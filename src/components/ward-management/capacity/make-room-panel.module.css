@@ -25,7 +25,7 @@
   border-radius: var(--wf-r-tag);
 }
 
-/* Plan cards (B and C) */
+/* Plan cards */
 
 .plans {
   display: grid;
@@ -106,7 +106,7 @@
   margin-inline-start: auto;
 }
 
-/* Route strip (B): left to right in the direction patients move */
+/* Route strip: left to right in the direction patients move */
 
 .route {
   display: flex;
@@ -162,95 +162,7 @@
   color: var(--wf-ink-3);
 }
 
-/* Route map (C): one column per ward, the move into it drawn underneath */
-
-.map {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: var(--wf-s-3);
-}
-
-.mapStep {
-  display: grid;
-  gap: var(--wf-s-2);
-  align-content: start;
-}
-
-.mapWard {
-  display: grid;
-  gap: 2px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-inline-start: 4px solid var(--wf-warning);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-hold-tint);
-}
-
-.mapWardReady {
-  border-inline-start-color: var(--wf-success);
-  background: var(--wf-fit-tint);
-}
-
-.mapWardName {
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.mapWardBeds {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-
-.mapMove {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  gap: var(--wf-s-2);
-  align-items: center;
-  padding: var(--wf-s-2);
-  border: 1px dashed var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-}
-
-.mapMoveNumber {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  border-radius: 50%;
-  background: var(--wf-accent);
-  color: var(--wf-on-accent);
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-}
-
-.mapMoveFoot {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  padding-block-start: var(--wf-s-1);
-  border-block-start: 1px solid var(--wf-line);
-}
-
-.mapMoveText {
-  display: grid;
-  min-inline-size: 0;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-
-.mapMoveText strong {
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-1);
-}
-
-/* Stepper (all three) */
+/* Stepper */
 
 .stepper {
   display: grid;
@@ -333,97 +245,4 @@
   gap: 4px;
   font-size: var(--wf-fs-12);
   color: var(--wf-success-ink);
-}
-
-.checkList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 2px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.checkChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 8px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-tag);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-success-ink);
-}
-
-/* Compact list (A) */
-
-.compactList {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  list-style: none;
-}
-
-.compactRow + .compactRow {
-  border-block-start: 1px solid var(--wf-line);
-}
-
-.compactButton {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
-  gap: var(--wf-s-3);
-  align-items: center;
-  inline-size: 100%;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 0;
-  background: none;
-  font: inherit;
-  text-align: start;
-  color: inherit;
-  cursor: pointer;
-}
-
-.compactButton:hover {
-  background: var(--wf-hover);
-}
-
-.compactButton:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.compactWho {
-  display: grid;
-  min-inline-size: 0;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-1);
-}
-
-.compactMeta {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-
-.compactWard {
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-2);
-}
-
-.compactToggle {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-accent-ink);
-}
-
-.compactPlan {
-  display: grid;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
-  background: var(--wf-surface-2);
-}
-
-.compactPlan[hidden] {
-  display: none;
 }

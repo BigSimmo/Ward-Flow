@@ -1036,13 +1036,7 @@ export function CapacityScreen() {
             </div>
           </div>
           {stepDownBoardOn && !isPhone ? <StepDownBoard now={now} /> : null}
-          {makeRoomOn && !isPhone ? (
-            <>
-              <MakeRoomPanel now={now} variant="simple" />
-              <MakeRoomPanel now={now} variant="recommended" />
-              <MakeRoomPanel now={now} variant="fuller" />
-            </>
-          ) : null}
+          {makeRoomOn && !isPhone ? <MakeRoomPanel now={now} /> : null}
         </div>
         {isPhone ? (
           <div className={styles.plannedWrap} data-phone-hidden={phoneTab !== "planned" ? "true" : undefined}>

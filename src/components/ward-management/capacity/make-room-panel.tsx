@@ -1,9 +1,9 @@
 "use client";
 
 import { ArrowRight, BedDouble, Check, Clock, Info } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { Avatar, Badge, Icon, cx, durMinutes } from "@/components/wf";
+import { Avatar, Badge, Icon, SrOnly, cx, durMinutes } from "@/components/wf";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -16,19 +16,6 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { makeRoomPreview } from "./make-room-preview";
 import styles from "./make-room-panel.module.css";
-
-/**
- * A, conservative: one row per waiting referral, the plan opens in place.
- * B, recommended: a plan card with the route and numbered moves.
- * C, bold: a route map of the wards with each move drawn between them, then the moves with checks.
- */
-export type MakeRoomVariant = "simple" | "recommended" | "fuller";
-
-const VARIANT_TITLES: Record<MakeRoomVariant, string> = {
-  simple: "Mockup A, compact list",
-  recommended: "Mockup B, plan cards",
-  fuller: "Mockup C, route map",
-};
 
 /** Plain names for the checks a move passes, in the order a clinician reads them. */
 const CHECK_LABELS: Partial<Record<GateResult["gate"], string>> = {
@@ -82,29 +69,18 @@ function readyBeds(unit: Unit) {
   return boundedBedAvailability(unit).available;
 }
 
-function Checks({ checks, compact }: { checks: GateResult[]; compact: boolean }) {
-  const shown = checks.filter((check) => CHECK_LABELS[check.gate]);
-  if (compact) {
-    return (
-      <span className={styles.allChecks}>
-        <Icon icon={Check} size={14} />
-        All {shown.length} checks pass
-      </span>
-    );
-  }
+function Checks({ checks }: { checks: GateResult[] }) {
+  const names = checks.flatMap((check) => CHECK_LABELS[check.gate] ?? []);
   return (
-    <ul className={styles.checkList} aria-label="Checks this move passes">
-      {shown.map((check) => (
-        <li key={check.gate} className={styles.checkChip} title={check.detail}>
-          <Icon icon={Check} size={14} />
-          {CHECK_LABELS[check.gate]}
-        </li>
-      ))}
-    </ul>
+    <span className={styles.allChecks} title={names.join(", ")}>
+      <Icon icon={Check} size={14} />
+      All {names.length} checks pass
+      <SrOnly>: {names.join(", ")}</SrOnly>
+    </span>
   );
 }
 
-function Stepper({ moves, detailed }: { moves: Move[]; detailed: boolean }) {
+function Stepper({ moves }: { moves: Move[] }) {
   return (
     <ol className={styles.stepper}>
       {moves.map((move, index) => (
@@ -133,7 +109,7 @@ function Stepper({ moves, detailed }: { moves: Move[]; detailed: boolean }) {
                 ? `${move.to.name} has ${readyBeds(move.to)} Ready ${readyBeds(move.to) === 1 ? "bed" : "beds"} now.`
                 : `Takes the bed freed by step ${index}.`}
             </p>
-            <Checks checks={move.checks} compact={!detailed} />
+            <Checks checks={move.checks} />
           </div>
         </li>
       ))}
@@ -169,51 +145,6 @@ function RouteStrip({ chain, moves }: { chain: MakeRoomChain; moves: Move[] }) {
   );
 }
 
-/** Bold option: each ward as a column with its bed state, and each move drawn as a chip between them. */
-function RouteMap({ chain, moves }: { chain: MakeRoomChain; moves: Move[] }) {
-  const columns = [...chain.stepDowns.map((step) => step.toUnit), chain.targetUnit];
-  return (
-    <div className={styles.map} role="group" aria-label="Route map">
-      {columns.map((ward, index) => {
-        const move = moves[index];
-        return (
-          <div key={ward.id} className={styles.mapStep}>
-            <div className={cx(styles.mapWard, index === 0 && styles.mapWardReady)}>
-              <span className={styles.mapWardName}>{ward.name}</span>
-              <span className={styles.mapWardBeds}>
-                <Icon icon={BedDouble} size={14} />
-                {index === 0 ? `${readyBeds(ward)} Ready now` : "Full now"}
-              </span>
-            </div>
-            {move ? (
-              <div className={styles.mapMove}>
-                <span className={styles.mapMoveNumber}>{index + 1}</span>
-                <Avatar name={move.who} size="md" decorative />
-                <span className={styles.mapMoveText}>
-                  <strong>{move.who}</strong>
-                  <span>from {move.fromName}</span>
-                </span>
-                <span className={styles.mapMoveFoot}>
-                  {index === 0 ? (
-                    <Badge tone="success" size="sm">
-                      Can start now
-                    </Badge>
-                  ) : (
-                    <Badge tone="neutral" size="sm">
-                      After step {index}
-                    </Badge>
-                  )}
-                  <Checks checks={move.checks} compact />
-                </span>
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function PlanHeader({ chain, moves, now }: { chain: MakeRoomChain; moves: Move[]; now: Instant }) {
   const waitingFor = durMinutes(Math.max(0, now - chain.movement.openedAt));
   const waiting = moves.at(-1)!;
@@ -237,7 +168,7 @@ function PlanHeader({ chain, moves, now }: { chain: MakeRoomChain; moves: Move[]
   );
 }
 
-function PlanFooter({ chain, withDismiss }: { chain: MakeRoomChain; withDismiss: boolean }) {
+function PlanFooter({ chain }: { chain: MakeRoomChain }) {
   return (
     <div className={styles.planFoot}>
       <p className={styles.planNote}>
@@ -246,54 +177,19 @@ function PlanFooter({ chain, withDismiss }: { chain: MakeRoomChain; withDismiss:
         are told.
       </p>
       <div className={styles.planActions}>
-        {withDismiss ? (
-          <NotWiredButton size="sm" variant="ghost" label="Not now" name={`Not now for ${chain.targetUnit.name}`} />
-        ) : null}
+        <NotWiredButton size="sm" variant="ghost" label="Not now" name={`Not now for ${chain.targetUnit.name}`} />
         <NotWiredButton size="sm" variant="pri" label="Start plan" name={`Start plan for ${chain.targetUnit.name}`} />
       </div>
     </div>
   );
 }
 
-function CompactRow({ chain, moves, now }: { chain: MakeRoomChain; moves: Move[]; now: Instant }) {
-  const [open, setOpen] = useState(false);
-  const waiting = moves.at(-1)!;
-  const panelId = `make-room-compact-${chain.movement.id}`;
-  return (
-    <li className={styles.compactRow}>
-      <button
-        type="button"
-        className={styles.compactButton}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className={styles.compactWho}>
-          <strong>{waiting.who}</strong>
-          <span className={styles.compactMeta}>
-            Waiting {durMinutes(Math.max(0, now - chain.movement.openedAt))} in {waiting.fromName}
-          </span>
-        </span>
-        <span className={styles.compactWard}>{chain.targetUnit.name}</span>
-        <Badge tone="info" size="sm">
-          {movesLabel(moves.length)}
-        </Badge>
-        <span className={styles.compactToggle}>{open ? "Hide plan" : "Show plan"}</span>
-      </button>
-      <div id={panelId} hidden={!open} className={styles.compactPlan}>
-        <Stepper moves={moves} detailed={false} />
-        <PlanFooter chain={chain} withDismiss={false} />
-      </div>
-    </li>
-  );
-}
-
 /**
  * MAKE ROOM PLANS, mockup stage (`make-room-chains`). Each waiting referral whose ward is full but
- * could be freed by moving patients already marked for step down, shown three ways for Josh to pick.
- * It only suggests: starting a plan is not wired yet.
+ * could be freed by moving patients already marked for step down, as plan cards (option B, Josh
+ * 17 Oct 2026). It only suggests: starting a plan is not wired yet.
  */
-export function MakeRoomPanel({ now, variant }: { now: Instant; variant: MakeRoomVariant }) {
+export function MakeRoomPanel({ now }: { now: Instant }) {
   const { admissions, units, movements, patients, referrals } = useWardFlowSelect(
     "admissions",
     "units",
@@ -319,9 +215,9 @@ export function MakeRoomPanel({ now, variant }: { now: Instant; variant: MakeRoo
 
   return (
     <WardPanel
-      title={`Make room, ${VARIANT_TITLES[variant]}`}
+      title="Make room"
       count={`${chains.length} ${chains.length === 1 ? "plan" : "plans"}`}
-      testId={`make-room-${variant}`}
+      testId="make-room"
     >
       <div className={styles.body}>
         <p className={styles.intro}>
@@ -331,12 +227,6 @@ export function MakeRoomPanel({ now, variant }: { now: Instant; variant: MakeRoo
         <p className={styles.previewNote}>Preview data: some wards are shown full so plans appear.</p>
         {chains.length === 0 ? (
           <p className={styles.empty}>No waiting referral needs room made right now.</p>
-        ) : variant === "simple" ? (
-          <ul className={styles.compactList}>
-            {chains.map((chain) => (
-              <CompactRow key={chain.movement.id} chain={chain} moves={movesOf(chain, nameOf)} now={now} />
-            ))}
-          </ul>
         ) : (
           <ul className={styles.plans}>
             {chains.map((chain) => {
@@ -344,13 +234,9 @@ export function MakeRoomPanel({ now, variant }: { now: Instant; variant: MakeRoo
               return (
                 <li key={chain.movement.id} className={styles.plan}>
                   <PlanHeader chain={chain} moves={moves} now={now} />
-                  {variant === "fuller" ? (
-                    <RouteMap chain={chain} moves={moves} />
-                  ) : (
-                    <RouteStrip chain={chain} moves={moves} />
-                  )}
-                  {variant === "fuller" ? null : <Stepper moves={moves} detailed={false} />}
-                  <PlanFooter chain={chain} withDismiss />
+                  <RouteStrip chain={chain} moves={moves} />
+                  <Stepper moves={moves} />
+                  <PlanFooter chain={chain} />
                 </li>
               );
             })}
