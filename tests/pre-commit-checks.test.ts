@@ -1,7 +1,8 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   approvedTakeoverFiles,
@@ -16,6 +17,7 @@ import {
   stagedPathsFromStatus,
   ownershipAdmission,
   partitionMergeOwnership,
+  filterAdmissionMergePaths,
 } from "../scripts/pre-commit-checks.mjs";
 
 describe("signOutConflicts (clash guard)", () => {
@@ -432,5 +434,183 @@ describe("the hook script end to end", () => {
     });
     expect(passed.status).toBe(1);
     expect(passed.stderr).toContain(`sign-out log unavailable at ${root}/ward-flow-logs/sign-out.md`);
+  });
+});
+
+describe("admission-only merge with no HEAD-to-index changes", () => {
+  const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
+  const mainStart = source.indexOf("async function main() {");
+  const mainEnd = source.indexOf("\nif (process.argv[1]", mainStart);
+  expect(mainStart).toBeGreaterThanOrEqual(0);
+  expect(mainEnd).toBeGreaterThan(mainStart);
+  const mainSource = source.slice(mainStart, mainEnd);
+  const incomingFile = "docs/ward-flow/incoming.md";
+  const fixtureRoot = process.cwd();
+  const mergeHeadPath = join(fixtureRoot, "MERGE_HEAD");
+  const signOutFile = join(fixtureRoot, "sign-out.md");
+
+  async function run({
+    merging = true,
+    incoming = incomingFile,
+    currentOnly = "",
+    log = "Open sign-outs only\n",
+    logPresent = true,
+    skipGuard = false,
+    mergeBases = "b".repeat(40),
+  }: {
+    merging?: boolean;
+    incoming?: string;
+    currentOnly?: string;
+    log?: string;
+    logPresent?: boolean;
+    skipGuard?: boolean;
+    mergeBases?: string;
+  } = {}) {
+    const errors: string[] = [];
+    let admissions = 0;
+    const fakeGit = (args: string[]): string => {
+      if (args[0] === "rev-parse" && args[1] === "--show-toplevel") return fixtureRoot;
+      if (args[0] === "rev-parse" && args[1] === "--git-path") return mergeHeadPath;
+      if (args[0] === "rev-parse" && args[1] === "--abbrev-ref") return "ward/probe";
+      if (args.join(" ") === "diff --cached --name-only -z --no-renames MERGE_HEAD")
+        return [incoming, currentOnly].filter(Boolean).join("\0") + (incoming || currentOnly ? "\0" : "");
+      if (
+        args.join(" ") ===
+        "diff --cached -U0 --no-color --no-ext-diff --diff-filter=ACMRT --src-prefix=a/ --dst-prefix=b/"
+      )
+        return "";
+      if (args.join(" ") === "merge-base --all HEAD " + "a".repeat(40)) return mergeBases;
+      if (args[0] === "ls-tree" && args.at(-1) === "b".repeat(40))
+        return (
+          [
+            `100644 blob ${"1".repeat(40)}\t${incomingFile}`,
+            currentOnly && `100644 blob ${"1".repeat(40)}\t${currentOnly}`,
+          ]
+            .filter(Boolean)
+            .join("\0") + "\0"
+        );
+      if (args[0] === "ls-tree" && args.at(-1) === "a".repeat(40))
+        return (
+          [
+            `100644 blob ${"2".repeat(40)}\t${incomingFile}`,
+            currentOnly && `100644 blob ${"1".repeat(40)}\t${currentOnly}`,
+          ]
+            .filter(Boolean)
+            .join("\0") + "\0"
+        );
+      if (args[0] === "ls-tree" && args.at(-1) === "HEAD")
+        return (
+          [
+            `100644 blob ${"1".repeat(40)}\t${incomingFile}`,
+            currentOnly && `100644 blob ${"3".repeat(40)}\t${currentOnly}`,
+          ]
+            .filter(Boolean)
+            .join("\0") + "\0"
+        );
+      if (args.join(" ") === "ls-files --stage -z")
+        return (
+          [`100644 ${"1".repeat(40)} 0\t${incomingFile}`, currentOnly && `100644 ${"3".repeat(40)} 0\t${currentOnly}`]
+            .filter(Boolean)
+            .join("\0") + "\0"
+        );
+      throw new Error(`Unexpected git call: ${args.join(" ")}`);
+    };
+    const main = runInNewContext(`${mainSource}\nmain`, {
+      TYPECHECK_CHILD_FLAG: "--typecheck-child",
+      SIGN_OUT_FILE: signOutFile,
+      process: {
+        argv: ["node", "pre-commit-checks.mjs", "--admission-only"],
+        env: { SKIP_SIGNOUT_GUARD: skipGuard ? "1" : undefined },
+        chdir: () => {},
+      },
+      git: fakeGit,
+      filterAdmissionMergePaths: (paths: string[], heads: string[]) => filterAdmissionMergePaths(paths, heads, fakeGit),
+      stagedScope: () => ({ changes: [], ownershipPaths: [], contentPaths: [] }),
+      existsSync: (file: string) => (file === mergeHeadPath ? merging : file === signOutFile && logPresent),
+      readFileSync: (file: string) => (file === mergeHeadPath ? `${"a".repeat(40)}\n` : log),
+      parseAddedLines: () => [],
+      scanAddedLines: () => [],
+      mergeOwnershipScope: () => ({ cleanIncoming: [], requiredClaims: [] }),
+      ownershipAdmission: (args: Parameters<typeof ownershipAdmission>[0]) => {
+        admissions++;
+        return ownershipAdmission(args);
+      },
+      isPublicWardFlowCheckout: () => true,
+      elapsed: () => "0 ms",
+      console: { error: (message: string) => errors.push(message) },
+    }) as () => Promise<number>;
+    return { code: await main(), errors: errors.join("\n"), admissions };
+  }
+
+  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async () => {
+    const missing = await run({ logPresent: false });
+    expect(missing.code).toBe(1);
+    expect(missing.errors).toContain("shared sign-out log unavailable");
+
+    const other = `Open sign-outs only\n- 2026-10-17 | Other | ward/other | /other | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
+    const clash = await run({ log: other });
+    expect(clash.code).toBe(1);
+    expect(clash.errors).toContain("files signed out by another session");
+    expect(clash.errors).toContain(incomingFile);
+
+    const unsigned = await run();
+    expect(unsigned.code).toBe(1);
+    expect(unsigned.errors).toContain("Ward files without your sign-out");
+
+    const own = `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${fixtureRoot} | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
+    const allowed = await run({ log: own });
+    expect(allowed.code).toBe(0);
+    expect(allowed.errors).toContain("admission ok");
+
+    const refusedSkip = await run({ log: own, skipGuard: true });
+    expect(refusedSkip.code).toBe(1);
+    expect(refusedSkip.errors).toContain("cannot skip ownership admission");
+    expect([missing, clash, unsigned, allowed].every((result) => result.admissions === 1)).toBe(true);
+    expect(refusedSkip.admissions).toBe(0);
+  });
+
+  it("keeps truly empty non-merge and identical incoming merge admissions empty", async () => {
+    expect(await run({ merging: false, logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
+    expect(await run({ incoming: "", logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
+  });
+
+  it("does not admit a current-side-only path from the index-to-incoming diff", async () => {
+    const result = await run({ incoming: "", currentOnly: "docs/ward-flow/current.md", logPresent: false });
+    expect(result).toMatchObject({ code: 0, admissions: 0 });
+  });
+
+  it("keeps ownership admission mandatory when merge bases are ambiguous", async () => {
+    const result = await run({ mergeBases: `${"b".repeat(40)}\n${"c".repeat(40)}`, logPresent: false });
+    expect(result).toMatchObject({ code: 1, admissions: 1 });
+    expect(result.errors).toContain("shared sign-out log unavailable");
+  });
+});
+
+describe("filterAdmissionMergePaths conservative provenance", () => {
+  const paths = ["docs/ward-flow/incoming.md"];
+  const head = "a".repeat(40);
+
+  it.each([
+    ["invalid incoming head", ["not-a-commit"]],
+    ["octopus merge", [head, "b".repeat(40)]],
+    ["missing incoming head", []],
+  ])("retains paths for %s", (_label, heads) => {
+    expect(
+      filterAdmissionMergePaths(paths, heads as string[], () => {
+        throw new Error("Unknown provenance must not be used for an exemption");
+      }),
+    ).toEqual(paths);
+  });
+
+  it.each([
+    ["multiple merge bases", `${"b".repeat(40)}\n${"c".repeat(40)}`],
+    ["invalid merge base", "not-a-commit"],
+  ])("retains paths for %s", (_label, bases) => {
+    expect(
+      filterAdmissionMergePaths(paths, [head], (args: string[]) => {
+        expect(args).toEqual(["merge-base", "--all", "HEAD", head]);
+        return bases;
+      }),
+    ).toEqual(paths);
   });
 });

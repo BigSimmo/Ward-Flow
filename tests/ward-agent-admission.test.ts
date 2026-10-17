@@ -215,14 +215,20 @@ test("bare admission checks ownership during a merge", (t) => {
   assert.match(result.stderr, /without your sign-out/);
 });
 
-test("merge admission excludes unchanged upstream files from task ownership", (t) => {
+test("merge admission exempts clean incoming paths but requires ownership for manual resolutions", (t) => {
   const f = mergeFixture(t);
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  // A committed current-side-only change needs no new claim. A manual merge
+  // resolution changes HEAD-to-index and must still have an own sign-out.
+  f.stage("synthetic manual merge resolution\n");
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
   const unsigned = f.run();
   assert.equal(unsigned.status, 1);
   assert.match(unsigned.stderr, /without your sign-out/);
+  f.claims();
+  const resolved = f.run();
+  assert.equal(resolved.status, 0, resolved.stderr);
 });
 
 test("merge admission still scans upstream changes for secrets", (t) => {
