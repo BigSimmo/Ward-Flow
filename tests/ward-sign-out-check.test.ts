@@ -92,6 +92,15 @@ describe("ward sign-out-check", () => {
     expect(result.stdout).not.toContain("stale entries not checked");
   });
 
+  it("normalises an explicit ./ argument before matching an extensionless root claim", () => {
+    writeFileSync(signOut, claim("./LICENSE"));
+    for (const arg of ["./LICENSE", "LICENSE"]) {
+      const result = run(arg);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stdout).toContain("SIGNED OUT  LICENSE  by Fixture owner (ward/other)");
+    }
+  });
+
   it("reports no clash on a non-clashing file", () => {
     const result = run("file.ts");
     expect(result.status, result.stderr).toBe(0);

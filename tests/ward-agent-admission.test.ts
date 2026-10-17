@@ -4,10 +4,20 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync,
 import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { test } from "node:test";
-import { signOutLogOptional } from "../pre-commit-checks.mjs";
+import { it, onTestFinished } from "vitest";
+import { signOutLogOptional } from "../scripts/pre-commit-checks.mjs";
 
-const root = fileURLToPath(new URL("../../", import.meta.url));
+// Spawned git/bash fixtures; formerly a node:test file under scripts/tests, run here so the
+// whole-suite runner collects it and the scripts/ coverage inventory stays complete.
+type Cleanup = { after: (fn: () => void) => void };
+type Body = (t: Cleanup) => unknown;
+function test(name: string, optionsOrBody: { skip?: boolean } | Body, maybeBody?: Body) {
+  const options = typeof optionsOrBody === "function" ? {} : optionsOrBody;
+  const body = (typeof optionsOrBody === "function" ? optionsOrBody : maybeBody) as Body;
+  (options.skip ? it.skip : it)(name, { timeout: 120_000 }, () => body({ after: (fn) => onTestFinished(fn) }));
+}
+
+const root = fileURLToPath(new URL("../", import.meta.url));
 const hook = path.join(root, ".githooks", "pre-commit").replace(/\\/g, "/");
 const file = "docs/ward-flow/admission-probe.md";
 const branch = "ward/admission-fixture";
@@ -24,16 +34,17 @@ if (process.platform === "win32") {
   );
 }
 
-function fixture(t) {
+function fixture(t: Cleanup) {
   const dir = mkdtempSync(path.join(tmpdir(), "ward-admission-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const env = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: devNull };
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: devNull };
   for (const key of Object.keys(env)) {
     if (key.startsWith("GIT_") && !["GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL"].includes(key)) delete env[key];
     if (key.startsWith("WARD_") || key.startsWith("SKIP_") || key === "CONFIRM_WARD_FLOW_FOLD_TO_MAIN") delete env[key];
   }
-  const git = (...args) => execFileSync("git", args, { cwd: dir, env, encoding: "utf8", stdio: "pipe" }).trim();
-  const write = (name, content) => {
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: dir, env, encoding: "utf8", stdio: "pipe" }).trim();
+  const write = (name: string, content: string) => {
     mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
     writeFileSync(path.join(dir, name), content);
   };
@@ -53,12 +64,12 @@ function fixture(t) {
       `## Active sign-outs\n- 2026-10-17 | ${owner} | ${taskBranch} | ${checkout} | ${paths.join(", ")}\n`,
     );
   claims();
-  const stage = (content, name = file) => {
+  const stage = (content: string, name = file) => {
     write(name, content);
     git("add", "--", name);
   };
   // Write a synthetic symlink blob to the fixture index without OS symlink privileges.
-  const stageSymlink = (content, name = file) => {
+  const stageSymlink = (content: string, name = file) => {
     const oid = execFileSync("git", ["hash-object", "-w", "--stdin"], {
       cwd: dir,
       env,
@@ -82,16 +93,16 @@ function fixture(t) {
     git("update-ref", "refs/remotes/origin/main", "HEAD");
     return import(pathToFileURL(checker).href);
   };
-  const run = (overrides = {}) =>
+  const run = (overrides: Record<string, string | undefined> = {}) =>
     spawnSync(bash, [hook], {
       cwd: dir,
-      env: { ...env, SKIP_PRECOMMIT_READINESS: "1", ...overrides },
+      env: { ...env, SKIP_PRECOMMIT_READINESS: "1", ...overrides } as NodeJS.ProcessEnv,
       encoding: "utf8",
     });
   return { dir, env, git, write, claims, stage, stageSymlink, makePublic, run };
 }
 
-function mergeFixture(t, upstreamFile = "docs/ward-flow/upstream.md", upstreamText = "synthetic upstream\n") {
+function mergeFixture(t: Cleanup, upstreamFile = "docs/ward-flow/upstream.md", upstreamText = "synthetic upstream\n") {
   const f = fixture(t);
   f.git("switch", "--quiet", "-c", "synthetic-upstream");
   f.stage(upstreamText, upstreamFile);
@@ -165,7 +176,7 @@ test("explicit file and directory configurations fail closed when unavailable", 
   const f = fixture(t);
   f.stage("synthetic change\n");
   for (const overrides of [
-    { WARD_SIGNOUT_FILE: path.join(f.dir, "absent.md"), WARD_FLOW_LOGS: path.dirname(f.env.WARD_SIGNOUT_FILE) },
+    { WARD_SIGNOUT_FILE: path.join(f.dir, "absent.md"), WARD_FLOW_LOGS: path.dirname(f.env.WARD_SIGNOUT_FILE ?? "") },
     { WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: path.join(f.dir, "absent-logs") },
     { WARD_SIGNOUT_FILE: f.dir },
   ]) {

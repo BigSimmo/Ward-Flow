@@ -92,7 +92,7 @@ if (process.argv[2] === "--stale") {
   process.exit(0);
 }
 
-const files = process.argv.slice(2).map((file) => file.replace(/\\/g, "/"));
+const files = process.argv.slice(2).map((file) => file.replace(/\\/g, "/").replace(/^\.\//, ""));
 if (files.length === 0) {
   console.log("Usage: sign-out-check.mjs <file> [<file> ...] | --stale");
   process.exit(2);
