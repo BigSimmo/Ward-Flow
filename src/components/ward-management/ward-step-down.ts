@@ -1,7 +1,9 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
+  adjustSexMix,
   eligibility,
+  mixSexOf,
   type EligibilitySubject,
   type EligibilityVerdict,
 } from "@/components/ward-management/ward-eligibility";
@@ -78,9 +80,11 @@ export type StepDownBoardRow = {
  * `cohort`, `security`, `gender_designation` D-31, `forensic`, `sex_mix`, `prior_decline`,
  * `capacity_freshness`, `allocatable_bed`) rather than a second rule set.
  */
-export function freedStepDownUnit(fromUnit: Unit): Unit {
+export function freedStepDownUnit(fromUnit: Unit, departing?: Admission): Unit {
+  const departingSex = departing === undefined ? undefined : mixSexOf(departing.gender, departing.sex);
   return {
     ...fromUnit,
+    isClosed: fromUnit.isClosed,
     allocatable: {
       ...fromUnit.allocatable,
       value: fromUnit.allocatable.value + 1,
@@ -89,16 +93,19 @@ export function freedStepDownUnit(fromUnit: Unit): Unit {
       ...fromUnit.empty,
       value: fromUnit.empty.value + 1,
     },
+    sexMix: departing === undefined ? fromUnit.sexMix : adjustSexMix(fromUnit.sexMix, departingSex, -1),
   };
 }
 
 export function deriveStepDownSwapCandidates(input: {
   fromUnit: Unit;
+  departingAdmission?: Admission;
   movements: readonly Movement[];
   transferMovementId?: string;
   now: Instant;
 }): StepDownSwapCandidate[] {
-  const unitAfterStepDown = freedStepDownUnit(input.fromUnit);
+  if (input.fromUnit.isClosed) return [];
+  const unitAfterStepDown = freedStepDownUnit(input.fromUnit, input.departingAdmission);
   return input.movements
     .filter(
       (movement) =>
@@ -158,6 +165,7 @@ export function deriveStepDownBoard(input: {
       wards.length > 0
         ? deriveStepDownSwapCandidates({
             fromUnit,
+            departingAdmission: admission,
             movements: input.movements,
             transferMovementId: transferMovement?.id,
             now: input.now,
