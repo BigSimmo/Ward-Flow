@@ -157,7 +157,13 @@ function project(state: WardFlowState, admission: Admission, actor: WardRecordAc
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
+<<<<<<< HEAD
     dischargeCriteria: criteriaFor(actor, admission.dischargeCriteria),
+=======
+    // Fixed-list criteria, any typed patient specific criteria (D-65) and times. A record read is
+    // limited to the unit's ward, the coordinator, or the community team on the referral.
+    dischargeCriteria: admission.dischargeCriteria ?? null,
+>>>>>>> origin/claude/project-thread-3kib58
     criteriaEligibility: admissionCriteriaEligibility(state, admission),
   });
 }
