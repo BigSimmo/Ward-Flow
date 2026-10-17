@@ -9,7 +9,12 @@
 // destination and hiding it is the defect. `cohort` is itself one of the overridable gates.
 import { describe, expect, it } from "vitest";
 
-import { blockingGate, shortlistCandidates } from "../src/components/ward-management/ward-derivations";
+import {
+  blockingGate,
+  eligibleCandidatesAmong,
+  shortlistCandidates,
+} from "../src/components/ward-management/ward-derivations";
+import { fitKind } from "../src/components/ward-management/coordinator/home-fit";
 import { SUITABILITY_GATES, seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -336,5 +341,34 @@ describe("shortlistCandidates — a closed ward is not offered", () => {
     expect(blockingGate(after.verdict)?.detail).toContain("is closed");
     // Anti-vacuity: the same ward is not unavailable for this reason when open.
     expect(before.verdict.gates.find((gate) => gate.gate === "allocatable_bed")?.pass).toBe(true);
+  });
+});
+
+describe("a closed ward on Home: never a fit, never a best fit", () => {
+  const eligibleOpen = all.find(
+    (c) => c.availability === "eligible" && !c.unit.isClosed && c.unit.cohort === movement.cohort,
+  );
+  const closedUnits = state.units.map((unit) =>
+    unit.id === eligibleOpen?.unit.id ? { ...unit, isClosed: true } : unit,
+  );
+
+  it("reads as not fitting, rather than 'fits, no bed now'", () => {
+    expect(eligibleOpen, "the seeded network has an eligible open ward for this movement").toBeDefined();
+    expect(
+      fitKind(
+        all.find((c) => c.unit.id === eligibleOpen!.unit.id)!,
+        movement,
+      ),
+    ).toBe("bed");
+    const closed = shortlistCandidates(movement, closedUnits, NOW).find((c) => c.unit.id === eligibleOpen!.unit.id)!;
+    expect(fitKind(closed, movement)).toBe("no");
+  });
+
+  it("is not eligible in the routed shortlist the Home best fit reads", () => {
+    const routed = eligibleCandidatesAmong(movement, closedUnits, NOW, closedUnits.length);
+    const closed = routed.find((c) => c.unit.id === eligibleOpen!.unit.id)!;
+    expect(closed.unit.allocatable.value, "still has allocatable beds, so only closure explains it").toBeGreaterThan(0);
+    expect(closed.verdict.eligible).toBe(false);
+    expect(routed.find((c) => c.verdict.eligible)?.unit.id).not.toBe(eligibleOpen!.unit.id);
   });
 });
