@@ -2,7 +2,7 @@
  * **WHO MAY GIVE WHOM ACCESS — the access admin's rules (role access plan, later pass, Josh's go
  * 16 Oct 2026).**
  *
- * One set of rules for granting, approving and removing roles, for cover of a second ward or ED,
+ * One set of rules for granting and removing roles, for cover of a second ward or ED,
  * and for a person with no role asking for one. The local demo's Access admin screen and the
  * shared server (`backend/ward-flow/engine.ts`) both read this module, so the screen and the
  * server can never disagree about who may give what.
@@ -66,7 +66,7 @@ export type AccessRequest = {
 /** The place answers these rules need: the access table's lookup plus every ward in the workspace. */
 export type AccessPlaces = PlaceLookup & { readonly unitIds: readonly string[] };
 
-/** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
+/** Who may grant and remove roles: the access admin, and the statewide coordinator. */
 export function managesAccess(access: WardAccess): boolean {
   return access.role === "admin" || accessIsWholeNetwork(access);
 }
@@ -115,6 +115,22 @@ export function scopeWithinScope(inner: WardAccessScope, outer: WardAccessScope,
 const NOT_ADMIN = "Granting and removing roles is not part of your role.";
 const WIDER = "That role is wider than your own.";
 
+/**
+ * @deprecated Role grants take effect immediately; the legacy approval action always refuses.
+ * Kept only so older client callers fail explicitly while they migrate away from approval.
+ */
+export function approveRefusal(input: {
+  readonly approver: WardAccess;
+  readonly approverId: string;
+  readonly membership: AccessMembership;
+  readonly places: AccessPlaces;
+}): string | null {
+  const { membership } = input;
+  if (!managesAccess(input.approver)) return NOT_ADMIN;
+  if (!scopeWithinScope(membership.access.scope, input.approver.scope, input.places)) return WIDER;
+  return "That role is not waiting for approval.";
+}
+
 /** Why this grant may not be made, or `null`. */
 export function grantRefusal(input: {
   readonly granter: WardAccess;
@@ -132,19 +148,6 @@ export function grantRefusal(input: {
   if (!scopeNamesPlace(input.access.scope, input.places)) return "That place is not in the workspace.";
   if (!scopeWithinScope(input.access.scope, input.granter.scope, input.places)) return WIDER;
   return null;
-}
-
-/** Compatibility for older callers: role grants no longer need an approval. */
-export function approveRefusal(input: {
-  readonly approver: WardAccess;
-  readonly approverId: string;
-  readonly membership: AccessMembership;
-  readonly places: AccessPlaces;
-}): string | null {
-  const { membership } = input;
-  if (!managesAccess(input.approver)) return NOT_ADMIN;
-  if (!scopeWithinScope(membership.access.scope, input.approver.scope, input.places)) return WIDER;
-  return "That role is not waiting for approval.";
 }
 
 /** Why this role may not be removed by this person, or `null`. Cover is ended by its giver too. */

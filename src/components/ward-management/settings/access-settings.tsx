@@ -52,7 +52,6 @@ import {
   DEMO_ADMIN_ID,
   DEMO_STAFF,
   demoStaffLabel,
-  localApprove,
   localDecide,
   localGrant,
   localRevoke,
@@ -77,7 +76,6 @@ type AccessAdminSource = {
   readonly people: readonly { readonly id: string; readonly label: string }[] | null;
   readonly label: (actorId: string) => string;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
-  readonly approve: (id: string) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
   /** Why the lists may be out of date (the server was not reached). */
@@ -123,7 +121,6 @@ function useLocalAdminSource(desk: WardAccess, now: Instant, places: AccessPlace
       people: DEMO_STAFF.filter((person) => person.id !== DEMO_ADMIN_ID),
       label: demoStaffLabel,
       grant: async (input) => localGrant(admin, { ...input, now, places }),
-      approve: async (id) => localApprove(admin, id, now, places),
       revoke: async (id) => localRevoke(admin, id, now, places),
       decide: async (id, decision, expiresAt) => localDecide(admin, id, decision, { expiresAt, now, places }),
     };

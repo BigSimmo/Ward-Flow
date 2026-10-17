@@ -15,7 +15,6 @@ export type SharedAccessApi = Pick<
   | "listAccess"
   | "listCovers"
   | "grantAccess"
-  | "approveAccess"
   | "revokeAccess"
   | "giveCover"
   | "decideRequest"

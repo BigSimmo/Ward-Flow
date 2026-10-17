@@ -516,9 +516,6 @@ export class SharedWorkspaceClient {
       expiresAt: new Date(Date.now() + input.expiresInMinutes * 60_000).toISOString(),
     });
   }
-  approveAccess(membershipId: string) {
-    return this.change("/v1/workspace/access/approve", { membershipId });
-  }
   /** Removes a role, or ends cover early (its giver may too). */
   revokeAccess(membershipId: string) {
     return this.change("/v1/workspace/access/revoke", { membershipId });

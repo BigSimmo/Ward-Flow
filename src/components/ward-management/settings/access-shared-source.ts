@@ -122,7 +122,6 @@ export type SharedAdminSource = {
   readonly loading: boolean;
   readonly label: (actorId: string) => string;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
-  readonly approve: (id: string) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
 };
@@ -147,7 +146,6 @@ export function useSharedAdminSource(
       label: (actorId) => accountLabel(actorId, self),
       grant: ({ actorId, access, expiresAt }) =>
         settle(api.grantAccess({ actorId, role: access.role, scope: access.scope, expiresInMinutes: expiresAt - now })),
-      approve: (id) => settle(api.approveAccess(id)),
       revoke: (id) => settle(api.revokeAccess(id)),
       decide: (id, decision, expiresAt) => settle(api.decideRequest(id, decision, expiresAt - now)),
     };
