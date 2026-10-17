@@ -2,7 +2,6 @@ import type { EligibilityGate } from "./ward-eligibility";
 import type { Instant } from "@/components/ward-management/ward-clock";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
-import type { SupportServiceType } from "@/components/ward-management/ward-support-notifications";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
 // see that module's own doc comment for why the vocabulary lives there rather than here or on
 // `ward-admissions.ts`, where the fact it describes first gained a runtime writer.
@@ -2007,8 +2006,6 @@ export type BedRelease = {
   /** Reason the most recent discharge blocker was cleared, chosen from `DISCHARGE_DELAY_CLEAR_REASONS`. */
   lastClearedBlockReason?: DischargeDelayClearReason;
   /** Append-only history of cleared discharge blockers on this bed release. */
-  /** Support services notified for this discharge release. */
-  sentSupportServices?: ReadonlyArray<SupportServiceType>;
   clearedBlockHistory?: ReadonlyArray<{
     readonly at: Instant;
     readonly by: WardFlowRole;

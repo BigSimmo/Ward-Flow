@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
 import {
   SUPPORT_SERVICE_TYPES,
@@ -36,11 +36,20 @@ export function WardDischargeNotices({
   onClose: () => void;
 }) {
   const baseId = useId();
-  const effectiveSent = sentServices ?? new Set<SupportServiceType>();
+  const [localSent, setLocalSent] = useState<ReadonlySet<SupportServiceType>>(() => new Set());
+  const effectiveSent = sentServices ?? localSent;
 
   const handleSend = (service: SupportServiceType) => {
-    if (effectiveSent.has(service) || !onSendService) return;
-    onSendService(service);
+    if (effectiveSent.has(service)) return;
+    if (onSendService) {
+      onSendService(service);
+    } else {
+      setLocalSent((prev) => {
+        const next = new Set(prev);
+        next.add(service);
+        return next;
+      });
+    }
   };
 
   return (

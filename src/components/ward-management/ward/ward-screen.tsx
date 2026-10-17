@@ -2945,10 +2945,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               key={release.id}
               bedLabel={bed?.bedLabel ?? "this bed"}
               dueSoonHours={dueSoon ? Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60) : null}
-              sentServices={new Set(release.sentSupportServices ?? [])}
-              onSendService={(service) =>
-                dispatch({ type: "NOTIFY_SUPPORT_SERVICE", role: "ward", now, releaseId: release.id, service })
-              }
               onClose={() => {
                 setNoticesForRelease(null);
               }}

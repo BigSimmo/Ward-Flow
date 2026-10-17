@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Badge, Button } from "@/components/wf";
-import { admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  admissionChecklist,
+  type AdmissionChecklistOverrides,
+} from "@/components/ward-management/ward-admission-checklist";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
 import edStyles from "./ed.module.css";
@@ -14,20 +17,12 @@ import styles from "./ed-admission-checklist.module.css";
  * the ED clinician mark the contraband search and medication chart ready before departure.
  */
 export function EdAdmissionChecklist({ movement, referrals }: { movement: Movement; referrals: readonly Referral[] }) {
-  const { dispatch } = useWardFlowSelect("dispatch");
-  const now = useWardFlowClock();
-  const items = admissionChecklist(movement, referrals);
+  const [overrides, setOverrides] = useState<AdmissionChecklistOverrides>({});
+  const items = admissionChecklist(movement, referrals, overrides);
   const done = items.filter((item) => item.state === "done").length;
   const counted = items.length;
-  const toggleItem = (key: "contraband_search" | "medication_chart", currentDone: boolean) => {
-    dispatch({
-      type: "TOGGLE_ADMISSION_CHECKLIST_ITEM",
-      role: "ed",
-      now,
-      movementId: movement.id,
-      item: key,
-      done: !currentDone,
-    });
+  const toggleOverride = (key: keyof AdmissionChecklistOverrides, currentDone: boolean) => {
+    setOverrides((prev) => ({ ...prev, [key]: !currentDone }));
   };
   return (
     <section
@@ -53,7 +48,7 @@ export function EdAdmissionChecklist({ movement, referrals }: { movement: Moveme
                   variant="ghost"
                   size="sm"
                   aria-pressed={item.state === "done"}
-                  onClick={() => toggleItem(item.key, item.state === "done")}
+                  onClick={() => toggleOverride(item.key as keyof AdmissionChecklistOverrides, item.state === "done")}
                 >
                   {item.state === "done" ? "Clear" : "Mark done"}
                 </Button>
