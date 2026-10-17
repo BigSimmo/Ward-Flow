@@ -870,11 +870,12 @@ guard.test.ts` is what proves that check can actually fail.
 - **`ward-teams.ts` has no code importers** (per the overview map, re-checked there, not
   re-verified in this pass) — superseded by the site/team join; do not delete without the owner
   (protected path).
-- **`RECORD_COUNTRY_EXTENSION` is a dead-looking but _intentional_ no-op event** — its case
-  unconditionally refuses, existing only to redirect callers to `RECORD_LEGAL_FORM_EXPIRY`. Do not
-  "fix" it by implementing the extension logic without checking
-  `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md` first — the owner's ruling was
-  that this prototype computes no legal time limits of its own.
+- **`RECORD_COUNTRY_EXTENSION` records paper expiry, never an extension calculation.** For an open
+  movement with a current Form 1A and recorded country setting, it delegates the typed
+  `paperExpiresAt` to `RECORD_LEGAL_FORM_EXPIRY`; missing or ineligible paper facts are refused.
+  The engine never computes or stores a legal time limit. The separate, sourced Legal forms demo
+  allowed by [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
+  illustrates periods without writing calculated expiry into the record.
 - **Three engine files are the only ones with outside imports** at all
   (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`) — per the
   overview map. The engine otherwise only imports from itself, so a change here has an unusually

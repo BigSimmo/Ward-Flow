@@ -32,6 +32,14 @@ established by this advisory check. Keep project/tool glob inputs trusted and bo
 tracking a compatible upstream fix. Re-evaluate when `braces`, its callers or the lint toolchain
 publish a relevant change, then validate the dependency graph, audit and focused lint/CI contracts.
 
+Review on 17 October 2026 against Ward Flow main `7b14c9888d2ed2e534a55b2e366ddaf91f5d690b`:
+the npm registry still lists `braces@3.0.3` as latest with no newer release, and
+`micromatch@4.0.8` still requires `braces ^3.0.3`. No compatible version-only repair was found.
+The dependency maintainer owns the follow-up: review the nightly full-audit warning and
+recheck publication metadata within 30 days, or sooner on a relevant upstream release or a
+change to the lint/glob dependency chain. Keep untrusted glob input out of this development
+toolchain in the meantime. This mitigation and review record do not close the advisory.
+
 Useful read-only commands:
 
 ```sh
