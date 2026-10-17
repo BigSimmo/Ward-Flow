@@ -300,24 +300,28 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   /**
-   * When this account last signed in with its password or another factor: the newest `amr`
-   * timestamp, in milliseconds. A refreshed token keeps it, so it answers "how recently did this
-   * person prove it is them" for step-up (feature 9). Undefined when the token carries none.
+   * The newest `amr` timestamp answers "how recently did this person prove it is them" for
+   * step-up (feature 9). The earliest one is the start of the session: a later factor must not
+   * extend the session's twelve-hour lifetime. Undefined when the token carries no usable record.
    */
-  const signedInAt = (claims) => {
+  const signInTimes = (claims) => {
     const times = Array.isArray(claims?.amr)
       ? claims.amr.map((entry) => entry?.timestamp).filter((value) => Number.isFinite(value))
       : [];
-    return times.length ? Math.max(...times) * 1000 : undefined;
+    return {
+      signedInAt: times.length ? Math.max(...times) * 1000 : undefined,
+      sessionStartedAt: times.length ? Math.min(...times) * 1000 : undefined,
+    };
   };
   /**
-   * `session`, when given, is filled once the token is verified: `signedInAt` (above) and `aal`.
-   * The subject is still the only return value.
+   * `session`, when given, is filled once the token is verified: the newest factor as `signedInAt`,
+   * the original session start as `sessionStartedAt`, and `aal`. The subject is still the only
+   * return value.
    */
   return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
     const verified = (userId, claims) => {
       if (session) {
-        session.signedInAt = signedInAt(claims);
+        Object.assign(session, signInTimes(claims));
         session.aal = typeof claims?.aal === "string" ? claims.aal : undefined;
       }
       return userId;

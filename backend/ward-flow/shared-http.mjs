@@ -138,7 +138,7 @@ export function createSharedHandler({
       });
     }
     let actorId;
-    /** @type {{ signedInAt?: number, aal?: string }} */
+    /** @type {{ signedInAt?: number, sessionStartedAt?: number, aal?: string }} */
     const session = {};
     try {
       actorId = await authenticate(request.headers.get("authorization"), {
@@ -157,7 +157,7 @@ export function createSharedHandler({
     // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). Supabase tokens
     // carry the sign-in time, which a refresh keeps, so the person signs in again with a password.
     const limitMs = (Number.isFinite(store.sessionLimitMinutes) ? store.sessionLimitMinutes : Infinity) * 60_000;
-    if (Number.isFinite(session.signedInAt) && session.signedInAt < Date.now() - limitMs)
+    if (!Number.isFinite(session.sessionStartedAt) || session.sessionStartedAt < Date.now() - limitMs)
       return reply(
         401,
         {

@@ -55,13 +55,19 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
     sharedStore,
-    /** @param {string} token @param {{ session?: { signedInAt?: number } }} [context] */
+    /** @param {string} token @param {{ session?: { signedInAt?: number, sessionStartedAt?: number } }} [context] */
     authenticate: async (token, { session } = {}) => {
       if (!token) throw new Error("Unauthorized");
       // "Bearer stale" stands for a sign-in older than the step-up window, "Bearer old" for one
-      // older than the session limit.
-      const age = { "Bearer stale": 11 * 60_000, "Bearer old": 12 * 60 * 60_000 + 60_000 }[token] ?? 0;
-      if (session) session.signedInAt = Date.now() - age;
+      // older than the session limit. "Bearer unknown" has no usable sign-in timestamp.
+      const age =
+        token === "Bearer unknown"
+          ? undefined
+          : { "Bearer stale": 11 * 60_000, "Bearer old": 12 * 60 * 60_000 + 60_000 }[token] ?? 0;
+      if (session && age !== undefined) {
+        session.signedInAt = Date.now() - age;
+        session.sessionStartedAt = Date.now() - age;
+      }
       return actor;
     },
     log: (event) => logs.push(event),
@@ -483,6 +489,14 @@ test("the powerful steps need a recent sign-in, and say so with their own code",
     grantAccess: async () => ({ status: 200, body: {} }),
   });
   assert.equal((await strict.handler(request("/access/grant", grant, "Bearer stale"))).status, 401);
+});
+
+test("a session without a sign-in time is refused", async () => {
+  const { calls, handler } = setup();
+  const response = await handler(request("", undefined, "Bearer unknown"));
+  assert.equal(response.status, 401);
+  assert.equal((await response.json()).code, "session-limit");
+  assert.deepEqual(calls, []);
 });
 
 test("a sign-in older than the session limit is refused on every route, reads included", async () => {
