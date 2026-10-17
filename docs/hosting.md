@@ -84,9 +84,12 @@ Backend settings (Railway dashboard):
   trust by default. The start command writes it from a variable, so no certificate file is in the
   deployment archive.
 - Variables: the [Supabase settings template](../backend/ward-flow/infra/supabase-settings.template.env)
-  values, plus `HOST=0.0.0.0`, `PORT=8080`, `WARD_TRUSTED_PROXY_ADDRESSES=*`,
-  `WARD_ALLOWED_ORIGIN` set to the signed-in site, `WARD_SUPABASE_CA_PEM` and
-  `WARD_SUPABASE_CA_CERT_FILE=/tmp/supabase-ca.pem`. Phone push is off (no VAPID keys).
+  values, with every blank one filled: `WARD_COORDINATOR_USER_IDS` (the coordinator test
+  account), `WARD_WORKSPACE_ID` (the shared workspace), `WARD_SUPABASE_PUBLISHABLE_KEY`,
+  `WARD_ALLOWED_ORIGIN` set to the signed-in site, `WARD_TRUSTED_PROXY_ADDRESSES=*`,
+  `WARD_SUPABASE_CA_CERT_FILE=/tmp/supabase-ca.pem`, `HOST=0.0.0.0` and `PORT=8080`, plus
+  `WARD_SUPABASE_CA_PEM`. The backend refuses to start in shared mode if the coordinator or
+  workspace id is missing. Phone push is off (no VAPID keys).
   `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
   password was set privately by the owner and lives only in Railway.
 - Watch paths: `backend/ward-flow`, `src/components/ward-management` (the engine bundles it),
