@@ -73,13 +73,12 @@ it.skipIf(process.platform === "win32")(
     // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
     process.env.HOME = root;
     try {
-      await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
-        "sign-out log unavailable",
-      );
+      await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow("sign-out log unavailable");
     } finally {
       if (previous.file !== undefined) process.env.WARD_SIGNOUT_FILE = previous.file;
       if (previous.logs !== undefined) process.env.WARD_FLOW_LOGS = previous.logs;
-      process.env.HOME = previous.home;
+      if (previous.home === undefined) delete process.env.HOME;
+      else process.env.HOME = previous.home;
     }
   },
 );

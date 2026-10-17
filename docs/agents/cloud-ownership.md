@@ -20,12 +20,14 @@ Boundary: <actual Cloud checkout/group>; <ownership source/checkpoint>.
 Desktop/other-host sign-outs unavailable; no global clearance claimed.
 
 ## Active sign-outs
-- <date> | <owner> | <task-branch> | <absolute-checkout> | path/to/file, other/file. repo=BigSimmo/Ward-Flow
+- <date> | <owner> | <task-branch> | <absolute-checkout> | path/to/file, ./LICENSE; repo=BigSimmo/Ward-Flow
 ```
+
+Use `./LICENSE` or `./Dockerfile` for an extensionless root filename; the checker normalises the explicit `./` prefix. Separate repository metadata with `;`, rather than appending a sentence to an extensionless filename. The legacy log format cannot express whitespace or comma/semicolon/pipe characters in exact paths. Do not invent quoting for such a path; coordinate a supported parent-directory claim where that scope is authorised, or report the exact-path limitation. A directory claim is never an exact-file takeover approval.
 
 Run `node scripts/ward-flow/sign-out-check.mjs <exact-files>` with that same `WARD_SIGNOUT_FILE` before claiming/editing files. It checks available local branch history and the supplied log; it cannot discover other hosts. An overlap requires the other owner's release or Josh's already-applicable exact-file takeover authority. Sign out new files as the task scope grows. Pass the same environment to formatting, admission and commit commands; a readable empty log does not supply your claims.
 
-At handoff, preserve the checkpoint, log path and exact outstanding ownership. The receiving session validates the current branch, files and claims, then appends its own claim after the outgoing owner releases the handed-back paths. Use the existing release format:
+At handoff, preserve the checkpoint, log path and exact outstanding ownership. The existing `RELEASED` record clears **all earlier claims for every named branch in this repository scope**, regardless of the owner field or files mentioned in its reason. It does not release individual files. Use it only when every affected claim can be released; the receiving session then validates the current branch/files and appends the complete set of claims still needed by the coordinating group. For a partial handoff, keep unrelated claims active and obtain the existing exact-file takeover authority if ownership overlaps; do not use a branch-wide release to imply a partial transfer. Use this format for a complete branch handoff:
 
 ```text
 RELEASED <date> | <owner> | <task-branch> | <handoff/integration reason>; repo=BigSimmo/Ward-Flow

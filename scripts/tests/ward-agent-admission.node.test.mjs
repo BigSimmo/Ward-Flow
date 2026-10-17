@@ -3,11 +3,11 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { devNull, tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
-import { signOutLogOptional, unsignedWardFiles } from "../scripts/pre-commit-checks.mjs";
+import { signOutLogOptional } from "../pre-commit-checks.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
+const root = fileURLToPath(new URL("../../", import.meta.url));
 const hook = path.join(root, ".githooks/pre-commit");
 const file = "docs/ward-flow/admission-probe.md";
 const branch = "ward/admission-fixture";
@@ -47,13 +47,50 @@ function fixture(t) {
     write(name, content);
     git("add", "--", name);
   };
+  // Write a synthetic symlink blob to the fixture index without OS symlink privileges.
+  const stageSymlink = (content, name = file) => {
+    const oid = execFileSync("git", ["hash-object", "-w", "--stdin"], {
+      cwd: dir,
+      env,
+      input: content,
+      encoding: "utf8",
+    }).trim();
+    git("update-index", "--add", "--cacheinfo", "120000", oid, name);
+  };
+  const makePublic = async () => {
+    const checker = path.join(dir, "scripts/pre-commit-checks.mjs");
+    const source = readFileSync(checker, "utf8");
+    // Only this disposable copy uses its own minted history anchor. No real
+    // repository objects, remotes or origin/main ref are required by the test.
+    const synthetic = source.replace(
+      /(export const WARD_FLOW_IDENTITY_ANCHOR = ")[a-f0-9]{40}(";)/,
+      `$1${git("rev-parse", "HEAD")}$2`,
+    );
+    assert.notEqual(synthetic, source);
+    writeFileSync(checker, synthetic);
+    git("remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
+    git("update-ref", "refs/remotes/origin/main", "HEAD");
+    return import(pathToFileURL(checker).href);
+  };
   const run = (overrides = {}) =>
     spawnSync(bash, [hook], {
       cwd: dir,
       env: { ...env, SKIP_PRECOMMIT_READINESS: "1", ...overrides },
       encoding: "utf8",
     });
-  return { dir, env, git, write, claims, stage, run };
+  return { dir, env, git, write, claims, stage, stageSymlink, makePublic, run };
+}
+
+function mergeFixture(t, upstreamFile = "docs/ward-flow/upstream.md", upstreamText = "synthetic upstream\n") {
+  const f = fixture(t);
+  f.git("switch", "--quiet", "-c", "synthetic-upstream");
+  f.stage(upstreamText, upstreamFile);
+  f.git("commit", "--quiet", "-m", "synthetic upstream change");
+  f.git("switch", "--quiet", branch);
+  f.stage("synthetic task change\n");
+  f.git("commit", "--quiet", "-m", "synthetic task change");
+  f.git("merge", "--quiet", "--no-commit", "--no-ff", "synthetic-upstream");
+  return f;
 }
 
 test("publication skips readiness only after clean staged admission", (t) => {
@@ -155,6 +192,70 @@ test("bare admission checks ownership during a merge", (t) => {
   assert.match(result.stderr, /without your sign-out/);
 });
 
+test("merge admission excludes unchanged upstream files from task ownership", (t) => {
+  const f = mergeFixture(t);
+  const admitted = f.run();
+  assert.equal(admitted.status, 0, admitted.stderr);
+  f.write("coordination/sign-out.md", "## Active sign-outs\n");
+  const unsigned = f.run();
+  assert.equal(unsigned.status, 1);
+  assert.match(unsigned.stderr, /without your sign-out/);
+});
+
+test("merge admission still scans upstream changes for secrets", (t) => {
+  const f = mergeFixture(t, "docs/ward-flow/upstream.md", `key ${"AKIA" + "QWERTYUIOPASDFGH"}\n`);
+  const result = f.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /AWS access key/);
+});
+
+test("merge ownership preserves NUL-delimited paths with whitespace and non-ASCII names", (t) => {
+  const f = mergeFixture(t);
+  const special = ["space name.md", "tab\tname.md", "line\nname.md", "é.md"].map(
+    (name) => `docs/ward-flow/special/${name}`,
+  );
+  for (const name of special) f.stage("synthetic task addition\n", name);
+  const unsigned = f.run();
+  assert.equal(unsigned.status, 1);
+  for (const name of special) assert.ok(unsigned.stderr.includes(name), name);
+  // The legacy log cannot quote arbitrary exact paths, but its supported
+  // directory-claim syntax covers this synthetic, expressly owned subtree.
+  f.claims([file, "docs/ward-flow/special/"]);
+  const admitted = f.run();
+  assert.equal(admitted.status, 0, admitted.stderr);
+});
+
+test("type-only changes require ownership admission", (t) => {
+  const f = fixture(t);
+  f.stageSymlink("synthetic-target");
+  assert.match(f.git("diff", "--cached", "--name-status", "-z"), /^T\0/);
+  f.write("coordination/sign-out.md", "## Active sign-outs\n");
+  const unsigned = f.run();
+  assert.equal(unsigned.status, 1);
+  assert.match(unsigned.stderr, /without your sign-out/);
+  f.claims();
+  const admitted = f.run();
+  assert.equal(admitted.status, 0, admitted.stderr);
+});
+
+test("type-only changes remain inside the staged secret scan", (t) => {
+  const f = fixture(t);
+  f.stageSymlink("AKIA" + "QWERTYUIOPASDFGH");
+  const result = f.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /AWS access key/);
+});
+
+test("a type-only change cannot evade the main-branch guard", (t) => {
+  const f = fixture(t);
+  f.git("branch", "-m", "main");
+  f.stageSymlink("synthetic-target");
+  const result = f.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /admission ok/);
+  assert.match(result.stderr, /COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED/);
+});
+
 test("deletions require ownership admission as well", (t) => {
   const f = fixture(t);
   f.git("rm", "--", file);
@@ -200,9 +301,75 @@ test("missing admission tooling blocks even a readiness-only publication", (t) =
   assert.match(result.stderr, /required for staged safety\/ownership admission/);
 });
 
-test("missing logs have no implicit host waiver and real Ward claims include root files", () => {
+test("older or incompatible checkers cannot silently accept publication mode", (t) => {
+  const f = fixture(t);
+  f.stage("synthetic task change\n");
+  for (const response of ["older checker", "admission-mode=v2", "noise\nadmission-mode=v1"]) {
+    f.write("scripts/pre-commit-checks.mjs", `console.log(${JSON.stringify(response)});\n`);
+    const result = f.run();
+    assert.equal(result.status, 1, response);
+    assert.match(result.stderr, /did not confirm admission-only support/);
+    assert.doesNotMatch(result.stderr, /readiness checks unrun by explicit publication scope/);
+  }
+});
+
+test("checker modes reject unknown, mixed and duplicate flags", (t) => {
+  const f = fixture(t);
+  const checker = path.join(f.dir, "scripts/pre-commit-checks.mjs");
+  const supported = spawnSync(process.execPath, [checker, "--supports-admission-only"], {
+    cwd: f.dir,
+    env: f.env,
+    encoding: "utf8",
+  });
+  assert.equal(supported.status, 0, supported.stderr);
+  assert.equal(supported.stdout.trim(), "admission-mode=v1");
+  for (const args of [
+    ["--unknown-mode"],
+    ["--supports-admission-only", "--admission-only"],
+    ["--typecheck-child", "--admission-only"],
+    ["--admission-only", "--admission-only"],
+  ]) {
+    const result = spawnSync(process.execPath, [checker, ...args], { cwd: f.dir, env: f.env, encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Unknown option|cannot be combined/);
+    assert.doesNotMatch(result.stdout, /admission-mode=v1/);
+  }
+});
+
+test("missing logs have no implicit host waiver and public root claims use isolated fixture history", async (t) => {
   assert.equal(signOutLogOptional(), false);
-  assert.deepEqual(unsignedWardFiles(["AGENTS.md"], "", "codex/fixture", root), ["AGENTS.md"]);
+  const f = fixture(t);
+  const checker = await f.makePublic();
+  assert.equal(checker.isPublicWardFlowCheckout(f.dir), true);
+  assert.deepEqual(checker.unsignedWardFiles(["AGENTS.md"], "", branch, f.dir), ["AGENTS.md"]);
+  f.stage("synthetic root rule\n", "AGENTS.md");
+  const unsigned = f.run();
+  assert.equal(unsigned.status, 1);
+  assert.match(unsigned.stderr, /without your sign-out/);
+  f.claims(["AGENTS.md"]);
+  const admitted = f.run();
+  assert.equal(admitted.status, 0, admitted.stderr);
+});
+
+test("explicit relative claims support extensionless root files and branch-wide releases", async (t) => {
+  const f = fixture(t);
+  const checker = await f.makePublic();
+  f.stage("synthetic licence\n", "LICENSE");
+  const claim = `- 2026-10-17 | Fixture owner | ${branch} | ${f.dir} | ./LICENSE, ./Dockerfile; repo=BigSimmo/Ward-Flow\n`;
+  f.write("coordination/sign-out.md", `## Active sign-outs\n${claim}`);
+  assert.deepEqual(
+    checker.unsignedWardFiles(["LICENSE", "Dockerfile"], `## Active sign-outs\n${claim}`, branch, f.dir),
+    [],
+  );
+  const admitted = f.run();
+  assert.equal(admitted.status, 0, admitted.stderr);
+  const released = `## Active sign-outs\n${claim}RELEASED 2026-10-17 | Other description | ${branch} | LICENSE only; repo=BigSimmo/Ward-Flow\n`;
+  // Release semantics are branch-wide, even if the human-readable reason
+  // mentions one file or the owner field differs.
+  assert.deepEqual(checker.unsignedWardFiles(["LICENSE", "Dockerfile"], released, branch, f.dir), [
+    "LICENSE",
+    "Dockerfile",
+  ]);
 });
 
 test("instruction adapters and policy pointers preserve one authority and scoped publication", () => {

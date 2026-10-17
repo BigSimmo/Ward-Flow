@@ -21,7 +21,7 @@ if [ "${SKIP_PRECOMMIT_READINESS:-}" = "1" ]; then
     echo "[pre-commit] BLOCKED: checker does not support admission-only publication." >&2
     exit 1
   }
-  if ! printf '%s\n' "$admission_mode" | grep -qx 'admission-mode=v1'; then
+  if [ "$admission_mode" != 'admission-mode=v1' ]; then
     echo "[pre-commit] BLOCKED: checker did not confirm admission-only support." >&2
     exit 1
   fi
@@ -30,10 +30,10 @@ else
   node scripts/pre-commit-checks.mjs || exit 1
 fi
 
-staged_files=$(git diff --cached --name-only --diff-filter=ACMRD)
+staged_files=$(git diff --cached --name-only --diff-filter=ACMRDT)
 working_files=$(
   {
-    git diff --name-only --diff-filter=ACMRD
+    git diff --name-only --diff-filter=ACMRDT
     git ls-files --others --exclude-standard
   } | sort -u
 )

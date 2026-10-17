@@ -264,14 +264,17 @@ function signOutEntries(signOutText) {
         /\s/.test(file)
       )
         continue;
-      paths.push(file);
+      // An explicit ./ prefix identifies an extensionless root filename without
+      // treating arbitrary single-word prose in older logs as a file claim.
+      const relativeFile = file.replace(/^\.\//, "");
+      paths.push(relativeFile);
       // A takeover must name an exact file and the user's approval, not a directory.
       if (
         !file.endsWith("/") &&
         !file.endsWith("/**") &&
         (legacyScopedApproval || /\(approved takeover by Josh: [^)]+\)/i.test(raw))
       ) {
-        takeoverPaths.push(file);
+        takeoverPaths.push(relativeFile);
       }
     }
     entries.push({ owner, branch, worktree, paths, takeoverPaths });
@@ -731,6 +734,7 @@ async function main() {
     console.log("admission-mode=v1");
     return 0;
   }
+  if (args.length > 1) throw new Error("Checker modes cannot be combined or repeated");
   const allowedArgs = new Set([TYPECHECK_CHILD_FLAG, "--admission-only"]);
   const unknownArgs = args.filter((arg) => !allowedArgs.has(arg));
   if (unknownArgs.length > 0) throw new Error(`Unknown option: ${unknownArgs[0]}`);
@@ -739,11 +743,11 @@ async function main() {
   const started = Date.now();
   const root = git(["rev-parse", "--show-toplevel"]).trim();
   process.chdir(root);
-  const staged = git(["diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRD"])
+  const staged = git(["diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRDT"])
     .split("\0")
     .filter(Boolean);
   if (staged.length === 0) return 0;
-  const scanFiles = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]).split("\0").filter(Boolean);
+  const scanFiles = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMRT"]).split("\0").filter(Boolean);
 
   let failed = false;
   const report = [];
@@ -756,7 +760,7 @@ async function main() {
     "-U0",
     "--no-color",
     "--no-ext-diff",
-    "--diff-filter=ACMR",
+    "--diff-filter=ACMRT",
     "--src-prefix=a/",
     "--dst-prefix=b/",
   ]);
@@ -775,7 +779,7 @@ async function main() {
   // so upstream files are not treated as this task's ownership scope.
   const ownershipFiles =
     merging && admissionOnly
-      ? git(["diff", "--cached", "--name-only", "--no-renames", "MERGE_HEAD"]).split("\n").filter(Boolean)
+      ? git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean)
       : staged;
 
   // 1b. Ward ownership admission. Publication never waives it, even during a merge.

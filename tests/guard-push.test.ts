@@ -539,9 +539,13 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(verdict.runs).toHaveLength(1);
   });
 
-  it("is documented as blocking (not advisory) in AGENTS.md, matching the guard's behaviour", () => {
+  it("documents blocking CI admission and named skips in the workflow linked by AGENTS.md", () => {
     const agents = readFileSync(join(process.cwd(), "AGENTS.md"), "utf8");
-    const line = agents.split("\n").find((entry) => entry.includes("in-flight CI push check"));
+    expect(agents).toContain("docs/agents/git-publication.md#normal-pushes-and-prs");
+    const publication = readFileSync(join(process.cwd(), "docs/agents/git-publication.md"), "utf8");
+    const normalPushes = publication.split(/^## Normal pushes and PRs$/m)[1]?.split(/^## /m)[0];
+    expect(normalPushes).toBeDefined();
+    const line = normalPushes?.split("\n").find((entry) => entry.includes("in-flight CI push check"));
     expect(line).toBeDefined();
     expect(line).toContain("is a blocking check, not an advisory one");
     expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
@@ -635,8 +639,15 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     process.env.SKIP_IN_FLIGHT_CI_GUARD = "1";
     try {
       const result = inFlightCiGuard(["claude/my-fix"], [], {
-        prViewer: () => ({ state: "OPEN", number: 77 }),
-        runFetcher: () => [{ databaseId: 555, name: "Ward Flow CI", status: "in_progress" }],
+        prViewer: () => {
+          throw new Error("The named CI skip must not read PR state");
+        },
+        runFetcher: () => {
+          throw new Error("The named CI skip must not read workflow runs");
+        },
+        ghAvailable: () => {
+          throw new Error("The named CI skip must return before inspecting provider tooling");
+        },
       });
       expect(result.ok).toBe(true);
       expect(result.skipped).toBe("SKIP_IN_FLIGHT_CI_GUARD=1");

@@ -237,7 +237,7 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
   });
 
   it("runs the dependency-free staged admission regressions", { timeout: 90_000 }, () => {
-    const result = spawnSync(process.execPath, ["--test", "tests/ward-agent-admission.node.test.mjs"], {
+    const result = spawnSync(process.execPath, ["--test", "scripts/tests/ward-agent-admission.node.test.mjs"], {
       cwd: process.cwd(),
       encoding: "utf8",
     });
