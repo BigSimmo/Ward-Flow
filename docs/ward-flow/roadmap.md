@@ -7,8 +7,8 @@ For current repository status, completed local verification, and active open wor
 
 The 8 October 2026 audit baseline was dedicated Ward `main` `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`
 (advancing through PRs #130–#131 at `0bbcd341d08ad1b2e0c67a77a9cab84367e03769`, PRs #258–#264 at
-`30b1803`, and the 14–17 October remediation, criteria-led discharge, and shared-access wave across PRs #283–#390 at `6358371c`).
-Local integrity fixes, the v10 design system, phone layouts, criteria-led discharge in production with typed patient-specific criteria and paused AWOL bed-hold warnings (D-64/D-65, PRs #383, #385, #387), single-approval prototype role grants (D-66, PR #384), the 12-hour ISM-0428 shared session limit (PR #389), and opt-in shared synthetic workspace routes (`NEXT_PUBLIC_WARD_API_BASE_URL` and `/v1/workspace*` via `use-ward-supabase-shared.ts` and `ward-shared-client.ts`)
+`30b1803`, and the 14–17 October remediation, criteria-led discharge, and shared-access wave across PRs #283–#392 at `e025da04`).
+Local integrity fixes, the v10 design system, phone layouts, criteria-led discharge in production with typed patient-specific criteria and paused AWOL bed-hold warnings (D-64/D-65, PRs #383, #385, #387), single-approval prototype role grants (D-66, PR #384), the 12-hour ISM-0428 shared session limit (PR #389), pluggable database workspace stores and browser auth adapters (PR #391), and opt-in shared synthetic workspace routes (`NEXT_PUBLIC_WARD_API_BASE_URL` and `/v1/workspace*` via `use-ward-supabase-shared.ts` and `ward-shared-client.ts`)
 are landed on `main`. Production-grade multi-user authentication and clinical pilot readiness remain separate
 milestones. Preserve the latest accepted appearance and current `AGENTS.md` repository boundary.
 
