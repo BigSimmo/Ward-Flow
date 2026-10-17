@@ -350,12 +350,14 @@ export function MovementsScreen() {
   }, []);
 
   const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
-  const [keyboardTabFocus, setKeyboardTabFocus] = useState<"every" | "resolved" | null>(null);
+  // A ref, not state: it only records which tab a key press asked to focus, so the layout effect
+  // below can move focus once the new selection has committed. Nothing renders from it.
+  const keyboardTabFocus = useRef<"every" | "resolved" | null>(null);
   useLayoutEffect(() => {
-    if (keyboardTabFocus !== boardTab) return;
-    document.getElementById(`movements-tab-${keyboardTabFocus}`)?.focus();
-    setKeyboardTabFocus(null);
-  }, [boardTab, keyboardTabFocus]);
+    if (keyboardTabFocus.current !== boardTab) return;
+    document.getElementById(`movements-tab-${boardTab}`)?.focus();
+    keyboardTabFocus.current = null;
+  }, [boardTab]);
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [sideView, setSideView] = useState<"transport" | "shape">("transport");
@@ -1318,7 +1320,7 @@ export function MovementsScreen() {
                         tabIndex={boardTab === tab.id ? 0 : -1}
                         className={styles.boardTab}
                         onClick={() => {
-                          setKeyboardTabFocus(null);
+                          keyboardTabFocus.current = null;
                           startTransition(() => setBoardTab(tab.id));
                         }}
                         onKeyDown={(event) => {
@@ -1329,7 +1331,9 @@ export function MovementsScreen() {
                           else if (event.key === "End") next = "resolved";
                           else return;
                           event.preventDefault();
-                          setKeyboardTabFocus(next);
+                          // Selection is unchanged (Home on the first tab, End on the last): the tab is
+                          // already focused and no commit follows, so there is nothing to wait for.
+                          keyboardTabFocus.current = next === boardTab ? null : next;
                           startTransition(() => setBoardTab(next));
                         }}
                       >
