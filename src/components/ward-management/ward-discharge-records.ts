@@ -157,6 +157,8 @@ function project(state: WardFlowState, admission: Admission, actor: WardRecordAc
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
+    // Fixed-list criteria, typed patient specific criteria (D-65) and times. A community reader gets
+    // placeholders for the typed ones (criteriaFor).
     dischargeCriteria: criteriaFor(actor, admission.dischargeCriteria),
     criteriaEligibility: admissionCriteriaEligibility(state, admission),
   });
