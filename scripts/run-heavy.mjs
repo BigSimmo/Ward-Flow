@@ -68,6 +68,10 @@ try {
     command: `npm run ${script}`,
     forceLockRelease,
     mode,
+    // Full tsc uses repository-wide capacity; focused Vitest retains checkout-local admission.
+    ...(sharedTypecheckScripts.has(script)
+      ? { environment: { ...process.env, CLINICAL_KB_HEAVY_LOCK_SCOPE: "repository" } }
+      : {}),
     ...(waitTimeoutMs === undefined ? {} : { waitTimeoutMs }),
   });
 } catch (error) {

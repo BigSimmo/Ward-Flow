@@ -135,6 +135,16 @@ function requireWorkflow(source) {
     "Check reference-pack integrity",
     "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
   );
+  for (const [name, command, output] of [
+    ["Check owner rulings index", "node scripts/ward-flow/owner-rulings-index.mjs --check", "owner_index"],
+    ["Check lessons rules index", "node scripts/ward-flow/rules-index.mjs --check", "rules_index"],
+    [
+      "Check file organisation",
+      "node scripts/ward-flow/organisation.mjs --check --source working-tree",
+      "organisation",
+    ],
+  ])
+    exactStep("static", name, command, expression(`steps.plan.outputs.${output} == 'true'`));
   exactStep(
     "coverage",
     "Check complete executable coverage inventory",
