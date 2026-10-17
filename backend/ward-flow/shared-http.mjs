@@ -138,7 +138,7 @@ export function createSharedHandler({
       });
     }
     let actorId;
-    /** @type {{ signedInAt?: number, aal?: string }} */
+    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string }} */
     const session = {};
     try {
       actorId = await authenticate(request.headers.get("authorization"), {
@@ -154,15 +154,19 @@ export function createSharedHandler({
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
         : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
-    // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). Supabase tokens
-    // carry the sign-in time, which a refresh keeps, so the person signs in again with a password.
-    const limitMs = (Number.isFinite(store.sessionLimitMinutes) ? store.sessionLimitMinutes : Infinity) * 60_000;
-    if (Number.isFinite(session.signedInAt) && session.signedInAt < Date.now() - limitMs)
+    // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). It counts from
+    // the token's first sign-in factor, which a refresh or a later factor never moves, so the person
+    // signs in again with a password. A sign-in with no start time fails closed.
+    const limitMinutes = store.sessionLimitMinutes;
+    const started = session.startedAt;
+    if (Number.isFinite(limitMinutes) && !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000))
       return reply(
         401,
         {
           code: "session-limit",
-          error: `Signed out after ${store.sessionLimitMinutes / 60} hours. Sign in again to carry on.`,
+          error: Number.isFinite(started)
+            ? `Signed out after ${limitMinutes / 60} hours. Sign in again to carry on.`
+            : "Signed out. Sign in again to carry on.",
         },
         "session_limit",
       );

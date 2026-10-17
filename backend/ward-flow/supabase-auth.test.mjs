@@ -563,11 +563,13 @@ test("a verified token reports when the account last signed in, for the step-up 
     }),
   );
   assert.equal(await verify(token, { session }), coordinator);
-  assert.deepEqual(session, { signedInAt: signedIn * 1000, aal: "aal1" });
+  // The session limit counts from the oldest factor, step-up from the newest.
+  assert.deepEqual(session, { signedInAt: signedIn * 1000, startedAt: (signedIn - 600) * 1000, aal: "aal1" });
   // A token with no sign-in record leaves the time unknown, so step-up asks again.
   const unknown = {};
   await verify(signed("ES256", "ec-1"), { session: unknown });
   assert.equal(unknown.signedInAt, undefined);
+  assert.equal(unknown.startedAt, undefined);
   // A refused token fills nothing.
   const refused = {};
   await assert.rejects(verify(`${token}x`, { session: refused }));

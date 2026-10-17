@@ -1425,6 +1425,8 @@ test(
         role: "authenticated",
         iat: at.getTime() / 1000,
         exp: at.getTime() / 1000 + 3600,
+        // The session limit reads the sign-in time against the server's own clock.
+        amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }],
       })}`;
       return `Bearer ${data}.${sign("sha256", Buffer.from(data), { key: key.privateKey, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
     };
@@ -1770,7 +1772,11 @@ test(
             assert.ok(wider.payload.state.patients.length > first.payload.state.patients.length);
             const handler = createHandler({
               config: { coordinatorIds: [f.lead], origin: "http://localhost", workspaceId: f.workspaceId },
-              authenticate: async () => f.nurse,
+              /** @param {string} _token @param {{ session?: { startedAt?: number } }} [context] */
+              authenticate: async (_token, { session } = {}) => {
+                if (session) session.startedAt = Date.now();
+                return f.nurse;
+              },
               sharedStore: {
                 ...f.store,
                 viewer: async (actorId, options) => {

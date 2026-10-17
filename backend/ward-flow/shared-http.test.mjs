@@ -55,13 +55,17 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
     sharedStore,
-    /** @param {string} token @param {{ session?: { signedInAt?: number } }} [context] */
+    /** @param {string} token @param {{ session?: { signedInAt?: number, startedAt?: number } }} [context] */
     authenticate: async (token, { session } = {}) => {
       if (!token) throw new Error("Unauthorized");
       // "Bearer stale" stands for a sign-in older than the step-up window, "Bearer old" for one
-      // older than the session limit.
-      const age = { "Bearer stale": 11 * 60_000, "Bearer old": 12 * 60 * 60_000 + 60_000 }[token] ?? 0;
-      if (session) session.signedInAt = Date.now() - age;
+      // older than the session limit, "Bearer old-later-factor" for an old sign-in with a recent
+      // second factor, and "Bearer unknown" for a token with no sign-in times.
+      if (session && token !== "Bearer unknown") {
+        const age = { "Bearer stale": 11 * 60_000, "Bearer old": 12 * 60 * 60_000 + 60_000 }[token] ?? 0;
+        session.signedInAt = session.startedAt = Date.now() - age;
+        if (token === "Bearer old-later-factor") session.startedAt = Date.now() - 12 * 60 * 60_000 - 60_000;
+      }
       return actor;
     },
     log: (event) => logs.push(event),
@@ -496,6 +500,13 @@ test("a sign-in older than the session limit is refused on every route, reads in
     const body = await response.json();
     assert.equal(body.code, "session-limit");
     assert.match(body.error, /12 hours/);
+  }
+  assert.deepEqual(calls, []);
+  // A later factor does not extend the sign-in, and a token with no sign-in time fails closed.
+  for (const token of ["Bearer old-later-factor", "Bearer unknown"]) {
+    const response = await handler(request("", undefined, token));
+    assert.equal(response.status, 401, token);
+    assert.equal((await response.json()).code, "session-limit");
   }
   assert.deepEqual(calls, []);
   // A sign-in just inside the limit still reads the board.

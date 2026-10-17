@@ -311,13 +311,26 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     return times.length ? Math.max(...times) * 1000 : undefined;
   };
   /**
-   * `session`, when given, is filled once the token is verified: `signedInAt` (above) and `aal`.
+   * When this sign-in began: the oldest `amr` timestamp, in milliseconds. A later factor or a
+   * refresh never moves it, so the session limit (ISM-0428) counts from here. Undefined when the
+   * token carries none.
+   */
+  const startedAt = (claims) => {
+    const times = Array.isArray(claims?.amr)
+      ? claims.amr.map((entry) => entry?.timestamp).filter((value) => Number.isFinite(value))
+      : [];
+    return times.length ? Math.min(...times) * 1000 : undefined;
+  };
+  /**
+   * `session`, when given, is filled once the token is verified: `signedInAt` and `startedAt`
+   * (above) and `aal`.
    * The subject is still the only return value.
    */
   return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
     const verified = (userId, claims) => {
       if (session) {
         session.signedInAt = signedInAt(claims);
+        session.startedAt = startedAt(claims);
         session.aal = typeof claims?.aal === "string" ? claims.aal : undefined;
       }
       return userId;
