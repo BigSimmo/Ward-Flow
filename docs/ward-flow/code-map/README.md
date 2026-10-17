@@ -110,8 +110,8 @@ apply the former Database ward-line fold procedure to this repository.
 7. **Double-clicking a drawing.** Serve it for historical comparison; opened as a bare file it renders
    differently. The rendered app is the current design authority.
 8. **Appearance and accessible controls.** Preserve the accepted app and understandable status. Historical token/edge-bar prescriptions do not authorise restyling; retain accessible tap targets. Older edge-bar and top-highlight restrictions describe drawings; inspect current scoped tests before changing controls.
-9. **Mental Health Act wording.** The engine never computes or stores legal expiry; the paper form
-   supplies it. [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
+9. **Mental Health Act wording.** The engine does not calculate legal expiry, but it stores the expiry
+   entered from the checked paper form. [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
    permits sourced section references and countdowns only in the separately labelled Legal forms
    synthetic demo. Unconnected controls say exactly "Not wired in this prototype."
 10. **Trusting a document's number or SHA.** Quote a figure with the tree it came from, and check
