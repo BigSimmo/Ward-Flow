@@ -139,7 +139,8 @@ function project(state: WardFlowState, admission: Admission): DischargeRecord {
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
-    // Fixed-list criteria and times only, never typed text (ward-discharge-criteria.ts).
+    // Fixed-list criteria, any typed patient specific criteria (D-65) and times. A record read is
+    // limited to the unit's ward, the coordinator, or the community team on the referral.
     dischargeCriteria: admission.dischargeCriteria ?? null,
     criteriaEligibility: admissionCriteriaEligibility(state, admission),
   });
