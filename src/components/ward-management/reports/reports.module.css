@@ -11,6 +11,7 @@
   box-sizing: border-box;
   /* The band's canvas lip matches the page ground (v10 band contract). */
   background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
@@ -957,4 +958,35 @@
   box-shadow:
     0 0 0 var(--wf-s-2) var(--wf-canvas),
     inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+/* Keep the first report load recognisable without inventing any figures or table rows. */
+.packLoading {
+  min-height: 16rem;
+}
+
+.packLoadingRows {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.packLoadingRows span {
+  height: var(--wf-row-default);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface-2);
+}
+
+.chronologyStart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.chronologyStart p {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: var(--wf-ink-2);
 }

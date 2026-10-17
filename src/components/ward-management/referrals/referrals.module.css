@@ -4139,6 +4139,7 @@
  * labels that truncate rather than wrap. Scoped to the register so the intake form is untouched. */
 
 .screen[data-ward-design="v6"] {
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);

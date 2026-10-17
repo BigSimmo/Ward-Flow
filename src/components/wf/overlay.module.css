@@ -32,6 +32,21 @@
   }
 }
 
+/* Glare's opaque tokens also need an explicit filter override: a white fill
+ * alone still leaves an unnecessary backdrop filter and its containing block. */
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media screen and (max-width: 48rem) and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .toast {
+    --toast-bg: var(--wf-ink-1);
+  }
+}
+
 .panel {
   position: absolute;
   top: calc(100% + 6px);

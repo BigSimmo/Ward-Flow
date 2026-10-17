@@ -1,0 +1,5 @@
+{
+  "note": "Parsed Ward on-screen font inventory added for SYS-05. Measured from immutable base 2c37e5ae, not the edited working tree. Legacy small-token occurrences retain their separate existing ratchet. Ward shell aliases resolve those legacy steps to 12px. This static inventory resolves px/rem, simple aliases/fallbacks and max/clamp lower bounds; unresolved relative, inherited and calculated sizes still require browser verification. New signatures below 12px are forbidden; removing one cannot fund another.",
+  "base": "2c37e5ae",
+  "counts": {}
+}

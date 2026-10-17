@@ -253,6 +253,14 @@
   }
 }
 
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .sheet {
+    background: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .sheet {
     background-color: var(--wf-overlay);

@@ -582,43 +582,69 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
   color: var(--wf-dim);
 }
 
-/* Glare mode: data-mode="glare" on the root, for ward PCs by bright windows. Solid surfaces, no
-   glass, darker lines and 12px glyphs. Red still means act now. */
-:root[data-mode="glare"] {
-  color-scheme: light;
-  --wf-canvas: #ffffff;
-  --wf-surface: #ffffff;
-  --wf-surface-2: #f3f5f7;
-  --wf-raised: #ffffff;
-  --wf-overlay: #ffffff;
-  --wf-accent: #245a8c;
-  --wf-accent-strong: #1f4f7d;
-  --wf-accent-tint: #e3eef9;
-  --wf-accent-ink: #1f4d7a;
-  --wf-on-accent: #ffffff;
-  --wf-pri-1: #2f6aa3;
-  --wf-pri-2: #234f7a;
-  --wf-pri-edge: #1d4569;
-  --wf-pri-1-hover: #3874af;
-  --wf-pri-2-hover: #295a8a;
-  --wf-pri-1-press: #234f7a;
-  --wf-pri-2-press: #1c4166;
-  --wf-accent-hover: #1f4f7d;
-  --wf-accent-press: #1b4570;
-  --wf-line: #9aa6b2;
-  --wf-line-2: #6f7c89;
-  --wf-line-3: #4a5562;
-  --wf-ink-1: #05080b;
-  --wf-ink-2: #1f2933;
-  --wf-ink-3: #3a4652;
-  --wf-glyph: 12px;
-  --wf-glass-bar: #ffffff;
-  --wf-glass-pop: #ffffff;
-  --wf-glass-sheet: #ffffff;
-  --wf-glass-thin: #ffffff;
-  --wf-glass: #ffffff;
-  --wf-glass-thick: #ffffff;
-  --wf-sheen: none;
+/* Glare is a light, opaque screen mode even when Appearance is dark. Keep its
+   palette out of forced colours and print, which have their own rendering rules. */
+@media screen and (forced-colors: none) {
+  :root[data-mode="glare"] {
+    color-scheme: light;
+    --wf-canvas: #ffffff;
+    --wf-surface: #ffffff;
+    --wf-surface-2: #f3f5f7;
+    --wf-raised: #ffffff;
+    --wf-overlay: #ffffff;
+    --wf-track: #eceff3;
+    --wf-hover: #f2f5f8;
+    --wf-selected: #eef3f8;
+    --wf-accent: #245a8c;
+    --wf-accent-strong: #1f4f7d;
+    --wf-accent-tint: #e3eef9;
+    --wf-accent-ink: #1f4d7a;
+    --wf-on-accent: #ffffff;
+    --wf-pri-1: #2f6aa3;
+    --wf-pri-2: #234f7a;
+    --wf-pri-edge: #1d4569;
+    --wf-pri-1-hover: #3874af;
+    --wf-pri-2-hover: #295a8a;
+    --wf-pri-1-press: #234f7a;
+    --wf-pri-2-press: #1c4166;
+    --wf-accent-hover: #1f4f7d;
+    --wf-accent-press: #1b4570;
+    --wf-line: #9aa6b2;
+    --wf-line-2: #6f7c89;
+    --wf-line-3: #4a5562;
+    --wf-line-ctl: #6f7c89;
+    --wf-ink-1: #05080b;
+    --wf-ink-2: #1f2933;
+    --wf-ink-3: #3a4652;
+    --wf-ink-off: #3a4652;
+    --wf-danger: #c4513f;
+    --wf-danger-ink: #9a3424;
+    --wf-warning: #ac720a;
+    --wf-warning-ink: #7a5208;
+    --wf-success: #2f8a5f;
+    --wf-success-ink: #1c6343;
+    --wf-info: #4f7398;
+    --wf-info-ink: #27405a;
+    --wf-neutral: #6b7f93;
+    --wf-data-1: #2f4c66;
+    --wf-data-2: #7c96af;
+    --wf-data-3: #c9d3dd;
+    --wf-data-ready: #2f8a5f;
+    --wf-data-closed: #b9c4cf;
+    --wf-focus-ring: var(--wf-accent);
+    --wf-focus-gap: var(--wf-surface);
+    --wf-glyph: 12px;
+    --wf-glass-bar: #ffffff;
+    --wf-glass-pop: #ffffff;
+    --wf-glass-sheet: #ffffff;
+    --wf-glass-thin: #ffffff;
+    --wf-glass: #ffffff;
+    --wf-glass-thick: #ffffff;
+    --wf-glass-rim: none;
+    --wf-glass-hl: transparent;
+    --wf-backdrop: var(--wf-canvas);
+    --wf-sheen: none;
+  }
 }
 
 /* Touch: coarse pointers get touch rows unless dense rows were chosen. The app's compact and

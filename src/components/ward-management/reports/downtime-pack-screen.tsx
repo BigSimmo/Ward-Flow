@@ -215,6 +215,18 @@ export function DowntimePackScreen() {
       <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v10">
         <main id="main-content" className={styles.main} aria-busy="true">
           <Hero level={1} eyebrow="Downtime pack · synthetic data" title="Downtime pack" titleMeta="Taking snapshot" />
+          <Card aria-labelledby="downtime-preparing-title" className={styles.packLoading}>
+            <CardHead id="downtime-preparing-title" icon={FileText} title="Preparing the downtime pack" />
+            <p role="status" className={styles.cardNote}>
+              Taking a snapshot of beds, the ED queue, pending moves and legal forms.
+            </p>
+            <div className={styles.packLoadingRows} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+          </Card>
         </main>
       </div>
     );

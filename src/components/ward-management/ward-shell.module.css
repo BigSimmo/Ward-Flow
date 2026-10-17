@@ -44,6 +44,7 @@
   flex-direction: column;
   flex: 1 0 auto;
   min-height: 0;
+  --wf-page-canvas: var(--ward-ground);
   background: var(--ward-ground);
 }
 
@@ -160,6 +161,7 @@
    paint, so cards read as white on grey as in the phone mockup. Phone only. */
 @media (max-width: 48rem) {
   .shell {
+    --wf-page-canvas: var(--wf-canvas);
     background: var(--wf-canvas);
   }
 }
@@ -200,6 +202,8 @@
  */
 @media print {
   .shell {
+    display: block;
+    overflow: visible;
     background: transparent;
   }
 

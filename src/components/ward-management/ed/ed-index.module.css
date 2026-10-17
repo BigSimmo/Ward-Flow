@@ -2,6 +2,7 @@
 
 .screen {
   min-width: 0;
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font-family: var(--wf-font);

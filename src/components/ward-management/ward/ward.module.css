@@ -879,6 +879,7 @@
   min-height: 100%;
   padding-top: 0;
   color: var(--ink);
+  --wf-page-canvas: var(--ground);
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 46%, var(--ground)), var(--ground) 22rem);
   --glass-fill: color-mix(in srgb, var(--surface) 86%, transparent);
   --glass-band: color-mix(in srgb, var(--surface-2) 92%, transparent);
@@ -3891,7 +3892,7 @@
   .tabTools {
     flex: 1 1 auto;
     justify-content: flex-end;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: var(--wf-s-1);
     min-width: 0;
     padding: 0;
@@ -3899,6 +3900,7 @@
 
   .tabTools > :is(a, button),
   .tabTools > div > button {
+    flex-shrink: 0;
     gap: var(--wf-s-2);
     white-space: nowrap;
   }

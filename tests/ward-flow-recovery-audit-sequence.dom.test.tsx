@@ -9,6 +9,7 @@ import {
 import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
 
 /**
  * Live walkthrough, 25 September 2026: a reload threw away the whole day. `appendAudit`
@@ -29,6 +30,7 @@ function Probe() {
 function mount() {
   return render(
     <WardFlowProvider>
+      <WardRecoveryNotice />
       <Probe />
     </WardFlowProvider>,
   );

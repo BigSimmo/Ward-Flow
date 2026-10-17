@@ -1513,6 +1513,7 @@ export function ShortlistPanel({
                 type="button"
                 className={shortlistStyles.gateFilterBtn}
                 data-testid="ward-shortlist-gate-filter-all"
+                aria-label={`All checks (${sortedGates.length})`}
                 aria-pressed={gateFilter === "all"}
                 aria-controls="ward-shortlist-gate-list"
                 onClick={() => {
@@ -1522,12 +1523,13 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                All checks ({sortedGates.length})
+                All ({sortedGates.length})
               </button>
               <button
                 type="button"
                 className={shortlistStyles.gateFilterBtn}
                 data-testid="ward-shortlist-gate-filter-open"
+                aria-label={`Show open gates only (${notMetCount})`}
                 aria-pressed={gateFilter === "open"}
                 aria-controls="ward-shortlist-gate-list"
                 onClick={() => {
@@ -1537,7 +1539,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                Show open gates only ({notMetCount})
+                Open ({notMetCount})
               </button>
             </div>
           </div>

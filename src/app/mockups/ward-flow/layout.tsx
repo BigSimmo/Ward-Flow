@@ -13,6 +13,7 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
@@ -164,9 +165,10 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 <WardBarMount />
                 {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
-                <p className={styles.loadingNote} role="status" data-testid="ward-loading-note">
+                <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
                   Loading, not live yet. Taps work once this goes.
                 </p>
+                <WardRecoveryNotice />
                 <div className={styles.bannerHolder}>
                   <WardBroadcastBanner />
                   <WardOfflineBanner />
