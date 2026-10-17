@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/**
- * One kept referral draft, held in this tab's JavaScript memory only.
- *
- * The slide-out keeps the draft here as the referrer types (debounced autosave), and again when it
- * is closed with "Keep draft", so closing never loses work; a reopened slide-out carries on from
- * it. Typed text must never reach browser storage (D-18), so the draft lives in a module variable:
- * a reload or a new tab starts empty. `tests/ward-referral-drawer-sheet.dom.test.tsx` checks that
- * keeping and autosaving a draft write nothing to `localStorage` or `sessionStorage`.
- */
+import {
+  clearSessionDrafts,
+  draftSessionVersion,
+  readSessionDraft,
+  removeSessionDraft,
+  writeSessionDraft,
+  sessionDraftKey,
+} from "../ward-session-drafts";
+
+/** One memory copy and one explicitly opted-in synthetic session copy, with a single autosave owner. */
+let keptStorageKey: string | undefined;
+let recoverySaved = true;
+export const referralRecoverySaved = () => recoverySaved;
 let kept: unknown = null;
 /** Wall-clock milliseconds when the draft was last kept, for the "Draft kept" age. */
 let keptAtMs: number | null = null;
@@ -22,29 +26,142 @@ export function referralDraftSessionVersion(): number {
 /** A new signed-in person must never inherit the previous person's draft or sender. */
 export function clearReferralDraftSession(): void {
   sessionVersion += 1;
+  clearSessionDrafts();
+  keptStorageKey = undefined;
   kept = null;
   keptAtMs = null;
   lastReferrer = null;
 }
 
-export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion): boolean {
+export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion, storageKey?: string): boolean {
   if (ownerVersion !== sessionVersion) return false;
+  keptStorageKey = storageKey;
+  if (storageKey) {
+    // Attachment bytes stay in memory. A refresh restores choices/text and requires reattachment.
+    const copy = draft as { documentation?: { charts?: unknown[] } };
+    const projection = copy.documentation
+      ? {
+          ...copy,
+          documentation: { ...copy.documentation, charts: [] },
+          needsChartReattachment: !!copy.documentation.charts?.length,
+        }
+      : copy;
+    recoverySaved = writeSessionDraft(storageKey, JSON.stringify(projection), draftSessionVersion());
+  }
   kept = draft;
   keptAtMs = Date.now();
   return true;
 }
 
-export function readKeptReferralDraft<T>(): T | null {
-  return (kept as T | null) ?? null;
+export function readKeptReferralDraft<T>(storageKey?: string): T | null {
+  if (kept !== null && (!storageKey || storageKey === keptStorageKey)) return kept as T;
+  if (!storageKey) return null;
+  const raw = readSessionDraft(storageKey);
+  if (raw === null) {
+    // Preserve the existing single-memory-draft ownership when another person opens a sheet.
+    const scope = storageKey.slice(0, storageKey.lastIndexOf(":"));
+    return keptStorageKey?.startsWith(scope + ":") ? (kept as T | null) : null;
+  }
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object") return null;
+    const record = value as Record<string, unknown>;
+    const textFields = [
+      "activePatientKey",
+      "destType",
+      "activeSection",
+      "ageBand",
+      "selectedRecipient",
+      "catchmentSuburb",
+      "catchmentTeam",
+      "catchmentService",
+      "homeRegion",
+      "sourceKind",
+      "originSiteCode",
+      "sendingTeam",
+      "referralSex",
+      "referralGender",
+      "arrivalEta",
+      "legalStatus",
+      "urgency",
+      "security",
+      "provisionalDiag",
+      "doctorNote",
+      "clinicalSummary",
+      "transport",
+      "transitNote",
+    ];
+    const isRecord = (item: unknown): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && !Array.isArray(item);
+    if (
+      textFields.some((field) => typeof record[field] !== "string") ||
+      !Array.isArray(record.selectedUnitIds) ||
+      record.selectedUnitIds.some((id) => typeof id !== "string") ||
+      !isRecord(record.contact) ||
+      Object.values(record.contact).some((item) => typeof item !== "string") ||
+      !isRecord(record.documentation) ||
+      !Array.isArray(record.documentation.charts) ||
+      record.documentation.charts.length !== 0 ||
+      Object.entries(record.documentation).some(([name, item]) => name !== "charts" && typeof item !== "string") ||
+      !isRecord(record.riskFlags) ||
+      Object.values(record.riskFlags).some((item) => typeof item !== "boolean") ||
+      !isRecord(record.clearanceChecks) ||
+      !isRecord(record.communityNeeds) ||
+      !isRecord(record.edNeeds) ||
+      typeof record.highAcuity !== "boolean" ||
+      typeof record.catchmentConfirmed !== "boolean"
+    ) {
+      removeSessionDraft(storageKey);
+      return null;
+    }
+    kept = value;
+    keptStorageKey = storageKey;
+    keptAtMs = Date.now();
+    return value as T;
+  } catch {
+    return null;
+  }
 }
 
 export function readKeptReferralDraftAt(): number | null {
   return kept === null ? null : keptAtMs;
 }
 
+/** Select only the named synthetic subject; a different person's memory draft retains its owner. */
+export function useReferralDraftRecovery<T extends { activePatientKey: string }>(
+  scenario: string,
+  patientId: string | undefined,
+  prefillKey: string | null,
+  patientKey: string,
+) {
+  const [draftStorageKey] = useState(() => sessionDraftKey(scenario, "referral", patientId ?? "new"));
+  const [draftRestored] = useState(() => readSessionDraft(draftStorageKey) !== null);
+  const [storedDraft] = useState(() => readKeptReferralDraft<T>(draftStorageKey));
+  const [draftOwnerVersion] = useState(referralDraftSessionVersion);
+  const kept =
+    !patientId ||
+    (storedDraft !== null &&
+      ((prefillKey !== null && storedDraft.activePatientKey === prefillKey) ||
+        storedDraft.activePatientKey === patientKey))
+      ? storedDraft
+      : null;
+  const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
+  const draftDiscardOwner = keepsAnotherPersonsDraft ? null : draftOwnerVersion;
+  return {
+    draftStorageKey,
+    draftRestored,
+    draftOwnerVersion,
+    storedDraft,
+    kept,
+    keepsAnotherPersonsDraft,
+    draftDiscardOwner,
+  };
+}
+
 /** A null owner never discards: a sheet that did not write the kept draft must not clear it. */
 export function discardReferralDraft(ownerVersion: number | null = sessionVersion): boolean {
   if (ownerVersion === null || ownerVersion !== sessionVersion) return false;
+  if (keptStorageKey) removeSessionDraft(keptStorageKey);
   kept = null;
   keptAtMs = null;
   return true;
@@ -71,7 +188,7 @@ export function forgetReferrerContact(): void {
 }
 
 /** How long after the last keystroke the draft is kept. */
-export const REFERRAL_DRAFT_AUTOSAVE_MS = 800;
+export const REFERRAL_DRAFT_AUTOSAVE_MS = 500;
 
 /** "just now", "4m ago", "1h 05m ago": the age of a kept draft. */
 export function referralDraftAgeText(keptAt: number, nowMs: number): string {
@@ -95,6 +212,7 @@ export function referralDraftAgeText(keptAt: number, nowMs: number): string {
  */
 export function useReferralDraftAutosave<T>({
   draft,
+  storageKey,
   draftJson,
   contentJson = draftJson,
   enabled,
@@ -103,6 +221,7 @@ export function useReferralDraftAutosave<T>({
   initialKeptJson,
 }: {
   draft: T;
+  storageKey?: string;
   draftJson: string;
   /** Edited content only, excluding view state. Defaults to the complete draft for simple callers. */
   contentJson?: string;
@@ -113,9 +232,11 @@ export function useReferralDraftAutosave<T>({
   /** The reopened draft's own JSON, so reopening alone does not count as a change. */
   initialKeptJson: string | null;
 }) {
+  const [sessionSaved, setSessionSaved] = useState(true);
   const [keptAt, setKeptAt] = useState<number | null>(initialKeptAt);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [ownerVersion] = useState(referralDraftSessionVersion);
+  const [sessionOwner] = useState(draftSessionVersion);
   const latest = useRef({ draft, draftJson, contentJson, enabled, dirty });
   const lastKeptJson = useRef<string | null>(initialKeptJson);
   const stoppedPermanently = useRef(false);
@@ -127,7 +248,13 @@ export function useReferralDraftAutosave<T>({
   });
 
   useEffect(() => {
-    if (!enabled || stoppedPermanently.current || ownerVersion !== sessionVersion) return;
+    if (
+      !enabled ||
+      stoppedPermanently.current ||
+      ownerVersion !== sessionVersion ||
+      sessionOwner !== draftSessionVersion()
+    )
+      return;
     if (stoppedContentJson.current !== null) {
       if (contentJson === stoppedContentJson.current) return;
       stoppedContentJson.current = null;
@@ -139,7 +266,8 @@ export function useReferralDraftAutosave<T>({
         if (
           stoppedPermanently.current ||
           stoppedContentJson.current === latest.current.contentJson ||
-          ownerVersion !== sessionVersion
+          ownerVersion !== sessionVersion ||
+          sessionOwner !== draftSessionVersion()
         )
           return;
         discardReferralDraft(ownerVersion);
@@ -155,10 +283,12 @@ export function useReferralDraftAutosave<T>({
       if (
         stoppedPermanently.current ||
         stoppedContentJson.current === latest.current.contentJson ||
-        ownerVersion !== sessionVersion
+        ownerVersion !== sessionVersion ||
+        sessionOwner !== draftSessionVersion()
       )
         return;
-      keepReferralDraft(latest.current.draft, ownerVersion);
+      keepReferralDraft(latest.current.draft, ownerVersion, storageKey);
+      setSessionSaved(referralRecoverySaved());
       lastKeptJson.current = latest.current.draftJson;
       const at = readKeptReferralDraftAt();
       setKeptAt(at);
@@ -167,7 +297,7 @@ export function useReferralDraftAutosave<T>({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [enabled, dirty, draftJson, contentJson, reopened, ownerVersion]);
+  }, [enabled, dirty, draftJson, contentJson, reopened, ownerVersion, sessionOwner, storageKey]);
 
   // Unmounting with a change still waiting settles it at once, so no close path loses it.
   useEffect(
@@ -177,7 +307,8 @@ export function useReferralDraftAutosave<T>({
         stoppedPermanently.current ||
         stoppedContentJson.current === current.contentJson ||
         !current.enabled ||
-        ownerVersion !== sessionVersion
+        ownerVersion !== sessionVersion ||
+        sessionOwner !== draftSessionVersion()
       )
         return;
       if (!current.dirty) {
@@ -187,7 +318,7 @@ export function useReferralDraftAutosave<T>({
         return;
       }
       if (current.draftJson !== lastKeptJson.current) {
-        keepReferralDraft(current.draft, ownerVersion);
+        keepReferralDraft(current.draft, ownerVersion, storageKey);
       }
     },
     // `reopened` is fixed for the sheet's life.
@@ -218,13 +349,14 @@ export function useReferralDraftAutosave<T>({
     if (
       stoppedPermanently.current ||
       stoppedContentJson.current === latest.current.contentJson ||
-      ownerVersion !== sessionVersion
+      ownerVersion !== sessionVersion ||
+      sessionOwner !== draftSessionVersion()
     )
       return;
     stoppedContentJson.current = null;
-    keepReferralDraft(latest.current.draft, ownerVersion);
+    keepReferralDraft(latest.current.draft, ownerVersion, storageKey);
     lastKeptJson.current = latest.current.draftJson;
-  }, [ownerVersion]);
+  }, [ownerVersion, sessionOwner, storageKey]);
 
-  return { keptAt, nowMs, stop, keepNow };
+  return { keptAt, nowMs, stop, keepNow, sessionSaved };
 }

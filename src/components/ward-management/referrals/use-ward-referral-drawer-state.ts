@@ -43,12 +43,11 @@ import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
   keepReferralDraft,
-  readKeptReferralDraft,
   readKeptReferralDraftAt,
   readLastReferrerContact,
-  referralDraftSessionVersion,
   rememberReferrerContact,
   useReferralDraftAutosave,
+  useReferralDraftRecovery,
 } from "./referral-draft-store";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
@@ -189,6 +188,7 @@ export function useWardReferralDrawerState({
     "admissions",
     "units",
   );
+  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
 
@@ -216,22 +216,20 @@ export function useWardReferralDrawerState({
   const [prefillKey] = useState(() =>
     effectiveInitialPatientId ? patientKeyFor(effectiveInitialPatientId, { movements, patients, referrals }) : null,
   );
-  // A Refer link names its person: it reopens a kept draft only when that draft is for the same
-  // person, and never someone else's.
-  const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
-  const [draftOwnerVersion] = useState(referralDraftSessionVersion);
-  const kept =
-    !effectiveInitialPatientId ||
-    (storedDraft !== null &&
-      ((prefillKey !== null && storedDraft.activePatientKey === prefillKey) ||
-        storedDraft.activePatientKey === `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`))
-      ? storedDraft
-      : null;
-  // Another person's kept draft stays as it was: this sheet does not autosave over it.
-  const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
-  const draftDiscardOwner = keepsAnotherPersonsDraft ? null : draftOwnerVersion;
-  // Option B (Josh, 13 Oct 2026): opened from a place that names the person (ED, a community team,
-  // Home), the record answers step 1 where it can, so the sheet opens on Referral with step 1 done.
+  const {
+    draftStorageKey,
+    draftRestored,
+    draftOwnerVersion,
+    storedDraft,
+    kept,
+    keepsAnotherPersonsDraft,
+    draftDiscardOwner,
+  } = useReferralDraftRecovery<KeptDraft>(
+    `${scenario}/${worldGeneration}`,
+    effectiveInitialPatientId,
+    prefillKey,
+    `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
+  );
   const fromEntryPoint = kept === null && prefillKey !== null;
   // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
   // never a demo person from another site.
@@ -327,8 +325,6 @@ export function useWardReferralDrawerState({
   const [catchmentService, setCatchmentService] = useState<HealthService | "">(
     kept?.catchmentService ?? HEALTH_SERVICES.find((service) => service === urlPrefill?.service) ?? "",
   );
-  // From an entry point, a catchment the suburb lookup or the record names counts as confirmed;
-  // Change on the catchment card reopens it.
   const [catchmentConfirmed, setCatchmentConfirmed] = useState(
     kept?.catchmentConfirmed ??
       (fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()),
@@ -339,8 +335,6 @@ export function useWardReferralDrawerState({
     kept?.activeSection ?? (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
   );
   const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
-  // What a menu or link asks for wins over a kept draft; the draft fills in everything else.
-  // L6 (review 12 Oct 2026): a person already in an ED is referred from that ED by default.
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
     (initialSendingTeam ? "community" : undefined) ??
@@ -363,7 +357,6 @@ export function useWardReferralDrawerState({
   const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
   const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
-  // Form field state - fully synced and editable
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
       urlPrefill?.legal ??
@@ -439,7 +432,6 @@ export function useWardReferralDrawerState({
     unidentified,
     notOnWard,
   };
-  // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
   const draftJson = JSON.stringify(draftNow);
 
@@ -462,17 +454,16 @@ export function useWardReferralDrawerState({
 
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Asks before an unsent draft is lost: Keep editing, Keep draft or Discard.
   const dirty = !sentReferralId && draftJson !== openingDraft;
-  // Autosave to the same tab-memory store as Keep draft, so no close path loses typed work (D-18:
-  // memory only, never browser storage).
   const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: JSON.stringify(kept) } : null));
   const {
+    sessionSaved: draftSessionSaved,
     keptAt: draftKeptAt,
     nowMs: draftNowMs,
     stop: stopDraftAutosave,
   } = useReferralDraftAutosave({
     draft: draftNow,
+    storageKey: draftStorageKey,
     draftJson,
     contentJson: JSON.stringify({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
@@ -527,11 +518,11 @@ export function useWardReferralDrawerState({
     onClose();
   }
   function keepAndClose() {
-    const kept = keepReferralDraft(draftNow, draftOwnerVersion);
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion, draftStorageKey);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell(kept ? "Referral draft kept until this tab reloads." : "Draft not kept: signed in again.");
+    announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
   }
 
   const handleDrawerClose = useCallback(() => {
@@ -1418,6 +1409,15 @@ export function useWardReferralDrawerState({
     edNeeds,
     setEdNeeds,
     draftNow,
+    draftRestored: draftRestored && kept !== null,
+    draftSessionSaved,
+    needsChartReattachment: !!(kept as (KeptDraft & { needsChartReattachment?: boolean }) | null)
+      ?.needsChartReattachment,
+    clearRecoveredDraft: () => {
+      stopDraftAutosave();
+      discardReferralDraft(draftDiscardOwner);
+      onRestart();
+    },
     openingDraft,
     draftJson,
     handleTouchStart,

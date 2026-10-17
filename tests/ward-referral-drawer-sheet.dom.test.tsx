@@ -122,7 +122,7 @@ describe("referral slide-out, option B", () => {
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic reason");
   });
 
-  it("keeps a draft in memory only and reopens it", () => {
+  it("keeps an opted-in synthetic draft in session storage and reopens it", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     const first = renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
@@ -130,7 +130,7 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
     fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
     expect(first.onClose).toHaveBeenCalledTimes(1);
-    expect(setItem).not.toHaveBeenCalled();
+    expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     first.unmount();
 
     renderDrawer();
@@ -336,12 +336,12 @@ describe("owner pins carried over from the retired full-page form", () => {
     expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Perth");
   });
 
-  it("never writes typed history to browser storage", () => {
+  it("does not save opted-in typed history before the debounce", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
-    expect(setItem).not.toHaveBeenCalled();
+    expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
   });
 
@@ -399,7 +399,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value } });
   }
 
-  it("keeps the draft in tab memory as the user types, never in browser storage", () => {
+  it("keeps the synthetic draft in memory and session storage as the user types", () => {
     vi.useFakeTimers();
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     renderDrawer();
@@ -412,7 +412,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     expect(readKeptReferralDraft()).not.toBeNull();
     expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept · just now");
     expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
-    expect(setItem).not.toHaveBeenCalled();
+    expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
   });
 
