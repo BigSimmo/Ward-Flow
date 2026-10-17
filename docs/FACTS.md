@@ -13,8 +13,8 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `migration-count`   | 9                                           | Numbered database migrations                                                            | `backend/ward-flow/migrations/` |
 | `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`                                            | `src/app/mockups/ward-flow/`    |
 | `app-route-count`   | 52                                          | Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest | `src/app/mockups/`              |
-| `latest-decision`   | D-65                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
-| `next-decision`     | D-66                                        | Number to use for the next decision                                                     | `docs/ward-flow/decisions.md`   |
+| `latest-decision`   | D-66                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
+| `next-decision`     | D-67                                        | Number to use for the next decision                                                     | `docs/ward-flow/decisions.md`   |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                                 | `package.json`                  |
 | `backend-env-vars`  | 23 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                          | `backend/ward-flow/*.mjs`       |
 
@@ -61,6 +61,7 @@ Ward Flow stores its shared workspace in <!-- fact:database-provider -->Supabase
 Listed in [`retired-terms.json`](retired-terms.json). Existing mentions in maintained docs warn;
 a pull request that adds a new one fails. Archives, dated records and logs are never scanned.
 
-| Term    | Retired    | Why                                                                                                                                   | Instead                                                                                                                                          |
-| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `azure` | 2026-10-15 | Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired. | Name Supabase, or quote the current value with `<!-- fact:database-provider -->` from docs/FACTS.md. Delete the mention, or fence it as history. |
+| Term                   | Retired    | Why                                                                                                                                   | Instead                                                                                                                                          |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `second-role-approval` | 2026-10-17 | D-66 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype.                 | Granted roles work immediately. Keep grant authority, scope, expiry, revocation and audit requirements.                                          |
+| `azure`                | 2026-10-15 | Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired. | Name Supabase, or quote the current value with `<!-- fact:database-provider -->` from docs/FACTS.md. Delete the mention, or fence it as history. |
