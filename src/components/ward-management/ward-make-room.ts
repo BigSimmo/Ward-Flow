@@ -22,7 +22,7 @@ import { stepDownSubject } from "@/components/ward-management/ward-step-down";
 /** The longest chain offered, counting the waiting referral's own move. */
 export const MAKE_ROOM_MAX_MOVES = 3;
 
-export type MakeRoomStepDown = {
+type MakeRoomStepDown = {
   admission: Admission;
   fromUnit: Unit;
   toUnit: Unit;
