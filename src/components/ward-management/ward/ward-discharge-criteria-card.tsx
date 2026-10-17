@@ -85,14 +85,15 @@ export function WardDischargeCriteriaCard({
 
   const canTick = onChange !== undefined && (status.kind === "in_progress" || status.kind === "all_met");
   const typedToSave = typed.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+  const typedInvalid =
+    new Set(typedToSave).size !== typedToSave.length || typedToSave.some((entry) => isDischargeCriterion(entry));
   const nothingChosen = chosen.length === 0 && typedToSave.length === 0;
   const typedRows = typed.length < PATIENT_SPECIFIC_CRITERIA_MAX ? [...typed, ""] : typed;
   const setTypedAt = (index: number, value: string) =>
     setTyped((current) => {
       const next = [...current];
       next[index] = value;
-      // A cleared row goes, so the spare empty row is always the last one.
-      return next.filter((entry) => entry.length > 0);
+      return next;
     });
   const toggleMet = (criterion: string, met: boolean) => {
     onChange?.({
@@ -223,7 +224,7 @@ export function WardDischargeCriteriaCard({
               <Button
                 className={styles.touchTarget}
                 variant="sec"
-                disabled={nothingChosen || !attested || !patientTold}
+                disabled={nothingChosen || typedInvalid || !attested || !patientTold}
                 onClick={() => {
                   onChange({
                     criteria: chosen,
@@ -240,7 +241,11 @@ export function WardDischargeCriteriaCard({
                 Cancel
               </Button>
             </div>
-            {nothingChosen || !attested || !patientTold ? (
+            {typedInvalid ? (
+              <p className={styles.note}>
+                Patient specific criteria must be unique and must not duplicate a fixed criterion.
+              </p>
+            ) : nothingChosen || !attested || !patientTold ? (
               <p className={styles.note}>
                 Choose or type at least one criterion, confirm the treating psychiatrist set them and that the patient
                 was told.
