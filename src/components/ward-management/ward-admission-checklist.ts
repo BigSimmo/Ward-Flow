@@ -34,6 +34,7 @@ export function admissionChecklist(
   /** @deprecated Ignored: only recorded movement values establish completion. */
   _overrides?: AdmissionChecklistOverrides,
 ): AdmissionChecklistItem[] {
+  void _overrides;
   const clearance = recordedMovementMedicalClearance(movement, referrals);
   const transportNeed = transportNeedState(movement);
   const transportBooked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
