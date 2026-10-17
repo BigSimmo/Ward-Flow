@@ -92,3 +92,16 @@ it("retains the attachment reattach reminder through later recovered autosaves",
   keepReferralDraft({ documentation: { charts: [] }, needsChartReattachment: true }, undefined, key);
   expect(JSON.parse(readSessionDraft(key)!)).toMatchObject({ needsChartReattachment: true });
 });
+
+import { setDraftScenarioScope } from "@/components/ward-management/ward-session-drafts";
+it("fences old-world writes on an observed incoming scenario replacement", () => {
+  clearSessionDrafts();
+  const oldKey = sessionDraftKey("standard/0", "referral", "new");
+  const owner = draftSessionVersion();
+  writeSessionDraft(oldKey, "synthetic old world", owner);
+  setDraftScenarioScope("standard/1");
+  expect(readSessionDraft(oldKey)).toBeNull();
+  expect(writeSessionDraft(oldKey, "synthetic stale callback", owner)).toBe(false);
+  const nextKey = sessionDraftKey("standard/1", "referral", "new");
+  expect(writeSessionDraft(nextKey, "synthetic next world", owner)).toBe(true);
+});

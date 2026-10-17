@@ -6,7 +6,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-clie
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftSession } from "./referrals/referral-draft-store";
-import { clearLegacySessionDrafts } from "./ward-session-drafts";
+import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
@@ -865,6 +865,9 @@ function WardFlowWorld({
   useLayoutEffect(() => {
     syncWorldGlobals(state);
   }, [state]);
+  useLayoutEffect(() => {
+    if (container.sessionAdopted) setDraftScenarioScope(`${state.scenario}/${state.worldGeneration}`);
+  }, [state.scenario, state.worldGeneration, container.sessionAdopted]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why

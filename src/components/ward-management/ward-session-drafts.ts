@@ -6,6 +6,7 @@ export const SESSION_DRAFT_MAX_CHARS = 256_000;
 const SESSION_KEY = "wf-draft-session:v1";
 let generation = 0;
 let account = "synthetic-demo";
+let activeScenarioScope: string | null = null;
 let fallbackSession = "memory-only";
 
 export const draftSessionVersion = () => generation;
@@ -45,6 +46,7 @@ export function sessionDraftKey(scenario: string, kind: string, subject: string)
 
 export function clearSessionDrafts(): void {
   generation += 1;
+  activeScenarioScope = null;
   fallbackSession = `memory-only-${generation}`;
   if (typeof window === "undefined") return;
   try {
@@ -73,6 +75,20 @@ export function setDraftAccount(next: string): void {
     }
   } catch {
     /* The in-memory session fence still applies. */
+  }
+}
+
+/** Observed world replacement, including incoming shared or cross-tab resets. */
+export function setDraftScenarioScope(scope: string): void {
+  activeScenarioScope = scope;
+  if (typeof window === "undefined") return;
+  try {
+    const storage = window.sessionStorage;
+    for (const key of Array.from({ length: storage.length }, (_, i) => storage.key(i))) {
+      if (key?.startsWith(PREFIX) && key.split(":")[4] !== encodeURIComponent(scope)) storage.removeItem(key);
+    }
+  } catch {
+    /* Writes to an outgoing world's scope remain fenced even with blocked storage. */
   }
 }
 
@@ -132,6 +148,7 @@ export function writeSessionDraft(key: string, value: string, owner: number): bo
   const session = sessionDetails();
   if (
     owner !== generation ||
+    (activeScenarioScope !== null && key.split(":")[4] !== encodeURIComponent(activeScenarioScope)) ||
     value.length > SESSION_DRAFT_MAX_CHARS ||
     !key.startsWith(PREFIX + [account, session.id].map(encodeURIComponent).join(":") + ":")
   )
