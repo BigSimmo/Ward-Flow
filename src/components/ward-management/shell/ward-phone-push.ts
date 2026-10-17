@@ -138,7 +138,7 @@ function iosTab(): boolean {
 }
 
 /** Whether this browser can receive web push at all. */
-export function phonePushSupported(): boolean {
+function phonePushSupported(): boolean {
   return (
     typeof window !== "undefined" &&
     typeof navigator !== "undefined" &&
@@ -149,7 +149,7 @@ export function phonePushSupported(): boolean {
 }
 
 /** Web Push's applicationServerKey wants raw bytes; the server sends base64url. */
-export function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
+function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (value.length % 4)) % 4);
   const raw = window.atob(padded);
   const bytes = new Uint8Array(new ArrayBuffer(raw.length));

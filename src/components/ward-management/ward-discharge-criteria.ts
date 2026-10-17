@@ -59,7 +59,7 @@ export function criteriaEligibilityRefusal(eligibility: CriteriaEligibility): st
   return null;
 }
 
-export function isDischargeCriterion(value: unknown): value is DischargeCriterion {
+function isDischargeCriterion(value: unknown): value is DischargeCriterion {
   return typeof value === "string" && (DISCHARGE_CRITERIA as readonly string[]).includes(value);
 }
 

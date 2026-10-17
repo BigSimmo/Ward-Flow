@@ -54,7 +54,7 @@ export function ownerShort(owner: string): string {
   return OWNER_SHORT[owner] ?? owner;
 }
 
-export function groupTone(group: AlertGroup): WfTone {
+function groupTone(group: AlertGroup): WfTone {
   return group === "act" ? "danger" : group === "wait" ? "warning" : "neutral";
 }
 

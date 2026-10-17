@@ -241,7 +241,7 @@ function countsOnlyReferral(referral: Referral): Referral {
  * One key for a community team's spellings, so a desk named "Midland" finds patients whose
  * catchment team is "Midland Community Team" (review on PR #330). An empty name matches nothing.
  */
-export function communityTeamKey(name: string | undefined): string {
+function communityTeamKey(name: string | undefined): string {
   return (name ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/gu, " ")

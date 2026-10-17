@@ -67,7 +67,6 @@ import {
   type BreakGlassRecord,
 } from "./ward-access-store";
 
-export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
@@ -77,12 +76,10 @@ import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
-export { accessPlaceLabel } from "./ward-access-labels";
-
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
-export function useBreakGlassPatientIds(): ReadonlySet<string> {
+function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
@@ -582,7 +579,7 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
 }
 
 /** Says a record is open only through break glass, on the patient page. */
-export function WardBreakGlassNote({ patientId }: { patientId: string }) {
+function WardBreakGlassNote({ patientId }: { patientId: string }) {
   const glass = useBreakGlassPatientIds();
   if (!glass.has(patientId)) return null;
   return (

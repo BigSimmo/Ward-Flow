@@ -145,7 +145,7 @@ export const WARD_VIEWS: readonly WardViewItem[] = [
  */
 export const WARD_HOME_HREF: string = WARD_VIEWS.find((view) => view.id === "command")!.href;
 
-export type WardNavGroup = "role" | "board";
+type WardNavGroup = "role" | "board";
 
 /**
  * Every `WARD_NAV` id, as a union rather than `string`.

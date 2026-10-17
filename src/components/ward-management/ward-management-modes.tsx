@@ -121,7 +121,7 @@ function ModeHeader({
  * maintained copies that could quietly drift apart — the failure mode the brief calls worse than
  * a single missing statement.
  */
-export function NotAMedicalDeviceStatement() {
+function NotAMedicalDeviceStatement() {
   return (
     /*
      * 🔴 `data-ward-type-floor` EXISTS ONLY SO A BROWSER GATE CAN FIND THIS SENTENCE. DO NOT DELETE

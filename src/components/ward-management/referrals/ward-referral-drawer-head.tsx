@@ -8,7 +8,7 @@ import { DESTINATIONS, SECTION_IDS, sectionLabel } from "./ward-referral-drawer-
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: the hero over the steps, with the inbox chip, close and the headline figures. */
-export function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
+function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
   const {
     view,
     onViewChange,

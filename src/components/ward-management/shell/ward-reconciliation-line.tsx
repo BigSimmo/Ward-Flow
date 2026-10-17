@@ -55,7 +55,7 @@ export const NO_RECONCILIATION_CLAUSE = "No reconciliation is available for this
  * facts, three sentences** — before this, the first two were the same empty array and rendered
  * identically.
  */
-export const NOTHING_TO_RECONCILE_SENTENCE = "This screen reports nothing to reconcile.";
+const NOTHING_TO_RECONCILE_SENTENCE = "This screen reports nothing to reconcile.";
 
 export function reconciliationSentence(publication: WardChecksPublication, asAt?: string): string {
   /*
@@ -90,7 +90,7 @@ export function reconciliationSentence(publication: WardChecksPublication, asAt?
   return asAt ? `${core}, as at ${asAt}.` : `${core}.`;
 }
 
-export type WardReconciliationLineProps = {
+type WardReconciliationLineProps = {
   /**
    * ⚠️ **A PUBLICATION, NEVER AN ARRAY — O-9.** The caller must handle "no screen has spoken" by
    * name, which is what stops it being collapsed into "empty".

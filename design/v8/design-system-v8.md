@@ -189,40 +189,40 @@ New in v8: `.tone-*` colours a glyph or mark. `.ink-*` colours words. In high co
 
 `src/components/wf` is the one library. Class names stay short for CSS Modules. The React names below are the contract.
 
-| Class                  | Component in `wf/`                             | v8 contract                                                                                             |
-| ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `.b`                   | `Button`, `SplitButton`                        | Disabled is `aria-disabled` plus a reason, so it stays in the tab order. Busy keeps focus on the button |
-| `.pt`                  | `Tabs` (tablist), `Segmented` (radiogroup)     | Roving tab stop always exists (I2). Disabled items are dashed                                           |
-| `.trk`                 | `HeroTrack`                                    | Link mode never nests a second `nav` inside an outer one                                                |
-| `.fc`                  | `FilterChip`, `AppliedFilter`                  | On state is `aria-pressed` with an accent edge and heavier label. Highlight border in forced colours    |
-| `.choice-row`          | `Segmented variant="row"` (new)                | Radiogroup of equal buttons, never wrapping                                                             |
-| `.k`                   | `Count`, `CountBubble`                         | Always neutral. 0 shows 0                                                                               |
-| `.tier`                | `TierTile`                                     | T1 to T3 pill, never red                                                                                |
-| `.bd`                  | `Badge`                                        | Flat pill. Drops its chip inside rows                                                                   |
-| `.svc`                 | `ServiceTag` (new)                             | Dot and service name. Never the dot alone                                                               |
-| `.g`, `svg.gl`         | `StatusGlyph`, `Dot`                           | Info is the capsule (v7 build item)                                                                     |
-| `.lv`                  | `LiveChip`, `Timer`                            | Pause: one name with `aria-pressed` (I1). Resume refreshes the time at once                             |
-| `.hs`, `.hs.pill`      | `HeroStat`                                     | `pressed` prop makes the pill. Never mix pills and plain stats in one row                               |
-| `.in`, `.field`        | `Field`, `TextInput`, `Select`, `Textarea`     | Errors are announced (`role="alert"` or a live region). Clearing returns focus to the input             |
-| `.sw`, `.chk`, `.rad`  | `Switch`, `Checkbox`, `Radio`                  | Indeterminate re-applies after every click                                                              |
-| `.stp`                 | `Stepper`                                      | The value is the spinbutton (I7)                                                                        |
-| `.card`                | `Card`, `CardHead`, `CardBody`, `CardFoot`     | `aside={0}` renders 0 (I6)                                                                              |
-| `.hero`                | `Hero`                                         | `.quiet` when nothing is live                                                                           |
-| `.st`, `.meter`, `.mb` | `Stat`, `Meter`, `StackBar`                    | Meter clamps `aria-valuenow` to its range. Stacked segments 2px apart                                   |
-| `.chart-*`             | `BarList`, `ColumnChart`, `Donut`, `LineChart` | Butt caps on arcs (I5). Empty series render an empty state, not NaN                                     |
-| `.menu`, `.pop`        | `Menu`, `Popover`                              | Escape closes the menu only and returns focus. Portalled when inside a scrolling sheet                  |
-| `.toast`               | `ToastView`, `ToastProvider`                   | Mount the provider once in the ward shell. The toast layer is exempt from a sheet's inert               |
-| `.tip`                 | `Tooltip` (move from `ui/`)                    | Opens on hover or focus after a short delay. Escape closes the tip only. The tip is hoverable (I3)      |
-| `.drawer`, `.scrim`    | `Sheet`, `Drawer` (move from `ui/`)            | Names its first focus. Returns focus on close and unmount (I4)                                          |
-| `.empty`               | `EmptyState`                                   | One 48px line that says what is clear                                                                   |
-| `.sk`                  | `Skeleton`                                     | Stops under reduced motion                                                                              |
-| `.tile`, `.av`, `.kbd` | `IconTile`, `Avatar`, `Kbd`                    | Neutral only                                                                                            |
-| `.bed`, `.beds`        | `BedTile`, `BedBoard` (new)                    | `.dim` for Find, never opacity                                                                          |
-| `.grp`, `.row-tl`      | `GroupedTable`, `RowTimeline` (new)            | Group header is a button with `aria-expanded` (I8)                                                      |
+| Class                  | Component in `wf/`                         | v8 contract                                                                                             |
+| ---------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `.b`                   | `Button`                                   | Disabled is `aria-disabled` plus a reason, so it stays in the tab order. Busy keeps focus on the button |
+| `.pt`                  | `Tabs` (tablist), `Segmented` (radiogroup) | Roving tab stop always exists (I2). Disabled items are dashed                                           |
+| `.trk`                 | `HeroTrack`                                | Link mode never nests a second `nav` inside an outer one                                                |
+| `.fc`                  | `FilterChip`, `AppliedFilter`              | On state is `aria-pressed` with an accent edge and heavier label. Highlight border in forced colours    |
+| `.choice-row`          | `Segmented variant="row"` (new)            | Radiogroup of equal buttons, never wrapping                                                             |
+| `.k`                   | `Count`, `CountBubble`                     | Always neutral. 0 shows 0                                                                               |
+| `.tier`                | `TierTile`                                 | T1 to T3 pill, never red                                                                                |
+| `.bd`                  | `Badge`                                    | Flat pill. Drops its chip inside rows                                                                   |
+| `.svc`                 | `ServiceTag` (new)                         | Dot and service name. Never the dot alone                                                               |
+| `.g`, `svg.gl`         | `StatusGlyph`, `Dot`                       | Info is the capsule (v7 build item)                                                                     |
+| `.lv`                  | `LiveChip`, `Timer`                        | Pause: one name with `aria-pressed` (I1). Resume refreshes the time at once                             |
+| `.hs`, `.hs.pill`      | `HeroStat`                                 | `pressed` prop makes the pill. Never mix pills and plain stats in one row                               |
+| `.in`, `.field`        | `Field`, `TextInput`, `Select`, `Textarea` | Errors are announced (`role="alert"` or a live region). Clearing returns focus to the input             |
+| `.sw`, `.chk`, `.rad`  | `Switch`, `Checkbox`, `Radio`              | Indeterminate re-applies after every click                                                              |
+| `.stp`                 | `Stepper`                                  | The value is the spinbutton (I7)                                                                        |
+| `.card`                | `Card`, `CardHead`, `CardBody`, `CardFoot` | `aside={0}` renders 0 (I6)                                                                              |
+| `.hero`                | `Hero`                                     | `.quiet` when nothing is live                                                                           |
+| `.st`, `.meter`, `.mb` | `Stat`, `Meter`, `StackBar`                | Meter clamps `aria-valuenow` to its range. Stacked segments 2px apart                                   |
+| `.chart-*`             | `BarList`, `ColumnChart`, `Donut`          | Butt caps on arcs (I5). Empty series render an empty state, not NaN                                     |
+| `.menu`, `.pop`        | `Menu`, `Popover`                          | Escape closes the menu only and returns focus. Portalled when inside a scrolling sheet                  |
+| `.toast`               | `ToastView`, `ToastProvider`               | Mount the provider once in the ward shell. The toast layer is exempt from a sheet's inert               |
+| `.tip`                 | `Tooltip` (move from `ui/`)                | Opens on hover or focus after a short delay. Escape closes the tip only. The tip is hoverable (I3)      |
+| `.drawer`, `.scrim`    | `Sheet`, `Drawer` (move from `ui/`)        | Names its first focus. Returns focus on close and unmount (I4)                                          |
+| `.empty`               | `EmptyState`                               | One 48px line that says what is clear                                                                   |
+| `.sk`                  | `Skeleton`                                 | Stops under reduced motion                                                                              |
+| `.tile`, `.av`, `.kbd` | `IconTile`, `Avatar`, `Kbd`                | Neutral only                                                                                            |
+| `.bed`, `.beds`        | `BedTile`, `BedBoard` (new)                | `.dim` for Find, never opacity                                                                          |
+| `.grp`, `.row-tl`      | `GroupedTable`, `RowTimeline` (new)        | Group header is a button with `aria-expanded` (I8)                                                      |
 
 **Retire from `ui/`** once nothing outside tests imports them: `button`, `chip`, `choice`, `tabs`, `segmented-control`, `select`, `text-field`, `form-field`, `confirm-dialog`, `page-header`, `link`, `pagination`, `progress`, `disclosure`, `error-state`, `applied-filters`, `interactive-row`, `section-heading` and `metro-pulse-circle`. Move `sheet`, `sheet-focus`, `tooltip` and `overlay-root` into `wf/`. Keep `live-announcer` and `missing-value` as shared utilities. Deleting exported code still follows the dead-code rule in `AGENTS.md` and needs Josh's approval for that run.
 
-**Unused `wf/` exports.** `SplitButton`, `Meter`, `Sparkline`, `LineChart`, `SortHeader`, `BulkBar`, `HeroSteps`, `CountBubble`, `Radio` and `Textarea` have no product importers. They stay, because the patterns in v7 section 6 need several of them, but each needs one product use or a retirement decision.
+**Unused `wf/` exports.** `Meter`, `CountBubble`, `Radio` and `Textarea` have no product importers. They stay, because the patterns in v7 section 6 need several of them, but each needs one product use or a retirement decision. Retired on 16 October 2026 with Josh's approval for that run ("Go unused exports", PR #379): `SplitButton`, `Sparkline`, `LineChart`, `SortHeader`, `BulkBar`, `HeroSteps`, `Skeleton`, `SkeletonLines`, `AvatarStack`, `Divider` and `Th`, which had no product use. The `.sk` row above is retired with `Skeleton`.
 
 ## 9. Legacy migration
 

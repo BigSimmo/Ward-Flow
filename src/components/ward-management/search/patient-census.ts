@@ -62,7 +62,7 @@ export const CENSUS_GROUPS: readonly { id: CensusGroup; label: string; short: st
   { id: "off", label: "Not active", short: "Not active", glyph: "off" },
 ];
 
-export type CensusTimelineEntry = { at: Instant; glyph: CensusGlyph; text: string };
+type CensusTimelineEntry = { at: Instant; glyph: CensusGlyph; text: string };
 
 export type CensusRow = {
   /** The movement or referral id for those rows (so existing row test ids hold), else a prefixed id. */

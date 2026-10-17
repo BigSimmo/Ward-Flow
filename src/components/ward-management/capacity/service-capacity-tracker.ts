@@ -41,7 +41,7 @@ export const WA_ED_EXTENDED_WAIT_MINUTES = ED_SEVERE_PRESSURE_WAIT_MINUTES;
 export type CapacityAlertCode = "green" | "yellow" | "red" | "black";
 
 /** Metrics for an emergency department within a hospital site. */
-export interface HospitalEdMetrics {
+interface HospitalEdMetrics {
   edId: string;
   edName: string;
   siteCode: string;
@@ -99,7 +99,7 @@ export interface CompoundEscalationAlert {
 }
 
 /** Complete capacity and warning tracking for a Health Service. */
-export interface ServiceCapacityTracking {
+interface ServiceCapacityTracking {
   id: string;
   service: HealthService;
   shortName: HealthService;

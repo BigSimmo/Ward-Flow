@@ -183,7 +183,7 @@ export type CommunityTreatmentOrder = {
   earlier?: EndedCommunityTreatmentOrder[];
 };
 
-export type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
+type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
 
 /** True while a Form 5A is in force (not yet ended). */
 export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
@@ -315,7 +315,7 @@ export function patientDisplayName(patient: Patient): string {
  * - Digits only: DDMMYYYY, YYYYMMDD
  * - Partial: DD/MM, MM/YYYY, YYYY
  */
-export function matchDateOfBirth(dobIso: string, query: string): boolean {
+function matchDateOfBirth(dobIso: string, query: string): boolean {
   if (!dobIso || !query) return false;
   const clean = query.trim();
   if (clean.length < 2) return false;

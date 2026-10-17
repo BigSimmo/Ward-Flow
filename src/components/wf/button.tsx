@@ -1,11 +1,10 @@
 "use client";
 
 import { useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from "react";
-import { ChevronDown, Lock, type LucideIcon } from "lucide-react";
+import { Lock, type LucideIcon } from "lucide-react";
 import { Tooltip } from "./tooltip";
 import { cx } from "./cx";
 import { Icon } from "./icon";
-import { Menu, type MenuItem } from "./menu";
 import { Count, Kbd, SrOnly, Spinner } from "./primitives";
 import styles from "./button.module.css";
 
@@ -158,60 +157,6 @@ export function DisabledReason({ id, children }: { id: string; children: ReactNo
     <span className={styles.reason} id={id}>
       <Icon icon={Lock} size={14} />
       {children}
-    </span>
-  );
-}
-
-export type SplitButtonProps = {
-  /** Main action label. */
-  children: ReactNode;
-  onClick: () => void;
-  /** Items for the caret menu. */
-  menuItems: MenuItem[];
-  /** Accessible name of the caret, such as "More referral options". */
-  menuLabel: string;
-  variant?: Extract<ButtonVariant, "pri" | "sec" | "light">;
-  size?: ButtonSize;
-  icon?: LucideIcon;
-  kbd?: string;
-  className?: string;
-};
-
-/**
- * Primary action plus a caret that opens a menu, as on the header New referral. Two real
- * buttons: the main action, and the caret (`aria-haspopup="menu"`).
- */
-export function SplitButton({
-  children,
-  onClick,
-  menuItems,
-  menuLabel,
-  variant = "pri",
-  size = "md",
-  icon,
-  kbd,
-  className,
-}: SplitButtonProps) {
-  return (
-    <span className={cx(styles.split, className)}>
-      <Button variant={variant} size={size} icon={icon} kbd={kbd} className={styles.splitMain} onClick={onClick}>
-        {children}
-      </Button>
-      <Menu
-        label={menuLabel}
-        items={menuItems}
-        align="end"
-        trigger={(triggerProps) => (
-          <button
-            {...triggerProps}
-            type="button"
-            aria-label={menuLabel}
-            className={buttonClass({ variant, size, iconOnly: true, className: styles.splitCaret })}
-          >
-            <Icon icon={ChevronDown} size={14} />
-          </button>
-        )}
-      />
     </span>
   );
 }

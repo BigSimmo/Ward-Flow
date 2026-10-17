@@ -35,7 +35,7 @@ import wardPin from "../ward-pinned-switch.module.css";
 
 export type CommunityPhoneListId = "waiting" | "inBed" | "back" | "ctos";
 
-export type CommunityPhoneRow = {
+type CommunityPhoneRow = {
   id: string;
   name: ReactNode;
   meta?: ReactNode;
@@ -49,7 +49,7 @@ export type CommunityPhoneRow = {
   testId?: string;
 };
 
-export type CommunityPhoneGroup = {
+type CommunityPhoneGroup = {
   id: string;
   /** Omit for the list's first, unnamed group. */
   title?: string;

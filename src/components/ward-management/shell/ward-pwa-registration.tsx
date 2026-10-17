@@ -26,7 +26,7 @@ import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "./ward-phone-push";
 import { listenForInstallPrompt } from "./ward-pwa-install";
 
 /** Must match OPEN_MESSAGE in public/ward-flow-push-sw.js. */
-export const WARD_PWA_OPEN_MESSAGE = "ward-flow-open";
+const WARD_PWA_OPEN_MESSAGE = "ward-flow-open";
 /** The scope used before F-11. */
 export const LEGACY_PWA_SCOPE = `${PHONE_PUSH_SCOPE}/`;
 
@@ -64,7 +64,7 @@ async function hadPushSubscription(registration: ServiceWorkerRegistration): Pro
  * `onAlertsEnded` runs when the dropped registration held a phone alerts subscription, which the
  * browser ends with it. The server forgets that endpoint once a send to it fails.
  */
-export async function registerWardPwaWorker(onAlertsEnded?: () => void): Promise<ServiceWorkerRegistration | null> {
+async function registerWardPwaWorker(onAlertsEnded?: () => void): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
   const legacyScope = new URL(LEGACY_PWA_SCOPE, window.location.origin).href;
   const existing = await navigator.serviceWorker.getRegistrations();

@@ -123,7 +123,7 @@ export const PLAN_STEPS = [
   { n: 2, title: "Transport", answers: ["road or flight", "provider", "legal status"] },
   { n: 3, title: "Dispatch", answers: ["CAD number", "depart time"] },
 ] as const;
-export const PLAN_ANSWER_COUNT = 7;
+const PLAN_ANSWER_COUNT = 7;
 
 /** The answers still needed, in plan order. None is filled in for the coordinator. */
 export function missingAnswers(draft: RepatDraft, now: Instant): string[] {

@@ -37,7 +37,7 @@ import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
-export const REFERRAL_BEDS_HREF = "/mockups/ward-flow/hub";
+const REFERRAL_BEDS_HREF = "/mockups/ward-flow/hub";
 
 /** D4: the exact words for a control that is shown for review but not connected. */
 export const NOT_WIRED = "Not wired in this prototype.";
@@ -107,7 +107,7 @@ export function isOverdue(referral: Referral, now: Instant): boolean {
 }
 
 /** The tier's own window, or the any-tier one if that is shorter (Josh's defaults, not legal limits). */
-export function decisionWindow(referral: Referral): number {
+function decisionWindow(referral: Referral): number {
   return Math.min(OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency], OVERDUE_AFTER_ANY_TIER_MINUTES);
 }
 

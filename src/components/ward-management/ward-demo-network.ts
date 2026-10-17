@@ -22,7 +22,7 @@ import type { Gender, Patient, PatientId } from "@/components/ward-management/wa
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 
-/**
+/*
  * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
  * The one-tap demo resets (Josh, 15 Oct 2026) add "quiet" (beds free, short ED waits), "winter"
  * (every ward full or one short, more people waiting) and "ed-crisis" (surge wards with long EMHS
@@ -54,10 +54,8 @@ import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/wa
  * computed deadline: no generated legal form carries a `dueAt`.
  *
  * ⏸ **Patients whose gender is not recorded, and non-binary patients, are held back** until the
- * engine's matching rule for them (owner ruling 4, 10:08) is on the ward line. Flip
- * `INCLUDE_UNRECORDED_AND_NON_BINARY_GENDER` then; the generator already knows where to put them.
+ * engine's matching rule for them (owner ruling 4, 10:08) is on the ward line.
  */
-export const INCLUDE_UNRECORDED_AND_NON_BINARY_GENDER = false;
 
 /** The variants whose occupancy each ward spec states directly. */
 type StatedVariant = "demo" | "surge";
@@ -380,7 +378,7 @@ const OTHER_WARDS: readonly WardSpec[] = [
   },
 ];
 
-export const DEMO_WARD_SPECS: readonly WardSpec[] = [...EMHS_WARDS, ...OTHER_WARDS];
+const DEMO_WARD_SPECS: readonly WardSpec[] = [...EMHS_WARDS, ...OTHER_WARDS];
 
 /**
  * People waiting in each emergency department: minutes since they arrived, longest first. Kept

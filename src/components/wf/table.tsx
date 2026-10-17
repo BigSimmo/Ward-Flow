@@ -1,8 +1,5 @@
-import type { ComponentPropsWithoutRef, CSSProperties, ElementType, ReactNode } from "react";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
-import { Button } from "./button";
+import type { ComponentPropsWithoutRef, CSSProperties, ElementType } from "react";
 import { cx } from "./cx";
-import { Icon } from "./icon";
 import { SrOnly } from "./primitives";
 import styles from "./table.module.css";
 
@@ -46,7 +43,7 @@ export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
    * ward-flow-v9-tokens.css). It stays in place, in order and focusable.
    */
   dim?: boolean;
-  /** Header row: 36px, surface-2. Use `Th` and `SortHeader` cells inside. */
+  /** Header row: 36px, surface-2. Use `tableClasses.th` on header cells. */
   head?: boolean;
   as?: "div" | "li";
   style?: CSSProperties;
@@ -99,54 +96,6 @@ export function Cell({
   return <div className={cx(styles.cell, align === "end" && styles.end, mono && styles.num, className)} {...rest} />;
 }
 
-/** Header cell (`.th`): 11px uppercase meta ink. */
-export function Th({
-  children,
-  align = "start",
-  className,
-}: {
-  children?: ReactNode;
-  align?: "start" | "end";
-  className?: string;
-}) {
-  return (
-    <div role="columnheader" className={cx(styles.th, align === "end" && styles.end, className)}>
-      {children}
-    </div>
-  );
-}
-
-export type SortDirection = "ascending" | "descending" | "none";
-
-/** Sortable header cell: a real button inside a `columnheader` carrying `aria-sort`. */
-export function SortHeader({
-  children,
-  sort,
-  onSort,
-  align = "start",
-  className,
-}: {
-  children: ReactNode;
-  sort: SortDirection;
-  onSort: () => void;
-  align?: "start" | "end";
-  className?: string;
-}) {
-  const glyph = sort === "ascending" ? ChevronUp : sort === "descending" ? ChevronDown : ChevronsUpDown;
-  return (
-    <div
-      role="columnheader"
-      aria-sort={sort}
-      className={cx(styles.th, align === "end" && styles.end, sort !== "none" && styles.sorted, className)}
-    >
-      <button type="button" className={styles.sortButton} onClick={onSort}>
-        {children}
-        <Icon icon={glyph} size={14} />
-      </button>
-    </div>
-  );
-}
-
 /** Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge; the digit carries it. */
 export function TierTile({
   tier,
@@ -161,28 +110,5 @@ export function TierTile({
       </SrOnly>
       <span aria-hidden="true">T{tier}</span>
     </span>
-  );
-}
-
-/** Bulk action bar under a table: "2 selected", Clear, then actions (one primary at most). */
-export function BulkBar({
-  selected,
-  onClear,
-  children,
-  className,
-}: {
-  selected: number;
-  onClear: () => void;
-  children?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cx(styles.bulk, className)} role="region" aria-label="Bulk actions">
-      <span>{selected} selected</span>
-      <Button variant="ghost" size="sm" onClick={onClear}>
-        Clear
-      </Button>
-      {children ? <div className={styles.bulkActions}>{children}</div> : null}
-    </div>
   );
 }

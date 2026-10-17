@@ -47,7 +47,7 @@ export type MenuItem =
   | { kind: "separator"; id: string }
   | { kind: "heading"; id: string; label: ReactNode };
 
-export type MenuTriggerProps = {
+type MenuTriggerProps = {
   ref: RefObject<HTMLButtonElement | null>;
   "aria-haspopup": "menu" | "dialog";
   "aria-expanded": boolean;

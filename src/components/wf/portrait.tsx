@@ -16,7 +16,7 @@ import styles from "./portrait.module.css";
  * layouts; a page renders these parts only when `useIsTabletPortrait()` is true.
  */
 
-export type PortraitRowData = {
+type PortraitRowData = {
   id: string;
   /** Surname first, as on every list. Truncates first. */
   name: string;

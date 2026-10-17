@@ -141,7 +141,7 @@ export type HeroStatProps = {
   label: ReactNode;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
-  /** A small trend beside the value, such as a `Sparkline`. */
+  /** A small trend beside the value. */
   trend?: ReactNode;
   /** Makes the stat a toggle that shows or hides the panel named by `controls`. */
   onToggle?: () => void;
@@ -219,47 +219,5 @@ export function HeroStat({
         {body}
       </button>
     </div>
-  );
-}
-
-export type HeroStep = { id: string; label: ReactNode };
-
-/**
- * Journey track for the hero band only. Steps before `current` show a tick, the current step is
- * solid white with `aria-current="step"`, and later steps are numbered.
- */
-export function HeroSteps({
-  steps,
-  current,
-  label,
-  className,
-}: {
-  steps: HeroStep[];
-  /** Index of the current step. */
-  current: number;
-  /** Accessible name, such as "Referral progress". */
-  label: string;
-  className?: string;
-}) {
-  return (
-    <ol className={cx(styles.steps, className)} aria-label={label}>
-      {steps.map((step, index) => {
-        const done = index < current;
-        const isCurrent = index === current;
-        return (
-          <li
-            key={step.id}
-            className={cx(styles.step, done && styles.done, isCurrent && styles.current)}
-            aria-current={isCurrent ? "step" : undefined}
-          >
-            <span className={styles.stepMark} aria-hidden="true">
-              {done ? <StatusGlyph tone="success" size={9} /> : index + 1}
-            </span>
-            <span className={styles.stepLabel}>{step.label}</span>
-            {done ? <SrOnly>, done</SrOnly> : null}
-          </li>
-        );
-      })}
-    </ol>
   );
 }

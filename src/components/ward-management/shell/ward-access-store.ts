@@ -33,10 +33,10 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 
-export const WARD_ACCESS_STORAGE_KEY = "wardflow:access-desk-v1";
+const WARD_ACCESS_STORAGE_KEY = "wardflow:access-desk-v1";
 
 /** Per-person browser keys cleared when the desk changes or the screen locks (review finding 5). */
-export const WARD_PERSONAL_SESSION_KEYS = [
+const WARD_PERSONAL_SESSION_KEYS = [
   "ward-flow-coordinator-last-look",
   "ward_flow_home_ed_filter",
   "wardflow:census-bed-opener",
@@ -214,7 +214,7 @@ export function useEffectiveWardAccess(): WardAccess {
 
 /** The access role as the existing chrome knows roles. An access admin has no clinical chrome, so it
  *  reads as executive there, which offers no actions at all. */
-export function chromeRoleForAccess(access: WardAccess): WardChromeRole {
+function chromeRoleForAccess(access: WardAccess): WardChromeRole {
   return access.role === "admin" ? "executive" : access.role;
 }
 

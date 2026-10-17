@@ -262,7 +262,7 @@ export function PhoneSheet({
 
 /* ---------- PhoneTabBar ---------- */
 
-export type PhoneTab = {
+type PhoneTab = {
   id: string;
   /** One or two words. */
   label: string;
@@ -477,7 +477,7 @@ export function PhoneListRow({
 
 /* ---------- PhoneHero ---------- */
 
-export type PhoneHeroFigure = {
+type PhoneHeroFigure = {
   id: string;
   value: ReactNode;
   label: ReactNode;

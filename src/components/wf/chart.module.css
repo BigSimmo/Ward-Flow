@@ -286,26 +286,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-.svgValue {
-  font: 600 var(--wf-fs-12) var(--wf-mono);
-  fill: var(--wf-ink-1);
-  font-variant-numeric: tabular-nums;
-}
-
 .svgGrid {
   stroke: var(--wf-line);
   stroke-width: 1;
-}
-
-.svgTarget {
-  stroke: var(--wf-ink-3);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-}
-
-.svgDot {
-  fill: var(--wf-surface);
-  stroke-width: 1.5;
 }
 
 .donutWrap {

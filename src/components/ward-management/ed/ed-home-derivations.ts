@@ -193,7 +193,7 @@ export function edHomeSummaries(
  *  per-department maximum, because the totals strip's "Longest single wait" names ONE patient at
  *  ONE department, not each department's own worst case. Computed inline by `edHomeTotals`,
  *  which is the only caller and needs `now` to do it. */
-export type NetworkLongestWait = { movement: Movement; summary: EdSummary; waitMinutes: number };
+type NetworkLongestWait = { movement: Movement; summary: EdSummary; waitMinutes: number };
 
 export type EdHomeTotals = {
   waiting: number;
@@ -264,9 +264,6 @@ export function groupByHealthService(summaries: readonly EdSummary[]): ServiceBa
     departments: summaries.filter((summary) => summary.service === service),
   }));
 }
-
-/** The RowSpark window lives with the other operational defaults. */
-export { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES };
 
 /**
  * How many people were waiting at one department at each 2 hour point over the last 12 hours,

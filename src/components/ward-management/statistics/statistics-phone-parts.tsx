@@ -118,7 +118,7 @@ export function PhoneCard({
 }
 
 /** A row that opens a sheet or another page: icon tile, title, one line, chevron. */
-export function PhoneNavRow({
+function PhoneNavRow({
   icon,
   title,
   sub,

@@ -169,73 +169,6 @@
   font-weight: 500;
 }
 
-/* Journey track: done shows a tick, the current step is solid white, future steps are numbered. */
-.steps {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 2px;
-  margin: 0;
-  padding: var(--wf-s-1);
-  list-style: none;
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  height: 26px;
-  padding: 0 var(--wf-s-2);
-  border-radius: var(--wf-r-xs);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-hero-ink-2);
-  white-space: nowrap;
-}
-
-.stepLabel {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stepMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  box-sizing: border-box;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.done .stepMark {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-  color: var(--wf-hero-success);
-}
-
-.current {
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-  font-weight: 600;
-}
-
-.current .stepMark {
-  border-color: var(--wf-hero-2);
-  background: var(--wf-hero-2);
-  color: var(--wf-hero-ink);
-}
-
 @media (max-width: 900px) {
   .row {
     flex-wrap: wrap;
@@ -478,9 +411,6 @@
   }
   .stat {
     border-left-color: CanvasText;
-  }
-  .current {
-    outline: 2px solid CanvasText;
   }
 }
 

@@ -136,7 +136,7 @@ export function adjustSexMix(mix: Record<Sex, number>, sex: Sex | undefined, del
  * The coordinator's review itself is enforced by the placement record (`genderReviewNeeded`,
  * `ward-model.ts`); this only says how the count was read.
  */
-export function mixSexFlag(gender: ReferralGender | undefined, sex: RecordedSex): string {
+function mixSexFlag(gender: ReferralGender | undefined, sex: RecordedSex): string {
   if (gender === "Female" || gender === "Male") return "";
   const why =
     gender === undefined

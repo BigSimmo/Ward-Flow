@@ -66,7 +66,6 @@ import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-m
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
-  GENDER_MISMATCH_DECLINE_REASON,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
   isArrivalLate as isArrivalLateClock,
   leaveBedNeedsOpenWarning as leaveBedNeedsOpenWarningClock,
@@ -956,7 +955,7 @@ export type ShortlistCandidate = {
   waitlistTier?: string;
 };
 
-export function isCatchmentUnit(movement: Movement, unit: Unit): boolean {
+function isCatchmentUnit(movement: Movement, unit: Unit): boolean {
   if (movement.homeRegion && unit.homeRegion) {
     return movement.homeRegion === unit.homeRegion;
   }
@@ -1172,7 +1171,7 @@ export function eligibleCandidatesAmong(movement: Movement, units: Unit[], now: 
  */
 export { candidateReason } from "@/components/ward-management/ward-eligibility";
 
-export type InboxTone = "danger" | "warning";
+type InboxTone = "danger" | "warning";
 export type InboxItem = {
   id: string;
   tone: InboxTone;
@@ -2205,20 +2204,11 @@ export function effectivenessNumbers(movements: Movement[]): {
   };
 }
 
-/** Decline reasons that waitlist instead of ending the referral. */
-export { WAITLIST_INSTEAD_OF_DECLINE_REASONS, GENDER_MISMATCH_DECLINE_REASON };
-
 export function isArrivalLate(
   movement: Pick<Movement, "arrivalDetails" | "stage" | "arrivalLateNotifiedAt">,
   now: Instant,
 ): boolean {
   return isArrivalLateClock(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now);
-}
-
-export function medicalClearanceWarning(movement: Pick<Movement, "medicalClearance">): string | null {
-  if (movement.medicalClearance === undefined) return null;
-  if (movement.medicalClearance.cleared) return null;
-  return "Not medically cleared — warning only; hold and collection may continue.";
 }
 
 export function leaveBedNeedsOpenWarning(leaveBed: LeaveBed, now: Instant): boolean {
@@ -2235,39 +2225,6 @@ export function expectFlagKindFor(
     return age >= EXPECT_FLAG_VOLUNTARY_MINUTES ? "voluntary_48h" : null;
   }
   return age >= EXPECT_FLAG_INVOLUNTARY_MINUTES ? "involuntary_7d" : null;
-}
-
-/**
- * Legal mismatch between person and ward. Flag only — override continues.
- * involuntary on voluntary-only (unauthorised) ward, or voluntary on locked-only ward.
- */
-export function legalMismatchKind(
-  movement: Pick<Movement, "legalStatus" | "security">,
-  unit: Unit,
-): "involuntary_on_voluntary_ward" | "voluntary_on_locked_ward" | null {
-  const involuntary = requiresAuthorisedDestination(movement.legalStatus);
-  if (involuntary && !unit.authorised) return "involuntary_on_voluntary_ward";
-  if (movement.legalStatus === "Voluntary" && unitHasLockedBeds(unit) && !unitHasOpenBeds(unit)) {
-    return "voluntary_on_locked_ward";
-  }
-  return null;
-}
-
-/**
- * Infection needing a single room hides shared bays; a closed bay is removed from offer.
- * Staffing / high acuity / cleaning stay banners only and are not modelled here.
- */
-export function unitBedOfferBlocked(
-  unit: Unit,
-  options?: { bayId?: string; isSharedBay?: boolean },
-): { blocked: boolean; reason: string | null } {
-  if (unit.infectionNeedsSingleRoom && options?.isSharedBay) {
-    return { blocked: true, reason: "Infection control: shared bays are hidden; offer a single room." };
-  }
-  if (options?.bayId && unit.closedBayIds?.includes(options.bayId)) {
-    return { blocked: true, reason: `Bay ${options.bayId} is closed.` };
-  }
-  return { blocked: false, reason: null };
 }
 
 function toInstantMinutes(val: Instant | string): number {

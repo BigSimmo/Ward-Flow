@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
 import type { WfFill } from "./stat";
@@ -8,7 +8,7 @@ import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./chart.module.css";
 
 /** CSS colour for a fill role. Status tones and data roles only. */
-export function fillVar(fill: WfFill = "data-1"): string {
+function fillVar(fill: WfFill = "data-1"): string {
   switch (fill) {
     case "ready":
       return "var(--wf-data-ready)";
@@ -226,7 +226,7 @@ export function BarList({
   );
 }
 
-export type ColumnDatum = {
+type ColumnDatum = {
   id: string;
   label: string;
   value: number;
@@ -310,209 +310,6 @@ export function ColumnChart({
               {target.label}: {target.value}
             </li>
           ) : null}
-        </ul>
-      </SrOnly>
-    </figure>
-  );
-}
-
-function linePath(points: Array<[number, number]>, step: boolean): string {
-  return points
-    .map(([x, y], i) => {
-      if (i === 0) return `M${x},${y}`;
-      if (!step) return `L${x},${y}`;
-      const [, py] = points[i - 1]!;
-      return `L${x},${py} L${x},${y}`;
-    })
-    .join(" ");
-}
-
-export type SparklineProps = {
-  values: number[];
-  width?: number;
-  height?: number;
-  /** Stroke colour role. Defaults to the current text colour (hero ink on the hero band). */
-  fill?: WfFill;
-  /** Accessible name. Omit when the value beside it already says it. */
-  label?: string;
-  className?: string;
-};
-
-/** Tiny trend line with an end dot. Decorative unless labelled. */
-export function Sparkline({ values, width = 56, height = 16, fill, label, className }: SparklineProps) {
-  if (values.length === 0) return null;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const pad = 2;
-  const pts: Array<[number, number]> = values.map((v, i) => [
-    pad + (i / Math.max(1, values.length - 1)) * (width - pad * 2),
-    pad + (1 - (v - min) / span) * (height - pad * 2),
-  ]);
-  const last = pts[pts.length - 1]!;
-  const stroke = fill ? fillVar(fill) : "currentColor";
-  return (
-    <svg
-      className={cx(styles.svg, className)}
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role={label ? "img" : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-      focusable="false"
-    >
-      <path
-        d={linePath(pts, false)}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx={last[0]} cy={last[1]} r={2} fill={stroke} />
-    </svg>
-  );
-}
-
-function useWidth<T extends HTMLElement>(initial: number) {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(initial);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(Math.max(80, Math.round(entry.contentRect.width)));
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
-}
-
-export type LinePoint = { id: string; label: string; value: number };
-
-export type LineChartProps = {
-  points: LinePoint[];
-  /** Y range. Defaults to the data range with a little room. */
-  min?: number;
-  max?: number;
-  /** Y tick values, at most four. */
-  yTicks?: number[];
-  /** Format for tick and end labels ("80%"). */
-  format?: (value: number) => string;
-  /** One dashed target line ("85% line"). */
-  target?: { value: number; label: string };
-  /** Step line for counts that change at points in time. */
-  step?: boolean;
-  /** Label the last value directly. */
-  labelLast?: boolean;
-  height?: number;
-  fill?: WfFill;
-  label: string;
-  className?: string;
-};
-
-/** Line chart with direct labels: x labels under, at most four y ticks, one dashed target. */
-export function LineChart({
-  points,
-  min: minProp,
-  max: maxProp,
-  yTicks,
-  format = (v) => String(v),
-  target,
-  step = false,
-  labelLast = true,
-  height = 120,
-  fill = "data-1",
-  label,
-  className,
-}: LineChartProps) {
-  const { ref, width } = useWidth<HTMLDivElement>(320);
-  const values = points.map((p) => p.value).concat(target ? [target.value] : []);
-  const dataMin = Math.min(...values);
-  const dataMax = Math.max(...values);
-  const room = (dataMax - dataMin || 1) * 0.15;
-  const min = minProp ?? dataMin - room;
-  const max = maxProp ?? dataMax + room;
-  const left = yTicks && yTicks.length ? 32 : 4;
-  const right = labelLast ? 44 : 8;
-  const top = target ? 16 : 8;
-  const bottom = 20;
-  const plotW = Math.max(10, width - left - right);
-  const plotH = Math.max(10, height - top - bottom);
-  const x = (i: number) => left + (points.length > 1 ? (i / (points.length - 1)) * plotW : plotW / 2);
-  const y = (v: number) => top + (1 - (v - min) / (max - min || 1)) * plotH;
-  const pts: Array<[number, number]> = points.map((p, i) => [x(i), y(p.value)]);
-  const stroke = fillVar(fill);
-  const last = points[points.length - 1];
-
-  return (
-    <figure className={cx(styles.chart, styles.chartFlush, className)}>
-      <div ref={ref}>
-        <svg
-          className={styles.svg}
-          width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
-          aria-hidden="true"
-          focusable="false"
-        >
-          {(yTicks ?? []).slice(0, 4).map((t) => (
-            <g key={t}>
-              <line className={styles.svgGrid} x1={left} x2={left + plotW} y1={y(t)} y2={y(t)} />
-              <text className={styles.svgText} x={left - 6} y={y(t) + 4} textAnchor="end">
-                {format(t)}
-              </text>
-            </g>
-          ))}
-          {target ? (
-            <g>
-              <line
-                className={styles.svgTarget}
-                x1={left}
-                x2={left + plotW}
-                y1={y(target.value)}
-                y2={y(target.value)}
-              />
-              <text className={styles.svgText} x={left} y={y(target.value) - 5}>
-                {target.label}
-              </text>
-            </g>
-          ) : null}
-          <path
-            d={linePath(pts, step)}
-            fill="none"
-            stroke={stroke}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {pts.map(([px, py], i) => (
-            <circle key={points[i]!.id} className={styles.svgDot} cx={px} cy={py} r={3} stroke={stroke} />
-          ))}
-          {points.map((p, i) => (
-            <text key={p.id} className={styles.svgText} x={x(i)} y={height - 4} textAnchor="middle">
-              {p.label}
-            </text>
-          ))}
-          {labelLast && last ? (
-            <text className={styles.svgValue} x={x(points.length - 1) + 8} y={y(last.value) + 4}>
-              {format(last.value)}
-            </text>
-          ) : null}
-        </svg>
-      </div>
-      <figcaption>
-        <SrOnly>{label}</SrOnly>
-      </figcaption>
-      <SrOnly>
-        <ul>
-          {points.map((p) => (
-            <li key={p.id}>
-              {p.label}: {format(p.value)}
-            </li>
-          ))}
         </ul>
       </SrOnly>
     </figure>
