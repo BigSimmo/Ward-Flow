@@ -65,6 +65,7 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 - `FLAG_MOVEMENT_TURNAROUND_PRIORITY` payload: `{ movementId: string; unitId: string }` plus the normal role/time/event metadata.
 - `FLAG_REFERRAL_TURNAROUND_PRIORITY` payload: `{ referralId: string; unitId: string }` plus the normal metadata, for a referral without a movement. Never create a movement merely to flag priority. Preserve the preference through the existing referral-to-movement conversion.
 - A second pure selector resolves the source from live CLD or a confirmed/departing, unreleased bed release. An expected date alone is insufficient. A departure source must not receive a CLD badge.
+- Exhaustive integration includes `ward-flow-storage-validation.ts` (strict optional preference schema and existing unit reference), `ward-flow-referral-send-events.ts` (conversion), `ward-history.ts`, `ward-reanchor.ts` (flag timestamp), and local schemas in `backend/ward-flow/command-schemas.ts`. These are Agent A's additional owned paths with corresponding focused tests; no hosted backend call is required.
 
 - [ ] Write failing tests for eligible CLD, partial/empty/lapsed/paused criteria, involuntary/CTO/unknown status, wrong unit and departed admissions.
 - [ ] Add reducer tests for a pre-movement referral, an existing movement, confirmed departure, no qualifying departure, stale eligibility, closed referral/movement, duplicate clicks and invalid IDs. Assert that capacity, allocation, acceptance, urgency and transport booking remain unchanged.
@@ -93,6 +94,8 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 **Window decision:** Ward/ED compare changes since the later of the last review and `now - 15` synthetic minutes. Display that actual start time. When an old snapshot cannot locate a transition in the window, use recorded event/timestamp evidence; do not invent when it happened. Leave the coordinator's shift/last-visit behaviour unchanged.
 
+**Scope decision:** Fingerprint only the ward's own addressing on a multi-destination referral. Another ward's decision on the same referral must not create an update. ED scope includes explicit ED addressing and linked movements' `originEdId`; an origin site alone does not establish a department or self-addressing.
+
 - [ ] Write failing pure tests for status changes without new IDs, scope filtering, the 15-minute boundary, older/malformed snapshots and account/scenario resets.
 - [ ] Write failing DOM tests for Ward and ED header pills, unrelated-unit isolation, independent scope acknowledgements, opening/closing/focus behaviour and a second update arriving while the sheet is open.
 - [ ] Run `npx vitest run tests/ward-since-last-look.test.ts tests/ward-since-last-look.dom.test.tsx`.
@@ -110,9 +113,11 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 - [ ] Write failing storage tests for the exact 500ms debounce, malformed/version-mismatched entries, blocked storage/quota, subject/account/scenario separation and no localStorage writes.
 - [ ] Write failing integration tests for unmount/remount restoration with “Draft restored from this session” and Clear, successful submission clearing, rejected submission retaining the draft and sign-out/reset invalidating pending writes.
+- [ ] Add delayed-auth/world-adoption tests: restore only after identity and the matching synthetic world are settled, with no transient local-demo fallback. Check envelope save/expiry timestamps, reject future timestamps and expire drafts no later than the existing session/workstation limit.
 - [ ] Run `npx vitest run tests/ward-draft-recovery.test.ts tests/ward-draft-recovery.dom.test.tsx`.
 - [ ] Add narrowly scoped opt-in persistence. Do not let another mounted dirty guard purge an active permitted draft. Consolidate the drawer's 800ms memory autosave and new 500ms storage writes through one owner/session fence; avoid competing restore paths.
 - [ ] Restore values only into the matching form draft, never directly into clinical state or a submitted legal record. Revalidate before submit. Clear cancels pending saves and resets the draft/notice; successful submit clears only after reducer acceptance. Do not claim recovery for keystrokes inside the unelapsed debounce.
+- [ ] Replace the legal sheet's synchronous success boolean with an observed command outcome before clearing. A delayed shared refusal must keep the form draft available for correction; test that path with a mocked command.
 - [ ] Wire local cleanup for explicit sign-out, auth expiry/account switch, demo reset and scenario reset. An old timer or unmount callback must not recreate a deleted draft.
 - [ ] Root documents the user-requested, synthetic-form exception to D-18 in the owned decision documentation; the general event-based typed-state privacy lock stays in force. Browser session restore can retain sessionStorage after a browser restart, so do not promise guaranteed erasure on browser close. Clear on observed session termination and sign-out; a stronger browser-close guarantee requires a different recovery design.
 - [ ] Re-run the new tests plus `npx vitest run tests/ward-use-dirty-state-guard.dom.test.tsx tests/ward-referral-drawer-sheet.dom.test.tsx`. Commit the package.
