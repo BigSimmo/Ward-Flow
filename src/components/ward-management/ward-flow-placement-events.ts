@@ -171,6 +171,9 @@ export function reducePlacementEvent(
       }
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
+      if (unit.isClosed) {
+        return reject(state, event, `${unit.name} is closed; a new bed cannot be reserved there`);
+      }
       if (unit.allocatable.value <= 0) {
         /**
          * Reports only the fact it read (`allocatable.value <= 0`), never a cause.
