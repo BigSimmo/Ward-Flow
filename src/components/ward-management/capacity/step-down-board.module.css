@@ -53,3 +53,10 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
+
+.swapSection {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-block-start: var(--wf-s-1);
+  border-block-start: 1px dashed var(--wf-line);
+}

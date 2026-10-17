@@ -52,6 +52,11 @@ export function stepDownSubject(
 
 type StepDownWard = { unit: Unit; verdict: EligibilityVerdict; readyBeds: number };
 
+export type StepDownSwapCandidate = {
+  incomingMovement: Movement;
+  verdict: EligibilityVerdict;
+};
+
 export type StepDownBoardRow = {
   admission: Admission;
   fromUnit: Unit;
@@ -59,7 +64,62 @@ export type StepDownBoardRow = {
   wards: StepDownWard[];
   /** An open ward-to-ward movement for this stay that can still be referred, if there is one. */
   transferMovement: Movement | undefined;
+  /**
+   * Top 25 item 16 (`top25-step-down-swap`, D-30): open incoming admission movements that pass
+   * `eligibility()` on `fromUnit` once this step-down frees a bed on `fromUnit`. Empty when no
+   * receiving step-down ward has a Ready bed now.
+   */
+  swapCandidates: StepDownSwapCandidate[];
 };
+
+/**
+ * Models `fromUnit` with one bed freed by stepping `admission` down to an open receiving ward, so
+ * the incoming leg of a step-down swap is checked by the SAME `eligibility()` gates (`authorisation`,
+ * `cohort`, `security`, `gender_designation` D-31, `forensic`, `sex_mix`, `prior_decline`,
+ * `capacity_freshness`, `allocatable_bed`) rather than a second rule set.
+ */
+export function freedStepDownUnit(fromUnit: Unit): Unit {
+  return {
+    ...fromUnit,
+    allocatable: {
+      ...fromUnit.allocatable,
+      value: fromUnit.allocatable.value + 1,
+    },
+    empty: {
+      ...fromUnit.empty,
+      value: fromUnit.empty.value + 1,
+    },
+  };
+}
+
+export function deriveStepDownSwapCandidates(input: {
+  fromUnit: Unit;
+  movements: readonly Movement[];
+  transferMovementId?: string;
+  now: Instant;
+}): StepDownSwapCandidate[] {
+  const unitAfterStepDown = freedStepDownUnit(input.fromUnit);
+  return input.movements
+    .filter(
+      (movement) =>
+        !movement.closure &&
+        movement.id !== input.transferMovementId &&
+        movement.sourceAdmissionId === undefined &&
+        movement.acceptedUnitId !== input.fromUnit.id &&
+        REFERRABLE_MOVEMENT_STAGES.includes(movement.stage),
+    )
+    .map((incomingMovement) => ({
+      incomingMovement,
+      verdict: eligibility(incomingMovement, unitAfterStepDown, input.now),
+    }))
+    .filter((candidate) => candidate.verdict.eligible)
+    .sort((a, b) => {
+      const aAcuityOrSecure = a.incomingMovement.security === "Secure" || a.incomingMovement.highAcuity ? 1 : 0;
+      const bAcuityOrSecure = b.incomingMovement.security === "Secure" || b.incomingMovement.highAcuity ? 1 : 0;
+      if (bAcuityOrSecure !== aAcuityOrSecure) return bAcuityOrSecure - aAcuityOrSecure;
+      return a.incomingMovement.openedAt - b.incomingMovement.openedAt;
+    });
+}
 
 export function deriveStepDownBoard(input: {
   admissions: readonly Admission[];
@@ -94,7 +154,16 @@ export function deriveStepDownBoard(input: {
         !movement.closure &&
         REFERRABLE_MOVEMENT_STAGES.includes(movement.stage),
     );
-    rows.push({ admission, fromUnit, wards, transferMovement });
+    const swapCandidates =
+      wards.length > 0
+        ? deriveStepDownSwapCandidates({
+            fromUnit,
+            movements: input.movements,
+            transferMovementId: transferMovement?.id,
+            now: input.now,
+          })
+        : [];
+    rows.push({ admission, fromUnit, wards, transferMovement, swapCandidates });
   }
   return rows;
 }

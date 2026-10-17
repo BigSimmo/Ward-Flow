@@ -216,6 +216,15 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
+  "top25-step-down-swap": {
+    label: "Step down swap pairing",
+    description:
+      "Pairs a step down candidate who has a ready open receiving bed with an incoming referral that fits the freed acute or secure bed.",
+    owner: "Josh",
+    added: "2026-10-17",
+    defaults: { development: true, demo: true, production: true },
+    removeWhen: "Josh signs off the item in the real screens after review.",
+  },
   "top25-follow-up-7day": {
     label: "Seven day follow up check",
     description:
