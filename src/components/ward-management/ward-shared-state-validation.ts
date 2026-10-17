@@ -1,3 +1,4 @@
+import { isDischargeCriteriaRecord, isPatientSpecificItem } from "./ward-discharge-criteria";
 import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
 import { REPATRIATION_MODES, WARD_FLOW_ROLE_LABELS } from "./ward-flow-events";
 import { TRANSPORT_LEGAL_STATUSES, TRANSPORT_PROVIDERS } from "./ward-model";
@@ -96,8 +97,24 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
       seenIds.add(row.id);
     }
   }
+  // Shared storage may hold typed patient specific criteria (D-65). Check each record here, then
+  // hand the browser schema the fixed-list criteria only.
+  const admissions = [];
+  for (const admission of state.admissions) {
+    const record: unknown = admission.dischargeCriteria;
+    if (record === undefined || record === null) {
+      admissions.push(admission);
+      continue;
+    }
+    if (!isDischargeCriteriaRecord(record)) return false;
+    admissions.push({
+      ...admission,
+      dischargeCriteria: { ...record, items: record.items.filter((item) => !isPatientSpecificItem(item)) },
+    });
+  }
   return isValidStoredWardFlowState({
     ...state,
+    admissions,
     repatriations: [],
     ...(state.supportNotifications === undefined ? {} : { supportNotifications: [] }),
   });

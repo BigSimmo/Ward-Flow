@@ -1,6 +1,6 @@
 import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
-import { criteriaEligibility, type CriteriaEligibility } from "./ward-discharge-criteria";
+import { criteriaEligibility, isPatientSpecificItem, type CriteriaEligibility } from "./ward-discharge-criteria";
 import type { Movement } from "./ward-model";
 import { activeCommunityTreatmentOrder, type Patient } from "./ward-patients";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -120,7 +120,25 @@ function readableScope(state: WardFlowState, actor: WardRecordActor, unitId?: st
   );
 }
 
-function project(state: WardFlowState, admission: Admission): DischargeRecord {
+/**
+ * Typed patient specific criteria (D-65) stay with the ward and the coordinator. A community reader
+ * sees each one only as a numbered placeholder, so the count and tick times still match the ward's.
+ */
+function criteriaFor(
+  actor: WardRecordActor,
+  record: Admission["dischargeCriteria"],
+): DischargeRecord["dischargeCriteria"] {
+  if (!record || actor.role !== "community") return record ?? null;
+  let typed = 0;
+  return {
+    ...record,
+    items: record.items.map((item) =>
+      isPatientSpecificItem(item) ? { ...item, criterion: `Patient specific criterion ${++typed}` } : item,
+    ),
+  };
+}
+
+function project(state: WardFlowState, admission: Admission, actor: WardRecordActor): DischargeRecord {
   return structuredClone({
     id: `discharge-${admission.id}`,
     generation: state.worldGeneration,
@@ -139,8 +157,9 @@ function project(state: WardFlowState, admission: Admission): DischargeRecord {
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
-    // Fixed-list criteria and times only, never typed text (ward-discharge-criteria.ts).
-    dischargeCriteria: admission.dischargeCriteria ?? null,
+    // Fixed-list criteria, typed patient specific criteria (D-65) and times. A community reader gets
+    // placeholders for the typed ones (criteriaFor).
+    dischargeCriteria: criteriaFor(actor, admission.dischargeCriteria),
     criteriaEligibility: admissionCriteriaEligibility(state, admission),
   });
 }
@@ -163,7 +182,7 @@ export function selectDischargeRecord(
     const team = actor.actingTeamId ? communityTeamById(actor.actingTeamId) : undefined;
     if (!team || !admissionBelongsToTeam(admission, team, state.referrals)) return { status: "denied" };
   }
-  return { status: "allowed", value: project(state, admission) };
+  return { status: "allowed", value: project(state, admission, actor) };
 }
 
 export function selectDischargeRecords(
