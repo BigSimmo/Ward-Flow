@@ -1566,5 +1566,110 @@
       },
       "testCorrections": "First complete full run exposed two CSS scope-parser defects, two nonconforming new test filenames and a baseline calendar-dependent weekly-report fixture. Scope parsers were corrected without weakening assertions, test files were renamed to the required ward- prefix, and the fixture now pins its calendar anchor with positive long-wait coverage. A second complete full run passed; no application-source change was required."
     }
+  },
+  "_designAuditAdversarialReview": {
+    "date": "2026-10-17",
+    "who": "Codex coordinator and fresh independent system/shell/page reviewers",
+    "reviewedBaseRevision": "2c37e5ae171514d5b16513512b4a52b32ab9d5d0",
+    "reviewedRevision": "9e619a6f9d9e22a1e0cf9b1a5abeb4575db52213",
+    "checkedRevision": "9f49fafe58ddf495f6c90b1416ef80b5f8d51d43",
+    "dirtyInputs": [],
+    "scope": "Adversarial follow-up requested after local implementation completion, before authorised feature-branch publication and PR.",
+    "findings": [
+      {
+        "severity": "P2",
+        "status": "fixed and independently rechecked",
+        "file": "scripts/ward-flow/font-size-inventory.mjs",
+        "trigger": "A print-only 12px token hid an 11px on-screen var() fallback.",
+        "correction": "Exclude print-only token definitions and font declarations with one shared media-ancestor predicate, including only print and print-only query lists. Mixed/not-print media remain included. Tests cover local/global/shell layers and real CLI rejection. Five regression cases failed before correction; focused2files/23tests pass afterward."
+      },
+      {
+        "severity": "requirement coverage",
+        "status": "fixed and independently browser checked",
+        "file": "src/components/ward-management/coordinator/home.module.css",
+        "trigger": "Existing desktop/tablet grid-auto-columns overrode the earlier new 9rem minimum; a retained tablet mask obscured the final tile focus edge.",
+        "correction": "Set9rem on the active auto-column rule, remove the permanent tablet mask and provide inline focus/scroll clearance. Retain the phone layout."
+      },
+      {
+        "severity": "integration conflict",
+        "status": "resolved without merging unrelated main changes",
+        "file": "tests/ward-statistics-tone-and-dates.dom.test.tsx",
+        "trigger": "Current main independently fixed the calendar fixture using a pinned Saturday.",
+        "correction": "Preserve the upstream general fixture, use an explicit Wednesday calendar in the tone test, and retain positive nonempty/two-day-wait assertions. Local merge-tree against fetched main aa3a78b9 is clean."
+      }
+    ],
+    "browser": {
+      "family": "Chromium",
+      "version": "151.0.7922.173",
+      "driver": "Playwright1.64.1"
+    },
+    "homeCases": [
+      {
+        "width": 1440,
+        "height": 900,
+        "theme": "light"
+      },
+      {
+        "width": 1440,
+        "height": 900,
+        "theme": "dark"
+      },
+      {
+        "width": 1200,
+        "height": 900,
+        "theme": "light"
+      },
+      {
+        "width": 820,
+        "height": 900,
+        "theme": "light"
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "theme": "light"
+      }
+    ],
+    "homeResult": "All five pass: desktop/tablet automatic tracks have144px minimum, mask none, final keyboard-focused tile has4px end clearance for2px outline plus2px offset. Phone retains44px chips, original flex and2px/16px padding with8px/16px scroll-padding. No measured tile/deadline/document overflow or page errors.",
+    "otherReviewResults": "No additional confirmed introduced P1/P2 from shell/provider or per-page reviews. Bounded browser checks found legal controls contained, Delays truthful local table overflow and timeline lane/label heights matching.",
+    "evidenceRoot": "/workspace/scratch/ward-flow-design-audit-task",
+    "evidenceSha256": {
+      "adversarial-system.md": "9c548ae77275189cd75df1e65b77f960f9fee2db671fed747e3a17749c0989af",
+      "adversarial-shell.md": "88ab67bee3db82b64c16ed29497c87fb28a5a0ab10bab697c3aa068f47345901",
+      "adversarial-pages.md": "c79361f2c57371d289e008128040db3b4b34ca491a3d8b2603c8452ffa21b893",
+      "adversarial-home-fixed.json": "97b0b989b9f99e0c42fb6d89628368a8555f336bfda8571d795b97af806c5104",
+      "adversarial-focused.log": "430a6d5ecc35a29f937437f18b7bbd304acbb2bf6b3c94630c21b1c741662182",
+      "adversarial-font-red.log": "a4cb8edd4a6eecb40ef4b881d968f49335364d232d677a543ed868c4019ec6f1"
+    },
+    "verificationGates": {
+      "unit": {
+        "command": "npm run check:ward-expected-reds",
+        "result": "passed",
+        "files": 1205,
+        "collectedAssertions": 13399,
+        "executedAssertions": 13398,
+        "failed": 0,
+        "skipped": 1,
+        "receipt": "/tmp/ward-full-gate/6640ca2df53e/9f49fafe58ddf495f6c90b1416ef80b5f8d51d43/receipt-1792276083980-2662.json",
+        "logSha256": "545aed0d1db9f63351929e33819604f087c6f72955df7b534641abae5f62acf0"
+      },
+      "productionJourneys": {
+        "command": "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e:ward-journeys",
+        "result": "passed",
+        "selected": 159,
+        "passed": 158,
+        "failed": 0,
+        "skipped": 1,
+        "retries": 0,
+        "skippedCase": "Existing exploratory forced-colours question at tests/ui-ward-forced-colors.spec.ts:306; unchanged explicit test.skip.",
+        "build": "Isolated production build and TypeScript passed.",
+        "logSha256": "c583ed985f8e6fcb7b613a1f83b65642fa6dbbb54475a605790bebece2d3bde7"
+      }
+    },
+    "limits": "Scoped code review and local Chromium evidence; physical Safari, installed PWA, exhaustive accessibility and hosted deployment remain unverified. Font selector pooling remains a documented conservative authoring approximation, not complete cascade resolution.",
+    "unitSkip": {
+      "file": "tests/diff-integrity.test.ts",
+      "reason": "Existing it.runIf historical incident replay is skipped because commit d1485d6e8 is absent from the supplied checkout. Test source was not changed."
+    }
   }
 }

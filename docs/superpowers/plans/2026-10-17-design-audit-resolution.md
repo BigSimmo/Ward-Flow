@@ -10,7 +10,7 @@
 
 ## Constraints
 
-- Local task branch based on the supplied main snapshot `2c37e5ae171514d5b16513512b4a52b32ab9d5d0`; no hosted provider calls or publication.
+- Initial implementation used the supplied main snapshot `2c37e5ae171514d5b16513512b4a52b32ab9d5d0` and local gates. GitHub branch/PR publication was later explicitly authorised after adversarial review; merge and deployment remain excluded.
 - Desktop rows remain 44px, phone rows 52px, desktop target token 28px and legacy tap token 48px.
 - Preserve the single phone chrome owner, exact D4/D-18 wording and synthetic disclosures.
 - No new sub-12px text. No engine, persistence or clinical-calculation changes.
@@ -99,4 +99,16 @@ Final local gates passed on clean test-correction commit `7dc2cea9800876294d4d35
 - Full lint and typecheck, exact-file formatting, token/type/text-size guards, installed-lock parity, diff integrity, CI-scope checks and selected documentation/index checks passed. Changed test files also passed commit-time lint and scoped typecheck.
 - The final shared browser probes covered glare under a dark preference, forced-colour emulation, representative text/status contrast with correct alpha compositing, a reduced-viewport reflow proxy, referral focus/Escape, not-found link affordance and unconstrained long-report printing. Detailed cases, source identities, diagnostic corrections, artifact hashes and limits are recorded in `docs/ward-flow/screen-verification.json` under `_designAuditResolutionEvidence`. Historical screen verdicts were not renewed.
 
-Chromium checks do not establish physical Safari, installed PWA, exhaustive accessibility or clinical deployment acceptance. The font-size inventory remains conservative and explicitly reports unresolved declarations. No hosted provider, push, PR, merge or deployment was performed.
+Chromium checks do not establish physical Safari, installed PWA, exhaustive accessibility or clinical deployment acceptance. The font-size inventory remains a scoped authoring approximation and explicitly reports unresolved declarations. The original implementation phase did not publish a branch or PR. The later authorised publication follows the adversarial review below; merge and deployment remain excluded.
+
+## Adversarial review follow-up
+
+Three fresh reviewers independently examined `2c37e5ae171514d5b16513512b4a52b32ab9d5d0..9e619a6f9d9e22a1e0cf9b1a5abeb4575db52213`. Corrections are committed in `9f49fafe58ddf495f6c90b1416ef80b5f8d51d43`:
+
+- **P2, font guard:** print-only token definitions could conceal an 11px screen fallback. The same media-ancestor predicate now excludes print-only definitions and font declarations in local, global and shell token layers, including `only print` and print-only lists. Mixed and `not print` queries remain included. Five regression cases failed before the fix; the final focused batch passed all 23 tests. The reviewer independently reproduced the corrected result.
+- **Home requirement coverage:** the first 9rem tile minimum was overridden by later desktop/tablet rules, and a retained tablet mask obscured the final tile's focus edge. The active auto-column rule now uses 9rem, the permanent mask is removed, and inline padding leaves the focus edge visible. Independent checks at 1440 light/dark, 1200 light, 820 light and 390 light found the expected 144px desktop/tablet minimum, no mask, 4px focus-end clearance and no measured tile/deadline/page overflow. The phone layout remains unchanged.
+- **Calendar fixture integration:** retained the upstream pinned calendar fixture while explicitly using a Wednesday calendar to exercise the two-day-wait colour branch. Nonempty and positive long-wait assertions remain. A local `git merge-tree` check against fetched main `aa3a78b9` is clean; no main merge was performed.
+
+The final gates ran on clean correction commit `9f49fafe58ddf495f6c90b1416ef80b5f8d51d43`: **1,205 files, 13,398 executed unit tests, zero failures**, and a fresh isolated production build/TypeScript run with **158 Chromium journeys passed, one exploratory test skipped, zero failures and zero retries**. One unit assertion is conditionally skipped because its historical incident commit `d1485d6e8` is absent from this checkout; its source was not changed.
+
+No confirmed P1/P2 remains open in the reviewed patch. Exact review scopes, corrected findings, checked cases, artifact hashes and gate identities are recorded in `screen-verification.json` under `_designAuditAdversarialReview`. The earlier implementation evidence remains historical. GitHub feature-branch publication and a PR are authorised; merge, deployment and hosted CI monitoring are outside this task.
