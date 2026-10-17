@@ -477,6 +477,13 @@ function wardFlowContainerReducer(
       recoveryNotice: undefined,
       sessionAdopted: true,
       preAdoptionEvents: undefined,
+      earlyOutcomes: (container.earlyOutcomes ?? []).map(({ event }) => ({
+        event,
+        outcome: {
+          status: "cancelled" as const,
+          message: "The scenario was replaced before the action could be restored. Review the loaded board before trying again.",
+        },
+      })),
     };
   }
   const next = trackWardFlowTypedTextDispatch(container, action);
