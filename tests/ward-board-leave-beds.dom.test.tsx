@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { useLayoutEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { WardBoard } from "@/components/ward-management/board/ward-board";
+import { WardBoard, boardArrivalAllowed } from "@/components/ward-management/board/ward-board";
 import { wardAdmissions, WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 
@@ -39,6 +39,9 @@ const UNIT_WITH_LEAVE = "rph-adult-secure";
 
 type Probe = ReturnType<typeof useWardFlow>;
 const probeRef: { current: Probe | null } = { current: null };
+function readProviderProbe(): Probe | null {
+  return probeRef.current;
+}
 
 function ProviderProbe() {
   const flow = useWardFlow();
@@ -202,34 +205,80 @@ describe("Mark them back command completion", () => {
       });
       finishes[1 - unaccepted]!({ commandId: "accepted", status: "accepted" });
     });
-    expect(screen.getByTestId("ward-board-toast")).toHaveTextContent(
-      "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+    expect(screen.getByTestId("ward-board-toast").textContent).toBe(
+      `${status === "refused" ? "Action refused: " : ""}Part of this return was saved, but the other step is not confirmed. Review the board before trying again.`,
     );
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Nothing was changed.");
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Returned to ward:");
   });
 });
 
-it("preserves the original refusal when neither return command was accepted", async () => {
-  const message = "This action is outside your working scope. Nothing was changed.";
-  const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
-    commandId: "refused",
-    status: "refused",
-    message,
-  }));
+it.each(["refused", "failed", "cancelled"] as const)(
+  "preserves the original %s reason when neither return command was accepted",
+  async (status) => {
+    const message =
+      status === "refused"
+        ? "This action is outside your working scope. Nothing was changed."
+        : "Save is not confirmed. Review the board before trying again.";
+    const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
+      commandId: "unaccepted",
+      status,
+      message,
+    }));
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <PendingReturnBoard both dispatch={dispatch} />
+      </WardFlowProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
+          name: "Mark them back",
+        }),
+      );
+    });
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId("ward-board-toast").textContent).toBe(
+      status === "refused" ? `Action refused: ${message}` : message,
+    );
+    expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Part of this return was saved");
+  },
+);
+
+import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
+function StaleArrivalBoard() {
+  const flow = useWardFlow();
+  const moving = flow.movements.find((movement) => movement.stage === "moving" && boardArrivalAllowed(movement));
+  const shownUnit = flow.units.find((unit) => unit.id !== moving?.acceptedUnitId);
+  const admission = flow.admissions.find((row) => row.state === "pulled");
+  if (!moving || !shownUnit || admission?.state !== "pulled")
+    throw new Error("The seed must contain a collected pulled admission and another ward.");
+  const admissions = [{ ...admission, unitId: shownUnit.id, movementId: moving.id }];
+  // The board has a stale destination; the real local reducer still owns the accepted ward.
+  const movements = flow.movements.map((movement) =>
+    movement.id === moving.id ? { ...movement, acceptedUnitId: shownUnit.id, admissionId: admission.id } : movement,
+  );
+  return (
+    <WardFlowOverride value={{ ...flow, movements, admissions }}>
+      <WardBoard unitId={shownUnit.id} />
+      <WardLiveRegion />
+    </WardFlowOverride>
+  );
+}
+it("labels and announces a real local arrival refusal explicitly", () => {
+  resetWardLiveRegionForTests();
+  probeRef.current = null;
   render(
     <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
-      <PendingReturnBoard both dispatch={dispatch} />
+      <ProviderProbe />
+      <StaleArrivalBoard />
     </WardFlowProvider>,
   );
-  await act(async () => {
-    fireEvent.click(
-      within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
-        name: "Mark them back",
-      }),
-    );
-  });
-  expect(dispatch).toHaveBeenCalledTimes(2);
-  expect(screen.getByTestId("ward-board-toast")).toHaveTextContent(message);
-  expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Part of this return was saved");
+  fireEvent.click(screen.getByRole("button", { name: "Patient arrived" }));
+  const refusal = readProviderProbe()?.rejections.at(-1);
+  expect(refusal?.attempted).toBe("PATIENT_ARRIVED");
+  expect(refusal?.reason).toContain("cannot confirm arrival");
+  const expected = `Action refused: ${refusal?.reason}`;
+  expect(screen.getByTestId("ward-board-toast").textContent).toBe(expected);
+  expect(screen.getByTestId("ward-live-region").textContent?.replace(/\u200B/g, "")).toBe(expected);
 });

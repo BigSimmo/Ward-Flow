@@ -1187,7 +1187,9 @@ export function WardBoard({
         : undefined;
     const unaccepted = check.outcome && check.outcome.status !== "accepted";
     const msg = unaccepted
-      ? (check.outcome!.message ?? "Save is not confirmed. Review the board before trying again.")
+      ? check.outcome!.status === "refused"
+        ? `Action refused: ${check.outcome!.message ?? "The action was refused."}`
+        : (check.outcome!.message ?? "Save is not confirmed. Review the board before trying again.")
       : refused
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
