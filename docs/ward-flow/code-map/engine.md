@@ -1,5 +1,16 @@
 # Engine: reducer, events, state and persistence
 
+## Synthetic form recovery — 17 October 2026
+
+`ward-session-drafts.ts` owns D-67's opt-in, versioned session draft envelopes, account and
+scenario boundaries, bounded lifetime and cleanup fences. `use-dirty-state-guard.ts` offers
+500ms persistence only when a form supplies a storage key; other guards retain navigation
+protection. The referral draft store remains its form's single autosave owner and omits chart
+bytes from recovery. Provider world adoption, reset and local auth cleanup invalidate outgoing
+writes without removing the general typed-event state privacy lock. Legal form saves clear a
+draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,
+`tests/ward-draft-recovery.dom.test.tsx` and existing guard, drawer, auth and provider privacy suites.
+
 ## Turnaround preferences — 17 October 2026
 
 `ward-turnaround-priority.ts` derives eligible CLD readiness from occupied admissions, the
