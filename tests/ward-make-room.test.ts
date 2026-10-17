@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { makeRoomPreview } from "../src/components/ward-management/capacity/make-room-preview";
-import { eligibility } from "../src/components/ward-management/ward-eligibility";
+import { eligibility, mixSexOf } from "../src/components/ward-management/ward-eligibility";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { deriveMakeRoomChains, MAKE_ROOM_MAX_MOVES } from "../src/components/ward-management/ward-make-room";
 import { boundedBedAvailability } from "../src/components/ward-management/ward-ready-beds";
@@ -86,6 +86,30 @@ describe("make room plans", () => {
       const ward = chain.stepDowns[0]!.toUnit;
       promised.set(ward.id, (promised.get(ward.id) ?? 0) + 1);
       expect(promised.get(ward.id)).toBeLessThanOrEqual(boundedBedAvailability(ward).available);
+    }
+  });
+
+  it("offers no plan when the patient coming in would still fail the sex mix check", () => {
+    // A full ward with no occupant of the waiting patient's sex. Freeing one bed leaves one free bed
+    // and no same-sex company, which the normal sex mix check refuses, so no plan may be offered.
+    const preview = makeRoomPreview(seedWardFlowState());
+    const [chain] = chainsFor(preview.admissions, preview.units).filter((each) => each.stepDowns.length === 1);
+    expect(chain).toBeDefined();
+    const sex = mixSexOf(chain!.movement.gender, chain!.movement.sex)!;
+    const other = sex === "Female" ? "Male" : "Female";
+    const total = chain!.targetUnit.sexMix.Female + chain!.targetUnit.sexMix.Male;
+    const units = preview.units.map((unit) =>
+      unit.id === chain!.targetUnit.id ? { ...unit, sexMix: { ...unit.sexMix, [sex]: 0, [other]: total } } : unit,
+    );
+    const after = chainsFor(preview.admissions, units);
+    expect(after.some((each) => each.movement.id === chain!.movement.id)).toBe(false);
+  });
+
+  it("checks the waiting patient against the ward as it will be once the bed is free", () => {
+    const preview = makeRoomPreview(seedWardFlowState());
+    for (const chain of chainsFor(preview.admissions, preview.units)) {
+      expect(chain.checks.every((gate) => gate.pass)).toBe(true);
+      for (const step of chain.stepDowns) expect(step.checks.every((gate) => gate.pass)).toBe(true);
     }
   });
 });

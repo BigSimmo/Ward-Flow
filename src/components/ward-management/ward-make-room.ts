@@ -1,6 +1,12 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { eligibility, type EligibilitySubject, type GateResult } from "@/components/ward-management/ward-eligibility";
+import {
+  adjustSexMix,
+  eligibility,
+  mixSexOf,
+  type EligibilitySubject,
+  type GateResult,
+} from "@/components/ward-management/ward-eligibility";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -26,7 +32,7 @@ type MakeRoomStepDown = {
   admission: Admission;
   fromUnit: Unit;
   toUnit: Unit;
-  /** The suitability checks this move passes, leaving out the free bed checks it waits on. */
+  /** The checks this move passes, asked of its ward once the bed it waits on is free. */
   checks: GateResult[];
 };
 
@@ -40,19 +46,30 @@ export type MakeRoomChain = {
    * later one moves into the bed the one before it freed.
    */
   stepDowns: MakeRoomStepDown[];
-  /** The suitability checks the waiting referral passes on its ward, leaving out the free bed checks. */
+  /** The checks the waiting referral passes on its ward once the last step down has left. */
   checks: GateResult[];
 };
 
 const FREE_BED_GATES: readonly string[] = ["allocatable_bed", "sex_mix"];
 
-function suitabilityChecks(subject: EligibilitySubject, unit: Unit, now: Instant): GateResult[] {
-  return eligibility(subject, unit, now).gates.filter((gate) => !FREE_BED_GATES.includes(gate.gate));
-}
-
-/** A ward that fits on every check, ignoring only whether a bed is free now. */
+/** A ward that fits on every check, ignoring only whether a bed is free now. A first filter: the
+ * real answer comes from `vacated()`, since freeing a bed also changes the ward's sex mix. */
 function fitsExceptForBed(subject: EligibilitySubject, unit: Unit, now: Instant): boolean {
   return eligibility(subject, unit, now).gates.every((gate) => gate.pass || FREE_BED_GATES.includes(gate.gate));
+}
+
+/**
+ * The ward as it would be once `leaving` moves out: one more free bed, and one fewer occupant in
+ * their sex mix bucket. Every gate, `sex_mix` included, is then asked of this ward, so a plan is
+ * only offered when the patient coming in would pass the normal placement checks at that moment.
+ */
+function vacated(unit: Unit, leaving: Admission): Unit {
+  return {
+    ...unit,
+    allocatable: { ...unit.allocatable, value: Math.max(0, unit.allocatable.value) + 1 },
+    empty: { ...unit.empty, value: Math.max(0, unit.empty.value) + 1 },
+    sexMix: adjustSexMix(unit.sexMix, mixSexOf(leaving.gender, leaving.sex), -1),
+  };
 }
 
 function isFull(unit: Unit): boolean {
@@ -104,21 +121,40 @@ export function deriveMakeRoomChains(input: {
     return free > 0 && eligibility(subject, unit, now).eligible;
   }
 
-  /** Step downs that free a bed on `full`, without revisiting a ward already in the chain. */
-  function freeABed(full: Unit, visited: Set<string>, movesLeft: number): MakeRoomStepDown[] | undefined {
+  /** The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one fails. */
+  function checksIntoVacated(subject: EligibilitySubject, unit: Unit, leaving: Admission): GateResult[] | undefined {
+    const verdict = eligibility(subject, vacated(unit, leaving), now);
+    return verdict.eligible ? verdict.gates : undefined;
+  }
+
+  /**
+   * Step downs that free a bed on `full` that `incoming` can then take, without revisiting a ward
+   * already in the chain. The last step down returned is the patient who leaves `full`.
+   */
+  function freeABed(
+    full: Unit,
+    incoming: EligibilitySubject,
+    visited: Set<string>,
+    movesLeft: number,
+  ): MakeRoomStepDown[] | undefined {
     if (movesLeft < 1) return undefined;
     const service = serviceOf(full);
     const others = input.units.filter(
       (unit) => !visited.has(unit.id) && serviceOf(unit) === service && unit.id !== full.id,
     );
-    const onWard = candidates.filter((admission) => admission.unitId === full.id && !used.has(admission.id));
+    const onWard = candidates.filter(
+      (admission) =>
+        admission.unitId === full.id &&
+        !used.has(admission.id) &&
+        checksIntoVacated(incoming, full, admission) !== undefined,
+    );
     // A move straight into a Ready bed first, so the shortest chain wins.
     for (const admission of onWard) {
       const entry = subjectOf.get(admission.id);
       if (!entry) continue;
       const ready = others.find((unit) => fitsWithBed(entry.subject, unit));
       if (ready) {
-        return [{ admission, fromUnit: full, toUnit: ready, checks: suitabilityChecks(entry.subject, ready, now) }];
+        return [{ admission, fromUnit: full, toUnit: ready, checks: eligibility(entry.subject, ready, now).gates }];
       }
     }
     if (movesLeft < 2) return undefined;
@@ -127,13 +163,10 @@ export function deriveMakeRoomChains(input: {
       if (!entry) continue;
       for (const next of others) {
         if (!isFull(next) || !fitsExceptForBed(entry.subject, next, now)) continue;
-        const before = freeABed(next, new Set([...visited, next.id]), movesLeft - 1);
-        if (before && !before.some((step) => step.admission.id === admission.id)) {
-          return [
-            ...before,
-            { admission, fromUnit: full, toUnit: next, checks: suitabilityChecks(entry.subject, next, now) },
-          ];
-        }
+        const before = freeABed(next, entry.subject, new Set([...visited, next.id]), movesLeft - 1);
+        if (!before || before.some((step) => step.admission.id === admission.id)) continue;
+        const checks = checksIntoVacated(entry.subject, next, before.at(-1)!.admission);
+        if (checks) return [...before, { admission, fromUnit: full, toUnit: next, checks }];
       }
     }
     return undefined;
@@ -151,12 +184,13 @@ export function deriveMakeRoomChains(input: {
     if (local.some((unit) => fitsWithBed(movement, unit))) continue;
     for (const targetUnit of local) {
       if (!isFull(targetUnit) || !fitsExceptForBed(movement, targetUnit, now)) continue;
-      const stepDowns = freeABed(targetUnit, new Set([targetUnit.id]), MAKE_ROOM_MAX_MOVES - 1);
-      if (!stepDowns) continue;
+      const stepDowns = freeABed(targetUnit, movement, new Set([targetUnit.id]), MAKE_ROOM_MAX_MOVES - 1);
+      const checks = stepDowns && checksIntoVacated(movement, targetUnit, stepDowns.at(-1)!.admission);
+      if (!stepDowns || !checks) continue;
       for (const step of stepDowns) used.add(step.admission.id);
       const readyWard = stepDowns[0]!.toUnit.id;
       claimed.set(readyWard, (claimed.get(readyWard) ?? 0) + 1);
-      chains.push({ movement, targetUnit, stepDowns, checks: suitabilityChecks(movement, targetUnit, now) });
+      chains.push({ movement, targetUnit, stepDowns, checks });
       break;
     }
   }

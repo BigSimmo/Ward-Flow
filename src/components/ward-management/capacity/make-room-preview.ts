@@ -2,11 +2,11 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Unit } from "@/components/ward-management/ward-model";
 
 /**
- * PREVIEW ONLY, for the three Make room mockups (17 Oct 2026). The demo network has no patient
- * marked for step down and almost every ward has a Ready bed, so no chain would show. On this
- * screen only, this marks a few synthetic stays as step down candidates, fills four wards and makes
- * one open ward women only, so the mockups show a two move and a three move chain. It changes no
- * stored state and is deleted once a mockup is picked.
+ * PREVIEW ONLY, for the Make room plan cards (option B, picked 17 Oct 2026). The demo network has
+ * no patient marked for step down and almost every ward has a Ready bed, so no chain would show. On
+ * this screen only, this marks a few synthetic stays as step down candidates, fills four wards and
+ * makes one open ward women only, so the panel shows a two move and a three move chain. It changes
+ * no stored state, and is removed when "Start plan" is wired to real step down marks.
  */
 const PREVIEW_FULL_WARDS = ["rph-adult-secure", "bty-adult-secure", "arm-adult-open", "rgh-adult-secure"];
 const PREVIEW_WOMEN_ONLY_WARD = "sjgm-adult-open";
