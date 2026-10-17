@@ -74,14 +74,10 @@ const SIGN_OUT_FILE =
     .replace(/\\/g, "/");
 
 /**
- * Compatibility helper used by formatter admission as well as the hook. A
- * missing log never grants ownership clearance, including implicit Cloud paths.
- * @param {Record<string, string | undefined>} [env]
- * @param {string} [platform]
+ * @deprecated Missing sign-out logs never grant ownership clearance.
+ * Retained for consumers that imported the old helper.
  */
-export function signOutLogOptional(env = process.env, platform = process.platform) {
-  void env;
-  void platform;
+export function signOutLogOptional() {
   return false;
 }
 
@@ -729,8 +725,17 @@ async function typecheckChildMain() {
 }
 
 async function main() {
-  if (process.argv.includes(TYPECHECK_CHILD_FLAG)) return typecheckChildMain();
-  const admissionOnly = process.argv.includes("--admission-only");
+  const args = process.argv.slice(2);
+  if (args.includes("--supports-admission-only")) {
+    if (args.length !== 1) throw new Error("--supports-admission-only cannot be combined with other flags");
+    console.log("admission-mode=v1");
+    return 0;
+  }
+  const allowedArgs = new Set([TYPECHECK_CHILD_FLAG, "--admission-only"]);
+  const unknownArgs = args.filter((arg) => !allowedArgs.has(arg));
+  if (unknownArgs.length > 0) throw new Error(`Unknown option: ${unknownArgs[0]}`);
+  if (args.includes(TYPECHECK_CHILD_FLAG)) return typecheckChildMain();
+  const admissionOnly = args.includes("--admission-only");
   const started = Date.now();
   const root = git(["rev-parse", "--show-toplevel"]).trim();
   process.chdir(root);
@@ -766,6 +771,12 @@ async function main() {
   }
 
   const merging = existsSync(git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim());
+  // During admission-only publication after a merge, compare with the merged branch
+  // so upstream files are not treated as this task's ownership scope.
+  const ownershipFiles =
+    merging && admissionOnly
+      ? git(["diff", "--cached", "--name-only", "--no-renames", "MERGE_HEAD"]).split("\n").filter(Boolean)
+      : staged;
 
   // 1b. Ward ownership admission. Publication never waives it, even during a merge.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
@@ -781,11 +792,11 @@ async function main() {
     }
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
     const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
-    const clashes = signOutConflicts(staged, signOutText, branch, root);
+    const clashes = signOutConflicts(ownershipFiles, signOutText, branch, root);
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");
-    const unsigned = taskBranch ? unsignedWardFiles(staged, signOutText, branch, root) : [];
+    const unsigned = taskBranch ? unsignedWardFiles(ownershipFiles, signOutText, branch, root) : [];
     if (clashes.length > 0) {
       failed = true;
       console.error(`[pre-commit] BLOCKED: files signed out by another session in ${SIGN_OUT_FILE}:`);

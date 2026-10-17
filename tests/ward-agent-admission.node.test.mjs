@@ -201,7 +201,7 @@ test("missing admission tooling blocks even a readiness-only publication", (t) =
 });
 
 test("missing logs have no implicit host waiver and real Ward claims include root files", () => {
-  for (const platform of ["linux", "darwin", "win32"]) assert.equal(signOutLogOptional({}, platform), false);
+  assert.equal(signOutLogOptional(), false);
   assert.deepEqual(unsignedWardFiles(["AGENTS.md"], "", "codex/fixture", root), ["AGENTS.md"]);
 });
 

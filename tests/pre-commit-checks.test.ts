@@ -148,13 +148,7 @@ function added(file: string, ...lines: string[]) {
 
 describe("signOutLogOptional", () => {
   it("never infers ownership from a missing log on any host", () => {
-    expect(signOutLogOptional({}, "linux")).toBe(false);
-    expect(signOutLogOptional({}, "darwin")).toBe(false);
-    expect(signOutLogOptional({}, "win32")).toBe(false);
-    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "/tmp/typo.md" }, "linux")).toBe(false);
-    expect(signOutLogOptional({ WARD_FLOW_LOGS: "/tmp/typo" }, "linux")).toBe(false);
-    expect(signOutLogOptional({ WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: "" }, "linux")).toBe(false);
-    expect(signOutLogOptional({ WARD_FLOW_LOGS: "" }, "win32")).toBe(false);
+    expect(signOutLogOptional()).toBe(false);
   });
 });
 

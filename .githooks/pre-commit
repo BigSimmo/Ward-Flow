@@ -17,6 +17,14 @@ if [ ! -f scripts/pre-commit-checks.mjs ] || ! command -v node >/dev/null 2>&1; 
   exit 1
 fi
 if [ "${SKIP_PRECOMMIT_READINESS:-}" = "1" ]; then
+  admission_mode=$(node scripts/pre-commit-checks.mjs --supports-admission-only) || {
+    echo "[pre-commit] BLOCKED: checker does not support admission-only publication." >&2
+    exit 1
+  }
+  if ! printf '%s\n' "$admission_mode" | grep -qx 'admission-mode=v1'; then
+    echo "[pre-commit] BLOCKED: checker did not confirm admission-only support." >&2
+    exit 1
+  fi
   node scripts/pre-commit-checks.mjs --admission-only || exit 1
 else
   node scripts/pre-commit-checks.mjs || exit 1
