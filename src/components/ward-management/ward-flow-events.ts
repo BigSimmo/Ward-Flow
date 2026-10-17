@@ -703,6 +703,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       unitId: string;
+      /** The displayed source, revalidated by the reducer; omission keeps the default source selection. */
+      source?: "cld" | "departure";
     }
   | {
       type: "FLAG_REFERRAL_TURNAROUND_PRIORITY";
@@ -710,6 +712,7 @@ export type WardFlowEvent =
       now: Instant;
       referralId: string;
       unitId: string;
+      source?: "cld" | "departure";
     }
   | {
       type: "CHANGE_URGENCY";

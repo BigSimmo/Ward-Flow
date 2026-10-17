@@ -2420,8 +2420,11 @@ export function reduceClinicalEvent(
       if (!Number.isFinite(event.now))
         return reject(state, event, "Turnaround preference requires a finite current time.");
       if (!findUnit(state, event.unitId)) return reject(state, event, "Turnaround preference names no known unit.");
-      const source = unitTurnaroundSource(state, event.unitId, event.now);
-      if (!source)
+      const source =
+        event.source === "departure"
+          ? unitTurnaroundSource(state, event.unitId, event.now, false)
+          : unitTurnaroundSource(state, event.unitId, event.now);
+      if (!source || (event.source !== undefined && event.source !== source))
         return reject(state, event, "No current CLD-ready admission or unblocked confirmed departure on this unit.");
       const preference = { unitId: event.unitId, flaggedAt: event.now, source };
       if (event.type === "FLAG_MOVEMENT_TURNAROUND_PRIORITY") {

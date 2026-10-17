@@ -120,6 +120,32 @@ describe("CLD turnaround preference", () => {
     release.state = "discharged" as "expected";
     expect(unitTurnaroundSource(f.state, f.unitId, now)).toBe(null);
   });
+  it.each(["movement", "referral"] as const)(
+    "honours a validated %s departure source when CLD also qualifies",
+    (kind) => {
+      const f = fixture();
+      f.state.bedReleases = [
+        {
+          ...seedWardFlowState().bedReleases[0]!,
+          unitId: f.unitId,
+          admissionId: f.admission.id,
+          state: "confirmed",
+          blocker: null,
+        },
+      ];
+      expect(unitTurnaroundSource(f.state, f.unitId, now, false)).toBe("departure");
+      const next = wardFlowReducer(f.state, flag(f, kind, { source: "departure" }));
+      const preference =
+        kind === "movement"
+          ? next.movements.find((m) => m.id === f.movement.id)!.turnaroundPriority
+          : next.referrals.find((r) => r.id === f.referral.id)!.turnaroundPriority;
+      expect(preference?.source).toBe("departure");
+      expect(liveTurnaroundPreference(next, preference, now, false)).toEqual(preference);
+      f.state.bedReleases = [];
+      refused(f.state, wardFlowReducer(f.state, flag(f, kind, { source: "departure" })));
+      refused(f.state, wardFlowReducer(f.state, flag(f, kind, { source: "unrecorded" })));
+    },
+  );
   it("refuses stale readiness, unknown IDs and unauthorised callers", () => {
     const f = fixture();
     for (const extra of [
@@ -201,6 +227,7 @@ describe("CLD turnaround preference", () => {
         { now: "bad" },
         { now: Infinity },
         { role: "ed" },
+        { source: "unrecorded" },
         kind === "movement" ? { movementId: "" } : { referralId: "" },
       ])
         expect(validSharedCommand({ ...event, ...extra })).toBe(false);
