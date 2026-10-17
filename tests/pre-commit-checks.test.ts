@@ -1,7 +1,8 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   approvedTakeoverFiles,
@@ -432,5 +433,94 @@ describe("the hook script end to end", () => {
     });
     expect(passed.status).toBe(1);
     expect(passed.stderr).toContain(`sign-out log unavailable at ${root}/ward-flow-logs/sign-out.md`);
+  });
+});
+
+describe("admission-only merge with no HEAD-to-index changes", () => {
+  const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
+  const mainSource = source.slice(source.indexOf("async function main() {"), source.indexOf("\nif (process.argv[1]"));
+  const incomingFile = "docs/ward-flow/incoming.md";
+  const fixtureRoot = process.cwd();
+  const mergeHeadPath = join(fixtureRoot, "MERGE_HEAD");
+  const signOutFile = join(fixtureRoot, "sign-out.md");
+
+  async function run({
+    merging = true,
+    incoming = incomingFile,
+    log = "Open sign-outs only\n",
+    logPresent = true,
+    skipGuard = false,
+  }: {
+    merging?: boolean;
+    incoming?: string;
+    log?: string;
+    logPresent?: boolean;
+    skipGuard?: boolean;
+  } = {}) {
+    const errors: string[] = [];
+    let admissions = 0;
+    const main = runInNewContext(`${mainSource}\nmain`, {
+      TYPECHECK_CHILD_FLAG: "--typecheck-child",
+      SIGN_OUT_FILE: signOutFile,
+      process: {
+        argv: ["node", "pre-commit-checks.mjs", "--admission-only"],
+        env: { SKIP_SIGNOUT_GUARD: skipGuard ? "1" : undefined },
+        chdir: () => {},
+      },
+      git: (args: string[]) => {
+        if (args[0] === "rev-parse" && args[1] === "--show-toplevel") return fixtureRoot;
+        if (args[0] === "rev-parse" && args[1] === "--git-path") return mergeHeadPath;
+        if (args[0] === "rev-parse" && args[1] === "--abbrev-ref") return "ward/probe";
+        if (args[0] === "diff" && args[2] === "--name-only") return incoming ? `${incoming}\0` : "";
+        if (args[0] === "diff" && args[2] === "-U0") return "";
+        throw new Error(`Unexpected git call: ${args.join(" ")}`);
+      },
+      stagedScope: () => ({ changes: [], ownershipPaths: [], contentPaths: [] }),
+      existsSync: (file: string) => (file === mergeHeadPath ? merging : file === signOutFile && logPresent),
+      readFileSync: (file: string) => (file === mergeHeadPath ? `${"a".repeat(40)}\n` : log),
+      parseAddedLines: () => [],
+      scanAddedLines: () => [],
+      mergeOwnershipScope: () => ({ cleanIncoming: [], requiredClaims: [] }),
+      ownershipAdmission: (args: Parameters<typeof ownershipAdmission>[0]) => {
+        admissions++;
+        return ownershipAdmission(args);
+      },
+      isPublicWardFlowCheckout: () => true,
+      elapsed: () => "0 ms",
+      console: { error: (message: string) => errors.push(message) },
+    }) as () => Promise<number>;
+    return { code: await main(), errors: errors.join("\n"), admissions };
+  }
+
+  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async () => {
+    const missing = await run({ logPresent: false });
+    expect(missing.code).toBe(1);
+    expect(missing.errors).toContain("shared sign-out log unavailable");
+
+    const other = `Open sign-outs only\n- 2026-10-17 | Other | ward/other | /other | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
+    const clash = await run({ log: other });
+    expect(clash.code).toBe(1);
+    expect(clash.errors).toContain("files signed out by another session");
+    expect(clash.errors).toContain(incomingFile);
+
+    const unsigned = await run();
+    expect(unsigned.code).toBe(1);
+    expect(unsigned.errors).toContain("Ward files without your sign-out");
+
+    const own = `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${fixtureRoot} | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
+    const allowed = await run({ log: own });
+    expect(allowed.code).toBe(0);
+    expect(allowed.errors).toContain("admission ok");
+
+    const refusedSkip = await run({ log: own, skipGuard: true });
+    expect(refusedSkip.code).toBe(1);
+    expect(refusedSkip.errors).toContain("cannot skip ownership admission");
+    expect([missing, clash, unsigned, allowed].every((result) => result.admissions === 1)).toBe(true);
+    expect(refusedSkip.admissions).toBe(0);
+  });
+
+  it("keeps truly empty non-merge and identical incoming merge admissions empty", async () => {
+    expect(await run({ merging: false, logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
+    expect(await run({ incoming: "", logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
   });
 });
