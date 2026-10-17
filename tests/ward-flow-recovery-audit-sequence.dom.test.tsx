@@ -68,7 +68,9 @@ describe("a saved day that holds audit rows survives a reload", () => {
     view.unmount();
 
     mount();
-    expect(screen.queryByRole("status"), "no 'could not be restored' notice").toBeNull();
+    expect(screen.getByRole("status"), "successful restoration is labelled without a failure notice").toHaveTextContent(
+      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+    );
     expect(current.movements.find((movement) => movement.id === "WF-009")!.legalStatus).toBe("Voluntary");
     expect(saved().state.auditEvents).toHaveLength(1);
   });

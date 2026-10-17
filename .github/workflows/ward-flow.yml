@@ -104,13 +104,13 @@ jobs:
       # These source checks need no npm install and do not assert clinical approval.
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
-      # Documentation in CI is held to four checks (fix list 10.12, 15 Oct 2026): links and
-      # anchors in every tracked Markdown file, npm commands named in maintained docs, the facts
-      # and retired terms below, and the safety wording (synthetic-data disclaimer above, legal
-      # wording later in this job). The index and inventory checks run in the pre-commit hook;
-      # the organisation check runs on demand with `npm run docs:maintain:check`.
+      # Documentation checks cover links and anchors, maintained commands, facts and retired
+      # terms, safety wording, and reference-pack integrity. The index and organisation
+      # checks also run in the pre-commit hook and the full maintenance aggregate.
       - name: Check document links and anchors
         run: npm run docs:check-links
+      - name: Check reference-pack integrity
+        run: node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check
       - name: Check maintained document commands
         run: npm run docs:check-scripts
       # Facts read from source must match docs/FACTS.md and every fact marker. Retired terms
@@ -316,6 +316,12 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
         run: npm run test:e2e:ward-journeys
+      - name: Check the API CSRF proxy boundary
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' && matrix.group == 1 }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
+        run: node scripts/run-playwright.mjs --project=chromium api-csrf-proxy.spec.ts
       - name: Save Next build cache (main only)
         if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.next-cache.outcome == 'success' && steps.next-cache.outputs.cache-hit != 'true' && steps.journeys.outcome != 'skipped' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -332,9 +338,9 @@ jobs:
           retention-days: 3
 
   # The release gate: four core bed-flow journeys (tests/release-gate-journeys.spec.ts) on desktop
-  # Chrome and phone WebKit, with an axe WCAG 2.1 AA check at each key step. Its own named check so it
-  # can be made a required status check on main (a GitHub branch protection setting). It runs on every
-  # main commit too, reuse or not, because Railway deploys a main commit only when this workflow passes.
+  # Chrome and phone WebKit, with an axe WCAG 2.1 AA check at each key step. Its named check
+  # participates in the required aggregate verdict. It runs on every main commit, including reuse;
+  # a browser=false scope plan skips its steps while the job still reports success.
   release-gate:
     name: Ward Flow release gate
     runs-on: ubuntu-24.04
@@ -498,6 +504,9 @@ jobs:
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
           done
           node node_modules/vitest/vitest.mjs run --merge-reports="$WARD_SHARD_BLOBS" --coverage
+      - name: Check complete executable coverage inventory
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:coverage-inventory
       # Prints every unit file's measured cost on this run, the input for refreshing
       # scripts/ward-flow/unit-durations.json when the shards drift apart. Report only: it never fails.
       - name: Report measured unit test costs
@@ -509,7 +518,7 @@ jobs:
   required:
     name: Ward Flow required
     if: always()
-    needs: [reuse, static, unit, browser, secret-scan, build, coverage]
+    needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -525,9 +534,10 @@ jobs:
           SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
           BUILD_RESULT: ${{ needs.build.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
+          RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}
         run: |
           if [ "$REUSE_VERIFIED" != true ]; then
-            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success
+            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success && test "$RELEASE_GATE_RESULT" = success
           else
-            test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped && test "$BROWSER_RESULT" = skipped && test "$BUILD_RESULT" = skipped && test "$COVERAGE_RESULT" = skipped
+            test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped && test "$BROWSER_RESULT" = skipped && test "$BUILD_RESULT" = skipped && test "$COVERAGE_RESULT" = skipped && test "$RELEASE_GATE_RESULT" = success
           fi

@@ -64,10 +64,11 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("requires a successful browser result in the always-running aggregate", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
-    expect(required).toContain("needs: [reuse, static, unit, browser, secret-scan, build, coverage]");
+    expect(required).toContain("needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]");
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
+    expect(required).toContain("RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}");
     expect(required).toContain(
-      'if [ "$REUSE_VERIFIED" != true ]; then\n            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success\n',
+      'if [ "$REUSE_VERIFIED" != true ]; then\n            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success && test "$RELEASE_GATE_RESULT" = success\n',
     );
     // On a verified main reuse the browser groups must be skipped, not failed or cancelled.
     expect(required).toContain('test "$BROWSER_RESULT" = skipped');

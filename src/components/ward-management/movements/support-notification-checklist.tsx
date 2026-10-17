@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useUndoableStep } from "../use-undoable-step";
+import { useId, useMemo, useRef, useState } from "react";
 import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -14,6 +15,7 @@ import {
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
   SUPPORT_NOTIFICATION_PARTIES,
   SUPPORT_NOTIFICATION_PARTY_LABELS,
+  SUPPORT_NOTIFICATION_PARTY_SHORT,
   SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
   SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
   admissionSupportNotificationSubject,
@@ -84,18 +86,17 @@ export function SupportNotificationChecklist({
   );
   const now = useWardFlowClock();
   const headingId = useId();
+  const editingRevisionRef = useRef(0);
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
   const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
   const [who, setWho] = useState("");
   const [time, setTime] = useState("");
   const [day, setDay] = useState<ToldDay>("0");
   const [reason, setReason] = useState("");
-  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
-  const [savedFrom, setSavedFrom] = useState<number | null>(null);
+  const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
+  const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setOutcomeMessage });
   const [timeError, setTimeError] = useState<string | null>(null);
-  const recordCount = supportNotifications?.length ?? 0;
-  // The form closes once the reducer has accepted (a new record exists); a refusal keeps it open.
-  const openParty = editing !== null && !(savedFrom !== null && recordCount > savedFrom) ? editing : null;
+  const openParty = editing;
 
   const subject = useMemo(() => {
     if (movementId) {
@@ -114,22 +115,16 @@ export function SupportNotificationChecklist({
   if (!subject) return null;
   const checklist = supportNotificationChecklist(supportNotifications, subject.occasion, subject.subjectId);
   const done = SUPPORT_NOTIFICATION_PARTIES.filter((party) => checklist[party] !== undefined).length;
-  const refusal =
-    submittedAt !== null &&
-    rejections.length > submittedAt &&
-    rejections.at(-1)?.attempted === "RECORD_SUPPORT_NOTIFICATION"
-      ? rejections.at(-1)?.reason
-      : undefined;
 
   function startEditing(party: SupportNotificationParty) {
+    editingRevisionRef.current += 1;
     setEditing(party);
     setOutcome("told");
     setWho("");
     setTime(formatInstant(now));
     setDay("0");
     setReason("");
-    setSubmittedAt(null);
-    setSavedFrom(null);
+    setOutcomeMessage(null);
     setTimeError(null);
   }
 
@@ -145,20 +140,40 @@ export function SupportNotificationChecklist({
       return;
     }
     setTimeError(null);
-    setSubmittedAt(rejections.length);
-    setSavedFrom(recordCount);
+    const submittedRevision = editingRevisionRef.current;
+    const closeSubmittedDraft = () => {
+      // An earlier save cannot dismiss a reopened form or edits made while it was pending.
+      if (editingRevisionRef.current !== submittedRevision) return;
+      editingRevisionRef.current += 1;
+      setEditing(null);
+    };
     const target =
       subject.occasion === "discharge" ? { admissionId: subject.subjectId } : { movementId: subject.subjectId };
-    dispatch({
-      type: "RECORD_SUPPORT_NOTIFICATION",
-      role,
-      now,
-      occasion: subject.occasion,
-      ...target,
-      party,
-      outcome,
-      ...(outcome === "told" ? { who, contactedAt: contactedAt ?? now } : { reason }),
-    });
+    runRecorded(
+      () => {
+        const completion = dispatch({
+          type: "RECORD_SUPPORT_NOTIFICATION",
+          role,
+          now,
+          occasion: subject.occasion,
+          ...target,
+          party,
+          outcome,
+          ...(outcome === "told" ? { who, contactedAt: contactedAt ?? now } : { reason }),
+        });
+        if (completion && "then" in completion)
+          void completion.then((result) => {
+            if (result.status === "accepted") closeSubmittedDraft();
+          });
+        else if (completion?.status === "accepted") closeSubmittedDraft();
+        return completion;
+      },
+      {
+        success: `${SUPPORT_NOTIFICATION_PARTY_SHORT[party]} record saved`,
+        undo: (at) => ({ type: "UNDO_SUPPORT_NOTIFICATION", role, now: at, ...target }),
+        undone: "Tell record undone.",
+      },
+    );
   }
 
   return (
@@ -172,12 +187,7 @@ export function SupportNotificationChecklist({
           {SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion]} · Advisory · {done} of 3
         </span>
       </div>
-      {refusal ? (
-        <p className={styles.error} role="alert">
-          <StatusGlyph tone="danger" size={9} />
-          Not recorded: {refusal}
-        </p>
-      ) : null}
+      {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
       <ul className={styles.rows}>
         {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
           const record = checklist[party];
@@ -217,7 +227,10 @@ export function SupportNotificationChecklist({
                     label="Outcome"
                     items={OUTCOME_ITEMS}
                     value={outcome}
-                    onChange={setOutcome}
+                    onChange={(value) => {
+                      editingRevisionRef.current += 1;
+                      setOutcome(value);
+                    }}
                   />
                   {outcome === "told" ? (
                     <div className={styles.fields}>
@@ -227,11 +240,20 @@ export function SupportNotificationChecklist({
                           maxLength={SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}
                           autoComplete="off"
                           onChange={(event) => {
+                            editingRevisionRef.current += 1;
                             setWho(event.target.value);
                           }}
                         />
                       </Field>
-                      <Segmented<ToldDay> label="Day told" items={DAY_ITEMS} value={day} onChange={setDay} />
+                      <Segmented<ToldDay>
+                        label="Day told"
+                        items={DAY_ITEMS}
+                        value={day}
+                        onChange={(value) => {
+                          editingRevisionRef.current += 1;
+                          setDay(value);
+                        }}
+                      />
                       <Field label="Time told" hint="24h" error={timeError ?? undefined}>
                         <TextInput
                           value={time}
@@ -239,6 +261,7 @@ export function SupportNotificationChecklist({
                           placeholder="HH:MM"
                           maxLength={5}
                           onChange={(event) => {
+                            editingRevisionRef.current += 1;
                             setTime(event.target.value);
                           }}
                         />
@@ -251,6 +274,7 @@ export function SupportNotificationChecklist({
                         maxLength={SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS}
                         autoComplete="off"
                         onChange={(event) => {
+                          editingRevisionRef.current += 1;
                           setReason(event.target.value);
                         }}
                       />
@@ -261,6 +285,7 @@ export function SupportNotificationChecklist({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        editingRevisionRef.current += 1;
                         setEditing(null);
                       }}
                     >

@@ -21,29 +21,27 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-// Records every booking the screen sends, so a test can see the ETA it carried even when the
-// reducer then refuses the booking. Every event still goes to the real reducer unchanged.
-const bookings = vi.hoisted(() => ({ estimatedAt: [] as Array<number | undefined> }));
-vi.mock("@/components/ward-management/ward-flow-reducer", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-reducer")>();
-  return {
-    ...actual,
-    wardFlowReducer: (
-      state: Parameters<typeof actual.wardFlowReducer>[0],
-      event: Parameters<typeof actual.wardFlowReducer>[1],
-    ) => {
-      if (event.type === "BOOK_TRANSPORT") bookings.estimatedAt.push(event.estimatedAt);
-      return actual.wardFlowReducer(state, event);
-    },
-  };
-});
+// Observe UI dispatches, not reducer evaluations: the provider may preview a pure reducer
+// before committing it. Every event and its command completion still pass through unchanged.
+const bookings = { estimatedAt: [] as Array<number | undefined> };
 
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider, WardFlowOverride } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { clock } from "@/components/ward-management/patients/patient-now-records";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+
+function ObserveBookingDispatches({ children }: { children: ReactNode }) {
+  const flow = useWardFlow();
+  const dispatch = (event: WardFlowEvent) => {
+    if (event.type === "BOOK_TRANSPORT") bookings.estimatedAt.push(event.estimatedAt);
+    return flow.dispatch(event);
+  };
+  return <WardFlowOverride value={{ ...flow, dispatch }}>{children}</WardFlowOverride>;
+}
 
 function RecordTransportFixture({ estimatedAt = NOW_ANCHOR + 30 }: { estimatedAt?: number }) {
   const { dispatch } = useWardFlow();
@@ -212,7 +210,9 @@ describe("Patient Transport & Transfer Coordination section", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RecordTransportFixture estimatedAt={yesterday} />
-        <PatientNowScreen initialExampleId="WF-004" />
+        <ObserveBookingDispatches>
+          <PatientNowScreen initialExampleId="WF-004" />
+        </ObserveBookingDispatches>
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));

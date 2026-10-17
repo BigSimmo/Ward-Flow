@@ -3,6 +3,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { handoverSnapshot, isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, DeclineReason, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 
 /**
@@ -527,9 +528,9 @@ export type DeclinesByReason = {
    * are rendered rather than dropped.
    */
   tallies: DeclineReasonTally[];
-  /** Every decline counted, across every movement given. A count. */
+  /** Every actual decline counted, excluding recorded waitlist aliases. A count. */
   totalCount: number;
-  /** How many of the movements given carry at least one decline. A count. */
+  /** How many of the movements given carry at least one actual decline. A count. */
   movementsWithDeclinesCount: number;
   /** How many movements were examined. A count, rendered so a nought total can be told apart from
    *  a scan that ran against an empty collection. */
@@ -544,8 +545,9 @@ export function declinesByReason(movements: Movement[]): DeclinesByReason {
   let movementsWithDeclinesCount = 0;
 
   for (const movement of movements) {
-    if (movement.declines.length > 0) movementsWithDeclinesCount += 1;
-    totalCount += countMovementDeclines(movement, counts);
+    const movementCount = countMovementDeclines(movement, counts);
+    if (movementCount > 0) movementsWithDeclinesCount += 1;
+    totalCount += movementCount;
   }
 
   return {
@@ -563,6 +565,15 @@ export function declinesByReason(movements: Movement[]): DeclinesByReason {
 function countMovementDeclines(movement: Movement, counts: Map<DeclineReason, number>): number {
   let count = 0;
   for (const decline of movement.declines) {
+    // These producer aliases also live in declines[]. Only a matching recorded waitlist
+    // answer identifies them as waitlisting; ambiguous legacy decline history is retained.
+    if (
+      (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
+      movement.referralAnswerHistory?.some(
+        (answer) => answer.unitId === decline.unitId && answer.at === decline.at && answer.answer === "waitlisted",
+      )
+    )
+      continue;
     const seen = counts.get(decline.reason);
     if (seen === undefined) {
       throw new Error(

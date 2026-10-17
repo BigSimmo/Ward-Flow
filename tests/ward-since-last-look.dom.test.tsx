@@ -7,7 +7,12 @@ import {
   parseLastLookSnapshot,
   takeLastLookSnapshot,
 } from "@/components/ward-management/coordinator/since-last-look";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useSinceLastLook } from "@/components/ward-management/coordinator/since-last-look-panel";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -76,5 +81,43 @@ describe("the Command screen's 'Since you last looked' list", () => {
     expect(screen.queryByRole("region", { name: "Since you last looked" })).toBeNull();
     expect(screen.getByTestId("ward-since-last-look")).toHaveTextContent("Nothing new since you last looked");
     expect(screen.getByRole("button", { name: /new since \d\d:\d\d/, expanded: true })).toHaveTextContent("0");
+  });
+});
+
+describe("actual last-look provider fences", () => {
+  function LookProbe() {
+    const world = useWardFlow();
+    const { changes } = useSinceLastLook(world, world.now);
+    return (
+      <>
+        <output data-testid="look-basis">{changes.basis ?? "look"}</output>
+        <button onClick={() => world.dispatch({ type: "RESET_SCENARIO", role: "demo", now: world.now })}>
+          Reset world
+        </button>
+      </>
+    );
+  }
+  function Look({ userId }: { userId: string }) {
+    return (
+      <WardFlowProvider initialNow={NOW}>
+        <SharedAccessContext.Provider value={{ actorId: userId, api: {} as SharedAccessApi }}>
+          <LookProbe />
+        </SharedAccessContext.Provider>
+      </WardFlowProvider>
+    );
+  }
+  it("starts fresh after a same-scenario reset or account change", () => {
+    window.sessionStorage.setItem(
+      LAST_LOOK_STORAGE_KEY,
+      JSON.stringify({ ...seededSnapshot(), userId: "account-one", at: NOW - 5 }),
+    );
+    const view = render(<Look userId="account-one" />);
+    expect(screen.getByTestId("look-basis").textContent).toBe("look");
+    view.rerender(<Look userId="account-two" />);
+    expect(screen.getByTestId("look-basis").textContent).toBe("shift");
+    view.rerender(<Look userId="account-one" />);
+    expect(screen.getByTestId("look-basis").textContent).toBe("look");
+    fireEvent.click(screen.getByText("Reset world"));
+    expect(screen.getByTestId("look-basis").textContent).toBe("shift");
   });
 });

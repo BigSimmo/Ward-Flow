@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -157,6 +158,112 @@ describe("ward-docs-maintain-pipeline", () => {
       expect(typeof result.ok).toBe("boolean");
       expect(result.updated).toBe(false);
       expect(Array.isArray(result.mismatches)).toBe(true);
+    });
+  });
+
+  describe("manifest population integrity", () => {
+    function fixture(run: (root: string, refDir: string) => void) {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "ward-pack-population-"));
+      const refDir = path.join(root, "docs/ward-flow/reference-data");
+      fs.mkdirSync(refDir, { recursive: true });
+      try {
+        run(root, refDir);
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      }
+    }
+
+    it.each(["omitted.json", "nested/omitted.json"])("rejects an unlisted pack file: %s", (file) => {
+      fixture((root, refDir) => {
+        fs.mkdirSync(path.dirname(path.join(refDir, file)), { recursive: true });
+        fs.writeFileSync(path.join(refDir, file), "synthetic fixture\n");
+        const manifestPath = path.join(refDir, "pack_manifest.json");
+        const original = JSON.stringify({ files: {} });
+        fs.writeFileSync(manifestPath, original);
+        for (const write of [false, true]) {
+          const result = checkOrUpdatePackManifest({ root, write });
+          expect(result.ok).toBe(false);
+          expect(result.mismatches).toContainEqual({ file, reason: "not listed in manifest" });
+          expect(fs.readFileSync(manifestPath, "utf8")).toBe(original);
+        }
+      });
+    });
+
+    it("accepts exact nested membership, excludes only the manifest itself and detects byte drift", () => {
+      fixture((root, refDir) => {
+        fs.mkdirSync(path.join(refDir, "nested"));
+        const raw = Buffer.from("synthetic fixture\n");
+        fs.writeFileSync(path.join(refDir, "nested/data.json"), raw);
+        fs.writeFileSync(
+          path.join(refDir, "pack_manifest.json"),
+          JSON.stringify({
+            files: {
+              "nested/data.json": { bytes: raw.length, sha256: createHash("sha256").update(raw).digest("hex") },
+            },
+          }),
+        );
+        expect(checkOrUpdatePackManifest({ root }).ok).toBe(true);
+        fs.appendFileSync(path.join(refDir, "nested/data.json"), "changed");
+        const result = checkOrUpdatePackManifest({ root });
+        expect(result.ok).toBe(false);
+        expect(result.mismatches).toHaveLength(1);
+        expect(result.mismatches[0].file).toBe("nested/data.json");
+      });
+    });
+
+    it.each(["../outside.json", "/outside.json", "nested/../outside.json", "nested\\outside.json"])(
+      "rejects a non-canonical member: %s",
+      (file) => {
+        fixture((root, refDir) => {
+          fs.writeFileSync(
+            path.join(refDir, "pack_manifest.json"),
+            JSON.stringify({ files: { [file]: { bytes: 0, sha256: "stale" } } }),
+          );
+          const result = checkOrUpdatePackManifest({ root, write: true });
+          expect(result.ok).toBe(false);
+          expect(result.mismatches).toContainEqual({ file, reason: "invalid manifest path" });
+        });
+      },
+    );
+
+    it("runs the read-only pack CLI without repository tooling or installed dependencies", () => {
+      fixture((root, refDir) => {
+        const manifestPath = path.join(refDir, "pack_manifest.json");
+        fs.writeFileSync(manifestPath, JSON.stringify({ files: {} }));
+        const script = path.resolve("scripts/ward-flow/maintain-docs-and-organisation.mjs");
+        const run = () =>
+          spawnSync(process.execPath, [script, "--pack-only", "--check", "--root", root, "--json"], {
+            cwd: root,
+            encoding: "utf8",
+          });
+        const accepted = run();
+        expect(accepted.status, accepted.stderr).toBe(0);
+        expect(JSON.parse(accepted.stdout)).toMatchObject({ mode: "check-pack", ok: true, updated: false });
+        fs.writeFileSync(path.join(refDir, "omitted.json"), "synthetic fixture");
+        const rejected = run();
+        expect(rejected.status, rejected.stderr).toBe(1);
+        expect(JSON.parse(rejected.stdout).mismatches).toContainEqual({
+          file: "omitted.json",
+          reason: "not listed in manifest",
+        });
+        expect(JSON.parse(fs.readFileSync(manifestPath, "utf8"))).toEqual({ files: {} });
+        expect(() => parseArgs(["--pack-only", "--write"])).toThrow("--pack-only requires --check mode");
+        expect(() => parseArgs(["--pack-only", "--classify", "docs/example.md"])).toThrow(
+          "--pack-only requires --check mode",
+        );
+      });
+    });
+
+    it("refuses symbolic links instead of hashing outside the pack", () => {
+      fixture((root, refDir) => {
+        fs.writeFileSync(path.join(root, "outside.json"), "synthetic fixture");
+        fs.symlinkSync(path.join(root, "outside.json"), path.join(refDir, "linked.json"));
+        fs.writeFileSync(path.join(refDir, "pack_manifest.json"), JSON.stringify({ files: {} }));
+        expect(checkOrUpdatePackManifest({ root }).mismatches).toContainEqual({
+          file: "linked.json",
+          reason: "not a regular pack file",
+        });
+      });
     });
   });
 

@@ -54,7 +54,9 @@ describe("PR265 derivation reconciliation preserves newer main facts", () => {
   });
 
   const snapshot: LastLookSnapshot = {
-    version: 1,
+    version: 2,
+    worldGeneration: 1,
+    userId: "synthetic-pr265-coordinator",
     at: NOW_ANCHOR,
     scenario: "synthetic-pr265",
     referralIds: [],
@@ -67,7 +69,9 @@ describe("PR265 derivation reconciliation preserves newer main facts", () => {
   it("keeps the entire valid snapshot while refusing malformed recorded shapes", () => {
     expect(parseLastLookSnapshot(JSON.stringify(snapshot))).toEqual(snapshot);
     for (const invalid of [
-      { ...snapshot, version: 2 },
+      { ...snapshot, version: 1 },
+      { ...snapshot, worldGeneration: undefined },
+      { ...snapshot, userId: undefined },
       { ...snapshot, scenario: 7 },
       { ...snapshot, at: "unknown" },
       { ...snapshot, movementIds: [7] },

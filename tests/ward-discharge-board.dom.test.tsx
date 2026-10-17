@@ -172,13 +172,13 @@ function releaseWorklist(): HTMLElement {
   return within(screen.getByRole("region", { name: "Discharge worklist" })).getByRole("table");
 }
 
-function releaseGroup(key: ReleaseGroupKey): HTMLElement {
-  return within(releaseWorklist()).getByTestId(`ward-discharge-group-${key}`);
+function releaseGroup(key: ReleaseGroupKey, table = releaseWorklist()): HTMLElement {
+  return within(table).getByTestId(`ward-discharge-group-${key}`);
 }
 
 /** Actual release rows have a ward opener; group headers and honest empty rows do not. */
-function releaseRows(key: ReleaseGroupKey): HTMLElement[] {
-  return within(releaseGroup(key))
+function releaseRows(key: ReleaseGroupKey, table = releaseWorklist()): HTMLElement[] {
+  return within(releaseGroup(key, table))
     .getAllByRole("row")
     .filter((row) => within(row).queryByRole("button") !== null);
 }
@@ -410,18 +410,18 @@ describe("DischargeBoard", () => {
 
   it("gives every release a freshness stamp in its selected detail", () => {
     renderBoard();
+    // Selection changes detail contents; keep the named regions while walking every row.
+    const table = releaseWorklist();
+    const details = screen.getByRole("region", { name: "Selected discharge details" });
 
     let inspected = 0;
     for (const key of RELEASE_GROUP_KEYS) {
-      const rows = releaseRows(key);
+      const rows = releaseRows(key, table);
       expect(rows.length, `${key} has no release row, so its detail freshness was not exercised`).toBeGreaterThan(0);
       for (const row of rows) {
         fireEvent.click(within(row).getByRole("button"));
-        expect(
-          within(screen.getByRole("region", { name: "Selected discharge details" })).getByText(
-            /^Confirmed \d{2}:\d{2} ·/,
-          ),
-        ).toBeInTheDocument();
+        expect(details).toBeInTheDocument();
+        expect(within(details).getByText(/^Confirmed \d{2}:\d{2} ·/)).toBeInTheDocument();
         inspected += 1;
       }
     }

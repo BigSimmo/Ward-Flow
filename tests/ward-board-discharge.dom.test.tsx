@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { ToastProvider } from "@/components/wf";
 import { LEAVING_DESTINATIONS } from "../src/components/ward-management/ward-admissions";
 import { describe, expect, it } from "vitest";
 
@@ -269,4 +270,30 @@ describe("recording a departure from the ward board", () => {
           : ""),
     ).toBe(chosen);
   });
+});
+
+it("offers guarded Undo after a board departure and restores the occupied bed", () => {
+  const { unitId } = aWardWithAnOccupant();
+  render(
+    <WardFlowProvider initialNow={OFF_ANCHOR}>
+      <ToastProvider>
+        <WardBoard unitId={unitId} />
+        <DepartureProbe unitId={unitId} />
+      </ToastProvider>
+    </WardFlowProvider>,
+  );
+  const before = new Set(
+    Array.from(screen.getByTestId("model-departures").children).map((row) => row.getAttribute("data-admission-id")),
+  );
+  selectAnOccupiedBed();
+  fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
+  const added = Array.from(screen.getByTestId("model-departures").children).filter(
+    (row) => !before.has(row.getAttribute("data-admission-id")),
+  );
+  expect(added).toHaveLength(1);
+  const admissionId = added[0]!.getAttribute("data-admission-id");
+  expect(screen.getByTestId(`model-departure-${admissionId}`)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+  expect(screen.queryByTestId(`model-departure-${admissionId}`)).toBeNull();
+  expect(screen.getByText("Departure undone. This patient is back on the ward.")).toBeTruthy();
 });
