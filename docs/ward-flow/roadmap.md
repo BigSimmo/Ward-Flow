@@ -1,14 +1,14 @@
 # Ward Flow — roadmap
 
-## Current programme — 14 October 2026
+## Current programme — 17 October 2026
 
 For current repository status, completed local verification, and active open work, see
-[`docs/ward-flow/STATUS.md`](STATUS.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78).
+[`docs/ward-flow/STATUS.md`](STATUS.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82).
 
 The 8 October 2026 audit baseline was dedicated Ward `main` `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`
-(advancing through PRs #130–#131 at `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` and PRs #258–#264 at
-`30b1803`). Local integrity fixes, the v10 design system, phone layouts, and opt-in shared synthetic
-workspace routes (`/api/ward-flow/shared/state`, `/api/ward-flow/shared/events`, `use-ward-supabase-shared.ts`)
+(advancing through PRs #130–#131 at `0bbcd341d08ad1b2e0c67a77a9cab84367e03769`, PRs #258–#264 at
+`30b1803`, and the 14–17 October remediation, criteria-led discharge, and shared-access wave across PRs #283–#390 at `6358371c`).
+Local integrity fixes, the v10 design system, phone layouts, criteria-led discharge in production with typed patient-specific criteria and paused AWOL bed-hold warnings (D-64/D-65, PRs #383, #385, #387), single-approval prototype role grants (D-66, PR #384), the 12-hour ISM-0428 shared session limit (PR #389), and opt-in shared synthetic workspace routes (`NEXT_PUBLIC_WARD_API_BASE_URL` and `/v1/workspace*` via `use-ward-supabase-shared.ts` and `ward-shared-client.ts`)
 are landed on `main`. Production-grade multi-user authentication and clinical pilot readiness remain separate
 milestones. Preserve the latest accepted appearance and current `AGENTS.md` repository boundary.
 
@@ -28,19 +28,20 @@ milestones. Preserve the latest accepted appearance and current `AGENTS.md` repo
 
 Steps 1–2 and local backend contract work can run in parallel with exact file
 ownership. Shared-user acceptance requires 3–5; clinical piloting requires 4–6.
-The [remediation checkpoint](reports/remediation-2026-10-08.md) and
-[`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78) record evidence and
+The [remediation checkpoint](reports/remediation-2026-10-08.md),
+[`docs/superpowers/plans/2026-10-16-audit-resolution-results.md`](../superpowers/plans/2026-10-16-audit-resolution-results.md), and
+[`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record evidence and
 remaining decisions. Historical proposals below do not mark current tasks complete.
 
 ---
 
-> **Historical completion notice — 14 October 2026.** The 25 September 2026 Phase 1–6 milestone
+> **Historical completion notice — 17 October 2026.** The 25 September 2026 Phase 1–6 milestone
 > log below is retained as historical context only. Milestones 1–4 (PsychSift removal, green ward
 > test suite, removal of invented screen data, and Coordinator bed board journey) are completed in
 > `BigSimmo/Ward-Flow`, and Milestone 5's opt-in shared synthetic workspace prototype is wired.
 > Its former shared-repository references, red-suite counts, and script commands are historical.
 > See [`docs/ward-flow/STATUS.md`](STATUS.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md)
-> (§7.78) for current status and open work.
+> (§7.78–§7.82) for current status and open work.
 
 <!-- docs-script-refs:historical-start -->
 
