@@ -257,10 +257,12 @@ const unit = z
   );
 
 const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
+const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
 const movement = z
   .looseObject({
     id,
     originEdId: emergencyDepartmentId,
+    turnaroundPriority: z.optional(turnaroundPriority),
     cohort: z.enum(COHORTS),
     security: z.enum(["Open", "Secure"]),
     sex: z.enum(RECORDED_SEXES),
@@ -363,6 +365,7 @@ const referralDestination = z.discriminatedUnion("kind", [
 ]);
 const referral = z.looseObject({
   id,
+  turnaroundPriority: z.optional(turnaroundPriority),
   ageBand: text,
   homeRegion: text,
   source: text,
@@ -714,6 +717,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const movement of state.movements) {
     if (
+      !reference(movement.turnaroundPriority?.unitId, unitIds) ||
       !reference(movement.patientId, patientIds) ||
       !reference(movement.referralId, referralIds) ||
       !reference(movement.admissionId, admissionIds) ||
@@ -766,6 +770,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   }
 
   for (const referral of state.referrals) {
+    if (!reference(referral.turnaroundPriority?.unitId, unitIds)) return false;
     if (!reference(referral.patientId, patientIds) || !reference(referral.originUnitId, unitIds)) return false;
     if (!referral.destinations.every((arm) => reference(arm.acceptedUnitId, unitIds))) return false;
   }

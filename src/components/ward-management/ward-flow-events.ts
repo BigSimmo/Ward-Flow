@@ -698,6 +698,20 @@ export type WardFlowEvent =
       suburb?: string;
     }
   | {
+      type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      unitId: string;
+    }
+  | {
+      type: "FLAG_REFERRAL_TURNAROUND_PRIORITY";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+    }
+  | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;
       now: Instant;
@@ -2842,6 +2856,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * false attribution, because the record makes no attribution at all. That absence is itself a
    * known limit, recorded on the events' own doc comments.
    */
+  FLAG_MOVEMENT_TURNAROUND_PRIORITY: ["coordinator"],
+  FLAG_REFERRAL_TURNAROUND_PRIORITY: ["coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*

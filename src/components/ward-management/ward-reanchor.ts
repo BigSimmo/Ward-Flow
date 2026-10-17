@@ -54,6 +54,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  * either one now fails the guard rather than quietly producing a plausible wrong duration.
  */
 export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
+  "flaggedAt",
   "auditCaptureStartedAt",
   // v10 pass 2: when Add patient created a record (`Patient.addedAt`).
   "addedAt",
