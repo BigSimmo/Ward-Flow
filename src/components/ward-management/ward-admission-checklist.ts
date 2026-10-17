@@ -1,12 +1,10 @@
 /**
  * Admission arrival checklist (Top 25 item 14, flag `top25-admission-checklist`).
  *
- * A read-only list of what the receiving ward wants settled before a patient arrives, read from
- * facts the record already holds. It replaces the showcase's four free-standing booleans
- * (`derivePreFlightAdmissionsPacket`) with the recorded medical clearance, legal form receipt and
- * transport need. The contraband search and medication chart have no record in this prototype, so
- * they are listed as not wired rather than ticked. Nothing here blocks the handover: the reducer's
- * own `HANDOVER_READY` rules are unchanged.
+ * Lists what the receiving ward wants settled before a patient arrives, read from the recorded
+ * medical clearance, legal form receipt, transport need, contraband search and medication chart.
+ * Checks without a recorded value remain explicitly not wired; this view never records a completion.
+ * Nothing here blocks the handover: the reducer's own `HANDOVER_READY` rules are unchanged.
  */
 import { transportNeedState } from "@/components/ward-management/ward-derivations";
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
@@ -22,14 +20,28 @@ export type AdmissionChecklistItem = {
   detail: string;
 };
 
+/** @deprecated Local drafts cannot establish recorded checklist completion. */
+export type AdmissionChecklistOverrides = {
+  contraband_search?: boolean;
+  medication_chart?: boolean;
+};
+
 export const NOT_WIRED = "Not wired in this prototype.";
 
-export function admissionChecklist(movement: Movement, referrals: readonly Referral[]): AdmissionChecklistItem[] {
+export function admissionChecklist(
+  movement: Movement,
+  referrals: readonly Referral[],
+  /** @deprecated Ignored: only recorded movement values establish completion. */
+  _overrides?: AdmissionChecklistOverrides,
+): AdmissionChecklistItem[] {
+  void _overrides;
   const clearance = recordedMovementMedicalClearance(movement, referrals);
   const transportNeed = transportNeedState(movement);
   const transportBooked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
   // No form on the record is settled only when the legal status needs none.
   const formNeeded = movement.legalForm === undefined && requiresAuthorisedDestination(movement.legalStatus);
+  const contrabandDone = movement.contrabandSearchDone;
+  const medChartDone = movement.medicationChartDone;
   return [
     {
       key: "medical_clearance",
@@ -66,7 +78,17 @@ export function admissionChecklist(movement: Movement, referrals: readonly Refer
               ? "Needed, not booked"
               : "Need not recorded",
     },
-    { key: "contraband_search", label: "Contraband search", state: "not_wired", detail: NOT_WIRED },
-    { key: "medication_chart", label: "Medication chart", state: "not_wired", detail: NOT_WIRED },
+    {
+      key: "contraband_search",
+      label: "Contraband search",
+      state: contrabandDone === undefined ? "not_wired" : contrabandDone ? "done" : "outstanding",
+      detail: contrabandDone === undefined ? NOT_WIRED : contrabandDone ? "Checked in ED" : "Not yet checked",
+    },
+    {
+      key: "medication_chart",
+      label: "Medication chart",
+      state: medChartDone === undefined ? "not_wired" : medChartDone ? "done" : "outstanding",
+      detail: medChartDone === undefined ? NOT_WIRED : medChartDone ? "Ready for ward" : "Not yet ready",
+    },
   ];
 }

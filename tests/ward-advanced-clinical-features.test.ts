@@ -87,8 +87,8 @@ describe("Advanced clinical coordination features & behaviors", () => {
   });
 
   describe("Option 2: Discharge Barriers for Long-Stay Patients (LOS >= 7 Days)", () => {
-    it("refuses to set discharge barrier if patient stay is less than 7 days", () => {
-      // Create or find patient with stay < 7 days (e.g. arrived 2 days ago)
+    it("allows setting a discharge barrier even when patient stay is less than 7 days", () => {
+      // Create or find patient with stay < 7 days (e.g. arrived 2 days ago, due out within 24h)
       const recentAdmission: Admission = {
         ...baseState.admissions[0],
         id: "ADM-RECENT",
@@ -109,8 +109,8 @@ describe("Advanced clinical coordination features & behaviors", () => {
         barrier: "NDIS",
       });
 
-      expect(result.rejections.length).toBeGreaterThan(testState.rejections.length);
-      expect(result.rejections.at(-1)?.reason).toContain("less than 7 days");
+      expect(result.rejections).toHaveLength(testState.rejections.length);
+      expect(result.admissions.find((a) => a.id === "ADM-RECENT")?.dischargeBarrier).toBe("NDIS");
     });
 
     it("successfully sets discharge barrier when patient stay is 7 days or more", () => {

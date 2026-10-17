@@ -1,12 +1,19 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import {
   eligibility,
   type EligibilitySubject,
   type EligibilityVerdict,
 } from "@/components/ward-management/ward-eligibility";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
-import type { LegalStatus, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  genderReviewNeeded,
+  type LegalStatus,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
@@ -52,6 +59,11 @@ export function stepDownSubject(
 
 type StepDownWard = { unit: Unit; verdict: EligibilityVerdict; readyBeds: number };
 
+export type StepDownSwapCandidate = {
+  incomingMovement: Movement;
+  verdict: EligibilityVerdict;
+};
+
 export type StepDownBoardRow = {
   admission: Admission;
   fromUnit: Unit;
@@ -59,7 +71,76 @@ export type StepDownBoardRow = {
   wards: StepDownWard[];
   /** An open ward-to-ward movement for this stay that can still be referred, if there is one. */
   transferMovement: Movement | undefined;
+  /**
+   * Top 25 item 16 (`top25-step-down-swap`, D-30): open incoming admission movements that pass
+   * `eligibility()` on the LIVE `fromUnit`. Owner ruling (17 Oct 2026, 10:13 PM AWST): the incoming
+   * leg is offered only once a bed there is actually free, never against a modelled freed bed, and
+   * there is no combined swap. A Secure movement needs a locked bed actually free. Empty when no
+   * receiving step-down ward has a Ready bed now.
+   */
+  swapCandidates: StepDownSwapCandidate[];
+  /**
+   * Owner ruling (17 Oct 2026, 10:13 PM AWST): movements that would otherwise match but need a
+   * coordinator gender placement review for `fromUnit` (`genderReviewNeeded`, no placement record
+   * covering it). They are never offered as a swap; the board routes them to Placement.
+   */
+  placementReview: Movement[];
+  /** Whether `fromUnit` has a bed actually free now (the bounded Ready figure is above 0). */
+  fromUnitHasFreeBed: boolean;
 };
+
+/** A movement whose recorded sex and gender need a coordinator placement for this ward first. */
+function needsGenderPlacementReview(movement: Movement, unitId: string): boolean {
+  return (
+    genderReviewNeeded(movement.gender, movement.sex) &&
+    !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(unitId))
+  );
+}
+
+/**
+ * Incoming movements for the step-down swap, split into those the board may refer to `fromUnit`
+ * now and those it routes to Placement for a gender placement review. Both are checked against the
+ * live `fromUnit`, so nothing is offered until a bed there is actually free.
+ */
+export function deriveStepDownSwapCandidates(input: {
+  fromUnit: Unit;
+  movements: readonly Movement[];
+  transferMovementId?: string;
+  now: Instant;
+}): { candidates: StepDownSwapCandidate[]; placementReview: Movement[] } {
+  const { fromUnit } = input;
+  // "Actually free" is the bounded Ready figure: allocatable AND physically empty, never closed.
+  const freeNow = boundedBedAvailability(fromUnit).available;
+  if (freeNow <= 0) return { candidates: [], placementReview: [] };
+  const matches = input.movements
+    .filter(
+      (movement) =>
+        !movement.closure &&
+        movement.id !== input.transferMovementId &&
+        movement.sourceAdmissionId === undefined &&
+        movement.acceptedUnitId !== fromUnit.id &&
+        REFERRABLE_MOVEMENT_STAGES.includes(movement.stage) &&
+        // A Secure movement is offered only if a locked bed is actually free on this ward.
+        (movement.security !== "Secure" || Math.min(lockedBedsFree(fromUnit), freeNow) > 0),
+    )
+    .map((incomingMovement) => ({
+      incomingMovement,
+      verdict: eligibility(incomingMovement, fromUnit, input.now),
+    }))
+    .filter((candidate) => candidate.verdict.eligible)
+    .sort((a, b) => {
+      const aAcuityOrSecure = a.incomingMovement.security === "Secure" || a.incomingMovement.highAcuity ? 1 : 0;
+      const bAcuityOrSecure = b.incomingMovement.security === "Secure" || b.incomingMovement.highAcuity ? 1 : 0;
+      if (bAcuityOrSecure !== aAcuityOrSecure) return bAcuityOrSecure - aAcuityOrSecure;
+      return a.incomingMovement.openedAt - b.incomingMovement.openedAt;
+    });
+  return {
+    candidates: matches.filter((candidate) => !needsGenderPlacementReview(candidate.incomingMovement, fromUnit.id)),
+    placementReview: matches
+      .filter((candidate) => needsGenderPlacementReview(candidate.incomingMovement, fromUnit.id))
+      .map((candidate) => candidate.incomingMovement),
+  };
+}
 
 export function deriveStepDownBoard(input: {
   admissions: readonly Admission[];
@@ -94,7 +175,24 @@ export function deriveStepDownBoard(input: {
         !movement.closure &&
         REFERRABLE_MOVEMENT_STAGES.includes(movement.stage),
     );
-    rows.push({ admission, fromUnit, wards, transferMovement });
+    const swap =
+      wards.length > 0
+        ? deriveStepDownSwapCandidates({
+            fromUnit,
+            movements: input.movements,
+            transferMovementId: transferMovement?.id,
+            now: input.now,
+          })
+        : { candidates: [], placementReview: [] };
+    rows.push({
+      admission,
+      fromUnit,
+      wards,
+      transferMovement,
+      swapCandidates: swap.candidates,
+      placementReview: swap.placementReview,
+      fromUnitHasFreeBed: boundedBedAvailability(fromUnit).available > 0,
+    });
   }
   return rows;
 }

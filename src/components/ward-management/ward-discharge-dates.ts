@@ -302,7 +302,7 @@ export function deriveEddDriftBadge(input: {
   const driftPrefix = driftDays !== null && driftDays > 0 ? `EDD +${driftDays}d · ` : "";
   const rememberedReason = input.dischargeDelayReason;
 
-  if (revisionCount >= 3) {
+  if (revisionCount >= 2) {
     return {
       revisionCount,
       driftDays: driftDays ?? 0,

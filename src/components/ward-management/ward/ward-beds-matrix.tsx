@@ -14,8 +14,7 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
- * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
- * is `deriveEddDriftBadge`'s own fixed count (three); there is no clinical value for it yet.
+ * Top 25 item 21: the badge for a discharge date the ward has moved several times (two or more).
  * Counts the ward's own date moves (`dischargeDateMoves`), never a measure of the person.
  */
 export function eddMovedBadge(moves: number | null | undefined): string | null {

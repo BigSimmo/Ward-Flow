@@ -41,6 +41,8 @@ test.describe.configure({ timeout: 120_000 });
 
 /** Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone. */
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
+  // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
   if (isPhoneLayout(page)) {
     await page
@@ -184,6 +186,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await expect.poll(() => wardFigure(page, "ready")).toBe(0);
   await expectNoReloadSince(page, "confirming the ward's numbers");
 
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(0);
   await expectAccessible(page, testInfo, "capacity board after the ward's figures");
@@ -346,6 +349,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await expectNoReloadSince(page, "recording the departure");
 
   // The coordinator's board shows one more ready bed.
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
   await expectAccessible(page, testInfo, "capacity board after the departure");
