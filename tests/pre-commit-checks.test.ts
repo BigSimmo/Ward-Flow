@@ -13,6 +13,9 @@ import {
   signOutConflicts,
   signOutLogOptional,
   unsignedWardFiles,
+  stagedPathsFromStatus,
+  ownershipAdmission,
+  partitionMergeOwnership,
 } from "../scripts/pre-commit-checks.mjs";
 
 describe("signOutConflicts (clash guard)", () => {
@@ -24,6 +27,14 @@ describe("signOutConflicts (clash guard)", () => {
     "## Copied from the old file",
     "- 2026-09-25 | Old | ward/old | D:/w/o | tests/b.test.ts",
   ].join("\n");
+
+  it("retains the last file before pipe metadata without requiring a trailing comma", () => {
+    const file = "docs/ward-flow/last.md";
+    const line = (branch: string) =>
+      `Open sign-outs only\n- 2026-10-17 | Synthetic owner | ${branch} | | ${file} | repo=BigSimmo/Ward-Flow\n`;
+    expect(signOutConflicts([file], line("ward/peer"), "ward/mine", process.cwd())).toHaveLength(1);
+    expect(unsignedWardFiles([file], line("ward/mine"), "ward/mine", process.cwd())).toEqual([]);
+  });
 
   it("flags files, folders and bare file names signed out by another branch, naming the owner", () => {
     const hits = signOutConflicts(
@@ -149,6 +160,70 @@ function added(file: string, ...lines: string[]) {
 describe("signOutLogOptional", () => {
   it("never infers ownership from a missing log on any host", () => {
     expect(signOutLogOptional()).toBe(false);
+  });
+});
+
+describe("complete staged ownership admission", () => {
+  it("keeps deletion and both rename paths separate from content selection", () => {
+    const scope = stagedPathsFromStatus("D\0docs/ward-flow/old.md\0R100\0from.md\0to.md\0");
+    expect(scope.ownershipPaths).toEqual(["docs/ward-flow/old.md", "from.md", "to.md"]);
+    expect(scope.contentPaths).toEqual(["to.md"]);
+    expect(stagedPathsFromStatus("D\0only.md\0").contentPaths).toEqual([]);
+  });
+
+  it("blocks an unavailable log on main and during merges", () => {
+    const input = {
+      ownershipPaths: ["docs/ward-flow/a.md"],
+      branch: "main",
+      root: "",
+      taskBranch: false,
+      merging: true,
+      logAvailable: false,
+    };
+    expect(ownershipAdmission(input)).toMatchObject({ blocked: true, missingLog: true });
+  });
+
+  it("requires own claims for manual or both-side merge changes", () => {
+    const changes = [
+      { status: "M", paths: ["clean.md"] },
+      { status: "M", paths: ["manual.md"] },
+    ];
+    const base = new Map([
+      ["clean.md", "old"],
+      ["manual.md", "old"],
+    ]);
+    const head = new Map([
+      ["clean.md", "old"],
+      ["manual.md", "ours"],
+    ]);
+    const incoming = new Map([
+      ["clean.md", "new"],
+      ["manual.md", "theirs"],
+    ]);
+    const result = partitionMergeOwnership(changes, { base, head, incoming, index: incoming });
+    expect(result.cleanIncoming).toEqual(["clean.md"]);
+    expect(result.requiredClaims).toEqual(["manual.md"]);
+  });
+
+  it("still checks active overlaps for an exact clean incoming merge", () => {
+    const file = "docs/ward-flow/a.md";
+    const input = {
+      ownershipPaths: [file],
+      requiredClaims: [],
+      logAvailable: true,
+      taskBranch: true,
+      branch: "ward/mine",
+      root: "",
+      merging: true,
+      signOutText: "Open sign-outs only\n",
+    };
+    expect(ownershipAdmission(input).blocked).toBe(false);
+    expect(
+      ownershipAdmission({
+        ...input,
+        signOutText: `Open sign-outs only\n- 2026-10-17 | Peer | ward/peer | | ${file}\n`,
+      }).blocked,
+    ).toBe(true);
   });
 });
 
@@ -302,7 +377,42 @@ describe("the hook script end to end", () => {
       WARD_SIGNOUT_FILE: signOutFile,
     });
     expect(blocked.status).toBe(1);
-    expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
+    expect(blocked.stderr).toContain(`shared sign-out log unavailable at ${signOutFile}`);
+  });
+
+  it("requires claims for staged deletion and both sides of a rename", () => {
+    const root = repo();
+    execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+    const oldFile = "docs/ward-flow/old.md";
+    const newFile = "docs/ward-flow/new.md";
+    const deletedFile = "docs/ward-flow/deleted.md";
+    mkdirSync(dirname(join(root, oldFile)), { recursive: true });
+    writeFileSync(join(root, oldFile), "synthetic old\n");
+    writeFileSync(join(root, deletedFile), "synthetic deletion\n");
+    execFileSync("git", ["add", oldFile, deletedFile], { cwd: root });
+    execFileSync("git", ["commit", "--quiet", "--no-verify", "-m", "fixture"], { cwd: root });
+    execFileSync("git", ["mv", oldFile, newFile], { cwd: root });
+    rmSync(join(root, deletedFile));
+    execFileSync("git", ["add", deletedFile], { cwd: root });
+    const signOutFile = join(root, "sign-out.md");
+    const run = () =>
+      spawnSync(process.execPath, [join(process.cwd(), "scripts", "pre-commit-checks.mjs"), "--admission-only"], {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile },
+      });
+    writeFileSync(signOutFile, `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${root} | ${newFile}\n`);
+    const blocked = run();
+    expect(blocked.status).toBe(1);
+    expect(blocked.stderr).toContain(oldFile);
+    expect(blocked.stderr).toContain(deletedFile);
+    writeFileSync(
+      signOutFile,
+      `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${root} | ${oldFile}, ${newFile}, ${deletedFile}\n`,
+    );
+    const passed = run();
+    expect(passed.status).toBe(0);
+    expect(passed.stderr).toContain("admission ok");
   });
 
   it.skipIf(process.platform === "win32")("blocks when the default log is absent off Windows", () => {

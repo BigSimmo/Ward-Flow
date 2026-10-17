@@ -14,8 +14,7 @@ const matchesOrganisationRoot = (file) => {
   return organisationRoots.some((root) => {
     const expression = String(root)
       .replace(/[.+^${}()|[\]\\]/gu, "\\$&")
-      .replace(/\*\*/gu, ".*")
-      .replace(/\*/gu, "[^/]*");
+      .replace(/\*\*|\*/gu, (match) => (match === "**" ? ".*" : "[^/]*"));
     return new RegExp(`^${expression}$`, "u").test(file);
   });
 };

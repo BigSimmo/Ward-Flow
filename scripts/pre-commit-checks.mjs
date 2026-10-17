@@ -26,8 +26,10 @@
  * file simply does not call it. Lint and typecheck skip with a notice when the
  * worktree has no node_modules; the scan needs only node and always runs.
  *
- * During a merge (MERGE_HEAD present) the normal hook skips code readiness checks.
- * Admission-only publication still requires the ownership check during a merge.
+ * During a merge (MERGE_HEAD present), staged scan and ownership admission still
+ * run. Only unchanged-on-HEAD paths that exactly match one incoming tree may
+ * omit a new own sign-out; active overlaps always block. The normal hook skips
+ * lint and typecheck during a merge.
  *
  * Also: a clash guard. Staged files that another branch has signed out in the
  * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
@@ -79,6 +81,106 @@ const SIGN_OUT_FILE =
  */
 export function signOutLogOptional() {
   return false;
+}
+
+/** Parse NUL-delimited status records, retaining deletions and both rename paths. */
+export function stagedPathsFromStatus(output) {
+  const fields = output.split("\0");
+  if (fields.at(-1) === "") fields.pop();
+  const changes = [];
+  for (let i = 0; i < fields.length;) {
+    const status = fields[i++];
+    if (!/^(?:[ACDMRTUXB]|[RC]\d+)$/.test(status)) throw Error("Unsupported staged status");
+    const count = /^[RC]/.test(status) ? 2 : 1;
+    const paths = fields.slice(i, i + count);
+    if (paths.length !== count || paths.some((file) => !file)) throw Error("Incomplete staged paths");
+    i += count;
+    changes.push({ status, paths });
+  }
+  return {
+    changes,
+    ownershipPaths: [...new Set(changes.flatMap((change) => change.paths))],
+    contentPaths: [
+      ...new Set(changes.filter((change) => /^[ACMRT]/.test(change.status)).map((change) => change.paths.at(-1))),
+    ],
+  };
+}
+
+export function stagedScope(run = git) {
+  return stagedPathsFromStatus(run(["diff", "--cached", "--name-status", "-z", "--find-renames", "--no-ext-diff"]));
+}
+
+/** Compare mode and object identity, including absence. */
+export function parseOwnershipTree(output, index = false) {
+  const entries = new Map();
+  for (const record of output.split("\0").filter(Boolean)) {
+    const tab = record.indexOf("\t");
+    if (tab < 0) throw Error("Invalid ownership tree");
+    const header = record.slice(0, tab).split(" ");
+    const [mode, second, third] = header;
+    const oid = index ? second : third;
+    if (
+      header.length !== 3 ||
+      !/^\d{6}$/.test(mode) ||
+      !/^[a-f0-9]{40,64}$/.test(oid) ||
+      (index ? third !== "0" : !["blob", "commit"].includes(second))
+    )
+      throw Error("Unresolved ownership tree");
+    const file = record.slice(tab + 1);
+    if (!file || entries.has(file)) throw Error("Ambiguous ownership tree");
+    entries.set(file, `${mode}:${oid}`);
+  }
+  return entries;
+}
+
+export function partitionMergeOwnership(changes, { base, head, incoming, index }) {
+  const cleanIncoming = [];
+  const requiredClaims = [];
+  for (const change of changes) {
+    const unchangedHere = change.paths.every((file) => head.get(file) === base.get(file));
+    const exactlyIncoming = change.paths.every((file) => index.get(file) === incoming.get(file));
+    const changedThere = change.paths.some((file) => incoming.get(file) !== base.get(file));
+    const clean = /^[ACDMRT]/.test(change.status) && unchangedHere && exactlyIncoming && changedThere;
+    (clean ? cleanIncoming : requiredClaims).push(...change.paths);
+  }
+  return { cleanIncoming: [...new Set(cleanIncoming)], requiredClaims: [...new Set(requiredClaims)] };
+}
+
+/** Unknown, octopus, conflicted or multiple-base provenance receives no exemption. */
+export function mergeOwnershipScope(changes, incomingHeads, run = git) {
+  const fallback = { cleanIncoming: [], requiredClaims: [...new Set(changes.flatMap((change) => change.paths))] };
+  if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0])) return fallback;
+  try {
+    const bases = run(["merge-base", "--all", "HEAD", incomingHeads[0]]).trim().split(/\r?\n/);
+    if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return fallback;
+    const tree = (ref) => parseOwnershipTree(run(["ls-tree", "-r", "-z", "--full-tree", ref]));
+    return partitionMergeOwnership(changes, {
+      base: tree(bases[0]),
+      head: tree("HEAD"),
+      incoming: tree(incomingHeads[0]),
+      index: parseOwnershipTree(run(["ls-files", "--stage", "-z"]), true),
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+export function ownershipAdmission({
+  ownershipPaths,
+  requiredClaims = ownershipPaths,
+  logAvailable,
+  signOutText = "",
+  branch,
+  root,
+  taskBranch,
+  merging = false,
+  skip = false,
+}) {
+  if (skip) return { blocked: false, skipped: true, clashes: [], unsigned: [] };
+  if (!logAvailable) return { blocked: true, missingLog: true, clashes: [], unsigned: [] };
+  const clashes = signOutConflicts(ownershipPaths, signOutText, branch, root);
+  const unsigned = taskBranch || merging ? unsignedWardFiles(requiredClaims, signOutText, branch, root) : [];
+  return { blocked: clashes.length > 0 || unsigned.length > 0, clashes, unsigned };
 }
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */
@@ -244,7 +346,10 @@ function signOutEntries(signOutText) {
     const legacyScopedApproval = /Josh approved scoped (?:overlap|takeover) in this chat/i.test(owner);
     const pathFields = fields
       .slice(4)
-      .join("|")
+      // Pipe fields after the path list are metadata or legacy additional lists.
+      // Preserve the final path even when no comma precedes the repo marker.
+      .filter((field) => !/^repo\s*=/i.test(field))
+      .join(",")
       .split(/[,;]\s*/);
     const paths = [];
     const takeoverPaths = [];
@@ -743,11 +848,9 @@ async function main() {
   const started = Date.now();
   const root = git(["rev-parse", "--show-toplevel"]).trim();
   process.chdir(root);
-  const staged = git(["diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRDT"])
-    .split("\0")
-    .filter(Boolean);
-  if (staged.length === 0) return 0;
-  const scanFiles = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMRT"]).split("\0").filter(Boolean);
+  const scope = stagedScope();
+  if (scope.ownershipPaths.length === 0) return 0;
+  const scanFiles = scope.contentPaths;
 
   let failed = false;
   const report = [];
@@ -774,33 +877,49 @@ async function main() {
     console.error(`  Remove it (use made-up data), or if it is deliberately fake add "${ALLOW_MARKER}" on that line.`);
   }
 
-  const merging = existsSync(git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim());
-  // During admission-only publication after a merge, compare with the merged branch
-  // so upstream files are not treated as this task's ownership scope.
-  const ownershipFiles =
-    merging && admissionOnly
-      ? git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean)
-      : staged;
+  const mergeHeadPath = git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim();
+  const merging = existsSync(mergeHeadPath);
 
-  // 1b. Ward ownership admission. Publication never waives it, even during a merge.
+  // 1b. Admission covers every staged path, including deletions and rename sources.
+  // Exact incoming tree identity can waive a new claim, never the active-overlap check.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
   if (admissionOnly && process.env.SKIP_SIGNOUT_GUARD === "1") {
     failed = true;
     console.error("[pre-commit] BLOCKED: admission-only publication cannot skip ownership admission.");
   }
-  if ((admissionOnly || !merging) && (admissionOnly || process.env.SKIP_SIGNOUT_GUARD !== "1")) {
-    if (!signOutLogPresent) {
-      failed = true;
-      console.error(`[pre-commit] BLOCKED: sign-out log unavailable at ${SIGN_OUT_FILE}.`);
-      console.error("  Configure the actual coordination log with WARD_SIGNOUT_FILE; absence is never clearance.");
-    }
+  if (process.env.SKIP_SIGNOUT_GUARD !== "1") {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
     const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
-    const clashes = signOutConflicts(ownershipFiles, signOutText, branch, root);
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");
-    const unsigned = taskBranch ? unsignedWardFiles(ownershipFiles, signOutText, branch, root) : [];
+    const mergeScope = merging
+      ? mergeOwnershipScope(scope.changes, readFileSync(mergeHeadPath, "utf8").trim().split(/\r?\n/))
+      : { cleanIncoming: [], requiredClaims: scope.ownershipPaths };
+    const admissionMergePaths =
+      merging && admissionOnly
+        ? git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean)
+        : [];
+    const admission = ownershipAdmission({
+      ownershipPaths: [...new Set([...scope.ownershipPaths, ...admissionMergePaths])],
+      requiredClaims: [...new Set([...mergeScope.requiredClaims, ...admissionMergePaths])],
+      logAvailable: signOutLogPresent,
+      signOutText,
+      branch,
+      root,
+      taskBranch,
+      merging,
+    });
+    const { clashes, unsigned } = admission;
+    if (admission.missingLog) {
+      failed = true;
+      console.error(`[pre-commit] BLOCKED: shared sign-out log unavailable at ${SIGN_OUT_FILE}.`);
+      console.error("  Configure the actual coordination log with WARD_SIGNOUT_FILE; absence is never clearance.");
+    }
+    if (mergeScope.cleanIncoming.length > 0 && !admission.missingLog)
+      report.push(
+        `${mergeScope.cleanIncoming.length} clean incoming path(s): active overlaps checked; no new own sign-out required`,
+      );
     if (clashes.length > 0) {
       failed = true;
       console.error(`[pre-commit] BLOCKED: files signed out by another session in ${SIGN_OUT_FILE}:`);
@@ -815,6 +934,10 @@ async function main() {
       for (const file of unsigned) console.error(`  ${file}`);
       console.error("  Run sign-out-check before editing, then sign out these files in the shared log.");
     }
+  } else if (!admissionOnly) {
+    report.push(
+      "sign-out guard explicitly skipped (single-user per-commit assertion; not authority for concurrent work)",
+    );
   }
   // Admission has already rejected this staged snapshot. Keep every scan/ownership diagnostic,
   // but do not load lint plugins or start a TypeScript child for a commit that cannot proceed.
