@@ -172,7 +172,11 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                     }
                                   >
                                     <option value="">Choose reason</option>
-                                    {REFERRAL_CAP_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+                                    {REFERRAL_CAP_REASONS.map((reason) => (
+                                      <option key={reason} value={reason}>
+                                        {reason}
+                                      </option>
+                                    ))}
                                   </select>
                                 </label>
                               ) : null}
