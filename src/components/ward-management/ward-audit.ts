@@ -343,7 +343,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
 function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
   const role = enumValue(
     Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[],
-    "stoodDownByRole" in event && event.stoodDownByRole !== undefined ? event.stoodDownByRole : event.role,
+    event.role,
   );
   return {
     role,
