@@ -29,6 +29,21 @@ function fixture() {
   const referral = state.referrals.find(
     (r) => r.destinations.some((d) => d.state === "queued") && !state.movements.some((m) => m.referralId === r.id),
   )!;
+  referral.ageBand = "Adult";
+  referral.destinations = [
+    {
+      destination: {
+        kind: "psychiatric_ward",
+        unitId: admission.unitId,
+        sex: "Female",
+        gender: "Female",
+        secureBedNeeded: false,
+        involuntaryBedNeeded: false,
+        highAcuityNursingNeeded: false,
+      },
+      state: "queued",
+    },
+  ];
   return { state, admission: state.admissions[0]!, movement, referral, unitId: admission.unitId };
 }
 function flag(f: ReturnType<typeof fixture>, kind: "movement" | "referral", extra: Record<string, unknown> = {}) {
@@ -46,6 +61,47 @@ function refused(before: WardFlowState, after: WardFlowState) {
 }
 
 describe("CLD turnaround preference", () => {
+  it.each(["authorisation", "clinical fit"])(
+    "rechecks receiving %s before recording a movement preference",
+    (reason) => {
+      const f = fixture();
+      const unit = f.state.units.find((u) => u.id === f.unitId)!;
+      if (reason === "authorisation") {
+        unit.authorised = false;
+        f.movement.legalStatus = "Involuntary inpatient";
+      } else f.movement.cohort = unit.cohort === "Adult" ? "Older adult" : "Adult";
+      refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
+    },
+  );
+  it.each(["no ward arm", "different named ward", "incompatible referral"])("refuses turnaround for %s", (reason) => {
+    const f = fixture();
+    const unit = f.state.units.find((u) => u.id === f.unitId)!;
+    f.referral.ageBand = "Adult";
+    f.referral.destinations =
+      reason === "no ward arm"
+        ? [
+            {
+              destination: { kind: "emergency_department", edId: allEmergencyDepartments()[0]!.id, purpose: "bed" },
+              state: "queued",
+            },
+          ]
+        : [
+            {
+              destination: {
+                kind: "psychiatric_ward",
+                unitId: reason === "different named ward" ? "synthetic-other-ward" : unit.id,
+                sex: "Female",
+                gender: "Female",
+                secureBedNeeded: false,
+                involuntaryBedNeeded: reason === "incompatible referral",
+                highAcuityNursingNeeded: false,
+              },
+              state: "queued",
+            },
+          ];
+    if (reason === "incompatible referral") unit.authorised = false;
+    refused(f.state, wardFlowReducer(f.state, flag(f, "referral")));
+  });
   it("uses only current, occupied, legally eligible all-met criteria", () => {
     const f = fixture();
     expect(unitHasCldReadyDeparture(f.state, f.unitId, now)).toBe(true);
@@ -180,6 +236,7 @@ describe("CLD turnaround preference", () => {
     const f = fixture();
     const edId = allEmergencyDepartments()[0]!.id;
     f.referral.destinations = [
+      ...f.referral.destinations,
       { destination: { kind: "emergency_department", edId, purpose: "bed" }, state: "queued" },
     ];
     const flagged = wardFlowReducer(f.state, flag(f, "referral"));

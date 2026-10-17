@@ -395,7 +395,11 @@ export function useWardReferralDrawerState({
   const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(kept?.communityNeeds ?? {});
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
 
-  const draftNow: KeptDraft = {
+  const needsChartReattachment =
+    !!(kept as (KeptDraft & { needsChartReattachment?: boolean }) | null)?.needsChartReattachment &&
+    documentation.charts.length === 0;
+  const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
+    needsChartReattachment,
     activePatientKey,
     destType,
     activeSection,
@@ -1411,8 +1415,7 @@ export function useWardReferralDrawerState({
     draftNow,
     draftRestored: draftRestored && kept !== null,
     draftSessionSaved,
-    needsChartReattachment: !!(kept as (KeptDraft & { needsChartReattachment?: boolean }) | null)
-      ?.needsChartReattachment,
+    needsChartReattachment,
     clearRecoveredDraft: () => {
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);

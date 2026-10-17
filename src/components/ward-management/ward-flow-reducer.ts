@@ -1,5 +1,5 @@
 import { referralState } from "./ward-referrals";
-import { unitTurnaroundSource } from "./ward-turnaround-priority";
+import { turnaroundEligibilityAllows, unitTurnaroundSource } from "./ward-turnaround-priority";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
@@ -2419,7 +2419,8 @@ export function reduceClinicalEvent(
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY": {
       if (!Number.isFinite(event.now))
         return reject(state, event, "Turnaround preference requires a finite current time.");
-      if (!findUnit(state, event.unitId)) return reject(state, event, "Turnaround preference names no known unit.");
+      const unit = findUnit(state, event.unitId);
+      if (!unit) return reject(state, event, "Turnaround preference names no known unit.");
       const source =
         event.source === "departure"
           ? unitTurnaroundSource(state, event.unitId, event.now, false)
@@ -2432,6 +2433,8 @@ export function reduceClinicalEvent(
         if (!movement) return reject(state, event, "Turnaround preference names no known movement.");
         if (movement.closure || movement.stage === "arrived" || movement.acceptedUnitId)
           return reject(state, event, "Turnaround preference requires a waiting, unplaced movement.");
+        if (!turnaroundEligibilityAllows(eligibility(movement, unit, event.now), unit))
+          return reject(state, event, "The receiving unit's clinical and legal gates must allow this movement.");
         if (movement.turnaroundPriority?.unitId === event.unitId && movement.turnaroundPriority.source === source)
           return reject(state, event, "Turnaround preference already recorded for this unit.");
         return replaceMovement(state, movement.id, { ...movement, turnaroundPriority: preference });
@@ -2445,6 +2448,17 @@ export function reduceClinicalEvent(
         return reject(state, event, "Turnaround preference requires an open waiting referral.");
       if (state.movements.some((movement) => movement.referralId === referral.id))
         return reject(state, event, "Record turnaround preference on the referral's linked movement.");
+      if (
+        !referral.destinations.some(
+          (arm) =>
+            arm.state === "queued" &&
+            arm.withdrawnAt === undefined &&
+            arm.destination.kind === "psychiatric_ward" &&
+            (arm.destination.unitId === undefined || arm.destination.unitId === unit.id) &&
+            turnaroundEligibilityAllows(referralEligibility(referral, arm.destination, unit, event.now), unit),
+        )
+      )
+        return reject(state, event, "An open ward request must match the receiving unit's clinical and legal gates.");
       if (referral.turnaroundPriority?.unitId === event.unitId && referral.turnaroundPriority.source === source)
         return reject(state, event, "Turnaround preference already recorded for this unit.");
       return replaceReferral(state, referral.id, { ...referral, turnaroundPriority: preference });

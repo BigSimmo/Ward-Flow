@@ -1,12 +1,25 @@
 import type { Instant } from "./ward-clock";
 import type { WardFlowState } from "./ward-flow-reducer";
-import type { TurnaroundPriority } from "./ward-model";
+import type { TurnaroundPriority, Unit } from "./ward-model";
+import type { EligibilityVerdict } from "./ward-eligibility";
+import { unitHasLockedBeds } from "./ward-bed-designation";
 import { admissionCriteriaEligibility } from "./ward-discharge-records";
 import { dischargeCriteriaStatus } from "./ward-discharge-criteria";
 import { resolveWardFeatureFlags, serverWardFeatureFlags, wardEnvironment } from "./ward-feature-flags";
 
 type CldState = Pick<WardFlowState, "admissions" | "patients" | "movements">;
 type TurnaroundState = CldState & Pick<WardFlowState, "bedReleases">;
+
+/** Staging may wait for capacity; every receiving clinical/legal capability must already fit. */
+export function turnaroundEligibilityAllows(verdict: EligibilityVerdict, unit: Unit): boolean {
+  return verdict.gates.every(
+    (gate) =>
+      gate.pass ||
+      gate.gate === "allocatable_bed" ||
+      gate.gate === "capacity_freshness" ||
+      (gate.gate === "security" && unitHasLockedBeds(unit)),
+  );
+}
 
 /** Readiness is a proposal; this never changes occupancy or establishes a discharge decision. */
 export function unitHasCldReadyDeparture(state: CldState, unitId: string, now: Instant): boolean {

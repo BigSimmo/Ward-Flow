@@ -118,6 +118,38 @@ describe("synthetic form integration", () => {
     expect(readSessionDraft(key)).toBeNull();
     expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
   });
+  it("retains the attachment warning across a recovered autosave and a second refresh", () => {
+    const draw = () =>
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardReferralDrawer initialPatientId="PT-023" onClose={() => {}} />
+        </WardFlowProvider>,
+      );
+    const first = draw();
+    fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), {
+      target: { value: "Synthetic attachment recovery" },
+    });
+    act(() => vi.advanceTimersByTime(500));
+    const key = sessionDraftKey("standard/0", "referral", "PT-023");
+    const envelope = JSON.parse(window.sessionStorage.getItem(key)!);
+    envelope.value = JSON.stringify({ ...JSON.parse(envelope.value), needsChartReattachment: true });
+    first.unmount();
+    discardReferralDraft();
+    window.sessionStorage.setItem(key, JSON.stringify(envelope));
+    const second = draw();
+    expect(screen.getByText(/Attachments are not recovered/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), {
+      target: { value: "Synthetic attachment draft edited" },
+    });
+    act(() => vi.advanceTimersByTime(500));
+    const saved = window.sessionStorage.getItem(key)!;
+    second.unmount();
+    discardReferralDraft();
+    window.sessionStorage.setItem(key, saved);
+    draw();
+    expect(screen.getByText(/Attachments are not recovered/)).toBeInTheDocument();
+  });
   it("keeps legal values and cached draft after delayed refusal; clears only after acceptance", async () => {
     let complete!: (accepted: boolean) => void;
     const save = vi.fn(

@@ -151,6 +151,57 @@ describe("last-look world and account fences", () => {
 });
 
 describe("scoped fifteen-minute deltas", () => {
+  it("isolates an incoming ED arm while the sender ED still sees downstream decisions", () => {
+    const seed = seededWorld();
+    const referral = {
+      ...seed.referrals[0]!,
+      raisedAt: NOW - 10,
+      destinations: [
+        {
+          destination: { kind: "emergency_department" as const, edId: "rph-ed", purpose: "bed" as const },
+          state: "queued" as const,
+        },
+        {
+          destination: { kind: "emergency_department" as const, edId: "fsh-ed", purpose: "bed" as const },
+          state: "queued" as const,
+        },
+      ],
+    };
+    for (const sender of [false, true]) {
+      const world = {
+        ...seed,
+        referrals: [referral],
+        movements: sender ? [{ ...seed.movements[0]!, originEdId: "rph-ed", referralId: referral.id }] : [],
+      };
+      const before = takeLastLookSnapshot(
+        scopeLastLookWorld(world, "ed:rph-ed"),
+        NOW - 2,
+        DEFAULT_DUE_SOON_THRESHOLDS,
+        "ed:rph-ed",
+      );
+      const changed = {
+        ...world,
+        referrals: [
+          {
+            ...referral,
+            destinations: [
+              referral.destinations[0]!,
+              { ...referral.destinations[1]!, state: "declined" as const, decidedAt: NOW },
+            ],
+          },
+        ],
+      };
+      const after = takeLastLookSnapshot(
+        scopeLastLookWorld(changed, "ed:rph-ed"),
+        NOW,
+        DEFAULT_DUE_SOON_THRESHOLDS,
+        "ed:rph-ed",
+      );
+      expect(scopedChangesSinceLastLook(before, after, 15).updates?.filter((r) => r.kind === "referral")).toHaveLength(
+        sender ? 1 : 0,
+      );
+    }
+  });
   it("detects status changes on existing movement IDs and isolates units", () => {
     const world = seededWorld();
     const movement = world.movements[0]!;

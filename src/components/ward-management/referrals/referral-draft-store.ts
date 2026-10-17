@@ -94,6 +94,7 @@ export function readKeptReferralDraft<T>(storageKey?: string): T | null {
     const isRecord = (item: unknown): item is Record<string, unknown> =>
       !!item && typeof item === "object" && !Array.isArray(item);
     if (
+      (record.needsChartReattachment !== undefined && typeof record.needsChartReattachment !== "boolean") ||
       textFields.some((field) => typeof record[field] !== "string") ||
       !Array.isArray(record.selectedUnitIds) ||
       record.selectedUnitIds.some((id) => typeof id !== "string") ||

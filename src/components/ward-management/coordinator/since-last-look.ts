@@ -327,7 +327,14 @@ export function scopeLastLookWorld(world: LastLookWorld, scopeKey: string): Last
                   a.destination.kind === "psychiatric_ward" && (a.destination.unitId === id || a.acceptedUnitId === id),
               ),
             }
-          : r,
+          : referralIds.has(r.id)
+            ? r
+            : {
+                ...r,
+                destinations: r.destinations.filter(
+                  (a) => a.destination.kind === "emergency_department" && a.destination.edId === id,
+                ),
+              },
       ),
     units: ward ? world.units.filter((u) => u.id === id) : [],
     bedReleases: ward ? world.bedReleases.filter((r) => r.unitId === id) : [],
