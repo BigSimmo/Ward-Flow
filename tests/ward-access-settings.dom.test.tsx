@@ -37,9 +37,11 @@ import {
   type SharedAccessApi,
 } from "@/components/ward-management/shell/ward-shared-access-context";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { sharedMembership } from "@/components/ward-management/settings/access-shared-source";
+import { membershipStatus } from "@/components/ward-management/ward-access-admin";
 
 /**
- * The Settings Access tab (role access plan, later pass): an Access admin desk gives, approves and
+ * The Settings Access tab (role access plan, later pass): an Access admin desk gives and
  * removes roles, a nurse in charge gives cover, and each change asks to confirm it is you first.
  * Made-up demonstration staff only.
  */
@@ -122,18 +124,39 @@ describe("the Access tab", () => {
     settings();
     expect(screen.getByRole("radio", { name: /^Access/ })).toBeChecked();
     expect(screen.getByTestId("ward-access-requests")).toHaveTextContent("2 open requests");
-    expect(screen.getByTestId("ward-access-waiting")).toHaveTextContent("Demo staff D");
+    expect(screen.queryByTestId("ward-access-waiting")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Approve$/u })).not.toBeInTheDocument();
+    const formerPending = screen
+      .getAllByTestId("ward-access-role-row")
+      .find((row) => row.textContent?.includes("Demo staff D"));
+    expect(formerPending).toHaveTextContent("Active");
 
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     await act(async () => confirmStepUp());
     expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Demo access admin 2");
 
-    // One confirm lasts the step-up window, so approving straight after asks nothing.
-    const waiting = screen.getByTestId("ward-access-waiting");
-    await act(async () => fireEvent.click(within(waiting).getByRole("button", { name: "Approve" })));
     expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Approved: Flow coordinator, South Metro.");
     expect(screen.queryByTestId("ward-access-waiting")).not.toBeInTheDocument();
+  });
+
+  it("shows a legacy pending admin as active without inventing an approver", () => {
+    const membership = sharedMembership(
+      {
+        id: "membership-admin",
+        actorId: "synthetic-admin",
+        role: "admin",
+        scope: { kind: "statewide" },
+        kind: "role",
+        grantedBy: "synthetic-coordinator",
+        approved: false,
+        approvedBy: null,
+        minutes: { granted: -60, expires: 1440, lastUsed: null },
+      },
+      NOW_ANCHOR,
+    );
+    expect(membership).not.toBeNull();
+    expect(membership!.approvedBy).toBeNull();
+    expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("active");
   });
 
   it("changes nothing when the confirm is cancelled", async () => {

@@ -5,7 +5,7 @@
  * later pass, Josh's go 16 Oct 2026).**
  *
  * Shown only with the `role-access` flag on. An Access admin desk sees the roles list: grant,
- * approve as the second person, remove, the review list (ending soon, not used) and requests for
+ * remove, the review list (ending soon, not used) and requests for
  * access. A coordinator, nurse in charge or ED clinician sees cover instead: give a colleague cover
  * of one ward or ED for one shift at most, and end it early. Every change goes behind the step-up
  * check and through the same rules the server uses (`ward-access-admin.ts`).
@@ -14,7 +14,7 @@
  * lists from the server (`access-shared-source.ts`, through `SharedAccessContext`).
  */
 import { useContext, useMemo, useState, type ReactNode } from "react";
-import { KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { KeyRound, UserPlus, Users } from "lucide-react";
 
 import { Badge, Button, Card, CardBody, CardHead, Field, Select, TextInput, type WfTone } from "@/components/wf";
 import {
@@ -108,7 +108,6 @@ function whenText(at: Instant, now: Instant): string {
 }
 
 const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
-  waiting: { label: "Waiting for a second approver", tone: "warning" },
   active: { label: "Active", tone: "success" },
   unused: { label: "Switched off, not used", tone: "closed" },
   ended: { label: "Ended", tone: "neutral" },
@@ -171,7 +170,6 @@ function AccessAdminPanel() {
   const run = (action: () => Promise<StepUpResult>, done: string) => void guard(action).then((r) => say(r, done));
   const describe = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
   const live = source.memberships.filter((m) => membershipStatus(m, now) !== "ended");
-  const waiting = live.filter((m) => membershipStatus(m, now) === "waiting");
   const open = source.requests.filter((r) => r.decision === null);
   const defaultEnd = now + 90 * MINUTES_PER_DAY;
 
@@ -181,8 +179,7 @@ function AccessAdminPanel() {
         {desk.role === "admin"
           ? "You give and remove roles. You see no patients from this desk. "
           : "As a statewide coordinator you also give and remove roles. "}
-        Nobody grants themselves a role, and a coordinator or access admin role works only once a second person approves
-        it.
+        Nobody grants themselves a role. Granted roles work immediately and have an end date.
       </p>
       {source.problem ? (
         <p className={styles.result} role="alert">
@@ -235,33 +232,6 @@ function AccessAdminPanel() {
           )}
         </CardBody>
       </Card>
-
-      {waiting.length > 0 ? (
-        <Card data-testid="ward-access-waiting">
-          <CardHead title="Waiting for a second approver" icon={ShieldCheck} meta={plural(waiting.length, "role")} />
-          <CardBody flush>
-            <ul className={styles.list}>
-              {waiting.map((m) => (
-                <li key={m.id} className={styles.row}>
-                  <span className={styles.who}>
-                    <span className={styles.name}>{source.label(m.actorId)}</span>
-                    <span className={styles.meta}>
-                      {describe(m.access)}. Granted by {source.label(m.grantedBy)}.
-                    </span>
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="sec"
-                    onClick={() => run(() => source.approve(m.id), `Approved: ${describe(m.access)}.`)}
-                  >
-                    Approve
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
-      ) : null}
 
       <GrantForm source={source} units={units} now={now} onRun={run} />
 

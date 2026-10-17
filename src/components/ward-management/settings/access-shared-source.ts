@@ -47,7 +47,7 @@ export function sharedMembership(row: SharedMembership, now: Instant): AccessMem
     grantedBy: row.grantedBy,
     grantedAt: now + minutes.granted,
     expiresAt: now + minutes.expires,
-    approvedBy: row.approved ? (row.approvedBy ?? row.grantedBy) : null,
+    approvedBy: row.approvedBy,
     lastUsedAt: typeof minutes.lastUsed === "number" ? now + minutes.lastUsed : null,
     revokedAt: null,
   };

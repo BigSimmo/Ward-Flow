@@ -1014,21 +1014,29 @@ test(
       assert.deepEqual(closed.grants, []);
       assert.equal(closed.recentGrant, false);
 
-      // A coordinator or access admin role waits for a second person, never the granter or the
-      // person themselves.
+      // Coordinator and access admin grants work immediately, including existing rows whose
+      // approval fields are null. No approval record is manufactured (D-65).
       const pending = await store.grantAccess(leadView, {
         actorId: admin,
         role: "admin",
         scope: { kind: "statewide" },
         expiresAt: later,
       });
-      assert.equal(pending.body.membership.approved, false);
-      assert.deepEqual(await store.viewer(admin), { status: "none" });
-      // A role still waiting for its second approver counts for the sign-in allowance.
+      assert.equal(pending.body.membership.approved, true);
+      assert.equal(pending.body.membership.approvedBy, null);
+      assert.equal((await store.viewer(admin)).access.role, "admin");
+      assert.deepEqual(
+        (
+          await pool.query("SELECT approved_by, approved_at FROM ward_flow.memberships WHERE id=$1", [
+            pending.body.membership.id,
+          ])
+        ).rows,
+        [{ approved_by: null, approved_at: null }],
+      );
       assert.equal((await store.roleHolders()).includes(admin), true);
       assert.equal((await store.approveAccess(leadView, pending.body.membership.id)).status, 422);
       assert.equal((await store.approveAccess(nurseView, pending.body.membership.id)).status, 403);
-      assert.equal((await store.approveAccess(secondView, pending.body.membership.id)).status, 200);
+      assert.equal((await store.approveAccess(secondView, pending.body.membership.id)).status, 422);
       const adminView = await store.viewer(admin);
       assert.equal(adminView.access.role, "admin");
       const coordinatorGrant = await store.grantAccess(leadView, {
@@ -1037,7 +1045,9 @@ test(
         scope: { kind: "statewide" },
         expiresAt: later,
       });
-      assert.equal((await store.approveAccess(adminView, coordinatorGrant.body.membership.id)).status, 200);
+      assert.equal(coordinatorGrant.body.membership.approved, true);
+      assert.equal(coordinatorGrant.body.membership.approvedBy, null);
+      assert.equal((await store.approveAccess(adminView, coordinatorGrant.body.membership.id)).status, 422);
       assert.equal((await store.viewer(coordinator)).access.role, "coordinator");
 
       // The access admin reads role changes only.
@@ -1219,7 +1229,8 @@ test(
         engine.scopeWithin(before, wardA, { kind: "service", service: name }),
       );
       const placeRole = await grant(placeCoordinator, "coordinator", { kind: "service", service });
-      assert.equal((await store.approveAccess(secondView, placeRole.id)).status, 200);
+      assert.equal((await store.approveAccess(secondView, placeRole.id)).status, 422);
+      assert.equal((await store.viewer(placeCoordinator)).access.role, "coordinator");
       const placeView = await store.viewer(placeCoordinator);
       assert.ok((await store.listCovers(placeView)).body.covers.some((c) => c.id === reliefCover.body.membership.id));
       assert.equal((await store.revokeAccess(placeView, roleA.id)).status, 403);
@@ -1264,7 +1275,7 @@ test(
       // Alerts by role: a coordinator by membership hears the whole network, a nurse in charge
       // only the new act-now rows inside their own ward.
       const coordinatorRole = await grant(deskCoordinator, "coordinator", { kind: "statewide" });
-      assert.equal((await store.approveAccess(secondView, coordinatorRole.id)).status, 200);
+      assert.equal((await store.approveAccess(secondView, coordinatorRole.id)).status, 422);
       const coordinatorView = await store.viewer(deskCoordinator);
       assert.equal(store.pushByRole(coordinatorView), true);
       assert.equal(store.pushByRole(aView), true);

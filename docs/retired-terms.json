@@ -2,6 +2,15 @@
   "$comment": "Words that describe something Ward Flow no longer uses. scripts/doc-facts.mjs warns on every current mention in maintained docs and fails a pull request that adds a new one. Add a term when a decision retires something; remove it once nothing should ever warn again. A line that matches allowWhen (for example one saying the thing is retired) is current and never flagged. Dated records, archives and the files listed in historicalFiles are history and are never scanned. Inside a maintained doc, keep a deliberate historical mention by wrapping it in the docs-script-refs:historical-start and docs-script-refs:historical-end markers.",
   "terms": [
     {
+      "id": "second-role-approval",
+      "pattern": "second[ -](?:person(?:'s)?[ -])?approv(?:er|al)|second person (?:approves|to approve)",
+      "flags": "i",
+      "allowWhen": "\\b(retired|removed|replaced|superseded|no longer|without|no second)\\b",
+      "since": "2026-10-17",
+      "why": "D-65 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype.",
+      "instead": "Granted roles work immediately. Keep grant authority, scope, expiry, revocation and audit requirements."
+    },
+    {
       "id": "azure",
       "pattern": "\\bazure|\\bentra\\b",
       "flags": "i",

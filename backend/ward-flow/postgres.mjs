@@ -19,8 +19,6 @@ const VERSION_TRUSTED_MS = 60_000;
 const GRANT_SETTLE_MS = 60_000;
 /** Most break glass grants one desk is sent at once. */
 const GRANT_LIST_LIMIT = 50;
-/** Roles that work only once a second person has approved them. */
-const APPROVED_ROLES = ["coordinator", "admin"];
 /** How often a role's "last used" time is written: once an hour is enough for a 90 day rule. */
 const LAST_USED_EVERY_MS = 3_600_000;
 /** A membership still in use, as the viewer counts it: cover, or used since `param` (a cutoff). */
@@ -280,8 +278,8 @@ export function createWorkspaceStore(
       let last = null;
       for (;;) {
         const { rows: desks } = await client.query(
-          `SELECT DISTINCT m.id, m.actor_id, m.role, m.scope, m.kind FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND (m.approved_at IS NOT NULL OR NOT (m.role = ANY($3::text[]))) AND ${inUse("$4")}${last ? " AND m.id > $5" : ""} ORDER BY m.id LIMIT ${DESK_PAGE}`,
-          [workspaceId, at, APPROVED_ROLES, unusedBefore(at), ...(last ? [last] : [])],
+          `SELECT DISTINCT m.id, m.actor_id, m.role, m.scope, m.kind FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND ${inUse("$3")}${last ? " AND m.id > $4" : ""} ORDER BY m.id LIMIT ${DESK_PAGE}`,
+          [workspaceId, at, unusedBefore(at), ...(last ? [last] : [])],
         );
         if (!desks.length) break;
         const accesses = await deskAccesses(client, desks, at);
@@ -510,11 +508,9 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $5) ORDER BY granted_at, id LIMIT 20"
-            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (approved_at IS NOT NULL OR NOT (role = ANY($4::text[]))) ORDER BY granted_at, id LIMIT 20",
-          covers
-            ? [workspaceId, actorId, at, APPROVED_ROLES, unusedBefore(at)]
-            : [workspaceId, actorId, at, APPROVED_ROLES],
+            ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
+            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
+          covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
           forgetVersionOnMissing(error);
@@ -638,7 +634,8 @@ export function createWorkspaceStore(
     grantedAt: new Date(row.granted_at).toISOString(),
     expiresAt: new Date(row.expires_at).toISOString(),
     lastUsedAt: row.last_used_at ? new Date(row.last_used_at).toISOString() : null,
-    approved: row.approved_at !== null || !APPROVED_ROLES.includes(row.role),
+    // Kept for older clients: every role is usable without a separate approval (D-65).
+    approved: true,
     approvedBy: row.approved_by,
     minutes: {
       granted: minutesFrom(row.granted_at, at),
@@ -985,7 +982,7 @@ export function createWorkspaceStore(
     },
     /**
      * Gives a person a role at a place until a set time. Nobody grants themselves a role or one
-     * wider than their own, and a coordinator or access admin role waits for a second approver.
+     * wider than their own. Granted roles work immediately without another approval (D-65).
      */
     async grantAccess(view, request) {
       const blocked = accessRefusal(view);
@@ -1172,15 +1169,9 @@ export function createWorkspaceStore(
         };
       });
     },
-    /** The second person's approval of a coordinator or access admin role. */
+    /** Older clients may still ask to approve a role; grants now work immediately. */
     approveAccess(view, membershipId) {
-      return changeMembership(view, membershipId, "ACCESS_APPROVE", (membership) =>
-        !APPROVED_ROLES.includes(membership.role) || membership.approved_at !== null
-          ? "That role is not waiting for approval."
-          : membership.granted_by === view.actorId || membership.actor_id === view.actorId
-            ? "A second person approves this role."
-            : ["approved_at", "approved_by"],
-      );
+      return changeMembership(view, membershipId, "ACCESS_APPROVE", () => "That role is not waiting for approval.");
     },
     /** Ends a role now. Cover is ended by its giver too, with no access admin. */
     revokeAccess(view, membershipId) {
