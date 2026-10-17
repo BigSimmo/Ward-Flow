@@ -234,7 +234,7 @@ safe global key across 30 files.
 | `D-63` | `decisions.md`:723 | D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026) |
 | `D-64` | `decisions.md`:731 | D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026) |
 | `D-65` | `decisions.md`:738 | D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026) |
-| `D-66` | `decisions.md`:751 | D-66. Granted roles work without a second approval (17 October 2026) |
+| `D-66` | `decisions.md`:752 | D-66. Granted roles work without a second approval (17 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -576,7 +576,7 @@ safe global key across 30 files.
 - `D-63` — line 723, heading: "D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026)"
 - `D-64` — line 731, heading: "D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026)"
 - `D-65` — line 738, heading: "D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026)"
-- `D-66` — line 751, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
+- `D-66` — line 752, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
