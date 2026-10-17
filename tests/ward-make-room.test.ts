@@ -194,11 +194,14 @@ describe("make room plans", () => {
   it("never starts a plan in a bed still being made ready", () => {
     const { preview, chains } = previewChains();
     const first = chains[0]!.stepDowns[0]!.toUnit;
-    const releases = Array.from(
-      { length: boundedBedAvailability(first).available },
-      (_, index) =>
-        ({ id: `prep-${index}`, unitId: first.id, state: "discharged", preparing: true }) as unknown as BedRelease,
-    );
+    const template = seedWardFlowState().bedReleases[0]!;
+    const releases: BedRelease[] = Array.from({ length: boundedBedAvailability(first).available }, (_, index) => ({
+      ...template,
+      id: `prep-${index}`,
+      unitId: first.id,
+      state: "discharged",
+      preparing: true,
+    }));
     const after = chainsFor(preview.admissions, preview.units, { bedReleases: releases });
     expect(after.some((chain) => chain.stepDowns[0]!.toUnit.id === first.id)).toBe(false);
   });
@@ -275,5 +278,80 @@ describe("make room plans", () => {
     const units = preview.units.map((unit) => ({ ...unit, speciallingCapacity: 0 }));
     const after = chainsFor(admissions, units);
     expect(after.some((plan) => plan.stepDowns.some((step) => step.admission.id === first.admission.id))).toBe(false);
+  });
+
+  it("never counts on a stay with no bed kind freeing a secure bed, even on an all-secure ward", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains.find((plan) => plan.targetUnit.lockedBeds >= plan.targetUnit.beds)!;
+    expect(chain).toBeDefined();
+    const movements = secureMovement(chain.movement.id);
+    const offered = (plans: ReturnType<typeof chainsFor>) =>
+      plans.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id);
+    // No secure bed free: a departure only gives one back when the stay is recorded in one.
+    const units = preview.units.map((unit) =>
+      unit.id === chain.targetUnit.id ? { ...unit, allocatableLocked: 0 } : unit,
+    );
+    const leaving = chain.stepDowns.at(-1)!.admission;
+    expect(leaving.bedKind).toBeUndefined();
+    expect(offered(chainsFor(preview.admissions, units, { movements }))).toBe(false);
+    const admissions = preview.admissions.map((admission) =>
+      admission.id === leaving.id ? { ...admission, bedKind: "locked" as const } : admission,
+    );
+    expect(offered(chainsFor(admissions, units, { movements }))).toBe(true);
+  });
+
+  it("never counts on a bed a departure gives to an arrival still waiting for one", () => {
+    const { preview, chains } = previewChains();
+    const target = chains[0]!.targetUnit;
+    const units = preview.units.map((unit) =>
+      unit.id === target.id
+        ? { ...unit, arrivalCapacityConflicts: [{ movementId: "WF-over-capacity", at: NOW_ANCHOR }] }
+        : unit,
+    );
+    expect(chainsFor(preview.admissions, units).some((plan) => plan.targetUnit.id === target.id)).toBe(false);
+  });
+
+  it("never offers a waiting referral a ward with no specialling place left, as a pull needs an override", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains[0]!;
+    const movements = seedWardFlowState().movements.map((movement) =>
+      movement.id === chain.movement.id ? { ...movement, specialling: true } : movement,
+    );
+    const units = preview.units.map((unit) =>
+      unit.id === chain.targetUnit.id ? { ...unit, speciallingCapacity: 0 } : unit,
+    );
+    const plans = chainsFor(preview.admissions, units, { movements });
+    expect(
+      plans.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
+    ).toBe(false);
+  });
+
+  it("counts a specialling place promised to an earlier plan's referral as taken", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains[0]!;
+    const target = chain.targetUnit;
+    const state = seedWardFlowState();
+    const original = state.movements.find((movement) => movement.id === chain.movement.id)!;
+    const second = { ...original, id: "WF-second-referral" as Movement["id"], openedAt: original.openedAt + 1 };
+    const movements = [
+      ...state.movements.map((movement) =>
+        movement.id === original.id ? { ...movement, specialling: true } : movement,
+      ),
+      { ...second, specialling: true },
+    ];
+    const units = preview.units.map((unit) => (unit.id === target.id ? { ...unit, speciallingCapacity: 1 } : unit));
+    // Every stay on the target may step down, and none of them holds a specialling place.
+    const admissions = preview.admissions.map((admission) =>
+      admission.unitId === target.id ? { ...admission, specialling: false, stepDownCandidate: true } : admission,
+    );
+    const planned = (wards: typeof units) =>
+      chainsFor(admissions, wards, { movements }).some(
+        (plan) => plan.movement.id === second.id && plan.targetUnit.id === target.id,
+      );
+    expect(planned(units)).toBe(false);
+    // With a second place, the second referral can be planned there too.
+    expect(planned(units.map((unit) => (unit.id === target.id ? { ...unit, speciallingCapacity: 2 } : unit)))).toBe(
+      true,
+    );
   });
 });

@@ -65,23 +65,29 @@ function fitsExceptForBed(subject: EligibilitySubject, unit: Unit, now: Instant)
 }
 
 /**
- * The ward as it would be once `leaving` moves out: one more free bed, and one fewer occupant in
- * their sex mix bucket. Every gate, `sex_mix` included, is then asked of this ward, so a plan is
- * only offered when the patient coming in would pass the normal placement checks at that moment.
+ * The ward as it would be once `leaving` moves out, by the engine's own departure rule
+ * (`departAdmission`): one fewer occupant in their sex mix bucket, and one more free bed unless an
+ * over-capacity arrival is still waiting for one, in which case the departure settles that arrival
+ * and frees nothing. The freed bed only counts as secure when the stay is recorded in a secure bed,
+ * since that is the only case the engine gives a secure bed back. Every gate, `sex_mix` included, is
+ * then asked of this ward, so a plan is only offered when the patient coming in would pass the
+ * normal placement checks at that moment.
  */
 function vacated(unit: Unit, leaving: Admission): Unit {
+  const sexMix = adjustSexMix(unit.sexMix, mixSexOf(leaving.gender, leaving.sex), -1);
+  const conflicts = unit.arrivalCapacityConflicts ?? [];
+  if (conflicts.length > 0) {
+    const own = conflicts.findIndex((entry) => entry.admissionId === leaving.id);
+    const settled = own >= 0 ? own : 0;
+    return { ...unit, sexMix, arrivalCapacityConflicts: conflicts.filter((_, index) => index !== settled) };
+  }
   return {
     ...unit,
     allocatable: { ...unit.allocatable, value: Math.max(0, unit.allocatable.value) + 1 },
-    allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (freesSecureBed(unit, leaving) ? 1 : 0)),
+    allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (leaving.bedKind === "locked" ? 1 : 0)),
     empty: { ...unit.empty, value: Math.max(0, unit.empty.value) + 1 },
-    sexMix: adjustSexMix(unit.sexMix, mixSexOf(leaving.gender, leaving.sex), -1),
+    sexMix,
   };
-}
-
-/** The bed `leaving` frees is secure when it is recorded as secure, or every bed on the ward is. */
-function freesSecureBed(unit: Unit, leaving: Admission): boolean {
-  return leaving.bedKind === "locked" || unit.lockedBeds >= unit.beds;
 }
 
 /**
@@ -153,20 +159,18 @@ export function deriveMakeRoomChains(input: {
   const units = (): Unit[] => input.units.filter((unit) => !unit.isClosed).map(current);
 
   /**
-   * One patient arriving on (1) or leaving (-1) `unit` in the projection. `secure` is a patient
-   * taking a secure bed, or leaving one recorded as secure. On a ward where every bed is secure,
-   * every move takes or frees one.
+   * One patient arriving on `unit` in the projection. `secure` is a patient taking a secure bed. On
+   * a ward where every bed is secure, every arrival takes one. Departures go through `vacated()`.
    */
-  function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1, secure = false): void {
+  function arrive(unit: Unit, sex: ReturnType<typeof mixSexOf>, secure: boolean): void {
     const ward = current(unit);
     const locked = secure || ward.lockedBeds >= ward.beds;
-    const lockedChange = locked ? -delta : 0;
     projected.set(unit.id, {
       ...ward,
-      allocatable: { ...ward.allocatable, value: Math.max(0, ward.allocatable.value - delta) },
-      allocatableLocked: Math.min(ward.lockedBeds, Math.max(0, ward.allocatableLocked + lockedChange)),
-      empty: { ...ward.empty, value: Math.max(0, ward.empty.value - delta) },
-      sexMix: adjustSexMix(ward.sexMix, sex, delta),
+      allocatable: { ...ward.allocatable, value: Math.max(0, ward.allocatable.value - 1) },
+      allocatableLocked: Math.min(ward.lockedBeds, Math.max(0, ward.allocatableLocked - (locked ? 1 : 0))),
+      empty: { ...ward.empty, value: Math.max(0, ward.empty.value - 1) },
+      sexMix: adjustSexMix(ward.sexMix, sex, 1),
     });
   }
 
@@ -178,17 +182,21 @@ export function deriveMakeRoomChains(input: {
       return unitId ? { ...admission, unitId } : admission;
     });
 
+  // Specialling and high acuity places that waiting referrals in plans already offered will take.
+  const plannedPlaces = new Map<string, { specialling: number; highAcuity: number }>();
+
   /**
    * The checks the engine makes beyond `eligibility()` before it moves a patient: a secure bed free
-   * when they would take one, and, for a ward to ward transfer, a specialling or high acuity place
-   * left (a transfer refuses without one). `admission` is the step down moving, if it is one.
+   * when they would take one, and a specialling or high acuity place left when they need one (a
+   * transfer refuses without one, and a pull needs an override). Places already promised to earlier
+   * plans count as taken. `admission` is the step down moving, if it is one.
    */
   function bedAndStaffing(subject: EligibilitySubject, unit: Unit, admission?: Admission, leaving?: Admission) {
     if (takesSecureBed(subject, unit, admission !== undefined) && lockedBedsFree(unit) < 1) return false;
-    if (!admission) return true;
     const stays = plannedStays().filter((stay) => stay.id !== leaving?.id);
-    if (admission.specialling && remainingSpeciallingCapacity(unit, stays) < 1) return false;
-    if (admission.highAcuity && remainingHighAcuityCapacity(unit, stays) < 1) return false;
+    const promised = plannedPlaces.get(unit.id) ?? { specialling: 0, highAcuity: 0 };
+    if (subject.specialling && remainingSpeciallingCapacity(unit, stays) - promised.specialling < 1) return false;
+    if (subject.highAcuity && remainingHighAcuityCapacity(unit, stays) - promised.highAcuity < 1) return false;
     return true;
   }
 
@@ -204,8 +212,8 @@ export function deriveMakeRoomChains(input: {
 
   /**
    * The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one
-   * fails. The bed `leaving` frees only counts as secure when it is recorded as secure or every bed
-   * on the ward is, so a stay with no bed kind recorded never frees a secure bed.
+   * fails. The bed `leaving` frees only counts as secure when it is recorded as secure, so a stay
+   * with no bed kind recorded never frees a secure bed, even on a ward where every bed is secure.
    */
   function checksIntoVacated(
     subject: EligibilitySubject,
@@ -287,16 +295,16 @@ export function deriveMakeRoomChains(input: {
       for (const step of stepDowns) {
         const sex = mixSexOf(step.admission.gender, step.admission.sex);
         const subject = subjectOf.get(step.admission.id)!.subject;
-        move(step.fromUnit, sex, -1, freesSecureBed(current(step.fromUnit), step.admission));
-        move(step.toUnit, sex, 1, takesSecureBed(subject, current(step.toUnit), true));
+        projected.set(step.fromUnit.id, vacated(current(step.fromUnit), step.admission));
+        arrive(step.toUnit, sex, takesSecureBed(subject, current(step.toUnit), true));
         plannedWard.set(step.admission.id, step.toUnit.id);
       }
-      move(
-        targetUnit,
-        mixSexOf(movement.gender, movement.sex),
-        1,
-        takesSecureBed(movement, current(targetUnit), false),
-      );
+      arrive(targetUnit, mixSexOf(movement.gender, movement.sex), takesSecureBed(movement, current(targetUnit), false));
+      const places = plannedPlaces.get(targetUnit.id) ?? { specialling: 0, highAcuity: 0 };
+      plannedPlaces.set(targetUnit.id, {
+        specialling: places.specialling + (movement.specialling ? 1 : 0),
+        highAcuity: places.highAcuity + (movement.highAcuity ? 1 : 0),
+      });
       chains.push({ movement, targetUnit, stepDowns, checks });
       break;
     }
