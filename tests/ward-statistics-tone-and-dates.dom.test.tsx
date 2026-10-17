@@ -18,7 +18,7 @@ import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistic
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, perthMidnight } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
@@ -48,10 +48,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function renderInProvider(node: ReactNode) {
+function renderInProvider(node: ReactNode, initialDayZero?: number) {
   return render(
     <ToastProvider>
-      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={initialDayZero}>
+        {node}
+      </WardFlowProvider>
     </ToastProvider>,
   );
 }
@@ -59,10 +61,14 @@ function renderInProvider(node: ReactNode) {
 describe("Weekly ED waits (stats-9)", () => {
   it("tones a wait of two days or more red, as the ED page does, and says when the figure stops", () => {
     asPhone();
-    renderInProvider(<WeeklyReportScreen />);
+    // The report groups by Perth calendar weeks. Pin the opening Wednesday as well as the
+    // demo minute so this seeded previous-week example does not go empty later in the week.
+    renderInProvider(<WeeklyReportScreen />, perthMidnight(2026, 9, 7).getTime());
     // The seeded last full week has long waits, one still open (the audit's own example).
     const list = screen.getByRole("list", { name: /^ED waits over/u });
     const rows = within(list).getAllByRole("listitem");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.textContent ?? "")?.[1] ?? 0) >= 2)).toBe(true);
     // D-39: never a WF- journey id; an AD- number or "Not yet admitted".
     expect(list.textContent).not.toMatch(/WF-/u);
     for (const row of rows) expect(row.textContent).toMatch(/^(AD-|Not yet admitted)/u);

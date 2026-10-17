@@ -93,20 +93,47 @@ const FORCED_COLOURS_PALETTE = bodyAfter(
   ".wardShellTokens",
 );
 const PRINT_PALETTE = bodyAfter(bodyAfter(THIRD_EDITION_WITHOUT_COMMENTS, "@media print"), ".wardShellTokens,");
+const GLARE_PALETTE = bodyAfter(
+  bodyAfter(THIRD_EDITION_WITHOUT_COMMENTS, "@media screen and (forced-colors: none)"),
+  ':global(:root[data-mode="glare"]) .wardShellTokens.wardShellTokens',
+);
+const WF_GLARE_PALETTE = bodyAfter(
+  bodyAfter(
+    readFileSync(resolve(process.cwd(), "src/app/ward-flow-v9-tokens.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""),
+    "@media screen and (forced-colors: none)",
+  ),
+  ':root[data-mode="glare"]',
+);
 
 const HUB_PAINT_DEPENDENCIES = ["--good", "--warn", "--accent", "--surface", "--line-strong"] as const;
+const GLARE_BRIDGE = {
+  "--good": "var(--wf-success-ink)",
+  "--warn": "var(--wf-warning-ink)",
+  "--accent": "var(--wf-accent)",
+  "--surface": "var(--wf-surface)",
+  "--line-strong": "var(--wf-line-3)",
+} as const;
+type PaletteScope = 0 | 1 | "glare";
 
 /** Follows `var(--x)` through the ward token layer and then globals, for one palette scope. */
-function resolveToken(token: string, scope: 0 | 1, seen = new Set<string>()): string {
+function resolveToken(token: string, scope: PaletteScope, seen = new Set<string>()): string {
   if (seen.has(token)) return `CYCLE:${token}`;
   seen.add(token);
   const thirdEdition = declarations(THIRD_EDITION_TOKENS, token);
   const ward = declarations(WARD_TOKENS, token);
   const global = declarations(GLOBALS, token);
   const candidates = thirdEdition.length > 0 ? thirdEdition : ward.length > 0 ? ward : global;
-  if (candidates.length === 0) return `UNDECLARED:${token}`;
+  // Glare is a scoped override, not array index 2 (which is explicit dark).
+  // Resolve its aliases through the actual v9 glare block, keeping both original
+  // palette branches and their source-order controls intact.
+  const glareValue =
+    scope === "glare" ? (declarations(GLARE_PALETTE, token)[0] ?? declarations(WF_GLARE_PALETTE, token)[0]) : undefined;
+  if (candidates.length === 0 && glareValue === undefined) return `UNDECLARED:${token}`;
   // The ward layer has no dark variant for these aliases; globals does.
-  const value = candidates[Math.min(scope, candidates.length - 1)] ?? "";
+  const value =
+    scope === "glare"
+      ? (glareValue ?? candidates[0] ?? "")
+      : (candidates[Math.min(scope, candidates.length - 1)] ?? "");
   const varMatch = /^var\((--[a-z0-9-]+)\)$/i.exec(value);
   return varMatch?.[1] === undefined ? value : resolveToken(varMatch[1], scope, seen);
 }
@@ -124,7 +151,7 @@ function resolveToken(token: string, scope: 0 | 1, seen = new Set<string>()): st
  * declare a background. **Two would be an ambiguity for a human to resolve, not a tie for this
  * function to break silently** — the second could be the one that actually paints.
  */
-function resolvedBackground(className: string, scope: 0 | 1): string {
+function resolvedBackground(className: string, scope: PaletteScope): string {
   // ⚠️ Comments are stripped FIRST. A `/* … */` block contains no braces, so it becomes part of the
   // captured selector text of the rule that follows it — and every rule in this stylesheet that
   // matters here is preceded by a long one. Without this, the selector never equals the class and
@@ -154,7 +181,7 @@ function resolvedBackground(className: string, scope: 0 | 1): string {
 // segment this list once named went with the ruling that folds out-of-service beds into Closed.
 const SEGMENTS = ["barReady", "barNotYet", "barPulled"] as const;
 
-describe("Ward Flow hub — the bed bar's segments are three different paints, in both palettes", () => {
+describe("Ward Flow hub — the bed bar's segments are three different paints, in light, dark and glare", () => {
   it("the resolver still understands the token files (if this fails, every result below is worthless)", () => {
     // Name every CSS scope that contributes to the declaration arrays rather than assuming that
     // index 1 means dark. The explicit-dark rule must duplicate prefers-dark, print must restore
@@ -163,12 +190,14 @@ describe("Ward Flow hub — the bed bar's segments are three different paints, i
       const base = declarations(BASE_PALETTE, token);
       const prefersDark = declarations(PREFERS_DARK_PALETTE, token);
       const explicitDark = declarations(EXPLICIT_DARK_PALETTE, token);
+      const glare = declarations(GLARE_PALETTE, token);
       const forcedColours = declarations(FORCED_COLOURS_PALETTE, token);
       const print = declarations(PRINT_PALETTE, token);
 
       expect(base, `${token} must have exactly one base declaration`).toHaveLength(1);
       expect(prefersDark, `${token} must have exactly one prefers-dark declaration`).toHaveLength(1);
       expect(explicitDark, `${token} must have exactly one explicit-dark declaration`).toEqual(prefersDark);
+      expect(glare, `${token} must bridge to its specific v9 glare role`).toEqual([GLARE_BRIDGE[token]]);
       expect(print, `${token} must have exactly one print declaration restoring light`).toEqual(base);
       expect(forcedColours, `${token} has the wrong forced-colours declaration shape`).toEqual(
         token === "--surface" ? [] : ["CanvasText"],
@@ -177,6 +206,7 @@ describe("Ward Flow hub — the bed bar's segments are three different paints, i
         ...base,
         ...prefersDark,
         ...explicitDark,
+        ...glare,
         ...forcedColours,
         ...print,
       ]);
@@ -184,7 +214,7 @@ describe("Ward Flow hub — the bed bar's segments are three different paints, i
 
     // The floor. A resolver that silently returns UNDECLARED for everything would make every
     // distinctness assertion below pass trivially, because "UNDECLARED:--a" !== "UNDECLARED:--b".
-    for (const scope of [0, 1] as const) {
+    for (const scope of [0, 1, "glare"] as const) {
       for (const segment of SEGMENTS) {
         const value = resolvedBackground(segment, scope);
         expect(value, `.${segment} resolved to an unresolvable value in scope ${scope}: ${value}`).not.toMatch(
@@ -206,7 +236,7 @@ describe("Ward Flow hub — the bed bar's segments are three different paints, i
     }
   });
 
-  it.each([0, 1] as const)("all three segments differ in palette scope %i", (scope) => {
+  it.each([0, 1, "glare"] as const)("all three segments differ in palette scope %s", (scope) => {
     const painted = SEGMENTS.map((segment) => ({ segment, value: resolvedBackground(segment, scope) }));
     const collisions: string[] = [];
     for (let i = 0; i < painted.length; i++) {
