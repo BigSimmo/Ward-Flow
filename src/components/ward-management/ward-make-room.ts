@@ -133,12 +133,18 @@ export function deriveMakeRoomChains(input: {
   // A closed ward takes nobody, so it is never a target or a stop in a chain.
   const units = (): Unit[] => input.units.filter((unit) => !unit.isClosed).map(current);
 
-  /** One patient arriving on (1) or leaving (-1) `unit` in the projection. */
-  function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1): void {
+  /**
+   * One patient arriving on (1) or leaving (-1) `unit` in the projection. A patient who needs a
+   * secure bed, or any patient on a ward where every bed is secure, takes or frees a secure bed too.
+   */
+  function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1, secure = false): void {
     const ward = current(unit);
+    const allSecure = ward.lockedBeds >= ward.beds;
+    const lockedChange = delta === 1 ? (secure || allSecure ? -1 : 0) : allSecure ? 1 : 0;
     projected.set(unit.id, {
       ...ward,
       allocatable: { ...ward.allocatable, value: Math.max(0, ward.allocatable.value - delta) },
+      allocatableLocked: Math.min(ward.lockedBeds, Math.max(0, ward.allocatableLocked + lockedChange)),
       empty: { ...ward.empty, value: Math.max(0, ward.empty.value - delta) },
       sexMix: adjustSexMix(ward.sexMix, sex, delta),
     });
@@ -236,7 +242,7 @@ export function deriveMakeRoomChains(input: {
         move(step.fromUnit, sex, -1);
         move(step.toUnit, sex, 1);
       }
-      move(targetUnit, mixSexOf(movement.gender, movement.sex), 1);
+      move(targetUnit, mixSexOf(movement.gender, movement.sex), 1, movement.security === "Secure");
       chains.push({ movement, targetUnit, stepDowns, checks });
       break;
     }
