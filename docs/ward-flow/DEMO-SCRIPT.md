@@ -489,7 +489,7 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 >
 > In our clinical governance architecture, the Nurse Unit Manager’s clinical gatekeeping is sovereign. A ward can decline any referral by selecting from standardized, transparent decline reasons (such as _Acuity beyond current ward nursing skill mix_, _Specialling capacity exceeded_, or _Physical environment unsafe for cohort_).
 >
-> While a Statewide Flow Coordinator possesses the administrative authority to record an override, the system forces that override to be explicitly documented with a detailed clinical justification. The software never overrides a clinician automatically; it ensures that when administrative overrides occur, they are transparent, peer-reviewed, and clinically auditable."
+> While a Statewide Flow Coordinator possesses the administrative authority to record an override, the actions that need one require a structured override reason, and a recorded override appears in the governance audit view. Routine transitions do not all require or retain a clinical rationale, and this prototype's log is not an immutable clinical record. The software never overrides a clinician automatically; it makes recorded overrides visible for review."
 
 ---
 
