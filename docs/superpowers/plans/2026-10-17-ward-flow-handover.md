@@ -67,12 +67,12 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 - A second pure selector resolves the source from live CLD or a confirmed/departing, unreleased bed release. An expected date alone is insufficient. A departure source must not receive a CLD badge.
 - Exhaustive integration includes `ward-flow-storage-validation.ts` (strict optional preference schema and existing unit reference), `ward-flow-referral-send-events.ts` (conversion), `ward-history.ts`, `ward-reanchor.ts` (flag timestamp), and local schemas in `backend/ward-flow/command-schemas.ts`. These are Agent A's additional owned paths with corresponding focused tests; no hosted backend call is required.
 
-- [ ] Write failing tests for eligible CLD, partial/empty/lapsed/paused criteria, involuntary/CTO/unknown status, wrong unit and departed admissions.
-- [ ] Add reducer tests for a pre-movement referral, an existing movement, confirmed departure, no qualifying departure, stale eligibility, closed referral/movement, duplicate clicks and invalid IDs. Assert that capacity, allocation, acceptance, urgency and transport booking remain unchanged.
-- [ ] Run `npx vitest run tests/ward-cld-turnaround-priority.test.ts tests/ward-event-permissions.test.ts`; confirm the new behaviour fails before implementation.
-- [ ] Implement selectors and preference events with coordinator authority, current-state validation and existing concurrency/refusal conventions. Register the event in every exhaustive event/permission/persistence registry used by the local and shared paths. Persist fixed IDs/enums/times only and validate restored preferences.
-- [ ] Re-run the focused tests. Inspect direct event consumers for exhaustive handling; run their exact focused tests where affected. Hand B the final payloads and selectors.
-- [ ] Commit named owned files after the required local admission checks. Root records the package evidence.
+- [x] Write failing tests for eligible CLD, partial/empty/lapsed/paused criteria, involuntary/CTO/unknown status, wrong unit and departed admissions.
+- [x] Add reducer tests for a pre-movement referral, an existing movement, confirmed departure, no qualifying departure, stale eligibility, closed referral/movement, duplicate clicks and invalid IDs. Assert that capacity, allocation, acceptance, urgency and transport booking remain unchanged.
+- [x] Run `npx vitest run tests/ward-cld-turnaround-priority.test.ts tests/ward-event-permissions.test.ts`; confirm the new behaviour fails before implementation.
+- [x] Implement selectors and preference events with coordinator authority, current-state validation and existing concurrency/refusal conventions. Register the event in every exhaustive event/permission/persistence registry used by the local and shared paths. Persist fixed IDs/enums/times only and validate restored preferences.
+- [x] Re-run the focused tests. Inspect direct event consumers for exhaustive handling; run their exact focused tests where affected. Hand B the final payloads and selectors.
+- [x] Commit named owned files after the required local admission checks. Root records the package evidence.
 
 ## Package B: Turnaround control and queue badge
 
@@ -80,11 +80,11 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 **Consumes:** A's selectors and event payloads. **Produces:** enabled human-triggered priority control and a source-accurate queue badge.
 
-- [ ] Write failing DOM cases for qualified CLD, qualifying departure, blocked action with a readable reason and duplicate flag feedback. Assert an explicit click dispatches exactly one preference event and no placement/transport event.
-- [ ] Run `npx vitest run tests/ward-cld-turnaround-priority.dom.test.tsx` to establish the failing behaviour.
-- [ ] Replace the inert scheduling notice with actual eligibility and handler wiring. Use the referral event until a linked movement exists. Render “Turnaround Candidate: Bed clearing via Criteria-Led Discharge” only for a currently valid CLD source; label departures separately. Expired preferences must not continue to imply a clearing bed.
-- [ ] Run both turnaround test files. Preserve existing clinical/legal/gender/capacity gates, human confirmation and refusal feedback.
-- [ ] Commit the package. Root hands the touched UI paths to E after integration.
+- [x] Write failing DOM cases for qualified CLD, qualifying departure, blocked action with a readable reason and duplicate flag feedback. Assert an explicit click dispatches exactly one preference event and no placement/transport event.
+- [x] Run `npx vitest run tests/ward-cld-turnaround-priority.dom.test.tsx` to establish the failing behaviour.
+- [x] Replace the inert scheduling notice with actual eligibility and handler wiring. Use the referral event until a linked movement exists. Render “Turnaround Candidate: Bed clearing via Criteria-Led Discharge” only for a currently valid CLD source; label departures separately. Expired preferences must not continue to imply a clearing bed.
+- [x] Run both turnaround test files. Preserve existing clinical/legal/gender/capacity gates, human confirmation and refusal feedback.
+- [x] Commit the package. Root hands the touched UI paths to E after integration.
 
 ## Package C: Scoped Ward and ED deltas
 
@@ -96,12 +96,12 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 **Scope decision:** Fingerprint only the ward's own addressing on a multi-destination referral. Another ward's decision on the same referral must not create an update. ED scope includes explicit ED addressing and linked movements' `originEdId`; an origin site alone does not establish a department or self-addressing.
 
-- [ ] Write failing pure tests for status changes without new IDs, scope filtering, the 15-minute boundary, older/malformed snapshots and account/scenario resets.
-- [ ] Write failing DOM tests for Ward and ED header pills, unrelated-unit isolation, independent scope acknowledgements, opening/closing/focus behaviour and a second update arriving while the sheet is open.
-- [ ] Run `npx vitest run tests/ward-since-last-look.test.ts tests/ward-since-last-look.dom.test.tsx`.
-- [ ] Implement scope-aware storage/subscriptions and a shared accessible pill/sheet. Capture the displayed changes before acknowledging on open; keep those captured rows visible after the live badge clears. Do not acknowledge later arrivals automatically.
-- [ ] Use narrow provider selectors and stable derived values. Reserve header space or keep a stable zero-state slot so badge changes do not shift adjacent controls. Reuse the existing Sheet and `SinceLastLookSheetBody`; there is no existing component named `SinceLastLookSheet` to import.
-- [ ] Run the focused tests and inspect the affected headers on phone/tablet widths with synthetic state during implementation. Commit the package.
+- [x] Write failing pure tests for status changes without new IDs, scope filtering, the 15-minute boundary, older/malformed snapshots and account/scenario resets.
+- [x] Write failing DOM tests for Ward and ED header pills, unrelated-unit isolation, independent scope acknowledgements, opening/closing/focus behaviour and a second update arriving while the sheet is open.
+- [x] Run `npx vitest run tests/ward-since-last-look.test.ts tests/ward-since-last-look.dom.test.tsx`.
+- [x] Implement scope-aware storage/subscriptions and a shared accessible pill/sheet. Capture the displayed changes before acknowledging on open; keep those captured rows visible after the live badge clears. Do not acknowledge later arrivals automatically.
+- [x] Use narrow provider selectors and stable derived values. Reserve header space or keep a stable zero-state slot so badge changes do not shift adjacent controls. Reuse the existing Sheet and `SinceLastLookSheetBody`; there is no existing component named `SinceLastLookSheet` to import.
+- [x] Run the focused tests and inspect the affected headers on phone/tablet widths with synthetic state during implementation. Commit the package.
 
 ## Package D: Synthetic session draft recovery
 
@@ -111,17 +111,17 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 **Interfaces:** add optional `storageKey?: string` to `DirtyStateGuardOptions`; reuse its `value`, `onRestore` and `clearDraft` APIs. Return `draftRestored: boolean`. Use versioned `wf-draft:` entries scoped to account/session, scenario, form kind and subject ID. Only explicitly enabled synthetic forms may save typed drafts. Non-opted-in guards retain existing privacy behaviour.
 
-- [ ] Write failing storage tests for the exact 500ms debounce, malformed/version-mismatched entries, blocked storage/quota, subject/account/scenario separation and no localStorage writes.
-- [ ] Write failing integration tests for unmount/remount restoration with “Draft restored from this session” and Clear, successful submission clearing, rejected submission retaining the draft and sign-out/reset invalidating pending writes.
-- [ ] Add delayed-auth/world-adoption tests: restore only after identity and the matching synthetic world are settled, with no transient local-demo fallback. Check envelope save/expiry timestamps, reject future timestamps and expire drafts no later than the existing session/workstation limit.
-- [ ] Persist a bounded referral projection without attached chart bytes. Keep files in memory during ordinary drawer use; after refresh clearly require reattachment. Test attachment/size/quota behaviour and never restore metadata that falsely marks an absent chart as ready to submit.
-- [ ] Run `npx vitest run tests/ward-draft-recovery.test.ts tests/ward-draft-recovery.dom.test.tsx`.
-- [ ] Add narrowly scoped opt-in persistence. Do not let another mounted dirty guard purge an active permitted draft. Consolidate the drawer's 800ms memory autosave and new 500ms storage writes through one owner/session fence; avoid competing restore paths.
-- [ ] Restore values only into the matching form draft, never directly into clinical state or a submitted legal record. Revalidate before submit. Clear cancels pending saves and resets the draft/notice; successful submit clears only after reducer acceptance. Do not claim recovery for keystrokes inside the unelapsed debounce.
-- [ ] Replace the legal sheet's synchronous success boolean with an observed command outcome before clearing. A delayed shared refusal must keep the form draft available for correction; test that path with a mocked command.
-- [ ] Wire local cleanup for explicit sign-out, auth expiry/account switch, demo reset and scenario reset. An old timer or unmount callback must not recreate a deleted draft.
-- [ ] Root documents the user-requested, synthetic-form exception to D-18 in the owned decision documentation; the general event-based typed-state privacy lock stays in force. Browser session restore can retain sessionStorage after a browser restart, so do not promise guaranteed erasure on browser close. Clear on observed session termination and sign-out; a stronger browser-close guarantee requires a different recovery design.
-- [ ] Re-run the new tests plus `npx vitest run tests/ward-use-dirty-state-guard.dom.test.tsx tests/ward-referral-drawer-sheet.dom.test.tsx`. Commit the package.
+- [x] Write failing storage tests for the exact 500ms debounce, malformed/version-mismatched entries, blocked storage/quota, subject/account/scenario separation and no localStorage writes.
+- [x] Write failing integration tests for unmount/remount restoration with “Draft restored from this session” and Clear, successful submission clearing, rejected submission retaining the draft and sign-out/reset invalidating pending writes.
+- [x] Add delayed-auth/world-adoption tests: restore only after identity and the matching synthetic world are settled, with no transient local-demo fallback. Check envelope save/expiry timestamps, reject future timestamps and expire drafts no later than the existing session/workstation limit.
+- [x] Persist a bounded referral projection without attached chart bytes. Keep files in memory during ordinary drawer use; after refresh clearly require reattachment. Test attachment/size/quota behaviour and never restore metadata that falsely marks an absent chart as ready to submit.
+- [x] Run `npx vitest run tests/ward-draft-recovery.test.ts tests/ward-draft-recovery.dom.test.tsx`.
+- [x] Add narrowly scoped opt-in persistence. Do not let another mounted dirty guard purge an active permitted draft. Consolidate the drawer's 800ms memory autosave and new 500ms storage writes through one owner/session fence; avoid competing restore paths.
+- [x] Restore values only into the matching form draft, never directly into clinical state or a submitted legal record. Revalidate before submit. Clear cancels pending saves and resets the draft/notice; successful submit clears only after reducer acceptance. Do not claim recovery for keystrokes inside the unelapsed debounce.
+- [x] Replace the legal sheet's synchronous success boolean with an observed command outcome before clearing. A delayed shared refusal must keep the form draft available for correction; test that path with a mocked command.
+- [x] Wire local cleanup for explicit sign-out, auth expiry/account switch, demo reset and scenario reset. An old timer or unmount callback must not recreate a deleted draft.
+- [x] Root documents the user-requested, synthetic-form exception to D-18 in the owned decision documentation; the general event-based typed-state privacy lock stays in force. Browser session restore can retain sessionStorage after a browser restart, so do not promise guaranteed erasure on browser close. Clear on observed session termination and sign-out; a stronger browser-close guarantee requires a different recovery design.
+- [x] Re-run the new tests plus `npx vitest run tests/ward-use-dirty-state-guard.dom.test.tsx tests/ward-referral-drawer-sheet.dom.test.tsx`. Commit the package.
 
 ## Package E: Canonical placement controls and 48px sizing
 
@@ -129,22 +129,32 @@ Do not give two agents concurrent ownership of a file. Each worker receives the 
 
 **Tests:** extend `tests/ward-wf-v10-parts.dom.test.tsx`; retain `tests/ward-style-drift-ratchet.test.ts`. Add targeted placement interaction cases to the existing screen tests if the primitive tests do not exercise the actual callbacks.
 
-- [ ] Write failing cases for actual Accept, Pull and Decline controls using the canonical primitive; blocked actions must expose the real gate reason, remain discoverable and dispatch nothing. Preserve explicit submit types, confirmation steps and mandatory decline/override rationale.
-- [ ] Run `npx vitest run tests/ward-wf-v10-parts.dom.test.tsx tests/ward-style-drift-ratchet.test.ts`.
-- [ ] Migrate primary actions to `Button variant="pri" size="md"` and secondary/Decline actions to `variant="sec"`. Preserve handlers and derive `disabledReason` from the actual gate; do not hard-code “Waiting on Form 1A medical clearance” for every failure.
-- [ ] Give migrated placement control containers a shared token override of `--wf-h-md: var(--ward-tap, var(--spacing-tap, 3rem))`. This makes their canonical medium controls 48px at all viewport widths without enlarging unrelated desktop buttons. Ensure screen CSS cannot reduce that minimum and permit action groups to wrap.
-- [ ] Verify focused suites. Inspect computed target bounds at phone and tablet widths, keyboard focus, tooltip/inline explanations, text clipping and loading behaviour. CSS-only assertions or jsdom do not prove rendered dimensions.
-- [ ] Commit the package and provide exact affected controls to the reviewer.
+- [x] Write failing cases for actual Accept, Pull and Decline controls using the canonical primitive; blocked actions must expose the real gate reason, remain discoverable and dispatch nothing. Preserve explicit submit types, confirmation steps and mandatory decline/override rationale.
+- [x] Run `npx vitest run tests/ward-wf-v10-parts.dom.test.tsx tests/ward-style-drift-ratchet.test.ts`.
+- [x] Migrate primary actions to `Button variant="pri" size="md"` and secondary/Decline actions to `variant="sec"`. Preserve handlers and derive `disabledReason` from the actual gate; do not hard-code “Waiting on Form 1A medical clearance” for every failure.
+- [x] Mark migrated canonical controls with `data-placement-action`; the shared Button CSS applies `--wf-h-md: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)))` and minimum width/height. This enforces 48px across viewports without enlarging unrelated desktop buttons. Ensure screen CSS cannot reduce that minimum and permit action groups to wrap.
+- [x] Verify focused suites. Inspect computed target bounds at phone and tablet widths, keyboard focus, tooltip/inline explanations, text clipping and loading behaviour. CSS-only assertions or jsdom do not prove rendered dimensions.
+- [x] Commit the package and provide exact affected controls to the reviewer.
 
 ## Root integration and completion
 
-- [ ] Recheck drift from the assessed baseline before execution; refresh the plan only where new source changes matter. Do not force main back to the handover SHA.
-- [ ] Carry one task identity and shared ownership log; integrate packages A, B, C, D, E in that order after their focused checks.
-- [ ] Root owns updates to the relevant code-map sections and the D-18 exception note; workers supply factual snippets instead of concurrently editing shared documentation.
-- [ ] Run required local static/admission checks selected from the current check guidance. Keep provider-backed checks mocked or explicitly pending. Do not start whole-suite checks, CI or deployment.
-- [ ] Obtain the fresh independent review of the integrated behaviour and diff. Address supported findings and rerun only affected suites.
-- [ ] Report exact test files/counts that ran, browser observations, main/task branch state and any limitation. Deployment and clinical production status remain unverified.
+- [x] Recheck drift from the assessed baseline before execution; refresh the plan only where new source changes matter. Do not force main back to the handover SHA.
+- [x] Carry one task identity and shared ownership log; integrate packages A, B, C, D, E in that order after their focused checks.
+- [x] Root owns updates to the relevant code-map sections and the D-18 exception note; workers supply factual snippets instead of concurrently editing shared documentation.
+- [x] Run required local static/admission checks selected from the current check guidance. Keep provider-backed checks mocked or explicitly pending. Do not start whole-suite checks, CI or deployment.
+- [x] Obtain the fresh independent review of the integrated behaviour and diff. Address supported findings and rerun only affected suites.
+- [x] Report exact test files/counts that ran, browser observations, main/task branch state and any limitation. Deployment and clinical production status remain unverified.
 
 ## Planning receipt
 
 Task identity: Ward Flow five-task handover review, 17 October 2026. Assessed head: `aa3a78b9ecfd1132a7ff48867bac5f1d366dbccc`. Main is clean and aligned to the fetched origin/main. Plan branch: `docs/ward-flow-handover-plan`; checkout: `/workspace/ward-flow-handover-plan`. Only this plan is changed. Product work and subagent execution remain planned. Local coordination/checkpoint: `/tmp/ward-flow-handover-review/`. No test suite, hosted CI, deployment or paid service was run for this review.
+
+## Completed implementation receipt
+
+All packages A–E are integrated on `feat/ward-flow-handover` in `/workspace/ward-flow-handover-plan`; main remains untouched after the initial remote alignment. Independent source review at `44615659` found three defects (receiving gate validation, incoming ED arm isolation and repeated-refresh attachment reminders); all have failing-then-passing regressions and were closed by fresh offline reviewer probes. A subsequent behaviour-preserving extraction keeps attachment metadata with the draft store.
+
+Local evidence: final required-focused selection, 9 files/118 tests passed; four additional drawer/gender/Undo suites, 47 tests passed; recovered draft extraction, 2 files/20 tests passed. Earlier integrated provider/privacy/auth checks passed, with exact commands retained in the private task checkpoint. Full source TypeScript, changed-file lint and normal commit admission checks are recorded separately; no whole-suite lock, hosted CI, push, protected-branch merge or deployment was run.
+
+Local Chromium verified Ward and ED headers at 390px and 1024px: contained stable pills, independent acknowledgement, visible sheet and Escape/focus restoration, with no application errors. A real browser reload restored an edited synthetic referral, displayed its notice and allowed Clear. Visible Pull, Accept and Decline controls on two wards measured at least 48px high at both widths without clipping. Screenshots and logs stay outside Git under `/tmp/ward-flow-handover-review/`. All browser outbound requests were blocked.
+
+Known limits: the final unelapsed 500ms debounce may lose recent keystrokes; chart bytes require reattachment after refresh; browser session restore can retain storage across restarts, bounded by the draft lifetime and observed session cleanup. No real data use, deployment or physical-device/browser-family acceptance is claimed.

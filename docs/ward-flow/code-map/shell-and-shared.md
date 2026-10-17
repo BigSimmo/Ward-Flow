@@ -1,5 +1,16 @@
 # Routes, shell, navigation and shared UI
 
+## Placement touch targets — 17 October 2026
+
+`wf/button.module.css` gives canonical medium Buttons marked `data-placement-action` a scoped
+48px minimum via the ward tap token. This covers Accept, Pull and Decline in the ward home list,
+arrivals corridor, coordinator shortlist and referral candidate/review actions without changing
+other desktop button density. `disabledReason` keeps an unavailable action discoverable and
+explains its actual gate. Confirmation, decline rationale and documented placement-review
+handlers remain caller-owned. Focused interaction coverage is in
+`tests/ward-placement-controls.dom.test.tsx` and the existing v10 primitive, gender-placement,
+ward refusal and coordinator Undo suites.
+
 ## Feature flags, bed meeting TV and demo reset — 15 October 2026
 
 Unfinished work now ships in the real screens behind a feature flag instead of on a hidden page.
