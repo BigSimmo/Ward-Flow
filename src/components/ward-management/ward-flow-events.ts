@@ -286,6 +286,14 @@ export type WardFlowEvent =
       outcome: ExaminationOutcome;
     }
   | {
+      type: "TOGGLE_ADMISSION_CHECKLIST_ITEM";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      item: "contraband_search" | "medication_chart";
+      done: boolean;
+    }
+  | {
       /**
        * The emergency department records whether this patient's medical workup is done.
        * `cleared` is the clinician's stated answer; the ABSENCE of `Referral.medicalClearance`
@@ -2358,6 +2366,13 @@ export type WardFlowEvent =
       actingUnitId?: string;
     }
   | {
+      type: "NOTIFY_SUPPORT_SERVICE";
+      role: WardFlowRole;
+      now: Instant;
+      releaseId: string;
+      service: "pharmacy" | "transport" | "cleaning";
+    }
+  | {
       /**
        * Advisory checklist (9 Oct 2026): records that a carer, personal support person or the
        * Mental Health Advocacy Service was told about an involuntary patient's admission, transfer
@@ -3061,6 +3076,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  TOGGLE_ADMISSION_CHECKLIST_ITEM: ["ed", "ward", "coordinator"],
+  NOTIFY_SUPPORT_SERVICE: ["ward", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the
   // coordinator, who may undo anyone's.

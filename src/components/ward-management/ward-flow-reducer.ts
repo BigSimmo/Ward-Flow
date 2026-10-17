@@ -626,6 +626,10 @@ export function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     case "RECORD_SUPPORT_NOTIFICATION":
       return event.movementId ?? event.admissionId ?? "none";
+    case "NOTIFY_SUPPORT_SERVICE":
+      return event.releaseId;
+    case "TOGGLE_ADMISSION_CHECKLIST_ITEM":
+      return event.movementId;
     case "EVALUATE_LEAVE_BED_WARNINGS":
     case "EVALUATE_ARRIVAL_LATENESS":
     case "RECORD_HANDOVER_SIGN_OFF":
@@ -2333,6 +2337,28 @@ export function reduceClinicalEvent(
     case "CHANGE_LEGAL_STATUS":
       return reduceReferralSendEvent(state, event, decision, REFERRAL_SEND_EVENT_HELPERS);
 
+    case "NOTIFY_SUPPORT_SERVICE": {
+      const release = state.bedReleases.find((candidate) => candidate.id === event.releaseId);
+      if (!release || release.state !== "confirmed") return reject(state, event, "transition");
+      if (release.sentSupportServices?.includes(event.service)) return reject(state, event, "duplicate");
+      const next = replaceBedRelease(state, release.id, {
+        ...release,
+        sentSupportServices: [...(release.sentSupportServices ?? []), event.service],
+      });
+      return appendAudit(state, next, event, { outcome: "accepted", reasonCode: "none" });
+    }
+    case "TOGGLE_ADMISSION_CHECKLIST_ITEM": {
+      const movement = state.movements.find((candidate) => candidate.id === event.movementId);
+      if (!movement || typeof event.done !== "boolean") return reject(state, event, "not-found");
+      const nextMovement =
+        event.item === "contraband_search"
+          ? { ...movement, contrabandSearchDone: event.done }
+          : { ...movement, medicationChartDone: event.done };
+      return appendAudit(state, replaceMovement(state, movement.id, nextMovement), event, {
+        outcome: "accepted",
+        reasonCode: "none",
+      });
+    }
     case "RECORD_MEDICAL_CLEARANCE":
     case "RECORD_ARRIVED_IN_DEPARTMENT":
     case "RECORD_TRANSPORT_NEED":
