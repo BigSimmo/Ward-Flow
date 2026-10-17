@@ -119,7 +119,7 @@ function Stepper({ moves, bedReleases }: { moves: Move[]; bedReleases: BedReleas
               From {move.fromName}.{" "}
               {index === 0
                 ? `${move.to.name} has ${readyBeds(move.to)} Ready ${readyBeds(move.to) === 1 ? "bed" : "beds"} now.${preparationNote(bedsPendingPreparation(move.to.id, bedReleases))}`
-                : `Takes the bed freed by step ${index}.`}
+                : `Takes the bed freed by step ${index} once that bed is marked Ready.`}
             </p>
             <Checks checks={move.checks} />
           </div>

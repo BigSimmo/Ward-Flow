@@ -71,7 +71,9 @@ function fitsExceptForBed(subject: EligibilitySubject, unit: Unit, now: Instant)
  * and frees nothing. The freed bed only counts as secure when the stay is recorded in a secure bed,
  * since that is the only case the engine gives a secure bed back. Every gate, `sex_mix` included, is
  * then asked of this ward, so a plan is only offered when the patient coming in would pass the
- * normal placement checks at that moment.
+ * normal placement checks at that moment. The engine records the freed bed as being made ready, so
+ * the next move in a plan can only be placed once a ward member marks that bed Ready; the plan card
+ * says so.
  */
 function vacated(unit: Unit, leaving: Admission): Unit {
   const sexMix = adjustSexMix(unit.sexMix, mixSexOf(leaving.gender, leaving.sex), -1);
