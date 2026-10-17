@@ -839,6 +839,18 @@ describe("focused test admission", () => {
     expect(path.dirname(first)).toBe(path.join(baseDirectory, "clinical-kb-vitest-cache"));
   });
 
+  it("keeps Vitest's persistent module cache in the worktree cache, outside installed dependencies", async () => {
+    const specifier = "../vitest.config.mts";
+    const { default: config } = await import(specifier);
+    const moduleCache = config.test.fsModuleCachePath;
+    expect(typeof moduleCache).toBe("string");
+    expect(path.isAbsolute(moduleCache)).toBe(true);
+    const relative = path.relative(vitestCacheDirectory(process.cwd()), moduleCache);
+    expect(path.isAbsolute(relative)).toBe(false);
+    expect(relative.split(path.sep)).not.toContain("..");
+    expect(path.resolve(moduleCache).split(path.sep)).not.toContain("node_modules");
+  });
+
   it("uses different TypeScript incremental state for different worktrees", () => {
     const baseDirectory = temporaryDirectory("clinical-kb-tsc-cache-");
     const first = typescriptBuildInfoPath(path.join(baseDirectory, "worktree-a"), baseDirectory);

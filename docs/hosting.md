@@ -112,6 +112,12 @@ content security policy naming only the backend and the Supabase project. Signin
 signed-in site in a browser was not checked. Railway Singapore is offshore, so this hosting is
 for synthetic data only.
 
+## Post-merge verification and recovery
+
+The [operations readiness record](ward-flow/operations-readiness.md) records the deployed
+revision, browser acceptance status, rollback candidates and isolated-restore procedure. Use it
+for current verification work; the dated setup observations above remain historical evidence.
+
 ## Known limits
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
