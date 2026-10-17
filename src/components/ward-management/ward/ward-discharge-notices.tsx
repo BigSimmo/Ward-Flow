@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
-import { Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
+import { useId, useState } from "react";
+import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
 import {
   SUPPORT_SERVICE_TYPES,
   type SupportServiceType,
@@ -14,25 +14,44 @@ const SERVICE_LABELS: Record<SupportServiceType, string> = {
   cleaning: "Cleaning, bed made ready",
 };
 
-const NOT_WIRED = "Not wired in this prototype.";
-
 /**
  * Top 25 item 1: after the ward confirms a discharge, the pharmacy, transport and cleaning notices
- * it would send together. No event records these notices yet, so each send says it is not wired
- * rather than claiming a notice went anywhere.
+ * it can send for the bed.
  */
 export function WardDischargeNotices({
   bedLabel,
   dueSoonHours,
+  sentServices,
+  onSendService,
   onClose,
 }: {
   /** The bed this discharge frees, never the person's name. */
   bedLabel: string;
   /** Set when the stay is due out within the discharge prep window, in hours. */
   dueSoonHours: number | null;
+  /** Optional controlled set of services already notified for this release. */
+  sentServices?: ReadonlySet<SupportServiceType>;
+  /** Optional callback when a service notice is sent. */
+  onSendService?: (service: SupportServiceType) => void;
   onClose: () => void;
 }) {
   const baseId = useId();
+  const [localSent, setLocalSent] = useState<ReadonlySet<SupportServiceType>>(() => new Set());
+  const effectiveSent = sentServices ?? localSent;
+
+  const handleSend = (service: SupportServiceType) => {
+    if (effectiveSent.has(service)) return;
+    if (onSendService) {
+      onSendService(service);
+    } else {
+      setLocalSent((prev) => {
+        const next = new Set(prev);
+        next.add(service);
+        return next;
+      });
+    }
+  };
+
   return (
     <Card
       className={styles.card}
@@ -51,22 +70,32 @@ export function WardDischargeNotices({
           {dueSoonHours !== null ? ` Due out within ${dueSoonHours} hours, so these are best sent now.` : ""}
         </p>
         <ul className={styles.list}>
-          {SUPPORT_SERVICE_TYPES.map((service) => (
-            <li key={service} className={styles.row}>
-              <span className={styles.service}>{SERVICE_LABELS[service]}</span>
-              <Button
-                variant="sec"
-                size="sm"
-                aria-disabled="true"
-                aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
-              >
-                Send notice
-              </Button>
-              <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
-                {NOT_WIRED}
-              </span>
-            </li>
-          ))}
+          {SUPPORT_SERVICE_TYPES.map((service) => {
+            const isSent = effectiveSent.has(service);
+            return (
+              <li key={service} className={styles.row} data-sent={isSent ? "true" : "false"}>
+                <span className={styles.service}>{SERVICE_LABELS[service]}</span>
+                <Button
+                  variant="sec"
+                  size="sm"
+                  aria-pressed={isSent}
+                  aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
+                  onClick={() => handleSend(service)}
+                >
+                  {isSent ? "Notice sent" : "Send notice"}
+                </Button>
+                <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
+                  {isSent ? (
+                    <Badge tone="success" size="sm">
+                      Sent
+                    </Badge>
+                  ) : (
+                    "Ready to send"
+                  )}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </CardBody>
       <CardFoot>

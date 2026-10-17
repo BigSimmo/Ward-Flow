@@ -1,4 +1,4 @@
-import { daysInBed, isDischargeBarrier } from "./ward-admissions";
+import { isDischargeBarrier } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
@@ -666,15 +666,6 @@ export function reduceBedEvent(
       // anything off the list would reach browser storage as free text (review findings S2-12/A2-2).
       if (event.barrier !== null && event.barrier !== "None" && !isDischargeBarrier(event.barrier)) {
         return reject(state, event, "SET_DISCHARGE_BARRIER barrier must be chosen from DISCHARGE_BARRIERS");
-      }
-
-      const stay = daysInBed(admission, event.now) ?? 0;
-      if (stay < 7 && event.barrier !== null && event.barrier !== "None") {
-        return reject(
-          state,
-          event,
-          `Cannot set discharge barrier: patient length of stay (${stay} days) is less than 7 days`,
-        );
       }
 
       const updatedAdmission: Admission = {

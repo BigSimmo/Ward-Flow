@@ -47,14 +47,15 @@ function confirmFirstRelease(flagOn: boolean) {
 }
 
 describe("discharge support notices", () => {
-  it("offers pharmacy, transport and cleaning notices after a confirmed discharge, each not wired", () => {
+  it("offers pharmacy, transport and cleaning notices after a confirmed discharge and marks each sent when tapped", () => {
     confirmFirstRelease(true);
     const card = screen.getByTestId("ward-discharge-notices");
     expect(card).toHaveTextContent("Discharge support notices");
-    expect(within(card).getAllByText("Not wired in this prototype.")).toHaveLength(3);
-    for (const button of within(card).getAllByRole("button", { name: "Send notice" })) {
-      expect(button).toHaveAttribute("aria-disabled", "true");
-    }
+    const sendButtons = within(card).getAllByRole("button", { name: "Send notice" });
+    expect(sendButtons).toHaveLength(3);
+    fireEvent.click(sendButtons[0]!);
+    expect(within(card).getByRole("button", { name: "Notice sent" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(card).getByText("Sent")).toBeTruthy();
     fireEvent.click(within(card).getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("ward-discharge-notices")).toBeNull();
   });

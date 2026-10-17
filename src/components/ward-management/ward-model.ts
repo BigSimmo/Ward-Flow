@@ -1813,6 +1813,10 @@ export type Movement = {
   /** Append-only log of evolving clinical reassessments recorded while awaiting placement. */
   reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
   reassessmentNote?: string;
+  /** Top 25 item 14: whether the pre-transfer contraband search has been completed. */
+  contrabandSearchDone?: boolean;
+  /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
+  medicationChartDone?: boolean;
 };
 
 /**
