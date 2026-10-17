@@ -1,5 +1,17 @@
 # Engine: reducer, events, state and persistence
 
+## Turnaround preferences — 17 October 2026
+
+`ward-turnaround-priority.ts` derives eligible CLD readiness from occupied admissions, the
+existing legal-status lookup and current criteria expiry. It distinguishes CLD from an unblocked
+confirmed departure. Coordinator-only `FLAG_REFERRAL_TURNAROUND_PRIORITY` and
+`FLAG_MOVEMENT_TURNAROUND_PRIORITY` record a waiting patient's unit preference, never a bed
+allocation or transport booking. Referral conversion retains the preference. Storage validation,
+shared command schemas, history labels and synthetic timestamp reanchoring cover both events.
+`liveTurnaroundPreference` prevents a historical preference from claiming a currently clearing
+bed. Focused coverage lives in `tests/ward-cld-turnaround-priority.test.ts` and the existing
+event-permission, referral-model and reanchor tests.
+
 ## Shared coordinator implementation — 7 October 2026
 
 The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)
