@@ -183,7 +183,7 @@ export type CommunityTreatmentOrder = {
   earlier?: EndedCommunityTreatmentOrder[];
 };
 
-export type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
+type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
 
 /** True while a Form 5A is in force (not yet ended). */
 export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
@@ -231,7 +231,7 @@ export function patientAddedOnDayOf(patient: Patient, now: Instant): boolean {
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's
  *  own comment. `today` is passed rather than read so this stays deterministic. */
-export function patientAgeYears(patient: Patient, today: Date): number {
+export function patientAgeYears(patient: Pick<Patient, "dateOfBirth">, today: Date): number {
   // Read the birth date's own calendar fields. `new Date("YYYY-MM-DD")` is UTC midnight, which
   // local getters read as the day before in zones west of UTC.
   const [year, month, day] = patient.dateOfBirth.slice(0, 10).split("-").map(Number);
@@ -249,11 +249,8 @@ export function patientCohort(
   dateOfBirth: string,
   today: Date | string | number = new Date(),
 ): "Adult" | "Older adult" | "Youth" {
-  const born = new Date(dateOfBirth);
   const now = typeof today === "string" || typeof today === "number" ? new Date(today) : today;
-  let age = now.getFullYear() - born.getFullYear();
-  const monthDelta = now.getMonth() - born.getMonth();
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < born.getDate())) age -= 1;
+  const age = patientAgeYears({ dateOfBirth }, now);
   if (age < 25) return "Youth";
   if (age >= 65) return "Older adult";
   return "Adult";
@@ -318,7 +315,7 @@ export function patientDisplayName(patient: Patient): string {
  * - Digits only: DDMMYYYY, YYYYMMDD
  * - Partial: DD/MM, MM/YYYY, YYYY
  */
-export function matchDateOfBirth(dobIso: string, query: string): boolean {
+function matchDateOfBirth(dobIso: string, query: string): boolean {
   if (!dobIso || !query) return false;
   const clean = query.trim();
   if (clean.length < 2) return false;
@@ -377,6 +374,17 @@ export type PatientSearchContext = {
   units?: readonly { id: string; name: string }[];
 };
 
+function getPatientOptionalField(
+  patient: Patient,
+  field: "primaryDiagnosis" | "presentingComplaint" | "clinicalNotes" | "assignedWard",
+): string | undefined {
+  if (typeof patient === "object" && patient !== null && field in patient) {
+    const val = Reflect.get(patient, field);
+    return typeof val === "string" ? val : undefined;
+  }
+  return undefined;
+}
+
 // The context argument is part of the public signature that search callers already pass; matching is
 // currently patient-record-only, so it is accepted and deliberately unused.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -401,20 +409,23 @@ export function findPatients(patients: readonly Patient[], query: string, _conte
 
     // 3. Clinical diagnosis & complaint keywords on patient profile
     // These free-text fields are not on the Patient type; read them only if a record carries them.
-    const pAny: Partial<Record<"primaryDiagnosis" | "presentingComplaint" | "clinicalNotes" | "assignedWard", string>> =
-      patient as unknown as Record<string, string | undefined>;
-    if (pAny.primaryDiagnosis && fold(pAny.primaryDiagnosis).includes(needle)) {
+    const primaryDiagnosis = getPatientOptionalField(patient, "primaryDiagnosis");
+
+    if (primaryDiagnosis && fold(primaryDiagnosis).includes(needle)) {
       return true;
     }
-    if (pAny.presentingComplaint && fold(pAny.presentingComplaint).includes(needle)) {
+    const presentingComplaint = getPatientOptionalField(patient, "presentingComplaint");
+    if (presentingComplaint && fold(presentingComplaint).includes(needle)) {
       return true;
     }
-    if (pAny.clinicalNotes && fold(pAny.clinicalNotes).includes(needle)) {
+    const clinicalNotes = getPatientOptionalField(patient, "clinicalNotes");
+    if (clinicalNotes && fold(clinicalNotes).includes(needle)) {
       return true;
     }
 
     // 4. Assigned ward matching on patient profile
-    if (pAny.assignedWard && fold(pAny.assignedWard).includes(needle)) {
+    const assignedWard = getPatientOptionalField(patient, "assignedWard");
+    if (assignedWard && fold(assignedWard).includes(needle)) {
       return true;
     }
 

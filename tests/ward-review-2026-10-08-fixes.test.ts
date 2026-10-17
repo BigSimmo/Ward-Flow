@@ -321,7 +321,7 @@ describe("A2-1: a scenario holding a drawer referral can be saved and loaded", (
       cleared: false,
       expectedAt: "2026-10-07T18:00+08:00",
       contactName: "Demo Doctor",
-      contactPhone: "0400000000",
+      contactPhone: "0000000000",
     },
     triageAndRampCompleted: false,
     additionalDocuments: false,
@@ -334,7 +334,7 @@ describe("A2-1: a scenario holding a drawer referral can be saved and loaded", (
     })),
     referrer: {
       name: "Demo Sender",
-      phone: "0400000000",
+      phone: "0000000000",
       email: "demo@example.com",
       role: "Nurse",
       location: "SCGH ED",

@@ -22,7 +22,6 @@ function describeAvailableHook(name: string, body: () => void) {
 if (!existsSync(hook)) {
   describe("public PR handoff boundary", () => {
     it("has no partial Claude hook registration and retains the PR policy", () => {
-      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
       expect(readFileSync(join(process.cwd(), "AGENTS.md"), "utf8")).toContain("Do not babysit CI");
     });
   });

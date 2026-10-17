@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/components/ward-management/ward-download";
+
 import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -126,7 +128,7 @@ const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.given
 const clockOrMissing = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatInstant(instant));
 
 /**
- * PIR CHRONOLOGY (D-37, WF-57). Choose one synthetic person and read every recorded event for them
+ * PIR CHRONOLOGY (D-37). Choose one synthetic person and read every recorded event for them
  * in time order: occurred and recorded time, role, action, before and after, and any override or
  * change reason. Prints from the browser and downloads as CSV. The audit trail is coordinator-only,
  * so it is read only when the route's role is the coordinator; any other role sees records and the
@@ -247,7 +249,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   function downloadCsv() {
     if (!chronology) return;
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob(
         [
           chronologyCsv(
@@ -259,12 +261,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         ],
         { type: "text/csv;charset=utf-8" },
       ),
+      "ward-flow-synthetic-chronology.csv",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-chronology.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   function copyRow(row: ChronologyRow) {

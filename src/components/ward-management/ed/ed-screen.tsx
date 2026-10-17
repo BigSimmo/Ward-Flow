@@ -70,7 +70,7 @@ import {
  *   ed-screen-lists.tsx, ed-screen-inbox.tsx, ed-screen-referred.tsx   the Lists tabs
  *   ed-screen-patient-dialog.tsx the patient record dialog
  */
-export { edBayAssignments, edReferralClockLines, outstandingItem } from "./ed-screen-model";
+export { edBayAssignments, edReferralClockLines } from "./ed-screen-model";
 
 type EdScreenProps = {
   edId: string;
@@ -474,7 +474,11 @@ export function EdScreen({ edId }: EdScreenProps) {
       {arrivalPlanMovement ? (
         <ArrivalTimeModal
           isOpen
-          onClose={() => setArrivalPlanOpenFor(undefined)}
+          onClose={() => {
+            setArrivalPlanOpenFor(undefined);
+            // Back to the patient record only when that record opened the plan.
+            if (rowPanels.arrivalPlanFromRecord) setSelectedPatientId(arrivalPlanMovement.id);
+          }}
           movement={arrivalPlanMovement}
           role="ed"
         />

@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -42,6 +41,8 @@ import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-man
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -80,6 +81,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsPhone,
   useIsTabletPortrait,
   useMediaQuery,
 } from "@/components/wf";
@@ -134,24 +136,19 @@ import { type HandoverScope, NETWORK_SCOPE_VALUE, handoverScopeValue, parseHando
 
 export { type HandoverScope, handoverScopeValue, parseHandoverScope } from "./handover-scope";
 
-const PHONE_WIDTH_QUERY = "(max-width: 48rem)";
-
-function subscribePhoneWidth(onChange: () => void) {
-  if (typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(PHONE_WIDTH_QUERY);
-  query.addEventListener?.("change", onChange);
-  return () => query.removeEventListener?.("change", onChange);
-}
-
-function readPhoneWidth() {
-  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_WIDTH_QUERY).matches;
+function allRecordsScopeLabel(access: WardAccess): string {
+  return accessIsWholeNetwork(access) ? "Whole network" : "All records you can access";
 }
 
 /** THE SCOPE'S NAME */
-export function handoverScopeLabel(scope: HandoverScope, units: Unit[]): string | undefined {
+export function handoverScopeLabel(
+  scope: HandoverScope,
+  units: Unit[],
+  allRecordsLabel = "Whole network",
+): string | undefined {
   switch (scope.kind) {
     case "network":
-      return "Whole network";
+      return allRecordsLabel;
     case "service":
       return scope.id;
     case "ward":
@@ -195,13 +192,6 @@ export function movementInHandoverScope(
       );
     }
   }
-}
-
-/** Observation / acuity label — urgent flag only, not invented observation cadence. */
-export function movementObservationLabel(movement: Movement): string {
-  if (movement.flaggedUrgent) return "Urgent";
-  if (movement.specialling) return "1:1 Specialling";
-  return "Standard";
 }
 
 /**
@@ -271,7 +261,7 @@ export function resolveMovementPatient(
  * Egress table, which until 25 September 2026 named six patients nobody in this model holds, each
  * under a real seeded UMRN that belongs to someone else entirely (audit finding, same date).
  */
-export function resolveAdmissionPatient(
+function resolveAdmissionPatient(
   admission: Admission | undefined,
   patients: Patient[],
   referrals: Referral[],
@@ -380,8 +370,10 @@ export function HandoverPage() {
     "inboxSnoozes",
   );
   const now = useWardFlowClock();
+  const access = useEffectiveWardAccess();
+  const allRecordsLabel = allRecordsScopeLabel(access);
   const longStayOn = useWardFeatureFlag("top25-long-stay-dossier");
-  const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const isPhoneWidth = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
   const portrait = isTabletPortrait && !isPhoneWidth;
@@ -397,7 +389,7 @@ export function HandoverPage() {
     return handoverScopeLabel(parsed, units) === undefined ? NETWORK_SCOPE_VALUE : handoverScopeValue(parsed);
   });
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
-  const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";
+  const scopeLabel = handoverScopeLabel(scope, units, allRecordsLabel) ?? allRecordsLabel;
 
   /* which handover */
   const [shift, setShift] = useState<HandoverShiftId>(() => defaultHandoverShift(now));
@@ -1600,7 +1592,7 @@ function HandoverHistory({
 }
 
 /** THE ONE CONTROL — `<select aria-label="Filter the sheet">` */
-export function HandoverScopeControl({
+function HandoverScopeControl({
   value,
   onChange,
   units,
@@ -1609,6 +1601,7 @@ export function HandoverScopeControl({
   onChange: (value: string) => void;
   units: Unit[];
 }) {
+  const access = useEffectiveWardAccess();
   const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
   const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
@@ -1625,7 +1618,7 @@ export function HandoverScopeControl({
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
+        <option value={NETWORK_SCOPE_VALUE}>{allRecordsScopeLabel(access)}</option>
         <optgroup label="Service">
           {HEALTH_SERVICES.map((service) => (
             <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>

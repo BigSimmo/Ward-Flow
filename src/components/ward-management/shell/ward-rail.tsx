@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
@@ -32,19 +32,18 @@ import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts"
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { Dot, durMinutes, useIsPhone } from "@/components/wf";
-import { createBrowserStore } from "@/lib/client-store-factory";
-import {
-  applyGlareToDocument,
-  applyThemeToDocument,
-  readStoredGlarePreference,
-  readStoredThemePreference,
-} from "@/lib/theme-client";
-import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
-import { closeWardDrawer, isPhoneViewport, openWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
+import { applyAppearance } from "./ward-bar";
+import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import styles from "./ward-rail.module.css";
-import { RAIL_OPEN_STORAGE_KEY, readWardRailEarlyShape } from "./ward-rail-early";
+import { readWardRailEarlyShape } from "./ward-rail-early";
+import {
+  isTypingTarget,
+  openDrawerForShortcut,
+  setRailOpenPreference,
+  useWardDocumentPreferences,
+} from "./ward-rail-preferences";
 import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
@@ -102,54 +101,8 @@ const SERVICE_SHORT_LABEL: Record<HealthService, string> = {
   Private: "Private",
 };
 
-function readRailOpenPreference(storedValue: string | null | undefined): boolean {
-  // Standard §7.7: "A browser that refuses storage still gets the page, open." Absent or any
-  // value other than the literal "closed" reads as open.
-  return storedValue !== "closed";
-}
-
-let inMemoryFallback: boolean | null = null;
-
-function getRailOpenSnapshot(): boolean {
-  if (inMemoryFallback !== null) return inMemoryFallback;
-  try {
-    return readRailOpenPreference(window.localStorage.getItem(RAIL_OPEN_STORAGE_KEY));
-  } catch {
-    return true;
-  }
-}
-
-const railOpenChangeEvent = "ward-flow-rail-change";
-
-function subscribeRailOpen(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(railOpenChangeEvent, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(railOpenChangeEvent, onChange);
-  };
-}
-
-/**
- * Exported for the Settings rail control, together with `setRailOpenPreference` below. These two
- * are the ONLY writers of the rail preference, which is why they are shared rather than copied:
- * `setRailOpenPreference` dispatches `ward-flow-rail-change`, and a duplicate writer that omitted
- * that dispatch would leave the rail stale until a reload.
- *
- * `RAIL_OPEN_STORAGE_KEY` is not re-exported from here, deliberately, so a two-keys catcher can
- * still fail. It lives in `./ward-rail-early` only so the pre-paint script reads the same key.
- */
-export const useRailOpenStore = createBrowserStore(subscribeRailOpen, getRailOpenSnapshot, true);
-
-export function setRailOpenPreference(open: boolean) {
-  try {
-    window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, open ? "open" : "closed");
-    inMemoryFallback = null;
-  } catch {
-    inMemoryFallback = open;
-  }
-  window.dispatchEvent(new Event(railOpenChangeEvent));
-}
+// The rail preference store moved to `./ward-rail-preferences` so a phone keeps it without the rail.
+export { setRailOpenPreference, useRailOpenStore } from "./ward-rail-preferences";
 
 const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
 
@@ -329,11 +282,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const bedAlerts = phone
     ? NO_BED_ALERTS
     : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
-  const open = useRailOpenStore();
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
-  const appearance = useAppearanceStore();
-  const glare = useGlareStore();
+  const { open, appearance } = useWardDocumentPreferences();
   const service = useServiceScope();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
@@ -426,37 +377,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     [],
   );
 
-  // Keeps the root attribute in sync with the remembered preference on every mount and whenever
-  // it changes elsewhere (another tab, the toggle below, Settings).
-  useEffect(() => {
-    document.documentElement.setAttribute("data-rail", open ? "open" : "closed");
-  }, [open]);
-
-  // The pre-paint script already applied the pin. Re-applying after hydration is idempotent and
-  // keeps data-theme, .dark and theme-color together if anything changed them in between. The theme
-  // is one app-wide preference, so leaving Ward Flow keeps it rather than handing the root back.
-  // The effect re-runs when `appearance` changes but applies the stored value: during hydration the
-  // store still reports its server default, and applying that would flash the wrong theme.
-  useLayoutEffect(() => {
-    const preference = readStoredThemePreference();
-    applyThemeToDocument(preference);
-    if (preference !== "system" || typeof window.matchMedia !== "function") return;
-    // Auto follows the OS live, so both theme layers move together when it changes.
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      applyThemeToDocument("system");
-    };
-    query.addEventListener("change", onChange);
-    return () => {
-      query.removeEventListener("change", onChange);
-    };
-  }, [appearance]);
-
-  // Glare mode the same way: painted before first paint, re-applied when it changes in another tab.
-  useLayoutEffect(() => {
-    applyGlareToDocument(readStoredGlarePreference());
-  }, [glare]);
-
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -478,28 +398,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         closeWardDrawer();
         return;
       }
-      const target = event.target;
-      const tag = target instanceof HTMLElement ? target.tagName : "";
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
-      if (target instanceof HTMLElement && target.isContentEditable) return;
-
-      if (event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        if (event.key === "T" || event.key === "t") {
-          event.preventDefault();
-          openWardDrawer("tasks");
-          return;
-        }
-        if (event.key === "R" || event.key === "r") {
-          event.preventDefault();
-          openWardDrawer("referral");
-          return;
-        }
-        if (event.key === "A" || event.key === "a") {
-          event.preventDefault();
-          openWardDrawer("activity");
-          return;
-        }
-      }
+      if (isTypingTarget(event.target)) return;
+      if (openDrawerForShortcut(event)) return;
 
       if (event.key !== "[") return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;

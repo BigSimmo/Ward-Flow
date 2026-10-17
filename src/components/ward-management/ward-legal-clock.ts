@@ -85,6 +85,13 @@ export function form3CRefusedAfter3D(previousCode?: string): boolean {
   return previousCode === "3D";
 }
 
+/** Form 3C is refused on a movement that arrived on Form 3D, by the same reading as the reducer. */
+export function movementRefuses3C(
+  movement: { legalForm?: { code?: string }; legalClock?: { code?: string } } | undefined,
+): boolean {
+  return form3CRefusedAfter3D(movement?.legalForm?.code ?? movement?.legalClock?.code);
+}
+
 export function isArrivalLate(
   estimatedArrivalAt: Instant | undefined,
   stage: string | undefined,

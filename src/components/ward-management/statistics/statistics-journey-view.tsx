@@ -508,7 +508,7 @@ export function StatisticsJourneyView({
                             </small>
                           </span>
                           <span className={styles.barArea} aria-hidden="true">
-                            <i className={styles.guide} style={{ left: "50%" }} />
+                            <i className={cx(styles.guide, styles.guideMid)} />
                             <span className={styles.bar}>
                               {row.occupied > 0 ? (
                                 <span className={styles.occupied} style={{ width: share(row.occupied) }} />

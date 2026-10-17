@@ -1,11 +1,10 @@
 "use client";
 
 import { useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from "react";
-import { ChevronDown, Lock, type LucideIcon } from "lucide-react";
+import { Lock, type LucideIcon } from "lucide-react";
 import { Tooltip } from "./tooltip";
 import { cx } from "./cx";
 import { Icon } from "./icon";
-import { Menu, type MenuItem } from "./menu";
 import { Count, Kbd, SrOnly, Spinner } from "./primitives";
 import styles from "./button.module.css";
 
@@ -84,11 +83,15 @@ export function Button(props: ButtonProps) {
     children,
     onClick,
     type = "button",
+    disabled,
+    "aria-disabled": ariaDisabled,
     "aria-describedby": describedBy,
     ...rest
   } = props;
   const reasonId = useId();
   const off = Boolean(disabledReason);
+  const isAriaDisabled = off || ariaDisabled === true || ariaDisabled === "true";
+  const restProps = isAriaDisabled ? rest : disabled !== undefined ? { ...rest, disabled } : rest;
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -96,18 +99,22 @@ export function Button(props: ButtonProps) {
       event.preventDefault();
       return;
     }
+    if (isAriaDisabled) {
+      // Caller-owned aria-disabled: block the native action but let the caller's guard announce why.
+      event.preventDefault();
+    }
     onClick?.(event);
   };
 
   const button = (
     <button
+      {...restProps}
       type={type}
       className={buttonClass({ variant, size, iconOnly: Boolean(iconOnly), className })}
-      aria-disabled={off || undefined}
+      aria-disabled={isAriaDisabled || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}
       onClick={handleClick}
-      {...rest}
     >
       {loading ? <Spinner /> : icon ? <Icon icon={icon} size={iconSize} /> : null}
       {iconOnly ? null : <span className={styles.label}>{children}</span>}
@@ -150,60 +157,6 @@ export function DisabledReason({ id, children }: { id: string; children: ReactNo
     <span className={styles.reason} id={id}>
       <Icon icon={Lock} size={14} />
       {children}
-    </span>
-  );
-}
-
-export type SplitButtonProps = {
-  /** Main action label. */
-  children: ReactNode;
-  onClick: () => void;
-  /** Items for the caret menu. */
-  menuItems: MenuItem[];
-  /** Accessible name of the caret, such as "More referral options". */
-  menuLabel: string;
-  variant?: Extract<ButtonVariant, "pri" | "sec" | "light">;
-  size?: ButtonSize;
-  icon?: LucideIcon;
-  kbd?: string;
-  className?: string;
-};
-
-/**
- * Primary action plus a caret that opens a menu, as on the header New referral. Two real
- * buttons: the main action, and the caret (`aria-haspopup="menu"`).
- */
-export function SplitButton({
-  children,
-  onClick,
-  menuItems,
-  menuLabel,
-  variant = "pri",
-  size = "md",
-  icon,
-  kbd,
-  className,
-}: SplitButtonProps) {
-  return (
-    <span className={cx(styles.split, className)}>
-      <Button variant={variant} size={size} icon={icon} kbd={kbd} className={styles.splitMain} onClick={onClick}>
-        {children}
-      </Button>
-      <Menu
-        label={menuLabel}
-        items={menuItems}
-        align="end"
-        trigger={(triggerProps) => (
-          <button
-            {...triggerProps}
-            type="button"
-            aria-label={menuLabel}
-            className={buttonClass({ variant, size, iconOnly: true, className: styles.splitCaret })}
-          >
-            <Icon icon={ChevronDown} size={14} />
-          </button>
-        )}
-      />
     </span>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import { dayOf } from "@/components/ward-management/ward-clock";
@@ -32,9 +32,34 @@ export interface DelaysScreenProps {
   movements?: Movement[];
 }
 
+const LOCATION_CHANGE_EVENT = "ward-flow:locationchange";
+const HISTORY_PATCHED_KEY = "__wardFlowLocationPatched";
+
+function ensureLocationHistoryPatched() {
+  if (typeof window === "undefined") return;
+  const win = window as Window & { [HISTORY_PATCHED_KEY]?: boolean };
+  if (win[HISTORY_PATCHED_KEY]) return;
+  win[HISTORY_PATCHED_KEY] = true;
+  const origPushState = window.history.pushState.bind(window.history);
+  const origReplaceState = window.history.replaceState.bind(window.history);
+  window.history.pushState = function patchedPushState(...args) {
+    origPushState(...args);
+    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
+  };
+  window.history.replaceState = function patchedReplaceState(...args) {
+    origReplaceState(...args);
+    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
+  };
+}
+
 function subscribeToLocation(listener: () => void) {
+  ensureLocationHistoryPatched();
   window.addEventListener("popstate", listener);
-  return () => window.removeEventListener("popstate", listener);
+  window.addEventListener(LOCATION_CHANGE_EVENT, listener);
+  return () => {
+    window.removeEventListener("popstate", listener);
+    window.removeEventListener(LOCATION_CHANGE_EVENT, listener);
+  };
 }
 /** shell-9: `?show=severe` from the Menu's Delays row. */
 function readSevereFromLocation() {
@@ -50,6 +75,7 @@ function readAliasFromLocation() {
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const [, startTransition] = useTransition();
   const thresholds = useDueSoonThresholds();
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
@@ -63,10 +89,13 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const raise = useWardRaise("coordinator");
 
   const allMovements = movementsOverride ?? liveMovements;
-  const movements =
-    service === null
-      ? allMovements
-      : allMovements.filter((movement: Movement) => movementBelongsToService(movement, service, units));
+  const movements = useMemo(
+    () =>
+      service === null
+        ? allMovements
+        : allMovements.filter((movement: Movement) => movementBelongsToService(movement, service, units)),
+    [allMovements, service, units],
+  );
 
   // Prototype notices (owner rule D4).
   const [notice, setNotice] = useState<string | null>(null);
@@ -86,34 +115,55 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     [],
   );
 
-  const open = movements.filter(isOpen);
-  const openNetworkWide = allMovements.filter(isOpen);
-  const groups = delayGroups(movements, units, now, thresholds);
+  const open = useMemo(() => movements.filter(isOpen), [movements]);
+  const openNetworkWide = useMemo(
+    () => (movements === allMovements ? open : allMovements.filter(isOpen)),
+    [movements, allMovements, open],
+  );
+  const groups = useMemo(() => delayGroups(movements, units, now, thresholds), [movements, units, now, thresholds]);
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
-  const escalated = openNetworkWide.filter((movement) => movement.escalation !== undefined);
+  const escalated = useMemo(
+    () => openNetworkWide.filter((movement) => movement.escalation !== undefined),
+    [openNetworkWide],
+  );
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
-  const networkGroups = delayGroups(allMovements, units, now, thresholds);
-  const severeRows = networkGroups
-    .filter((group) => SEVERE_CAUSES.includes(group.cause))
-    .flatMap((group) => group.movements.map((movement) => ({ movement, title: group.title as string | undefined })));
-  const shownAttentionIds = new Set(severeRows.map((row) => row.movement.id));
-  const extraAttention =
-    service === null
-      ? []
-      : urgentMovementsOutsideService(openNetworkWide, service, units, now, configuration)
-          .filter((movement) => !shownAttentionIds.has(movement.id))
-          .map((movement) => ({
-            movement,
-            title: networkGroups.find((group) => group.movements.some((candidate) => candidate.id === movement.id))
-              ?.title,
-          }));
-  const attention = [...severeRows, ...extraAttention];
+  const networkGroups = useMemo(
+    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now, thresholds)),
+    [movements, allMovements, groups, units, now, thresholds],
+  );
+  const urgentOutsideMovements = useMemo(
+    () => (service === null ? [] : urgentMovementsOutsideService(openNetworkWide, service, units, now, configuration)),
+    [openNetworkWide, service, units, now, configuration],
+  );
+  const attention = useMemo(() => {
+    const severeRows = networkGroups
+      .filter((group) => SEVERE_CAUSES.includes(group.cause))
+      .flatMap((group) => group.movements.map((movement) => ({ movement, title: group.title as string | undefined })));
+    const shownAttentionIds = new Set(severeRows.map((row) => row.movement.id));
+    const extraAttention =
+      service === null
+        ? []
+        : urgentOutsideMovements
+            .filter((movement) => !shownAttentionIds.has(movement.id))
+            .map((movement) => ({
+              movement,
+              title: networkGroups.find((group) => group.movements.some((candidate) => candidate.id === movement.id))
+                ?.title,
+            }));
+    return [...severeRows, ...extraAttention];
+  }, [networkGroups, service, urgentOutsideMovements]);
 
-  const closedToday = movements.filter(
-    (movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(now),
+  const closedToday = useMemo(
+    () => movements.filter((movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(now)),
+    [movements, now],
+  );
+
+  const noRecordedServiceCount = useMemo(
+    () => (service === null ? 0 : noRecordedServiceMovementCount(allMovements, units)),
+    [service, allMovements, units],
   );
 
   const isOutsideService = (movement: Movement): boolean =>
@@ -143,7 +193,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             type="button"
             className={styles.aliasBannerDismiss}
             onClick={() => {
-              setAliasBannerDismissed(true);
+              startTransition(() => {
+                setAliasBannerDismissed(true);
+              });
             }}
           >
             Dismiss
@@ -156,9 +208,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           shown={open.length}
           total={openNetworkWide.length}
           noun="movements"
-          noRecordedServiceCount={noRecordedServiceMovementCount(allMovements, units)}
+          noRecordedServiceCount={noRecordedServiceCount}
           urgentOutside={{
-            count: urgentMovementsOutsideService(openNetworkWide, service, units, now, configuration).length,
+            count: urgentOutsideMovements.length,
           }}
         />
       )}

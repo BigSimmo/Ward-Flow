@@ -67,7 +67,7 @@ function fromBase32(code: string): Uint8Array | null {
 }
 
 /** Whether a string has the shape of an internal record id (`WF-`, `PT-`, `RF-` or `AD-`). */
-export function looksLikeRecordId(value: string): boolean {
+function looksLikeRecordId(value: string): boolean {
   return RECORD_ID.test(value);
 }
 

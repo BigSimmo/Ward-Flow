@@ -2,7 +2,12 @@ import { daysInBed, isDischargeBarrier } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
-import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
+import {
+  BED_PREPARATION_NOTES,
+  BED_RELEASE_BLOCKERS,
+  DISCHARGE_DELAY_CLEAR_REASONS,
+  type DischargeDelayClearReason,
+} from "@/components/ward-management/ward-change-reasons";
 import { nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { leaveBedNeedsOpenWarning } from "@/components/ward-management/ward-legal-clock";
@@ -150,7 +155,41 @@ export function reduceBedEvent(
       if (admission.blockReason === null) {
         return reject(state, event, `admission ${admission.id} carries no discharge blocker to clear`);
       }
-      return replaceAdmission(state, admission.id, { ...admission, blockReason: null });
+      if (event.reason !== undefined && !DISCHARGE_DELAY_CLEAR_REASONS.includes(event.reason)) {
+        return reject(
+          state,
+          event,
+          `CLEAR_STAY_DISCHARGE_BLOCKER reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`,
+        );
+      }
+      // No default: an omitted reason stays omitted rather than becoming a clinical reason.
+      const clearedReason = event.reason as DischargeDelayClearReason | undefined;
+      const reasonPatch = clearedReason === undefined ? {} : { reason: clearedReason };
+      const linkedRelease = state.bedReleases.find(
+        (candidate) =>
+          candidate.admissionId === admission.id &&
+          candidate.state !== "discharged" &&
+          candidate.blocker !== null &&
+          candidate.unitId === event.actingUnitId &&
+          candidate.blocker === admission.blockReason,
+      );
+      const clearance = { at: event.now, by: event.role, ...reasonPatch, blocker: admission.blockReason };
+      if (!linkedRelease) {
+        // No bed release to hold the clearance, so the stay keeps it rather than losing it.
+        return replaceAdmission(state, admission.id, {
+          ...admission,
+          blockReason: null,
+          stayBlockClearances: [...(admission.stayBlockClearances ?? []), clearance],
+        });
+      }
+      const next = replaceAdmission(state, admission.id, { ...admission, blockReason: null });
+      return replaceBedRelease(next, linkedRelease.id, {
+        ...linkedRelease,
+        blocker: null,
+        blockedBy: null,
+        lastClearedBlockReason: clearedReason,
+        clearedBlockHistory: [...(linkedRelease.clearedBlockHistory ?? []), clearance],
+      });
     }
 
     case "CONFIRM_CAPACITY": {
@@ -187,7 +226,7 @@ export function reduceBedEvent(
           `CONFIRM_CAPACITY says unit ${unit.id} can allocate ${event.value} beds, which is more than the ${unit.beds} beds it has`,
         );
       }
-      // WF-08 optimistic-concurrency: a caller that read revision N and now writes must be told
+      // Optimistic-concurrency: a caller that read revision N and now writes must be told
       // when any resource change has since landed, rather than silently overwriting it.
       if (
         !Number.isSafeInteger(event.expectedRevision) ||
@@ -439,11 +478,22 @@ export function reduceBedEvent(
       if (release.blocker === null) {
         return reject(state, event, `release ${release.id} carries no blocked flag to clear`);
       }
+      if (event.reason !== undefined && !DISCHARGE_DELAY_CLEAR_REASONS.includes(event.reason)) {
+        return reject(state, event, `CLEAR_BED_RELEASE_BLOCK reason must be chosen from DISCHARGE_DELAY_CLEAR_REASONS`);
+      }
+      // No default: an omitted reason stays omitted rather than becoming a clinical reason.
+      const clearedReason = event.reason as DischargeDelayClearReason | undefined;
+      const reasonPatch = clearedReason === undefined ? {} : { reason: clearedReason };
       const unblocked: BedRelease = {
         ...release,
         blocker: null,
         blockedBy: null,
         confirmedAt: event.now,
+        lastClearedBlockReason: clearedReason,
+        clearedBlockHistory: [
+          ...(release.clearedBlockHistory ?? []),
+          { at: event.now, by: event.role, ...reasonPatch, blocker: release.blocker },
+        ],
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -574,7 +624,7 @@ export function reduceBedEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }],
+        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }].slice(-500),
       };
     }
 
@@ -716,6 +766,13 @@ export function reduceBedEvent(
       });
       const next = { ...state, leaveBeds };
       return notices.length === 0 ? next : appendNotices(next, notices);
+    }
+
+    default: {
+      // Sub-reducer slice narrowed via `Extract<WardFlowEvent, ...>`; ensure every BedEvent case is handled.
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
     }
   }
 }

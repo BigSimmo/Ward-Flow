@@ -53,7 +53,7 @@ describe("discharge support notices", () => {
     expect(card).toHaveTextContent("Discharge support notices");
     expect(within(card).getAllByText("Not wired in this prototype.")).toHaveLength(3);
     for (const button of within(card).getAllByRole("button", { name: "Send notice" })) {
-      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
     }
     fireEvent.click(within(card).getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("ward-discharge-notices")).toBeNull();

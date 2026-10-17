@@ -151,7 +151,9 @@ describe("ward bed drawer history", () => {
     const replace = vi.spyOn(window.history, "replaceState");
     fireEvent.click(screen.getByRole("button", { name: "Next bed" }));
     const written = replace.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(written).toEqual({ keep: 1 });
+    expect(written).toEqual(expect.objectContaining({ keep: 1 }));
+    expect(written).not.toHaveProperty("__NA");
+    expect(written).not.toHaveProperty("__PRIVATE_NEXTJS_INTERNALS_TREE");
     expect(window.location.search).toBe("?bed=2");
   });
 

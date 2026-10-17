@@ -181,7 +181,7 @@ export const REGISTERED_SURFACES: readonly string[] = [
  *
  * The edit is applied to an in-memory copy. No file is written and nothing is executed.
  */
-export type FalsifyingEdit = {
+type FalsifyingEdit = {
   /**
    * The change to the world this edit stands for, in the register's own words — what would have to
    * become true of the system for the claim to be false. This is the half no machine can check, so
@@ -262,7 +262,7 @@ const DESTINATION_OPTIONS = "src/components/ward-management/referrals/referral-d
  * blast radius, because a new unit field on this record falsifies all three of them together.
  */
 const REFERRAL_ADDRESSING_BODY =
-  'export type ReferralAddressing = { /** Explicitly placed on a recipient waitlist; still awaiting an answer. */ waitlistedAt?: Instant; /** When this specific destination was referred. */ referredAt?: Instant; destination: ReferralDestination; state: ReferralAddressingState; /** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: Instant; /** A ROLE, never a person \u2014 see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ decidedBy?: string; /** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is * `psychiatric_ward` or `emergency_department` (the latter further narrowed to * `ED_DECLINE_REASONS` by convention, never enforced by this type); from * `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` \u2014 O-16.6, community- * decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two * vocabularies apart at runtime, since this field\'s own type cannot narrow per destination kind \u2014 * see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; /** * Only on an `accepted` addressing, and only from `OVERRIDE_REASONS` \u2014 the SAME vocabulary the * three placement events use, deliberately not a second one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused without one. * * \u26a0\ufe0f Its ABSENCE on an accepted addressing means the referral passed every gate \u2014 not that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing \u2014 the other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: string; /** FD-5 \u2014 when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back the REFERRAL, * not one ward\'s copy of it. A destination that already answered keeps its answer. The reasoning, * and the three same-shaped events it must not be confused with, are on * `RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: Instant; /** The ROLE that wrote it down \u2014 never the person who withdrew, who is the referrer and outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; /** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one * destination alone (`destinationKind: "community_team"`), never on a whole-referral withdrawal \u2014 * that act carries no reason at all (see that event\'s own doc comment, `ward-flow-events.ts`, for * why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for "why a person * took back one destination\'s own live request", rather than a second list for this narrower act. */ withdrawalReason?: WardRequestWithdrawalReason; /** * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`, * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward\'s act, not the person. */ heldBedNumber?: number; };';
+  'export type ReferralAddressing = { /** Explicitly placed on a recipient waitlist; still awaiting an answer. */ waitlistedAt?: Instant; /** When this specific destination was referred. */ referredAt?: Instant; destination: ReferralDestination; state: ReferralAddressingState; /** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: Instant; /** A ROLE, never a person \u2014 see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ decidedBy?: string; /** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is * `psychiatric_ward` or `emergency_department` (the latter further narrowed to * `ED_DECLINE_REASONS` by convention, never enforced by this type); from * `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` \u2014 O-16.6, community- * decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two * vocabularies apart at runtime, since this field\'s own type cannot narrow per destination kind \u2014 * see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; /** * Only on an `accepted` addressing, and only from `OVERRIDE_REASONS` \u2014 the SAME vocabulary the * three placement events use, deliberately not a second one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused without one. * * \u26a0\ufe0f Its ABSENCE on an accepted addressing means the referral passed every gate \u2014 not that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing \u2014 the other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: string; /** FD-5 \u2014 when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back the REFERRAL, * not one ward\'s copy of it. A destination that already answered keeps its answer. The reasoning, * and the three same-shaped events it must not be confused with, are on * `RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: Instant; /** The ROLE that wrote it down \u2014 never the person who withdrew, who is the referrer and outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; /** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one * destination alone (`destinationKind: "community_team"`), never on a whole-referral withdrawal \u2014 * that act carries no reason at all (see that event\'s own doc comment, `ward-flow-events.ts`, for * why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for "why a person * took back one destination\'s own live request", rather than a second list for this narrower act. */ withdrawalReason?: WardRequestWithdrawalReason; /** * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`, * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward\'s act, not the person. */ heldBedNumber?: number; /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */ reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>; reassessmentNote?: string; };';
 
 /**
  * The `psychiatric_ward` destination arm, cited whole — from its `kind` discriminant to the brace
@@ -344,7 +344,11 @@ const BED_RELEASE_BODY =
   '`preparing: false` forces it null, because "not being made ready, waiting * on a clean" is a ' +
   "contradiction. * * **A note here still gates NOTHING.** See `preparing` above and " +
   "`BED_PREPARATION_NOTES`. */ preparationNote: BedPreparationNote | null; confirmedAt: Instant; /** A " +
-  "role — a unit or service label. Never a personal name. */ confirmedBy: string; };";
+  "role — a unit or service label. Never a personal name. */ confirmedBy: string; " +
+  "/** Reason the most recent discharge blocker was cleared, chosen from `DISCHARGE_DELAY_CLEAR_REASONS`. */ " +
+  "lastClearedBlockReason?: DischargeDelayClearReason; " +
+  "/** Append-only history of cleared discharge blockers on this bed release. */ " +
+  "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; /** Absent when the clearing event named no reason; never defaulted. */ readonly reason?: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; };";
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather
@@ -627,19 +631,20 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     // written using the same phrase. The register caught it and said so by name. A locator that
     // matches a comment as well as the page cannot say which paragraph makes the claim.
     rendered: "one shared timestamp that later release actions overwrite",
-    claim: "`BedRelease` carries a single `confirmedAt`, not one instant per act on the release.",
+    claim:
+      "`BedRelease` carries a single `confirmedAt` that every readiness act overwrites, not one instant per act. " +
+      "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
+      "admission in `stayBlockClearances` when no release is linked.",
     sourceFile: WARD_MODEL,
     evidence: BED_RELEASE_BODY,
     falsifiedBy: {
       change:
         "The release record gains a SECOND instant — `preparedAt` — so `confirmedAt` stops being the one field " +
         "every act on the release overwrites. This is the edit the old two-field citation survived.",
-      find:
-        "confirmedAt: Instant; /** A role — a unit or service label. Never a personal name. */ confirmedBy: string; " +
-        "};",
+      find: "confirmedAt: Instant; /** A role — a unit or service label. Never a personal name. */ confirmedBy: string;",
       replaceWith:
         "confirmedAt: Instant; preparedAt: Instant | null; /** A role — a unit or service label. Never a personal " +
-        "name. */ confirmedBy: string; };",
+        "name. */ confirmedBy: string;",
     },
   },
   {
@@ -960,7 +965,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: 'data-testid="ward-statistics-refused-so-far-count"',
     claim:
       "The counted condition is exactly `referredUnitIds` empty, `declines` non-empty and no accepting unit " +
-      "(WF-23, 2026-09-17: an accepted movement with an earlier decline is not 'declined by all') — no clock and " +
+      "(2026-09-17: an accepted movement with an earlier decline is not 'declined by all') — no clock and " +
       "no closure state.",
     sourceFile: WARD_DERIVATIONS,
     evidence:

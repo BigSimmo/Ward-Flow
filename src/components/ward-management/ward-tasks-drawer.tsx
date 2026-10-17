@@ -25,7 +25,6 @@ import {
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, buttonClass, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
@@ -99,7 +98,7 @@ type WardTasksDrawerProps = {
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
 /**
- * The drawer's words. With the `alerts-one-queue` flag on, Tasks and Alerts are one queue (Josh,
+ * The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61,
  * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
  * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
  */
@@ -283,8 +282,7 @@ export function WardTasksDrawer({
   alertsQueueForDesk = true,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  const words =
-    useWardFeatureFlag("alerts-one-queue") && alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
+  const words = alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
@@ -1199,20 +1197,7 @@ export function WardTasksDrawer({
           ) : null}
         </div>
 
-        <nav
-          aria-label="Network exception boards"
-          data-testid="ward-tasks-quick-jumps"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            borderTop: "1px solid var(--wf-line)",
-            background: "var(--wf-surface-2)",
-            fontSize: "0.75rem",
-          }}
-        >
+        <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
           {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
               broadcast and history. */}
           {words === ALERTS_WORDS ? (
@@ -1229,11 +1214,11 @@ export function WardTasksDrawer({
             href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/mockups/ward-flow/delays"}
             onClick={onClose}
             data-testid="ward-tasks-jump-delays"
-            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
+            className={styles.quickJump}
           >
             Delays board →
           </Link>
-          <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
+          <span aria-hidden="true" className={styles.quickJumpSep}>
             ·
           </span>
           {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
@@ -1242,11 +1227,11 @@ export function WardTasksDrawer({
                 href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
                 onClick={onClose}
                 data-testid="ward-tasks-jump-alerts"
-                style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
+                className={styles.quickJump}
               >
                 Alerts &amp; watches →
               </Link>
-              <span aria-hidden="true" style={{ color: "var(--wf-ink-3)" }}>
+              <span aria-hidden="true" className={styles.quickJumpSep}>
                 ·
               </span>
             </>
@@ -1255,14 +1240,14 @@ export function WardTasksDrawer({
             href={WARD_HOME_HREF}
             onClick={onClose}
             data-testid="ward-tasks-jump-coordinator"
-            style={{ color: "var(--wf-ink-1)", textDecoration: "none", fontWeight: 600 }}
+            className={styles.quickJump}
           >
             Coordinator workspace →
           </Link>
         </nav>
 
         <div className={styles.drawerFoot}>
-          <span id="taskDrawerSummary">Seen is not resolved</span>
+          <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
               <UserCheck aria-hidden="true" />

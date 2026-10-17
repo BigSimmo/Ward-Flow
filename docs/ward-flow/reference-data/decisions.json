@@ -9,7 +9,7 @@
   "decisions": [
     {
       "decision_id": "D1",
-      "issue_id": "WF-07",
+      "issue_id": "GRAYLANDS-CAPACITY",
       "subject": "Graylands capacity disagreement",
       "decision": "prefer_neither",
       "applied_rule": "Keep dual 109 and 122 assertions; never reduce to a single number for routing.",
@@ -19,7 +19,7 @@
     },
     {
       "decision_id": "D2",
-      "issue_id": "WF-03",
+      "issue_id": "LYNWOOD-CAMHS-CATCHMENT",
       "subject": "Lynwood CAMHS catchment conflict",
       "decision": "contested_manual_only",
       "applied_rule": "Retain PDF-to-Swan versus Fremantle-page conflict; manual review only.",
@@ -29,7 +29,7 @@
     },
     {
       "decision_id": "D3",
-      "issue_id": "WF-04",
+      "issue_id": "BUTLER-WANNEROO-SPLIT",
       "subject": "Butler/Wanneroo split",
       "decision": "clinics_verified_no_auto_split",
       "applied_rule": "Clinics are verified as present; suburb split remains unpublished and is not automated.",
@@ -39,7 +39,7 @@
     },
     {
       "decision_id": "D4",
-      "issue_id": "WF-06",
+      "issue_id": "ARMADALE-ORCHARD-CONTACT",
       "subject": "Armadale/Orchard naming and contact",
       "decision": "tip_names_demo_ok",
       "applied_rule": "Synthetic tip names are demo-only; live contact is Orchard Ave 9398 6600; ATT phone is 9391 2400 until HSP confirms.",

@@ -145,7 +145,7 @@ export const WARD_VIEWS: readonly WardViewItem[] = [
  */
 export const WARD_HOME_HREF: string = WARD_VIEWS.find((view) => view.id === "command")!.href;
 
-export type WardNavGroup = "role" | "board";
+type WardNavGroup = "role" | "board";
 
 /**
  * Every `WARD_NAV` id, as a union rather than `string`.
@@ -537,7 +537,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/mockups/ward-flow/reports/chronology",
-    "The PIR patient chronology (D-37, WF-57). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
+    "The PIR patient chronology (D-37). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
 ]);
 

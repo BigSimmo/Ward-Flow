@@ -159,12 +159,15 @@ describe("the actions block: recording a first expiry and an extension", () => {
     fireEvent.click(toggle);
 
     const save = screen.getByTestId(`ward-ed-legal-form-expiry-save-${id}`) as HTMLButtonElement;
-    expect(save.disabled, "nothing typed yet — the save control must not offer to submit a blank pair").toBe(true);
+    expect(
+      save.getAttribute("aria-disabled") === "true",
+      "nothing typed yet — the save control must not offer to submit a blank pair",
+    ).toBe(true);
 
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TODAY } });
-    expect(save.disabled, "date only — still an incomplete pair").toBe(true);
+    expect(save.getAttribute("aria-disabled") === "true", "date only — still an incomplete pair").toBe(true);
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "11:00" } });
-    expect(save.disabled).toBe(false);
+    expect(save.getAttribute("aria-disabled")).toBeNull();
 
     fireEvent.click(save);
     expect(lastMovementProbeParts()).toEqual({ id, code: "1A", dueAt: "660" });
@@ -196,12 +199,15 @@ describe("the actions block: recording a first expiry and an extension", () => {
     // declining to offer a dispatch it already knows the reducer would refuse.
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TODAY } });
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "10:00" } });
-    expect(save.disabled, "the same expiry again is not later than the one already recorded").toBe(true);
+    expect(
+      save.getAttribute("aria-disabled") === "true",
+      "the same expiry again is not later than the one already recorded",
+    ).toBe(true);
 
     // A genuinely later expiry is accepted.
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TOMORROW } });
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "10:00" } });
-    expect(save.disabled).toBe(false);
+    expect(save.getAttribute("aria-disabled")).toBeNull();
     fireEvent.click(save);
 
     // Tomorrow 10:00 is 1440 + 600 = 2040 minutes past dayZero.

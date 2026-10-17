@@ -40,6 +40,10 @@
     "next-env.d.ts",
     "scratch/**",
     "worktrees/**",
+    "tmp/**",
+    ".worktrees/**",
+    ".claude/**",
+    ".next-playwright/**",
     "scripts/archive/**",
     "docs/ward-flow/control/evidence/**"
   ]

@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateKeyPairSync } from "node:crypto";
@@ -242,11 +243,11 @@ function routes({
   limit = false,
   outcome = null,
   viewer = bootstrapViewer,
+  pushByRole = undefined,
 } = {}) {
   const calls = [];
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null, push },
-    store: {},
     sharedStore: {
       viewer,
       read: async () => ({ revision: 1, dataMode: "prototype" }),
@@ -262,6 +263,7 @@ function routes({
         calls.push(["status", ...args]);
         return true;
       },
+      ...(pushByRole ? { pushByRole } : {}),
     },
     authenticate: async (token) => {
       if (!token) throw new Error("Unauthorised");
@@ -297,9 +299,9 @@ test("a signed-in coordinator subscribes and unsubscribes only their own device"
   const status = await handler(call("push-status", { endpoint: subscription.endpoint }));
   assert.deepEqual(await status.json(), { owned: true });
   assert.deepEqual(calls, [
-    ["subscribe", coordinator, { endpoint: subscription.endpoint, ...browserKeys }],
+    ["subscribe", coordinator, { endpoint: subscription.endpoint, ...browserKeys }, null],
     ["unsubscribe", coordinator, subscription.endpoint],
-    ["status", coordinator, subscription.endpoint],
+    ["status", coordinator, subscription.endpoint, null],
   ]);
 });
 
@@ -363,6 +365,47 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   assert.equal(unwired.status, 422);
   assert.match((await unwired.json()).error, /not wired in this prototype/);
   assert.equal(member.calls.length, 0);
+});
+
+test("from migration 9 a desk held by membership turns alerts on for its own role and place", async () => {
+  const membershipId = "55555555-5555-4555-8555-555555555555";
+  const wardView = {
+    status: "ok",
+    actorId: other,
+    version: 9,
+    membershipId,
+    access: { role: "ward", scope: { kind: "ward", unitIds: ["unit-a"] } },
+    grants: [],
+  };
+  const ward = routes({
+    actor: other,
+    viewer: async () => wardView,
+    pushByRole: (view) => view.access.role === "ward",
+  });
+  assert.equal((await ward.handler(call("push-subscribe", { subscription }))).status, 200);
+  assert.deepEqual(ward.calls, [
+    ["subscribe", other, { endpoint: subscription.endpoint, ...browserKeys }, membershipId],
+  ]);
+  // A role the store does not send alerts to, or a database before 9, is refused and says why.
+  const executive = routes({
+    actor: other,
+    viewer: async () => ({ ...wardView, access: { role: "executive", scope: { kind: "statewide" } } }),
+    pushByRole: () => false,
+  });
+  const refused = await executive.handler(call("push-subscribe", { subscription }));
+  assert.equal(refused.status, 422);
+  assert.match((await refused.json()).error, /not part of your role/);
+  assert.equal(executive.calls.length, 0);
+  // The same ward desk on a database still at version 8.
+  const before9 = routes({
+    actor: other,
+    viewer: async () => ({ ...wardView, version: 8 }),
+    pushByRole: (view) => view.version >= 9 && view.access.role === "ward",
+  });
+  const early = await before9.handler(call("push-subscribe", { subscription }));
+  assert.equal(early.status, 422);
+  assert.match((await early.json()).error, /not set up on this database yet/);
+  assert.equal(before9.calls.length, 0);
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {

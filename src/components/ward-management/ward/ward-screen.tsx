@@ -18,9 +18,19 @@ import dynamic from "next/dynamic";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -86,6 +96,7 @@ import {
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
   admissionCriteriaEligibility,
+  admissionLegalStatus,
   HIGH_ACUITY_STAFFING_REFUSAL,
   OVERRIDE_REASON_REQUIRED,
 } from "@/components/ward-management/ward-flow-reducer";
@@ -126,7 +137,6 @@ import {
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
-import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 import styles from "./ward.module.css";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
@@ -138,10 +148,18 @@ import {
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
 import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { buzzKeys } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
-import { WardDischargeNotices } from "./ward-discharge-notices";
-import { type WardFlowTab, WardHomeTab, type WardShiftView, wardActNowCount } from "./ward-home-tab";
+import {
+  canSubmitDecline,
+  canSubmitOverride,
+  OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
+  type WardFlowTab,
+  WardHomeTab,
+  type WardShiftView,
+  wardActNowCount,
+} from "./ward-home-tab";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 
 const WardDailySheetDialog = dynamic(
@@ -176,6 +194,14 @@ const WardDischargesMatrix = dynamic(() => import("./ward-discharges-matrix").th
   ssr: false,
 });
 const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), { ssr: false });
+// Client-only like the other ward sections below; it renders nothing until the store has entries.
+const WardReferralInbox = dynamic(() => import("../referrals/ward-referral-inbox").then((m) => m.WardReferralInbox), {
+  ssr: false,
+});
+// Shown only after a confirmed discharge, so it loads when first needed.
+const WardDischargeNotices = dynamic(() => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices), {
+  ssr: false,
+});
 const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), { ssr: false });
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
@@ -393,7 +419,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!isPhone) setPhonePanel(null);
   }
   const [phoneTodoCount, setPhoneTodoCount] = useState<number | undefined>(undefined);
-  const [dismissedBuzzes, setDismissedBuzzes] = useState<number[]>([]);
+  const [dismissedBuzzes, setDismissedBuzzes] = useState<string[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the not-found early return
   // below — the same discipline this file's own comment already gives for `overrideReason`.
@@ -451,16 +477,57 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
   // Ward Hub (9 Oct 2026): the hero pills, the Find box and the home panels share this state.
+  const [, startTransition] = useTransition();
   const [bedFilter, setBedFilter] = useState<WardBedFilter>("all");
   const [bedQuery, setBedQuery] = useState("");
+  const deferredBedQuery = useDeferredValue(bedQuery);
   const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
+  const selectActiveTab = useCallback(
+    (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => {
+      startTransition(() => {
+        setActiveTab(next);
+      });
+    },
+    [startTransition],
+  );
+  const selectBedFilter = useCallback(
+    (next: WardBedFilter) => {
+      startTransition(() => {
+        setBedFilter(next);
+      });
+    },
+    [startTransition],
+  );
+  const selectFlowTab = useCallback(
+    (next: WardFlowTab) => {
+      startTransition(() => {
+        setFlowTab(next);
+      });
+    },
+    [startTransition],
+  );
+  const selectShiftView = useCallback(
+    (next: WardShiftView) => {
+      startTransition(() => {
+        setShiftView(next);
+      });
+    },
+    [startTransition],
+  );
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
   const bedParam = searchParams?.get("bed");
-  const parsedBed =
-    bedParam !== null && bedParam !== undefined && /^\d+$/.test(bedParam) ? Number.parseInt(bedParam, 10) : null;
-  const [selectedBed, setSelectedBed] = useState<number | null>(parsedBed);
+  const parseBed = (value: string | null | undefined) =>
+    value !== null && value !== undefined && /^\d+$/.test(value) ? Number.parseInt(value, 10) : null;
+  const parsedBed = parseBed(bedParam);
+  const [selectedBed, setSelectedBed] = useState<number | null>(() => {
+    if (parsedBed !== null) return parsedBed;
+    if (typeof window !== "undefined") {
+      return parseBed(new URLSearchParams(window.location.search).get("bed"));
+    }
+    return null;
+  });
   // Bumped when a `?bed=` naming no bed on this ward is refused, so the URL sync below drops it.
   const [refusedBedParam, setRefusedBedParam] = useState(0);
   const [prevBedParam, setPrevBedParam] = useState<string | null | undefined>(bedParam);
@@ -800,15 +867,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") {
         if (notificationCenterOpen) {
+          e.preventDefault();
+          e.stopPropagation();
           setNotificationCenterOpen(false);
           setTimeout(() => {
             notificationTriggerRef.current?.focus({ preventScroll: true });
           }, 0);
           return;
         }
-        if (hasOpenSheet()) return;
+        if (e.defaultPrevented || hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -872,7 +942,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // which owns Tab and Escape; this only keeps a stray Escape on the drawer closing it.
   function handleBedDrawerKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
+      if (event.defaultPrevented || hasOpenSheet() || notificationCenterOpen || confirmNumbersOpen || dailySheetOpen) {
+        return;
+      }
       event.preventDefault();
+      event.stopPropagation();
       closeBedDrawer();
     }
   }
@@ -957,6 +1031,89 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
+  const pendingBedReleases = useMemo(
+    () => (!unit ? [] : bedReleases.filter((release) => release.unitId === unit.id && release.state !== "discharged")),
+    [bedReleases, unit],
+  );
+  const unitLeaveBeds = useMemo(
+    () => (!unit ? [] : leaveBeds.filter((bed) => bed.unitId === unit.id)),
+    [leaveBeds, unit],
+  );
+  const incoming = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements
+            .filter(
+              (movement) =>
+                isOpen(movement) &&
+                movement.stage === "destination_review" &&
+                movement.referredUnitIds.includes(unit.id),
+            )
+            .sort((left, right) => left.openedAt - right.openedAt),
+    [movements, unit],
+  );
+  const accepted = useMemo(
+    () => (!unit ? [] : movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id)),
+    [movements, unit],
+  );
+  const heldAfterStop = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements.filter(
+            (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
+          ),
+    [movements, unit],
+  );
+  const recentAnswers = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements
+            .flatMap((movement) => {
+              const wardAnswers: Array<{
+                key: string;
+                movementId: string;
+                outcome: "Accepted" | "Declined";
+                at?: Instant;
+                reason?: DeclineReason;
+              }> = [];
+
+              if (movement.acceptedUnitId === unit.id) {
+                wardAnswers.push({
+                  key: `${movement.id}-accepted`,
+                  movementId: movement.id,
+                  outcome: "Accepted",
+                  at: movement.acceptedAt,
+                });
+              }
+
+              movement.declines
+                .filter((decline) => decline.unitId === unit.id)
+                .forEach((decline, index) => {
+                  wardAnswers.push({
+                    key: `${movement.id}-declined-${index}`,
+                    movementId: movement.id,
+                    outcome: "Declined",
+                    at: decline.at,
+                    reason: decline.reason,
+                  });
+                });
+
+              return wardAnswers;
+            })
+            .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY)),
+    [movements, unit],
+  );
+  const withdrawn = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements.filter((movement) => movement.withdrawnReferrals.some((entry) => entry.unitId === unit.id)),
+    [movements, unit],
+  );
+
   if (!unit) {
     return (
       <div className={styles.screen} data-testid="ward-unit-screen">
@@ -998,17 +1155,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // `handleRefer` closes over a plain `movementId` rather than re-checking `movement`), so this
   // plain string is what they close over instead.
   const wardUnitId = unit.id;
-
-  // Task 5: this unit's own bed releases, still pending — `discharged` is terminal and drops off
-  // this list (spec D10's "removes it from the pending list"), never rendered with dead controls.
-  const pendingBedReleases = bedReleases.filter(
-    (release) => release.unitId === unit.id && release.state !== "discharged",
-  );
-
-  // Task 5: this unit's beds held for people on approved leave, read from provider state.
-  // Leave holds never count as available beds (spec D4). This screen can end a hold but has no
-  // rendered recording control; that existing gap is tracked by the event-reachability test.
-  const unitLeaveBeds = leaveBeds.filter((bed) => bed.unitId === unit.id);
 
   /**
    * The two beds-and-leave rows of the daily return (rows 4 and 5 of the panel below) each stamp
@@ -1086,65 +1232,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const latestRefreshRequest =
     unitRefreshRequests.length > 0 ? unitRefreshRequests[unitRefreshRequests.length - 1] : undefined;
 
-  // Awaiting an answer: this unit holds a live referral and nothing has been decided yet.
-  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
-  const incoming = movements
-    .filter(
-      (movement) =>
-        isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),
-    )
-    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
-  // Accepted, pulled, or en route: this unit is the recorded destination, at any stage from
-  // acceptance through transport. `isOpen` excludes `arrived` — once a patient arrives the record
-  // closes and the bed shows as occupied in the grid above, not as a card here. Stopped transport
-  // movements awaiting bed release are tracked separately in `heldAfterStop` so the held bed
-  // remains visible on both Home and All arrivals without adding closed records back to `accepted`.
-  const accepted = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
-  const heldAfterStop = movements.filter(
-    (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
-  );
-  const recentAnswers = movements
-    .flatMap((movement) => {
-      const wardAnswers: Array<{
-        key: string;
-        movementId: string;
-        outcome: "Accepted" | "Declined";
-        at?: Instant;
-        reason?: DeclineReason;
-      }> = [];
-
-      if (movement.acceptedUnitId === unit.id) {
-        wardAnswers.push({
-          key: `${movement.id}-accepted`,
-          movementId: movement.id,
-          outcome: "Accepted",
-          at: movement.acceptedAt,
-        });
-      }
-
-      movement.declines
-        .filter((decline) => decline.unitId === unit.id)
-        .forEach((decline, index) => {
-          wardAnswers.push({
-            key: `${movement.id}-declined-${index}`,
-            movementId: movement.id,
-            outcome: "Declined",
-            at: decline.at,
-            reason: decline.reason,
-          });
-        });
-
-      return wardAnswers;
-    })
-    .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY));
-  // What was withdrawn from this ward specifically, and why — `withdrawnReferrals` is per
-  // movement, so this reads each movement's own array rather than assuming only one entry exists.
-  const withdrawn = movements.filter((movement) =>
-    movement.withdrawnReferrals.some((entry) => entry.unitId === unit.id),
-  );
   const blockedReleases = pendingBedReleases.filter((release) => release.blocker !== null);
 
   const rollupConfirmation = morningRollupConfirmations?.[unit.id];
@@ -1175,16 +1265,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
-  function handleDismissBuzz(buzzIndex: number) {
-    setDismissedBuzzes((current) => [...current, buzzIndex]);
+  function handleDismissBuzz(buzzKey: string) {
+    setDismissedBuzzes((current) => (current.includes(buzzKey) ? current : [...current, buzzKey]));
   }
 
   const unreadAlertsCount = (() => {
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const activeBuzzes = (refreshRequests ?? []).filter(
-      (r, idx) => r.unitId === unit.id && !dismissedBuzzes.includes(idx),
+    const requests = refreshRequests ?? [];
+    const keys = buzzKeys(requests);
+    const activeBuzzes = requests.filter(
+      (r, index) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[index] ?? ""),
     );
     count += activeBuzzes.length;
     const overdueArrivals = movements.filter(
@@ -1370,8 +1462,26 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission?.specialling === true;
 
-    const patientLegalStatus = linkedMovement?.legalStatus;
-    const patientLegalForm = linkedMovement?.legalForm;
+    // D-64, behind the criteria led discharge flag: the Legal tile reads the same records as the
+    // criteria card, so the two agree. With the flag off the tile is unchanged.
+    const recordLegalStatus =
+      criteriaLedOn && admission ? admissionLegalStatus({ movements, patients }, admission) : undefined;
+    const patientLegalStatus = recordLegalStatus ?? linkedMovement?.legalStatus;
+    const criteriaLedChip =
+      criteriaLedOn && admission?.state === "occupied"
+        ? criteriaLedTileChip(
+            dischargeCriteriaStatus(
+              admission.dischargeCriteria,
+              admissionCriteriaEligibility({ movements, patients }, admission),
+              now,
+            ),
+          )
+        : null;
+    // The movement's form only describes the status when that status came from the movement.
+    const patientLegalForm =
+      recordLegalStatus === undefined || recordLegalStatus === linkedMovement?.legalStatus
+        ? linkedMovement?.legalForm
+        : undefined;
     const legalStatusLabel = patientLegalForm
       ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
       : patientLegalStatus;
@@ -1430,6 +1540,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       legalStatus: patientLegalStatus,
       legalForm: patientLegalForm,
       legalStatusLabel,
+      criteriaLedChip,
       admissionId: admission?.id,
       stayAdmissionId:
         admission?.id ??
@@ -1794,13 +1905,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }));
 
   function toggleDecline(movementId: string) {
-    setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
-    setDeclineReason(undefined);
+    startTransition(() => {
+      setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
+      setDeclineReason(undefined);
+    });
   }
 
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
-    if (!declineReason) return;
+    if (!canSubmitDecline(declineReason)) return;
     raise("DECLINE", {
       movementId,
       unitId: wardUnitId,
@@ -1854,7 +1967,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // that refusal must never be gated on a tick it does not ask for. See
     // `overrideReasonForm`'s own doc comment.
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
-    if (isAcuityRefusal && !numConsulted) return;
+    if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
     priorRejectionCountRef.current = rejections.length;
     // ⚠️ TWO LITERAL DISPATCHES RATHER THAN ONE COMPUTED `type: attempted`, AND THE GUARD IS WHY.
     // The computed form was what I wrote first, and `ward-override-surfaces.test.ts` refused it on
@@ -1909,6 +2022,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (lastActionRejection.movementId !== movementId) return null;
     if (!lastActionRejection.reason.includes(OVERRIDE_REASON_REQUIRED)) return null;
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
+    const readyToSubmit = canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted);
     return (
       <form
         className={styles.declineForm}
@@ -1958,7 +2072,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           <button
             type="submit"
             className={styles.acceptButton}
-            disabled={!overrideReason || (isAcuityRefusal && !numConsulted)}
+            disabled={!readyToSubmit}
+            title={!readyToSubmit ? OVERRIDE_SUBMIT_UNAVAILABLE_REASON : undefined}
             data-testid={`ward-override-submit-${movementId}`}
           >
             {/* PLACEHOLDER WORDING — owner has not chosen this. */}
@@ -2036,24 +2151,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onChange={(event) => {
               setCapacityValue(event.target.value);
             }}
-            className={styles.capacityInput}
-            style={{
-              minHeight: "var(--ward-tap, 48px)",
-              fontFamily: "var(--mono, monospace)",
-              fontVariantNumeric: "tabular-nums",
-            }}
+            className={`${styles.capacityInput} ${styles.capacityInputMono}`}
           />
           <button
             type="submit"
             data-testid="ward-capacity-submit"
-            className={styles.capacitySubmit}
-            style={{
-              minHeight: "var(--ward-tap, 48px)",
-              minWidth: "var(--ward-tap, 48px)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className={`${styles.capacitySubmit} ${styles.tapTarget}`}
           >
             Confirm capacity
           </button>
@@ -2081,7 +2184,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             Review today&apos;s expected discharges → ({releasesCountedToday.length})
           </button>
         </div>
-        <p className={styles.capacityConfirmed} style={{ fontVariantNumeric: "tabular-nums" }}>
+        <p className={`${styles.capacityConfirmed} ${styles.tabularNums}`}>
           {capacityRevision !== (unit.allocatable.revision ?? 0) && (
             <button
               type="button"
@@ -2486,7 +2589,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         aria-label="Home (Worth Your Attention)"
         onClick={() => {
-          setActiveTab("attn");
+          selectActiveTab("attn");
         }}
       >
         <span>Home</span>
@@ -2505,7 +2608,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         aria-label="Bed board (pick up and place)"
         data-testid="ward-tab-board"
         onClick={() => {
-          setActiveTab("board");
+          selectActiveTab("board");
         }}
       >
         <span>Bed board</span>
@@ -2528,7 +2631,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         aria-controls="tab-return"
         aria-label="Decisions (Ward record)"
         onClick={() => {
-          setActiveTab("return");
+          selectActiveTab("return");
         }}
       >
         <span>Decisions</span>
@@ -2614,7 +2717,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   className={styles.phoneChip}
                   aria-haspopup="dialog"
                   onClick={() => {
-                    setActiveTab("attn");
+                    selectActiveTab("attn");
                     setPhonePanel("shift");
                   }}
                   data-testid="ward-phone-chip-shift"
@@ -2630,7 +2733,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   className={styles.phoneChip}
                   aria-haspopup="dialog"
                   onClick={() => {
-                    setActiveTab("attn");
+                    selectActiveTab("attn");
                     setPhonePanel("flow");
                   }}
                   data-testid="ward-phone-chip-flow"
@@ -2663,6 +2766,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     onDismissBuzz={handleDismissBuzz}
                     onClose={() => {
                       setNotificationCenterOpen(false);
+                      setTimeout(() => {
+                        notificationTriggerRef.current?.focus({ preventScroll: true });
+                      }, 0);
                     }}
                   />
                 </div>
@@ -2697,7 +2803,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     value={bedQuery}
                     onChange={(event) => {
                       setBedQuery(event.target.value);
-                      if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
+                      if (activeTab !== "attn" && activeTab !== "board") selectActiveTab("attn");
                     }}
                     onClear={() => {
                       setBedQuery("");
@@ -2926,7 +3032,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             overrideReasonForm={overrideReasonForm}
             liveFormAlerts={liveFormAlerts}
             onOpenDecisions={() => {
-              setActiveTab("return");
+              selectActiveTab("return");
             }}
             morningRollupConfirmed={isRollupConfirmedToday}
             morningRollupTimeLabel={morningRollupTimeLabel}
@@ -2943,19 +3049,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               setSelectedBed(bedNumber);
             }}
             bedFilter={bedFilter}
-            onBedFilterChange={setBedFilter}
-            bedQuery={bedQuery}
+            onBedFilterChange={selectBedFilter}
+            bedQuery={deferredBedQuery}
             flowTab={flowTab}
-            onFlowTabChange={setFlowTab}
+            onFlowTabChange={selectFlowTab}
             shiftView={shiftView}
-            onShiftViewChange={setShiftView}
+            onShiftViewChange={selectShiftView}
             morningRollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
             onOpenArrivals={() => {
               setPhonePanel(null);
-              setActiveTab("coming");
+              selectActiveTab("coming");
             }}
             onOpenBeds={() => {
-              setActiveTab("beds");
+              selectActiveTab("beds");
             }}
             registerBedTrigger={(bedNumber, element) => {
               if (element) bedTriggerRefs.current.set(bedNumber, element);
@@ -2973,9 +3079,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   say={boardSay}
                   onBedPress={pressBoardBed}
                   placedBed={placedBed}
-                  query={bedQuery}
+                  query={deferredBedQuery}
                   onOpenList={() => {
-                    setActiveTab("attn");
+                    selectActiveTab("attn");
                   }}
                 />
               ) : undefined
@@ -2994,9 +3100,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
                   </div>
                   <div
-                    className={styles.capacityFreshnessRow}
+                    className={`${styles.capacityFreshnessRow} ${styles.flushMargin}`}
                     data-testid="ward-unit-capacity-freshness"
-                    style={{ margin: 0 }}
                   >
                     <WardFreshness
                       confirmedAt={unit.allocatable.confirmedAt}
@@ -3477,16 +3582,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </h2>
                 <button
                   type="button"
-                  className={styles.drawerCloseBtn}
+                  className={`${styles.drawerCloseBtn} ${styles.tapTarget}`}
                   onClick={closeCapacityModal}
                   aria-label="Close capacity confirmation modal"
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
                 >
                   &times; Close
                 </button>
@@ -3499,100 +3597,50 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 <div className={styles.unitCard}>
                   <div className={styles.unitCardHeader}>
                     <h3 className={styles.sectionHeading}>Bed roster &amp; census overview</h3>
-                    <span
-                      className={styles.statusPillBadge}
-                      style={{
-                        color: "var(--ink)",
-                        borderColor: "var(--line-strong)",
-                      }}
-                    >
-                      {unit.name}
-                    </span>
+                    <span className={`${styles.statusPillBadge} ${styles.unitNamePill}`}>{unit.name}</span>
                   </div>
                   <div className={styles.unitCardBody}>
                     <dl className={styles.unitFacts}>
                       <div>
                         <dt>Total Staffed Beds</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {unit.beds} {unit.beds === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Beds in use</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {occupancy.inUse} / {unit.beds} {unit.beds === 1 ? "bed" : "beds"} (
                           {formatWardOccupancy(occupancy)})
                         </dd>
                       </div>
                       <div>
                         <dt>Confirmed free</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {unit.allocatable.value} {unit.allocatable.value === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Ready Vacant</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {capacity.available} {capacity.available === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>{BED_STATE_LABELS.pulled}, not arrived</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {states.pulled} {states.pulled === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>{BED_STATE_LABELS.closed}, not offered</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {states.closed} {states.closed === 1 ? "bed" : "beds"}
                         </dd>
                       </div>
                       <div>
                         <dt>Unoccupied change</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {(() => {
                             const parsed = parseInt(capacityValue, 10);
                             if (isNaN(parsed)) return "Not recorded";
@@ -3609,13 +3657,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       </div>
                       <div>
                         <dt>Physical Vacancy Delta</dt>
-                        <dd
-                          style={{
-                            fontFamily: "var(--mono, monospace)",
-                            fontVariantNumeric: "tabular-nums",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <dd className={styles.factValue}>
                           {(() => {
                             const openVacant = Math.max(0, unit.beds - capacity.occupied - states.closed);
                             return `${openVacant} ${openVacant === 1 ? "bed" : "beds"} vacant${states.closed > 0 ? ` (${states.closed} closed)` : ""}`;
@@ -3631,15 +3673,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <div className={styles.modalFoot}>
                 <button
                   type="button"
-                  className={styles.btnActionSec}
+                  className={`${styles.btnActionSec} ${styles.tapTarget}`}
                   onClick={closeCapacityModal}
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
                 >
                   Done
                 </button>

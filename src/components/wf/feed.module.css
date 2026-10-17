@@ -128,30 +128,6 @@
   box-shadow: 0 0 0 2px var(--wf-surface);
 }
 
-.stack {
-  display: inline-flex;
-  align-items: center;
-}
-
-.stack > .av + .av {
-  margin-left: 2px;
-}
-
-/* Skeleton. */
-.sk {
-  display: block;
-  border-radius: var(--wf-r-xs);
-  background: linear-gradient(90deg, var(--wf-track) 0%, var(--wf-surface-2) 50%, var(--wf-track) 100%);
-  background-size: 200% 100%;
-  animation: wfSkShimmer 1.4s var(--wf-ease-io) infinite;
-}
-
-.skLines {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-}
-
 /* Empty state: short, no filler. */
 .empty {
   display: flex;
@@ -230,21 +206,6 @@
   align-items: center;
   gap: var(--wf-s-2);
   flex: 0 0 auto;
-}
-
-@keyframes wfSkShimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sk {
-    animation: none;
-  }
 }
 
 @media (forced-colors: active) {

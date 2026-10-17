@@ -2098,8 +2098,8 @@
   gap: 4px;
   font-size: var(--t-0, 12px);
   font-weight: 600;
-  color: var(--good) !important;
-  text-decoration: none !important;
+  color: var(--good);
+  text-decoration: none;
   margin-top: 2px;
   padding: 0;
   background: transparent;
@@ -2114,14 +2114,14 @@
 }
 
 .glanceCard .heroCta:hover {
-  color: var(--accent) !important;
+  color: var(--accent);
   background: transparent;
   transform: none;
-  text-decoration: underline !important;
+  text-decoration: underline;
 }
 
 .glanceCard .heroCta span {
-  color: inherit !important;
+  color: inherit;
 }
 
 .statusPillBadge {
@@ -2250,12 +2250,12 @@
 }
 
 .tabPanel > * {
-  order: 0 !important;
-  max-height: none !important;
+  order: 0;
+  max-height: none;
 }
 
 .tabPanel[data-active="false"] {
-  display: none !important;
+  display: none;
 }
 
 .bedMatrixGrid {
@@ -3005,7 +3005,7 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
-  padding: 0 14px 0 36px !important;
+  padding: 0 14px 0 36px;
   font-size: 13.5px;
   color: var(--ink);
   height: 42px;
@@ -3937,7 +3937,7 @@
 
 @media (max-width: 64rem) {
   .toolWide {
-    display: none !important;
+    display: none;
   }
 }
 
@@ -3949,7 +3949,7 @@
 
 @media (min-width: 48.0625rem) and (max-width: 64rem) {
   .toolSolo {
-    display: none !important;
+    display: none;
   }
 
   .toolMore {
@@ -4220,4 +4220,51 @@
   .suburbSearchInput {
     font-size: max(1rem, 16px);
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+.suburbVerdictRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.capacityInputMono {
+  min-height: var(--ward-tap, 48px);
+  font-family: var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shared by the capacity submit, the capacity modal's close and its Done button. Placed after
+   `.capacitySubmit`, `.drawerCloseBtn` and `.btnActionSec` so its 48px floor (and the narrower
+   min-width it gives `.capacitySubmit`) wins, as the inline styles did. */
+.tapTarget {
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabularNums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Compounded to beat `.bedSection > .capacityFreshnessRow` (0,2,0). */
+.capacityFreshnessRow.flushMargin {
+  margin: 0;
+}
+
+/* Compounded to match the specificity of the `.statusPillBadge` tone variants. */
+.statusPillBadge.unitNamePill {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.factValue {
+  font-family: var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }

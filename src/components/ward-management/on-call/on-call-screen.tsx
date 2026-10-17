@@ -67,20 +67,19 @@ import styles from "./on-call.module.css";
 export type Highlight = "now" | "soon" | "email" | "due";
 
 /** Highlights mark rows and never hide one: a contact you cannot see is a contact you cannot ring. */
-export const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, minute: number) => boolean }[] =
-  [
-    { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
-    {
-      id: "soon",
-      label: "Ends within the hour",
-      test: (entry, minute) => {
-        const now = availability(entry, minute);
-        return now.kind === "on" && !now.allDay && now.soon;
-      },
+const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, minute: number) => boolean }[] = [
+  { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
+  {
+    id: "soon",
+    label: "Ends within the hour",
+    test: (entry, minute) => {
+      const now = availability(entry, minute);
+      return now.kind === "on" && !now.allDay && now.soon;
     },
-    { id: "email", label: "Has email", test: (entry) => Boolean(entry.email) },
-    { id: "due", label: "Check due", test: (entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS },
-  ];
+  },
+  { id: "email", label: "Has email", test: (entry) => Boolean(entry.email) },
+  { id: "due", label: "Check due", test: (entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS },
+];
 
 const COVER_AT: { id: string; label: string }[] = [
   { id: "now", label: "Now" },
@@ -105,13 +104,13 @@ const SECTION_LABEL: Record<DirectorySection, string> = {
   statewide: "Statewide",
 };
 
-export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
+function matchesQuery(entry: DirectoryEntry, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return false;
   return entrySearchFields(entry).some((value) => value.toLowerCase().includes(needle));
 }
 
-export function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
+function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
   return tab === "mine"
     ? entries.filter((entry) => favourites.includes(entry.id))
     : entries.filter((entry) => entry.section === tab);

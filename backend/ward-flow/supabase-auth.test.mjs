@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { test } from "node:test";
@@ -5,6 +6,7 @@ import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { clientAddress, createHandler } from "./server.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import {
+  REMOTE_CHECKS_PER_ACCOUNT,
   REMOTE_CHECKS_PER_ADDRESS,
   REMOTE_CHECKS_TOTAL,
   REMOTE_CHECKS_UNKNOWN_TOTAL,
@@ -52,6 +54,7 @@ function signed(alg, kid, body = claims()) {
 }
 const legacy = (body = claims()) => `Bearer ${part({ alg: "HS256", typ: "JWT" })}.${part(body)}.c3ludGhldGlj`;
 
+/** @param {{ keys?: { keys: Array<Record<string, unknown>> } | null, user?: unknown, clock?: () => number }} [options] */
 function setup({ keys = published, user = { id: coordinator }, clock } = {}) {
   const calls = [];
   const verify = createSupabaseAuthenticator(config, {
@@ -85,7 +88,7 @@ test("a forged, altered or wrong-audience signed token is refused without asking
   for (const token of [forged, altered, crossAlg, signed("ES256", "ec-1", claims({ aud: "anon" }))])
     await assert.rejects(
       verify(token),
-      (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+      (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
     );
   assert.deepEqual(calls, [JWKS]);
 });
@@ -95,7 +98,7 @@ test("a key missing from a list read after the token was issued is refused, with
   const issued = claims({ iat: Math.floor(Date.now() / 1000) - 60 });
   await assert.rejects(
     verify(signed("ES256", "ec-1", issued)),
-    (error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+    (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
   );
   await assert.rejects(verify(signed("ES256", "made-up", issued)), /Unauthorised/);
   assert.deepEqual(calls, [JWKS], "removed or made-up keys never reach /auth/v1/user");
@@ -250,22 +253,52 @@ test("forged subjects from one address do not lock out another address's genuine
 });
 
 test("distributed forged subjects remain bounded by the total remote budget", async () => {
+  const holders = Array.from({ length: REMOTE_CHECKS_TOTAL / REMOTE_CHECKS_PER_ACCOUNT + 1 }, () => randomUUID());
   const verify = createSupabaseAuthenticator(config, {
+    roleHolders: async () => holders,
     fetch: async () => new Response(null, { status: 401 }),
   });
   for (let index = 0; index < REMOTE_CHECKS_TOTAL; index += 1)
     await assert.rejects(
-      verify(legacy(claims({ jti: `forged-${index}` })), {
+      verify(legacy(claims({ sub: holders[index % (holders.length - 1)], jti: `forged-${index}` })), {
         clientAddress: `synthetic-source-${index}`,
       }),
       /Unauthorised/,
     );
   await assert.rejects(
-    verify(legacy(claims({ jti: "over-total" })), {
+    verify(legacy(claims({ sub: holders.at(-1), jti: "over-total" })), {
       clientAddress: "synthetic-new-source",
     }),
     VerifierRateLimitedError,
   );
+});
+
+test("forged tokens naming one real role holder spend only that account's share of the main allowance", async () => {
+  const nurse = randomUUID();
+  const calls = [];
+  const verify = createSupabaseAuthenticator(config, {
+    roleHolders: async () => [nurse],
+    fetch: async (url, init) => {
+      calls.push(url);
+      const token = init.headers.Authorization.slice(7).split(".")[1];
+      const { sub, jti } = JSON.parse(Buffer.from(token, "base64url").toString());
+      return jti?.startsWith("forged") ? new Response(null, { status: 401 }) : Response.json({ id: sub });
+    },
+  });
+  // Every forged token names the bootstrap coordinator, each from a new address.
+  const forged = REMOTE_CHECKS_PER_ACCOUNT + REMOTE_CHECKS_UNKNOWN_TOTAL;
+  for (let index = 0; index < forged; index += 1)
+    await assert.rejects(
+      verify(legacy(claims({ jti: `forged-${index}` })), { clientAddress: `198.51.100.${index}` }),
+      /Unauthorised/,
+    );
+  await assert.rejects(
+    verify(legacy(claims({ jti: "forged-over" })), { clientAddress: "203.0.113.90" }),
+    VerifierRateLimitedError,
+  );
+  assert.equal(calls.length, forged);
+  // Another role holder still has the rest of the main allowance.
+  assert.equal(await verify(legacy(claims({ sub: nurse })), { clientAddress: "203.0.113.91" }), nurse);
 });
 
 test("made-up accounts share one small allowance, so they never use up the checks real desks need", async () => {
@@ -387,6 +420,7 @@ test("a stalled role read never holds a sign-in check past the verifier's deadli
   let at = 1_000_000;
   let reads = 0;
   const subject = randomUUID();
+  /** @type {(holders: string[]) => void} */
   let finishFirst;
   const verify = createSupabaseAuthenticator(config, {
     now: () => at,
@@ -511,4 +545,31 @@ test("nonfinite numeric JWT dates are refused even with a valid signature", asyn
     const signature = sign("sha256", Buffer.from(data), { key: ec.privateKey, dsaEncoding: "ieee-p1363" });
     await assert.rejects(verify(`Bearer ${data}.${signature.toString("base64url")}`), /Unauthorised/);
   }
+});
+
+test("a verified token reports when the account last signed in, for the step-up check", async () => {
+  const { verify } = setup();
+  const signedIn = Math.floor(Date.now() / 1000) - 120;
+  const session = {};
+  const token = signed(
+    "ES256",
+    "ec-1",
+    claims({
+      aal: "aal1",
+      amr: [
+        { method: "password", timestamp: signedIn - 600 },
+        { method: "password", timestamp: signedIn },
+      ],
+    }),
+  );
+  assert.equal(await verify(token, { session }), coordinator);
+  assert.deepEqual(session, { signedInAt: signedIn * 1000, aal: "aal1" });
+  // A token with no sign-in record leaves the time unknown, so step-up asks again.
+  const unknown = {};
+  await verify(signed("ES256", "ec-1"), { session: unknown });
+  assert.equal(unknown.signedInAt, undefined);
+  // A refused token fills nothing.
+  const refused = {};
+  await assert.rejects(verify(`${token}x`, { session: refused }));
+  assert.deepEqual(refused, {});
 });

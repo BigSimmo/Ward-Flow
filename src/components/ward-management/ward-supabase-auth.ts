@@ -12,6 +12,22 @@ export class WardAuthError extends Error {
 type User = { id: string };
 type Session = { access_token: string; refresh_token: string; expiresAt: number; recovery: boolean; user?: User };
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+function isValidSession(parsed: unknown): parsed is Session {
+  if (!parsed || typeof parsed !== "object") return false;
+  const row = parsed as Record<string, unknown>;
+  const user = row.user;
+  const userId = user && typeof user === "object" ? (user as Record<string, unknown>).id : undefined;
+  return (
+    typeof row.access_token === "string" &&
+    row.access_token.length > 0 &&
+    typeof row.refresh_token === "string" &&
+    row.refresh_token.length > 0 &&
+    typeof row.expiresAt === "number" &&
+    Number.isFinite(row.expiresAt) &&
+    typeof row.recovery === "boolean" &&
+    (!row.recovery ? typeof userId === "string" && userId.length > 0 : true)
+  );
+}
 export function consumeRecoveryFragment(
   location: Pick<Location, "hash" | "pathname" | "search">,
   replace: (url: string) => void,
@@ -24,14 +40,16 @@ export function consumeRecoveryFragment(
   replace(location.pathname + location.search);
   const failed = ["error", "error_code", "error_description"].some((key) => parts.has(key));
   if (parts.get("type") === "signup" && !failed) return null;
-  if (failed || parts.get("type") !== "recovery" || !parts.get("access_token") || !parts.get("refresh_token"))
+  const accessToken = parts.get("access_token");
+  const refreshToken = parts.get("refresh_token");
+  if (failed || parts.get("type") !== "recovery" || !accessToken || !refreshToken)
     throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
   const expires = Number(parts.get("expires_in"));
   if (!Number.isFinite(expires) || expires <= 0)
     throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
   return {
-    access_token: parts.get("access_token")!,
-    refresh_token: parts.get("refresh_token")!,
+    access_token: accessToken,
+    refresh_token: refreshToken,
     expiresAt: Date.now() + expires * 1000,
     recovery: true,
   };
@@ -42,6 +60,8 @@ export class SupabaseWardAuth {
   private disposed = false;
   private requests = new Set<AbortController>();
   private refreshTask: Promise<void> | null = null;
+  /** The signed-in account's email, for the step-up sign-in. Memory only, never stored. */
+  private email: string | null = null;
   constructor(
     private readonly options: {
       url: string;
@@ -70,6 +90,7 @@ export class SupabaseWardAuth {
   }
   private clear() {
     this.session = null;
+    this.email = null;
     this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
   }
   private invalidate() {
@@ -164,7 +185,29 @@ export class SupabaseWardAuth {
       throw new WardAuthError("session", "The signed-in account changed. Sign in again.");
     }
     this.assert(generation);
-    this.save({ ...session, user });
+    // Only the id is kept in the saved session. The email stays in memory, for the step-up.
+    this.save({ ...session, user: { id: user.id } });
+    const email = (user as { email?: unknown }).email;
+    this.email = typeof email === "string" && email ? email : null;
+  }
+  /**
+   * The step-up sign-in (role access plan feature 9): the same account signs in again with its
+   * password, so the server sees a recent sign-in. A different account, or none, is refused and
+   * the session is cleared. A wrong password is a form answer and keeps the session.
+   */
+  async reauthenticate(password: string) {
+    const id = this.userId;
+    const email = this.email;
+    if (!this.session || this.isRecovery || !id || !email)
+      throw new WardAuthError("session", "Sign in again to carry on.");
+    const generation = this.generation;
+    const value = await this.request(
+      "/token?grant_type=password",
+      { method: "POST", body: JSON.stringify({ email, password }) },
+      undefined,
+      generation,
+    );
+    await this.verify({ ...this.readSession(value, false), user: { id } }, generation);
   }
   async restore(recovery: Session | null = null) {
     if (recovery) {
@@ -177,18 +220,9 @@ export class SupabaseWardAuth {
     const saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
     if (!saved) return;
     try {
-      const row = JSON.parse(saved) as Session;
-      if (
-        typeof row.access_token !== "string" ||
-        !row.access_token ||
-        typeof row.refresh_token !== "string" ||
-        !row.refresh_token ||
-        !Number.isFinite(row.expiresAt) ||
-        typeof row.recovery !== "boolean" ||
-        (!row.recovery && !row.user?.id)
-      )
-        throw new Error();
-      this.session = row;
+      const parsed: unknown = JSON.parse(saved);
+      if (!isValidSession(parsed)) throw new Error();
+      this.session = parsed;
     } catch {
       this.clear();
       throw new WardAuthError("session", "Your session has expired. Sign in again.");
@@ -275,7 +309,8 @@ export class SupabaseWardAuth {
   async updatePassword(password: string) {
     if (!this.isRecovery || !this.session) throw new WardAuthError("session", "Open a password recovery link first.");
     await this.refreshIfNeeded();
-    const session = this.session!;
+    const session = this.session;
+    if (!session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
     const generation = this.generation;
     const user = (await this.request(
       "/user",

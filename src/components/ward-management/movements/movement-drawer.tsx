@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BedSingle, ChevronRight, FileText, Flag, Lock, PhoneCall, Truck, X } from "lucide-react";
@@ -182,6 +182,7 @@ export function MovementDrawer({
   // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
   // the early return so hook order never depends on whether `movement` resolves.
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
+  const baseId = useId();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
 
@@ -592,7 +593,9 @@ export function MovementDrawer({
                 className={buttonClass({ variant: "sec", size: "sm" })}
                 data-testid="ward-movement-drawer-urgent-toggle"
                 aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-                aria-describedby={urgentFlagReason === undefined ? "ward-movement-drawer-urgent-blocked" : undefined}
+                aria-describedby={
+                  urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
+                }
                 title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
                 onClick={
                   urgentFlagReason === undefined
@@ -612,7 +615,7 @@ export function MovementDrawer({
                 Flag this patient as urgent
               </button>
               {urgentFlagReason === undefined ? (
-                <span id="ward-movement-drawer-urgent-blocked" className="sr-only">
+                <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
                   {URGENT_FLAG_UNCHOSEN}
                 </span>
               ) : null}

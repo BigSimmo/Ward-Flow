@@ -333,7 +333,7 @@ This list records remaining scope rather than re-reporting corrected baseline de
 
 **Current local correction/evidence boundary:** Explicit D34 command and guarded ED controls implemented. Bound physical refundfea85da, linked-clearance/physical-arrival protections3c30811, usable stale-completion controls8377a8c and resumed clock4247723 integrated. Scoped actual-producer/domain/DOM checks and final local gates pass; earlier0ffd Chromium D34 cancel/confirm proof retained with exact source qualification. Collected emergency diversion remains a separate approved clinical contract.
 
-**Existing task/decision:** WF-43 / D-34; partially specified, not completed
+**Existing task/decision:** D-34; partially specified, not completed
 
 **Dependencies:** NEW-CAPACITY-001
 
@@ -780,7 +780,7 @@ This list records remaining scope rather than re-reporting corrected baseline de
 
 **Current local correction/evidence boundary:** Existing referral FIFO and movement urgency-first semantics preserved.
 
-**Existing task/decision:** WF-32 / D-32 versus historical item37
+**Existing task/decision:** D-32 versus historical item37
 
 **Dependencies:** Owner policy scope decision
 

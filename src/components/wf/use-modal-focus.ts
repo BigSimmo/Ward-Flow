@@ -56,7 +56,7 @@ const FOCUSABLE =
   'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
 /** The panel's Tab stops, in order: enabled, not hidden or inert, and laid out. */
-export function modalFocusableIn(panel: HTMLElement | null) {
+function modalFocusableIn(panel: HTMLElement | null) {
   return Array.from(panel?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
     (element) =>
       !element.hasAttribute("disabled") &&
@@ -154,9 +154,18 @@ export function useModalFocus({
       // trap stays out of the way.
       if (!isTopmostSheet(modalId)) return;
       if (event.key === "Escape") {
-        if (!closeOnEscapeRef.current) return;
+        if (!closeOnEscapeRef.current) {
+          // A layer that ignores Escape still owns it in the capture phase, so the screen behind
+          // (the idle lock's, for one) cannot act on it either.
+          if (capture) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+          return;
+        }
         // In the bubble phase a menu or field inside the panel that handled Escape has said so.
         if (event.defaultPrevented) return;
+        if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
         event.preventDefault();
         if (capture) event.stopImmediatePropagation();
         onCloseRef.current();

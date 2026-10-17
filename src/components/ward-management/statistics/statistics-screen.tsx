@@ -471,6 +471,7 @@ export function StatisticsScreen({
           navTestId="ward-statistics-index"
           eyebrow={`Statistics · whole network · as at ${formatInstant(now)}`}
           title={`${availableNow} ${availableNow === 1 ? "bed" : "beds"} ready now`}
+          now={now}
           paused={live.paused}
           onTogglePause={live.togglePause}
           exportFigures={{

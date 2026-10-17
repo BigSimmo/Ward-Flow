@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
-import { useWardFlow } from "../ward-flow-provider";
+import { useWardFlowSelect } from "../ward-flow-provider";
 import { bedsPendingPreparation, boundedBedAvailability } from "../ward-bed-availability";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import { sexDesignationAccepts } from "../ward-eligibility";
@@ -105,7 +105,7 @@ function Choice<T extends string>({
 }
 
 export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
-  const { units, bedReleases } = useWardFlow();
+  const { units, bedReleases } = useWardFlowSelect("units", "bedReleases");
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
   const matches = findBeds(units, bedReleases, filters);
   const set =

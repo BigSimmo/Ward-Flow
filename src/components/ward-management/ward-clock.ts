@@ -82,7 +82,7 @@ export function absoluteWallClockMinutes(): number {
 }
 
 /** Perth is UTC+8 all year: Western Australia observes no daylight saving. */
-export const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
+const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
 const PERTH_UTC_OFFSET_MS = PERTH_UTC_OFFSET_MINUTES * 60_000;
 const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
 

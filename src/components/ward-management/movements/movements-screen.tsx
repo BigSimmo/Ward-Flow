@@ -124,7 +124,7 @@ function legalActNowReason(movement: Movement, now: Instant, thresholds: DueSoon
   return null;
 }
 
-export interface CauseDefinition {
+interface CauseDefinition {
   key: string;
   rank: number;
   title: string;
@@ -133,7 +133,7 @@ export interface CauseDefinition {
   mark?: string;
 }
 
-export const CAUSES: CauseDefinition[] = [
+const CAUSES: CauseDefinition[] = [
   {
     key: "legal_breached",
     rank: 1,

@@ -33,6 +33,7 @@ import {
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -40,7 +41,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
-import type { ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
+import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -75,6 +76,7 @@ import {
   alertGroupOf,
   alertKindOf,
   byOldest,
+  escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
   minutesText,
@@ -155,7 +157,7 @@ type HeroPill = "act" | "wait" | "mine";
 type HistoryEntry = { id: string; at: Instant; tone: WfTone; title: string; sub: string; by: string; action: boolean };
 
 /** A request this screen sent, read back from the event log so a refused act never says it happened. */
-type ActionRequest = { type: string; logOffset: number; ok: string; refused: string };
+type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
@@ -198,6 +200,7 @@ function AlertsWorkspace() {
   } = state;
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
+  const raise = useWardRaise("coordinator");
   const live = usePageLive();
   const now = live.now;
   // Top 25 item 12: name a stuck handover once the transport booked target has passed.
@@ -290,20 +293,22 @@ function AlertsWorkspace() {
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
-    logOffset: number;
+    logSequence: number;
     title: string;
     scope: BroadcastTargetScope;
     scopeLabel: string;
   } | null>(null);
   const broadcastResult = broadcastRequest
-    ? state.eventLog?.slice(broadcastRequest.logOffset).find((entry) => entry.type === broadcastRequest.type)
+    ? state.eventLog?.find(
+        (entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type,
+      )
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const actionResult = actionRequest
-    ? state.eventLog?.slice(actionRequest.logOffset).find((entry) => entry.type === actionRequest.type)
+    ? state.eventLog?.find((entry) => entry.sequence > actionRequest.logSequence && entry.type === actionRequest.type)
     : undefined;
 
   // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
@@ -548,10 +553,14 @@ function AlertsWorkspace() {
   // ---- Acts on a row, each read back from the event log ----
   // Notes where the event log stands before each dispatch, so the notice reads the reducer's verdict.
   const track = useCallback(
-    (request: Omit<ActionRequest, "logOffset">) => {
+    (request: Omit<ActionRequest, "logSequence">) => {
+      const tail = state.eventLog?.at(-1)?.sequence ?? -1;
       setBroadcastRequest(null);
       setBroadcastSuccessNotice(null);
-      setActionRequest({ ...request, logOffset: state.eventLog?.length ?? 0 });
+      setActionRequest((prev) => {
+        const prevPending = prev && !state.eventLog?.some((e) => e.sequence > prev.logSequence && e.type === prev.type);
+        return { ...request, logSequence: prevPending ? Math.max(tail, prev.logSequence + 1) : tail };
+      });
     },
     [state.eventLog],
   );
@@ -608,6 +617,23 @@ function AlertsWorkspace() {
         refused: "Release was not accepted. The bed is still held.",
       });
       dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
+    },
+    onEscalate: (item) => {
+      setChosenId(item.id);
+      const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      if (item.movementId && escalationAppliesTo(item, movement, units, now)) {
+        track({
+          type: "RECORD_ESCALATION",
+          ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
+          refused: "Escalation was not accepted.",
+        });
+        raise("RECORD_ESCALATION", {
+          movementId: item.movementId,
+          triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
+          contact: ESCALATION_CONTACTS[0],
+        });
+      }
+      // An alert with no movement, or not about a bed search, has nothing to escalate: the button is disabled, so no notice is made.
     },
   };
   const queueHandlers: QueueHandlers = {
@@ -871,7 +897,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
-      logOffset: state.eventLog?.length ?? 0,
+      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: broadcastTitle.trim(),
       scope: broadcastScope,
       scopeLabel: targetScopeLabel,
@@ -900,7 +926,7 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      logOffset: state.eventLog?.length ?? 0,
+      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: alert?.title ?? "Directive",
       scope: alert?.targetScope ?? "all",
       scopeLabel: alert?.targetScopeLabel ?? "the selected scope",
@@ -1673,8 +1699,16 @@ function AlertsWorkspace() {
                           <Button
                             size="sm"
                             icon={Clock}
-                            disabledReason="Not wired in this prototype."
-                            reasonDisplay="tooltip"
+                            onClick={() => {
+                              // The notice reads the reducer's verdict from the event log, as every
+                              // other act on this page does, so a refused extension is not reported.
+                              track({
+                                type: "EXTEND_BROADCAST_ALERT",
+                                ok: `Extended "${activeBroadcast.title}".`,
+                                refused: "Extension was not accepted.",
+                              });
+                              raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
+                            }}
                           >
                             Extend
                           </Button>

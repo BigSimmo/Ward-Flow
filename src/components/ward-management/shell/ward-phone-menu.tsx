@@ -1,14 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   Activity,
   BedSingle,
   House,
   Inbox,
-  ChevronRight,
   Clock3,
   Bell,
   ListChecks,
@@ -34,18 +42,9 @@ import { WARD_ADD_PERSON_HREF, WARD_ALERTS_HREF } from "@/components/ward-manage
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
-import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
-import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
-import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import {
-  patientResultTitle,
-  SearchResultIcon,
-  smartSearchGroups,
-  type SearchResultGroup,
-  type SearchResultItem,
-} from "@/components/ward-management/ward-global-search";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
+import { preloadWhenIdle } from "../preload-when-idle";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "../ward-shared-access";
@@ -57,6 +56,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
+import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
@@ -339,8 +339,6 @@ function RowBody({ icon: Icon, label, meta }: { icon: typeof Plus; label: string
   );
 }
 
-const Chevron = () => <ChevronRight aria-hidden="true" className={styles.chevron} strokeWidth={1.75} />;
-
 function PageRow({
   entry,
   count,
@@ -543,15 +541,6 @@ function PhoneDock({
   );
 }
 
-function Section({ label, rich, children }: { label: string; rich?: boolean; children: ReactNode }) {
-  return (
-    <section aria-label={label} className={styles.section}>
-      <p className={styles.heading}>{label}</p>
-      <ul className={rich ? `${styles.list} ${styles.rich}` : styles.list}>{children}</ul>
-    </section>
-  );
-}
-
 function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; onClose: () => void }) {
   return (
     <section aria-label="More" className={styles.section}>
@@ -740,7 +729,55 @@ function CreateSheet({
 
 type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
 
-type PageRowRender = (entry: RailEntry, count?: WardNavCount, withMeta?: boolean) => ReactNode;
+/**
+ * Repo score follow-up (16 October 2026): the menu's search results need the app's whole search
+ * engine, which a phone's first load no longer carries. They load once the browser is idle, so a
+ * search normally finds them already there, and read "Searching…" until then.
+ */
+const loadMenuResults = () => import("./ward-phone-menu-results");
+type MenuSearchResultsProps = ComponentProps<(typeof import("./ward-phone-menu-results"))["MenuSearchResults"]>;
+// A failed load (offline before the code arrived) draws `MenuSearchRetry` in its place rather than
+// failing the whole shell.
+const MenuSearchResults = dynamic(
+  () =>
+    loadMenuResults().then(
+      (m) => m.MenuSearchResults,
+      () => MenuSearchRetry,
+    ),
+  { ssr: false, loading: () => <MenuSearching /> },
+);
+preloadWhenIdle(loadMenuResults);
+
+/**
+ * Stands in for the results when their code could not load. It tries again on each keystroke and
+ * each time the menu opens, and shows the real results once they arrive.
+ */
+function MenuSearchRetry(props: MenuSearchResultsProps) {
+  const [Results, setResults] = useState<ComponentType<MenuSearchResultsProps> | null>(null);
+  const [failed, setFailed] = useState(false);
+  const retryKey = Results ? "" : props.query;
+  useEffect(() => {
+    let live = true;
+    loadMenuResults().then(
+      (m) => {
+        if (live) setResults(() => m.MenuSearchResults);
+      },
+      () => {
+        if (live) setFailed(true);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [retryKey]);
+  if (Results) return <Results {...props} />;
+  if (!failed) return <MenuSearching />;
+  return (
+    <Section label="Search unavailable">
+      <li className={styles.empty}>Search could not load. Check the connection, then type again.</li>
+    </Section>
+  );
+}
 
 function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string) => void }) {
   return (
@@ -759,145 +796,6 @@ function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string
         data-testid="ward-phone-menu-search"
       />
     </label>
-  );
-}
-
-/** Records per kind in the menu, the same short list the header search shows under All. */
-const MENU_RESULTS_PER_GROUP = 6;
-/** Audit round 2 (S-33): what "Show all N" opens a group to, the header search's per-kind limit. */
-const MENU_RESULTS_FULL = 40;
-
-/**
- * The menu's search is the app's one smart search (`searchWardFlow`, grouped by
- * `smartSearchGroups`), so it finds the same patients, movements, places, forms and tasks as the
- * header search. Pages come first from the rail's own role-ordered entries; a screen the engine
- * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
- */
-function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlowSelect(
-    "movements",
-    "patients",
-    "units",
-    "referrals",
-    "plannedAdmissions",
-  );
-  const now = useWardFlowClock();
-  const debouncedQuery = useDebouncedValue(query, 120);
-  const trimmed = query.trim();
-  const needle = debouncedQuery.trim();
-  const isPending = trimmed !== needle;
-  return useMemo(() => {
-    if (!needle || isPending) return null;
-    const refusal = refusalFor(needle);
-    const results = searchWardFlow({
-      query: needle,
-      patients,
-      movements,
-      units,
-      referrals,
-      now,
-      limitPerGroup: MENU_RESULTS_FULL,
-      plannedAdmissions,
-    });
-    const viewHrefs = new Set(results.views.map((view) => view.href));
-    const lower = needle.toLowerCase();
-    const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
-    // A screen already listed as a page drops out, including an alias titled the same (Escalation
-    // is "Delays" and redirects there).
-    const pageHrefs = new Set(pages.map((entry) => entry.href));
-    const pageLabels = new Set(pages.map((entry) => entry.label.toLowerCase()));
-    const groups: SearchResultGroup[] = refusal
-      ? []
-      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions })
-          .map((group) =>
-            group.key === "views"
-              ? {
-                  ...group,
-                  items: group.items.filter(
-                    (item) => !pageHrefs.has(item.href) && !pageLabels.has(item.title.toLowerCase()),
-                  ),
-                }
-              : group,
-          )
-          .filter((group) => group.items.length > 0);
-    return { needle, refusal, pages, groups };
-  }, [needle, isPending, entries, movements, patients, units, referrals, plannedAdmissions, now]);
-}
-
-function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
-  const nameFor = usePatientNameDisplay();
-  const title = patientResultTitle(item, nameFor);
-  return (
-    <li>
-      {/* Announce the name as shown, so the discreet form is never read out in full. */}
-      <Link
-        href={item.href}
-        className={styles.row}
-        onClick={() => onGo({ ...item, title })}
-        data-testid="ward-phone-menu-result"
-      >
-        <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
-        <span className={styles.rowText}>
-          <span className={styles.rowLabel}>{title}</span>
-          {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
-        </span>
-        <Chevron />
-      </Link>
-    </li>
-  );
-}
-
-function MenuResults({
-  search,
-  pageRow,
-  onGo,
-}: {
-  search: NonNullable<ReturnType<typeof useMenuSearch>>;
-  pageRow: PageRowRender;
-  onGo: (item: SearchResultItem) => void;
-}) {
-  const { needle, refusal, pages, groups } = search;
-  // Audit round 2 (S-33): each group shows six, then "Show all N" opens the rest in place. A new
-  // query starts short again.
-  const [expanded, setExpanded] = useState<{ needle: string; keys: ReadonlySet<string> }>({
-    needle,
-    keys: new Set(),
-  });
-  const openKeys = expanded.needle === needle ? expanded.keys : new Set<string>();
-  return (
-    <>
-      {pages.length > 0 ? <Section label="Pages">{pages.map((entry) => pageRow(entry))}</Section> : null}
-      {groups.map((group) => {
-        const full = openKeys.has(group.key);
-        const shown = full ? group.items : group.items.slice(0, MENU_RESULTS_PER_GROUP);
-        return (
-          <Section key={group.key} label={group.heading}>
-            {shown.map((item) => (
-              <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
-            ))}
-            {shown.length < group.items.length ? (
-              <li>
-                <button
-                  type="button"
-                  className={styles.row}
-                  data-testid={`ward-phone-menu-show-all-${group.key}`}
-                  onClick={() => setExpanded({ needle, keys: new Set([...openKeys, group.key]) })}
-                >
-                  <span className={styles.rowText}>
-                    <span className={styles.rowLabel}>Show all {group.items.length}</span>
-                  </span>
-                </button>
-              </li>
-            ) : null}
-          </Section>
-        );
-      })}
-      {refusal ? (
-        <p className={styles.empty}>{refusal.sentence}</p>
-      ) : pages.length === 0 && groups.length === 0 ? (
-        <p className={styles.empty}>{NOTHING_FOUND(needle)}</p>
-      ) : null}
-    </>
   );
 }
 
@@ -922,14 +820,8 @@ function MenuPages({
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
-  const search = useMenuSearch(query, entries);
   if (query.trim().length > 0) {
-    if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onResult} />;
-    return (
-      <Section label="Searching">
-        <li className={styles.empty}>Searching…</li>
-      </Section>
-    );
+    return <MenuSearchResults query={query} entries={entries} pageRow={pageRow} onGo={onResult} />;
   }
   return (
     <>
@@ -1056,7 +948,6 @@ export function WardPhoneMenu({
   // One Alerts queue only for the bed coordinator's desk (whose list it is, as the act-now count
   // above) when its role may open the Alerts screen. Others keep the Tasks drawer.
   const oneAlertsQueue =
-    flagOn("alerts-one-queue") &&
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];

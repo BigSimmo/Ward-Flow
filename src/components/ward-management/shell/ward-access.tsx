@@ -16,10 +16,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Button, buttonClass } from "@/components/wf";
+import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
   scopeBroadcastAlerts,
@@ -31,14 +32,15 @@ import type { AuditReview } from "@/components/ward-management/ward-audit";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowOverride,
   useWardFlow,
+  useWardFlowSelect,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { Rejection, Unit } from "@/components/ward-management/ward-model";
+import type { Rejection } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
@@ -54,49 +56,30 @@ import {
   type BreakGlassReasonId,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import {
   breakGlass,
   endAccessPreview,
+  endDueCovers,
   lockWardDesk,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
   type BreakGlassRecord,
 } from "./ward-access-store";
 
-export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
+import { forgetStepUp, useStepUp } from "./ward-step-up";
+import { accessPlaceLabel } from "./ward-access-labels";
+import { SharedAccessContext } from "./ward-shared-access-context";
 import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
-/** Where the desk is, in words: "Ward 6B", "Fiona Stanley ED", "South Metro". */
-export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): string {
-  const scope = access.scope;
-  switch (scope.kind) {
-    case "statewide":
-      return "Statewide";
-    case "service":
-      return scope.service;
-    case "site":
-      return siteByCode(scope.siteCode)?.name ?? scope.siteCode;
-    case "ward":
-      return scope.unitIds.map((id) => units.find((unit) => unit.id === id)?.name ?? id).join(", ");
-    case "ed":
-      return edById(scope.edId)?.name ?? scope.edId;
-    case "team":
-      return scope.teamName;
-    case "jobs":
-      return "Assigned transport jobs";
-  }
-}
-
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
-export function useBreakGlassPatientIds(): ReadonlySet<string> {
+function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
@@ -124,19 +107,33 @@ function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
  * state field by field, so a list keeps its previous identity while it holds the same items, and a
  * reader of that field does not re-render for an unrelated change (review on PR #322).
  */
+function isSteadyContextKey(value: WardFlowContextValue, key: string): key is keyof WardFlowContextValue {
+  return key in value;
+}
+
+function copySteadyKey<K extends keyof WardFlowContextValue>(
+  target: WardFlowContextValue,
+  source: WardFlowContextValue,
+  key: K,
+): void {
+  target[key] = source[key];
+}
+
 function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
   const [steady, setSteady] = useState(next);
   let changed = false;
-  const merged = { ...next } as Record<string, unknown>;
-  const before = steady as unknown as Record<string, unknown>;
+  const merged: WardFlowContextValue = { ...next };
   for (const key of Object.keys(merged)) {
-    const was = before[key];
+    if (!isSteadyContextKey(merged, key)) continue;
+    const was = steady[key];
     const now = merged[key];
-    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) merged[key] = was;
+    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) {
+      copySteadyKey(merged, steady, key);
+    }
     if (merged[key] !== was) changed = true;
   }
-  if (Object.keys(before).length !== Object.keys(merged).length) changed = true;
-  const result = changed ? (merged as unknown as WardFlowContextValue) : steady;
+  if (Object.keys(steady).length !== Object.keys(merged).length) changed = true;
+  const result = changed ? merged : steady;
   if (result !== steady) setSteady(result);
   return result;
 }
@@ -191,6 +188,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
   const { records, previewOf } = useWardAccessSnapshot();
   const previewing = previewOf !== null;
   const now = context.now;
+  // Cover ends by itself at its time, on the demo clock (feature 2).
+  useEffect(() => endDueCovers(now), [now]);
   const activeGrants = useMemo(
     () => records.filter((record) => record.role === access.role && record.until > now),
     [records, access.role, now],
@@ -344,7 +343,14 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
-        supportNotifications: coordinator ? context.supportNotifications : [],
+        supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
+          coordinator,
+          wholeNetwork,
+          unitIn,
+          role: access.role,
+          movements: scoped.movements,
+          wholeStay: (admissionId) => admissionIds.has(admissionId) && !scoped.datesOnlyAdmissionIds.has(admissionId),
+        }),
         wardReferralInbox: (unitId: string) => (unitIn(unitId) ? context.wardReferralInbox(unitId) : []),
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },
@@ -425,7 +431,7 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const on = useWardFeatureFlag("role-access");
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
   if (!on || accessIsWholeNetwork(access)) return <>{children}</>;
@@ -503,6 +509,9 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
   const [other, setOther] = useState("");
   const minutes = CLINICAL_VALUES.breakGlassWindow.value;
   const ready = reason !== null && (reason !== "other" || other.trim().length > 0);
+  // Opening a record outside your care needs a recent sign-in (feature 9).
+  const { guard, dialog } = useStepUp();
+  const shared = useContext(SharedAccessContext);
   return (
     <section className={styles.glass} aria-labelledby="ward-break-glass-title">
       <h2 id="ward-break-glass-title">Open this record anyway</h2>
@@ -542,24 +551,35 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
         data-testid="ward-break-glass-open"
         onClick={() =>
           reason &&
-          breakGlass({
-            patientId,
-            now,
-            windowMinutes: minutes,
-            reason,
-            otherText: other,
-            placeLabel: accessPlaceLabel(access, units),
+          void guard(async () => {
+            // In the shared workspace the server opens the record, asks for a fresh sign-in and
+            // keeps the review record (the reason from the list only, never the typed words).
+            if (shared) {
+              const refusal = await shared.api.breakGlass(patientId, reason);
+              if (refusal !== null) return refusal;
+            }
+            return breakGlass({
+              patientId,
+              now,
+              windowMinutes: minutes,
+              reason,
+              otherText: other,
+              placeLabel: accessPlaceLabel(access, units),
+            }) || shared
+              ? null
+              : "Not opened.";
           })
         }
       >
         Open read only
       </Button>
+      {dialog}
     </section>
   );
 }
 
 /** Says a record is open only through break glass, on the patient page. */
-export function WardBreakGlassNote({ patientId }: { patientId: string }) {
+function WardBreakGlassNote({ patientId }: { patientId: string }) {
   const glass = useBreakGlassPatientIds();
   if (!glass.has(patientId)) return null;
   return (
@@ -618,12 +638,23 @@ export function WardIdleLock() {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const [locked, setLocked] = useState(false);
+  const lockRef = useRef<HTMLDivElement | null>(null);
   const minutes = CLINICAL_VALUES.idleLock.value;
+  // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
+  useModalFocus({
+    open: locked,
+    onClose: () => undefined,
+    panelRef: lockRef,
+    closeOnEscape: false,
+    focusOnOpen: "immediate",
+    keyPhase: "capture",
+  });
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (!on) return;
     const lock = () => {
       lockWardDesk();
+      forgetStepUp();
       setLocked(true);
     };
     let timer = window.setTimeout(lock, minutes * 60_000);
@@ -639,7 +670,7 @@ export function WardIdleLock() {
   }, [on, access, minutes]);
   if (!locked) return null;
   return (
-    <div className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
+    <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
         <p>
@@ -654,14 +685,23 @@ export function WardIdleLock() {
   );
 }
 
-/** Every print names who printed it, from where, and when (feature 11). */
-export function WardPrintFooter() {
+/** Reused inside isolated paper stacks as well as ordinary page print footers. */
+export function WardPrintAttribution({ at, className }: { at?: Instant; className?: string }) {
   const access = useEffectiveWardAccess();
   const { units, now } = useUnscopedWardFlow();
   return (
+    <span className={className} data-testid="ward-print-attribution">
+      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {formatInstantWithDay(at ?? now, now)}. Synthetic data.
+    </span>
+  );
+}
+
+/** Every print names who printed it, from where, and when (feature 11). */
+export function WardPrintFooter() {
+  return (
     <p className={styles.printFooter} data-testid="ward-print-footer">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at {formatInstant(now)}.
-      Synthetic data.
+      <WardPrintAttribution />
     </p>
   );
 }

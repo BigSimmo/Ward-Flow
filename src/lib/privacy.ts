@@ -1,10 +1,3 @@
-/**
- * @deprecated Stale helper retained for export stability under check:dead-code-candidate (A4-15).
- */
-export function safeIngestionJobLog(jobId: string) {
-  return `Processing ingestion job ${jobId}`;
-}
-
 /** Redact paths, URLs, secrets, and emails from support/diagnostic strings. */
 export function redactLogValue(value: unknown): unknown {
   if (typeof value !== "string") {
@@ -51,35 +44,6 @@ export function redactLogValue(value: unknown): unknown {
       )
       .slice(0, 500)
   );
-}
-
-/**
- * @deprecated Stale error details logging helper retained for export stability under check:dead-code-candidate (A4-15).
- */
-export function safeErrorLogDetails(error: unknown) {
-  const record = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
-  const message = error instanceof Error ? error.message : typeof error === "string" ? error : record.message;
-  const stack = error instanceof Error ? error.stack : typeof record.stack === "string" ? record.stack : null;
-  const errorName = error instanceof Error ? error.name : typeof error;
-  const firstStackLine = stack
-    ?.split("\n")
-    .map((line) => line.trim())
-    .find(
-      (line) =>
-        line &&
-        !line.startsWith("Error:") &&
-        !line.startsWith(`${errorName}:`) &&
-        !/^<(!doctype|html|head|body|!--)/i.test(line),
-    );
-
-  return {
-    name: errorName,
-    ...(message ? { message: redactLogValue(message) } : {}),
-    ...(record.code ? { code: redactLogValue(record.code) } : {}),
-    ...(record.details ? { details: redactLogValue(record.details) } : {}),
-    ...(record.hint ? { hint: redactLogValue(record.hint) } : {}),
-    ...(firstStackLine ? { stack: redactLogValue(firstStackLine) } : {}),
-  };
 }
 
 export function redactCaptionIdentifiers(value: string): string {

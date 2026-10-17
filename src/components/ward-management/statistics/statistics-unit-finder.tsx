@@ -126,7 +126,7 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
           type="search"
           icon={Search}
           boxClassName={styles.search}
-          style={{ flex: "1 1 auto" }}
+          className={styles.searchInput}
           aria-label={PLACEHOLDER[kind]}
           placeholder={PLACEHOLDER[kind]}
           value={query}
@@ -134,7 +134,14 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
         />
       </div>
       {shown.length === 0 ? (
-        <p className={styles.empty}>No matching {NOUNS[kind]}</p>
+        <div className={styles.empty}>
+          <p>No matching {NOUNS[kind]}</p>
+          {query.trim() ? (
+            <button className={styles.resetButton} type="button" onClick={() => setQuery("")}>
+              Clear search
+            </button>
+          ) : null}
+        </div>
       ) : (
         <ul
           className={styles.finderList}

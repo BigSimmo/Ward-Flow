@@ -72,7 +72,7 @@ function phoneMediaBlocks(source: string): string[] {
  * directory was deleted outright, so the estate scan below no longer finds the file at all.
  * `escalation/escalation.module.css` and `tracker/live-tracker.module.css` left the same way on
  * 15 Oct 2026, deleted with their unreachable components. */
-const DORMANT_FIXED_PHONE_RESERVE_STYLES = ["ward-chrome-header.module.css"];
+const DORMANT_FIXED_PHONE_RESERVE_STYLES: string[] = [];
 
 describe("Ward Flow sidebar — phone contract", () => {
   it("finds the shell stylesheets it is about to check (sanity check on the scan)", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
   type CatchmentAnswer,
@@ -39,8 +39,6 @@ import styles from "./ward.module.css";
  * out of area — something to CHECK. A suburb present with an empty cell is a real place whose mapping
  * was never written down — something to FILL IN. **Neither is called "Unknown."**
  */
-
-const HEADING_ID = "ward-suburb-team-heading";
 
 /**
  * ⚠️ **THIS SENTENCE IS RENDERED IN EVERY STATE, NOT ONLY THE EMPTY ONE.** An honest qualifier that
@@ -84,15 +82,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="reviewed">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>One team covers {found.suburb}.</p>
               <span className={`${styles.statusPillBadge} ${styles.good}`}>Single Team Catchment</span>
             </div>
@@ -109,15 +99,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="marked">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>{found.suburb} has an answer, and the row it came from is marked.</p>
               <span className={`${styles.statusPillBadge} ${styles.warn}`}>Marked Row</span>
             </div>
@@ -138,15 +120,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="contested">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>
                 {found.suburb} has two readings that disagree
                 {found.withinOneDocument ? ", in the same document" : ""}.
@@ -172,15 +146,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       return found.reason === "suburb-in-source-table-but-no-follow-up-clinic-recorded" ? (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="no-team-recorded">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown". The place is real and the mapping is missing — something to FILL IN. */}
               <p className={styles.suburbVerdict}>No team is recorded for {found.suburb ?? found.query}.</p>
               <span className={`${styles.statusPillBadge} ${styles.warn}`}>No Clinic Recorded</span>
@@ -199,15 +165,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
       ) : (
         <div className={styles.suburbAnswer} data-testid="ward-suburb-team-answer" data-state="not-in-table">
           <div className={styles.suburbResultPanel}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown" either, and not the same as the case above — something to CHECK. */}
               <p className={styles.suburbVerdict}>{found.query} is not in the source table.</p>
               <span className={`${styles.statusPillBadge} ${styles.danger}`}>Not In Catchment Table</span>
@@ -224,6 +182,8 @@ function Answer({ found }: { found: CatchmentLookup }) {
 }
 
 export function SuburbTeamPanel() {
+  const baseId = useId();
+  const headingId = `${baseId}-ward-suburb-team-heading`;
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
 
@@ -236,7 +196,7 @@ export function SuburbTeamPanel() {
 
   return (
     <section
-      aria-labelledby={HEADING_ID}
+      aria-labelledby={headingId}
       className={`${styles.listSection} ${styles.suburbLookupCard}`}
       data-testid="ward-suburb-team-panel"
     >
@@ -249,7 +209,7 @@ export function SuburbTeamPanel() {
             </svg>
           </div>
           <div className={styles.suburbHeaderTitles}>
-            <h2 id={HEADING_ID} className={styles.suburbHeaderMainTitle}>
+            <h2 id={headingId} className={styles.suburbHeaderMainTitle}>
               The team for this suburb
             </h2>
             <p className={styles.suburbHeaderSubText}>
@@ -272,7 +232,7 @@ export function SuburbTeamPanel() {
           setSubmitted(query);
         }}
       >
-        <label className="sr-only" htmlFor="ward-suburb-team-input">
+        <label className="sr-only" htmlFor={`${baseId}-ward-suburb-team-input`}>
           Patient&rsquo;s suburb
         </label>
         <div className={styles.suburbSearchRow}>
@@ -290,7 +250,7 @@ export function SuburbTeamPanel() {
               <path d="M10.5 10.5L14 14" />
             </svg>
             <input
-              id="ward-suburb-team-input"
+              id={`${baseId}-ward-suburb-team-input`}
               className={styles.suburbSearchInput}
               value={query}
               onChange={(event) => setQuery(event.target.value)}

@@ -65,7 +65,7 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
   const newestFirst = [...entries].sort((a, b) => b.override.at - a.override.at);
 
   return (
-    <ul className={styles.list} data-testid="ward-override-register" style={{ fontVariantNumeric: "tabular-nums" }}>
+    <ul className={`${styles.list} ${styles.listTabular}`} data-testid="ward-override-register">
       {newestFirst.map((entry, index) => {
         const movementAny = entry.movement as { umrn?: string };
         const hasUmrn = typeof movementAny.umrn === "string" && movementAny.umrn.length > 0;
@@ -76,48 +76,22 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
           // stable for a given render.
           <li
             key={`${entry.movement.id}-${entry.override.at}-${index}`}
-            className={styles.entry}
+            className={`${styles.entry} ${styles.entryCard}`}
             data-testid={`ward-override-entry-${entry.movement.id}`}
-            style={{
-              border: "1px solid var(--line-strong, var(--line, currentColor))",
-              borderRadius: "var(--radius-md, 0.375rem)",
-              backgroundColor: "var(--surface)",
-              color: "var(--ink)",
-              boxShadow: "0 1px 3px var(--scrim, transparent)",
-            }}
           >
-            <div
-              className={styles.entryHeader}
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "0.5rem",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div className={`${styles.entryHeader} ${styles.entryHeaderRow}`}>
+              <div className={styles.entryIdentity}>
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                <strong style={{ fontVariantNumeric: "tabular-nums", color: "var(--ink)" }}>
-                  {patientOf(entry.movement).formalName}
-                </strong>
+                <strong className={styles.entryName}>{patientOf(entry.movement).formalName}</strong>
                 {hasUmrn ? (
-                  <span
-                    className={styles.entryMeta}
-                    style={{ fontVariantNumeric: "tabular-nums", color: "var(--ink-soft, var(--muted))" }}
-                  >
-                    UMRN: {movementAny.umrn}
-                  </span>
+                  <span className={`${styles.entryMeta} ${styles.metaSoftTabular}`}>UMRN: {movementAny.umrn}</span>
                 ) : null}
-                <span
-                  className={styles.entryMeta}
-                  style={{ fontVariantNumeric: "tabular-nums", color: "var(--ink-soft, var(--muted))" }}
-                >
+                <span className={`${styles.entryMeta} ${styles.metaSoftTabular}`}>
                   {formatInstantWithDay(entry.override.at, now)}
                 </span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexWrap: "wrap" }}>
+              <div className={styles.entryPills}>
                 <span
                   data-testid={`ward-override-status-pill-${entry.movement.id}`}
                   style={{
@@ -169,9 +143,8 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
               as the role deciding, which is what happened.
             */}
             <span
-              className={styles.entryMeta}
+              className={`${styles.entryMeta} ${styles.metaSoft}`}
               data-testid={`ward-override-by-${entry.movement.id}`}
-              style={{ color: "var(--ink-soft, var(--muted))" }}
             >
               Decided by {entry.override.by}
             </span>
@@ -182,9 +155,8 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
               second wording of a governance reason is a second reason.
             */}
             <span
-              className={styles.entryReason}
+              className={`${styles.entryReason} ${styles.reasonInk}`}
               data-testid={`ward-override-reason-${entry.movement.id}`}
-              style={{ color: "var(--ink)" }}
             >
               {entry.override.reason}
             </span>
@@ -198,18 +170,16 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
             */}
             {entry.override.gate === "high_acuity_staffing" && entry.override.numConsulted ? (
               <span
-                className={styles.entryMeta}
+                className={`${styles.entryMeta} ${styles.metaSoft}`}
                 data-testid={`ward-override-num-consulted-${entry.movement.id}`}
-                style={{ color: "var(--ink-soft, var(--muted))" }}
               >
                 High-acuity staffing — nurse unit manager consulted
               </span>
             ) : null}
 
             <span
-              className={styles.entryMeta}
+              className={`${styles.entryMeta} ${styles.metaSoft}`}
               data-testid={`ward-override-units-${entry.movement.id}`}
-              style={{ color: "var(--ink-soft, var(--muted))" }}
             >
               {/* The record holds a reason and destinations, not the historical gate verdict.
                   An override can also be recorded for an eligible target. */}

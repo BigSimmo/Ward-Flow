@@ -59,6 +59,27 @@ describe("apiMutationCsrfVerdict", () => {
     ).toEqual({ allowed: false, reason: "origin_mismatch" });
   });
 
+  it("rejects Sec-Fetch-Site: same-site without Origin when Referer is missing or cross-origin", () => {
+    expect(apiMutationCsrfVerdict(headersOf({ "sec-fetch-site": "same-site" }), requestHost)).toEqual({
+      allowed: false,
+      reason: "missing_browser_headers",
+    });
+
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ "sec-fetch-site": "same-site", referer: "https://evil.psychiatry.tools/page" }),
+        requestHost,
+      ),
+    ).toEqual({ allowed: false, reason: "referer_mismatch" });
+
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ "sec-fetch-site": "same-site", referer: "https://psychiatry.tools/page" }),
+        requestHost,
+      ),
+    ).toEqual({ allowed: true });
+  });
+
   it("rejects a mismatched Origin when Fetch Metadata is absent", () => {
     expect(apiMutationCsrfVerdict(headersOf({ origin: "https://attacker.example" }), requestHost)).toEqual({
       allowed: false,

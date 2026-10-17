@@ -241,7 +241,7 @@ export function DowntimePackScreen() {
         variant={variant}
         icon={taking ? undefined : Camera}
         onClick={newSnapshot}
-        disabled={!canSnapshot}
+        aria-disabled={!canSnapshot || undefined}
         aria-describedby={canSnapshot ? undefined : "downtime-snapshot-reason"}
         data-testid="ward-downtime-refresh"
       >

@@ -1,3 +1,4 @@
+// @ts-check
 import { randomBytes } from "node:crypto";
 
 // Test-only helper. Builds an offline database URL whose role secret is

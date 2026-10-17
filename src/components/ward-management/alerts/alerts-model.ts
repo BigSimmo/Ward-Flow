@@ -1,7 +1,7 @@
 import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
-import type { InboxItem } from "@/components/ward-management/ward-derivations";
+import { eligibleCandidatesAmong, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
@@ -56,6 +56,31 @@ const KIND_PREFIXES: [AlertKind, string][] = [
 
 export function alertKindOf(id: string): AlertKind | undefined {
   return KIND_PREFIXES.find(([, prefix]) => id.startsWith(prefix))?.[0];
+}
+
+/**
+ * Escalate stamps `Movement.escalation`, which means "the bed search is exhausted and the state desk
+ * was rung". The alert kind alone cannot say that: three declines can still be widened, and an
+ * "accepted destination no longer suitable" alert has a destination already accepted. So it is read
+ * from the movement and the live network, the same test the shortlist panel uses before it offers
+ * its own escalation form: an open movement, no accepted ward, and no ward currently eligible. Only
+ * the alerts about finding a placement are candidates at all; a legal-form deadline, a held bed or
+ * a transport delay are about something else, so Escalate stays unavailable for them.
+ */
+const PLACEMENT_ALERT_KINDS: readonly AlertKind[] = ["declines", "nobed"];
+
+export function escalationAppliesTo(
+  item: InboxItem,
+  movement: Movement | undefined,
+  units: readonly Unit[],
+  now: Instant,
+): boolean {
+  const kind = alertKindOf(item.id);
+  if (kind === undefined || !PLACEMENT_ALERT_KINDS.includes(kind)) return false;
+  if (!movement || !isOpen(movement) || movement.acceptedUnitId !== undefined) return false;
+  return !eligibleCandidatesAmong(movement, [...units], now, units.length).some(
+    (candidate) => candidate.verdict.eligible,
+  );
 }
 
 /** Only the categories this screen has always shown; anything else in the inbox stays elsewhere. */

@@ -141,7 +141,7 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
  * How much of a screen a role gets. `all` is the whole screen in the role's scope, `own` only the
  * role's own place, `counts` numbers with no names. Anything not listed is closed.
  */
-export type ScreenGrant = "all" | "own" | "counts";
+type ScreenGrant = "all" | "own" | "counts";
 
 type ScreenTable = Partial<Record<WardScreenId, ScreenGrant>>;
 
@@ -233,7 +233,7 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
 };
 
 /** Where each role lands. Every home is a screen the role can open. */
-export function homeScreenFor(role: WardAccessRole): WardScreenId {
+function homeScreenFor(role: WardAccessRole): WardScreenId {
   switch (role) {
     case "coordinator":
       return "home";
@@ -381,6 +381,8 @@ export type PlaceLookup = {
   edSiteCode(edId: string): string | undefined;
   edService(edId: string): HealthService | undefined;
   teamSlug(teamName: string): string;
+  /** A site's health service, from the registry: an ED-only site has no ward to read it from. */
+  siteService?(siteCode: string): HealthService | undefined;
 };
 
 export function unitInScope(scope: WardAccessScope, unitId: string, places: PlaceLookup): boolean {
@@ -456,13 +458,8 @@ export function screenDecision(
   return { open: true, grant };
 }
 
-/** Whether a role's nav should offer a screen at all (the place check happens on arrival). */
-export function roleOffersScreen(role: WardAccessRole, screen: WardScreenId): boolean {
-  return ROLE_SCREENS[role][screen] !== undefined;
-}
-
 /** Roles that may break glass on one patient record (plan section 7). Never officer, executive or admin. */
-export const BREAK_GLASS_ROLES: readonly WardAccessRole[] = ["bed_manager", "ward", "ed", "community"];
+const BREAK_GLASS_ROLES: readonly WardAccessRole[] = ["bed_manager", "ward", "ed", "community"];
 
 export function canBreakGlass(role: WardAccessRole): boolean {
   return BREAK_GLASS_ROLES.includes(role);

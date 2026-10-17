@@ -260,46 +260,6 @@ export function dischargeDateAccuracy(admissions: Admission[]): { met: number; m
   return total === 0 ? null : { met, moved, total };
 }
 
-/**
- * Default conditions for Criteria-Led Discharge (CLD) (#9).
- * Enables weekend or morning nurse-led discharge execution once a consultant authorises CLD
- * and all three operational criteria are met.
- */
-export const CLD_DEFAULT_CONDITIONS = [
-  "Overnight leave completed without incident",
-  "Discharge scripts (TTO) dispensed by pharmacy",
-  "Carer / community follow-up confirmed",
-] as const;
-
-export type CldDefaultCondition = (typeof CLD_DEFAULT_CONDITIONS)[number];
-
-export interface CriteriaLedDischargeEvaluation {
-  canNurseExecuteDischarge: boolean;
-  consultantAuthorised: boolean;
-  metCount: number;
-  totalCount: number;
-  unmetConditions: string[];
-}
-
-export function evaluateCriteriaLedDischarge(input: {
-  consultantAuthorised: boolean;
-  conditionsMet: Readonly<Record<string, boolean>>;
-}): CriteriaLedDischargeEvaluation {
-  // The three standard conditions are always required; a consultant's own extra conditions are added.
-  // A standard condition missing from the record counts as unmet, so a partial record cannot unlock discharge.
-  const conditionList = Array.from(new Set<string>([...CLD_DEFAULT_CONDITIONS, ...Object.keys(input.conditionsMet)]));
-  const unmetConditions = conditionList.filter((cond) => !input.conditionsMet[cond]);
-  const totalCount = conditionList.length;
-  const metCount = totalCount - unmetConditions.length;
-  return {
-    canNurseExecuteDischarge: Boolean(input.consultantAuthorised && totalCount > 0 && unmetConditions.length === 0),
-    consultantAuthorised: input.consultantAuthorised,
-    metCount,
-    totalCount,
-    unmetConditions,
-  };
-}
-
 export interface EddDriftBadge {
   revisionCount: number;
   driftDays: number;

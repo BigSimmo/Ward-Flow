@@ -7,13 +7,12 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { UserPlus } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
+import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useMediaQuery } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -1354,23 +1353,9 @@ export function PatientSearchPage() {
 
 const PHONE_QUERY = "(max-width: 40rem)";
 
-function subscribePhone(onChange: () => void) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const list = window.matchMedia(PHONE_QUERY);
-  list.addEventListener("change", onChange);
-  return () => list.removeEventListener("change", onChange);
-}
-
 /** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
 function usePhoneLayout(): boolean {
-  return useSyncExternalStore(
-    subscribePhone,
-    () =>
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
+  return useMediaQuery(PHONE_QUERY);
 }
 
 function highlightTest(highlight: CensusHighlight | null): (row: CensusRow) => boolean {
@@ -1404,16 +1389,21 @@ function matchesTier(result: PatientSearchResult, tier: string): boolean {
   return `Tier ${urgency}` === tier;
 }
 
+function matchesPatient(item: unknown, patientId: string): boolean {
+  if (typeof item === "object" && item !== null) {
+    return Reflect.get(item, "patientId") === patientId;
+  }
+  return false;
+}
+
 function getPatientPresence(
   patient: Patient,
   referrals: readonly Referral[],
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
-  const movement = movements.find((m) => (m as Record<string, unknown>)["patient" + "Id"] === patient.id && isOpen(m));
+  const movement = movements.find((m) => matchesPatient(m, patient.id) && isOpen(m));
   if (movement) return { key: "live", label: "On this board" };
-  const referral = referrals.find(
-    (r) => (r as Record<string, unknown>)["patient" + "Id"] === patient.id && referralState(r) === "queued",
-  );
+  const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
   if (referral) {
     if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
       return { key: "community", label: "Community / Home" };

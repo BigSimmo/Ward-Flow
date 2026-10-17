@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -36,7 +36,7 @@ import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
   setWardAccess,
@@ -44,7 +44,15 @@ import {
   useWardAccessSnapshot,
 } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
+import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
+import {
+  STATEWIDE_COORDINATOR,
+  accessIsWholeNetwork,
+  screenDecision,
+  screenForPath,
+  type WardAccess,
+} from "@/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -109,16 +117,20 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
 export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+  const baseId = useId();
   const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
   const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
     useUnscopedWardFlow();
   // The patient in focus is named from the desk's own scoped workspace (review on PR #330), so a
   // restricted desk never sees the UMRN of someone outside its care here.
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients", "referrals");
   // Role access plan PR 1: with the flag on, opening a desk takes that desk's access.
   const accessOn = useWardFeatureFlag("role-access");
   const { access: currentAccess } = useWardAccessSnapshot();
+  // Signed in to the shared workspace, the role comes from the server, never from this drawer: a
+  // desk here only opens its screens (a coordinator can still preview, read only).
+  const shared = useContext(SharedAccessContext) !== null;
   const [previewOnly, setPreviewOnly] = useState(false);
   const now = useWardFlowClock();
   const router = useRouter();
@@ -166,26 +178,49 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
     }
   }
 
+  const previewing = previewOnly && currentAccess.role === "coordinator";
+  // In the shared workspace (not previewing) the signed-in role stays, so the rail keeps its persona
+  // and a desk whose screens that role cannot open is not opened at all (review on PR #363).
+  const keepsSignedInRole = accessOn && shared && !previewing;
+
   function takeAccess(access: WardAccess) {
     if (!accessOn) return;
-    if (previewOnly && currentAccess.role === "coordinator") startAccessPreview(access);
-    else setWardAccess(access);
+    if (previewing) startAccessPreview(access);
+    else if (!shared) setWardAccess(access);
+  }
+
+  /** False, with a note, when the signed-in role cannot open this address. */
+  function reachable(href: string): boolean {
+    if (!keepsSignedInRole || accessIsWholeNetwork(currentAccess)) return true;
+    if (screenDecision(currentAccess, screenForPath(href), wardPlaceLookup(units)).open) return true;
+    setPreviewNote("That desk is not part of your role. To work as another of your roles, use Switch role.");
+    return false;
   }
 
   /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
   function openAccessDesk(access: WardAccess, href: string) {
+    if (!reachable(href)) return;
     takeAccess(access);
     onClose();
     router.push(href);
   }
 
-  function open(desk: Desk) {
+  function open(desk: Desk): boolean {
+    if (!reachable(desk.href)) return false;
     takeAccess(accessFor(desk));
     rememberDesk(desk.id);
-    onSelectRole?.(desk.role);
-    dispatchPersonaSyncForRole(desk.role);
+    if (!keepsSignedInRole) {
+      onSelectRole?.(desk.role);
+      dispatchPersonaSyncForRole(desk.role);
+    }
     onClose();
+    return true;
   }
+
+  /** A desk link: opens the desk, or stays put when the signed-in role cannot open it. */
+  const openLink = (desk: Desk) => (event: MouseEvent) => {
+    if (!open(desk)) event.preventDefault();
+  };
 
   // "Current" follows the role (Settings is the coordinator's desk); navigation is only blocked when
   // the browser is already on that desk's own home, so the coordinator home still opens from here.
@@ -195,8 +230,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
 
   function go(desk: Desk) {
     if (atHome(desk)) return;
-    open(desk);
-    router.push(desk.href);
+    if (open(desk)) router.push(desk.href);
   }
 
   function toggleSite(site: string) {
@@ -250,7 +284,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
       isOpen={expanded === desk.id}
       onToggle={() => setExpanded((current) => (current === desk.id ? null : desk.id))}
       onGo={() => go(desk)}
-      onOpen={() => open(desk)}
+      onOpen={openLink(desk)}
       accessTargetMinutes={configuration.edAccessTargetMinutes}
       compact={isPhone}
     />
@@ -278,7 +312,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             Recent
           </span>
           {recents.map((desk) => (
-            <Link key={desk.id} href={desk.href} className={styles.chip} onClick={() => open(desk)}>
+            <Link key={desk.id} href={desk.href} className={styles.chip} onClick={openLink(desk)}>
               {desk.name}
             </Link>
           ))}
@@ -302,7 +336,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
               key={unit.id}
               href={unitHref(unit.id)}
               className={styles.chip}
-              onClick={() => open({ id: unit.id, role: "ward", name: unit.name, href: unitHref(unit.id) })}
+              onClick={openLink({ id: unit.id, role: "ward", name: unit.name, href: unitHref(unit.id) })}
             >
               <Icon icon={BedSingle} size={14} />
               {unit.name}
@@ -312,7 +346,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             <Link
               href={edHref(focusEd.id)}
               className={styles.chip}
-              onClick={() => open({ id: focusEd.id, role: "ed", name: focusEd.name, href: edHref(focusEd.id) })}
+              onClick={openLink({ id: focusEd.id, role: "ed", name: focusEd.name, href: edHref(focusEd.id) })}
             >
               <Icon icon={Siren} size={14} />
               {focusEd.name}
@@ -349,7 +383,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             type="button"
             className={styles.hereHead}
             aria-expanded={hereOpen}
-            aria-controls="workstation-here-can"
+            aria-controls={`${baseId}-workstation-here-can`}
             onClick={() => setHereOpen((value) => !value)}
           >
             <span className={styles.roleIcon}>
@@ -363,7 +397,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             <Icon icon={ChevronDown} size={14} className={styles.chev} />
           </button>
           {hereOpen ? (
-            <div id="workstation-here-can" className={styles.hereBody}>
+            <div id={`${baseId}-workstation-here-can`} className={styles.hereBody}>
               <p className={styles.eyebrow}>You can here</p>
               <CanList role={here.role} />
             </div>
@@ -381,8 +415,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
               aria-current={desk.id === hereId ? "page" : undefined}
               data-testid={`workstation-open-${desk.id}`}
               onClick={(event) => {
-                if (atHome(desk)) event.preventDefault();
-                else open(desk);
+                if (atHome(desk) || !open(desk)) event.preventDefault();
               }}
             >
               <Icon icon={ROLE_ICON[desk.role]} size={16} />
@@ -455,6 +488,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
           />{" "}
           Preview only, then come back to the coordinator desk in one tap
         </label>
+      ) : null}
+      {accessOn && shared && !searching ? (
+        <p className={styles.empty} role="note" data-testid="workstation-shared-role-note">
+          In the shared workspace your role comes from your sign-in. Opening a desk here shows its screens only. To work
+          as another of your roles, use Switch role.
+        </p>
       ) : null}
       {previewNote && !searching ? (
         <p className={styles.empty} role="status">
@@ -707,17 +746,16 @@ function DeskRow({
   isOpen: boolean;
   onToggle: () => void;
   onGo: () => void;
-  onOpen: () => void;
+  onOpen: (event: MouseEvent) => void;
   accessTargetMinutes: number;
 }) {
   const previewId = `workstation-desk-${desk.id}`;
   return (
     <div className={styles.desk} data-open={isOpen ? "true" : undefined} data-here={isHere ? "true" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+      <div className={styles.deskRow}>
         <button
           type="button"
-          className={styles.deskHead}
-          style={{ flex: 1, minWidth: 0 }}
+          className={cx(styles.deskHead, styles.deskHeadGrow)}
           aria-expanded={isOpen}
           aria-controls={previewId}
           onClick={onToggle}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, eligibility } from "../ward-eligibility";
@@ -66,6 +66,7 @@ export function PatientTransitOperations({
   const referralCapOn = useWardFeatureFlag("top25-referral-cap");
   const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   const now = useWardFlowClock();
+  const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
   // B2 (site review, 12 Oct 2026): every step is raised as the route's own role, so the history
@@ -155,6 +156,21 @@ export function PatientTransitOperations({
   const job = movement.transport;
   const activeJob = job && job.cancelledAt === undefined;
   const noTransport = movement.transportNeed?.needed === false && !activeJob;
+  // Reasons a correction button is unavailable. The buttons stay focusable (aria-disabled, not native
+  // disabled) and point at these reasons so keyboard and screen-reader users hear why.
+  const releasePullBlocked = !releaseReason
+    ? "Choose a release reason first"
+    : job?.collectedAt !== undefined
+      ? "The bed cannot be released after the patient has been collected"
+      : activeJob
+        ? "Cancel the transport job before releasing the bed"
+        : null;
+  const stepBackBlocked = !backTo || !backReason ? "Choose both an earlier stage and a reason first" : null;
+  const withdrawBlocked = !confirmWithdraw
+    ? "Tick confirmation before withdrawing referral"
+    : movement.referredUnitIds.length === 0
+      ? "No open ward referrals to withdraw"
+      : null;
   const remaining = movement.pullExpiresAt === undefined ? undefined : movement.pullExpiresAt - now;
   const searchStage = ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage);
   const selectedTargets = selected.filter(
@@ -196,11 +212,11 @@ export function PatientTransitOperations({
     (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE" ||
       lastActionRejection.attempted === "PULL_PATIENT" ||
       lastActionRejection.attempted === "REFER_TO_UNITS") ? (
-      <section className={styles.card} aria-labelledby="override-title">
+      <section className={styles.card} aria-labelledby={`${baseId}-override-title`}>
         <div className={styles.cardHeader}>
           <div>
             <span className={styles.eyebrow}>CLINICAL OVERRIDE</span>
-            <h3 id="override-title">Record why this is going ahead anyway</h3>
+            <h3 id={`${baseId}-override-title`}>Record why this is going ahead anyway</h3>
           </div>
         </div>
         <div className={styles.cardBody}>
@@ -222,6 +238,7 @@ export function PatientTransitOperations({
             type="button"
             className={styles.primary}
             disabled={!overrideReason}
+            title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
               if (!overrideReason || !lastActionRejection) return;
               const reason = overrideReason;
@@ -271,11 +288,13 @@ export function PatientTransitOperations({
     ) : null;
 
   const candidatePanel = (
-    <section className={styles.card} aria-labelledby="candidate-title">
+    <section className={styles.card} aria-labelledby={`${baseId}-candidate-title`}>
       <div className={styles.cardHeader}>
         <div>
           <span className={styles.eyebrow}>DESTINATION REVIEW</span>
-          <h3 id="candidate-title">{destination ? "Network eligibility reference" : "Network ward shortlist"}</h3>
+          <h3 id={`${baseId}-candidate-title`}>
+            {destination ? "Network eligibility reference" : "Network ward shortlist"}
+          </h3>
         </div>
         <span className={styles.count}>{eligibleCount} eligible</span>
       </div>
@@ -429,7 +448,7 @@ export function PatientTransitOperations({
       <div className={styles.cardFooter}>
         <span>{selectedTargets.length} wards selected</span>
         {selectedTargets.length === 0 ? (
-          <span id="refer-wards-disabled-guidance" className="sr-only">
+          <span id={`${baseId}-refer-wards-disabled-guidance`} className="sr-only">
             Select at least one ward above before sending a referral.
           </span>
         ) : null}
@@ -444,7 +463,7 @@ export function PatientTransitOperations({
               ? "true"
               : undefined
           }
-          aria-describedby={selectedTargets.length === 0 ? "refer-wards-disabled-guidance" : undefined}
+          aria-describedby={selectedTargets.length === 0 ? `${baseId}-refer-wards-disabled-guidance` : undefined}
           onClick={
             !canRefer ||
             selectedTargets.length === 0 ||
@@ -477,11 +496,11 @@ export function PatientTransitOperations({
   );
   const dispatchPanel = (
     <div className={styles.rightColumn}>
-      <section className={styles.card} aria-labelledby="dispatch-title">
+      <section className={styles.card} aria-labelledby={`${baseId}-dispatch-title`}>
         <div className={styles.cardHeader}>
           <div>
             <span className={styles.eyebrow}>NEXT ACTION</span>
-            <h3 id="dispatch-title" tabIndex={-1} ref={nextActionRef}>
+            <h3 id={`${baseId}-dispatch-title`} tabIndex={-1} ref={nextActionRef}>
               Placement &amp; dispatch deck
             </h3>
           </div>
@@ -828,12 +847,21 @@ export function PatientTransitOperations({
                     ))}
                   </select>
                 </label>
+                {releasePullBlocked ? (
+                  <span id={`${baseId}-release-pull-disabled-guidance`} className="sr-only">
+                    {releasePullBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
-                  onClick={() => {
-                    if (!releaseReason) return;
+                  aria-disabled={releasePullBlocked ? "true" : undefined}
+                  aria-describedby={releasePullBlocked ? `${baseId}-release-pull-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (releasePullBlocked || !releaseReason) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "RELEASE_PULL",
@@ -883,12 +911,21 @@ export function PatientTransitOperations({
                     ))}
                   </select>
                 </label>
+                {stepBackBlocked ? (
+                  <span id={`${baseId}-step-back-disabled-guidance`} className="sr-only">
+                    {stepBackBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!backTo || !backReason}
-                  onClick={() => {
-                    if (!backTo || !backReason) return;
+                  aria-disabled={stepBackBlocked ? "true" : undefined}
+                  aria-describedby={stepBackBlocked ? `${baseId}-step-back-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (stepBackBlocked || !backTo || !backReason) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "STEP_BACK_STAGE",
@@ -916,11 +953,21 @@ export function PatientTransitOperations({
                   />
                   Confirm this bed search is no longer required
                 </label>
+                {withdrawBlocked ? (
+                  <span id={`${baseId}-withdraw-referral-disabled-guidance`} className="sr-only">
+                    {withdrawBlocked}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className={styles.secondary}
-                  disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
-                  onClick={() => {
+                  aria-disabled={withdrawBlocked ? "true" : undefined}
+                  aria-describedby={withdrawBlocked ? `${baseId}-withdraw-referral-disabled-guidance` : undefined}
+                  onClick={(e) => {
+                    if (withdrawBlocked || !confirmWithdraw || movement.referredUnitIds.length === 0) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
                     noteAttempt();
                     dispatch({
                       type: "WITHDRAW_REFERRAL",
@@ -941,11 +988,11 @@ export function PatientTransitOperations({
     </div>
   );
   return (
-    <section className={styles.deck} aria-labelledby="transit-title">
+    <section className={styles.deck} aria-labelledby={`${baseId}-transit-title`}>
       <header className={styles.heading} hidden={bare}>
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
-          <h2 id="transit-title">Transit operations</h2>
+          <h2 id={`${baseId}-transit-title`}>Transit operations</h2>
           <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
       </header>

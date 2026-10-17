@@ -77,11 +77,8 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                 data-minutes-in-department={clocks.inDepartment}
               >
                 <header className={styles.inboxItemHeader}>
-                  <strong>{referralPatient.umrn}</strong>
-                  <span style={{ fontSize: "0.85rem", color: "var(--ink)", fontWeight: 600 }}>
-                    {referralPatient.displayName}
-                  </span>
-                  <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+                  <span className={styles.inboxName}>{referralPatient.displayName}</span>
+                  <span className={styles.umrnNote}>
                     (UMRN: <strong>{referralPatient.umrn}</strong>)
                   </span>
                   <span className={styles.inboxPurpose} data-testid={`ward-ed-inbox-purpose-${referral.id}`}>

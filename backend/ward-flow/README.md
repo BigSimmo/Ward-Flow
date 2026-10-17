@@ -21,15 +21,16 @@ to `005`. These source files do not establish a current hosted connection or dep
   and talks to this backend's `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`
   and `/v1/workspace/push-*` routes through `ward-shared-client.ts`.
 
-## Roles and places (migration 8)
+## Roles and places (migrations 8 and 9)
 
 - Sign-in proves only who the account is. The server decides who each account is working as on
   every request, from its own record, never from the browser or the sign-in token. Accounts in `WARD_COORDINATOR_USER_IDS` are the
   bootstrap statewide coordinators. Every other account needs an active membership in
   `ward_flow.memberships`: a role, a place and an end date.
 - An account with more than one role sends `X-Ward-Working-As` (a membership ID, or `bootstrap`).
-  Without it the server answers 409 `choose-role` with the choices. The picker in the app is not
-  built yet.
+  Without it the server answers 409 `choose-role` with up to 20 choices (plus `bootstrap`). The
+  app shows a role picker, keeps the chosen membership ID in that tab's session storage and offers
+  Switch role. A header naming a role that has ended is answered with the choices again.
 - Every reply is cut to that desk's place with `scopeWardFlowState`, the same rule the screens
   use: the snapshot, the poll and every command reply. A command is refused (422, `code: "scope"`)
   when its type is not the desk's own or it names a record outside the desk's place. The audit
@@ -44,7 +45,13 @@ to `005`. These source files do not establish a current hosted connection or dep
   for a ward, ED, community team or bed manager, for the time in the clinical values module. Each
   opening is kept in `ward_flow.break_glass` and audited, and more than the set number in one shift
   is marked as a pattern.
-- Phone alerts stay with the bootstrap statewide coordinators.
+- From migration 9, `GET` and `POST /v1/workspace/access/cover` list cover and let a
+  coordinator, nurse in charge or ED clinician give cover of one ward or ED for one shift at most.
+  An account with no role may hold one open `POST /v1/workspace/access/request`, and an access admin answers
+  it with `/access/decide`. Before 9 these routes answer 409 and say migration 9 is not applied.
+- Phone alerts: before 9 they stay with the bootstrap statewide coordinators. From 9 each device
+  records the membership that turned it on, and alerts reach bed managers, nurses in charge and ED
+  clinicians for their own place, cover included.
 
 ## Files
 
@@ -85,12 +92,14 @@ to `005`. These source files do not establish a current hosted connection or dep
   A signed token naming a key that is not in the current list is refused here. Any other token
   without a usable published key (a legacy shared-secret token, no key ID, an unsupported or
   unreadable key, or while the keys cannot be read) goes to Supabase's `/auth/v1/user`, limited to 30 checks a minute per client address and 300 in
-  total, and a confirmed token is reused for a minute. The client address is the socket's, or
+  total. Each account named by a role holder's token takes at most 10 of the 300, then shares the 30 left for
+  accounts with no role, so forged tokens naming one real account cannot use up the checks other desks need.
+  A confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
   (`*` on Railway, which is reachable only through its proxy). A locally
   verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 8):
+- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 9):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -110,6 +119,15 @@ to `005`. These source files do not establish a current hosted connection or dep
     `infra/rollback-008-role-access.sql` takes a database back to 7, and refuses once any audit row
     names a role other than coordinator or a place narrower than statewide, because audit rows are
     never removed or changed.
+  - `009-access-cover-requests.sql`: cover of a second ward or ED as its own kind of membership
+    (it ends by itself, at most the clinical values module's cover length), requests for access
+    from an account with no role, when each role was last used (a role not used for the set time
+    switches off), and phone alerts by role and place. Cover counts as a role holder for the
+    sign-in allowance, because it is a membership. A request is not a role, so the account that
+    asks stays in the no-role allowance. Granting, approving, removing, cover, answering a request
+    and break glass need a sign-in within the step-up window, or the server answers `step-up`.
+    `infra/rollback-009-access-cover-requests.sql` ends all cover, turns off membership phone
+    alerts and takes a database back to 8. The backend accepts versions 5 to 9.
 
 ## Boundaries
 

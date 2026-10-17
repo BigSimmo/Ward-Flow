@@ -123,7 +123,7 @@ export function WardArrivalsCorridor({
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Coming in</h2>
         </div>
-        <span className={styles.statusTag} data-type="mode" style={{ fontSize: "12px", padding: "4px 10px" }}>
+        <span className={`${styles.statusTag} ${styles.modeTagCompact}`} data-type="mode">
           {accepted.length} Inbound En Route
         </span>
       </div>
@@ -310,8 +310,7 @@ export function WardArrivalsCorridor({
                         aria-disabled={blocked ? "true" : undefined}
                         aria-describedby={blocked ? `ward-pull-unavailable-${movement.id}` : undefined}
                         title={blocked ?? undefined}
-                        className={styles.btnCorridorPull}
-                        style={{ width: "100%" }}
+                        className={`${styles.btnCorridorPull} ${styles.fullWidth}`}
                         onClick={
                           blocked
                             ? ignoreUnavailableActivation
@@ -343,8 +342,7 @@ export function WardArrivalsCorridor({
                         aria-disabled={arriveBlocked ? "true" : undefined}
                         aria-describedby={arriveBlocked ? `ward-confirm-arrival-unavailable-${movement.id}` : undefined}
                         title={arriveBlocked ?? undefined}
-                        className={`${styles.btnCorridorPull} ${styles.btnCorridorGood}`}
-                        style={{ width: "100%" }}
+                        className={`${styles.btnCorridorPull} ${styles.btnCorridorGood} ${styles.fullWidth}`}
                         onClick={
                           arriveBlocked
                             ? ignoreUnavailableActivation
@@ -371,8 +369,7 @@ export function WardArrivalsCorridor({
                         type="button"
                         data-testid={`ward-release-pull-toggle-${movement.id}`}
                         aria-expanded={releaseOpen}
-                        className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
-                        style={{ width: "100%" }}
+                        className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
                         onClick={() => toggleRelease(movement.id)}
                       >
                         Release the pulled bed
@@ -387,8 +384,7 @@ export function WardArrivalsCorridor({
                       <button
                         type="button"
                         data-testid={`ward-release-diverted-bed-${movement.id}`}
-                        className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
-                        style={{ width: "100%" }}
+                        className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
                         onClick={() =>
                           dispatch({
                             type: "RELEASE_DIVERTED_BED",
@@ -408,19 +404,15 @@ export function WardArrivalsCorridor({
                     <form
                       onSubmit={(e) => submitRelease(e, movement.id)}
                       data-testid={`ward-release-pull-${movement.id}`}
-                      style={{ marginTop: "6px" }}
+                      className={styles.releaseForm}
                     >
-                      <label
-                        style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", display: "block" }}
-                        htmlFor={`ward-release-pull-reason-${movement.id}`}
-                      >
+                      <label className={styles.releaseLabel} htmlFor={`ward-release-pull-reason-${movement.id}`}>
                         Reason for releasing the pulled bed for {patientInfo.displayName}
                       </label>
                       <select
                         id={`ward-release-pull-reason-${movement.id}`}
                         required
-                        className={styles.selectInput}
-                        style={{ width: "100%", margin: "4px 0" }}
+                        className={`${styles.selectInput} ${styles.releaseSelect}`}
                         value={releaseReason ?? ""}
                         onChange={(e) => setReleaseReason(e.target.value as ReleasePullReason)}
                       >
@@ -436,8 +428,8 @@ export function WardArrivalsCorridor({
                       <button
                         type="submit"
                         disabled={!releaseReason}
-                        className={styles.btnCorridorPull}
-                        style={{ width: "100%", padding: "5px 10px", fontSize: "11.5px" }}
+                        title={!releaseReason ? "Choose a reason before confirming release" : undefined}
+                        className={`${styles.btnCorridorPull} ${styles.releaseSubmit}`}
                       >
                         Confirm release
                       </button>
@@ -446,7 +438,7 @@ export function WardArrivalsCorridor({
 
                   {lastActionRejection?.movementId === movement.id ? (
                     <p
-                      style={{ fontSize: "11.5px", color: "var(--danger)", margin: "4px 0" }}
+                      className={styles.rejectionNote}
                       role="alert"
                       data-testid={`ward-action-rejection-${movement.id}`}
                     >
@@ -458,10 +450,7 @@ export function WardArrivalsCorridor({
                   {overrideReasonForm(movement.id)}
 
                   {canCancel ? (
-                    <p
-                      style={{ fontSize: "11px", color: "var(--muted)" }}
-                      data-testid="ward-cancel-transport-unavailable"
-                    >
+                    <p className={styles.cancelNote} data-testid="ward-cancel-transport-unavailable">
                       This ward cannot cancel a transport it did not book. Ask the sending emergency department, or the
                       flow coordinator.
                     </p>
@@ -474,7 +463,7 @@ export function WardArrivalsCorridor({
       )}
 
       {heldAfterStop.length > 0 ? (
-        <section aria-label="Stopped transports awaiting bed release" style={{ marginTop: "16px" }}>
+        <section aria-label="Stopped transports awaiting bed release" className={styles.heldSection}>
           <h3>Transport stopped — release held bed</h3>
           {heldAfterStop.map((movement) => {
             const patient = resolvePatientIdentity(movement);

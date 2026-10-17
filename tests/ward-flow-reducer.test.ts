@@ -2270,6 +2270,16 @@ describe("bed release privacy", () => {
       expect(arrivalRefused.rejections[0].reason).toContain(
         "only destination ward or coordinator can set arrival details",
       );
+      // A ward that does not name itself is refused too (review on PR #365).
+      const arrivalUnnamed = wardFlowReducer(seeded, {
+        type: "SET_ARRIVAL_DETAILS",
+        role: "ward",
+        now: NOW,
+        movementId: movement.id,
+        arrivalMode: "ambulance",
+        estimatedArrivalAt: NOW + 30,
+      });
+      expect(arrivalUnnamed.rejections).toHaveLength(1);
 
       // Coordinator succeeds
       const arrivalCoord = wardFlowReducer(seeded, {

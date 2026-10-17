@@ -168,7 +168,7 @@ function segments(window: ContactWindow | null): [number, number][] {
 }
 
 /** One day of a contact's lines, the line answering now drawn solid, with a marker at the shown time. */
-export function DayBar({ entry, minute, ticks = true }: { entry: DirectoryEntry; minute: number; ticks?: boolean }) {
+function DayBar({ entry, minute, ticks = true }: { entry: DirectoryEntry; minute: number; ticks?: boolean }) {
   const lines = entry.lines.length
     ? entry.lines.map((item) => ({ label: item.label, window: item.window }))
     : entry.email
@@ -474,7 +474,7 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
 }
 
 /** Call, copy and email for one contact. Calling never dials: it copies and says so. */
-export function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
+function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
   const number = numberAt(entry, actions.minute);
   return (
     <div className={styles.callRow}>

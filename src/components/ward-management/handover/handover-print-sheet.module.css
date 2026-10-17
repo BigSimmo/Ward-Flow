@@ -165,6 +165,7 @@
 }
 
 .stamp {
+  max-width: 60%;
   margin-left: auto;
   flex: 0 0 auto;
   text-align: right;
@@ -176,6 +177,12 @@
   display: block;
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-ink-2);
+}
+
+/* Isolated handover pages carry the same provenance as ordinary page prints. */
+.stamp .attribution {
+  white-space: normal;
+  font-weight: 400;
 }
 
 .sum {
@@ -429,4 +436,30 @@
   .patientRow.hlr:focus-within td {
     background: var(--wf-accent-tint);
   }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+/* Sheet table column widths (table-layout: fixed). In beds and Past EDD share the narrow width. */
+.colNarrow {
+  width: 70px;
+}
+
+.colReady {
+  width: 56px;
+}
+
+.colUpdated {
+  width: 80px;
+}
+
+.colHeld {
+  width: 50px;
+}
+
+.colWard {
+  width: 150px;
+}
+
+.colHold {
+  width: 180px;
 }

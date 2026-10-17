@@ -3,7 +3,7 @@ import { cx } from "./cx";
 import styles from "./primitives.module.css";
 
 /** v6 icon sizes: 14 in chips and rows, 16 in buttons, 20 in headers and card tiles. */
-export type IconSize = 14 | 16 | 20;
+type IconSize = 14 | 16 | 20;
 
 export type IconProps = Omit<LucideProps, "size" | "ref" | "strokeWidth"> & {
   icon: LucideIcon;

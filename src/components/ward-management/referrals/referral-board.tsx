@@ -2,6 +2,7 @@
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
 import {
@@ -28,6 +29,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
@@ -96,16 +98,13 @@ import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
-  BedMeetingSheet,
   BedsReady,
   DecisionClock,
   HeroTools,
-  IsbarSheet,
   REFERRAL_SOURCE_WORDS,
   ReferralAlerts,
   ReferralPatientTab,
   ReferralTimeline,
-  ShortcutsSheet,
   SummaryButton,
   WaitCell,
   WaitRunway,
@@ -121,6 +120,11 @@ import {
   type MeetingRow,
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
+
+// The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
+const BedMeetingSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.BedMeetingSheet), { ssr: false });
+const IsbarSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.IsbarSheet), { ssr: false });
+const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -725,7 +729,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     }
     const onKeyDown = (e: KeyboardEvent) => {
       // A sheet over the page closes first; the referral stays open behind it.
-      if (e.key === "Escape" && sheet === null && !e.defaultPrevented) {
+      const target = e.target as HTMLElement | null;
+      if (
+        e.key === "Escape" &&
+        sheet === null &&
+        !e.defaultPrevented &&
+        !hasOpenSheet() &&
+        !document.querySelector('[aria-modal="true"]') &&
+        target?.tagName !== "SELECT"
+      ) {
         e.preventDefault();
         closeDetail();
       }
@@ -735,7 +747,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   }, [selectedReferralId, closeDetail, sheet]);
 
   const onShortcutKey = useEffectEvent((e: KeyboardEvent) => {
-    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || sheet !== null || isTyping(e.target)) return;
+    if (
+      e.defaultPrevented ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.altKey ||
+      sheet !== null ||
+      hasOpenSheet() ||
+      document.querySelector('[aria-modal="true"]') !== null ||
+      isTyping(e.target)
+    ) {
+      return;
+    }
     const key = e.key.toLowerCase();
     if (key === "j" || key === "k") {
       e.preventDefault();
@@ -1919,7 +1942,7 @@ function DecidedSection({
                     </td>
                     <td>
                       <div>{outcomeLabel(referral)}</div>
-                      <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
+                      <span className={styles.decidedPatientName}>
                         <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                       </span>
                     </td>

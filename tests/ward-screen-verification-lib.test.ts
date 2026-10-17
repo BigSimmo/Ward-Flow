@@ -25,7 +25,7 @@ function cleanup(dir: string): void {
   rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
-describe("drawingStatus — WF-35: the word CURRENT is retired", () => {
+describe("drawingStatus — the word CURRENT is retired", () => {
   it("is NOT YET LOOKED AT when nobody has looked", () => {
     expect(drawingStatus(null, "abc123")).toBe("NOT YET LOOKED AT");
     expect(drawingStatus(undefined, "abc123")).toBe("NOT YET LOOKED AT");

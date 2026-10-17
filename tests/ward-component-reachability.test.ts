@@ -141,7 +141,7 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
     module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
-    why: "added by #269 (WF-A1-15) but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
+    why: "added by #269 but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
   },
   {
     module: "src/components/ward-management/patients/person-by-umrn.tsx",
@@ -182,19 +182,9 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * `TASKS_NOUN` would have had no renderer to be checked against and the re-point would have
    * quietly become a deletion of the noun contract. This entry is what keeps that visible.
    *
-   * ⚠️ **`ward-chrome-search.tsx` IS DECLARED THOUGH NO TEST RENDERS IT DIRECTLY**, so the
-   * assertion above would not have named it. It is here as a pin that fails by itself: if anything
-   * ever mounts it again, "holds no stale declaration" goes red and names this line, which a
-   * comment saying the same thing could never do.
+   * ✅ **`ward-chrome-header.tsx` and `ward-chrome-search.tsx` were deleted on 16 Oct 2026** with
+   * their retired tests, so their entries are gone.
    */
-  {
-    module: "src/components/ward-management/ward-chrome-header.tsx",
-    why: "RETIRED 2026-09-11 — shell/ward-bar.tsx replaced it; layout.tsx mounts the bar instead",
-  },
-  {
-    module: "src/components/ward-management/ward-chrome-search.tsx",
-    why: "RETIRED 2026-09-11 — reached only from ward-chrome-header; the bar owns the one search box",
-  },
   /*
    * ✅ **`ward-standing-strip.tsx` CAME BACK AS FLOATING DYNAMIC ISLAND HUD — 2026-09-30.**
    * Mounted in `src/app/mockups/ward-flow/layout.tsx` so the Dynamic Island HUD floats site-wide.

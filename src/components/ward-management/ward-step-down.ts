@@ -50,7 +50,7 @@ export function stepDownSubject(
   };
 }
 
-export type StepDownWard = { unit: Unit; verdict: EligibilityVerdict; readyBeds: number };
+type StepDownWard = { unit: Unit; verdict: EligibilityVerdict; readyBeds: number };
 
 export type StepDownBoardRow = {
   admission: Admission;

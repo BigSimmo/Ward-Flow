@@ -3,7 +3,7 @@
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -53,6 +53,12 @@ import {
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import {
+  canSubmitDecline,
+  canSubmitOverride,
+  DECLINE_SUBMIT_UNAVAILABLE_REASON,
+  OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
+} from "./ward-home-tab";
 
 /** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
 const ANSWER_ALERT_LINE = 95;
@@ -104,6 +110,7 @@ function declineReasonLabel(reason: DeclineReason): string {
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
+  const [, startTransition] = useTransition();
   const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
     useWardFlowSelect(
       "movements",
@@ -196,6 +203,62 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   );
   useDirtyStateGuard({ isDirty: hasUnsavedAnswerDraft });
 
+  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
+  const incoming = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements
+            .filter(
+              (movement) =>
+                isOpen(movement) &&
+                movement.stage === "destination_review" &&
+                movement.referredUnitIds.includes(unit.id),
+            )
+            .sort((left, right) => left.openedAt - right.openedAt),
+    [movements, unit],
+  );
+  const recentAnswers = useMemo(
+    () =>
+      !unit
+        ? []
+        : movements
+            .flatMap((movement) => {
+              const wardAnswers: Array<{
+                key: string;
+                movementId: string;
+                outcome: "Accepted" | "Declined";
+                at?: Instant;
+                reason?: DeclineReason;
+              }> = [];
+
+              if (movement.acceptedUnitId === unit.id) {
+                wardAnswers.push({
+                  key: `${movement.id}-accepted`,
+                  movementId: movement.id,
+                  outcome: "Accepted",
+                  at: movement.acceptedAt,
+                });
+              }
+
+              movement.declines
+                .filter((decline) => decline.unitId === unit.id)
+                .forEach((decline, index) => {
+                  wardAnswers.push({
+                    key: `${movement.id}-declined-${index}`,
+                    movementId: movement.id,
+                    outcome: "Declined",
+                    at: decline.at,
+                    reason: decline.reason,
+                  });
+                });
+
+              return wardAnswers;
+            })
+            .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY)),
+    [movements, unit],
+  );
+
   if (!unit) {
     return (
       <div className={styles.answerScreen} data-testid="ward-unit-screen">
@@ -227,62 +290,20 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // reading a bare "ready" count and being refused at the moment of pulling a patient.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
 
-  // A1-9 (audit round 2): longest wait first, as the Referrals board orders its queue.
-  const incoming = movements
-    .filter(
-      (movement) =>
-        isOpen(movement) &&
-        movement.stage === "destination_review" &&
-        movement.referredUnitIds.includes(currentUnit.id),
-    )
-    .sort((left, right) => left.openedAt - right.openedAt);
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
 
-  const recentAnswers = movements
-    .flatMap((movement) => {
-      const wardAnswers: Array<{
-        key: string;
-        movementId: string;
-        outcome: "Accepted" | "Declined";
-        at?: Instant;
-        reason?: DeclineReason;
-      }> = [];
-
-      if (movement.acceptedUnitId === currentUnit.id) {
-        wardAnswers.push({
-          key: `${movement.id}-accepted`,
-          movementId: movement.id,
-          outcome: "Accepted",
-          at: movement.acceptedAt,
-        });
-      }
-
-      movement.declines
-        .filter((decline) => decline.unitId === currentUnit.id)
-        .forEach((decline, index) => {
-          wardAnswers.push({
-            key: `${movement.id}-declined-${index}`,
-            movementId: movement.id,
-            outcome: "Declined",
-            at: decline.at,
-            reason: decline.reason,
-          });
-        });
-
-      return wardAnswers;
-    })
-    .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY));
-
   function toggleDecline(movementId: string) {
-    setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
-    setDeclineReason(undefined);
-    setDeclineNudge(false);
+    startTransition(() => {
+      setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
+      setDeclineReason(undefined);
+      setDeclineNudge(false);
+    });
   }
 
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
-    if (!declineReason) return;
+    if (!canSubmitDecline(declineReason)) return;
     raise("DECLINE", {
       movementId,
       unitId: currentUnit.id,
@@ -297,7 +318,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   /** Phone: the decline sheet's footer confirms without a form submit. */
   function confirmDecline(movementId: string) {
-    if (!declineReason) {
+    if (!canSubmitDecline(declineReason)) {
       setDeclineNudge(true);
       return;
     }
@@ -342,7 +363,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     if (attempted !== "ACCEPT_IN_PRINCIPLE" && attempted !== "PULL_PATIENT") return;
 
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
-    if (isAcuityRefusal && !numConsulted) return;
+    if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
     setPriorRejectionCount(rejections.length);
 
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
@@ -538,24 +559,50 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex === 0}
-                    onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
+                    aria-disabled={activeAnswerIndex === 0 ? "true" : undefined}
+                    aria-describedby={activeAnswerIndex === 0 ? "ward-answer-prev-reason" : undefined}
+                    title={activeAnswerIndex === 0 ? "Already on the first request." : undefined}
+                    onClick={(event) => {
+                      if (activeAnswerIndex === 0) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.max(0, current - 1));
+                    }}
                   >
                     <ChevronLeft size={14} aria-hidden="true" />
                     Previous
                   </button>
+                  {activeAnswerIndex === 0 ? (
+                    <span id="ward-answer-prev-reason" className="sr-only">
+                      Already on the first request.
+                    </span>
+                  ) : null}
                   <span className={styles.heroNavPos}>
                     Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
                   </span>
                   <button
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm" })}
-                    disabled={activeAnswerIndex >= incoming.length - 1}
-                    onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
+                    aria-disabled={activeAnswerIndex >= incoming.length - 1 ? "true" : undefined}
+                    aria-describedby={activeAnswerIndex >= incoming.length - 1 ? "ward-answer-next-reason" : undefined}
+                    title={activeAnswerIndex >= incoming.length - 1 ? "Already on the last request." : undefined}
+                    onClick={(event) => {
+                      if (activeAnswerIndex >= incoming.length - 1) {
+                        ignoreUnavailableActivation(event);
+                        return;
+                      }
+                      setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1));
+                    }}
                   >
                     Next
                     <ChevronRight size={14} aria-hidden="true" />
                   </button>
+                  {activeAnswerIndex >= incoming.length - 1 ? (
+                    <span id="ward-answer-next-reason" className="sr-only">
+                      Already on the last request.
+                    </span>
+                  ) : null}
                 </span>
               </>
             ) : isPhone ? (
@@ -980,14 +1027,55 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <button
                               type="submit"
                               className={`${styles.btn} ${styles.btnGood}`}
-                              disabled={
-                                !overrideReason ||
-                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                              aria-disabled={
+                                !canSubmitOverride(
+                                  overrideReason,
+                                  lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL),
+                                  numConsulted,
+                                )
+                                  ? "true"
+                                  : undefined
+                              }
+                              onClick={
+                                !canSubmitOverride(
+                                  overrideReason,
+                                  lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL),
+                                  numConsulted,
+                                )
+                                  ? ignoreUnavailableActivation
+                                  : undefined
+                              }
+                              aria-describedby={
+                                !canSubmitOverride(
+                                  overrideReason,
+                                  lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL),
+                                  numConsulted,
+                                )
+                                  ? `ward-override-submit-reason-${activeMovement.id}`
+                                  : undefined
+                              }
+                              title={
+                                !canSubmitOverride(
+                                  overrideReason,
+                                  lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL),
+                                  numConsulted,
+                                )
+                                  ? OVERRIDE_SUBMIT_UNAVAILABLE_REASON
+                                  : undefined
                               }
                               data-testid={`ward-override-submit-${activeMovement.id}`}
                             >
                               Record reason and continue
                             </button>
+                            {!canSubmitOverride(
+                              overrideReason,
+                              lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL),
+                              numConsulted,
+                            ) ? (
+                              <span id={`ward-override-submit-reason-${activeMovement.id}`} className="sr-only">
+                                {OVERRIDE_SUBMIT_UNAVAILABLE_REASON}
+                              </span>
+                            ) : null}
                           </fieldset>
                         </form>
                       ) : null}
@@ -1011,7 +1099,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <div className={styles.phoneSheetScope}>
                               <fieldset className={styles.phoneDeclineFieldset}>
                                 <legend className={styles.phoneSheetLabel}>Decline reason</legend>
-                                {declineNudge && !declineReason ? (
+                                {declineNudge && !canSubmitDecline(declineReason) ? (
                                   <p className={styles.phoneSheetNudge} role="alert">
                                     Choose a reason to confirm the decline.
                                   </p>
@@ -1150,11 +1238,23 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           </fieldset>
                           <button
                             type="submit"
-                            disabled={!declineReason}
+                            aria-disabled={!canSubmitDecline(declineReason) ? "true" : undefined}
+                            onClick={!canSubmitDecline(declineReason) ? ignoreUnavailableActivation : undefined}
+                            aria-describedby={
+                              !canSubmitDecline(declineReason)
+                                ? `ward-decline-submit-reason-${activeMovement.id}`
+                                : undefined
+                            }
+                            title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
                             className={`${styles.btn} ${styles.btnDanger}`}
                           >
                             Confirm decline
                           </button>
+                          {!canSubmitDecline(declineReason) ? (
+                            <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">
+                              {DECLINE_SUBMIT_UNAVAILABLE_REASON}
+                            </span>
+                          ) : null}
                         </form>
                       ) : null}
 

@@ -24,6 +24,7 @@ import type {
   reject,
   releasePulledBedAndAdmission,
   RepatriationRecord,
+  withoutReferralBedHold,
   replaceAdmission,
   replaceMovement,
   replaceReferral,
@@ -145,6 +146,7 @@ export type RecordedFactEventHelpers = {
   referralReferrer: typeof referralReferrer;
   reject: typeof reject;
   releasePulledBedAndAdmission: typeof releasePulledBedAndAdmission;
+  withoutReferralBedHold: typeof withoutReferralBedHold;
   replaceAdmission: typeof replaceAdmission;
   replaceMovement: typeof replaceMovement;
   replaceReferral: typeof replaceReferral;
@@ -179,6 +181,7 @@ export function reduceRecordedFactEvent(
     referralReferrer,
     reject,
     releasePulledBedAndAdmission,
+    withoutReferralBedHold,
     replaceAdmission,
     replaceMovement,
     replaceReferral,
@@ -281,6 +284,14 @@ export function reduceRecordedFactEvent(
           );
         }
       }
+      const actingPlaceId = event.actingPlaceId;
+      if (event.role === "ed" && actingPlaceId !== undefined && actingPlaceId !== movement.originEdId) {
+        return reject(
+          state,
+          event,
+          `${event.type} was raised acting as ED ${actingPlaceId} but movement origin is ${movement.originEdId}; only the origin ED can book or record transport for its own movement`,
+        );
+      }
       // Re-recording overwrites on purpose, as for medical clearance. "Not needed" is refused while
       // a booked job is live (audit §3 item 4): that job is cancelled through CANCEL_TRANSPORT
       // first, or PATIENT_ARRIVED could close the movement with a vehicle still booked.
@@ -377,7 +388,10 @@ export function reduceRecordedFactEvent(
         );
       }
       // Gives back a pulled bed and its admission, or does nothing; safe to call unconditionally.
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       // Truthful cause: the department recorded an outcome that ends the bed search, not the
       // referrer withdrawing (`WithdrawalReason.ed_outcome_recorded`, `ward-change-reasons.ts`).
       const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
@@ -397,6 +411,7 @@ export function reduceRecordedFactEvent(
         // See `acceptingUnitId` above: left set, this movement would go on reading as accepted at a
         // ward after the bed search that acceptance belonged to had already ended.
         acceptedUnitId: undefined,
+        heldBedNumber: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
         referralAnswerHistory: [
@@ -711,7 +726,10 @@ export function reduceRecordedFactEvent(
       // would have released (including after a step-back, WFA-004). S1-5: check whether a bed was
       // held so the notice does not falsely claim a release.
       const bedWasHeld = movementHoldsBedByStage(movement);
-      const withoutPulledBed = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutPulledBed = withoutReferralBedHold(
+        releasePulledBedAndAdmission(state, movement, event.now),
+        movement,
+      );
       const acceptingUnitId = movement.acceptedUnitId;
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
       const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
@@ -734,6 +752,7 @@ export function reduceRecordedFactEvent(
         admissionId: undefined,
         // S1-5: Clear acceptedUnitId and referredUnitIds so the closed movement does not linger as live.
         acceptedUnitId: undefined,
+        heldBedNumber: undefined,
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
         referralAnswerHistory: [
@@ -893,6 +912,16 @@ export function reduceRecordedFactEvent(
           state,
           event,
           `cannot change blocker on movement ${movement.id}: examination was revoked while holding a bed — requires explicit RELEASE_HELD_BED or doctor reassessment`,
+        );
+      }
+      const divertedHoldingBed =
+        movement.transport?.diversion !== undefined ||
+        movement.blocker === STAGE_TRANSITION_BLOCKERS.divertedAwaitingRelease;
+      if (divertedHoldingBed) {
+        return reject(
+          state,
+          event,
+          `cannot overwrite diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
         );
       }
       const blocker = event.blocker.trim();
@@ -1274,7 +1303,8 @@ export function reduceRecordedFactEvent(
           );
         }
         if (event.role === "ed" && event.actingPlaceId !== undefined) {
-          const originEdId = referralReferrer(referral)?.placeId;
+          const referrer = referralReferrer(referral);
+          const originEdId = referrer?.role === "ed" ? referrer.placeId : undefined;
           if (originEdId === undefined || event.actingPlaceId !== originEdId) {
             return reject(
               state,
@@ -1285,9 +1315,9 @@ export function reduceRecordedFactEvent(
         }
         if (event.role === "community" && event.actingPlaceId !== undefined) {
           if (
-            referral.sendingTeamName !== undefined &&
-            event.actingPlaceId !== referral.sendingTeamName &&
-            event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName)
+            referral.sendingTeamName === undefined ||
+            (event.actingPlaceId !== referral.sendingTeamName &&
+              event.actingPlaceId !== communityTeamSlug(referral.sendingTeamName))
           ) {
             return reject(
               state,
@@ -1624,12 +1654,13 @@ export function reduceRecordedFactEvent(
       const hadPull =
         movement.admissionId !== undefined || movement.stage === "pulled" || movement.stage === "handover_ready";
       const liveJob = movement.transport && movement.transport.cancelledAt === undefined;
-      const withoutHold = releasePulledBedAndAdmission(state, movement, event.now);
+      const withoutHold = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
       const updated: Movement = {
         ...movement,
         stage: "placement_requested",
         acceptedUnitId: undefined,
         acceptedAt: undefined,
+        heldBedNumber: undefined,
         admissionId: undefined,
         pullExpiresAt: undefined,
         referredUnitIds: [],
@@ -1958,7 +1989,8 @@ export function reduceRecordedFactEvent(
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
-      if (existing.some((record) => record.admissionId === admission.id)) {
+      const existingRecord = existing.find((record) => record.admissionId === admission.id);
+      if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
       if (!siteByCode(event.homeHospital)) {
@@ -1988,12 +2020,16 @@ export function reduceRecordedFactEvent(
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
+      // One home hospital for the record and for the return movement: an agreement that arrives
+      // naming a different site never moves the one the plan was sent to.
+      const homeHospital = existingRecord?.homeHospital ?? event.homeHospital;
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
-        at: event.now,
-        by: event.role,
-        homeHospital: event.homeHospital,
+        at: existingRecord?.at ?? event.now,
+        by: existingRecord?.by ?? event.role,
+        homeHospital,
         receivingWardAgreed: event.receivingWardAgreed,
+        ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
         provider: event.provider,
         cadNumber: event.cadNumber.trim(),
@@ -2016,7 +2052,7 @@ export function reduceRecordedFactEvent(
           allEmergencyDepartments().find((ed) => ed.siteCode === currentSite?.code)?.id ??
           allEmergencyDepartments()[0]?.id ??
           "rph-ed";
-        const targetSite = siteByCode(event.homeHospital);
+        const targetSite = siteByCode(homeHospital);
         const targetHealthService = targetSite?.service ?? "North Metro";
 
         const returnMovement: Movement = {
@@ -2044,7 +2080,7 @@ export function reduceRecordedFactEvent(
           owner: currentSite?.name ?? "Outside Hospital",
           referredUnitIds: [],
           declines: [],
-          blocker: `Repatriation to ${targetSite?.name ?? event.homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
+          blocker: `Repatriation to ${targetSite?.name ?? homeHospital} (${targetHealthService}) agreed; awaiting destination bed placement`,
           withdrawnReferrals: [],
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
@@ -2055,7 +2091,9 @@ export function reduceRecordedFactEvent(
       }
       return {
         ...state,
-        repatriations: [...existing, recorded],
+        repatriations: existingRecord
+          ? existing.map((record) => (record.admissionId === admission.id ? recorded : record))
+          : [...existing, recorded],
         movements: nextMovements,
         referralSequence: nextSequence,
       };

@@ -16,6 +16,7 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
+import { buzzKeys } from "./ward-buzz-keys";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -37,7 +38,7 @@ export interface WardNotificationCenterProps {
   morningRollupDeadlineMinutes?: number;
   onConfirmMorningRollup?: () => void;
   onAcknowledgeNotice?: (noticeId: string) => void;
-  onDismissBuzz?: (buzzIndex: number) => void;
+  onDismissBuzz?: (buzzKey: string) => void;
   onClose?: () => void;
 }
 
@@ -137,8 +138,9 @@ export function WardNotificationCenter({
   };
 
   // 1. Coordinator Buzzes matching unitId
+  const keys = buzzKeys(refreshRequests);
   const matchingBuzzes = refreshRequests
-    .map((buzz, originalIndex) => ({ buzz, originalIndex }))
+    .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
     .filter(({ buzz }) => buzz.unitId === unitId);
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
@@ -155,11 +157,11 @@ export function WardNotificationCenter({
     setSoundEnabled(next);
   };
 
-  const handleAcknowledgeBuzz = (originalIndex: number, isUrgent?: boolean) => {
+  const handleAcknowledgeBuzz = (buzzKey: string, isUrgent?: boolean) => {
     if (isUrgent) {
       triggerUrgentBuzzAlert();
     }
-    onDismissBuzz?.(originalIndex);
+    onDismissBuzz?.(buzzKey);
   };
 
   // 2. Urgent Tasks
@@ -194,16 +196,27 @@ export function WardNotificationCenter({
   const showNotices = activeTab === "all" || activeTab === "notices";
 
   return (
-    // The panel stays a polite live region, so new notifications are still heard. Each count it
-    // announces carries a screen-reader-only "sample records" in the same run, so a count is never
-    // read out bare (expected red #1, announced figures carry their marker). No visible change.
+    // Only the short summary below is a live region, so a change to the counts or filter is heard
+    // once rather than as the whole panel re-read. The summary carries a screen-reader-only
+    // "sample records" in the same run, so a count is never read out bare (expected red #1,
+    // announced figures carry their marker). No visible change.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the focused control inside
     <section
       className={`${styles.panel} ${hasUrgentBuzz ? styles.urgentBuzzPulse : ""}`}
       aria-label={`Ward notification and buzzer centre for ${unitName}`}
-      aria-live="polite"
       data-testid="ward-notification-center"
       data-urgent-buzz={hasUrgentBuzz ? "true" : "false"}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && onClose) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
     >
+      <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-notification-live-summary">
+        {`${totalUnreadAlerts} unread notification${totalUnreadAlerts === 1 ? "" : "s"}, ${activeTab} filter active, sample records`}
+      </span>
       {/* a) Telemetry & Action Strip */}
       <div className={styles.telemetryStrip}>
         <div className={styles.titleArea}>
@@ -299,7 +312,7 @@ export function WardNotificationCenter({
               <p className={styles.emptyState}>No coordinator buzzes for {unitName}.</p>
             ) : (
               <div className={styles.feed}>
-                {matchingBuzzes.map(({ buzz, originalIndex }) => {
+                {matchingBuzzes.map(({ buzz, buzzKey }) => {
                   const roleLabel =
                     buzz.byRole === "coordinator"
                       ? "State Bed Flow Coordinator"
@@ -307,10 +320,7 @@ export function WardNotificationCenter({
                   const messageText = buzz.message || "Capacity refresh requested";
 
                   return (
-                    <div
-                      key={`buzz-${originalIndex}`}
-                      className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}
-                    >
+                    <div key={`buzz-${buzzKey}`} className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}>
                       <div className={styles.cardBody}>
                         <div className={styles.cardHeader}>
                           <time className={styles.cardTime}>{formatInstantWithDay(buzz.at, now)}</time>
@@ -323,7 +333,7 @@ export function WardNotificationCenter({
                       <button
                         type="button"
                         className={styles.actionButton}
-                        onClick={() => handleAcknowledgeBuzz(originalIndex, buzz.urgent)}
+                        onClick={() => handleAcknowledgeBuzz(buzzKey, buzz.urgent)}
                       >
                         Acknowledge Buzz
                       </button>

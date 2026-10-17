@@ -66,7 +66,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 onClick={() => setEgressFilter("overdue")}
               >
                 <span>Overdue (Priority Follow-up)</span>
-                <span className={styles.badgePill} style={{ color: "var(--danger-ink)" }}>
+                <span className={`${styles.badgePill} ${styles.inkDanger}`}>
                   {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "overdue").length}
                 </span>
               </button>
@@ -93,9 +93,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 </span>
               </button>
             </div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: "var(--t-0)", color: "var(--muted)" }}>
-              Mandatory WA Health 7-Day Post-Discharge KPI
-            </div>
+            <div className={styles.filterMeta}>Mandatory WA Health 7-Day Post-Discharge KPI</div>
           </div>
 
           <div className={styles.cardPanel}>
@@ -120,7 +118,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                     <th scope="col">Destination</th>
                     <th scope="col">7-Day KPI Window Status</th>
                     <th scope="col">Assigned Coordinator</th>
-                    <th scope="col" style={{ textAlign: "right" }}>
+                    <th scope="col" className={styles.cellEnd}>
                       Actions
                     </th>
                   </tr>
@@ -149,9 +147,9 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                           setSelectedPatientId(egr.patientId);
                           setActiveDrawer("pxDrawer");
                         }}
-                        style={{ cursor: "pointer" }}
+                        className={styles.clickable}
                       >
-                        <td style={{ whiteSpace: "nowrap" }}>
+                        <td className={styles.cellNowrap}>
                           <b className={styles.patientIdWrap}>{demoUmrnOf(egr.patientId)}</b> ({egr.patientDetails})
                         </td>
                         <td>{egr.dischargingUnit}</td>
@@ -165,7 +163,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                           </span>
                         </td>
                         <td>{egr.assignedCoordinator}</td>
-                        <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                        <td className={styles.cellEnd} onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             className={egr.isPrimaryAction ? styles.btnSmPrimary : styles.btnSmSec}

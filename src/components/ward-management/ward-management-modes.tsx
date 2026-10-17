@@ -1,10 +1,10 @@
 "use client";
 
 import { ChevronDown, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { roleLabels, type ChangeAuditEntry, type WardRole } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardNetworkWorkspace } from "@/components/ward-management/ward-management-network";
 import type { WardMode } from "@/components/ward-management/ward-nav";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -62,7 +62,7 @@ function ModeHeader({
   const now = useWardFlowClock();
   const copy = modeCopy[mode];
   return (
-    <header className={styles.modeHeader} hidden style={{ display: "none" }}>
+    <header className={`${styles.modeHeader} ${styles.modeHeaderHidden}`} hidden>
       <div className={styles.modeIdentity}>
         {/* Ward Flow's own identity, not the host application's. This once showed the former
             clinical app's name and its "Source-backed clinical search" tagline on every board of a
@@ -121,7 +121,7 @@ function ModeHeader({
  * maintained copies that could quietly drift apart — the failure mode the brief calls worse than
  * a single missing statement.
  */
-export function NotAMedicalDeviceStatement() {
+function NotAMedicalDeviceStatement() {
   return (
     /*
      * 🔴 `data-ward-type-floor` EXISTS ONLY SO A BROWSER GATE CAN FIND THIS SENTENCE. DO NOT DELETE
@@ -144,12 +144,56 @@ export function NotAMedicalDeviceStatement() {
 }
 
 export function GovernanceView() {
-  const flow = useWardFlow();
-  const { movements, units } = flow;
+  const {
+    movements,
+    units,
+    worldGeneration,
+    readAuditEvents,
+    readAuditReviews,
+    readGovernanceAuditEvents,
+    dispatch,
+    admissions,
+    bedReleases,
+    rejections,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "worldGeneration",
+    "readAuditEvents",
+    "readAuditReviews",
+    "readGovernanceAuditEvents",
+    "dispatch",
+    "admissions",
+    "bedReleases",
+    "rejections",
+  );
+  // The workbench's own fields only, kept as one steady object between renders like the whole value was.
+  const api = useMemo(
+    () => ({
+      worldGeneration,
+      readAuditEvents,
+      readAuditReviews,
+      readGovernanceAuditEvents,
+      dispatch,
+      admissions,
+      bedReleases,
+      rejections,
+    }),
+    [
+      worldGeneration,
+      readAuditEvents,
+      readAuditReviews,
+      readGovernanceAuditEvents,
+      dispatch,
+      admissions,
+      bedReleases,
+      rejections,
+    ],
+  );
   const now = useWardFlowClock();
   return (
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
-      <GovernanceWorkbench movements={movements} units={units} now={now} api={flow} />
+      <GovernanceWorkbench movements={movements} units={units} now={now} api={api} />
       {/* Role access plan: records opened outside care, for the coordinator to review. */}
       <WardBreakGlassReview />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">

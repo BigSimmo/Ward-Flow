@@ -2,6 +2,7 @@
 
 // The patient record dialog opened from a list name, a Needs you item or "Open patient". Split out
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+import { useId } from "react";
 import { elapsedLabel, stageCopy } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -28,18 +29,19 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     referrals,
     patientDialogRef,
     setSelectedPatientId,
-    setArrivalPlanOpenFor,
+    openArrivalPlanFromRecord,
     selectedPatientInfo,
     selectedPatientJourneyEvents,
     patientBay,
   } = ctx;
+  const baseId = useId();
   return (
-    <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
+    <aside className={styles.pxDrawer} aria-labelledby={`${baseId}-pxTitle`}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
       <dialog
         ref={patientDialogRef}
         className={`${styles.menuPanel} ${styles.patientDialog}`}
-        aria-labelledby="pxTitle"
+        aria-labelledby={`${baseId}-pxTitle`}
         onCancel={() => setSelectedPatientId(null)}
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -56,7 +58,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
       >
         <div className={styles.popHead}>
           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-          <h2 id="pxTitle">{selectedPatientInfo?.displayName ?? NAME_NOT_RECORDED}</h2>
+          <h2 id={`${baseId}-pxTitle`}>{selectedPatientInfo?.displayName ?? NAME_NOT_RECORDED}</h2>
           <span className={styles.count}>
             UMRN: <strong>{selectedPatientInfo?.umrn}</strong> &middot; {selectedPatient.cohort} &middot;{" "}
             {selectedPatient.sex}
@@ -195,7 +197,12 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                   type="button"
                   data-testid={`ward-ed-drawer-arrival-plan-toggle-${selectedPatient.id}`}
                   className={styles.acceptButton}
-                  onClick={() => setArrivalPlanOpenFor(selectedPatient.id)}
+                  onClick={() => {
+                    // This native modal dialog makes everything outside it inert, so it closes
+                    // first and reopens when the arrival modal closes (review on PR #365).
+                    setSelectedPatientId(null);
+                    openArrivalPlanFromRecord(selectedPatient.id);
+                  }}
                 >
                   {selectedPatient.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
                 </button>

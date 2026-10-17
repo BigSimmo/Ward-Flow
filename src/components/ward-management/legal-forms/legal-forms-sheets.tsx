@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ChevronLeft, Clock } from "lucide-react";
 
 import {
@@ -17,6 +17,7 @@ import {
   cx,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
@@ -29,7 +30,6 @@ import {
 import { actPeriodFor, actPeriodSentence } from "./act-periods-demo";
 import {
   CATALOGUE,
-  NOT_WIRED,
   STANDING_TONE,
   clockStanding,
   receiptEventAccepts,
@@ -41,6 +41,60 @@ import styles from "./legal-forms.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MS_PER_MINUTE = 60_000;
+const MINUTES_PER_DAY = 1440;
+
+/**
+ * The time typed from the paper form, today. A blank, malformed, out-of-range or future time is
+ * refused (null): Ward Flow records only times a person typed, never the save moment standing in
+ * for one, and a form cannot have been written after now.
+ */
+function parseWrittenInstant(value: string, now: Instant): Instant | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  const dayOffset = ((now % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const startOfDay = now - dayOffset;
+  const candidate = startOfDay + hours * 60 + minutes;
+  return candidate > now ? null : candidate;
+}
+
+function parseExtensionExpiry(value: string, now: Instant, currentDue?: Instant): Instant | null {
+  const match = /(?:^|T)(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  const anchor = currentDue !== undefined && currentDue > now ? currentDue : now;
+  const dayOffset = ((anchor % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const startOfDay = anchor - dayOffset;
+  let candidate = startOfDay + hours * 60 + minutes;
+  if (candidate <= anchor) {
+    candidate += MINUTES_PER_DAY;
+  }
+  return candidate;
+}
 
 /**
  * REQUIREMENTS. One place to read what each form is, what this prototype records for it, and the
@@ -122,7 +176,7 @@ export function RequirementsSheet({
 
 export type RecordDraft = { form: string; movement: string };
 
-/** RECORD A FORM. The picker is real; saving is not wired (D4) and says so. */
+/** RECORD A FORM. Attaches a selectable MHA 2014 form to an open movement. */
 export function RecordFormSheet({
   open,
   onClose,
@@ -130,6 +184,9 @@ export function RecordFormSheet({
   onDraft,
   openMovements,
   labelOf,
+  now = 0,
+  recordUnavailable,
+  onSaveForm,
 }: {
   open: boolean;
   onClose: () => void;
@@ -137,17 +194,42 @@ export function RecordFormSheet({
   onDraft: (draft: RecordDraft) => void;
   openMovements: Movement[];
   labelOf: (movement: Movement) => string;
+  now?: Instant;
+  recordUnavailable?: string;
+  onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean;
 }) {
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
   const [formKey, setFormKey] = useState(0);
+  const [timeOnForm, setTimeOnForm] = useState("");
   const typeRef = useRef<HTMLSelectElement | null>(null);
+  const baseId = useId();
+  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
+  const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
+  // Dismissing without saving drops the typed time, so it never greets the next patient's form.
+  const dismiss = () => {
+    setTimeOnForm("");
+    onClose();
+  };
+  const saveBlockReason =
+    recordUnavailable ??
+    (!draft.movement
+      ? "Choose a movement first."
+      : !draft.form
+        ? "Choose a form type first."
+        : !isOwnedLegalFormCode(draft.form)
+          ? `Form ${draft.form} written time is not recorded on this sheet.`
+          : draft.form === "3C" && movementRefuses3C(selectedMovement)
+            ? "Form 3C is refused when the person arrived on a Form 3D."
+            : parsedWrittenAt === null
+              ? "Enter the time written on the form as HH:MM, no later than now."
+              : undefined);
   return (
     <Sheet
       open={open}
-      onClose={onClose}
+      onClose={dismiss}
       initialFocusRef={typeRef}
       title="Record a form"
-      description="Saving a new form is not wired in this prototype"
+      description="Attach a form to an open movement and record the time written on the paper"
       portal={false}
       testId="ward-legal-record"
       footer={
@@ -156,6 +238,7 @@ export function RecordFormSheet({
             variant="ghost"
             onClick={() => {
               onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+              setTimeOnForm("");
               setFormKey((key) => key + 1);
             }}
           >
@@ -165,8 +248,18 @@ export function RecordFormSheet({
           <Button
             variant="pri"
             data-testid="ward-legal-forms-register-confirm"
-            disabledReason={NOT_WIRED}
-            title={NOT_WIRED}
+            disabledReason={saveBlockReason}
+            title={saveBlockReason}
+            onClick={() => {
+              if (saveBlockReason || parsedWrittenAt === null) return;
+              const accepted = onSaveForm
+                ? onSaveForm({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt })
+                : true;
+              if (accepted) {
+                setTimeOnForm("");
+                onClose();
+              }
+            }}
           >
             Save form
           </Button>
@@ -174,7 +267,7 @@ export function RecordFormSheet({
       }
     >
       <div key={formKey} className={styles.recordForm}>
-        <Field label="Form type" id="legal-forms-new-instrument">
+        <Field label="Form type" id={`${baseId}-legal-forms-new-instrument`}>
           <Select
             ref={typeRef}
             value={draft.form}
@@ -187,7 +280,7 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
-        <Field label="Movement" id="legal-forms-new-movement">
+        <Field label="Movement" id={`${baseId}-legal-forms-new-movement`}>
           <Select value={draft.movement} onChange={(event) => onDraft({ ...draft, movement: event.target.value })}>
             <option value="">Choose a movement</option>
             {openMovements.map((movement) => (
@@ -198,18 +291,28 @@ export function RecordFormSheet({
           </Select>
         </Field>
         <div className={styles.fieldPair}>
-          <Field label="Clinician" id="legal-forms-new-clinician">
-            <TextInput placeholder="Name and role" autoComplete="off" />
+          <Field label="Clinician" id={`${baseId}-legal-forms-new-clinician`}>
+            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
-          <Field label="Time on form" id="legal-forms-new-time">
-            <TextInput icon={Clock} placeholder="HH:MM" inputMode="numeric" autoComplete="off" />
+          <Field label="Time on form" id={`${baseId}-legal-forms-new-time`}>
+            <TextInput
+              icon={Clock}
+              placeholder="HH:MM"
+              inputMode="numeric"
+              autoComplete="off"
+              aria-required="true"
+              value={timeOnForm}
+              onChange={(event) => setTimeOnForm(event.target.value)}
+            />
           </Field>
         </div>
-        <Field label="Notes" id="legal-forms-new-notes">
+        <Field label="Notes" id={`${baseId}-legal-forms-new-notes`}>
           <Textarea
+            readOnly
+            disabled
             maxLength={280}
             rows={2}
-            placeholder="Grounds as written on the form"
+            placeholder="Free-text grounds are not stored in prototype (D6)"
             data-gramm="false"
             data-enable-grammarly="false"
             spellCheck={false}
@@ -221,39 +324,62 @@ export function RecordFormSheet({
   );
 }
 
-/** EXTEND RECORDED FORM. Recorded, not legally checked, and not wired (D4). */
+/** EXTEND RECORDED FORM. Records the extended expiry typed from the form (not legally checked). */
 export function ExtendSheet({
   target,
   label,
   now,
   onClose,
+  extendUnavailable,
+  onExtendForm,
 }: {
   target: Movement | null;
   label: string;
   now: Instant;
   onClose: () => void;
+  extendUnavailable?: string;
+  onExtendForm?: (movement: Movement, dueAt: Instant) => boolean;
 }) {
   const thresholds = useDueSoonThresholds();
+  const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
+  const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
+  const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
+  const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
+  const extendBlockReason =
+    extendUnavailable ?? (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
+  // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
+  const dismiss = () => {
+    setExpiryState(null);
+    onClose();
+  };
   return (
     <Sheet
       open={target !== null}
-      onClose={onClose}
+      onClose={dismiss}
       title="Extend recorded form"
       description="Extension is recorded, not legally checked"
       portal={false}
       testId="ward-legal-extend"
       footer={
         <div className={styles.sheetFoot}>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={dismiss}>
             Cancel
           </Button>
           <span className={styles.footSpacer} />
           <Button
             variant="pri"
             data-testid="ward-legal-forms-renew-confirm"
-            disabledReason={NOT_WIRED}
-            title={NOT_WIRED}
+            disabledReason={extendBlockReason}
+            title={extendBlockReason}
+            onClick={() => {
+              if (extendBlockReason || !target || parsedDueAt === null) return;
+              const accepted = onExtendForm ? onExtendForm(target, parsedDueAt) : true;
+              if (accepted) {
+                setExpiryState(null);
+                onClose();
+              }
+            }}
           >
             Confirm extension
           </Button>
@@ -274,17 +400,39 @@ export function ExtendSheet({
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
           ) : null}
-          <Field label="Target movement" id="legal-forms-renew-movement">
+          <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />
           </Field>
-          <Field label="Authorising specialist" id="legal-forms-renew-specialist">
-            <TextInput placeholder="Specialist name and role" autoComplete="off" />
-          </Field>
-          <Field label="Justification" id="legal-forms-renew-justification">
+          <div className={styles.fieldPair}>
+            <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
+              <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
+            </Field>
+            <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>
+              <TextInput
+                data-testid="ward-legal-forms-renew-expiry"
+                icon={Clock}
+                placeholder="HH:MM"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-required="true"
+                value={expiryValue}
+                onChange={(event) => setExpiryState({ targetId: target.id, value: event.target.value })}
+              />
+            </Field>
+          </div>
+          {parsedDueAt !== null ? (
+            // The field takes a time only, so the resolved day is shown before Confirm records it.
+            <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
+              Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
+            </p>
+          ) : null}
+          <Field label="Justification" id={`${baseId}-legal-forms-renew-justification`}>
             <Textarea
+              readOnly
+              disabled
               maxLength={280}
               rows={3}
-              placeholder="Clinical justification for the recorded extension"
+              placeholder="Free-text justification is not stored in prototype (D6)"
               data-gramm="false"
               data-enable-grammarly="false"
               spellCheck={false}

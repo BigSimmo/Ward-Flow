@@ -112,9 +112,9 @@ describe("unified Patient Now clinical flight deck", () => {
     referAndAccept();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
     fireEvent.click(screen.getByText("Step back with recorded reason"));
-    expect(screen.getByRole("button", { name: "Record step-back" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Earlier journey stage"), { target: { value: "accepted_awaiting_bed" } });
-    expect(screen.getByRole("button", { name: "Record step-back" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Clinical / operational reason"), {
       target: { value: STEP_BACK_REASONS[0] },
     });
@@ -148,7 +148,7 @@ describe("unified Patient Now clinical flight deck", () => {
     referAndAccept();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
     fireEvent.click(screen.getByText("Release bed pull"));
-    expect(screen.getByRole("button", { name: "Release pull" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Release pull" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Release reason"), { target: { value: RELEASE_PULL_REASONS[0] } });
     fireEvent.click(screen.getByRole("button", { name: "Release pull" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");

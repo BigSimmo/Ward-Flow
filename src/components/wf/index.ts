@@ -3,9 +3,8 @@
  * Contract: `design/v9/design-system-v9.md` (Sections 8–14). Tokens: `src/app/ward-flow-v9-tokens.css`.
  */
 export { cx } from "./cx";
-export { dur, durMinutes, clk, durParts } from "./format";
-export { useMinuteNow } from "./use-minute-now";
-export { guessPhoneFromRequest } from "./phone-guess";
+export { dur, durMinutes, clk } from "./format";
+export { guessPhoneFromRequest, guessTabletFromRequest } from "./phone-guess";
 export {
   WfServerPhoneProvider,
   useIsPhone,
@@ -17,29 +16,13 @@ export {
   WF_TABLET_PORTRAIT_QUERY,
 } from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
-export { Icon, type IconProps, type IconSize } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, CountCircle, Divider, Inset, Spinner, IconTile } from "./primitives";
-export {
-  Button,
-  DisabledReason,
-  SplitButton,
-  buttonClass,
-  type ButtonProps,
-  type ButtonVariant,
-  type ButtonSize,
-  type SplitButtonProps,
-} from "./button";
-export { Badge, type BadgeProps, type BadgeVariant } from "./badge";
-export { Card, CardHead, CardBody, CardFoot, type CardProps, type CardHeadProps } from "./card";
-export { Hero, HeroStat, HeroSteps, type HeroProps, type HeroStatProps, type HeroStep } from "./hero";
-export {
-  useWfBandActive,
-  useWfBandBleed,
-  registerWfBandHero,
-  WF_BAND_QUERY,
-  WF_BAND_SCROLLED_PX,
-  WF_BAND_TOP_SLACK_PX,
-} from "./band";
+export { Icon } from "./icon";
+export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
+export { Button, DisabledReason, buttonClass, type ButtonVariant, type ButtonSize } from "./button";
+export { Badge } from "./badge";
+export { Card, CardHead, CardBody, CardFoot } from "./card";
+export { Hero, HeroStat } from "./hero";
+export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
   Frac,
@@ -50,11 +33,6 @@ export {
   GroupHead,
   SinceYouLooked,
   type CheckingItem,
-  type CheckingFootProps,
-  type StepState,
-  type OccupancyRingProps,
-  type WardCapacityRowProps,
-  type GroupHeadProps,
   type SinceItem,
 } from "./v10-parts";
 export {
@@ -65,26 +43,11 @@ export {
   rowDim,
   TimeRail,
   JourneyStrip,
-  type HeroChipProps,
-  type Fact,
   type TimeRailMark,
-  type TimeRailProps,
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
-export {
-  Stat,
-  StatGroup,
-  Meter,
-  StackBar,
-  Legend,
-  fillClass,
-  type WfFill,
-  type StatProps,
-  type MeterProps,
-  type StackSegment,
-  type LegendItem,
-} from "./stat";
+export { Stat, StatGroup, Meter, StackBar, Legend, type WfFill, type StackSegment, type LegendItem } from "./stat";
 export {
   Tabs,
   PillTabs,
@@ -95,89 +58,19 @@ export {
   AppliedFilter,
   ChipGroup,
   type ChoiceItem,
-  type TabsProps,
-  type PillTabsProps,
-  type SegmentedProps,
-  type FilterChipProps,
 } from "./choice";
-export {
-  DataRow,
-  Cell,
-  Th,
-  SortHeader,
-  TierTile,
-  BulkBar,
-  tableClasses,
-  type DataRowProps,
-  type SortDirection,
-} from "./table";
-export { Sheet, Drawer, type SheetProps } from "./sheet";
-export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, type PopoverProps } from "./menu";
-export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
-export { Dialog, type DialogProps, type DialogAction } from "./dialog";
-export {
-  useModalFocus,
-  modalFocusableIn,
-  type UseModalFocusOptions,
-  type UseModalFocusResult,
-} from "./use-modal-focus";
-export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
-export {
-  ToastDeviceSaveContext,
-  ToastProvider,
-  useOptionalToast,
-  useToast,
-  type ToastApi,
-  type ToastInput,
-} from "./toast-provider";
-export { Tooltip, type TooltipProps } from "./tooltip";
-export {
-  LiveChip,
-  Timer,
-  publishLiveClock,
-  type LiveState,
-  type LiveChipProps,
-  type TimerProps,
-  type TimerDirection,
-} from "./live";
-export {
-  Field,
-  TextInput,
-  Textarea,
-  Select,
-  Checkbox,
-  Radio,
-  Switch,
-  Stepper,
-  type FieldProps,
-  type TextInputProps,
-  type SwitchProps,
-  type StepperProps,
-} from "./form";
-export {
-  Timeline,
-  Avatar,
-  AvatarStack,
-  Skeleton,
-  SkeletonLines,
-  EmptyState,
-  StatusLine,
-  type TimelineItem,
-  type AvatarProps,
-  type EmptyStateProps,
-  type StatusLineProps,
-} from "./feed";
-export {
-  BarList,
-  ColumnChart,
-  Sparkline,
-  LineChart,
-  Donut,
-  fillVar,
-  type BarListRow,
-  type ColumnDatum,
-  type LinePoint,
-} from "./chart";
+export { DataRow, TierTile, tableClasses } from "./table";
+export { Sheet, Drawer } from "./sheet";
+export { Menu, Popover, type MenuItem } from "./menu";
+export { ToastView } from "./toast";
+export { Dialog } from "./dialog";
+export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
+export { StateLine, type StateKind } from "./state";
+export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
+export { LiveChip, Timer, publishLiveClock } from "./live";
+export { Field, TextInput, Textarea, Select, Checkbox, Radio, Switch, Stepper } from "./form";
+export { Timeline, Avatar, EmptyState, StatusLine, type TimelineItem } from "./feed";
+export { BarList, ColumnChart, Donut, type BarListRow } from "./chart";
 export {
   PhoneSheet,
   PhoneTabBar,
@@ -186,13 +79,6 @@ export {
   ScrollRow,
   PHONE_TAB_LIMIT,
   PHONE_HERO_FIGURE_LIMIT,
-  type PhoneSheetProps,
-  type PhoneTab,
-  type PhoneTabBarProps,
-  type PhoneListRowProps,
   type PhoneRowAction,
-  type PhoneHeroProps,
-  type PhoneHeroFigure,
-  type ScrollRowProps,
 } from "./phone";
-export { PortraitList, PortraitRail, type PortraitGroup, type PortraitRowData } from "./portrait";
+export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";

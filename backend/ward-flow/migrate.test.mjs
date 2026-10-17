@@ -1,3 +1,4 @@
+// @ts-check
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
@@ -25,20 +26,21 @@ function database(version) {
 }
 
 for (const [from, expected] of [
-  [null, [1, 2, 3, 4, 5, 6, 7, 8]],
-  [1, [2, 3, 4, 5, 6, 7, 8]],
-  [2, [3, 4, 5, 6, 7, 8]],
-  [3, [4, 5, 6, 7, 8]],
-  [4, [5, 6, 7, 8]],
-  [5, [6, 7, 8]],
-  [6, [7, 8]],
-  [7, [8]],
-  [8, []],
+  [null, [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+  [1, [2, 3, 4, 5, 6, 7, 8, 9]],
+  [2, [3, 4, 5, 6, 7, 8, 9]],
+  [3, [4, 5, 6, 7, 8, 9]],
+  [4, [5, 6, 7, 8, 9]],
+  [5, [6, 7, 8, 9]],
+  [6, [7, 8, 9]],
+  [7, [8, 9]],
+  [8, [9]],
+  [9, []],
 ]) {
-  test(`migration runner advances ${from ?? "fresh"} to version 8 in order`, async () => {
+  test(`migration runner advances ${from ?? "fresh"} to version 9 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 8);
+    assert.equal(db.current(), 9);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -54,7 +56,7 @@ for (const [from, expected] of [
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 9, "5"]) {
+  for (const version of [0, 10, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -118,6 +120,23 @@ test("migration 7 refuses a live workspace before changing anything, and its rol
   assert.match(undo, /ADD CONSTRAINT workspaces_data_mode_check CHECK \(data_mode IN \('prototype', 'live'\)\);/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 7;/);
   assert.doesNotMatch(sql, /DROP TRIGGER|workspace_mode_unique|DELETE|UPDATE/);
+});
+
+test("migration 9 adds cover, requests and alerts by role without dropping anything, and its rollback ends cover first", async () => {
+  const sql = await readFile(new URL("./migrations/009-access-cover-requests.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-009-access-cover-requests.sql", import.meta.url), "utf8");
+  assert.doesNotMatch(sql, /DROP|DELETE/);
+  assert.match(sql, /CREATE UNIQUE INDEX access_requests_one_open .* WHERE decision IS NULL;/);
+  assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
+  // Every role held when 9 runs starts its "not used" count then, so none switches off at once.
+  assert.match(sql, /UPDATE ward_flow\.memberships SET last_used_at = now\(\) WHERE revoked_at IS NULL;/);
+  const endCover = undo.indexOf(
+    "UPDATE ward_flow.memberships SET revoked_at = now(), revoked_by = granted_by WHERE kind = 'cover' AND revoked_at IS NULL;",
+  );
+  const dropKind = undo.indexOf("ALTER TABLE ward_flow.memberships DROP COLUMN kind;");
+  assert.ok(endCover >= 0 && dropKind >= 0 && endCover < dropKind);
+  assert.match(undo, /IS DISTINCT FROM 9/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 9;/);
 });
 
 test("one migration list: every SQL file is listed once, in order, and matches its checksum", async () => {

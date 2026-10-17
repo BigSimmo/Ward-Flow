@@ -34,7 +34,7 @@ describe("document metadata and modal lifecycle", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("File contents are not stored or sent");
     const submit = screen.getByTestId("confirm-upload-form-button");
-    expect(submit).toBeDisabled();
+    expect(submit).toHaveAttribute("aria-disabled", "true");
     const input = within(dialog).getByLabelText("Upload document file");
     fireEvent.change(input, { target: { files: [new File([], "empty.pdf", { type: "application/pdf" })] } });
     fireEvent.submit(submit.closest("form")!);
@@ -66,7 +66,8 @@ describe("document metadata and modal lifecycle", () => {
     const trigger = setup();
     const dialog = screen.getByRole("dialog");
     const first = within(dialog).getByRole("button", { name: "Close dialog" });
-    const last = within(dialog).getByRole("button", { name: "Cancel" });
+    // The unavailable submit stays focusable (aria-disabled, not native disabled), so it is the last stop.
+    const last = within(dialog).getByTestId("confirm-upload-form-button");
     expect(first).toHaveFocus();
     expect(trigger.closest("[inert]")).not.toBeNull();
     fireEvent.keyDown(first, { key: "Tab", shiftKey: true });
@@ -78,6 +79,6 @@ describe("document metadata and modal lifecycle", () => {
     expect(trigger).toHaveFocus();
     expect(trigger.closest("[inert]")).toBeNull();
     fireEvent.click(trigger);
-    expect(screen.getByTestId("confirm-upload-form-button")).toBeDisabled();
+    expect(screen.getByTestId("confirm-upload-form-button")).toHaveAttribute("aria-disabled", "true");
   });
 });

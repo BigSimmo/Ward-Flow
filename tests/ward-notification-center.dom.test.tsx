@@ -114,11 +114,25 @@ describe("WardNotificationCenter DOM Component", () => {
 
     fireEvent.click(acknowledgeButtons[0]);
     expect(onDismissBuzz).toHaveBeenCalledTimes(1);
-    expect(onDismissBuzz).toHaveBeenCalledWith(0);
+    expect(onDismissBuzz).toHaveBeenCalledWith(
+      "ward-alpha:540:coordinator:Please review pending discharges immediately:true#0",
+    );
 
     fireEvent.click(acknowledgeButtons[1]);
     expect(onDismissBuzz).toHaveBeenCalledTimes(2);
-    expect(onDismissBuzz).toHaveBeenCalledWith(2);
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:570:coordinator::false#0");
+  });
+
+  it("keeps identical repeat buzzes as separate acknowledgements", () => {
+    const onDismissBuzz = vi.fn();
+    const buzz = { unitId: "ward-alpha", at: 540, byRole: "coordinator", message: "Same buzz" };
+    render(
+      <WardNotificationCenter {...defaultProps} refreshRequests={[buzz, { ...buzz }]} onDismissBuzz={onDismissBuzz} />,
+    );
+    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge Buzz" });
+    expect(acknowledgeButtons).toHaveLength(2);
+    fireEvent.click(acknowledgeButtons[1]);
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:540:coordinator:Same buzz:false#1");
   });
 
   it("renders 09:30 overdue census banner with confirm callback", () => {
@@ -355,7 +369,7 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
   });
 
-  it("meets accessibility requirements: role=region, aria-live=polite, and tabpanel semantics", () => {
+  it("meets accessibility requirements: role=region, one polite summary live region, and tabpanel semantics", () => {
     render(
       <WardNotificationCenter {...defaultProps} morningRollupDeadlinePassed={true} morningRollupConfirmed={false} />,
     );
@@ -364,7 +378,9 @@ describe("WardNotificationCenter DOM Component", () => {
       name: "Ward notification and buzzer centre for Ward Alpha",
     });
     expect(region).toBeInTheDocument();
-    expect(region).toHaveAttribute("aria-live", "polite");
+    // Only the atomic summary announces; the panel itself is not a live region.
+    expect(region).not.toHaveAttribute("aria-live");
+    expect(screen.getByTestId("ward-notification-live-summary")).toHaveAttribute("aria-live", "polite");
 
     const tablist = screen.getByRole("tablist", { name: "Notification filters" });
     expect(tablist).toBeInTheDocument();

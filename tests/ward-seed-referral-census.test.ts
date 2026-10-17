@@ -185,7 +185,7 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
       thresholds: DEFAULT_DUE_SOON_THRESHOLDS, // seedWardFlowState() carries clockOffsetMinutes: 0, so "now" is the anchor itself
     });
 
-    // Queued AND still genuinely awaiting an answer (WF-13: excludes a withdrawn destination). No
+    // Queued AND still genuinely awaiting an answer (excludes a withdrawn destination). No
     // seeded referral carries `withdrawnAt`, so this equals the queued count pinned above (7,
     // 2026-09-25: was 6 before RF-RD06).
     expect(counts.referrals).toEqual({ value: 7, noun: "awaiting a decision", urgent: false });

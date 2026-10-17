@@ -10,6 +10,14 @@ import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import {
+  giveCover,
+  readWardAccessSnapshot,
+  setWardAccess,
+  resetWardAccessStoreForTests,
+} from "../src/components/ward-management/shell/ward-access-store";
+import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
+import { breakGlassRefusal, scopeWorld, seedWorld } from "../backend/ward-flow/engine";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -30,6 +38,15 @@ function Probe() {
 }
 function DataModeDetail() {
   return <p data-testid="data-mode-detail">{useWardDataMode()?.detail ?? "no data mode"}</p>;
+}
+function PatientIdsProbe() {
+  const { patients } = useWardFlow();
+  return (
+    <>
+      <output data-testid="patient-ids">{patients.map((patient) => patient.id).join(",")}</output>
+      <input aria-label="Scoped draft" defaultValue="draft" />
+    </>
+  );
 }
 /** No standalone data-mode bar: without a header slot nothing is drawn, but the mode is still published. */
 function expectNoStandaloneDataModeControl() {
@@ -70,6 +87,49 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("adopts opened and closed break-glass records at the same clinical revision without remounting drafts", () => {
+    const at = new Date("2026-10-16T00:00:00Z");
+    const world = seedWorld(at);
+    const access = { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } } as const;
+    const own = scopeWorld(world, access, at);
+    const patient = world.state.patients.find(
+      (candidate) => breakGlassRefusal(world, access, candidate.id, at) === null,
+    )!;
+    const opened = scopeWorld(world, access, at, [
+      { patientId: patient.id, until: new Date(at.getTime() + 30 * 60_000) },
+    ]);
+    expect(own.state.patients.some((row) => row.id === patient.id)).toBe(false);
+    expect(opened.state.patients.some((row) => row.id === patient.id)).toBe(true);
+    fake.connection = {
+      ...fake.connection!,
+      access,
+      snapshot: { ...fake.connection!.snapshot!, payload: own },
+    };
+    const tree = () => (
+      <WardFlowProvider>
+        <PatientIdsProbe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    const draft = screen.getByLabelText("Scoped draft");
+    fireEvent.change(draft, { target: { value: "keep this draft" } });
+    const ownIds = own.state.patients.map((row) => row.id).join(",");
+    const openedIds = opened.state.patients.map((row) => row.id).join(",");
+    expect(screen.getByTestId("patient-ids")).toHaveTextContent(ownIds);
+
+    fake.connection = { ...fake.connection, snapshot: { ...fake.connection.snapshot!, payload: opened } };
+    rerender(tree());
+    expect(screen.getByTestId("patient-ids").textContent).toBe(openedIds);
+    expect(screen.getByLabelText("Scoped draft")).toBe(draft);
+    expect(draft).toHaveValue("keep this draft");
+
+    fake.connection = { ...fake.connection, snapshot: { ...fake.connection.snapshot!, payload: own } };
+    rerender(tree());
+    expect(screen.getByTestId("patient-ids").textContent).toBe(ownIds);
+    expect(screen.getByLabelText("Scoped draft")).toBe(draft);
+    expect(draft).toHaveValue("keep this draft");
+    resetWardAccessStoreForTests();
+  });
   it.each([true, false])("shows the confirmed shared broadcast outcome (accepted: %s)", (accepted) => {
     const tree = () => (
       <WardFlowProvider>
@@ -164,6 +224,45 @@ describe("shared provider boundary", () => {
     fireEvent.click(screen.getByRole("button", { name: "Return to prototype" }));
     expect(screen.getByRole("textbox")).toBe(draft);
     expect(draft).toHaveValue("keep prototype draft");
+  });
+  it("takes the desk from the server's role, and offers a switch only after a choice", () => {
+    const access = { role: "ed", scope: { kind: "ed", edId: allEmergencyDepartments()[0]!.id } };
+    fake.connection = { ...fake.connection!, access, workingAs: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d" };
+    const tree = () => (
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    expect(
+      screen.getByText(
+        `ED mental health clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`,
+      ),
+    ).toBeInTheDocument();
+    expect(readWardAccessSnapshot().desk).toEqual(access);
+    expect(screen.queryByRole("button", { name: "Switch role" })).toBeNull();
+    const switchRole = vi.fn();
+    fake.connection = { ...fake.connection!, canSwitch: true, switchRole };
+    rerender(tree());
+    fireEvent.click(screen.getByRole("button", { name: "Switch role" }));
+    expect(switchRole).toHaveBeenCalledOnce();
+    resetWardAccessStoreForTests();
+  });
+  it("drops the local demo's covers once the server's role is taken, so they never widen it", () => {
+    const [unitA, unitB] = seedWardFlowStateAt(0).units.map((unit) => unit.id);
+    const access = { role: "ward", scope: { kind: "ward", unitIds: [unitA!] } } as const;
+    setWardAccess(access);
+    giveCover({ recipient: access, scope: { kind: "ward", unitIds: [unitB!] }, now: 0, until: 10_000 });
+    expect(readWardAccessSnapshot().access.scope).toEqual({ kind: "ward", unitIds: [unitA, unitB] });
+    fake.connection = { ...fake.connection!, access };
+    render(
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    expect(readWardAccessSnapshot().covers).toEqual([]);
+    expect(readWardAccessSnapshot().access).toEqual(access);
+    resetWardAccessStoreForTests();
   });
   it("adopts server state without reading or writing browser demo storage", () => {
     const read = vi.spyOn(Storage.prototype, "getItem");

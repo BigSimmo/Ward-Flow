@@ -42,28 +42,28 @@ const JHC_ED = edById("jhc-ed")!.name;
 const RGH_ED = edById("rgh-ed")!.name;
 const SJGM_ED = edById("sjgm-ed")!.name;
 
-export interface ClinicalGate {
+interface ClinicalGate {
   label: string;
   verdict: string;
   detail: string;
   passed?: boolean;
 }
 
-export interface ContactCard {
+interface ContactCard {
   who: string;
   role: string;
   note: string;
   tone: "warn" | "danger" | "good" | null;
 }
 
-export interface NextStepItem {
+interface NextStepItem {
   w: string;
   d: string;
   tone: "warn" | "danger" | "good" | null;
   chase?: boolean;
 }
 
-export interface HistoricalPresentation {
+interface HistoricalPresentation {
   date: string;
   year: number;
   where: string;
@@ -82,7 +82,7 @@ export interface HistoricalPresentation {
   current?: boolean;
 }
 
-export interface CommunityTeamRecord {
+interface CommunityTeamRecord {
   name: string;
   state: string;
   note: string;
@@ -136,18 +136,6 @@ export interface PatientNowRecord {
   documents: DocumentRecord[];
   documentsAbsent: string;
 }
-
-export const LIVE_REASONS: Record<string, string> = {
-  "No bed": "Re-check: After 14:00 shift handover.",
-  "Sex mix": "Re-check: Suitable bay vacancy.",
-  "Bed pulled for an earlier referral": "Re-check: Next bed release.",
-  "No specialling available": "Re-check: Next shift staffing roster.",
-};
-
-export const SETTLED_REASONS: Record<string, string> = {
-  "Acuity mix": "Ward acuity ceiling reached.",
-  "Out of catchment": "Outside catchment boundary.",
-};
 
 export const STAGES = [
   { id: "placement_requested", label: "Placement requested" },

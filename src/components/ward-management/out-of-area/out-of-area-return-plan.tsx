@@ -1,6 +1,5 @@
 "use client";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -43,6 +42,19 @@ import {
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+
+export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
+  return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
+}
+
+export function canSendReturnPlan(draft: RepatDraft, now: Instant = 0): boolean {
+  return returnPlanMissingToSend(draft, now).length === 0;
+}
+
+export function returnPlanBlockReason(draft: RepatDraft, now: Instant = 0): string | undefined {
+  const missing = returnPlanMissingToSend(draft, now);
+  return missing.length ? `Answer the ${missing.length} left first.` : undefined;
+}
 
 export type PlanPatient = {
   displayName: string;
@@ -167,6 +179,8 @@ export type ReturnPlanProps = {
   notice: string | null;
   onDismissNotice: () => void;
   onRecord: () => void;
+  onSendToWard?: () => void;
+  onMarkWardAgreed?: () => void;
   /** The plan's own header (desktop card head, or nothing inside the phone sheet). */
   header?: ReactNode;
   /** Keeps radio group names unique if the plan is ever mounted twice. */
@@ -193,6 +207,8 @@ export function ReturnPlan({
   notice,
   onDismissNotice,
   onRecord,
+  onSendToWard,
+  onMarkWardAgreed,
   header,
   idPrefix,
   compactIdentity = false,
@@ -289,7 +305,12 @@ export function ReturnPlan({
       ) : null}
 
       {record ? (
-        <RecordedReturn record={record} returnMovementId={returnMovementId} now={now} />
+        <RecordedReturn
+          record={record}
+          returnMovementId={returnMovementId}
+          now={now}
+          onMarkWardAgreed={onMarkWardAgreed}
+        />
       ) : (
         <>
           <div className={styles.steps}>
@@ -478,7 +499,17 @@ export function ReturnPlan({
                 </>
               )}
             </span>
-            <NotWiredButton variant="sec" size="sm" label="Send to ward" />
+            <Button
+              variant="sec"
+              size="sm"
+              data-testid="ward-out-of-area-repat-send"
+              disabledReason={returnPlanBlockReason(draft, now)}
+              title={returnPlanBlockReason(draft, now)}
+              reasonDisplay="tooltip"
+              onClick={onSendToWard}
+            >
+              Record sent to ward
+            </Button>
             <Button
               variant="pri"
               size="sm"
@@ -500,10 +531,12 @@ function RecordedReturn({
   record,
   returnMovementId,
   now,
+  onMarkWardAgreed,
 }: {
   record: RepatriationRecord;
   returnMovementId: string | undefined;
   now: Instant;
+  onMarkWardAgreed?: () => void;
 }) {
   return (
     <div className={styles.doneBox} data-testid="ward-out-of-area-recorded">
@@ -546,7 +579,9 @@ function RecordedReturn({
             <span className={styles.need}>
               <StatusGlyph tone="neutral" size={10} /> Awaiting the receiving ward
             </span>
-            <NotWiredButton variant="sec" size="sm" label="Mark ward agreed" />
+            <Button variant="sec" size="sm" data-testid="ward-out-of-area-mark-ward-agreed" onClick={onMarkWardAgreed}>
+              Mark ward agreed
+            </Button>
           </>
         )}
       </div>

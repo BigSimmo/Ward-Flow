@@ -7,10 +7,11 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import type { WfTone } from "@/components/wf";
+import { cx, type WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
  * Top 25 item 21: the badge for a discharge date the ward has moved several times. The "several"
@@ -56,6 +57,8 @@ export interface BedItem {
   blockReason?: string;
   expectedDays?: number | null;
   legalStatusLabel?: string;
+  /** Criteria led discharge on the tile (D-64), set only when the flag is on and criteria exist. */
+  criteriaLedChip?: CriteriaLedChip | null;
   admissionId?: string;
   /**
    * The admission whose stay this bed shows, including a live pull (which `admissionId` leaves
@@ -112,6 +115,7 @@ function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): strin
   if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
     parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
+  if (bed.criteriaLedChip) parts.push(bed.criteriaLedChip.phrase);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
   if (bed.tentativeDiagnosis) parts.push(`Tentative diagnosis: ${bed.tentativeDiagnosis}`);
   const expectedLeave = expectedLeaveLine(bed);
@@ -218,6 +222,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.age === n.age &&
     p.sex === n.sex &&
     p.legalStatusLabel === n.legalStatusLabel &&
+    p.criteriaLedChip?.label === n.criteriaLedChip?.label &&
     p.tentativeDiagnosis === n.tentativeDiagnosis &&
     p.notes === n.notes &&
     p.isPlannedAdmission === n.isPlannedAdmission &&
@@ -236,6 +241,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
   const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
   const eddMoved = eddDriftOn && bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
+  const criteriaLed = bed.patientAlias && !isReady && !isPulled ? (bed.criteriaLedChip ?? null) : null;
 
   // Color tint band class based on stay duration
   let bandClass = "";
@@ -312,7 +318,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
         </div>
       )}
 
-      {signal || eddMoved ? (
+      {signal || eddMoved || criteriaLed ? (
         <div className={styles.bedBottomTags}>
           {signal ? (
             <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
@@ -322,6 +328,18 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
           {eddMoved ? (
             <span className={styles.bedCardChip} data-testid="ward-bed-edd-moved">
               {eddMoved}
+            </span>
+          ) : null}
+          {criteriaLed ? (
+            <span
+              className={cx(
+                styles.bedCardChip,
+                criteriaLed.tone === "success" && styles.chipGood,
+                criteriaLed.tone === "warning" && styles.chipWarn,
+              )}
+              data-testid="ward-bed-criteria-led"
+            >
+              {criteriaLed.label}
             </span>
           ) : null}
         </div>
@@ -430,104 +448,89 @@ export function WardBedsMatrix({
     return grouped;
   }, [sortedBeds]);
 
-  // Extract shift items for the compact "Needs you this shift" section matching image 4
+  // Derive shift items dynamically from the unit's recorded bed items
   const shiftItems = useMemo(() => {
-    return [
-      {
-        key: "shift-1",
-        group: "due-out" as const,
-        bedNumber: 5,
-        title: "Expected discharge",
-        badge: "4d overdue",
-        badgeTone: "danger",
-        tag: "Discharge",
-        desc: "Expected out today, still here.",
-        actions: [
-          { label: "They have left", primary: false },
-          { label: "Record a blocker", primary: false },
-        ],
-        borderTone: "danger",
-      },
-      {
-        key: "shift-2",
-        group: "due-out" as const,
-        bedNumber: 9,
-        title: "Confirmed discharge",
-        badge: "3d overdue",
-        badgeTone: "warn",
-        tag: "Discharge",
-        desc: "Confirmed out today, still here. Awaiting accommodation.",
-        actions: [
-          { label: "They have left", primary: false },
-          { label: "Update blocker", primary: false },
-        ],
-        borderTone: "warn",
-      },
-      {
-        key: "shift-3",
-        group: "due-out" as const,
-        bedNumber: 15,
-        title: "Expected discharge",
-        badge: "3d overdue",
-        badgeTone: "danger",
-        tag: "Discharge",
-        desc: "Expected out today, still here.",
-        actions: [
-          { label: "They have left", primary: false },
-          { label: "Record a blocker", primary: false },
-        ],
-        borderTone: "danger",
-      },
-      {
-        key: "shift-4",
-        group: "off-ward" as const,
-        bedNumber: 6,
-        title: "Away at an ED",
-        badge: "Away at ED",
-        badgeTone: "info",
-        tag: "Just left",
-        desc: "Patient at ED. Bed still held for them.",
-        actions: [{ label: "Mark them back", primary: false }],
-        borderTone: "info",
-      },
-      {
-        key: "shift-5",
-        group: "off-ward" as const,
-        bedNumber: 7,
-        title: "Away at an ED",
-        badge: "Still at ED",
-        badgeTone: "info",
-        tag: "Left earlier",
-        desc: "Patient at ED. Bed still held for them.",
-        actions: [{ label: "Mark them back", primary: false }],
-        borderTone: "info",
-      },
-      {
-        key: "shift-6",
-        group: "in-transit" as const,
-        bedNumber: 3,
-        title: "Pulled bed",
-        badge: "In transit",
-        badgeTone: "purple",
-        tag: "Pulled earlier",
-        desc: "Pulled for Hazelle Ferrowmoor; taken, not yet arrived.",
-        actions: [{ label: "See the move", primary: false }],
-        borderTone: "purple",
-      },
-      {
-        key: "shift-7",
-        group: "in-transit" as const,
-        bedNumber: 18,
-        title: "Pulled bed",
-        badge: "In transit",
-        badgeTone: "purple",
-        tag: "Pulled earlier",
-        desc: "Pulled for Bramwen Ferrowmoor; taken, not yet arrived.",
-        actions: [{ label: "See the move", primary: false }],
-        borderTone: "purple",
-      },
-    ];
-  }, []);
+    const items: Array<{
+      key: string;
+      group: Exclude<ShiftGroup, "all">;
+      bedNumber: number;
+      title: string;
+      badge: string;
+      badgeTone: "danger" | "warn" | "info" | "purple";
+      tag: string;
+      desc: string;
+      actions: Array<{ label: string; primary: boolean }>;
+      borderTone: "danger" | "warn" | "info" | "purple";
+    }> = [];
+
+    for (const bed of bedsList) {
+      const bedNumber = typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber);
+      if (!Number.isFinite(bedNumber) || bedNumber <= 0) continue;
+      // Due out means the discharge date has arrived or passed. A discharge confirmed for a later day is
+      // not "needs you this shift" yet, matching the ward board's own due-out list.
+      const isDueOut = bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays <= 0);
+
+      if (bed.awayAtEdHours != null || bed.status === "leave") {
+        const atEd = bed.awayAtEdHours != null;
+        const isAwol = !atEd && bed.statusText === "Absent without leave";
+        const tone = isAwol ? "danger" : "info";
+        items.push({
+          key: `shift-off-${bed.bedLabel}-${bedNumber}`,
+          group: "off-ward",
+          bedNumber,
+          title: atEd ? "Away at an ED" : isAwol ? "Absent without leave" : "On leave",
+          badge: atEd ? (bed.awayAtEdHours! >= 4 ? "Still at ED" : "Away at ED") : bed.statusText || "On leave",
+          badgeTone: tone,
+          tag: atEd && bed.awayAtEdHours! >= 4 ? "Left earlier" : "Just left",
+          desc: atEd
+            ? "Patient at ED. Bed still held for them."
+            : `${bed.patientAlias ?? "Patient"} away from ${unit.name}. Bed still held for them.`,
+          actions: [{ label: "Mark them back", primary: false }],
+          borderTone: tone,
+        });
+      } else if (bed.status === "incoming" || bed.isPulled === true) {
+        const person = bed.patientAlias ?? "incoming transfer";
+        items.push({
+          key: `shift-transit-${bed.bedLabel}-${bedNumber}`,
+          group: "in-transit",
+          bedNumber,
+          title: "Pulled bed",
+          badge: "In transit",
+          badgeTone: "purple",
+          tag: "Pulled earlier",
+          desc: `Pulled for ${person}; taken, not yet arrived.`,
+          actions: [{ label: "See the move", primary: false }],
+          borderTone: "purple",
+        });
+      } else if (isDueOut && bed.status !== "ready" && bed.status !== "closed") {
+        const overdueDays =
+          typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
+        const confirmed = bed.dischargeConfirmed === true;
+        const isOverdue = Boolean(overdueDays) || bed.pastDate === true;
+        const badge = overdueDays ? `${overdueDays}d overdue` : bed.pastDate ? "Past date" : "Due today";
+        const statusPhrase = isOverdue
+          ? `${confirmed ? "Confirmed" : "Expected"} discharge overdue`
+          : `${confirmed ? "Confirmed" : "Expected"} out today`;
+        items.push({
+          key: `shift-due-${bed.bedLabel}-${bedNumber}`,
+          group: "due-out",
+          bedNumber,
+          title: confirmed ? "Confirmed discharge" : "Expected discharge",
+          badge,
+          badgeTone: confirmed ? "warn" : "danger",
+          tag: "Discharge",
+          desc: `${statusPhrase}, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
+          actions: [
+            { label: "They have left", primary: false },
+            { label: bed.blockReason ? "Update blocker" : "Record a blocker", primary: false },
+          ],
+          borderTone: confirmed ? "warn" : "danger",
+        });
+      }
+    }
+
+    return items;
+  }, [bedsList, unit.name]);
 
   const dueOutCount = shiftItems.filter((item) => item.group === "due-out").length;
   const offWardCount = shiftItems.filter((item) => item.group === "off-ward").length;
@@ -749,28 +752,49 @@ export function WardBedsMatrix({
         {/* ─────────────────────────────────────────────────────────────
            BAYS CONTAINER & CONTIGUOUS 20-BED GRID (IMAGE 1 ENHANCED)
            ───────────────────────────────────────────────────────────── */}
-        {bays.map((bay, idx) => (
-          <div key={idx} className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}>
-            {selectedPod !== "all" ? (
-              <div className={styles.bayHeader}>
-                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="2" width="12" height="12" rx="2" />
-                </svg>
-                <span>{bay.title}</span>
-              </div>
-            ) : null}
-            <div className={styles.bayBedsGrid}>
-              {bay.beds.map((bed) => (
-                <WardBedCard
-                  key={bed.bedNumber}
-                  bed={bed}
-                  isSelected={selectedBed === bed.bedNumber}
-                  onSelect={handleBedClick}
-                />
-              ))}
-            </div>
+        {bays.length === 0 ? (
+          <div className={styles.shiftEmptyNotice} role="status">
+            <span>No beds match the selected filter.</span>
+            {(activeFilter !== "all" || selectedPod !== "all") && (
+              <button
+                type="button"
+                className={`${styles.btnShiftAction} ${styles.resetButton}`}
+                onClick={() => {
+                  setActiveFilter("all");
+                  setSelectedPod("all");
+                }}
+              >
+                Show all beds
+              </button>
+            )}
           </div>
-        ))}
+        ) : (
+          bays.map((bay, idx) => (
+            <div
+              key={bay.beds[0] ? `bay-${bay.beds[0].bedNumber}` : `bay-empty-${idx}`}
+              className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}
+            >
+              {selectedPod !== "all" ? (
+                <div className={styles.bayHeader}>
+                  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="2" width="12" height="12" rx="2" />
+                  </svg>
+                  <span>{bay.title}</span>
+                </div>
+              ) : null}
+              <div className={styles.bayBedsGrid}>
+                {bay.beds.map((bed) => (
+                  <WardBedCard
+                    key={bed.bedNumber}
+                    bed={bed}
+                    isSelected={selectedBed === bed.bedNumber}
+                    onSelect={handleBedClick}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        )}
 
         {/* ─────────────────────────────────────────────────────────────
            FOOTER NOTES, CENSUS & ACCESSIBLE LEGEND

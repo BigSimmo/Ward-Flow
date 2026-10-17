@@ -7,7 +7,7 @@
  * Patients are named by record and UMRN only, never the journey id.
  */
 import Link from "next/link";
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import { ChevronRight, MapPin, Send, X } from "lucide-react";
 import {
   Button,
@@ -332,8 +332,8 @@ function NoWardSelected() {
       <div className={styles.ghostGrid} aria-hidden="true">
         {[0, 1, 2, 3].map((index) => (
           <div key={index}>
-            <i style={{ width: "40%" }} />
-            <i style={{ width: "70%" }} />
+            <i className={styles.ghostLineShort} />
+            <i className={styles.ghostLineLong} />
           </div>
         ))}
       </div>
@@ -343,10 +343,11 @@ function NoWardSelected() {
 }
 
 function HeldList({ held }: { held: HeldDischarge[] }) {
+  const baseId = useId();
   return (
-    <Card aria-labelledby="handover-beds-held">
+    <Card aria-labelledby={`${baseId}-handover-beds-held`}>
       <CardHead
-        id="handover-beds-held"
+        id={`${baseId}-handover-beds-held`}
         title="Discharges held up"
         meta={<CountPill n={held.length} />}
         aside={<span className={styles.sub}>Longest first</span>}
@@ -398,6 +399,7 @@ export function incomingCounts(rows: readonly HandoverRow[]): Map<string, { acce
 
 export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPatient }: HandoverBedsProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const baseId = useId();
   const [chips, setChips] = useState<ReadonlySet<BedChip>>(() => new Set());
 
   const selected = selectedId === null ? undefined : wards.find((ward) => ward.id === selectedId);
@@ -442,9 +444,9 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
     <div data-testid="ward-handover-beds" className={styles.root}>
       <div className={styles.main}>
         <BedTiles rows={rows} wards={wards} held={held} now={now} waitingForBed={waitingForBed} />
-        <Card aria-labelledby="handover-beds-wards">
+        <Card aria-labelledby={`${baseId}-handover-beds-wards`}>
           <CardHead
-            id="handover-beds-wards"
+            id={`${baseId}-handover-beds-wards`}
             title="Beds by ward"
             meta={<CountPill n={wards.length} />}
             aside={
@@ -495,15 +497,15 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
             <table className={cx(tableClasses.table, styles.bedsTable)}>
               <caption className={styles.caption}>Beds by ward, grouped by health service</caption>
               <colgroup>
-                <col style={{ width: 200 }} />
-                <col style={{ width: 170 }} />
-                <col style={{ width: 70 }} />
-                <col style={{ width: 108 }} />
-                <col style={{ width: 112 }} />
-                <col style={{ width: 62 }} />
-                <col style={{ width: 90 }} />
-                <col style={{ width: 88 }} />
-                <col style={{ width: 70 }} />
+                <col className={styles.colWard} />
+                <col className={styles.colBeds} />
+                <col className={styles.colNarrow} />
+                <col className={styles.colIncoming} />
+                <col className={styles.colUpdated} />
+                <col className={styles.colHeld} />
+                <col className={styles.colOutToday} />
+                <col className={styles.colPastEdd} />
+                <col className={styles.colNarrow} />
               </colgroup>
               <thead>
                 <tr>

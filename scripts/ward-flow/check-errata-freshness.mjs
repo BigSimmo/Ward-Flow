@@ -150,7 +150,13 @@ const CLAIMS = [
       // which is the whole reason a closed entry keeps a check instead of being deleted.
       const facade = read("src/components/ward-management/shell/ward-facade.ts");
       if (!facade) return { ok: false, saw: "ward-facade.ts not found - the facade may have moved" };
-      const patientExported = /export function patientHref\s*\(/.test(facade);
+      // 16 Oct 2026: the builder's body moved to shell/ward-patient-href.ts to break an import
+      // cycle, and the facade re-exports it, so the facade is still the one place screens import from.
+      const patientHome = read("src/components/ward-management/shell/ward-patient-href.ts") || "";
+      const patientExported =
+        !/function patientHref\s*\(/.test(facade) &&
+        /export \{ patientHref \} from "@\/components\/ward-management\/shell\/ward-patient-href";/.test(facade) &&
+        /export function patientHref\s*\(/.test(patientHome);
       const communityExported = /export function communityTeamHref\s*\(/.test(facade);
       const search = read("src/components/ward-management/ward-global-search.tsx") || "";
       const community = read("src/components/ward-management/community/community-screen.tsx") || "";

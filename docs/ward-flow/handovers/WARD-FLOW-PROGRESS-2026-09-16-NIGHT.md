@@ -52,44 +52,44 @@ focused tests each report named, typecheck, then the fold gate, then fast-forwar
 ## 2. The master plan — status
 
 Twelve read-only Opus planners were dispatched. Seven reported (summaries below). Five were still
-running and their output is lost if the session ended: **referral model (WF-09/11/12/14/15/23),
-clinical & legal (WF-01/03/17/30/31/36), screens & design (WF-27/28/44/50 + top bar + drawing
-clean-up), tests & verification (WF-34/35/47/52 + fold gate), consolidated owner decision list.**
+running and their output is lost if the session ended: **referral model,
+clinical & legal, screens & design (including top bar + drawing
+clean-up), tests & verification (including fold gate), consolidated owner decision list.**
 Re-dispatch those five on resume (briefs: read-only, base the fix line tip, per-task Owns / failing
 test first / acceptance / depends / parallel-safe / size, owner questions with options).
 
 ### Reported planner summaries (tasks that need NO owner answer are marked ▶)
 
-- **Engine state accounting (WF-02/04/06/13/37/39).** ▶T1 time-0 truthiness at seven transport sites
+- **Engine state accounting.** ▶T1 time-0 truthiness at seven transport sites
   - refuse re-collection · ▶T2 one `movementHoldsBed` rule incl. seed pulls stepped back · ▶T3 no
     RELEASE_PULL / revoked-exam refund / WITHDRAW_ACCEPTANCE after collection · ▶T4 no REFER_TO_UNITS
     while accepted · ▶T5 CANCEL_TRANSPORT never moves stage (being done by review-engine) · ▶T6 full
     step-back matrix test · ▶T10–11 withdrawn referral stops reading "queued" everywhere. Reducer
     order: T5 → T1 → T3 → T4 → T2 → T6. Owner Qs: release a held bed cancels its booking?; cancel
-    without auto-replacement?; a "withdrawn" referral state?; who owns the empty-bed count (WF-06)?;
+    without auto-replacement?; a "withdrawn" referral state?; who owns the empty-bed count?;
     what next for a movement stepped back past acceptance?
-- **Capacity & time (WF-07/08/24/25/26/51).** ▶T1 refuse unknown event types / non-finite `now` ·
+- **Capacity & time.** ▶T1 refuse unknown event types / non-finite `now` ·
   ▶T2 CONFIRM_CAPACITY integer 0..beds · ▶T3 cap refunds at beds · T4–T5 revision check on capacity
   writes + ward-screen draft conflict (owner Q2) · T6 locked-bed consumption on pull (**clinical:
   locked-bed free count can stay too high after a pull**, owner Q3) · T7 Today/Tomorrow on release
   and leave times (owner Q4) · T8 one meaning of "today" (Q5) · ▶T9 fix scarce scenario (gry-older-
   adult allocatable > empty) · T10–11 remove "nobody goes without today", base "ready" on
   min(allocatable, empty) (Q6, Q7).
-- **Admissions & bed lifecycle (WF-18/20/22/40).** ▶T1 `RECORD_FOLLOW_UP` (ruling 25; rewrite the
+- **Admissions & bed lifecycle.** ▶T1 `RECORD_FOLLOW_UP` (ruling 25; rewrite the
   "no producer" guards deliberately) · ▶T2 refuse "being made ready" before discharge · ▶T4 coordinator
   selection clears on closed movement. Blocked: leave-bed episode (Q2), discharge-date writers (Q4),
   turnover identity (Q5). "+ Plan departure" stays Not wired.
-- **Notices, governance, queue (WF-10/32/38/41/49, STILL-03).** ▶T1 activity feed uses opening tier
+- **Notices, governance, queue (STILL-03).** ▶T1 activity feed uses opening tier
   (`urgencyChanges[0]?.from ?? urgency`) + urgency-change events · ▶T2 record applied accept/pull
   overrides · ▶T4 `MARK_NOTICES_READ` engine event · ▶T5 Activity count stops summing notices ·
   T7 switcher privacy (Q5 option A: signpost for coordinators only) · T8 register wording per action.
-- **Journey & transport (WF-05/16/19/21/42/43/45).** ▶T1 ED Stop transport + revoke-after-accept
+- **Journey & transport.** ▶T1 ED Stop transport + revoke-after-accept
   controls (WLQ-38) · ▶T2 coordinator Stop transport · ▶T3 cancel-authority wording · ▶T4 "Stopped
   after collection" label · ▶T5 one `pullHoldExpired` rule (**console shows "Pull expired: nothing is
   being kept" for a patient already in a vehicle**). Blocked: delivered vs ward receipt (Q2),
   no-transport journey (Q1, Q9), renew hold (Q3), which ED (Q4), diversion (Q5), stop destination +
   officer notice (Q6), cancel without replacement (Q7), regional (Q8).
-- **Outside-team gates (WF-29/33/46/48, #G4YPNE, device).** Prepare now: access-scope matrix, ward
+- **Outside-team gates (#G4YPNE, device).** Prepare now: access-scope matrix, ward
   scope filter (not security), threat model, local store interface, draft hazard log with coverage
   test, pilot-readiness template, intended-purpose draft, test that Aboriginal status is never a
   decision input, capability register. Outside asks: clinical safety officer, privacy adviser, ICT
@@ -147,20 +147,20 @@ review-engine / review-ui / review-chart agents and the wiring agent (Settings D
 - **Resumed after the limit:** `ward-audit-wiring` (Tasks 1–7 committed; 8–10 in progress) and
   `ward-audit-review-ui` (uncommitted work in 8 files; finishing fixes 1–5).
 - **Wave 1 of the plans, one Sonnet agent per folder, base `84ea708320`:**
-  `ward-w1-board-gender` (bed-board caption; genderEligibility per WLQ-35) · `ward-w2-scarce` (WF-26 scarce
-  scenario) · `ward-w3-activity` (WF-49 opening tier) · `ward-w4-transport-copy` (cancel-authority copy;
-  "Stopped after collection") · `ward-w5-handover-declined` (WF-23 declined-by-all) · `ward-w6-test-guards`
+  `ward-w1-board-gender` (bed-board caption; genderEligibility per WLQ-35) · `ward-w2-scarce` (scarce
+  scenario) · `ward-w3-activity` (opening tier) · `ward-w4-transport-copy` (cancel-authority copy;
+  "Stopped after collection") · `ward-w5-handover-declined` (declined-by-all) · `ward-w6-test-guards`
   (tautology guard, retired-suite guard, runner skips) · `ward-w7-community-coordinator` (community
-  comparison table gating; WF-22 closed selection) · `ward-w8-screen-verification` (WF-35 drawing vs
-  implementation state) · `ward-w9-capacity-tests` (WF-27 capacity control tests).
+  comparison table gating; closed selection) · `ward-w8-screen-verification` (drawing vs
+  implementation state) · `ward-w9-capacity-tests` (capacity control tests).
 - The untracked `docs/ward-flow/plans/2026-09-16-fix-plan-inputs/` folder in `ward-audit-fixes` holds
   empty captures from a failed extraction; ignore it (deleting needs the protected-deletion override).
 
 ## 5. Update — 17 September, later
 
-- **Folded (fix line tip `531c74440e`):** all of wave 1 (w1–w9); wave 2 x2 Delays one mark at a time
-  (WF-27), x3 Activity count no longer sums notices (WF-10), x4 withdrawn referrals stop reading queued
-  (WF-13), x5 patient-link guard detects destructuring, callback parameters and one nested level; the
+- **Folded (fix line tip `531c74440e`):** all of wave 1 (w1–w9); wave 2 x2 Delays one mark at a time,
+  x3 Activity count no longer sums notices, x4 withdrawn referrals stop reading queued,
+  x5 patient-link guard detects destructuring, callback parameters and one nested level; the
   Settings wiring (ED access target, parallel referral cap and pulled-bed hold read from
   `state.configuration`, audited, guarded). Backup `claude-work/2026-09-16T153915Z` taken before the
   wiring fold.
@@ -198,7 +198,7 @@ review-engine / review-ui / review-chart agents and the wiring agent (Settings D
 - **Folded since §5:** y1 (no-bed cancel, blocker, STEP_BACK test), y2 (community decline end to end), y3
   (R3/R4/R5), y5 (guard hardening), y6 (Tasks drawer, letter rail, horizon rows), y7 (Act citations +
   guard, after an Opus review fix round), y8 (no form countdown without a written time), z5 (hold default
-  4 h), z6 (records closed, WF-53..57 logged), z7 (PT-007 prose), z9 (Morning spec re-pointed at Capacity),
+  4 h), z6 (records closed, outside-review tasks logged), z7 (PT-007 prose), z9 (Morning spec re-pointed at Capacity),
   owner-approved deletions (two scratch tests, duplicate Patient search drawing, orphaned `ward-lead1`
   registration, emptied Morning spec; backups `claude-work/2026-09-16T161634Z`), plus controller fixes to
   three stale test pins (permissions table, stage-change derivation reading comments, Ready coordinate).

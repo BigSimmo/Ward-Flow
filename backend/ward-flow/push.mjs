@@ -17,8 +17,8 @@ const PUSH_SERVICE_HOSTS = Object.freeze([
   "notify.windows.com",
 ]);
 export const ALERTS_PATH = "/mockups/ward-flow/alerts";
-export const PUSH_TOPIC = "wardflowactnow";
-export const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 10;
+const PUSH_TOPIC = "wardflowactnow";
+const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 10;
 
 function decodedLength(value) {
   return typeof value === "string" && BASE64URL.test(value) ? Buffer.from(value, "base64url").length : -1;

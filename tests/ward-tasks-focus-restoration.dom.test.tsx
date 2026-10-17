@@ -1,15 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { afterEach, expect, it, vi } from "vitest";
 
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-
-// These tests cover the Tasks words. The One Alerts queue flag (on by default in development) has
-// its own words, tested in tests/ward-alerts-one-queue.dom.test.tsx. Set before each test and not
-// reset after, so no flag change re-renders a tree that is being torn down.
-beforeEach(() => setWardFeatureFlagOnDevice("alerts-one-queue", false));
 
 const openers: HTMLButtonElement[] = [];
 afterEach(() => {
@@ -29,6 +24,7 @@ function Harness() {
   const [open, setOpen] = useState(true);
   return open ? (
     <WardTasksDrawer
+      alertsScreenOpen={false}
       items={[]}
       acknowledgements={{}}
       completions={{}}
@@ -66,4 +62,36 @@ it("does not attempt to restore focus to an opener removed while the drawer is o
   await afterFrames();
   expect(previous.isConnected).toBe(false);
   expect(document.activeElement).toBe(document.body);
+});
+
+it("registers the open drawer on the sheet stack and stops Escape from reaching guarded board listeners", async () => {
+  const previous = opener();
+  const boardEscapeSpy = vi.fn();
+  const onWindowKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape" && !event.defaultPrevented && !hasOpenSheet()) {
+      boardEscapeSpy();
+    }
+  };
+  window.addEventListener("keydown", onWindowKeyDown);
+  try {
+    const { unmount } = render(<Harness />);
+    expect(hasOpenSheet()).toBe(true);
+    const closeBtn = screen.getByRole("button", { name: "Close tasks panel" });
+    fireEvent.keyDown(closeBtn, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(hasOpenSheet()).toBe(false);
+    expect(boardEscapeSpy).not.toHaveBeenCalled();
+    expect(previous).toHaveFocus();
+    unmount();
+
+    // Also verify Escape dispatched on document.body exercises useWardModalFocus's window capture listener directly
+    render(<Harness />);
+    expect(hasOpenSheet()).toBe(true);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(hasOpenSheet()).toBe(false);
+    expect(boardEscapeSpy).not.toHaveBeenCalled();
+  } finally {
+    window.removeEventListener("keydown", onWindowKeyDown);
+  }
 });

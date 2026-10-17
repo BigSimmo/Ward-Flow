@@ -15,7 +15,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
  * count is read out through a low-contrast visible node.
  */
 
-export type AnnouncePriority = "polite" | "assertive";
+type AnnouncePriority = "polite" | "assertive";
 
 export type AnnounceOptions = {
   priority?: AnnouncePriority;

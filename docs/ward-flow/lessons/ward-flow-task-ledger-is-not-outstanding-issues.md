@@ -9,7 +9,7 @@ metadata:
 ---
 
 **When Josh asks for "the issue ledger" or "the task ledger" from a Ward Flow worktree, he means
-`docs/ward-flow-task-ledger.md` on the ward line** (WF-01..WF-52 families, I-01..I-14 invariants,
+`docs/ward-flow-task-ledger.md` on the ward line** (task families, I-01..I-14 invariants,
 DECISION-xx questions; companion list `docs/ward-flow/PROJECT-ISSUES.md`). Not the repository's
 `docs/outstanding-issues.md` on origin/main.
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Network } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -225,6 +225,7 @@ export function FlowDiagram({
   parallelReferralCap,
   service = null,
 }: FlowDiagramProps) {
+  const baseId = useId();
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number, for the hub's status line.
   const resolvePatientIdentity = usePatientOf();
   const hubWho = movement ? resolvePatientIdentity(movement).displayName : undefined;
@@ -391,7 +392,7 @@ export function FlowDiagram({
         data-overflowing={diagramOverflowing ? "true" : undefined}
         role="region"
         aria-label="State Bedflow diagram"
-        aria-describedby={diagramOverflowing ? "ward-diagram-scroll-instructions" : undefined}
+        aria-describedby={diagramOverflowing ? `${baseId}-ward-diagram-scroll-instructions` : undefined}
         tabIndex={0}
       >
         <div className={`${styles.diagramCanvas} ${flowStyles.canvas}`} ref={canvasRef}>
@@ -400,7 +401,7 @@ export function FlowDiagram({
           <svg className={`${styles.diagramConnectors} ${flowStyles.connectors}`} aria-hidden="true">
             <defs>
               <marker
-                id="ward-flow-diagram-arrow-demand"
+                id={`${baseId}-ward-flow-diagram-arrow-demand`}
                 markerWidth="7"
                 markerHeight="7"
                 refX="6"
@@ -410,7 +411,7 @@ export function FlowDiagram({
                 <path d="M 0 0 L 7 3.5 L 0 7 z" className={styles.diagramArrowDemand} />
               </marker>
               <marker
-                id="ward-flow-diagram-arrow-route-eligible"
+                id={`${baseId}-ward-flow-diagram-arrow-route-eligible`}
                 markerWidth="7"
                 markerHeight="7"
                 refX="6"
@@ -420,7 +421,7 @@ export function FlowDiagram({
                 <path d="M 0 0 L 7 3.5 L 0 7 z" className={styles.diagramArrowRouteEligible} />
               </marker>
               <marker
-                id="ward-flow-diagram-arrow-route-ineligible"
+                id={`${baseId}-ward-flow-diagram-arrow-route-ineligible`}
                 markerWidth="7"
                 markerHeight="7"
                 refX="6"
@@ -430,7 +431,7 @@ export function FlowDiagram({
                 <path d="M 0 0 L 7 3.5 L 0 7 z" className={styles.diagramArrowRouteIneligible} />
               </marker>
               <marker
-                id="ward-flow-diagram-arrow-destination"
+                id={`${baseId}-ward-flow-diagram-arrow-destination`}
                 markerWidth="7"
                 markerHeight="7"
                 refX="6"
@@ -452,11 +453,11 @@ export function FlowDiagram({
               const marker =
                 connector.kind === "route"
                   ? connector.eligible
-                    ? "url(#ward-flow-diagram-arrow-route-eligible)"
-                    : "url(#ward-flow-diagram-arrow-route-ineligible)"
+                    ? `url(#${baseId}-ward-flow-diagram-arrow-route-eligible)`
+                    : `url(#${baseId}-ward-flow-diagram-arrow-route-ineligible)`
                   : connector.kind === "destination"
-                    ? "url(#ward-flow-diagram-arrow-destination)"
-                    : "url(#ward-flow-diagram-arrow-demand)";
+                    ? `url(#${baseId}-ward-flow-diagram-arrow-destination)`
+                    : `url(#${baseId}-ward-flow-diagram-arrow-demand)`;
               return (
                 <path
                   key={connector.id}
@@ -567,7 +568,7 @@ export function FlowDiagram({
         declaration and `measure()` above for why this is measured, not declared.
       */}
       {diagramOverflowing ? (
-        <p className="sr-only" id="ward-diagram-scroll-instructions" data-testid="ward-diagram-scroll-note">
+        <p className="sr-only" id={`${baseId}-ward-diagram-scroll-instructions`} data-testid="ward-diagram-scroll-note">
           This diagram is wider than the panel — scroll sideways to see the rest.
         </p>
       ) : null}

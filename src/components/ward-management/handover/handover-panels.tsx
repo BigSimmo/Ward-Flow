@@ -6,6 +6,7 @@
  * (Josh, 9 Oct 2026: "the placeholder on the right is a sign off sheet for the handover").
  */
 import Link from "next/link";
+import { useId } from "react";
 import { Check, ClipboardCopy, Clock, FileText, Route, Truck, UserRound, X } from "lucide-react";
 import { Badge, Button, Card, Count, Icon, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -278,7 +279,7 @@ export function HandoverFlowPanel({
             Open patient
           </Link>
         ) : (
-          <Button variant="pri" size="sm" disabled disabledReason="UMRN not recorded">
+          <Button variant="pri" size="sm" disabledReason="UMRN not recorded">
             Open patient
           </Button>
         )}
@@ -313,17 +314,18 @@ export function HandoverSignOffPanel({
   /** Takes back this shift's sign-off. Once signed, the foot offers this instead of a second sign-off. */
   onUndoSignOff: () => void;
 }) {
+  const baseId = useId();
   return (
     <Card
       as="section"
       className={styles.panel}
-      aria-labelledby="ward-handover-sign-off-title"
+      aria-labelledby={`${baseId}-ward-handover-sign-off-title`}
       data-testid="ward-handover-sign-off"
     >
       <div className={styles.panelHead}>
         <Icon icon={Check} size={16} />
         <div className={styles.panelName}>
-          <b id="ward-handover-sign-off-title">{title}</b>
+          <b id={`${baseId}-ward-handover-sign-off-title`}>{title}</b>
           <span>{subtitle}</span>
         </div>
       </div>
@@ -384,8 +386,7 @@ export function HandoverSignOffPanel({
             size="sm"
             icon={Check}
             onClick={onSignOff}
-            disabled={!canSignOff}
-            disabledReason={cannotSignReason}
+            disabledReason={!canSignOff ? (cannotSignReason ?? "Complete sign-off checks first") : cannotSignReason}
             data-testid="ward-handover-sign-off-button"
           >
             {`Sign off at ${formatInstant(now)}`}

@@ -10,7 +10,7 @@ import styles from "./state.module.css";
 export type StateKind = "empty" | "stale" | "error" | "clear";
 
 /** One action at most: Retry, Refresh or Show all. Rendered as a small secondary button. */
-export type StateAction = { label: string; onAction: () => void };
+type StateAction = { label: string; onAction: () => void };
 
 type StateLineBase = {
   /** Why, kept short: "No delays over target", "Updated 12m ago", "Check the connection". */
