@@ -443,3 +443,19 @@ describe("destinations_declined respects acceptance (item 20)", () => {
     );
   });
 });
+
+describe("bed_pull_expired uses the same expiry boundary as the delay view", () => {
+  const rowFor = (id: string, pullExpiresAt: number) =>
+    buildActionInbox([movementFrom(id, { stage: "pulled", pullExpiresAt })], NOW, allUnits()).find(
+      (item) => item.movementId === id,
+    );
+
+  it("raises the row exactly when the hold runs out, not a minute later", () => {
+    expect(rowFor("WF-T-BP-01", NOW)?.id).toBe(`${INBOX_CATEGORIES.bed_pull_expired.idPrefix}WF-T-BP-01`);
+    expect(rowFor("WF-T-BP-02", NOW - 1)?.id).toBe(`${INBOX_CATEGORIES.bed_pull_expired.idPrefix}WF-T-BP-02`);
+  });
+
+  it("control: a hold with time left raises no expiry row", () => {
+    expect(rowFor("WF-T-BP-03", NOW + 1)).toBeUndefined();
+  });
+});

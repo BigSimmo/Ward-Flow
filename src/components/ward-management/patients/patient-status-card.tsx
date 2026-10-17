@@ -135,17 +135,22 @@ export interface PatientStatusContext {
    * The steps stay the local policy list (`absenceStepsFor`). A warning only, nothing is released.
    */
   awolTracker?: boolean;
+  /**
+   * D-65 (flag `awol-bed-hold-review`, paused): with the tracker on, whether it also asks for a review
+   * of the held bed past `awolBedHoldWarning`. Off, the tracker shows the time away only.
+   */
+  awolHoldReview?: boolean;
 }
 
 /**
  * Top 25 item 24: time since absent and, past `awolBedHoldWarning`, the bed hold review warning.
  * The bed stays held (the leave bed is the hold); the warning asks a person to review it.
  */
-function awolTrackerMeta(since: number, now: number, stayUnitName?: string): string {
+function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
   const base = `Since ${clock(since)}, away ${dur(away)}, owner nurse in charge`;
-  if (away < holdWarning) return base;
+  if (!holdReview || away < holdWarning) return base;
   const bed = stayUnitName ? `Bed on ${stayUnitName}` : "Bed";
   return `${base}. ${bed} held over ${holdWarning % 60 === 0 ? `${holdWarning / 60}h` : dur(holdWarning)}, review the hold`;
 }
@@ -691,7 +696,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
       meta: ctx.awolTracker
-        ? awolTrackerMeta(absence.since, now, ctx.stayUnitName)
+        ? awolTrackerMeta(absence.since, now, ctx.stayUnitName, ctx.awolHoldReview)
         : `Since ${clock(absence.since)}, owner nurse in charge`,
       cells: [],
       rows,

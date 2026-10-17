@@ -740,7 +740,7 @@ export function OnCallScreen() {
         {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
-          note="Not a medical device. Synthetic records, mock numbers. Calling and email are not wired."
+          note="Not approved for clinical use. Synthetic records, mock numbers. Calling and email are not wired."
         />
       </main>
       {downtimeCard}

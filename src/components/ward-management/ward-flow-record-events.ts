@@ -828,6 +828,7 @@ export function reduceRecordedFactEvent(
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
+        decision.reasonCode = "scope";
         return reject(
           state,
           event,

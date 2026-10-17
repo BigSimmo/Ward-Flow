@@ -4,7 +4,7 @@
  *
  * Modes:
  *   node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path> [more-paths...] [--json]
- *   node scripts/ward-flow/maintain-docs-and-organisation.mjs --check [--json]
+ *   node scripts/ward-flow/maintain-docs-and-organisation.mjs --check [--pack-only] [--json]
  *   node scripts/ward-flow/maintain-docs-and-organisation.mjs --write [--json]
  */
 
@@ -247,61 +247,80 @@ export function classifyPath(inputPath, { root = DEFAULT_ROOT, registry = null }
 }
 
 /**
- * Verifies or updates `docs/ward-flow/reference-data/pack_manifest.json` against disk.
- * Note: The self-referential `"pack_manifest.json"` entry inside `files` is skipped during
- * hash comparison because a JSON file cannot contain its own post-serialisation SHA-256.
+ * Verify every regular file recursively under reference-data against the manifest.
+ * Only pack_manifest.json is excluded: it cannot contain its own serialised hash.
+ * Write mode repairs hashes for declared members only; omissions require reviewed membership.
  */
 export function checkOrUpdatePackManifest({ root = DEFAULT_ROOT, write = false } = {}) {
   const manifestPath = path.join(root, PACK_MANIFEST_REL);
-  if (!fs.existsSync(manifestPath)) {
-    return {
-      ok: false,
-      updated: false,
-      mismatches: [{ file: PACK_MANIFEST_REL, reason: "pack_manifest.json missing on disk" }],
-    };
+  const failure = (reason) => ({ ok: false, updated: false, mismatches: [{ file: PACK_MANIFEST_REL, reason }] });
+  if (!fs.existsSync(manifestPath)) return failure("pack_manifest.json missing on disk");
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  } catch {
+    return failure("invalid manifest JSON");
   }
+  const filesObj = manifest?.files;
+  if (!filesObj || typeof filesObj !== "object" || Array.isArray(filesObj))
+    return failure("manifest files must be an object");
   const refDir = path.dirname(manifestPath);
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  const filesObj = manifest.files ?? {};
   const mismatches = [];
+  const actualFiles = new Set();
+  const nonRegular = new Set();
+  function walk(directory, prefix = "") {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const relative = prefix + entry.name;
+      if (relative === "pack_manifest.json") continue;
+      if (entry.isDirectory()) walk(path.join(directory, entry.name), relative + "/");
+      else if (entry.isFile()) actualFiles.add(relative);
+      else {
+        nonRegular.add(relative);
+        mismatches.push({ file: relative, reason: "not a regular pack file" });
+      }
+    }
+  }
+  walk(refDir);
+  for (const file of [...actualFiles].sort()) {
+    if (!Object.hasOwn(filesObj, file)) mismatches.push({ file, reason: "not listed in manifest" });
+  }
   let changed = false;
-
   for (const [fileName, expected] of Object.entries(filesObj)) {
     if (fileName === "pack_manifest.json") continue;
-    const targetPath = path.join(refDir, fileName);
-    if (!fs.existsSync(targetPath)) {
-      mismatches.push({ file: fileName, reason: "missing on disk" });
+    if (
+      !fileName ||
+      fileName.includes("\\") ||
+      fileName.includes(":") ||
+      fileName.split("/").some((part) => !part || part === "." || part === "..")
+    ) {
+      mismatches.push({ file: fileName, reason: "invalid manifest path" });
       continue;
     }
-    const raw = fs.readFileSync(targetPath);
+    if (!actualFiles.has(fileName)) {
+      if (!nonRegular.has(fileName)) mismatches.push({ file: fileName, reason: "missing on disk" });
+      continue;
+    }
+    const raw = fs.readFileSync(path.join(refDir, fileName));
     const actualBytes = raw.length;
     const actualSha256 = digest(raw);
-    if (expected.bytes !== actualBytes || expected.sha256 !== actualSha256) {
+    if (expected?.bytes !== actualBytes || expected?.sha256 !== actualSha256) {
       mismatches.push({
         file: fileName,
-        expectedBytes: expected.bytes,
+        expectedBytes: expected?.bytes,
         actualBytes,
-        expectedSha256: expected.sha256,
+        expectedSha256: expected?.sha256,
         actualSha256,
       });
       if (write) {
-        filesObj[fileName] = {
-          bytes: actualBytes,
-          sha256: actualSha256,
-        };
+        filesObj[fileName] = { bytes: actualBytes, sha256: actualSha256 };
         changed = true;
       }
     }
   }
-
-  if (write && changed) {
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
-    return { ok: mismatches.every((mismatch) => mismatch.reason === undefined), updated: true, mismatches };
-  }
-
+  if (write && changed) fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   return {
-    ok: mismatches.length === 0,
-    updated: false,
+    ok: mismatches.every((mismatch) => write && mismatch.reason === undefined),
+    updated: write && changed,
     mismatches,
   };
 }
@@ -426,12 +445,15 @@ export function parseArgs(argv = process.argv.slice(2)) {
   let mode = "check";
   let explicitMode = false;
   let json = false;
+  let packOnly = false;
   let root = DEFAULT_ROOT;
   const classifyPaths = [];
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === "--json") {
+    if (arg === "--pack-only") {
+      packOnly = true;
+    } else if (arg === "--json") {
       json = true;
     } else if (arg === "--check" || arg === "--write") {
       const requestedMode = arg.slice(2);
@@ -471,7 +493,8 @@ export function parseArgs(argv = process.argv.slice(2)) {
     throw new Error("Usage: --classify <path> [more-paths...] [--json]");
   }
 
-  return { mode, json, root, classifyPaths };
+  if (packOnly && mode !== "check") throw new Error("--pack-only requires --check mode");
+  return { mode, json, root, classifyPaths, packOnly };
 }
 
 function formatClassifyHuman(results) {
@@ -561,7 +584,17 @@ export function main(argv = process.argv.slice(2)) {
     return 2;
   }
 
-  const { mode, json, root, classifyPaths } = parsed;
+  const { mode, json, root, classifyPaths, packOnly } = parsed;
+  if (packOnly) {
+    const report = checkOrUpdatePackManifest({ root });
+    if (json) console.log(JSON.stringify({ mode: "check-pack", ...report }, null, 2));
+    else {
+      console.log(`Reference pack integrity: ${report.ok ? "PASS (membership, bytes and SHA-256)" : "FAIL"}`);
+      for (const mismatch of report.mismatches)
+        console.log(`  ${mismatch.file}: ${mismatch.reason ?? "bytes/SHA-256 mismatch"}`);
+    }
+    return report.ok ? 0 : 1;
+  }
 
   if (mode === "classify") {
     const registry = loadRegistry(root);

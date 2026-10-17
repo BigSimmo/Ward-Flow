@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
@@ -7,6 +8,187 @@ const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", i
   "\n",
 );
 function requireWorkflow(source) {
+  // This workflow intentionally uses a bounded YAML subset: jobs at two spaces,
+  // steps at six, scalar step fields at eight, literal run blocks at ten.
+  // Comment lines cannot count as executable steps or shell commands.
+  source = source
+    .split("\n")
+    .filter((line) => !/^\s*#/u.test(line))
+    .join("\n");
+  assert.match(source, /^on:\n {2}pull_request:\n {4}branches: \[main\]$/mu);
+  assert.match(
+    source,
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
+  );
+  const jobs = new Map();
+  for (const match of source.matchAll(
+    /^ {2}([a-z][a-z0-9_-]*):\n([\s\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\n|(?![\s\S]))/gmu,
+  )) {
+    assert.ok(!jobs.has(match[1]), `duplicate job ${match[1]}`);
+    const keys = [...match[2].matchAll(/^ {4}([a-z][a-z0-9_-]*):/gmu)].map((field) => field[1]);
+    assert.equal(new Set(keys).size, keys.length, `duplicate job field in ${match[1]}`);
+    jobs.set(match[1], match[2]);
+  }
+  function steps(job) {
+    assert.ok(jobs.has(job), `missing job ${job}`);
+    return jobs
+      .get(job)
+      .split(/^ {6}- /mu)
+      .slice(1)
+      .map((text) => {
+        const fields = new Map();
+        for (const match of `        ${text}`.matchAll(/^ {8}([a-z][a-z0-9_-]*): ([^\n]*)(?:\n|$)/gmu)) {
+          assert.ok(!fields.has(match[1]), `duplicate step field ${match[1]}`);
+          fields.set(match[1], match[2]);
+        }
+        return { fields, text };
+      });
+  }
+  const step = (job, name) => {
+    const found = steps(job).filter(({ fields }) => fields.get("name") === name);
+    assert.equal(found.length, 1, `${job}: exactly one ${name} step is required`);
+    return found[0];
+  };
+  const exactStep = (job, name, run, condition) => {
+    const { fields } = step(job, name);
+    assert.equal(fields.get("run"), run, `${job}: ${name} executable command`);
+    assert.equal(fields.get("if"), condition, `${job}: ${name} routing`);
+  };
+  const expression = (text) => "${{ " + text + " }}";
+  for (const job of ["static", "unit", "browser", "release-gate", "build", "coverage"])
+    exactStep(job, "Plan Ward scope", "node scripts/ward-ci-public/plan.mjs");
+  exactStep("static", "Verify the scope plan against the diff", "node scripts/ward-ci-public/verify-plan.mjs");
+  for (const job of ["static", "unit", "browser", "release-gate", "build", "coverage"]) {
+    assert.equal(step(job, "Plan Ward scope").fields.get("id"), "plan", `${job} planner id`);
+    assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install", `${job} install id`);
+  }
+  assert.equal(step("browser", "Install Chromium").fields.get("id"), "chromium");
+  assert.equal(step("release-gate", "Install Chromium and WebKit").fields.get("id"), "browsers");
+  exactStep(
+    "release-gate",
+    "Install Chromium and WebKit",
+    "node node_modules/playwright/cli.js install --with-deps chromium webkit",
+    expression("!cancelled() && steps.install.outcome == 'success'"),
+  );
+  const verifier = step("static", "Verify the scope plan against the diff");
+  for (const output of [
+    "full",
+    "unit",
+    "browser",
+    "policy",
+    "dependency_review",
+    "owner_index",
+    "rules_index",
+    "organisation",
+  ])
+    assert.ok(
+      verifier.text.includes(
+        `          WARD_PLAN_${output.toUpperCase()}: ${expression(`steps.plan.outputs.${output}`)}\n`,
+      ),
+      `verifier binding ${output}`,
+    );
+  for (const job of ["static", "secret-scan"]) assert.doesNotMatch(jobs.get(job), /^ {4}(?:if|needs):/mu);
+  assert.match(jobs.get("required"), /^ {4}name: Ward Flow required$/mu);
+  assert.match(jobs.get("required"), /^ {4}if: always\(\)$/mu);
+  assert.match(
+    jobs.get("required"),
+    /^ {4}needs: \[reuse, static, unit, browser, release-gate, secret-scan, build, coverage\]$/mu,
+  );
+  const full = expression("!cancelled() && steps.plan.outputs.full == 'true'");
+  exactStep("static", "Install locked dependencies", "npm ci --ignore-scripts", full);
+  exactStep(
+    "build",
+    "Install locked dependencies",
+    "npm ci --ignore-scripts",
+    expression("!cancelled() && steps.plan.outputs.full == 'true' && steps.plan.outputs.policy != 'true'"),
+  );
+  for (const [job, scope] of [
+    ["unit", "unit"],
+    ["browser", "browser"],
+    ["release-gate", "browser"],
+    ["coverage", "unit"],
+  ])
+    exactStep(
+      job,
+      "Install locked dependencies",
+      "npm ci --ignore-scripts",
+      expression(`!cancelled() && steps.plan.outputs.${scope} == 'true'`),
+    );
+  exactStep(
+    "static",
+    "Check maintained policy contracts",
+    "node scripts/ward-ci-public/check-policy-contracts.mjs",
+    expression("!cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success'"),
+  );
+  for (const [name, command] of [
+    ["Check Ward reference data", "npm run check:ward-reference"],
+    ["Check Ward legal wording", "npm run check:ward-legal-language"],
+  ])
+    exactStep(
+      "static",
+      name,
+      command,
+      expression("!cancelled() && steps.install.outcome == 'success' && steps.plan.outputs.policy != 'true'"),
+    );
+  exactStep(
+    "static",
+    "Check reference-pack integrity",
+    "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
+  );
+  exactStep(
+    "coverage",
+    "Check complete executable coverage inventory",
+    "npm run check:coverage-inventory",
+    expression("!cancelled() && steps.install.outcome == 'success'"),
+  );
+  exactStep(
+    "browser",
+    "Check the API CSRF proxy boundary",
+    "node scripts/run-playwright.mjs --project=chromium api-csrf-proxy.spec.ts",
+    expression("!cancelled() && steps.chromium.outcome == 'success' && matrix.group == 1"),
+  );
+  assert.doesNotMatch(jobs.get("release-gate"), /^ {4}(?:if|needs):/mu);
+  exactStep(
+    "release-gate",
+    "Run the release-gate journeys",
+    "npm run test:e2e:release-gate",
+    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+  );
+  const scan = step("secret-scan", "Scan git history for secrets");
+  assert.equal(scan.fields.get("run"), "|");
+  assert.equal(scan.fields.get("if"), undefined);
+  assert.equal(
+    scan.text.split("        run: |\n")[1]?.trim(),
+    '\"$RUNNER_TEMP/gitleaks\" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts=\"--full-history HEAD\"',
+  );
+  const verdict = step("required", "Require every Ward Flow job to succeed");
+  assert.equal(verdict.fields.get("if"), undefined);
+  assert.match(verdict.text, /^ {10}RELEASE_GATE_RESULT: \$\{\{ needs.release-gate.result \}\}$/mu);
+  for (const [key, job] of [
+    ["STATIC_RESULT", "static"],
+    ["UNIT_RESULT", "unit"],
+    ["BROWSER_RESULT", "browser"],
+    ["SECRET_SCAN_RESULT", "secret-scan"],
+    ["BUILD_RESULT", "build"],
+    ["COVERAGE_RESULT", "coverage"],
+    ["RELEASE_GATE_RESULT", "release-gate"],
+  ]) {
+    const lines = verdict.text.split("\n").filter((line) => line.startsWith(`          ${key}:`));
+    assert.deepEqual(
+      lines,
+      [`          ${key}: ${expression(`needs.${job}.result`)}`],
+      `required result binding ${key}`,
+    );
+  }
+  const ordinary =
+    'test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success && test "$RELEASE_GATE_RESULT" = success';
+  const reused =
+    'test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped && test "$BROWSER_RESULT" = skipped && test "$BUILD_RESULT" = skipped && test "$COVERAGE_RESULT" = skipped && test "$RELEASE_GATE_RESULT" = success';
+  assert.equal(
+    verdict.text.split("        run: |\n")[1]?.trim(),
+    `if [ "$REUSE_VERIFIED" != true ]; then\n            ${ordinary}\n          else\n            ${reused}\n          fi`,
+  );
+
   for (const pattern of [
     /^on:\s*\n\s*pull_request:/mu,
     // Railway deploys main, so main must get its own run.
@@ -15,7 +197,7 @@ function requireWorkflow(source) {
     /persist-credentials: false/u,
     /name: Ward Flow required/u,
     /if: always\(\)/u,
-    /needs: \[reuse, static, unit, browser, secret-scan, build, coverage\]/u,
+    /needs: \[reuse, static, unit, browser, release-gate, secret-scan, build, coverage\]/u,
     /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$BUILD_RESULT" = success && test "\$COVERAGE_RESULT" = success/u,
     /SECRET_SCAN_RESULT: \$\{\{ needs\.secret-scan\.result \}\}/u,
     /BUILD_RESULT: \$\{\{ needs\.build\.result \}\}/u,
@@ -140,6 +322,40 @@ function requireWorkflow(source) {
 
 requireWorkflow(workflow);
 for (const bad of [
+  workflow.replaceAll("        id: plan\n", "        id: unused-plan\n"),
+  workflow.replaceAll("        id: install\n", "        id: unused-install\n"),
+  workflow.replace("        id: browsers\n", "        id: unused-browsers\n"),
+  workflow.replace("run: node node_modules/playwright/cli.js install --with-deps chromium webkit", "run: echo omitted"),
+
+  workflow.replace(
+    "run: node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
+    "run: echo omitted",
+  ),
+  workflow.replace("run: npm run check:coverage-inventory", "run: echo omitted"),
+  workflow.replace(
+    "run: node scripts/run-playwright.mjs --project=chromium api-csrf-proxy.spec.ts",
+    "run: echo omitted",
+  ),
+  workflow.replace("browser, release-gate, secret-scan", "browser, secret-scan"),
+  workflow.replace(' && test "$RELEASE_GATE_RESULT" = success', ""),
+  workflow.replace(
+    "          RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}",
+    "          RELEASE_GATE_RESULT: success",
+  ),
+  workflow.replace("    name: Ward Flow release gate\n", "    name: Ward Flow release gate\n    if: false\n"),
+  workflow.replace("          UNIT_RESULT: ${{ needs.unit.result }}", "          UNIT_RESULT: success"),
+  workflow.replaceAll("run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"),
+  workflow.replace("run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"),
+  workflow.replaceAll("steps.plan.outputs.full == 'true'", "steps.plan.outputs.full != 'true'"),
+  workflow.replaceAll("steps.plan.outputs.policy == 'true'", "steps.plan.outputs.policy != 'true'"),
+  workflow.replace(/concurrency:\n(?: {2}[^\n]*\n)+/u, ""),
+  workflow.replace('test "$RELEASE_GATE_RESULT" = success\n', 'test "$RELEASE_GATE_RESULT" = success || true\n'),
+  workflow.replace("  pull_request:\n    branches: [main]", "  pull_request:\n    branches: [nonexistent-branch]"),
+  workflow.replace(
+    '          "$RUNNER_TEMP/gitleaks" git . --redact',
+    '          # "$RUNNER_TEMP/gitleaks" git . --redact',
+  ),
+
   workflow.replace("name: Ward Flow required", "name: Optional"),
   workflow.replace("timeout-minutes: 8", "timeout-minutes: 30"),
   workflow.replace("run: node scripts/ward-ci-public/install-chromium.mjs", "run: npx playwright install chromium"),
@@ -148,11 +364,11 @@ for (const bad of [
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
   workflow.replace(
-    "needs: [reuse, static, unit, browser, secret-scan, build, coverage]",
+    "needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]",
     "needs: [reuse, static, browser, secret-scan, build]",
   ),
   workflow.replace(
-    "needs: [reuse, static, unit, browser, secret-scan, build, coverage]",
+    "needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]",
     "needs: [static, unit, browser]",
   ),
   workflow.replace(' && test "$SECRET_SCAN_RESULT" = success', ""),
@@ -202,6 +418,29 @@ for (const bad of [
 ])
   assert.throws(() => requireWorkflow(bad));
 
+const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
+assert.ok(verdictShell);
+const runVerdict = (values) =>
+  spawnSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], { env: values }).status;
+for (const reuse of [false, true]) {
+  const values = {
+    REUSE_VERIFIED: String(reuse),
+    STATIC_RESULT: "success",
+    SECRET_SCAN_RESULT: "success",
+    RELEASE_GATE_RESULT: "success",
+    ...Object.fromEntries(
+      ["UNIT_RESULT", "BROWSER_RESULT", "BUILD_RESULT", "COVERAGE_RESULT"].map((key) => [
+        key,
+        reuse ? "skipped" : "success",
+      ]),
+    ),
+  };
+  assert.equal(runVerdict(values), 0, `valid ${reuse ? "reuse" : "ordinary/scoped plan"} verdict`);
+  for (const key of Object.keys(values).filter((key) => key !== "REUSE_VERIFIED"))
+    for (const result of ["failure", "cancelled", "", key === "RELEASE_GATE_RESULT" ? "skipped" : "unexpected"])
+      assert.notEqual(runVerdict({ ...values, [key]: result }), 0, `${key}=${result} must block`);
+}
+
 assert.deepEqual(parseNameStatus("M\tdocs/ward-flow/README.md\n"), [{ status: "M", file: "docs/ward-flow/README.md" }]);
 assert.equal(classifyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]).full, false);
 assert.equal(classifyChanges([{ status: "D", file: "docs/ward-flow/README.md" }]).full, true);
@@ -239,4 +478,4 @@ assert.equal(classifyChanges([]).full, true);
 assert.equal(hasDependencyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]), false);
 assert.equal(hasDependencyChanges([{ status: "M", file: "backend/ward-flow/package-lock.json" }]), true);
 assert.equal(hasDependencyChanges([{ status: "A", file: "package.json" }]), true);
-console.log("Ward public CI contracts OK");
+console.log("Ward public CI contracts OK — executable workflow mutations rejected; 58 aggregate verdict cases passed");

@@ -887,16 +887,15 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       onClick={() => {
                         const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
                         const admissionId = detailRelease.admissionId;
-                        recordWardDeparture(admissionId, detailRelease.unitId, departureDestination);
-                        // Unguarded, as the hand-built toast was: in a shared workspace the departure
-                        // may not be in state yet, so the record seen next could be an older one.
+                        const completion = recordWardDeparture(admissionId, detailRelease.unitId, departureDestination);
+                        // The completion carries this command's accepted Undo record, including shared saves.
                         offerDeparture(
                           {
                             success: `Recorded: ${who} has left the ward.`,
                             undo: (at) => ({ type: "UNDO_DEPARTURE", role: "coordinator", now: at, admissionId }),
                             undone: `Undone. ${who} is back in their bed.`,
                           },
-                          { guard: false },
+                          { completion },
                         );
                       }}
                     >
@@ -944,7 +943,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         <WardPrototypeFooter
           testId="ward-discharge-governance"
-          note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not a medical device"
+          note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not approved for clinical use"
         />
       </main>
     </div>

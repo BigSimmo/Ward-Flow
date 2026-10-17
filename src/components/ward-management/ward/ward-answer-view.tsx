@@ -1643,7 +1643,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       ) : null}
       <WardPrototypeFooter
         testId="ward-unit-governance"
-        note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not a medical device`}
+        note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}
       />
     </div>
   );

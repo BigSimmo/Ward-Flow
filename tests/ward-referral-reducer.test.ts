@@ -57,6 +57,19 @@ function ward(state: WardFlowState, id: string): ReferralAddressing {
   return found;
 }
 
+/** Name a real fixture recipient so terminal-decision tests reach that guard, not address refusal. */
+function addressedWardUnitId(state: WardFlowState, id: string): string {
+  const destination = ward(state, id).destination;
+  if (destination.kind !== "psychiatric_ward" || destination.unitId === undefined) {
+    throw new Error(`answered fixture referral ${id} has no named ward recipient`);
+  }
+  expect(
+    state.units.map((unit) => unit.id),
+    "the fixture recipient must be a real ward",
+  ).toContain(destination.unitId);
+  return destination.unitId;
+}
+
 /** A referral draft matched against `scgh-adult-open` on purpose — see the reducer test below
  *  ("passes every gate") for why that unit is a reliable, deterministic match: Adult cohort,
  *  Undesignated (accepts either sex), non-forensic, allocatable 2 (so sex_mix passes regardless
@@ -646,7 +659,7 @@ describe("ACCEPT_REFERRAL", () => {
       role: "coordinator",
       now: NOW,
       referralId: "RF-002",
-      unitId: "scgh-adult-open",
+      unitId: addressedWardUnitId(before, "RF-002"),
     });
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0].reason).toContain("already been accepted elsewhere");
@@ -666,7 +679,7 @@ describe("ACCEPT_REFERRAL", () => {
       role: "coordinator",
       now: NOW,
       referralId: "RF-004",
-      unitId: "scgh-adult-open",
+      unitId: addressedWardUnitId(before, "RF-004"),
     });
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0].reason).toContain("has already answered");
@@ -814,6 +827,7 @@ describe("DECLINE_REFERRAL", () => {
       role: "coordinator",
       now: NOW,
       referralId: "RF-003",
+      unitId: addressedWardUnitId(before, "RF-003"),
       reason: "no_suitable_bed",
     });
     expect(after.rejections).toHaveLength(1);
@@ -830,6 +844,7 @@ describe("DECLINE_REFERRAL", () => {
       role: "coordinator",
       now: NOW,
       referralId: "RF-004",
+      unitId: addressedWardUnitId(before, "RF-004"),
       reason: "no_suitable_bed",
     });
     expect(after.rejections).toHaveLength(1);

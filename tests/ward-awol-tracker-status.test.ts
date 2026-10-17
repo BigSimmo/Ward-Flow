@@ -15,7 +15,7 @@ const base = seedWardFlowState().movements[0]!;
 const noop = () => {};
 const HOLD = CLINICAL_VALUES.awolBedHoldWarning.value;
 
-function absentFor(minutes: number, awolTracker: boolean) {
+function absentFor(minutes: number, awolTracker: boolean, awolHoldReview = true) {
   const context: PatientStatusContext = {
     movement: base,
     hasBedHold: true,
@@ -32,6 +32,7 @@ function absentFor(minutes: number, awolTracker: boolean) {
     onEndCto: noop,
     stayUnitName: "Ward A",
     awolTracker,
+    awolHoldReview,
     leaveBed: {
       absentWithoutLeave: {
         since: NOW_ANCHOR - minutes,
@@ -57,6 +58,12 @@ describe("absent without leave tracker on the patient status card", () => {
     const late = absentFor(HOLD + 10, true).meta;
     expect(late).toContain(`Bed on Ward A held over ${HOLD / 60}h, review the hold`);
     expect(late).not.toMatch(/[;—→]/);
+  });
+
+  it("pauses the held bed review while its own flag is off (D-65), and still shows the time away", () => {
+    const paused = absentFor(HOLD + 10, true, false).meta;
+    expect(paused).not.toContain("review the hold");
+    expect(paused).toContain("away");
   });
 
   it("leaves the card as it was with the flag off", () => {

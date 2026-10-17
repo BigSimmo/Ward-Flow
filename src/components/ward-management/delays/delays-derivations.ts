@@ -15,6 +15,7 @@ import {
   destinationNoLongerLawful,
   examinationRevokedWhileBedHeld,
   isOpen,
+  INFORMATIONAL_GATES,
   referralForMovement,
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
@@ -30,6 +31,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 
 export type DelayCause =
@@ -255,7 +257,15 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant, thresho
   // nowhere to go would simply not have appeared on the screen built to find them.
   if (movement.acceptedUnitId === undefined) {
     const candidates = shortlistCandidates(movement, units, now);
-    if (!candidates.some((candidate) => candidate.availability === "eligible")) return "no_eligible_bed";
+    // Match the action inbox: stale capacity alone cannot establish that no bed is available.
+    if (
+      candidates.every((candidate) =>
+        candidate.verdict.gates.some(
+          (gate) => !gate.pass && gate.gate !== "capacity_freshness" && !INFORMATIONAL_GATES.includes(gate.gate),
+        ),
+      )
+    )
+      return "no_eligible_bed";
   }
 
   if (movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0) {
@@ -269,11 +279,8 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant, thresho
     return "awaiting_coordinator";
   }
   if (movement.stage === "pulled") {
-    // ⚠️ AUDIT GAP 1: condition mirrored exactly from `buildActionInbox`'s `expiredBedPulls`
-    // filter (ward-derivations.ts) — `stage === "pulled" && pullExpiresAt !== undefined &&
-    // pullExpiresAt < now`. Do not let this drift from that one independently; the two screens
-    // must agree on which holds count as expired.
-    if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) return "bed_pull_expired";
+    // The shared bed-hold rule includes the expiry instant itself.
+    if (bedHoldLapsed(movement.pullExpiresAt, now)) return "bed_pull_expired";
     return "awaiting_bed_ready";
   }
   if (movement.transport !== undefined) return "awaiting_transport";

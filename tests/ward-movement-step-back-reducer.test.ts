@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { GENDER_PLACEMENT_REASONS, OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import {
   seedWardFlowState,
   wardFlowReducer,
@@ -450,7 +450,7 @@ describe("STEP_BACK_STAGE — F3, does not undo what it steps back past", () => 
  * `Admission` and decrement `unit.allocatable` a second time, for the same person.
  */
 describe("PULL_PATIENT restores a movement that already holds a bed (owner ruling 2026-09-15)", () => {
-  it("restores the pull on the held bed once STEP_BACK_STAGE returns the movement to accepted_awaiting_bed", () => {
+  it.each([false, true])("restores the existing held bed after step back (ward closed=%s)", (isClosed) => {
     const pulled = buildPulledFixture();
     const before = movementIn(pulled, MOVEMENT_ID);
     expect(before.stage).toBe("pulled");
@@ -481,7 +481,7 @@ describe("PULL_PATIENT restores a movement that already holds a bed (owner rulin
       ...steppedBack,
       units: steppedBack.units.map((candidate) =>
         candidate.id === UNIT_ACCEPTED
-          ? { ...candidate, allocatable: { ...candidate.allocatable, value: 5 } }
+          ? { ...candidate, isClosed, allocatable: { ...candidate.allocatable, value: 5 } }
           : candidate,
       ),
     };
@@ -781,5 +781,33 @@ describe("fixtures this file depends on", () => {
       "the_patient_situation_changed",
       "the_bed_was_lost",
     ]);
+  });
+});
+
+describe("PULL_PATIENT requires an open ward for a new reservation", () => {
+  it.each([false, true])("refuses a closed ward without consuming its bed (override=%s)", (override) => {
+    const accepted = buildAcceptedFixture();
+    const closed: WardFlowState = {
+      ...accepted,
+      units: accepted.units.map((unit) => (unit.id === UNIT_ACCEPTED ? { ...unit, isClosed: true } : unit)),
+    };
+    const after = wardFlowReducer(closed, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: t(50),
+      movementId: MOVEMENT_ID,
+      unitId: UNIT_ACCEPTED,
+      ...(override
+        ? {
+            overrideReason: OVERRIDE_REASONS[0],
+            overrideSignOff: { role: "coordinator" as const, name: "Synthetic reviewer" },
+            numConsulted: true as const,
+          }
+        : {}),
+    });
+    expect(after.rejections.at(-1)?.reason).toMatch(/closed/i);
+    expect(movementIn(after, MOVEMENT_ID)).toEqual(movementIn(closed, MOVEMENT_ID));
+    expect(after.admissions).toEqual(closed.admissions);
+    expect(unitIn(after, UNIT_ACCEPTED)).toEqual(unitIn(closed, UNIT_ACCEPTED));
   });
 });

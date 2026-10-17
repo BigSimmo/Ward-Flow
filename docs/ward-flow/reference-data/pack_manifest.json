@@ -1,6 +1,6 @@
 {
   "built_on": "2026-09-17",
-  "updated_on": "2026-10-14",
+  "updated_on": "2026-10-16",
   "repository": "BigSimmo/Ward-Flow",
   "tip_sha_context": "f10ca39fbd",
   "files": {
@@ -37,8 +37,8 @@
       "sha256": "3f0a0badea810e9fc7a5aa15ee506494ba4993eef2083621b4488ee9a72a8364"
     },
     "DECISIONS-APPLIED-2026-09-17.md": {
-      "bytes": 3372,
-      "sha256": "4910961fa053607aba18557d518daea29fce0408023cf1aadc162b4916eb111f"
+      "bytes": 3348,
+      "sha256": "9733639d3b9628069136bea30c1ec91960a86071f632bdb0d45e68fd1638a1bd"
     },
     "sources.json": {
       "bytes": 129697,
@@ -49,8 +49,8 @@
       "sha256": "691ebad8cf4742da89e7d9bc5f7a8207ffb461348fe321f28e0b289e01983d2f"
     },
     "INGEST_MAP.md": {
-      "bytes": 5448,
-      "sha256": "790cf3fdb24fded653fc4014a00597a9cd204183db4c05d7bbdc3d6b04a0cc38"
+      "bytes": 5447,
+      "sha256": "d60173ced8b5948e4b248002edab9b55acb91224ba68ea889bc751a6135df1d0"
     },
     "CHANGELOG.md": {
       "bytes": 3297,
@@ -68,5 +68,13 @@
       "bytes": 4739,
       "sha256": "02d180ec8507f5b4e74f24a1dde1bd616c74d41b7083479aac7c3a74bf32e461"
     }
+  },
+  "integrity_scope": {
+    "directory": "docs/ward-flow/reference-data",
+    "population": "All regular files recursively, with exact relative paths.",
+    "excluded_files": {
+      "pack_manifest.json": "Self-referential metadata cannot contain its own serialised SHA-256."
+    },
+    "hash_review": "DECISIONS-APPLIED-2026-09-17.md and INGEST_MAP.md changed in b1a0c5a7 (#349): removed historical WF audit-code annotations and adjusted table padding only; recommendations, approval flags and clinical/reference values are unchanged. The hashes stored by #349 did not match its final committed source blobs; this update hashes the reviewed committed content."
   }
 }

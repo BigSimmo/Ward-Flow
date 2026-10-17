@@ -35,7 +35,7 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import { allWardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
+import { allWardStatistics, wardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { axisMax } from "./statistics-axis";
 import { downloadCsv } from "./statistics-csv";
@@ -99,10 +99,11 @@ export function StatisticsCompareScreen({
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   const wardStats = allWardStatistics(units, admissions, now);
-  const recordedStays = wardStats.flatMap(({ statistics }) =>
-    statistics.averageLengthOfStayDays === null ? [] : [statistics.averageLengthOfStayDays],
-  );
-  const networkAvgStay = recordedStays.length > 0 ? mean(recordedStays) : null;
+  const unitIds = new Set(units.map((unit) => unit.id));
+  const pooledAdmissions = admissions
+    .filter((admission) => unitIds.has(admission.unitId))
+    .map((admission) => ({ ...admission, unitId: "pooled" }));
+  const networkAvgStay = wardStatistics("pooled", pooledAdmissions, now).averageLengthOfStayDays;
   const totalBlockers = wardStats.reduce((s, { statistics }) => s + statistics.readyToLeaveCannot, 0);
   const totalLongStays = wardStats.reduce((s, { statistics }) => s + statistics.longStays, 0);
 

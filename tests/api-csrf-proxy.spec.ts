@@ -14,9 +14,9 @@ function resolveOriginAndHost(baseURL?: string) {
 }
 
 test.describe("API CSRF proxy integration (#72282V)", () => {
-  test("matching Origin & Host -> allowed (or executes route handler)", async ({ request, baseURL }) => {
+  test("matching Origin & Host -> reaches the existing route method boundary", async ({ request, baseURL }) => {
     const { origin, host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin,
         host,
@@ -25,15 +25,17 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
       data: {},
     });
 
-    // Allowed through proxy middleware to route handler; handler error code must not be cross_site_forbidden
-    expect(response.status()).not.toBe(403);
-    const data = await response.json().catch(() => ({}));
-    expect(data.code).not.toBe("cross_site_forbidden");
+    // Health is GET-only: Next returns 405 only after the proxy allows this POST.
+    // Assert the route itself exists so a retired/misspelled endpoint cannot pass.
+    const health = await request.get("/api/health");
+    expect(health.status()).toBe(200);
+    expect(await health.json()).toEqual({ status: "ok" });
+    expect(response.status()).toBe(405);
   });
 
   test("Sec-Fetch-Site: cross-site -> 403 Forbidden", async ({ request, baseURL }) => {
     const { origin, host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin,
         host,
@@ -50,7 +52,7 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
 
   test("Mismatched Origin vs Host -> 403 Forbidden", async ({ request, baseURL }) => {
     const { host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin: "https://evil-attacker.example.com",
         host,
@@ -69,10 +71,10 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
     baseURL,
   }) => {
     const { host } = resolveOriginAndHost(baseURL);
-    const externalDomain = "clinical-kb.up.railway.app";
+    const externalDomain = "ward-flow.example.test";
     const externalOrigin = `https://${externalDomain}`;
 
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin: externalOrigin,
         host, // Internal host differs from external Origin
@@ -82,19 +84,17 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
       data: {},
     });
 
-    expect(response.status()).not.toBe(403);
-    const data = await response.json().catch(() => ({}));
-    expect(data.code).not.toBe("cross_site_forbidden");
+    expect(response.status()).toBe(405);
   });
 });
 
 test.describe("apiMutationCsrfVerdict pure contract under simulated proxy headers", () => {
   const internalHost = "localhost:3000";
-  const externalHost = "clinical-kb.up.railway.app";
+  const externalHost = "ward-flow.example.test";
   const externalOrigin = `https://${externalHost}`;
 
   test("isCsrfGuardedApiRequest guards state-changing API endpoints, webhooks included (A4-15)", () => {
-    expect(isCsrfGuardedApiRequest("POST", "/api/answer-feedback")).toBe(true);
+    expect(isCsrfGuardedApiRequest("POST", "/api/health")).toBe(true);
     expect(isCsrfGuardedApiRequest("PUT", "/api/account/preferences")).toBe(true);
     expect(isCsrfGuardedApiRequest("PATCH", "/api/clinical-quality")).toBe(true);
     expect(isCsrfGuardedApiRequest("DELETE", "/api/documents/123")).toBe(true);

@@ -3,11 +3,12 @@
 import React from "react";
 import { CoordinatorScreen } from "./coordinator-screen";
 import { useWardFlow, useWardFlowClock, WardFlowOverride } from "@/components/ward-management/ward-flow-provider";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
 export interface CoordinatorCockpitProps {
   className?: string;
-  onDispatchAction?: (event: WardFlowEvent) => void;
+  onDispatchAction?: WardCommandDispatch;
   children?: React.ReactNode;
 }
 
@@ -37,9 +38,9 @@ export function CoordinatorCockpit({ className, onDispatchAction, children }: Co
       now: event.now ?? inputs.now,
     } as WardFlowEvent;
     if (inputs.onDispatchAction) {
-      inputs.onDispatchAction(coordinatorEvent);
+      return inputs.onDispatchAction(coordinatorEvent);
     } else {
-      inputs.dispatch(coordinatorEvent);
+      return inputs.dispatch(coordinatorEvent);
     }
   }, []);
 

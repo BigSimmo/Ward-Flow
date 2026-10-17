@@ -4,7 +4,15 @@ import { useState } from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Dialog, StateLine, ToastView, type StateKind } from "@/components/wf";
+import {
+  Dialog,
+  StateLine,
+  ToastView,
+  ToastProvider,
+  useToast,
+  type ToastInput,
+  type StateKind,
+} from "@/components/wf";
 
 describe("StateLine", () => {
   it.each<[StateKind, string, "status" | "alert"]>([
@@ -182,6 +190,88 @@ describe("ToastView undo window", () => {
     // A second press does nothing once the step is undone.
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not consume a temporarily refused Undo or renew its remaining window", () => {
+    const onUndo = vi.fn(() => false as const);
+    const onExpire = vi.fn();
+    render(<ToastView title="Deferred action" undo={{ durationMs: 5000, onUndo, onExpire }} />);
+    const button = screen.getByRole("button", { name: "Undo" });
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    fireEvent.click(button);
+    expect(button).not.toHaveAttribute("aria-disabled", "true");
+    act(() => {
+      vi.advanceTimersByTime(2999);
+    });
+    expect(onExpire).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onExpire).toHaveBeenCalledTimes(1);
+    fireEvent.click(button);
+    expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it("consumes a throwing standalone Undo without later expiring it", () => {
+    const onUndo = vi.fn(() => {
+      throw new Error("Synthetic Undo failure");
+    });
+    const onExpire = vi.fn();
+    const silence = (event: ErrorEvent) => event.preventDefault();
+    window.addEventListener("error", silence);
+    try {
+      render(<ToastView title="Throwing action" undo={{ durationMs: 1000, onUndo, onExpire }} />);
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(onUndo).toHaveBeenCalledTimes(1);
+      expect(onExpire).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("error", silence);
+    }
+  });
+
+  it.each([false, undefined] as const)("settles callback eviction safely when Undo returns %s", (result) => {
+    const onExpire = vi.fn();
+    function Caller() {
+      const toast = useToast();
+      return (
+        <button
+          onClick={() =>
+            toast.push({
+              tone: "success",
+              title: "Original action",
+              undo: {
+                durationMs: 5000,
+                onExpire,
+                onUndo: () => {
+                  for (let index = 0; index < 5; index++) toast.push({ tone: "warning", title: `Warning ${index}` });
+                  return result;
+                },
+              },
+            } satisfies ToastInput)
+          }
+        >
+          Offer
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <Caller />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Offer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.queryByText("Original action")).toBeNull();
+    expect(onExpire).toHaveBeenCalledTimes(result === false ? 1 : 0);
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
+    expect(onExpire).toHaveBeenCalledTimes(result === false ? 1 : 0);
   });
 
   it("calls onExpire once when the window runs out, with the bar timed from the style var", () => {

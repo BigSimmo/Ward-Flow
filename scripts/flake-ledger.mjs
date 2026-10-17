@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -28,8 +29,42 @@ function dateValue(value, field, id) {
   return parsed;
 }
 
+// --list collects the real configured test identities without starting a server or browser.
+// A source-string or AST declaration alone could still name an unreachable/unselected test.
+export function collectedPlaywrightTitles(spec, root = projectRoot) {
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(projectRoot, "node_modules/playwright/cli.js"),
+      "test",
+      "--list",
+      "--reporter=json",
+      "--config",
+      path.join(root, root === projectRoot ? "playwright.config.ts" : "playwright.config.mjs"),
+      spec,
+    ],
+    { cwd: root, encoding: "utf8", timeout: 30_000, maxBuffer: 10 * 1024 * 1024 },
+  );
+  if (result.status !== 0 || result.error) throw new Error(`flake-ledger: Playwright collection failed for ${spec}`);
+  const report = JSON.parse(result.stdout);
+  if (report.errors?.length) throw new Error(`flake-ledger: Playwright collection errors for ${spec}`);
+  const titles = [];
+  function walk(suite, parents = []) {
+    const nested = suite.line > 0 && suite.title ? [...parents, suite.title] : parents;
+    for (const test of suite.specs ?? []) {
+      const file = test.file ?? suite.file;
+      if (file && path.resolve(report.config?.rootDir ?? root, file) === path.resolve(root, spec))
+        titles.push([...nested, test.title].join(" "));
+    }
+    for (const child of suite.suites ?? []) walk(child, nested);
+  }
+  for (const suite of report.suites ?? []) walk(suite);
+  return titles;
+}
+
 export function validateFlakeLedgerEntries(flakes, { root = projectRoot, now = Date.now() } = {}) {
   const ids = new Set();
+  const collected = new Map();
   const today = Date.parse(`${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`);
   const latestAllowedExpiry = today + 31 * dayMs - 1;
   for (const flake of flakes) {
@@ -49,9 +84,9 @@ export function validateFlakeLedgerEntries(flakes, { root = projectRoot, now = D
     if (flake.title.includes("@critical"))
       throw new Error(`${flake.id}: a test cannot be both @quarantine and @critical`);
 
-    const specPath = path.join(root, flake.spec);
-    const spec = readFileSync(specPath, "utf8");
-    if (!spec.includes(flake.title)) throw new Error(`${flake.id}: exact title is not present in ${flake.spec}`);
+    if (!collected.has(flake.spec)) collected.set(flake.spec, collectedPlaywrightTitles(flake.spec, root));
+    if (!collected.get(flake.spec).includes(flake.title))
+      throw new Error(`${flake.id}: exact title is not present in collected tests from ${flake.spec}`);
   }
   return flakes;
 }

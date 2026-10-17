@@ -69,8 +69,8 @@ type ToastContextValue = {
   toasts: Toast[];
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
-  /** Runs the caller's Undo then closes the toast, so its `onExpire` never runs. */
-  undoAndDismiss: (id: string, onUndo: () => void) => void;
+  /** Runs Undo and closes its toast unless the caller temporarily blocks it with false. */
+  undoAndDismiss: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
   savesOnDevice: () => boolean;
 };
 
@@ -116,16 +116,31 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
 
   // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
   // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
+  // A temporary refusal keeps the same mounted toast and its remaining window.
   const undoAndDismiss = useCallback(
-    (id: string, onUndo: () => void) => {
+    (id: string, onUndo: ToastUndo["onUndo"]) => {
+      const original = toastsRef.current.find((toast) => toast.id === id);
       settled.current.add(id);
+      let blocked = false;
       try {
-        onUndo();
+        blocked = onUndo() === false;
+        if (blocked) return false as const;
       } finally {
-        dismiss(id);
+        if (blocked) {
+          settled.current.delete(id);
+          // A callback may have evicted its own toast while it was provisionally settled.
+          if (original && !toastsRef.current.some((toast) => toast.id === id)) {
+            try {
+              expire(original);
+            } finally {
+              settled.current.delete(id);
+            }
+          }
+        } else dismiss(id);
       }
+      return undefined;
     },
-    [dismiss],
+    [dismiss, expire],
   );
 
   const push = useCallback(
@@ -222,7 +237,7 @@ function ToastCard({
 }: {
   toast: Toast;
   onDismiss: (id: string) => void;
-  onUndone: (id: string, onUndo: () => void) => void;
+  onUndone: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
 }) {
   // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
   const duration = toast.undo ? 0 : (toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION));

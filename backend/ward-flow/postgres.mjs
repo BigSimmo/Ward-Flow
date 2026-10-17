@@ -457,6 +457,7 @@ export function createWorkspaceStore(
     }
   }
   async function read(actorId, view) {
+    if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
     const { rows } = await pool.query(
       "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
@@ -482,12 +483,18 @@ export function createWorkspaceStore(
       at.setTime(clock().getTime());
       const current = await resolveViewer(actorId, { workingAs: view.membershipId }, client, at, version);
       if (current.status !== "ok") throw new Error("role-ended");
+      // The HTTP reply uses this request's view for its access metadata too.
+      Object.assign(view, current);
       return snapshot(rows[0], at, current);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });
     if (current.status !== "ok") throw new Error("role-ended");
-    return transaction(async (client, now) => snapshot(await lock(client, actorId, now, current), now, current));
+    return transaction(async (client, now) => {
+      const row = await lock(client, actorId, now, current);
+      Object.assign(view, current);
+      return snapshot(row, now, current);
+    });
   }
   /**
    * Who this account is working as. The role always comes from here, never from the browser.

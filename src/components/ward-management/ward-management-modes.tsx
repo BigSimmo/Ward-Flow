@@ -137,8 +137,9 @@ function NotAMedicalDeviceStatement() {
      * same thing.
      */
     <p data-ward-type-floor="banner">
-      This screen is <strong>not a medical device</strong>. It orders operational placement work only — it never
-      assesses a patient&apos;s risk, acuity or treatment. A human coordinator confirms or overrides every suggestion.
+      This screen is <strong>not approved for clinical use</strong>. It orders operational placement work only — it
+      never assesses a patient&apos;s risk, acuity or treatment. A human coordinator confirms or overrides every
+      suggestion.
     </p>
   );
 }
@@ -198,7 +199,7 @@ export function GovernanceView() {
       <WardBreakGlassReview />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
         {/* Read by assistive tech, kept out of the Tab order: the notice is visually hidden. */}
-        <summary tabIndex={-1}>Synthetic prototype · not a medical device</summary>
+        <summary tabIndex={-1}>Synthetic prototype · not approved for clinical use</summary>
         <NotAMedicalDeviceStatement />
         <p data-testid="ward-governance-data-scope">
           Patient identity and operational facts are recorded, including patient-linked discharge records. No diagnosis,
@@ -320,7 +321,11 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
         {/* Audit 11 Oct 2026: the generic role focus banner is gone; the page carries the work. */}
         <WardPrototypeFooter
           testId={mode === "network" ? "ward-network-governance" : `ward-mode-${mode}-disclosure`}
-          note={mode === "network" ? "Synthetic network figures and bed statuses · Not a medical device" : undefined}
+          note={
+            mode === "network"
+              ? "Synthetic network figures and bed statuses · Not approved for clinical use"
+              : undefined
+          }
         />
       </main>
     </div>

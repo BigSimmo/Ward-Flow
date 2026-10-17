@@ -47,6 +47,8 @@ type CapacityRow = {
   units: Unit[];
 };
 
+const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
+
 type SortKey = "ready" | "occupancy" | "beds" | "name";
 
 const SORT_LABELS: Record<SortKey, string> = {
@@ -149,14 +151,13 @@ export function StatisticsCapacityChart({
           : sort === "beds"
             ? b.beds - a.beds
             : sort === "occupancy"
-              ? (b.beds ? b.occupied / b.beds : 0) - (a.beds ? a.occupied / a.beds : 0)
+              ? occupancyOf(b) - occupancyOf(a)
               : 0;
       return difference || a.name.localeCompare(b.name);
     });
     return { rows: sorted, allCount: group(units).length };
   }, [units, bedReleases, admissions, leaveBeds, query, groupBy, sort]);
 
-  const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
   const inService = (row: CapacityRow) => service === "all" || row.services.has(service);
   const isLit = (row: CapacityRow) => inService(row) && (!overOnly || occupancyOf(row) >= alertLine);
   const highlighting = service !== "all" || overOnly;
