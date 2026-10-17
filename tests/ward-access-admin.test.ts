@@ -42,7 +42,7 @@ import {
 
 /**
  * The access admin's rules (role access plan, later pass): no self grants, never wider than your
- * own place, a second approver for coordinator and admin roles, cover for one shift, and roles
+ * own place, immediate coordinator and admin grants, cover for one shift, and roles
  * that switch off when unused. Seed wards only, synthetic.
  */
 const places = wardAccessPlaces(seedWardFlowState().units);
@@ -116,14 +116,16 @@ describe("approving and removing", () => {
     access: { role: "coordinator", scope: { kind: "service", service: "South Metro" } },
   });
 
-  it("needs a second person for a coordinator or admin role", () => {
-    expect(membershipStatus(coordinatorGrant, now)).toBe("waiting");
+  it("activates coordinator and admin grants without adding a second approval", () => {
+    expect(membershipStatus(coordinatorGrant, now)).toBe("active");
+    expect(membershipStatus(membership({ access: statewideAdmin }), now)).toBe("active");
     expect(approveRefusal({ approver: southAdmin, approverId: "admin-1", membership: coordinatorGrant, places })).toBe(
-      "A second person approves this role.",
+      "That role is not waiting for approval.",
     );
-    expect(
-      approveRefusal({ approver: southAdmin, approverId: "admin-2", membership: coordinatorGrant, places }),
-    ).toBeNull();
+    expect(approveRefusal({ approver: southAdmin, approverId: "admin-2", membership: coordinatorGrant, places })).toBe(
+      "That role is not waiting for approval.",
+    );
+    expect(coordinatorGrant.approvedBy).toBeNull();
     expect(approveRefusal({ approver: southAdmin, approverId: "admin-2", membership: membership(), places })).toBe(
       "That role is not waiting for approval.",
     );
@@ -138,6 +140,13 @@ describe("approving and removing", () => {
     expect(
       revokeRefusal({ remover: statewideAdmin, removerId: "admin-9", membership: membership(), places }),
     ).toBeNull();
+  });
+
+  it.each(["coordinator", "admin"] as const)("still ends expired, revoked and unused %s roles", (role) => {
+    const access: WardAccess = { role, scope: { kind: "statewide" } };
+    expect(membershipStatus(membership({ access, expiresAt: now }), now)).toBe("ended");
+    expect(membershipStatus(membership({ access, revokedAt: now }), now)).toBe("ended");
+    expect(membershipStatus(membership({ access, lastUsedAt: now - ACCESS_UNUSED_MINUTES }), now)).toBe("unused");
   });
 
   it("refuses a non-admin ending a role, and lets a coordinator end cover inside its place", () => {
@@ -270,9 +279,10 @@ describe("the local demo access admin", () => {
   const desk = { access: statewideAdmin, actorId: DEMO_ADMIN_ID };
   const find = (actorId: string) => readLocalAccessAdmin(now).memberships.find((m) => m.actorId === actorId)!;
 
-  it("seeds a role waiting for approval, one ending soon and one unused", () => {
+  it("activates formerly pending seed roles and still flags ending and unused roles", () => {
     const { memberships, requests } = readLocalAccessAdmin(now);
-    expect(memberships.map((m) => membershipStatus(m, now))).toContain("waiting");
+    expect(membershipStatus(find("demo-staff-d"), now)).toBe("active");
+    expect(find("demo-staff-d").approvedBy).toBeNull();
     expect(memberships.some((m) => reviewNotes(m, now).endingSoon)).toBe(true);
     expect(memberships.some((m) => reviewNotes(m, now).unused)).toBe(true);
     expect(requests.filter((r) => r.decision === null)).toHaveLength(2);
@@ -286,8 +296,8 @@ describe("the local demo access admin", () => {
       localGrant(desk, { actorId: "demo-staff-h", access: fshWard, expiresAt: now + 1440, now, places }),
     ).toBeNull();
     expect(find("demo-staff-h").grantedBy).toBe(DEMO_ADMIN_ID);
-    const waiting = find("demo-staff-d");
-    expect(localApprove(desk, waiting.id, now, places)).toBeNull();
+    const granted = find("demo-staff-d");
+    expect(localApprove(desk, granted.id, now, places)).toBe("That role is not waiting for approval.");
     expect(membershipStatus(find("demo-staff-d"), now)).toBe("active");
     expect(localRevoke(desk, find("demo-staff-a").id, now, places)).toBeNull();
     expect(membershipStatus(find("demo-staff-a"), now)).toBe("ended");

@@ -198,7 +198,9 @@ function change(
   return null;
 }
 
-/** A second person approves a coordinator or access admin role. */
+/**
+ * @deprecated Role grants no longer need approval. Kept for older demo callers; it always refuses.
+ */
 export function localApprove(desk: LocalAdminDesk, id: string, now: Instant, places: AccessPlaces): string | null {
   return change(
     id,

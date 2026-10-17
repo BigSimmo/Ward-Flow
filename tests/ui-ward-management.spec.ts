@@ -291,6 +291,12 @@ test.describe("@mockup Ward Flow command view", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await page.goto("/mockups/ward-flow/network", { waitUntil: "domcontentloaded" });
 
+    // Match gotoCoordinator: SSR already shows the tabs, but the first click can be lost
+    // while the shell hydrates and moves the data-mode bar into the header.
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
+    await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+
     // ⚠️ **RETARGETED.** `/network` now opens on a two-tab split ("Network overview" /
     // "Placement workspace", `ward-management-network.tsx`'s `NetworkView`, default `"overview"`)
     // that did not exist when this journey was written. Everything this test drives — the
@@ -299,6 +305,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // tab is a different, summary screen entirely. Selecting the tab is therefore a real, necessary
     // step now, not an incidental one.
     await page.getByRole("tab", { name: "Placement workspace" }).click();
+    await expect(page.getByRole("tab", { name: "Placement workspace" })).toHaveAttribute("aria-selected", "true");
 
     const network = page.getByTestId("ward-network-view");
     await expect(network).toBeVisible({ timeout: 15_000 });
