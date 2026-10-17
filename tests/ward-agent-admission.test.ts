@@ -36,7 +36,7 @@ if (process.platform === "win32") {
 
 function fixture(t: Cleanup) {
   const dir = mkdtempSync(path.join(tmpdir(), "ward-admission-"));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   const env: NodeJS.ProcessEnv = { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: devNull };
   for (const key of Object.keys(env)) {
     if (key.startsWith("GIT_") && !["GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL"].includes(key)) delete env[key];
