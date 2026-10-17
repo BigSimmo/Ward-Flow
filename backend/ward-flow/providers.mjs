@@ -47,7 +47,7 @@ export async function createBackend(config, dependencies = {}) {
       }
       const [workspaceModule, engine] = await Promise.all([
         database.createWorkspaceStore
-          ? Promise.resolve({ createWorkspaceStore: database.createWorkspaceStore })
+          ? Promise.resolve(database) // keep the adapter as the method receiver (`this`)
           : (dependencies.workspace ?? (() => import("./postgres.mjs")))(),
         (dependencies.engine ?? (() => import(ENGINE_MODULE)))(),
       ]);

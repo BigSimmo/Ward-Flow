@@ -294,3 +294,23 @@ test("a database adapter may supply its own createWorkspaceStore without loading
   assert.equal(backend.sharedStore, customStore);
   assert.equal(backend.pool, null);
 });
+
+test("a stateful database adapter keeps itself as the createWorkspaceStore receiver", async () => {
+  const config = readConfig(environment("postgres", "supabase"));
+  const customStore = { viewer: bootstrapViewer, ready: async () => {} };
+  const adapter = {
+    store: customStore,
+    createWorkspaceStore() {
+      return this.store;
+    },
+  };
+  const backend = await createBackend(config, {
+    database: { postgres: async () => adapter },
+    auth: { supabase: async () => async () => async () => config.coordinatorIds[0] },
+    workspace: async () => {
+      throw new Error("postgres.mjs should not be loaded when adapter supplies createWorkspaceStore");
+    },
+    engine: async () => ({ fixture: "custom-engine" }),
+  });
+  assert.equal(backend.sharedStore, customStore);
+});

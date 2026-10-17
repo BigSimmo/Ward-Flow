@@ -93,8 +93,13 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  // Latest factory, read when the session boots. Updated in an effect (not during render) and
+  // declared before the boot effect so it is current when that effect runs; the boot effect keys
+  // on `enabled` only, so an inline factory with a new identity each render does not reconnect.
   const createAuthRef = useRef(createAuth);
-  createAuthRef.current = createAuth;
+  useEffect(() => {
+    createAuthRef.current = createAuth;
+  }, [createAuth]);
   const [previousEnabled, setPreviousEnabled] = useState(enabled);
   if (previousEnabled !== enabled) {
     // Reset before rendering children when the selected provider changes.
