@@ -1439,26 +1439,21 @@ button.registerRow:hover {
 }
 
 /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
-   wraps, when the screen is too narrow for every department (desktop and both tablets). A fade at
-   the right edge says there is more. */
+   wraps, when the screen is too narrow for every department (desktop and both tablets). The
+   scrollbar exposes overflow without obscuring the last tile or its focus indicator. */
 @media (min-width: 48.0625rem) {
   .edGrid {
     grid-auto-flow: column;
     grid-template-columns: none;
-    grid-auto-columns: minmax(6.5rem, 1fr);
+    grid-auto-columns: minmax(9rem, 1fr);
     overflow-x: auto;
     scrollbar-width: thin;
+    padding-inline: var(--wf-s-1);
+    scroll-padding-inline: var(--wf-s-1);
   }
 
   .edCell:last-child {
     border-right: 0;
-  }
-}
-
-@media (min-width: 48.0625rem) and (max-width: 75rem) {
-  .edGrid {
-    grid-auto-columns: minmax(8.5rem, 1fr);
-    mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 2.5rem), transparent);
   }
 }
 

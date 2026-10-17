@@ -47,6 +47,38 @@ describe("design audit: parsed Ward font inventory", () => {
     expect(result.unresolved).toEqual([]);
   });
 
+  it.each(["print", "only print", "print and (color)", "print, only print"])(
+    "does not let %s tokens hide a screen fallback in any token layer",
+    (media) => {
+      const screen = ".new { font: 400 var(--print-only, 11px) / 1 sans-serif; }";
+      const print = `@media ${media} { .new { --print-only: 12px; font-size: 10px; } }`;
+      const cases: [string, string[], string[]][] = [
+        [screen + print, [], []],
+        [screen, [print], []],
+        [screen, [], [print]],
+      ];
+      for (const [local, global, shell] of cases) {
+        const result = inventoryFontSizes(
+          new Map([["src/components/ward-management/fixture.module.css", local]]),
+          global,
+          shell,
+        );
+        expect(result.declarations).toBe(1);
+        expect(result.findings.map((item) => item.sizePx)).toEqual([11]);
+        expect(result.unresolved).toEqual([]);
+      }
+    },
+  );
+
+  it("retains tokens and sizes from media queries that can apply to a screen", () => {
+    const result = scan(`
+      @media screen, print { .mixed { --small-screen: 11px; font-size: var(--small-screen); } }
+      @media not print { .screen { font-size: 10px; } }
+    `);
+    expect(result.declarations).toBe(2);
+    expect(result.findings.map((item) => item.sizePx)).toEqual([11, 10]);
+  });
+
   it("reports relative/complex sizes and cycles as unresolved, without hanging or claiming a floor pass", () => {
     const result = scan(`
       .relative { font-size: .8em; }
@@ -156,6 +188,7 @@ describe("design audit: combined font guard admission", () => {
       ".new { font-size: 11px; }",
       ".new { font: 500 .625rem / 20px sans-serif; }",
       ".new { --tiny: 11px; --label: var(--tiny); font-size: var(--label); }",
+      ".new { font-size: var(--print-only, 11px); } @media print { .new { --print-only: 12px; } }",
     ]) {
       write("src/components/ward-management/fixture-0.module.css", rule);
       const result = run();

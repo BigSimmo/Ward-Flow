@@ -86,9 +86,23 @@ function shorthandSize(value, tokens) {
   return undefined;
 }
 
+function isPrintOnly(node) {
+  let parent = node.parent;
+  while (parent) {
+    if (parent.type === "atrule" && parent.name.toLowerCase() === "media") {
+      const queries = splitValue(parent.params.replace(/\/\*[\s\S]*?\*\//g, " "), /,/);
+      if (queries.length && queries.every((query) => /^(?:only\s+)?print(?:\s|$)/i.test(query.trim()))) return true;
+    }
+    parent = parent.parent;
+  }
+  return false;
+}
+
 function tokensIn(root) {
   const tokens = new Map();
-  root.walkDecls(/^--/, (decl) => tokens.set(decl.prop, [...(tokens.get(decl.prop) ?? []), decl.value]));
+  root.walkDecls(/^--/, (decl) => {
+    if (!isPrintOnly(decl)) tokens.set(decl.prop, [...(tokens.get(decl.prop) ?? []), decl.value]);
+  });
   return tokens;
 }
 
@@ -112,11 +126,7 @@ export function inventoryFontSizes(stylesheets, tokenStylesheets = [], shellToke
     const inWardShell = /^src\/(?:components\/ward-management\/|app\/mockups\/ward-flow\/)/.test(file);
     const tokens = new Map([...(inWardShell ? shellTokens : inherited), ...tokensIn(root)]);
     root.walkDecls(/^(font-size|font)$/i, (decl) => {
-      let parent = decl.parent;
-      while (parent) {
-        if (parent.type === "atrule" && parent.name === "media" && /^print(?:\s|$)/.test(parent.params)) return;
-        parent = parent.parent;
-      }
+      if (isPrintOnly(decl)) return;
       declarations += 1;
       // Zero-size icon/text suppression is not a visible sub-floor label.
       if (decl.prop === "font-size" && /^0(?:px|rem)?$/.test(decl.value)) return;
