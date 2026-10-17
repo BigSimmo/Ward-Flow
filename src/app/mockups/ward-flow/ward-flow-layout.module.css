@@ -178,7 +178,11 @@
 :global(html[data-reduced-motion]) .shellRow,
 :global(html[data-reduced-motion]) .shellRow *,
 :global(html[data-reduced-motion]) .shellRow *::before,
-:global(html[data-reduced-motion]) .shellRow *::after {
+:global(html[data-reduced-motion]) .shellRow *::after,
+:global(html[data-reduced-motion]):has(.shellRow) :global([data-overlay-layer]),
+:global(html[data-reduced-motion]):has(.shellRow) :global([data-overlay-layer]) *,
+:global(html[data-reduced-motion]):has(.shellRow) :global([data-overlay-layer]) *::before,
+:global(html[data-reduced-motion]):has(.shellRow) :global([data-overlay-layer]) *::after {
   animation: none !important;
   transition: none !important;
   scroll-behavior: auto !important;

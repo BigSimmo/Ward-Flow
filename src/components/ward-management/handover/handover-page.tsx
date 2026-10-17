@@ -1523,7 +1523,7 @@ export function HandoverPage() {
       ) : null}
       <WardPrototypeFooter
         testId="ward-handover-governance"
-        note="Synthetic data · Not a medical device · Printed copies carry the time they were taken"
+        note="Synthetic data · Not approved for clinical use · Printed copies carry the time they were taken"
       />
     </main>
   );

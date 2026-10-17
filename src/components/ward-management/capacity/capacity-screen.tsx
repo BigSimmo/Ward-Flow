@@ -1062,7 +1062,10 @@ export function CapacityScreen() {
             }
           />
         ) : null}
-        <WardPrototypeFooter testId="ward-capacity-governance" note="Statewide bed capacity · Not a medical device" />
+        <WardPrototypeFooter
+          testId="ward-capacity-governance"
+          note="Statewide bed capacity · Not approved for clinical use"
+        />
       </main>
     </div>
   );

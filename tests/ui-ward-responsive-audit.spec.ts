@@ -43,6 +43,39 @@ async function assertKeyboardTableScroll(page: Page) {
 test.describe("@mockup Ward phone scrolling", () => {
   test.use({ colorScheme: "light", hasTouch: true });
 
+  test("manual Reduce motion includes the portaled phone menu and preserves normal and OS motion choices", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/mockups/ward-flow", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => localStorage.setItem("ward-flow-reduced-motion", "true"));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).toHaveAttribute("data-reduced-motion", "");
+    const trigger = page.getByTestId("ward-bar-phone-menu");
+    await trigger.click();
+    const menu = page.getByTestId("ward-phone-menu");
+    await expect(menu).toBeVisible();
+    expect(await menu.evaluate((element) => !!element.closest("[data-overlay-layer]"))).toBe(true);
+    await expect.poll(() => menu.evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+    expect(await menu.evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
+    await page.keyboard.press("Escape");
+    await expect(menu).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+
+    await page.evaluate(() => localStorage.setItem("ward-flow-reduced-motion", "false"));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).not.toHaveAttribute("data-reduced-motion");
+    await trigger.click();
+    await expect(menu).toBeVisible();
+    expect(await menu.evaluate((element) => getComputedStyle(element).animationName)).not.toBe("none");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect.poll(() => menu.evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+    await page.keyboard.press("Escape");
+    await expect(menu).not.toBeVisible();
+  });
+
   test("phone header keeps its layout height while scrolling with motion enabled", async ({ page }) => {
     test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: "no-preference" });

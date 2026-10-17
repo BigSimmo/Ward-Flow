@@ -567,7 +567,7 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
-        Synthetic prototype, not a medical device
+        Synthetic prototype, not approved for clinical use
       </p>
     </section>
   );

@@ -1206,7 +1206,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
         )}
         <WardPrototypeFooter
           testId="community-screen-governance"
-          note="Community team directory · Not a medical device"
+          note="Community team directory · Not approved for clinical use"
         />
       </main>
     </div>

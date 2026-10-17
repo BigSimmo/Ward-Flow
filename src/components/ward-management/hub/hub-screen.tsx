@@ -1448,7 +1448,7 @@ export function HubScreen() {
         </div>
         <WardPrototypeFooter
           testId="ward-hub-governance"
-          note="Real hospital network; invented bed figures and community team names · Not a medical device"
+          note="Real hospital network; invented bed figures and community team names · Not approved for clinical use"
         />
         {isPhone ? (
           <PhoneSheet

@@ -527,7 +527,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         const info = patientOf(entry);
         return `${info.displayName} (${info.umrn}), ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
       }),
-      "Synthetic demonstration figures. Not a medical device.",
+      "Synthetic demonstration figures. Not approved for clinical use.",
     ];
     return lines.join("\n");
   };
@@ -693,7 +693,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           {counts}
           <WardPrototypeFooter
             testId="ward-out-of-area-governance"
-            note="People in a bed away from home · Synthetic demonstration figures · Not a medical device"
+            note="People in a bed away from home · Synthetic demonstration figures · Not approved for clinical use"
           />
         </main>
       </div>
@@ -1133,7 +1133,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
         <WardPrototypeFooter
           testId="ward-out-of-area-governance"
-          note="People in a bed away from home · Synthetic demonstration figures · Not a medical device"
+          note="People in a bed away from home · Synthetic demonstration figures · Not approved for clinical use"
         />
       </main>
     </div>
