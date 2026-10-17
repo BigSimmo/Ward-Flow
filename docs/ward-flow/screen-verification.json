@@ -1443,5 +1443,128 @@
       "clinical safety approval",
       "Full unit suite on latest integrated main: prior 10881-test pass was source3d01bf9, not latest8682118"
     ]
+  },
+  "_designAuditResolutionEvidence": {
+    "date": "2026-10-17",
+    "who": "Codex coordinator, with independent standards and specification source reviews",
+    "acceptedBaselineRevision": "2c37e5ae171514d5b16513512b4a52b32ab9d5d0",
+    "checkedRevision": "a7e60058fd60b5cb68c78586f5095d33658329c4",
+    "dirtyInputs": [],
+    "scope": "Task ward-flow-design-audit-20261017: targeted acceptance of authorised changes, not renewal of every historical screen verdict or literal matching to obsolete drawings.",
+    "browser": {
+      "family": "Chromium",
+      "version": "151.0.7922.173",
+      "driver": "Playwright 1.64.1"
+    },
+    "runtime": "Local Next.js preview from npm run ensure; /api/local-project-id verified projectId clinical-kb:6640ca2df53e. Browser contexts blocked non-loopback requests. Production journey evidence recorded separately.",
+    "widths": [320, 390, 720, 820, 1440],
+    "heights": [400, 450, 600, 700, 844, 900, 1180],
+    "themes": ["light", "dark", "glare", "forced-colours emulation"],
+    "verdict": "Scoped browser checks passed after diagnosed layout fixes; intentional retained features are documented in the audit resolution plan.",
+    "finalCommittedChecks": [
+      {
+        "case": "Referral drawer and not-found links",
+        "width": 1440,
+        "theme": "light",
+        "evidence": "interactions.json",
+        "result": "Drawer focus enters; Escape closes and restores trigger focus; actual urgency helper uses normal wrapping and fits its scroll dimensions. Not-found exit is underlined, accented and has a 48px target."
+      },
+      {
+        "case": "Domain page canvas follow-up",
+        "width": 1440,
+        "theme": "light",
+        "evidence": "final-qa.json",
+        "result": "Delays lip and local ground both rgb(239,246,250). Ward lip follows its own rgb(232,236,240) ground role; its decorative gradient and differing underlying shell paint are retained. No assertion that the gradient equals a flat ancestor colour."
+      },
+      {
+        "case": "Glare under a dark preference",
+        "width": 1440,
+        "theme": "glare",
+        "evidence": "home-accessibility-composited.json",
+        "result": "Shared text roles and status inks resolve to readable light-palette values. Measured representative contrast ratios 6.36 to 20.08 after compositing translucent status tints over their white surface. Global-search listbox filter is none; its parent owns the opaque surface. This is a scoped sample, not a complete contrast audit."
+      },
+      {
+        "case": "Forced colours",
+        "width": 1440,
+        "theme": "forced-colours emulation",
+        "evidence": "home-accessibility-composited.json",
+        "result": "Emulation active, canvas white and text black, no page-level horizontal overflow."
+      },
+      {
+        "case": "Width equivalent to 200% desktop zoom",
+        "width": 720,
+        "height": 450,
+        "theme": "light",
+        "evidence": "home-accessibility-composited.json",
+        "result": "No page-level horizontal overflow; reduced viewport is a reflow proxy, not physical device or browser text-only zoom acceptance."
+      },
+      {
+        "case": "Long-report print",
+        "width": 1440,
+        "theme": "print emulation",
+        "evidence": ["interactions.json", "downtime-redacted.pdf"],
+        "result": "Shell ancestors release height/max-height/overflow constraints. Redacted landscape output spans 9 A4 pages."
+      }
+    ],
+    "editingEvidence": {
+      "checkedRevision": "2c37e5ae171514d5b16513512b4a52b32ab9d5d0",
+      "dirtyInputs": [
+        "Task source edits before commit a7e60058fd60b5cb68c78586f5095d33658329c4; captures were used to diagnose and correct defects. Final source checks and production journeys are separate evidence."
+      ],
+      "cases": [
+        "Home: 1440x900 light/dark/glare, 820x1180 dark preference with glare, 390x844 light, 320x700 light. Lip matches actual Home canvas in each checked mode. Initial narrow development-router error was rerun after compilation settled; narrow-recheck.json has no errors.",
+        "1440x900 light: Delays, Out of area, Ward, ED, On-call, Statistics and Chronology; Board at 1440x900 dark; Legal forms at 820x1180 light. Original Delays/Ward lip mismatches in visual-matrix.json were diagnosed and corrected before the final committed checks.",
+        "1440x400 and 1440x600: last rail link fully visible and focused. At 400px height, expanded and collapsed Appearance, persona and bed-alert pop-outs stay within the viewport; Escape restores focus.",
+        "Long Legal forms page: recovery notice has matching client and scroll heights at desktop and phone; flex-shrink is zero.",
+        "TV: existing full-screen control observed and shortage cell width/height fit their scroll dimensions. Legal desktop calculator observed in the 400px right rail beside the list."
+      ]
+    },
+    "evidenceRoot": "/workspace/scratch/ward-flow-design-audit-task",
+    "evidenceSha256": {
+      "visual-matrix.json": "5f738b032a9dfddc00f0dc96b041e32c77d879f8d67aa727158ffa5a64d70cb0",
+      "narrow-recheck.json": "a23c70c4d3a4efeb1bb66484977a33de2592fcde1a158a13b5cb2700a674acfd",
+      "shell-short-rail.json": "758f45d530a1dad3b3d991a4e74f636d6895912b9f884d119898f571b8f515cc",
+      "shell-recovery-height.json": "a17bb028d5d4e48814be1f7b0d450409b06d08f7d4b2e9711821cc9bf80b8d41",
+      "interactions.json": "53c0719e1547d3fe1a5cb3937e298543fb0b9ff6931ae0a65aafb40776e06545",
+      "final-qa.json": "c9f180eaf8ffe09effb65b641cd4be5ed64037ec43c90e8ec734f4834daca0dc",
+      "home-accessibility-composited.json": "084447cb483e86f9423bba6a5f72f0ae6b095da755e540420e6cba388ecc7e60",
+      "downtime-redacted.pdf": "378c4f8c8120cf122da76d9111f2323146902b5f102f37330151b9253bebd247"
+    },
+    "notes": "Aggregate viewport/theme lists are the explicit cases above, not a full cross-product. final-qa.json includes an obsolete contrast calculation that ignored alpha; home-accessibility-composited.json supersedes those ratios. Initial diagnostic captures are not relabelled as final passes. The supplied audit documents had no attached referenced screenshots. Historical screen records below remain unchanged.",
+    "limits": [
+      "Physical Safari and installed PWA unverified.",
+      "No exhaustive screen-reader, contrast, text-only zoom or every-state acceptance.",
+      "No provider, hosted CI, deployment or clinical acceptance claimed.",
+      "The parsed font-size inventory reports unresolved relative/calculated declarations and is not a browser cascade engine."
+    ],
+    "verificationGates": {
+      "checkedRevision": "7dc2cea9800876294d4d350afe1c17b09dd5756a",
+      "dirtyInputs": [],
+      "applicationSource": "Identical to a7e60058fd60b5cb68c78586f5095d33658329c4; intervening commit changes tests only.",
+      "unit": {
+        "command": "npm run check:ward-expected-reds",
+        "files": 1205,
+        "collectedAssertions": 13394,
+        "executedAssertions": 13393,
+        "failing": 0,
+        "unexecutedAssertions": 1,
+        "result": "passed",
+        "receipt": "/tmp/ward-full-gate/6640ca2df53e/7dc2cea9800876294d4d350afe1c17b09dd5756a/receipt-1792262160844-30430.json",
+        "logSha256": "d3a117f3f0d5972775ff5cfec59d11ac425629b08c7318854dcf73beb51292a5"
+      },
+      "productionJourneys": {
+        "command": "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e:ward-journeys",
+        "result": "passed",
+        "selected": 159,
+        "passed": 158,
+        "failed": 0,
+        "skipped": 1,
+        "retries": 0,
+        "skippedCase": "Pre-existing exploratory question in tests/ui-ward-forced-colors.spec.ts:306; unchanged explicit test.skip, not executed acceptance.",
+        "build": "Isolated Next.js production build and TypeScript phase passed.",
+        "logSha256": "2674331b77a791773879c50d9e754678a4fc8d3db8b709e86a200d573129d29b"
+      },
+      "testCorrections": "First complete full run exposed two CSS scope-parser defects, two nonconforming new test filenames and a baseline calendar-dependent weekly-report fixture. Scope parsers were corrected without weakening assertions, test files were renamed to the required ward- prefix, and the fixture now pins its calendar anchor with positive long-wait coverage. A second complete full run passed; no application-source change was required."
+    }
   }
 }

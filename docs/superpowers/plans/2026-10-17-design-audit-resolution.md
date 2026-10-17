@@ -19,14 +19,14 @@
 ## Work and acceptance
 
 - [x] Establish isolated branch, base, clean starting state and exact-file Cloud ownership.
-- [x] System: diagnose canvas seams, finish glare opacity/theme bridges, remove dead token declarations and strengthen actual font-size coverage. Preserve already-correct hero geometry, fonts and toast distinctions.
+- [x] System: diagnose canvas seams, finish glare opacity/theme bridges, verify existing token declarations and strengthen actual font-size coverage. Preserve already-correct hero geometry, fonts and toast distinctions.
 - [x] Shell: put recovery feedback in the shell, keep loading feedback unobtrusive, make navigation and disclosure fully reachable, correct printing ancestors and mobile overflow affordances.
 - [x] Home/referrals/timeline: readable service counts, grouped checks, responsive tiles, complete urgency guidance and labels that can grow with their rows. Verify existing TV full-screen and shortage labels.
 - [x] Operational pages: complete update/blocker/location/action text and reachable filters, retaining working inspectors and responsive bed grids.
 - [x] Search/reports/statistics: clear report entry/loading states, responsive legal calculator, complete statistics names and wrapping sign-in/on-call content.
-- [ ] Verify desktop light/dark/glare, phone, tablet, short windows, enlarged text, keyboard/focus, report printing and selected interactions.
-- [ ] Run focused tests, token/size/mobile contracts, typecheck and changed-file lint/format; independently review standards and requirement coverage.
-- [ ] Record every audit item outcome and actual evidence, then commit the verified local result.
+- [x] Verify desktop light/dark/glare, phone, tablet, short windows, reduced-width reflow, keyboard/focus, report printing and selected interactions.
+- [x] Run focused tests, token/size/mobile contracts, typecheck and changed-file lint/format; independently review standards and requirement coverage.
+- [x] Record every audit item outcome and actual evidence, then commit the verified local result.
 
 ## Review focus
 
@@ -92,4 +92,11 @@ The implementation preserves the current accepted app where the original report 
 - A long downtime report releases screen-height ancestor bounds and produces a multi-page landscape PDF.
 - Independent standards and specification reviews found no blocking introduced defect. The parsed font inventory is conservative authoring evidence, not a browser cascade engine or a complete accessibility verdict.
 
-The final committed source is subject to the clean-tree full unit and production browser gates. Their exact commands, immutable head, outputs and any pre-existing/environment blockers are recorded in the task's private checkpoint and final handover; a focused result does not substitute for those gates. Chromium checks do not establish physical Safari, installed PWA or clinical deployment acceptance. No hosted provider, push, PR, merge or deployment is part of this task.
+Final local gates passed on clean test-correction commit `7dc2cea9800876294d4d350afe1c17b09dd5756a`. Its application source is identical to implementation commit `a7e60058fd60b5cb68c78586f5095d33658329c4`.
+
+- `npm run check:ward-expected-reds`: **1,205 files, 13,393 executed tests, zero failures**, with one pre-existing unexecuted assertion (13,394 collected). This was a complete second run after correcting CSS test parsers, required test naming and a calendar-dependent baseline fixture; existing assertions remain intact.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e:ward-journeys`: isolated production build and TypeScript passed; **158 browser journeys passed, one pre-existing exploratory test skipped, zero failures**, with zero retries.
+- Full lint and typecheck, exact-file formatting, token/type/text-size guards, installed-lock parity, diff integrity, CI-scope checks and selected documentation/index checks passed. Changed test files also passed commit-time lint and scoped typecheck.
+- The final shared browser probes covered glare under a dark preference, forced-colour emulation, representative text/status contrast with correct alpha compositing, a reduced-viewport reflow proxy, referral focus/Escape, not-found link affordance and unconstrained long-report printing. Detailed cases, source identities, diagnostic corrections, artifact hashes and limits are recorded in `docs/ward-flow/screen-verification.json` under `_designAuditResolutionEvidence`. Historical screen verdicts were not renewed.
+
+Chromium checks do not establish physical Safari, installed PWA, exhaustive accessibility or clinical deployment acceptance. The font-size inventory remains conservative and explicitly reports unresolved declarations. No hosted provider, push, PR, merge or deployment was performed.
