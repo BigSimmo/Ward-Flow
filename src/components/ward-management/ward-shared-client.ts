@@ -67,6 +67,8 @@ export type WardCommandOutcome = {
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
   undoRecords?: WardFlowState["undoRecords"];
+  /** False when the accepted command cannot safely be followed by an Undo dispatch. */
+  undoRecordsVisible?: boolean;
   generation?: number;
   /** Memory-only fence for an accepted toast; never serialized with workspace state. */
   isCurrent?: () => boolean;
@@ -98,8 +100,9 @@ export class SharedWorkspaceClient {
     status: WardCommandOutcome["status"],
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
+    undoRecordsVisible?: boolean,
   ) {
-    this.completions.get(commandId)?.({ commandId, status, message, undoRecords });
+    this.completions.get(commandId)?.({ commandId, status, message, undoRecords, undoRecordsVisible });
     this.completions.delete(commandId);
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
@@ -446,7 +449,8 @@ export class SharedWorkspaceClient {
               command.commandId,
               response.ok ? "accepted" : "refused",
               response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
-              response.ok ? value.snapshot.payload.state.undoRecords : undefined,
+              response.ok ? [] : undefined,
+              response.ok ? false : undefined,
             );
             // Keep the definitive command result, but read the newly granted view rather than
             // replacing it with the command's earlier scope. Retry retains the same command ID.
@@ -498,7 +502,8 @@ export class SharedWorkspaceClient {
             command.commandId,
             response.ok ? "accepted" : "refused",
             response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
-            response.ok ? value.snapshot.payload.state.undoRecords : undefined,
+            response.ok ? [] : undefined,
+            response.ok ? false : undefined,
           );
           this.publish({
             status: "unavailable",
@@ -601,6 +606,7 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
+    if (this.busy || this.pending) return;
     this.cancelAll("Your working role changed. Review the board before trying again.");
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
@@ -613,6 +619,7 @@ export class SharedWorkspaceClient {
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
+    if (this.busy || this.pending) return;
     this.cancelAll("Your working role changed. Review the board before trying again.");
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
