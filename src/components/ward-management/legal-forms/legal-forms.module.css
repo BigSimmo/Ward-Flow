@@ -513,6 +513,9 @@ button.taskLabel[aria-pressed="true"] {
   gap: var(--wf-s-3);
   position: sticky;
   top: var(--wf-s-3);
+  max-height: var(--ward-rail-height, calc(100dvh - 6rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   min-width: 0;
 }
 
