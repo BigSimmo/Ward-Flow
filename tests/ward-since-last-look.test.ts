@@ -253,3 +253,46 @@ it("scopes ED referrals by explicit address or linked sender department, never a
   const unrelated = scopeLastLookWorld({ ...world, movements: [], referrals: [linked] }, `ed:${edId}`);
   expect(unrelated.referrals).toEqual([]);
 });
+
+it("counts recorded transport arrivals, referral answers and ward releases without new record IDs", () => {
+  const world = seededWorld();
+  const movement = world.movements.find((m) => m.transport)!;
+  const referral = world.referrals.find((r) => r.destinations.some((a) => a.destination.kind === "psychiatric_ward"))!;
+  const unitId = world.units[0]!.id;
+  const release = { ...world.bedReleases[0]!, unitId, state: "confirmed" as const };
+  const addressing = referral.destinations.find((a) => a.destination.kind === "psychiatric_ward")!;
+  const scopedReferral = {
+    ...referral,
+    destinations: [{ ...addressing, destination: { ...addressing.destination, unitId }, state: "queued" as const }],
+  };
+  const beforeWorld = {
+    ...world,
+    movements: [{ ...movement, acceptedUnitId: unitId }],
+    referrals: [scopedReferral],
+    bedReleases: [release],
+  };
+  const scope = `ward:${unitId}`;
+  const before = takeLastLookSnapshot(
+    scopeLastLookWorld(beforeWorld, scope),
+    NOW - 5,
+    DEFAULT_DUE_SOON_THRESHOLDS,
+    scope,
+  );
+  const later = {
+    ...beforeWorld,
+    movements: [{ ...beforeWorld.movements[0]!, transport: { ...movement.transport!, arrivedAt: NOW } }],
+    referrals: [
+      {
+        ...scopedReferral,
+        destinations: [{ ...scopedReferral.destinations[0]!, state: "accepted" as const, decidedAt: NOW }],
+      },
+    ],
+    bedReleases: [{ ...release, state: "discharged" as const, confirmedAt: NOW }],
+  };
+  const after = takeLastLookSnapshot(scopeLastLookWorld(later, scope), NOW, DEFAULT_DUE_SOON_THRESHOLDS, scope);
+  expect(scopedChangesSinceLastLook(before, after, 15).updates).toEqual([
+    { kind: "referral", id: referral.id },
+    { kind: "movement", id: movement.id },
+    { kind: "release", id: release.id },
+  ]);
+});
