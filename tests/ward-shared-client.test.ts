@@ -751,7 +751,7 @@ describe("shared workspace connection", () => {
     await client.refresh();
     const grant = { actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4", role: "ward", scope: {}, expiresInMinutes: 60 };
     await expect(client.grantAccess(grant)).resolves.toBe("step-up");
-    await expect(client.approveAccess("m1")).resolves.toBe("That role is wider than your own.");
+    await expect(client.revokeAccess("m1")).resolves.toBe("That role is wider than your own.");
     await expect(client.revokeAccess("m1")).resolves.toBeNull();
     await expect(client.pushSubscribe({ endpoint: "https://push.example.test/1", keys: {} })).resolves.toBe("role");
     expect(view?.status).toBe("ready");

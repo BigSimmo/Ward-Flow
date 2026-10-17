@@ -2,13 +2,13 @@
  * **WHO MAY GIVE WHOM ACCESS — the access admin's rules (role access plan, later pass, Josh's go
  * 16 Oct 2026).**
  *
- * One set of rules for granting, approving and removing roles, for cover of a second ward or ED,
+ * One set of rules for granting and removing roles, for cover of a second ward or ED,
  * and for a person with no role asking for one. The local demo's Access admin screen and the
  * shared server (`backend/ward-flow/engine.ts`) both read this module, so the screen and the
  * server can never disagree about who may give what.
  *
  * - Nobody grants themselves a role, and nobody grants a role wider than their own place.
- * - A coordinator or access admin role works only once a second person approves it.
+ * - Every granted role works immediately; no second approval is required (D-66).
  * - Every role has an end date. One not used for the set time is switched off by itself.
  * - Cover is given by a coordinator, or by a nurse in charge or ED clinician for their own ward
  *   or ED, to a colleague, for one shift at most. It needs no admin, because an admin is not on at
@@ -24,15 +24,11 @@ import {
   edInScope,
   type PlaceLookup,
   type WardAccess,
-  type WardAccessRole,
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 
 // The few rules every screen's shell needs live apart, so the shell does not load all of these.
 export { PUSH_ROLES, STEP_UP_MINUTES, withCover } from "./ward-access-shell-rules";
-
-/** Roles that wait for a second person's approval before they work (plan decision 6). */
-const SECOND_APPROVER_ROLES: readonly WardAccessRole[] = ["coordinator", "admin"];
 
 /** Cover lasts one shift at most (synthetic). */
 export const COVER_MAX_MINUTES = CLINICAL_VALUES.coverLength.value * 60;
@@ -53,6 +49,11 @@ export type AccessMembership = {
   readonly grantedAt: Instant;
   readonly expiresAt: Instant;
   readonly approvedBy: string | null;
+  /**
+   * Set only when an older shared backend, which still wants a second approval, reports this role
+   * as not yet usable. The website then shows it as inactive instead of falsely "Active".
+   */
+  readonly blockedByOlderServer?: boolean;
   /** The last time the person worked as this role, or `null` if never. */
   readonly lastUsedAt: Instant | null;
   readonly revokedAt: Instant | null;
@@ -70,7 +71,7 @@ export type AccessRequest = {
 /** The place answers these rules need: the access table's lookup plus every ward in the workspace. */
 export type AccessPlaces = PlaceLookup & { readonly unitIds: readonly string[] };
 
-/** Who may grant, approve and remove roles: the access admin, and the statewide coordinator. */
+/** Who may grant and remove roles: the access admin, and the statewide coordinator. */
 export function managesAccess(access: WardAccess): boolean {
   return access.role === "admin" || accessIsWholeNetwork(access);
 }
@@ -119,6 +120,22 @@ export function scopeWithinScope(inner: WardAccessScope, outer: WardAccessScope,
 const NOT_ADMIN = "Granting and removing roles is not part of your role.";
 const WIDER = "That role is wider than your own.";
 
+/**
+ * @deprecated Role grants take effect immediately; the legacy approval action always refuses.
+ * Kept only so older client callers fail explicitly while they migrate away from approval.
+ */
+export function approveRefusal(input: {
+  readonly approver: WardAccess;
+  readonly approverId: string;
+  readonly membership: AccessMembership;
+  readonly places: AccessPlaces;
+}): string | null {
+  const { membership } = input;
+  if (!managesAccess(input.approver)) return NOT_ADMIN;
+  if (!scopeWithinScope(membership.access.scope, input.approver.scope, input.places)) return WIDER;
+  return "That role is not waiting for approval.";
+}
+
 /** Why this grant may not be made, or `null`. */
 export function grantRefusal(input: {
   readonly granter: WardAccess;
@@ -135,28 +152,6 @@ export function grantRefusal(input: {
   if (!(input.expiresAt > input.now)) return "A role needs an end date in the future.";
   if (!scopeNamesPlace(input.access.scope, input.places)) return "That place is not in the workspace.";
   if (!scopeWithinScope(input.access.scope, input.granter.scope, input.places)) return WIDER;
-  return null;
-}
-
-/** Whether the role waits for a second person before it works. */
-function needsSecondApprover(membership: Pick<AccessMembership, "access" | "kind">): boolean {
-  return membership.kind === "role" && SECOND_APPROVER_ROLES.includes(membership.access.role);
-}
-
-/** Why this approval may not be given, or `null`. */
-export function approveRefusal(input: {
-  readonly approver: WardAccess;
-  readonly approverId: string;
-  readonly membership: AccessMembership;
-  readonly places: AccessPlaces;
-}): string | null {
-  const { membership } = input;
-  if (!managesAccess(input.approver)) return NOT_ADMIN;
-  if (!scopeWithinScope(membership.access.scope, input.approver.scope, input.places)) return WIDER;
-  if (!needsSecondApprover(membership) || membership.approvedBy !== null)
-    return "That role is not waiting for approval.";
-  if (membership.grantedBy === input.approverId || membership.actorId === input.approverId)
-    return "A second person approves this role.";
   return null;
 }
 
@@ -181,15 +176,16 @@ export function revokeRefusal(input: {
   return null;
 }
 
-export type MembershipStatus = "waiting" | "active" | "unused" | "ended";
+export type MembershipStatus = "active" | "inactive" | "unused" | "ended";
 
 /**
- * Where a role stands now. "Unused" is a role not worked as for the set time: it is switched off
+ * Where a role stands now. "Inactive" is a role an older shared backend still holds back for an
+ * approval it no longer gets (only seen while the website is updated before the backend). "Unused" is a role not worked as for the set time: it is switched off
  * by itself, and the review list says so. Cover is too short ever to go unused.
  */
 export function membershipStatus(membership: AccessMembership, now: Instant): MembershipStatus {
   if (membership.revokedAt !== null || membership.expiresAt <= now) return "ended";
-  if (needsSecondApprover(membership) && membership.approvedBy === null) return "waiting";
+  if (membership.blockedByOlderServer) return "inactive";
   if (membership.kind === "role" && (membership.lastUsedAt ?? membership.grantedAt) <= now - ACCESS_UNUSED_MINUTES)
     return "unused";
   return "active";
