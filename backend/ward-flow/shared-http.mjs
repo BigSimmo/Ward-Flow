@@ -154,6 +154,18 @@ export function createSharedHandler({
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
         : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
+    // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). Supabase tokens
+    // carry the sign-in time, which a refresh keeps, so the person signs in again with a password.
+    const limitMs = (Number.isFinite(store.sessionLimitMinutes) ? store.sessionLimitMinutes : Infinity) * 60_000;
+    if (Number.isFinite(session.signedInAt) && session.signedInAt < Date.now() - limitMs)
+      return reply(
+        401,
+        {
+          code: "session-limit",
+          error: `Signed out after ${store.sessionLimitMinutes / 60} hours. Sign in again to carry on.`,
+        },
+        "session_limit",
+      );
     const workingAs = request.headers.get(WORKING_AS)?.toLowerCase() ?? null;
     if (workingAs !== null && workingAs !== "bootstrap" && !UUID.test(workingAs))
       return reply(400, { error: "Working as names one of this account's roles" });

@@ -48,6 +48,8 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
     },
     // Granting access and breaking glass need a recent sign-in (feature 9).
     stepUpMinutes: 10,
+    // A sign-in lasts at most 12 hours (ISM-0428).
+    sessionLimitMinutes: 720,
     ...overrides,
   };
   const handler = createHandler({
@@ -56,8 +58,10 @@ function setup(actor = coordinator, dataMode = "prototype", overrides = {}) {
     /** @param {string} token @param {{ session?: { signedInAt?: number } }} [context] */
     authenticate: async (token, { session } = {}) => {
       if (!token) throw new Error("Unauthorized");
-      // "Bearer stale" stands for a sign-in older than the step-up window.
-      if (session) session.signedInAt = token === "Bearer stale" ? Date.now() - 11 * 60_000 : Date.now();
+      // "Bearer stale" stands for a sign-in older than the step-up window, "Bearer old" for one
+      // older than the session limit.
+      const age = { "Bearer stale": 11 * 60_000, "Bearer old": 12 * 60 * 60_000 + 60_000 }[token] ?? 0;
+      if (session) session.signedInAt = Date.now() - age;
       return actor;
     },
     log: (event) => logs.push(event),
@@ -479,6 +483,26 @@ test("the powerful steps need a recent sign-in, and say so with their own code",
     grantAccess: async () => ({ status: 200, body: {} }),
   });
   assert.equal((await strict.handler(request("/access/grant", grant, "Bearer stale"))).status, 401);
+});
+
+test("a sign-in older than the session limit is refused on every route, reads included", async () => {
+  const { calls, handler } = setup();
+  for (const [path, data] of /** @type {Array<[string, unknown]>} */ ([
+    ["", undefined],
+    ["/commands", body],
+  ])) {
+    const response = await handler(request(path, data, "Bearer old"));
+    assert.equal(response.status, 401, path || "/");
+    const body = await response.json();
+    assert.equal(body.code, "session-limit");
+    assert.match(body.error, /12 hours/);
+  }
+  assert.deepEqual(calls, []);
+  // A sign-in just inside the limit still reads the board.
+  assert.equal((await handler(request("", undefined, "Bearer stale"))).status, 200);
+  // A store that names no limit keeps the old behaviour.
+  const open = setup(coordinator, "prototype", { sessionLimitMinutes: undefined });
+  assert.equal((await open.handler(request("", undefined, "Bearer old"))).status, 200);
 });
 
 test("cover, requests and answers check their fields; asking for access needs no role", async () => {

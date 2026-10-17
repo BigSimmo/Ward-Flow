@@ -313,6 +313,9 @@ export class SharedWorkspaceClient {
     if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
     // A role refusal on an access step comes back as its reason, not as a sign-out.
     if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
+    // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
+    if (response.status === 401 && value?.code === "session-limit")
+      throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
     if (response.status === 401 || response.status === 403)
       throw denied("Sign in with an account assigned a Ward Flow role.");
     // The server holds more than one role for this account and needs to be told which.
