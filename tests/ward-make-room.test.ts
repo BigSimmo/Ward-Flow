@@ -8,19 +8,30 @@ import { makeRoomPreview } from "../src/components/ward-management/capacity/make
 import { eligibility, mixSexOf } from "../src/components/ward-management/ward-eligibility";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { deriveMakeRoomChains, MAKE_ROOM_MAX_MOVES } from "../src/components/ward-management/ward-make-room";
+import type { BedRelease, Movement } from "../src/components/ward-management/ward-model";
 import { boundedBedAvailability } from "../src/components/ward-management/ward-ready-beds";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
-function chainsFor(admissions = seedWardFlowState().admissions, units = seedWardFlowState().units) {
+function chainsFor(
+  admissions = seedWardFlowState().admissions,
+  units = seedWardFlowState().units,
+  extra: { movements?: Movement[]; bedReleases?: BedRelease[] } = {},
+) {
   const state = seedWardFlowState();
   return deriveMakeRoomChains({
     admissions,
     units,
-    movements: state.movements,
+    movements: extra.movements ?? state.movements,
     patients: state.patients,
     referrals: state.referrals,
+    bedReleases: extra.bedReleases,
     now: NOW_ANCHOR,
   });
+}
+
+function previewChains() {
+  const preview = makeRoomPreview(seedWardFlowState());
+  return { preview, chains: chainsFor(preview.admissions, preview.units) };
 }
 
 describe("make room plans", () => {
@@ -157,5 +168,70 @@ describe("make room plans", () => {
         sexMix: { ...into.sexMix, [sex]: sameSex + 1 },
       });
     }
+  });
+
+  it("never routes a plan through a closed ward", () => {
+    const { preview, chains } = previewChains();
+    const used = new Set(chains.flatMap((chain) => [chain.targetUnit.id, ...chain.stepDowns.map((s) => s.toUnit.id)]));
+    const units = preview.units.map((unit) => (used.has(unit.id) ? { ...unit, isClosed: true } : unit));
+    for (const chain of chainsFor(preview.admissions, units)) {
+      for (const ward of [chain.targetUnit, ...chain.stepDowns.map((step) => step.toUnit)]) {
+        expect(used.has(ward.id)).toBe(false);
+      }
+    }
+  });
+
+  it("never starts a plan in a bed still being made ready", () => {
+    const { preview, chains } = previewChains();
+    const first = chains[0]!.stepDowns[0]!.toUnit;
+    const releases = Array.from(
+      { length: boundedBedAvailability(first).available },
+      (_, index) =>
+        ({ id: `prep-${index}`, unitId: first.id, state: "discharged", preparing: true }) as unknown as BedRelease,
+    );
+    const after = chainsFor(preview.admissions, preview.units, { bedReleases: releases });
+    expect(after.some((chain) => chain.stepDowns[0]!.toUnit.id === first.id)).toBe(false);
+  });
+
+  it("leaves out a patient who is already moving somewhere else", () => {
+    const { preview, chains } = previewChains();
+    const moving = chains[0]!.stepDowns[0]!.admission;
+    const state = seedWardFlowState();
+    const movements = [
+      ...state.movements,
+      { ...state.movements[0]!, id: "already-moving", closure: undefined, sourceAdmissionId: moving.id },
+    ] as Movement[];
+    const after = chainsFor(preview.admissions, preview.units, { movements });
+    expect(after.some((chain) => chain.stepDowns.some((step) => step.admission.id === moving.id))).toBe(false);
+  });
+
+  it("offers only the wards a referral already names", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains[0]!;
+    const state = seedWardFlowState();
+    const elsewhere = preview.units.find((unit) => unit.id !== chain.targetUnit.id)!;
+    const movements = state.movements.map((movement) =>
+      movement.id === chain.movement.id ? { ...movement, referredUnitIds: [elsewhere.id] } : movement,
+    );
+    const after = chainsFor(preview.admissions, preview.units, { movements });
+    for (const each of after.filter((plan) => plan.movement.id === chain.movement.id)) {
+      expect(each.targetUnit.id).toBe(elsewhere.id);
+    }
+  });
+
+  it("never counts on a freed bed being secure on a ward with open beds too", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains.find(
+      (plan) => plan.movement.security === "Secure" && plan.targetUnit.lockedBeds >= plan.targetUnit.beds,
+    )!;
+    expect(chain).toBeDefined();
+    // The same ward with one open bed, and no secure bed free: the bed a step down frees may be the open one.
+    const units = preview.units.map((unit) =>
+      unit.id === chain.targetUnit.id ? { ...unit, lockedBeds: unit.beds - 1, allocatableLocked: 0 } : unit,
+    );
+    const after = chainsFor(preview.admissions, units);
+    expect(
+      after.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
+    ).toBe(false);
   });
 });

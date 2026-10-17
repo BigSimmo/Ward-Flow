@@ -12,7 +12,7 @@ const PREVIEW_FULL_WARDS = ["rph-adult-secure", "bty-adult-secure", "arm-adult-o
 const PREVIEW_WOMEN_ONLY_WARD = "sjgm-adult-open";
 /** Ward, and the recorded sex of the stay to mark there (undefined means the first stay). */
 const PREVIEW_CANDIDATES: readonly (readonly [string, string | undefined])[] = [
-  ["bty-adult-secure", "Male"],
+  ["rph-adult-secure", "Male"],
   ["arm-adult-open", "Female"],
   ["rgh-adult-secure", undefined],
 ];

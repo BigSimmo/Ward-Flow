@@ -7,7 +7,7 @@ import { Avatar, Badge, Icon, SrOnly, cx, durMinutes } from "@/components/wf";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { GateResult } from "@/components/ward-management/ward-eligibility";
+import type { EligibilityGate, GateResult } from "@/components/ward-management/ward-eligibility";
 import { deriveMakeRoomChains, type MakeRoomChain } from "@/components/ward-management/ward-make-room";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -18,15 +18,20 @@ import { WardPanel } from "@/components/ward-management/ward-panel";
 import { makeRoomPreview } from "./make-room-preview";
 import styles from "./make-room-panel.module.css";
 
-/** Plain names for the checks a move passes, in the order a clinician reads them. */
-const CHECK_LABELS: Partial<Record<GateResult["gate"], string>> = {
+/** Plain names for every check a move can pass, so the count shown is the count run. */
+const CHECK_LABELS: Record<EligibilityGate, string> = {
   gender_designation: "Sex",
+  sex_mix: "Sex mix",
   authorisation: "Legal",
+  legal_status: "Legal status",
   cohort: "Age group",
+  age: "Age",
   security: "Security",
   acuity: "Acuity",
   specialling: "Specialling",
   forensic: "Forensic",
+  prior_decline: "Not declined before",
+  allocatable_bed: "Bed free",
   capacity_freshness: "Bed count current",
 };
 
@@ -77,7 +82,7 @@ function preparationNote(pending: number) {
 }
 
 function Checks({ checks }: { checks: GateResult[] }) {
-  const names = checks.flatMap((check) => CHECK_LABELS[check.gate] ?? []);
+  const names = checks.map((check) => CHECK_LABELS[check.gate]);
   return (
     <span className={styles.allChecks} title={names.join(", ")}>
       <Icon icon={Check} size={14} />
@@ -216,9 +221,10 @@ export function MakeRoomPanel({ now }: { now: Instant }) {
         movements,
         patients,
         referrals,
+        bedReleases,
         now,
       }),
-    [preview, movements, patients, referrals, now],
+    [preview, movements, patients, referrals, bedReleases, now],
   );
 
   return (

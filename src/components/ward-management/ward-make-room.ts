@@ -7,8 +7,10 @@ import {
   type EligibilitySubject,
   type GateResult,
 } from "@/components/ward-management/ward-eligibility";
+import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
-import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -92,11 +94,21 @@ export function deriveMakeRoomChains(input: {
   movements: readonly Movement[];
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
+  /** Beds still being made ready are not Ready for the first move. */
+  bedReleases?: BedRelease[];
   now: Instant;
 }): MakeRoomChain[] {
   const { now } = input;
+  const releases = input.bedReleases ?? [];
+  // A patient already on their way somewhere else is not free to step down.
+  const alreadyMoving = new Set(
+    input.movements.flatMap((movement) =>
+      !movement.closure && movement.sourceAdmissionId ? [movement.sourceAdmissionId] : [],
+    ),
+  );
   const candidates = input.admissions.filter(
-    (admission) => admission.stepDownCandidate === true && admission.state === "occupied",
+    (admission) =>
+      admission.stepDownCandidate === true && admission.state === "occupied" && !alreadyMoving.has(admission.id),
   );
   const subjectOf = new Map<string, { subject: EligibilitySubject; fromUnit: Unit }>();
   for (const admission of candidates) {
@@ -118,7 +130,8 @@ export function deriveMakeRoomChains(input: {
   // twice and a plan never counts on company that an earlier plan has moved away.
   const projected = new Map<string, Unit>();
   const current = (unit: Unit): Unit => projected.get(unit.id) ?? unit;
-  const units = (): Unit[] => input.units.map(current);
+  // A closed ward takes nobody, so it is never a target or a stop in a chain.
+  const units = (): Unit[] => input.units.filter((unit) => !unit.isClosed).map(current);
 
   /** One patient arriving on (1) or leaving (-1) `unit` in the projection. */
   function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1): void {
@@ -131,12 +144,24 @@ export function deriveMakeRoomChains(input: {
     });
   }
 
+  /**
+   * A bed `subject` could take now: open and made ready (not still being cleaned), of the kind they
+   * need, and every check passing. A secure bed is asked for by count here, as at the pull.
+   */
   function fitsWithBed(subject: EligibilitySubject, unit: Unit): boolean {
-    return boundedBedAvailability(unit).available > 0 && eligibility(subject, unit, now).eligible;
+    if (openBedsNow(unit, releases) < 1) return false;
+    if (subject.security === "Secure" && lockedBedsFree(unit) < 1) return false;
+    return eligibility(subject, unit, now).eligible;
   }
 
-  /** The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one fails. */
+  /**
+   * The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one
+   * fails. Which kind of bed `leaving` frees is not recorded, so a patient who needs a secure bed is
+   * only offered a ward where every bed is secure, or one with a secure bed already free.
+   */
   function checksIntoVacated(subject: EligibilitySubject, unit: Unit, leaving: Admission): GateResult[] | undefined {
+    const freesSecureBed = unit.lockedBeds >= unit.beds || lockedBedsFree(unit) > 0;
+    if (subject.security === "Secure" && !freesSecureBed) return undefined;
     const verdict = eligibility(subject, vacated(unit, leaving), now);
     return verdict.eligible ? verdict.gates : undefined;
   }
@@ -194,7 +219,11 @@ export function deriveMakeRoomChains(input: {
     // Same health service only. A referral that already has a ward there with a Ready bed needs no
     // room made.
     const service = movementService(movement);
-    const local = units().filter((unit) => serviceOf(unit) === service);
+    // When the referral already names wards, only those are offered.
+    const referred = movement.referredUnitIds;
+    const local = units().filter(
+      (unit) => serviceOf(unit) === service && (referred.length === 0 || referred.includes(unit.id)),
+    );
     if (local.some((unit) => fitsWithBed(movement, unit))) continue;
     for (const targetUnit of local) {
       if (!isFull(targetUnit) || !fitsExceptForBed(movement, targetUnit, now)) continue;
