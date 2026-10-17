@@ -8,7 +8,7 @@
 // (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so
 // you stop and tell the coordinator before editing.
 import { execFile, execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -35,13 +35,24 @@ const SIGN_OUT =
       "sign-out.md",
     )
     .replace(/\\/g, "/");
-function readSignOutText() {
-  return existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+function readSignOutText({ reportMissing = false } = {}) {
+  try {
+    return readFileSync(SIGN_OUT, "utf8");
+  } catch (error) {
+    if (reportMissing && error.code === "ENOENT") {
+      console.log(`sign-out-check: sign-out log missing at ${SIGN_OUT}; stale entries not checked.`);
+      process.exit(0);
+    }
+    console.error(
+      `sign-out-check: sign-out log unavailable at ${SIGN_OUT} (${error.code ?? "read failed"}); ownership cannot be established.`,
+    );
+    process.exit(1);
+  }
 }
 // --stale: list Active sign-out lines whose branches are all folded into the line or gone, so the
 // steward can clear them after each fold. Lists only; it never edits the file.
 if (process.argv[2] === "--stale") {
-  const text = readSignOutText();
+  const text = readSignOutText({ reportMissing: true });
   const section = scopedActiveSignOutLines(text, root);
   const gitLineTip = execFileSync("git", ["rev-parse", LINE], { encoding: "utf8" }).trim();
   const state = (branch) => {
@@ -81,7 +92,7 @@ if (process.argv[2] === "--stale") {
   process.exit(0);
 }
 
-const files = process.argv.slice(2).map((file) => file.replace(/\\/g, "/"));
+const files = process.argv.slice(2).map((file) => file.replace(/\\/g, "/").replace(/^\.\//, ""));
 if (files.length === 0) {
   console.log("Usage: sign-out-check.mjs <file> [<file> ...] | --stale");
   process.exit(2);

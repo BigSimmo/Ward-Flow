@@ -119,13 +119,11 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
   if (write) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
-    const { unsignedWardFiles, signOutConflicts, signOutLogOptional } = await import("./pre-commit-checks.mjs");
+    const { unsignedWardFiles, signOutConflicts } = await import("./pre-commit-checks.mjs");
     const log = wardSignOutFile();
     if (!existsSync(log)) {
-      // Same rule as the pre-commit guard: only an unnamed default log off Windows may be absent.
-      if (!signOutLogOptional())
-        throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
-      console.warn(`Sign-out log not found at ${log}; formatting the named files without an ownership check.`);
+      // Same fail-closed admission as the commit hook on every host.
+      throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
     } else {
       const claims = readFileSync(log, "utf8");
       const branch = git(root, ["branch", "--show-current"]).trim();

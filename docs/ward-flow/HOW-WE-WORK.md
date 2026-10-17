@@ -38,7 +38,7 @@ components, Next.js routes and CSS Modules. Reuse the shared synthetic records, 
 reducer so approval leads to direct integration, rather than an HTML-to-React rewrite. Keep
 preview controls separate; shared HTML previews bundle the same React components. Honour an
 explicit request for another format. Verify only the affected behaviour and reuse valid evidence
-on unchanged code, following the React mockup rule in `AGENTS.md`.
+on unchanged code, following the [UI workflow](../agents/building-ui.md#building-ui) linked from `AGENTS.md`.
 
 ## 2. Branches and worktrees
 
@@ -50,15 +50,20 @@ on unchanged code, following the React mockup rule in `AGENTS.md`.
 - **Every editing thread gets its own worktree and branch**, based on the verified Ward Flow
   `main` tip, so threads never share a working tree. Check the branch, status and base before editing.
   Read-only threads (reviews, questions, reports) need no worktree.
-- **Sign out files before editing** in `D:/Repos/ward-flow-logs/sign-out.md` (outside git,
-  one copy for every tool; enforced by default in `.githooks/pre-commit`). An overlap needs the other owner's release or Josh's explicit scoped
+- **Sign out files before editing** in the actual coordinating group's append-only log, outside Git
+  and shared by all writers in that boundary. `WARD_SIGNOUT_FILE` selects its exact path;
+  otherwise `WARD_FLOW_LOGS/sign-out.md`, then the Windows default
+  `D:/Repos/ward-flow-logs/sign-out.md` or non-Windows `~/ward-flow-logs/sign-out.md` applies.
+  Missing/unreadable logs fail closed on every host. Isolated Cloud work follows
+  [Cloud ownership](../agents/cloud-ownership.md): establish actual checkout/file ownership and
+  record the environment boundary, unavailable other-host state and checkpoint before editing.
+  A local log never proves desktop/global clearance. An overlap needs the other owner's release or Josh's explicit scoped
   takeover approval. For a takeover, record each exact file as
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
   append-only log. Follow [AGENTS.md](../../AGENTS.md) for the single-user interactive exception:
-  `SKIP_SIGNOUT_GUARD=1` is an explicit per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`), never a hook default and never used for concurrent multi-agent work. On another machine, `WARD_SIGNOUT_FILE`
-  selects that environment's shared local log; never treat an unavailable desktop log as clearance.
+  `SKIP_SIGNOUT_GUARD=1` is an explicit normal per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`), never a hook default and never used for concurrent multi-agent work or bare-publication admission.
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch

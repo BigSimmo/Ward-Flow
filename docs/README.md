@@ -119,7 +119,7 @@ Every remaining tracked document in this category (architecture and design, plus
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
-- [codex-review-protocol.md](archive/codex-review-protocol.md) — historical inherited review protocol; current handling is in the [Reviews section of AGENTS.md](../AGENTS.md#reviews)
+- [codex-review-protocol.md](archive/codex-review-protocol.md) — historical inherited review protocol; current handling is in the [Reviews workflow](agents/git-publication.md#reviews), governed by [AGENTS.md](../AGENTS.md)
 - [branch-cleanup-guide.md](archive/branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)

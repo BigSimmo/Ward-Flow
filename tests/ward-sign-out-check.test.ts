@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,6 +53,52 @@ describe("ward sign-out-check", () => {
     const result = run("--stale");
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("1 stale sign-out line(s)");
+  });
+
+  it("blocks exact-file checks when the configured sign-out log is missing", () => {
+    rmSync(signOut);
+    const result = run("file.ts");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("sign-out log unavailable");
+    expect(result.stdout).not.toContain("no clash");
+    expect(existsSync(signOut)).toBe(false);
+  });
+
+  it("blocks exact-file checks when the configured sign-out log cannot be read as a file", () => {
+    rmSync(signOut);
+    mkdirSync(signOut);
+    const result = run("file.ts");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("sign-out log unavailable");
+    expect(result.stdout).not.toContain("no clash");
+  });
+
+  it("reports a missing sign-out log in stale-only mode without creating it or claiming clearance", () => {
+    rmSync(signOut);
+    const result = run("--stale");
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("sign-out log missing");
+    expect(result.stdout).toContain("stale entries not checked");
+    expect(result.stdout).not.toContain("0 stale sign-out line(s)");
+    expect(existsSync(signOut)).toBe(false);
+  });
+
+  it("still blocks an unreadable sign-out log in stale-only mode", () => {
+    rmSync(signOut);
+    mkdirSync(signOut);
+    const result = run("--stale");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("sign-out log unavailable");
+    expect(result.stdout).not.toContain("stale entries not checked");
+  });
+
+  it("normalises an explicit ./ argument before matching an extensionless root claim", () => {
+    writeFileSync(signOut, claim("./LICENSE"));
+    for (const arg of ["./LICENSE", "LICENSE"]) {
+      const result = run(arg);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stdout).toContain("SIGNED OUT  LICENSE  by Fixture owner (ward/other)");
+    }
   });
 
   it("reports no clash on a non-clashing file", () => {
