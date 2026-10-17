@@ -7,7 +7,7 @@ import { useWardRaise } from "../ward-flow-raise";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
-import { isArrivalLate, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
+import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
 import styles from "./movement-workspace-cockpit.module.css";
 
@@ -60,8 +60,11 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     movement.transport && movement.transport.cancelledAt === undefined
       ? "Cancel the active transport booking before releasing the bed."
       : "Choose a release and reopen reason first.";
-  const continuationUnavailable = !form || !written;
-  const continuationReason = "Choose a continuation form and enter the written date and time first.";
+  const unsupportedContinuation = !!form && !isLegalClockFormCode(form);
+  const continuationUnavailable = !form || !written || unsupportedContinuation;
+  const continuationReason = unsupportedContinuation
+    ? `Form ${form} continuation is not recorded in this prototype.`
+    : "Choose a continuation form and enter the written date and time first.";
   const countryExtensionUnavailable = !countryExtensionEligible(movement) || !expiry;
   const countryExtensionReason = !countryExtensionEligible(movement)
     ? "A country extension requires a current Form 1A with a country paper setting."
