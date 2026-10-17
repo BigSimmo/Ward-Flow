@@ -61,4 +61,31 @@ describe("make room plans", () => {
       expect(failing.every((gate) => gate === "allocatable_bed" || gate === "sex_mix")).toBe(true);
     }
   });
+
+  it("never promises one Ready bed to two plans", () => {
+    // Stress the preview: every stay on a full ward is a step down candidate and every ward with
+    // room has exactly one Ready bed, so plans compete for the same beds.
+    const preview = makeRoomPreview(seedWardFlowState());
+    const fullWards = new Set(
+      preview.units.filter((unit) => boundedBedAvailability(unit).available === 0).map((unit) => unit.id),
+    );
+    const admissions = preview.admissions.map((admission) =>
+      fullWards.has(admission.unitId) && admission.state === "occupied"
+        ? { ...admission, stepDownCandidate: true }
+        : admission,
+    );
+    const units = preview.units.map((unit) =>
+      fullWards.has(unit.id)
+        ? unit
+        : { ...unit, allocatable: { ...unit.allocatable, value: 1 }, empty: { ...unit.empty, value: 1 } },
+    );
+    const chains = chainsFor(admissions, units);
+    expect(chains.length).toBeGreaterThan(0);
+    const promised = new Map<string, number>();
+    for (const chain of chains) {
+      const ward = chain.stepDowns[0]!.toUnit;
+      promised.set(ward.id, (promised.get(ward.id) ?? 0) + 1);
+      expect(promised.get(ward.id)).toBeLessThanOrEqual(boundedBedAvailability(ward).available);
+    }
+  });
 });

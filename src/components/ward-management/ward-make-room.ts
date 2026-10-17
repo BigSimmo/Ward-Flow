@@ -55,10 +55,6 @@ function fitsExceptForBed(subject: EligibilitySubject, unit: Unit, now: Instant)
   return eligibility(subject, unit, now).gates.every((gate) => gate.pass || FREE_BED_GATES.includes(gate.gate));
 }
 
-function fitsWithBed(subject: EligibilitySubject, unit: Unit, now: Instant): boolean {
-  return eligibility(subject, unit, now).eligible && boundedBedAvailability(unit).available > 0;
-}
-
 function isFull(unit: Unit): boolean {
   return boundedBedAvailability(unit).available === 0;
 }
@@ -100,6 +96,13 @@ export function deriveMakeRoomChains(input: {
   // Each step down candidate is offered in one chain only, so two suggestions never count on the
   // same patient moving.
   const used = new Set<string>();
+  // Ready beds already promised to an earlier chain, by ward, so one bed is never offered twice.
+  const claimed = new Map<string, number>();
+
+  function fitsWithBed(subject: EligibilitySubject, unit: Unit): boolean {
+    const free = boundedBedAvailability(unit).available - (claimed.get(unit.id) ?? 0);
+    return free > 0 && eligibility(subject, unit, now).eligible;
+  }
 
   /** Step downs that free a bed on `full`, without revisiting a ward already in the chain. */
   function freeABed(full: Unit, visited: Set<string>, movesLeft: number): MakeRoomStepDown[] | undefined {
@@ -113,7 +116,7 @@ export function deriveMakeRoomChains(input: {
     for (const admission of onWard) {
       const entry = subjectOf.get(admission.id);
       if (!entry) continue;
-      const ready = others.find((unit) => fitsWithBed(entry.subject, unit, now));
+      const ready = others.find((unit) => fitsWithBed(entry.subject, unit));
       if (ready) {
         return [{ admission, fromUnit: full, toUnit: ready, checks: suitabilityChecks(entry.subject, ready, now) }];
       }
@@ -145,12 +148,14 @@ export function deriveMakeRoomChains(input: {
     // room made.
     const service = movementService(movement);
     const local = input.units.filter((unit) => serviceOf(unit) === service);
-    if (local.some((unit) => fitsWithBed(movement, unit, now))) continue;
+    if (local.some((unit) => fitsWithBed(movement, unit))) continue;
     for (const targetUnit of local) {
       if (!isFull(targetUnit) || !fitsExceptForBed(movement, targetUnit, now)) continue;
       const stepDowns = freeABed(targetUnit, new Set([targetUnit.id]), MAKE_ROOM_MAX_MOVES - 1);
       if (!stepDowns) continue;
       for (const step of stepDowns) used.add(step.admission.id);
+      const readyWard = stepDowns[0]!.toUnit.id;
+      claimed.set(readyWard, (claimed.get(readyWard) ?? 0) + 1);
       chains.push({ movement, targetUnit, stepDowns, checks: suitabilityChecks(movement, targetUnit, now) });
       break;
     }
