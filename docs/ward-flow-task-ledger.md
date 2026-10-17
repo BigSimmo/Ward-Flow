@@ -353,6 +353,15 @@ when a separate permissions refresh fails or gates the desk; its targeted regres
 the defect before passing. Focused shared-client and real PostgreSQL checks passed. The linked
 receipt records the current open-PR overlap and retains the full-unit/browser verification limits.
 
+Post-merge close-out, 17 October: PR #381 landed as `ed9d59e7`. Final integrated head `d5100884`
+passed [Ward Flow CI #2533](https://github.com/BigSimmo/Ward-Flow/actions/runs/39000996265), including
+all required components, eight unit shards and three browser groups. That hosted result supersedes
+the earlier pending full-unit/browser and integration observations. Read-only Railway records show
+the app, backend and shared frontend deployed from the merged commit; fresh authenticated browser
+acceptance remains open because this execution environment blocks the hosted domain. The
+[same resolution receipt](superpowers/plans/2026-10-16-audit-resolution-results.md#post-merge-close-out-and-remaining-acceptance--17-october-2026)
+records the deployed identities, open PR overlaps and R43's unchanged upstream block and 22 October review.
+
 ## §7.82 — Decided owner questions from PR #383 review threads (17 October 2026)
 
 Two product and privacy questions for Josh came out of the PR #383 review and are carried here instead of as open review threads. No code change has been made for either. Both were decided on 17 October 2026 (D-65) and are kept here only as a record.
