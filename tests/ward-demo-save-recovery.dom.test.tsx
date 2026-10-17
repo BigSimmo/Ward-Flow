@@ -53,8 +53,14 @@ it("shows the retained successful save label alongside the storage warning after
       <Reset />
     </WardFlowProvider>,
   );
+  // The save was stamped 30 minutes before "now" in device wall-clock minutes, so the notice shows
+  // that device time. Derive it from the device offset instead of assuming UTC.
+  const savedWall = (((10 * 60 - 30 - new Date().getTimezoneOffset()) % 1440) + 1440) % 1440;
+  const savedClock = `${Math.floor(savedWall / 60) % 12 || 12}:${String(savedWall % 60).padStart(2, "0")} ${
+    savedWall < 720 ? "am" : "pm"
+  }`;
   expect(screen.getByRole("status").textContent).toMatch(
-    /Demo storage is unavailable.*last successful save from.*9:30/,
+    new RegExp(`Demo storage is unavailable.*last successful save from.*, ${savedClock}`),
   );
   fireEvent.click(screen.getByText("Reset"));
   expect(screen.getByRole("status").textContent).not.toContain("Restored the last successful save");

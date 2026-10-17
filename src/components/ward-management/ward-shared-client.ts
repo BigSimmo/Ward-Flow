@@ -125,6 +125,22 @@ export class SharedWorkspaceClient {
       );
     this.cancelAll("Your working role changed. Review the board before trying again.");
   }
+  /**
+   * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
+   * a definite "refused"; when a different request ended the session while the command was already
+   * sent, the server may have applied it, so say that. An unsent command is cancelled by the caller.
+   */
+  private settleForSessionEnd(body: unknown, message: string, answered: boolean) {
+    const pending = this.pending;
+    if (!pending) return;
+    if (answered && body === pending) this.settle(pending.commandId, "refused", message);
+    else if (this.sentCommandId === pending.commandId)
+      this.settle(
+        pending.commandId,
+        "failed",
+        "The session ended while this action was being saved. It may have been applied. Review the board before trying again.",
+      );
+  }
   private disposed = false;
   private busy = false;
   /** Requests stay with the desk that started them, even while waiting for a token. */
@@ -208,7 +224,7 @@ export class SharedWorkspaceClient {
         error instanceof WardAuthError &&
         error.kind === "session"
       ) {
-        if (this.pending) this.settle(this.pending.commandId, "refused", error.message);
+        this.settleForSessionEnd(body, error.message, false);
         this.cancelAll("The session ended. Sign in and review the board before trying again.");
         this.roleLifetime.abort();
         this.roleLifetime = new AbortController();
@@ -242,7 +258,7 @@ export class SharedWorkspaceClient {
       return { response, value, noRole };
     };
     const denied = (error: string) => {
-      if (this.pending) this.settle(this.pending.commandId, "refused", error);
+      this.settleForSessionEnd(body, error, true);
       this.cancelAll("The session ended. Review the board before trying again.");
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();

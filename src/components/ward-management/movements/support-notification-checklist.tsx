@@ -93,7 +93,6 @@ export function SupportNotificationChecklist({
   const [time, setTime] = useState("");
   const [day, setDay] = useState<ToldDay>("0");
   const [reason, setReason] = useState("");
-  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
   const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
   const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setOutcomeMessage });
   const [timeError, setTimeError] = useState<string | null>(null);
@@ -116,12 +115,6 @@ export function SupportNotificationChecklist({
   if (!subject) return null;
   const checklist = supportNotificationChecklist(supportNotifications, subject.occasion, subject.subjectId);
   const done = SUPPORT_NOTIFICATION_PARTIES.filter((party) => checklist[party] !== undefined).length;
-  const refusal =
-    submittedAt !== null &&
-    rejections.length > submittedAt &&
-    rejections.at(-1)?.attempted === "RECORD_SUPPORT_NOTIFICATION"
-      ? rejections.at(-1)?.reason
-      : undefined;
 
   function startEditing(party: SupportNotificationParty) {
     editingRevisionRef.current += 1;
@@ -131,7 +124,6 @@ export function SupportNotificationChecklist({
     setTime(formatInstant(now));
     setDay("0");
     setReason("");
-    setSubmittedAt(null);
     setOutcomeMessage(null);
     setTimeError(null);
   }
@@ -148,7 +140,6 @@ export function SupportNotificationChecklist({
       return;
     }
     setTimeError(null);
-    setSubmittedAt(rejections.length);
     const submittedRevision = editingRevisionRef.current;
     const closeSubmittedDraft = () => {
       // An earlier save cannot dismiss a reopened form or edits made while it was pending.
@@ -197,12 +188,6 @@ export function SupportNotificationChecklist({
         </span>
       </div>
       {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
-      {refusal ? (
-        <p className={styles.error} role="alert">
-          <StatusGlyph tone="danger" size={9} />
-          Not recorded: {refusal}
-        </p>
-      ) : null}
       <ul className={styles.rows}>
         {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
           const record = checklist[party];

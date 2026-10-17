@@ -132,6 +132,37 @@ it("allows an accepted Undo to queue while another command is saving", async () 
   }
 });
 
+describe("session ended by a different request", () => {
+  it("reports an already-sent command as possibly applied, not refused", async () => {
+    const commandReply = deferred<Response>();
+    let posted = false;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (url) => {
+        if (String(url).endsWith("/commands")) {
+          posted = true;
+          return commandReply.promise;
+        }
+        if (String(url).endsWith("/break-glass")) return Response.json({ error: "Signed out" }, { status: 401 });
+        return Response.json({ snapshot: snapshot(1) });
+      },
+    });
+    try {
+      await client.refresh();
+      const completion = client.dispatchConfirmed(event);
+      await vi.waitFor(() => expect(posted).toBe(true));
+      await expect(client.breakGlass("synthetic-patient", "handover")).rejects.toThrow("Access denied");
+      const result = await completion;
+      expect(result.status).toBe("failed");
+      expect(result.message).toMatch(/may have been applied/);
+    } finally {
+      client.dispose();
+    }
+  });
+});
+
 describe("working-role changes", () => {
   it.each([401, 403, 409, "session"] as const)(
     "preserves a confirmed acceptance when reconciliation gates the desk (%s)",

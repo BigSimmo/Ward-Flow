@@ -1737,8 +1737,11 @@ export function WardBoard({
           const summarize = (outcomes: WardCommandOutcome[]) => {
             const unaccepted = outcomes.find((outcome) => outcome.status !== "accepted");
             if (unaccepted && outcomes.some((outcome) => outcome.status === "accepted"))
+              // A mixed result is reported as an unconfirmed save, never as a refusal, so the
+              // "Action refused" prefix cannot contradict the part that was saved.
               return {
                 ...unaccepted,
+                status: "failed" as const,
                 message:
                   "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
               };

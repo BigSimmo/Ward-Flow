@@ -22,6 +22,7 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   formatElapsed,
@@ -1320,7 +1321,7 @@ export function buildActionInbox(
   }
 
   const expiredBedPulls = movements.filter(
-    (movement) => movement.stage === "pulled" && movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now,
+    (movement) => movement.stage === "pulled" && bedHoldLapsed(movement.pullExpiresAt, now),
   );
   for (const movement of expiredBedPulls) {
     const pullExpiresAt = movement.pullExpiresAt;
