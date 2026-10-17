@@ -511,7 +511,7 @@ export const CLINICAL_VALUES = {
     value: 12,
     unit: "hours",
     source:
-      "D-65 (17 Oct 2026), Australian Government ISM-0428: sessions end after at most 12 hours. Checked against the September 2026 ISM on cyber.gov.au",
+      "D-65 (17 Oct 2026), Australian Government ISM-0428: sessions end after at most twelve hours. Checked against the September 2026 ISM on cyber.gov.au",
   },
   stepUpWindow: {
     ...SIGNED_BY_JOSH_16_OCT,

@@ -244,6 +244,7 @@ function routes({
   outcome = null,
   viewer = bootstrapViewer,
   pushByRole = undefined,
+  sessionLimitMinutes = undefined,
 } = {}) {
   const calls = [];
   const handler = createHandler({
@@ -264,6 +265,7 @@ function routes({
         return true;
       },
       ...(pushByRole ? { pushByRole } : {}),
+      ...(sessionLimitMinutes ? { sessionLimitMinutes } : {}),
     },
     authenticate: async (token) => {
       if (!token) throw new Error("Unauthorised");
@@ -288,6 +290,17 @@ test("the public key route says whether phone alerts are set up, and never retur
   assert.deepEqual(await (await off.handler(call("push-key"))).json(), { enabled: false });
   assert.equal((await off.handler(call("push-subscribe", { subscription }))).status, 503);
   assert.equal(off.calls.length, 0);
+});
+
+test("a sign-in past the session limit can still turn this device's phone alerts off, and nothing else", async () => {
+  // This authenticator fills no sign-in time, which the session limit treats as past it.
+  const { calls, handler } = routes({ sessionLimitMinutes: 720 });
+  const subscribed = await handler(call("push-subscribe", { subscription }));
+  assert.equal(subscribed.status, 401);
+  assert.equal((await subscribed.json()).code, "session-limit");
+  const unsubscribed = await handler(call("push-unsubscribe", { endpoint: subscription.endpoint }));
+  assert.deepEqual(await unsubscribed.json(), { subscribed: false, revoked: true });
+  assert.deepEqual(calls, [["unsubscribe", coordinator, subscription.endpoint]]);
 });
 
 test("a signed-in coordinator subscribes and unsubscribes only their own device", async () => {

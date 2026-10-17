@@ -156,10 +156,15 @@ export function createSharedHandler({
     }
     // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). It counts from
     // the token's first sign-in factor, which a refresh or a later factor never moves, so the person
-    // signs in again with a password. A sign-in with no start time fails closed.
+    // signs in again with a password. A sign-in with no start time fails closed. Turning this
+    // device's phone alerts off still goes through, so the sign-out can stop them reaching it.
     const limitMinutes = store.sessionLimitMinutes;
     const started = session.startedAt;
-    if (Number.isFinite(limitMinutes) && !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000))
+    if (
+      Number.isFinite(limitMinutes) &&
+      !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
+      path !== "/v1/workspace/push-unsubscribe"
+    )
       return reply(
         401,
         {
