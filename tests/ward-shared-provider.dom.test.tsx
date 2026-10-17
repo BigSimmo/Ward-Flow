@@ -17,6 +17,7 @@ import {
   resetWardAccessStoreForTests,
 } from "../src/components/ward-management/shell/ward-access-store";
 import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
+import { breakGlassRefusal, scopeWorld, seedWorld } from "../backend/ward-flow/engine";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -37,6 +38,15 @@ function Probe() {
 }
 function DataModeDetail() {
   return <p data-testid="data-mode-detail">{useWardDataMode()?.detail ?? "no data mode"}</p>;
+}
+function PatientIdsProbe() {
+  const { patients } = useWardFlow();
+  return (
+    <>
+      <output data-testid="patient-ids">{patients.map((patient) => patient.id).join(",")}</output>
+      <input aria-label="Scoped draft" defaultValue="draft" />
+    </>
+  );
 }
 /** No standalone data-mode bar: without a header slot nothing is drawn, but the mode is still published. */
 function expectNoStandaloneDataModeControl() {
@@ -77,6 +87,49 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("adopts opened and closed break-glass records at the same clinical revision without remounting drafts", () => {
+    const at = new Date("2026-10-16T00:00:00Z");
+    const world = seedWorld(at);
+    const access = { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } } as const;
+    const own = scopeWorld(world, access, at);
+    const patient = world.state.patients.find(
+      (candidate) => breakGlassRefusal(world, access, candidate.id, at) === null,
+    )!;
+    const opened = scopeWorld(world, access, at, [
+      { patientId: patient.id, until: new Date(at.getTime() + 30 * 60_000) },
+    ]);
+    expect(own.state.patients.some((row) => row.id === patient.id)).toBe(false);
+    expect(opened.state.patients.some((row) => row.id === patient.id)).toBe(true);
+    fake.connection = {
+      ...fake.connection!,
+      access,
+      snapshot: { ...fake.connection!.snapshot!, payload: own },
+    };
+    const tree = () => (
+      <WardFlowProvider>
+        <PatientIdsProbe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    const draft = screen.getByLabelText("Scoped draft");
+    fireEvent.change(draft, { target: { value: "keep this draft" } });
+    const ownIds = own.state.patients.map((row) => row.id).join(",");
+    const openedIds = opened.state.patients.map((row) => row.id).join(",");
+    expect(screen.getByTestId("patient-ids")).toHaveTextContent(ownIds);
+
+    fake.connection = { ...fake.connection, snapshot: { ...fake.connection.snapshot!, payload: opened } };
+    rerender(tree());
+    expect(screen.getByTestId("patient-ids").textContent).toBe(openedIds);
+    expect(screen.getByLabelText("Scoped draft")).toBe(draft);
+    expect(draft).toHaveValue("keep this draft");
+
+    fake.connection = { ...fake.connection, snapshot: { ...fake.connection.snapshot!, payload: own } };
+    rerender(tree());
+    expect(screen.getByTestId("patient-ids").textContent).toBe(ownIds);
+    expect(screen.getByLabelText("Scoped draft")).toBe(draft);
+    expect(draft).toHaveValue("keep this draft");
+    resetWardAccessStoreForTests();
+  });
   it.each([true, false])("shows the confirmed shared broadcast outcome (accepted: %s)", (accepted) => {
     const tree = () => (
       <WardFlowProvider>

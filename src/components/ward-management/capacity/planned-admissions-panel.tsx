@@ -30,6 +30,7 @@ import {
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
+  perthCalendarDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -244,11 +245,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     const calendarDate =
       dayZero instanceof Date
         ? (() => {
-            const today = calendarDateOf(now, dayZero);
+            const today = perthCalendarDay(calendarDateOf(now, dayZero));
             return [
-              String(today.getFullYear()),
-              String(today.getMonth() + 1).padStart(2, "0"),
-              String(today.getDate()).padStart(2, "0"),
+              String(today.year),
+              String(today.monthIndex + 1).padStart(2, "0"),
+              String(today.day).padStart(2, "0"),
             ].join("-");
           })()
         : undefined;

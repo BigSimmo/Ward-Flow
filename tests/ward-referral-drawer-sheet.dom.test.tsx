@@ -508,6 +508,24 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     expect(readKeptReferralDraft()).toBe(kept);
   });
 
+  it("discarding a sheet for another person leaves the first person's kept draft alone", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer({ initialPatientId: "PT-010" });
+    typeReason("First person synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    first.unmount();
+    const kept = readKeptReferralDraft();
+
+    const second = renderDrawer({ initialPatientId: "PT-003" });
+    typeReason("Second person reason");
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(second.onClose).toHaveBeenCalledTimes(1);
+    expect(readKeptReferralDraft()).toBe(kept);
+  });
+
   it("says the draft's age in units", () => {
     expect(referralDraftAgeText(0, 20_000)).toBe("just now");
     expect(referralDraftAgeText(0, 4 * 60_000)).toBe("4m ago");

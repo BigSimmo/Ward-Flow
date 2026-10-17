@@ -29,6 +29,12 @@ import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-m
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { resetServiceScopeForTests } from "@/components/ward-management/shell/ward-service-store";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+
+function DirtyPage() {
+  useDirtyStateGuard({ isDirty: true, confirmMessage: "Keep the other form open?" });
+  return null;
+}
 
 function renderBarWith(children?: ReactNode) {
   return render(
@@ -50,6 +56,46 @@ afterEach(() => {
 });
 
 describe("a link to the referral route opens the slide-out in place", () => {
+  it.each(["indexed", "legacy"])(
+    "allows retrying a %s drawer history close after another dirty form cancels",
+    async (entry) => {
+      renderBarWith(<DirtyPage />);
+      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+      const tools = await screen.findByRole("dialog", { name: "Tools" });
+      const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValue(true);
+      const go = vi.spyOn(window.history, "go").mockImplementation(() => {
+        fireEvent.popState(window, { state: window.history.state });
+      });
+      const back = vi.spyOn(window.history, "back").mockImplementation(() => {
+        fireEvent.popState(window, {
+          state:
+            entry === "indexed"
+              ? { ...window.history.state, __wfHistoryIndex: window.history.state.__wfHistoryIndex - 1 }
+              : null,
+        });
+      });
+      try {
+        fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
+        expect(back).toHaveBeenCalledTimes(1);
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(confirm).toHaveBeenLastCalledWith("Keep the other form open?");
+        if (entry === "indexed") expect(go).toHaveBeenCalledWith(1);
+        else expect(go).not.toHaveBeenCalled();
+        expect(tools).toBeInTheDocument();
+        expect(document.documentElement.style.overflowY).toBe("hidden");
+
+        fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
+        expect(back).toHaveBeenCalledTimes(2);
+        expect(confirm).toHaveBeenCalledTimes(2);
+        await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull());
+      } finally {
+        back.mockRestore();
+        go.mockRestore();
+        confirm.mockRestore();
+      }
+    },
+  );
+
   it("keeps the chosen-service announcement after the pending history close", async () => {
     renderBarWith();
     fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));

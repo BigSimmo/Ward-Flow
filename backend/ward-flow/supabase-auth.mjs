@@ -29,6 +29,13 @@ export const REMOTE_CHECKS_TOTAL = 300;
  */
 export const REMOTE_CHECKS_UNKNOWN_TOTAL = 30;
 /**
+ * Checks one claimed account may take from the main allowance each minute. The subject is unverified,
+ * so a forger naming a real role holder from many addresses spends at most this much of it; further
+ * checks for that account come from the small allowance above instead. A real desk reuses each
+ * confirmed token for a minute, so it needs far fewer than this.
+ */
+export const REMOTE_CHECKS_PER_ACCOUNT = 10;
+/**
  * How long the list of accounts holding a role here is reused. At most one database read per
  * period, however many tokens arrive, and a new grant is recognised within this time.
  */
@@ -237,7 +244,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     }
     return holders.ids.has(subject);
   }
-  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map() };
+  const limits = { windowStart: -Infinity, total: 0, unknown: 0, addresses: new Map(), accounts: new Map() };
   function startWindow() {
     const at = now();
     if (at - limits.windowStart < LIMIT_WINDOW_MS) return;
@@ -245,6 +252,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     limits.total = 0;
     limits.unknown = 0;
     limits.addresses.clear();
+    limits.accounts.clear();
   }
   function addressKey(address) {
     return limits.addresses.size < LIMIT_ADDRESSES_MAX || limits.addresses.has(address) ? address : "overflow";
@@ -261,12 +269,23 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     limits.addresses.set(key, used + 1);
     return true;
   }
-  /** A claimed subject is unverified, so it picks the pool but never has a budget of its own to spend. */
-  function allowRemoteCheck(known) {
+  /**
+   * A claimed subject is unverified, so it picks the pool but never has a budget of its own that a
+   * forger could use up. A role holder's account draws on the main allowance up to its per-account
+   * share, then on the small one, so naming one real account cannot spend the checks other desks need.
+   */
+  function allowRemoteCheck(known, subject) {
     startWindow();
-    if (known ? limits.total >= REMOTE_CHECKS_TOTAL : limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL) return false;
-    if (known) limits.total += 1;
-    else limits.unknown += 1;
+    const used = known ? (limits.accounts.get(subject) ?? 0) : 0;
+    if (known && used < REMOTE_CHECKS_PER_ACCOUNT && limits.total < REMOTE_CHECKS_TOTAL) {
+      // Bounded by the main allowance: at most REMOTE_CHECKS_TOTAL accounts a minute are held.
+      limits.accounts.set(subject, used + 1);
+      limits.total += 1;
+      return true;
+    }
+    if (known && used < REMOTE_CHECKS_PER_ACCOUNT) return false;
+    if (limits.unknown >= REMOTE_CHECKS_UNKNOWN_TOTAL) return false;
+    limits.unknown += 1;
     return true;
   }
 
@@ -355,7 +374,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     if (known && known.until > now()) return verified(known.userId, claims);
     confirmed.delete(tokenKey);
     if (!chargeAddress(clientAddress)) throw new VerifierRateLimitedError("Too many sign-in checks");
-    if (!allowRemoteCheck(await holdsRole(subject))) throw new VerifierRateLimitedError("Too many sign-in checks");
+    if (!allowRemoteCheck(await holdsRole(subject), subject))
+      throw new VerifierRateLimitedError("Too many sign-in checks");
     let userId;
     try {
       userId = await remoteCheck(authorization);

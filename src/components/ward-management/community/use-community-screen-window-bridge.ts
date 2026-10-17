@@ -49,7 +49,19 @@ export function useCommunityScreenWindowBridge({
   // as arguments) never re-runs this effect: it re-runs on exactly the inputs it always did.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const win = window as unknown as Record<string, unknown>;
+    type CommunityScreenWindow = Window & {
+      switchTab?: (tabId: ActiveTabType) => void;
+      openReferralDrawer?: (refId: string) => void;
+      openPatientDrawer?: (ptId: string) => void;
+      acceptReferral?: (refId: string) => void;
+      declineReferral?: (refId: string) => void;
+      completeContact?: (ptId: string) => void;
+      openCrisisModal?: () => void;
+      openModal?: (modalId: string) => void;
+      openDrawer?: (drawerId: DrawerType) => void;
+      selectTeam?: (targetTeamId: string) => void;
+    };
+    const win: CommunityScreenWindow = window;
     win.switchTab = (tabId: ActiveTabType) => {
       setActiveTab(tabId);
     };
@@ -93,19 +105,16 @@ export function useCommunityScreenWindowBridge({
     // Remove only the functions this effect installed, so leaving the screen leaves no stale
     // callbacks on `window` that would act on an unmounted screen's state.
     return () => {
-      for (const name of [
-        "switchTab",
-        "openReferralDrawer",
-        "openPatientDrawer",
-        "acceptReferral",
-        "declineReferral",
-        "completeContact",
-        "openCrisisModal",
-        "openModal",
-        "openDrawer",
-        "selectTeam",
-      ])
-        delete win[name];
+      delete win.switchTab;
+      delete win.openReferralDrawer;
+      delete win.openPatientDrawer;
+      delete win.acceptReferral;
+      delete win.declineReferral;
+      delete win.completeContact;
+      delete win.openCrisisModal;
+      delete win.openModal;
+      delete win.openDrawer;
+      delete win.selectTeam;
     };
   }, [
     referrals,

@@ -181,7 +181,7 @@ export const REGISTERED_SURFACES: readonly string[] = [
  *
  * The edit is applied to an in-memory copy. No file is written and nothing is executed.
  */
-export type FalsifyingEdit = {
+type FalsifyingEdit = {
   /**
    * The change to the world this edit stands for, in the register's own words — what would have to
    * become true of the system for the claim to be false. This is the half no machine can check, so

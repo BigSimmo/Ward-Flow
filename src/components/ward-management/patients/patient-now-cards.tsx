@@ -1,5 +1,5 @@
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -88,6 +88,7 @@ export function PatientLegalNowCard({
   /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
   absent?: boolean;
 }) {
+  const legalId = useId();
   const thresholds = useDueSoonThresholds();
   const rows: Array<{
     tone: WfTone;
@@ -160,9 +161,13 @@ export function PatientLegalNowCard({
     /* v10 Patient, phone: "Legal now" and "All forms" head the section; each row is the form and
      * when it was recorded, never a lapse time. */
     return (
-      <section className={styles.phSection} data-testid="ward-patient-legal-now" aria-labelledby="pn-legal-now">
+      <section
+        className={styles.phSection}
+        data-testid="ward-patient-legal-now"
+        aria-labelledby={`${legalId}-pn-legal-now`}
+      >
         <div className={styles.phHeadRow}>
-          <h2 id="pn-legal-now" className={styles.phHead}>
+          <h2 id={`${legalId}-pn-legal-now`} className={styles.phHead}>
             Legal now
           </h2>
           <button type="button" className={styles.phLink} onClick={onAllForms}>
@@ -273,13 +278,18 @@ export function PatientLeaveCard({
   voluntary?: boolean;
   onMarkAbsent: () => void;
 }) {
+  const leaveId = useId();
   const isPhone = useIsPhone();
   const lastStep = voluntary ? "Treat as not back from leave" : "Treat as absent without leave";
   if (isPhone)
     /* v10 Patient, phone: the three steps under a page heading, numbered, the last with its action. */
     return (
-      <section className={styles.phSection} data-testid="ward-patient-leave-card" aria-labelledby="pn-leave-steps">
-        <h2 id="pn-leave-steps" className={styles.phHead}>
+      <section
+        className={styles.phSection}
+        data-testid="ward-patient-leave-card"
+        aria-labelledby={`${leaveId}-pn-leave-steps`}
+      >
+        <h2 id={`${leaveId}-pn-leave-steps`} className={styles.phHead}>
           If not back by {dueBack}
         </h2>
         <ol className={styles.phList}>

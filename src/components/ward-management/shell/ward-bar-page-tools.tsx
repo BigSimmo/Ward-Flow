@@ -28,20 +28,3 @@ export function WardBarPageTools({ label, children }: { label: string; children:
     host,
   );
 }
-
-/**
- * Classes for a page's header tools, so every page's tools look the same: `tool` for a button or
- * link, `count` for the count inside it, and `label` for text that hides when the header is short
- * of room. Getters, so nothing reads the CSS module at load: the browser test runner strips CSS imports.
- */
-export const wardBarToolStyles = {
-  get tool() {
-    return styles.tool;
-  },
-  get count() {
-    return styles.count;
-  },
-  get label() {
-    return styles.label;
-  },
-};

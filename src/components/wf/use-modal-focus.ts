@@ -56,7 +56,7 @@ const FOCUSABLE =
   'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
 /** The panel's Tab stops, in order: enabled, not hidden or inert, and laid out. */
-export function modalFocusableIn(panel: HTMLElement | null) {
+function modalFocusableIn(panel: HTMLElement | null) {
   return Array.from(panel?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
     (element) =>
       !element.hasAttribute("disabled") &&

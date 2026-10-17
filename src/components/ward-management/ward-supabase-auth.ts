@@ -12,6 +12,22 @@ export class WardAuthError extends Error {
 type User = { id: string };
 type Session = { access_token: string; refresh_token: string; expiresAt: number; recovery: boolean; user?: User };
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+function isValidSession(parsed: unknown): parsed is Session {
+  if (!parsed || typeof parsed !== "object") return false;
+  const row = parsed as Record<string, unknown>;
+  const user = row.user;
+  const userId = user && typeof user === "object" ? (user as Record<string, unknown>).id : undefined;
+  return (
+    typeof row.access_token === "string" &&
+    row.access_token.length > 0 &&
+    typeof row.refresh_token === "string" &&
+    row.refresh_token.length > 0 &&
+    typeof row.expiresAt === "number" &&
+    Number.isFinite(row.expiresAt) &&
+    typeof row.recovery === "boolean" &&
+    (!row.recovery ? typeof userId === "string" && userId.length > 0 : true)
+  );
+}
 export function consumeRecoveryFragment(
   location: Pick<Location, "hash" | "pathname" | "search">,
   replace: (url: string) => void,
@@ -24,14 +40,16 @@ export function consumeRecoveryFragment(
   replace(location.pathname + location.search);
   const failed = ["error", "error_code", "error_description"].some((key) => parts.has(key));
   if (parts.get("type") === "signup" && !failed) return null;
-  if (failed || parts.get("type") !== "recovery" || !parts.get("access_token") || !parts.get("refresh_token"))
+  const accessToken = parts.get("access_token");
+  const refreshToken = parts.get("refresh_token");
+  if (failed || parts.get("type") !== "recovery" || !accessToken || !refreshToken)
     throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
   const expires = Number(parts.get("expires_in"));
   if (!Number.isFinite(expires) || expires <= 0)
     throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
   return {
-    access_token: parts.get("access_token")!,
-    refresh_token: parts.get("refresh_token")!,
+    access_token: accessToken,
+    refresh_token: refreshToken,
     expiresAt: Date.now() + expires * 1000,
     recovery: true,
   };
@@ -202,18 +220,9 @@ export class SupabaseWardAuth {
     const saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
     if (!saved) return;
     try {
-      const row = JSON.parse(saved) as Session;
-      if (
-        typeof row.access_token !== "string" ||
-        !row.access_token ||
-        typeof row.refresh_token !== "string" ||
-        !row.refresh_token ||
-        !Number.isFinite(row.expiresAt) ||
-        typeof row.recovery !== "boolean" ||
-        (!row.recovery && !row.user?.id)
-      )
-        throw new Error();
-      this.session = row;
+      const parsed: unknown = JSON.parse(saved);
+      if (!isValidSession(parsed)) throw new Error();
+      this.session = parsed;
     } catch {
       this.clear();
       throw new WardAuthError("session", "Your session has expired. Sign in again.");
@@ -300,7 +309,8 @@ export class SupabaseWardAuth {
   async updatePassword(password: string) {
     if (!this.isRecovery || !this.session) throw new WardAuthError("session", "Open a password recovery link first.");
     await this.refreshIfNeeded();
-    const session = this.session!;
+    const session = this.session;
+    if (!session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
     const generation = this.generation;
     const user = (await this.request(
       "/user",

@@ -83,16 +83,8 @@ function orderFor<T extends { id: string }>(items: readonly T[], order: readonly
   return items.toSorted((left, right) => rank(left.id) - rank(right.id));
 }
 
-export function orderViewsForRole<T extends { id: WardMode }>(items: readonly T[], role: WardChromeRole) {
-  return orderFor(items, VIEW_ORDER[role]);
-}
-
 export function orderRoleScreensForRole<T extends { id: WardNavId }>(items: readonly T[], role: WardChromeRole) {
   return orderFor(items, ROLE_GROUP_ORDER[role]);
-}
-
-export function orderBoardsForRole<T extends { id: WardNavId }>(items: readonly T[], role: WardChromeRole) {
-  return orderFor(items, BOARD_GROUP_ORDER[role]);
 }
 
 /**

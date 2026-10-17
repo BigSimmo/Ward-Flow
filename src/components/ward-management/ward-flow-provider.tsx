@@ -242,7 +242,7 @@ export type { WardFlowContextValue };
  *  screens read through `useWardFlowSelect` instead; this stays for whole-value readers and tests. */
 export const WardFlowContext = createContext<WardFlowContextValue | null>(null);
 export const WardFlowClockContext = createContext<Instant | null>(null);
-export const WardClockContext = createContext<Instant | null>(null);
+const WardClockContext = createContext<Instant | null>(null);
 
 export type WardFlowKey = keyof WardFlowContextValue;
 
@@ -541,11 +541,13 @@ function wardFlowContainerReducer(
  * `resetDemoState()` at all). A REJECTED reset attempt (wrong role, or now also an invalid
  * `SET_SCENARIO` scenario) leaves `worldGeneration` unchanged, so it leaves the lock as it was.
  */
+const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
+
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const outcome = localCommandOutcome(container.world, nextWorld);
   const accepted = outcome.status === "accepted";
-  const logged = eventLogEntryFor(event, accepted);
+  const logged = { ...eventLogEntryFor(event, accepted), sequence: (container.eventLog?.at(-1)?.sequence ?? -1) + 1 };
   const earlyOutcomes = container.sessionAdopted
     ? container.earlyOutcomes
     : [...(container.earlyOutcomes ?? []), { event, outcome }];
@@ -554,12 +556,16 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
       ...container,
       world: nextWorld,
       typedTextSeen: false,
-      eventLog: [logged],
+      eventLog: [{ ...logged, sequence: 0 }],
       earlyOutcomes,
       recoveryNotice: undefined,
     };
   }
-  const eventLog = [...(container.eventLog ?? []), logged];
+  const previousLog = container.eventLog ?? [];
+  const eventLog =
+    previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
+      ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
+      : [...previousLog, logged];
   const typedTextSeen =
     container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
   return { ...container, world: nextWorld, typedTextSeen, eventLog, earlyOutcomes };
@@ -918,7 +924,9 @@ function WardFlowWorld({
     dispatchContainer({
       type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) =>
-        current.sharedRevision === snapshot.revision
+        // Grants and cover change the scoped payload without changing the clinical revision.
+        // A clock-only poll preserves the state reference, so it still skips adoption.
+        current.sharedRevision === snapshot.revision && current.world === snapshot.payload.state
           ? current
           : {
               ...current,
@@ -1395,39 +1403,6 @@ function WardFlowWorld({
   );
 }
 
-export function WardFlowClockProvider({
-  children,
-  initialNow,
-  anchorOffsetMinutes,
-  mountedAtAbsolute,
-  clockOffsetMinutes,
-}: {
-  children: ReactNode;
-  initialNow?: Instant;
-  anchorOffsetMinutes: number;
-  mountedAtAbsolute: number | null;
-  clockOffsetMinutes: number;
-}) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    if (initialNow !== undefined) return; // pinned: never tick in a test
-    const id = setInterval(() => setTick((previous) => previous + 1), 30_000);
-    return () => clearInterval(id);
-  }, [initialNow]);
-
-  const elapsed =
-    initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
-
-  const now = NOW_ANCHOR + anchorOffsetMinutes + elapsed + clockOffsetMinutes;
-
-  return (
-    <WardClockContext.Provider value={now}>
-      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
-    </WardClockContext.Provider>
-  );
-}
-
 export function useOptionalWardFlow(): WardFlowContextValue | null {
   return useContext(WardFlowContext);
 }
@@ -1445,7 +1420,7 @@ export function useWardFlow(): WardFlowContextValue {
  * its referrals from here and never from `useWardFlow()`, so it never holds another destination.
  */
 export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
-  const { referrals } = useWardFlow();
+  const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
 }
 
@@ -1454,7 +1429,7 @@ export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
  * record here so the community page can tell a broken link from a referral it may not see (FD-23).
  */
 export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
-  const { referrals } = useWardFlow();
+  const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => {
     const known = new Set(referrals.map((referral) => referral.id));
     return new Set(

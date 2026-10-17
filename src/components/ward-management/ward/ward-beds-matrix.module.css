@@ -256,6 +256,14 @@
   height: 100%;
 }
 
+@media (max-width: 48rem) {
+  .resetButton,
+  .resetButton::after {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
 .btnShiftAction:hover {
   background: var(--surface-2);
   border-color: var(--ink);
@@ -809,4 +817,15 @@
     color: CanvasText !important;
     background-color: Canvas !important;
   }
+}
+
+/* Criteria led discharge on the tile (D-64): ready reads as good, lapsed or paused as a warning. */
+.chipGood {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.chipWarn {
+  background: var(--warn-soft);
+  color: var(--warn);
 }

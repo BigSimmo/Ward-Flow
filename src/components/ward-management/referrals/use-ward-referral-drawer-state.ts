@@ -46,6 +46,7 @@ import {
   readKeptReferralDraft,
   readKeptReferralDraftAt,
   readLastReferrerContact,
+  referralDraftSessionVersion,
   rememberReferrerContact,
   useReferralDraftAutosave,
 } from "./referral-draft-store";
@@ -218,6 +219,7 @@ export function useWardReferralDrawerState({
   // A Refer link names its person: it reopens a kept draft only when that draft is for the same
   // person, and never someone else's.
   const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
+  const [draftOwnerVersion] = useState(referralDraftSessionVersion);
   const kept =
     !effectiveInitialPatientId ||
     (storedDraft !== null &&
@@ -227,6 +229,7 @@ export function useWardReferralDrawerState({
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.
   const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
+  const draftDiscardOwner = keepsAnotherPersonsDraft ? null : draftOwnerVersion;
   // Option B (Josh, 13 Oct 2026): opened from a place that names the person (ED, a community team,
   // Home), the record answers step 1 where it can, so the sheet opens on Referral with step 1 done.
   const fromEntryPoint = kept === null && prefillKey !== null;
@@ -471,20 +474,23 @@ export function useWardReferralDrawerState({
   } = useReferralDraftAutosave({
     draft: draftNow,
     draftJson,
+    contentJson: JSON.stringify({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
     dirty,
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
-  useDirtyStateGuard({
+  const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: !sentReferralId && (dirty || draftKeptAt !== null),
+    value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
   });
   const requestClose = useCallback(() => {
-    if (guardOpen) setGuardOpen(false);
-    else if (dirty) setGuardOpen(true);
-    else onClose();
-  }, [guardOpen, dirty, onClose]);
+    if (guardOpen) return setGuardOpen(false);
+    if (dirty) return setGuardOpen(true);
+    approveNextHistoryNavigation();
+    onClose();
+  }, [guardOpen, dirty, onClose, approveNextHistoryNavigation]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -514,16 +520,18 @@ export function useWardReferralDrawerState({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Once, on opening.
   }, []);
   function discardAndClose() {
-    stopDraftAutosave();
-    discardReferralDraft();
+    stopDraftAutosave({ resumeOnContentEdit: true });
+    discardReferralDraft(draftDiscardOwner);
     setGuardOpen(false);
+    approveNextHistoryNavigation();
     onClose();
   }
   function keepAndClose() {
-    keepReferralDraft(draftNow);
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion);
     setGuardOpen(false);
+    approveNextHistoryNavigation();
     onClose();
-    announceToWardShell("Referral draft kept until this tab reloads.");
+    announceToWardShell(kept ? "Referral draft kept until this tab reloads." : "Draft not kept: signed in again.");
   }
 
   const handleDrawerClose = useCallback(() => {
@@ -977,18 +985,17 @@ export function useWardReferralDrawerState({
     const created = referrals.find((referral) => referral.intake === submitted.intake);
     if (created) {
       stopDraftAutosave();
-      discardReferralDraft();
-      rememberReferrerContact(submitted.intake.referrer);
+      discardReferralDraft(draftDiscardOwner);
+      rememberReferrerContact(submitted.intake.referrer, draftOwnerVersion);
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
-
       announceToWardShell("Referral sent to the selected locations.");
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
     }
-  }, [sendPending, referrals, rejections, patientRecord?.id, now, stopDraftAutosave]);
+  }, [sendPending, referrals, rejections, now, stopDraftAutosave, draftDiscardOwner, draftOwnerVersion]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords

@@ -340,9 +340,7 @@ const perfPatterns = [
 
 /**
  * App Router handlers that budgeted routes fetch during the initial Lighthouse
- * navigation. ClinicalDashboard always calls /api/setup-status on mount, and
- * readLocalProjectIdentity always calls /api/local-project-id before that. A bare
- * URL with no query string does NOT imply "no API on load".
+ * navigation. A bare URL with no query string does NOT imply "no API on load".
  */
 const perfInitialLoadApiPatterns = ["src/app/api/local-project-id"];
 

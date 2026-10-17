@@ -65,15 +65,6 @@ export function CountCircle({
   );
 }
 
-/** Hairline. Horizontal by default. */
-export function Divider({ vertical = false, className }: { vertical?: boolean; className?: string }) {
-  return vertical ? (
-    <span role="separator" aria-orientation="vertical" className={cx(styles.dividerV, className)} />
-  ) : (
-    <hr className={cx(styles.divider, className)} />
-  );
-}
-
 /** Recessed box on surface-2 with a hairline, for figures inside a card. */
 export function Inset({ className, ...rest }: ComponentPropsWithoutRef<"div">) {
   return <div className={cx(styles.inset, className)} {...rest} />;

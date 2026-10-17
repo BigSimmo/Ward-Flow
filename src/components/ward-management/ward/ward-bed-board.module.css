@@ -218,6 +218,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* D-64: the bed number, then the criteria led discharge tag when one is set. */
+.cellTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
 .cellState {
   display: flex;
   align-items: center;

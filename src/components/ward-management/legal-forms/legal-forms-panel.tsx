@@ -242,9 +242,11 @@ export function FocusPanel({
   focusGap,
   refusal,
   onSaveWritten,
+  recordUnavailable,
   onMarkReceived,
   markReceivedUnavailable,
   onExtend,
+  extendUnavailable,
   onRecordNext,
   onRequirements,
   onCopy,
@@ -264,10 +266,14 @@ export function FocusPanel({
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
   onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand }) => void;
+  /** Feature 11: why this route's role may not record a form time, if it may not. */
+  recordUnavailable?: string;
   onMarkReceived: () => void;
   /** Feature 11: why this route's role may not mark a form received ("ED only"), if it may not. */
   markReceivedUnavailable?: string;
   onExtend: () => void;
+  /** Feature 11: why this route's role may not extend a recorded form, if it may not. */
+  extendUnavailable?: string;
   onRecordNext: () => void;
   onRequirements: (code: string) => void;
   onCopy: () => void;
@@ -303,7 +309,7 @@ export function FocusPanel({
 
   const submitWritten = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (typedWrittenAt === undefined) return;
+    if (recordUnavailable || typedWrittenAt === undefined) return;
     onSaveWritten({ writtenAt: typedWrittenAt, region: draft.region, ageBand: draft.ageBand });
     setChanging(false);
   };
@@ -504,7 +510,10 @@ export function FocusPanel({
                   size="sm"
                   data-testid={`ward-legal-forms-written-confirm-${movement.id}`}
                   aria-describedby={`ward-legal-forms-clock-preview-${movement.id}`}
-                  disabledReason={typedWrittenAt === undefined ? "Enter the time written on the form" : undefined}
+                  disabledReason={
+                    recordUnavailable ??
+                    (typedWrittenAt === undefined ? "Enter the time written on the form" : undefined)
+                  }
                   reasonDisplay="tooltip"
                 >
                   Save time written
@@ -526,7 +535,13 @@ export function FocusPanel({
           ) : null}
 
           {breached ? (
-            <Button variant="danger" size="sm" className={styles.extend} onClick={onExtend}>
+            <Button
+              variant="danger"
+              size="sm"
+              className={styles.extend}
+              onClick={onExtend}
+              disabledReason={extendUnavailable}
+            >
               Extend recorded form
             </Button>
           ) : null}
@@ -590,7 +605,7 @@ export function FocusPanel({
           Open move
         </Link>
         <span className={styles.footSpacer} />
-        <Button variant="pri" size="sm" onClick={onRecordNext}>
+        <Button variant="pri" size="sm" onClick={onRecordNext} disabledReason={recordUnavailable}>
           Record next form
         </Button>
       </div>

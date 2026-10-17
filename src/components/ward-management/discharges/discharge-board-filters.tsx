@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { DUE_SORT_OPTIONS, type DueSortMode } from "@/components/ward-management/ward-due-sort";
 import { Button, Card, Select, StatusGlyph } from "@/components/wf";
@@ -183,13 +184,14 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
     clearAllFilters,
     filtersActive,
   } = s;
+  const baseId = useId();
   return (
     <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
       <div className={pageStyles.filters}>
-        <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
+        <label htmlFor={`${baseId}-discharges-filter-service`} className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Service</span>
           <Select
-            id="discharges-filter-service"
+            id={`${baseId}-discharges-filter-service`}
             name="dischargesFilterService"
             value={service}
             boxClassName={pageStyles.filterSelect}
@@ -205,10 +207,10 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
             ))}
           </Select>
         </label>
-        <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
+        <label htmlFor={`${baseId}-discharges-filter-ward`} className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Ward</span>
           <Select
-            id="discharges-filter-ward"
+            id={`${baseId}-discharges-filter-ward`}
             name="dischargesFilterWard"
             value={ward}
             boxClassName={pageStyles.filterSelect}
@@ -228,10 +230,10 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
         {/* Decision 5 (review 12 Oct 2026): one control per filter. Status narrows from this one
             dropdown (its counts are the hero chips' counts); the hero chips highlight. The tab
             row over the table and the blocker chip row are gone. */}
-        <label htmlFor="discharges-filter-status" className={pageStyles.filterField}>
+        <label htmlFor={`${baseId}-discharges-filter-status`} className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Status</span>
           <Select
-            id="discharges-filter-status"
+            id={`${baseId}-discharges-filter-status`}
             name="dischargesFilterStatus"
             value={status}
             boxClassName={pageStyles.filterSelect}
@@ -250,10 +252,10 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
             ))}
           </Select>
         </label>
-        <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
+        <label htmlFor={`${baseId}-discharges-filter-blocker`} className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Blocker</span>
           <Select
-            id="discharges-filter-blocker"
+            id={`${baseId}-discharges-filter-blocker`}
             name="dischargesFilterBlocker"
             value={blockerCategory}
             boxClassName={pageStyles.filterSelect}
@@ -272,10 +274,10 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
         </label>
         {population === "records" && (
           <>
-            <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
+            <label htmlFor={`${baseId}-discharges-filter-identity`} className={pageStyles.filterField}>
               <span className={pageStyles.filterLabelText}>Patient link</span>
               <Select
-                id="discharges-filter-identity"
+                id={`${baseId}-discharges-filter-identity`}
                 name="dischargesFilterIdentity"
                 value={identity}
                 boxClassName={pageStyles.filterSelect}
@@ -311,10 +313,10 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
             </label>
           </>
         )}
-        <label htmlFor="discharges-sort" className={pageStyles.filterField}>
+        <label htmlFor={`${baseId}-discharges-sort`} className={pageStyles.filterField}>
           <span className={pageStyles.filterLabelText}>Sort</span>
           <Select
-            id="discharges-sort"
+            id={`${baseId}-discharges-sort`}
             name="dischargesSort"
             value={sortMode}
             boxClassName={pageStyles.filterSelect}

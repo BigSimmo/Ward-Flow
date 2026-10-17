@@ -1,16 +1,89 @@
 import "@testing-library/jest-dom/vitest";
-import { act, renderHook } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { useEffect, useState } from "react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import {
+  useDirtyStateGuard,
+  WARD_HISTORY_TRAVERSAL_CANCELLED,
+} from "@/components/ward-management/use-dirty-state-guard";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import {
+  discardReferralDraft,
+  forgetReferrerContact,
+  readKeptReferralDraft,
+} from "@/components/ward-management/referrals/referral-draft-store";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow/delays",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+}));
+
+/** The shell retains its drawer until the history close reaches its bubble listener. */
+function HistoryClosingReferral() {
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("popstate", close);
+    return () => window.removeEventListener("popstate", close);
+  }, []);
+  return open ? (
+    <WardReferralDrawer
+      onClose={() =>
+        window.dispatchEvent(
+          new PopStateEvent("popstate", {
+            state: { __NA: true, __wfHistoryIndex: window.history.state.__wfHistoryIndex - 1 },
+          }),
+        )
+      }
+    />
+  ) : null;
+}
+
+function openTypedReferral() {
+  window.history.replaceState({ __NA: true, wardDrawer: "referral" }, "", "/mockups/ward-flow/delays");
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <HistoryClosingReferral />
+    </WardFlowProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+  const openingReason = (screen.getByLabelText(/Reason for referral/) as HTMLTextAreaElement).value;
+  fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Synthetic referral draft" } });
+  fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+  return openingReason;
+}
+
+/** Observe the capture guard, then stop jsdom from scheduling unrelated document/hash navigation. */
+function dispatchGuardedLink(link: HTMLAnchorElement, event: MouseEvent): boolean {
+  let preventedByGuard: boolean | undefined;
+  link.addEventListener(
+    "click",
+    (click) => {
+      preventedByGuard = click.defaultPrevented;
+      click.preventDefault();
+    },
+    { once: true },
+  );
+  link.dispatchEvent(event);
+  return preventedByGuard ?? event.defaultPrevented;
+}
 
 describe("useDirtyStateGuard", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    discardReferralDraft();
+    forgetReferrerContact();
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
+    discardReferralDraft();
+    forgetReferrerContact();
   });
 
   it("attaches beforeunload listener when isDirty is true and prompts on unload", () => {
@@ -159,10 +232,10 @@ describe("useDirtyStateGuard", () => {
       button: 0,
     });
 
-    link.dispatchEvent(clickEvent);
+    const preventedByGuard = dispatchGuardedLink(link, clickEvent);
 
     expect(confirmSpy).toHaveBeenCalledWith("Leave without saving?");
-    expect(clickEvent.defaultPrevented).toBe(true);
+    expect(preventedByGuard).toBe(true);
 
     link.remove();
     unmount();
@@ -187,10 +260,10 @@ describe("useDirtyStateGuard", () => {
       button: 0,
     });
 
-    link.dispatchEvent(clickEvent);
+    const preventedByGuard = dispatchGuardedLink(link, clickEvent);
 
     expect(confirmSpy).toHaveBeenCalledWith("You have unsaved changes. Are you sure you want to leave?");
-    expect(clickEvent.defaultPrevented).toBe(false);
+    expect(preventedByGuard).toBe(false);
 
     link.remove();
     unmount();
@@ -216,7 +289,7 @@ describe("useDirtyStateGuard", () => {
       button: 0,
       metaKey: true,
     });
-    navLink.dispatchEvent(metaClick);
+    dispatchGuardedLink(navLink, metaClick);
     expect(confirmSpy).not.toHaveBeenCalled();
 
     // 2. target="_blank"
@@ -230,7 +303,7 @@ describe("useDirtyStateGuard", () => {
       cancelable: true,
       button: 0,
     });
-    blankLink.dispatchEvent(blankClick);
+    dispatchGuardedLink(blankLink, blankClick);
     expect(confirmSpy).not.toHaveBeenCalled();
 
     // 3. Hash link
@@ -243,7 +316,7 @@ describe("useDirtyStateGuard", () => {
       cancelable: true,
       button: 0,
     });
-    hashLink.dispatchEvent(hashClick);
+    dispatchGuardedLink(hashLink, hashClick);
     expect(confirmSpy).not.toHaveBeenCalled();
 
     navLink.remove();
@@ -263,15 +336,15 @@ describe("useDirtyStateGuard", () => {
     link.href = "/mockups/ward-flow/board";
     document.body.appendChild(link);
 
-    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+    dispatchGuardedLink(link, new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
     expect(confirmSpy).not.toHaveBeenCalled();
 
     rerender({ isDirty: true });
 
     const dirtyClick = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
-    link.dispatchEvent(dirtyClick);
+    const preventedByGuard = dispatchGuardedLink(link, dirtyClick);
     expect(confirmSpy).toHaveBeenCalled();
-    expect(dirtyClick.defaultPrevented).toBe(true);
+    expect(preventedByGuard).toBe(true);
 
     link.remove();
     unmount();
@@ -298,11 +371,33 @@ describe("useDirtyStateGuard", () => {
     ).toBeUndefined();
   });
 
+  it("cancels native traversal before an earlier router listener can hide the dirty form", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    let unmount = () => {};
+    const router = vi.fn(() => unmount());
+    window.addEventListener("popstate", router);
+    const hook = renderHook(() => useDirtyStateGuard({ isDirty: true }));
+    unmount = hook.unmount;
+    window.dispatchEvent(
+      new PopStateEvent("popstate", {
+        state: { __NA: true, __wfHistoryIndex: window.history.state.__wfHistoryIndex - 1 },
+      }),
+    );
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(router).not.toHaveBeenCalled();
+    hook.unmount();
+    window.removeEventListener("popstate", router);
+  });
+
   it("intercepts popstate when dirty, undoes back/forward traversal, and suppresses the compensating popstate", () => {
-    window.history.replaceState({ page: 2 }, "", "/mockups/ward-flow/board");
+    window.history.replaceState({ __NA: true }, "", "/mockups/ward-flow/board");
+    const index = window.history.state.__wfHistoryIndex as number;
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const pushStateSpy = vi.spyOn(window.history, "pushState");
     const goSpy = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const cancelled = vi.fn();
+    window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, cancelled);
 
     const { unmount } = renderHook(() =>
       useDirtyStateGuard({
@@ -312,7 +407,7 @@ describe("useDirtyStateGuard", () => {
     );
 
     // 1. Back traversal (page 2 -> page 1) cancelled: undoes with history.go(1)
-    const backPopEvent = new PopStateEvent("popstate", { state: { page: 1 } });
+    const backPopEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index - 1 } });
     const stopImmediateSpy = vi.spyOn(backPopEvent, "stopImmediatePropagation");
     window.dispatchEvent(backPopEvent);
 
@@ -321,24 +416,98 @@ describe("useDirtyStateGuard", () => {
     expect(goSpy).toHaveBeenLastCalledWith(1);
     expect(pushStateSpy).not.toHaveBeenCalled();
     expect(stopImmediateSpy).toHaveBeenCalled();
+    expect(cancelled).not.toHaveBeenCalled();
 
     // 2. Compensating popstate fired by history.go(1) is ignored without re-prompting
-    const compensatingBackEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    const compensatingBackEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index } });
     window.dispatchEvent(compensatingBackEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(1);
     expect(goSpy).toHaveBeenCalledTimes(1);
+    expect(cancelled).toHaveBeenCalledOnce();
 
     // 3. Forward traversal (page 2 -> page 3) cancelled: undoes with history.go(-1)
-    const forwardPopEvent = new PopStateEvent("popstate", { state: { page: 3 } });
+    const forwardPopEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index + 1 } });
     window.dispatchEvent(forwardPopEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(2);
     expect(goSpy).toHaveBeenLastCalledWith(-1);
 
     // 4. Compensating popstate fired by history.go(-1) is ignored
-    const compensatingForwardEvent = new PopStateEvent("popstate", { state: { page: 2 } });
+    const compensatingForwardEvent = new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index } });
     window.dispatchEvent(compensatingForwardEvent);
     expect(confirmSpy).toHaveBeenCalledTimes(2);
+    expect(cancelled).toHaveBeenCalledTimes(2);
 
     unmount();
+    window.removeEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, cancelled);
+  });
+  it.each(["Discard", "Keep draft"])(
+    "honours the referral's explicit %s before a synchronous history close",
+    (choice) => {
+      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+      vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+      openTypedReferral();
+      fireEvent.click(screen.getByRole("button", { name: choice }));
+      expect(screen.queryByRole("button", { name: "Close referral side drawer" })).toBeNull();
+      expect(confirmSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not prompt again if the sole dirty draft changes before a compensating traversal", () => {
+    window.history.replaceState({ __NA: true }, "", "/mockups/ward-flow/board");
+    const index = window.history.state.__wfHistoryIndex as number;
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const cancelled = vi.fn();
+    window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, cancelled);
+    const hook = renderHook(({ value }) => useDirtyStateGuard({ isDirty: true, value }), {
+      initialProps: { value: "Synthetic draft A" },
+    });
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index - 1 } }));
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    hook.rerender({ value: "Synthetic draft B" });
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: index } }));
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    expect(cancelled).toHaveBeenCalledOnce();
+    hook.unmount();
+    window.removeEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, cancelled);
+  });
+
+  it("preserves another dirty guard and rearms a retained referral when its text changes", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const other = renderHook(() => useDirtyStateGuard({ isDirty: true, confirmMessage: "Other form is dirty" }));
+    openTypedReferral();
+    const sourceIndex = window.history.state.__wfHistoryIndex as number;
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    expect(confirmSpy).toHaveBeenCalledWith("Other form is dirty");
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic referral draft");
+    // Settle the mocked reverse traversal before interacting with the retained drawer again.
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { __NA: true, __wfHistoryIndex: sourceIndex } }));
+    other.unmount();
+    const confirmNavigation = () =>
+      (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation?.();
+    confirmSpy.mockClear();
+    // The approval was consumed by the cancelled traversal; it cannot permit a later page Back.
+    expect(confirmNavigation()).toBe(false);
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), {
+      target: { value: "Synthetic referral draft edited again" },
+    });
+    expect(confirmNavigation()).toBe(false);
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("closes a clean referral while its earlier autosave is still being cleared", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const openingReason = openTypedReferral();
+    fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(readKeptReferralDraft()).not.toBeNull());
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: openingReason } });
+    // The selected section is part of the kept draft too; restore the complete opening baseline.
+    fireEvent.click(screen.getByRole("button", { name: "Patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    expect(screen.queryByRole("button", { name: "Close referral side drawer" })).toBeNull();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 });

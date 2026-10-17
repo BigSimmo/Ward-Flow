@@ -123,6 +123,21 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
 ]);
 const TIME_KEY = /^at$|At$|Minutes$/;
 
+function isReferralIntakeCandidate(value: unknown): value is ReferralIntakeDetails {
+  return (
+    object(value) &&
+    object(value.catchment) &&
+    typeof value.reasonForReferral === "string" &&
+    typeof value.legalStatus === "string" &&
+    Array.isArray(value.riskFlags) &&
+    object(value.medicalClearance) &&
+    typeof value.triageAndRampCompleted === "boolean" &&
+    Array.isArray(value.charts) &&
+    typeof value.additionalDocuments === "boolean" &&
+    object(value.referrer)
+  );
+}
+
 /** Check nested containers before any screen or allocator can touch them. This is a recovery
  * fence, not a producer: a rejected payload is never repaired or mixed with fixture records. */
 function nested(value: unknown, depth = 0): boolean {
@@ -137,7 +152,7 @@ function nested(value: unknown, depth = 0): boolean {
     // own validator, the one RECEIVE_REFERRAL applies. The generic walk below misread it and
     // refused every world holding one, so no such scenario could be saved (review finding A2-1).
     if (key === "intake") {
-      if (!object(item) || referralIntakeError(item as unknown as ReferralIntakeDetails) !== null) return false;
+      if (!isReferralIntakeCandidate(item) || referralIntakeError(item) !== null) return false;
       continue;
     }
     const rule = NESTED_KEY_RULES.get(key);
@@ -820,7 +835,15 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   // v10 pass 2: a review may name a synthetic seeded governance entry, derived from this same state.
   // The shape is fully checked by now; the seed reads it as the reducer's own state.
-  const seededAuditIds = new Set(syntheticGovernanceAuditEvents(value as unknown as WardFlowState).map((e) => e.id));
+  const isGovernanceSeedReadableState = (candidate: RecordValue): candidate is RecordValue & WardFlowState =>
+    typeof candidate.auditCaptureStartedAt === "number" &&
+    Array.isArray(candidate.units) &&
+    Array.isArray(candidate.movements) &&
+    Array.isArray(candidate.referrals) &&
+    Array.isArray(candidate.admissions);
+  const seededAuditIds = new Set(
+    (isGovernanceSeedReadableState(value) ? syntheticGovernanceAuditEvents(value) : []).map((e) => e.id),
+  );
   for (const row of state.auditReviews)
     if (!auditIds.has(row.eventId) && !seededAuditIds.has(row.eventId) && !row.eventId.startsWith("audit-seed-"))
       return false;

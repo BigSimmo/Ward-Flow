@@ -11,18 +11,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import {
-  CalendarDays,
-  ChevronDown,
-  Clock,
-  Copy,
-  Eye,
-  Search,
-  SearchX,
-  UserPlus,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarDays, ChevronDown, Clock, Copy, Eye, Search, SearchX, UserPlus, X } from "lucide-react";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -76,12 +65,12 @@ const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
 };
 
 /** The status shape for a row. `off` is a short bar: a record with nothing open. */
-export function CensusGlyphMark({ glyph, size = 10 }: { glyph: CensusGlyph; size?: number }) {
+function CensusGlyphMark({ glyph, size = 10 }: { glyph: CensusGlyph; size?: number }) {
   if (glyph === "off") return <span className={styles.offGlyph} aria-hidden="true" />;
   return <StatusGlyph tone={TONE[glyph]} size={size} />;
 }
 
-export function TierPill({ tier }: { tier: CensusRow["tier"] }) {
+function TierPill({ tier }: { tier: CensusRow["tier"] }) {
   if (tier === null) {
     return (
       <span className={styles.noTier}>
@@ -316,7 +305,7 @@ const WARD_CAP = 40;
 /** Waiting, Bed found and Moving fold after this many rows on the desktop table, like phone. */
 const GROUP_CAP = 10;
 
-export function rowTestId(row: CensusRow): string {
+function rowTestId(row: CensusRow): string {
   return row.kind === "movement" || row.kind === "referral"
     ? `ward-patient-search-case-${row.key}`
     : `ward-patient-search-row-${row.key}`;
@@ -1333,102 +1322,5 @@ export function PhoneCensus(props: PhoneCensusProps) {
         ) : null}
       </PhoneSheet>
     </section>
-  );
-}
-
-export type PhoneCommand = {
-  id: string;
-  label: string;
-  hint: string;
-  icon: LucideIcon;
-  href?: string;
-  onAction?: () => void;
-};
-
-/**
- * Commands (v10 phone): the page's verbs and the main places as a bottom sheet, with a filter.
- * Every command is something the page or the menu already does.
- */
-export function PhoneCommands({
-  open,
-  onClose,
-  actions,
-  places,
-}: {
-  open: boolean;
-  onClose: () => void;
-  actions: readonly PhoneCommand[];
-  places: readonly PhoneCommand[];
-}) {
-  const [filter, setFilter] = useState("");
-  const words = filter.trim().toLowerCase();
-  const match = (item: PhoneCommand) => !words || `${item.label} ${item.hint}`.toLowerCase().includes(words);
-  const list = (title: string, items: readonly PhoneCommand[]) => {
-    const shown = items.filter(match);
-    if (shown.length === 0) return null;
-    return (
-      <section className={styles.cmdGroup} aria-label={title}>
-        <h3 className={styles.cmdHead}>{title}</h3>
-        <ul className={styles.cmdList}>
-          {shown.map((item) => {
-            const body = (
-              <>
-                <Icon icon={item.icon} size={16} />
-                <span className={styles.cmdLabel}>{item.label}</span>
-                <span className={styles.cmdHint}>{item.hint}</span>
-              </>
-            );
-            return (
-              <li key={item.id}>
-                {item.href ? (
-                  <Link className={styles.cmdItem} href={item.href} onClick={onClose}>
-                    {body}
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className={styles.cmdItem}
-                    onClick={() => {
-                      item.onAction?.();
-                      onClose();
-                    }}
-                  >
-                    {body}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    );
-  };
-  return (
-    <PhoneSheet
-      open={open}
-      onClose={onClose}
-      title="Commands"
-      description="Do, go to, or change the screen"
-      height="tall"
-      data-testid="ward-patient-search-commands"
-    >
-      <div className={styles.cmdBody}>
-        <label className={styles.cmdFilter}>
-          <Icon icon={Search} size={16} />
-          <span className="sr-only">Filter commands</span>
-          <input
-            type="search"
-            value={filter}
-            placeholder="Type a verb, a name or a page"
-            onChange={(event) => setFilter(event.target.value)}
-          />
-        </label>
-        {list("Do", actions)}
-        {list("Go to", places)}
-        {actions.filter(match).length + places.filter(match).length === 0 ? (
-          <p className={styles.phoneSheetNote}>No command matches.</p>
-        ) : null}
-      </div>
-    </PhoneSheet>
   );
 }

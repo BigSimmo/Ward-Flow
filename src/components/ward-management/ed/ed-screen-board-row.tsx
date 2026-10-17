@@ -38,7 +38,7 @@ import { renderEdRowForms } from "./ed-screen-row-forms";
 import { renderEdRowMenuItems, renderEdRowNextGroup } from "./ed-screen-row-menu";
 
 /** What one board row knows about its person: clocks, blocked reasons, open panels and its next step. */
-export function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
+function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const {
     now,
     thresholds,

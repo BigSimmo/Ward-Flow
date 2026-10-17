@@ -24,7 +24,7 @@ import type { WardFlowEventType } from "@/components/ward-management/ward-role-p
 import styles from "./patient-status-card.module.css";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
-export interface StatusCell {
+interface StatusCell {
   key: string;
   icon: LucideIcon;
   label: string;
@@ -40,7 +40,7 @@ export interface StatusCell {
   href?: string;
 }
 
-export type StatusAction =
+type StatusAction =
   | {
       kind: "button";
       label: string;
@@ -76,7 +76,7 @@ export interface PatientStatus {
 }
 
 /** One checklist row: done or not, when, and at most one action. */
-export interface StatusRow {
+interface StatusRow {
   key: string;
   done: boolean;
   label: string;
@@ -141,7 +141,7 @@ export interface PatientStatusContext {
  * Top 25 item 24: time since absent and, past `awolBedHoldWarning`, the bed hold review warning.
  * The bed stays held (the leave bed is the hold); the warning asks a person to review it.
  */
-export function awolTrackerMeta(since: number, now: number, stayUnitName?: string): string {
+function awolTrackerMeta(since: number, now: number, stayUnitName?: string): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
   const base = `Since ${clock(since)}, away ${dur(away)}, owner nurse in charge`;
@@ -841,7 +841,7 @@ function withMeter(status: PatientStatus): PatientStatus {
   return { ...status, meter: { clear, of: status.cells.length } };
 }
 
-export function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
+function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
       <Button size="sm" disabledReason={action.reason} reasonDisplay="tooltip">

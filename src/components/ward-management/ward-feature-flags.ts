@@ -250,7 +250,7 @@ export type ResolvedWardFeatureFlag = {
   deviceCanChange: boolean;
 };
 
-export function isWardFeatureFlag(value: string): value is WardFeatureFlag {
+function isWardFeatureFlag(value: string): value is WardFeatureFlag {
   return Object.hasOwn(WARD_FEATURE_FLAGS, value);
 }
 

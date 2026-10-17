@@ -26,10 +26,14 @@ import {
   LiveChip,
   PhoneSheet,
   Select,
+  SrOnly,
   StatusGlyph,
   buttonClass,
   durMinutes,
 } from "@/components/wf";
+import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
 import { DischargeBarrierBars, DischargeDayChart, type DischargeDay } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
@@ -81,7 +85,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 const CHART_DAYS_AHEAD = 14;
 
 /** Moved to `./discharge-board-model` and `./discharge-board-parts`; re-exported so imports keep working. */
-export { groupDischarges, type DischargeGroups } from "./discharge-board-model";
+export { groupDischarges } from "./discharge-board-model";
 export { DischargeGroupSection } from "./discharge-board-parts";
 
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
@@ -94,6 +98,8 @@ export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: st
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
   const s = useDischargeWorkspaceState({ initialAdmissionId });
+  // D-64: rows show where criteria led discharge stands, behind its flag (off in production).
+  const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {
     units,
     dayZero,
@@ -489,6 +495,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       {visibleRecords.map((record) => {
                         const unit = units.find((candidate) => candidate.id === record.unitId);
                         const isSelected = selected?.admissionId === record.admissionId;
+                        const criteriaChip =
+                          criteriaLedOn && recordStage(record) !== "departed"
+                            ? criteriaLedTileChip(
+                                dischargeCriteriaStatus(record.dischargeCriteria, record.criteriaEligibility, now),
+                              )
+                            : null;
                         return (
                           <tr
                             key={record.id}
@@ -542,6 +554,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 {recordStatus(record) === "blocked" && (
                                   <span className={pageStyles.blocker}>{record.blockReason}</span>
                                 )}
+                                {criteriaChip ? (
+                                  <span data-testid="ward-discharge-criteria-led">
+                                    <CriteriaLedTag chip={criteriaChip} />
+                                    <SrOnly>{criteriaChip.phrase}</SrOnly>
+                                  </span>
+                                ) : null}
                                 {record.leavingDestination && (
                                   <span className={pageStyles.secondary}>
                                     {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)

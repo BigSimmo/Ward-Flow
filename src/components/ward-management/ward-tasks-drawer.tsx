@@ -1247,7 +1247,7 @@ export function WardTasksDrawer({
         </nav>
 
         <div className={styles.drawerFoot}>
-          <span id="taskDrawerSummary">Seen is not resolved</span>
+          <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
               <UserCheck aria-hidden="true" />

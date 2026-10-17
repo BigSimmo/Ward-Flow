@@ -170,6 +170,12 @@ export function reduceUndoEvent(
       );
       return { ...undone, undoRecords: remaining };
     }
+
+    default: {
+      // Sub-reducer slice narrowed via `Extract<WardFlowEvent, ...>`; ensure every UndoEvent case is handled.
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
+    }
   }
-  return state;
 }

@@ -92,6 +92,150 @@ describe("command-specific terminal completion", () => {
 });
 
 describe("working-role changes", () => {
+  it.each([401, 403, 409, "session"] as const)(
+    "preserves a confirmed acceptance when reconciliation gates the desk (%s)",
+    async (status) => {
+      const commandReply = deferred<Response>();
+      let reads = 0;
+      let posted = false;
+      let tokenCalls = 0;
+      let latest: import("@/components/ward-management/ward-shared-client").SharedView | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => {
+          if (++tokenCalls === 4 && status === "session") throw new WardAuthError("session", "Session ended");
+          return "test";
+        },
+        changed: (view) => {
+          latest = view;
+        },
+        fetch: async (url) => {
+          if (String(url).endsWith("/commands")) {
+            posted = true;
+            return commandReply.promise;
+          }
+          if (String(url).endsWith("/break-glass")) return Response.json({ snapshot: snapshot(1) });
+          if (++reads === 1) return Response.json({ snapshot: snapshot(1) });
+          if (typeof status !== "number") throw new Error("The sign-in check must stop this read before HTTP");
+          return Response.json({ code: status === 409 ? "choose-role" : "no-role", choices: [] }, { status });
+        },
+      });
+      try {
+        await client.refresh();
+        const completion = client.dispatchConfirmed(event);
+        await vi.waitFor(() => expect(posted).toBe(true));
+        await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
+        const accepted = snapshot(2);
+        commandReply.resolve(Response.json({ snapshot: accepted }));
+        const result = await completion;
+        expect(result).toMatchObject({ status: "accepted", undoRecords: accepted.payload.state.undoRecords });
+        await vi.waitFor(() =>
+          expect(latest?.status).toBe(
+            status === 401 || status === "session" ? "not-authorised" : status === 403 ? "no-role" : "choose-role",
+          ),
+        );
+        expect(latest?.snapshot).toBeNull();
+        expect(result.isCurrent?.()).toBe(false);
+        expect(reads).toBe(status === "session" ? 1 : 2);
+      } finally {
+        client.dispose();
+      }
+    },
+  );
+  it("expires an accepted command's fence when its working role ends on the server", async () => {
+    let role: string | null = "bootstrap";
+    let commands = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      workingAs: {
+        get: () => role,
+        set: (next) => {
+          role = next;
+        },
+      },
+      fetch: async (url) => {
+        if (String(url).endsWith("/commands")) {
+          commands++;
+          return commands === 1
+            ? Response.json({ snapshot: snapshot(2) })
+            : Response.json({ code: "no-role" }, { status: 403 });
+        }
+        return Response.json({ snapshot: snapshot(commands ? 2 : 1) });
+      },
+    });
+    try {
+      await client.refresh();
+      const accepted = await client.dispatchConfirmed(event);
+      expect(accepted.status).toBe("accepted");
+      expect(accepted.isCurrent?.()).toBe(true);
+      await expect(client.dispatchConfirmed(event)).resolves.toMatchObject({ status: "cancelled" });
+      expect(accepted.isCurrent?.()).toBe(false);
+      expect(commands).toBe(2);
+      expect(role).toBeNull();
+    } finally {
+      client.dispose();
+    }
+  });
+  it("keeps a definitive acceptance and its Undo records when the post-grant reconciliation read fails", async () => {
+    const commandReply = deferred<Response>();
+    const accepted = snapshot(2);
+    accepted.payload.state.undoRecords = [
+      {
+        kind: "bed-placement",
+        admissionId: "synthetic-stay",
+        unitId: "ward-test",
+        at: 642,
+        role: "coordinator",
+        beforeBed: null,
+        afterBed: 1,
+      },
+    ];
+    const opened = snapshot(1);
+    opened.payload.state.configuration.pullHoldMinutes = 45;
+    const commandPosts: Record<string, unknown>[] = [];
+    let reads = 0;
+    let latest: import("@/components/ward-management/ward-shared-client").SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (view) => {
+        latest = view;
+      },
+      fetch: async (url, options) => {
+        if (String(url).endsWith("/commands")) {
+          commandPosts.push(JSON.parse(options!.body as string));
+          return commandReply.promise;
+        }
+        if (String(url).endsWith("/break-glass")) return Response.json({ snapshot: opened });
+        reads++;
+        if (reads === 2) throw new Error("Reconciliation is offline");
+        return Response.json({ snapshot: reads === 1 ? snapshot(1) : accepted });
+      },
+    });
+    try {
+      await client.refresh();
+      const completion = client.dispatchConfirmed(event);
+      await vi.waitFor(() => expect(commandPosts).toHaveLength(1));
+      await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
+      commandReply.resolve(Response.json({ snapshot: accepted }));
+      await expect(completion).resolves.toMatchObject({
+        status: "accepted",
+        undoRecords: accepted.payload.state.undoRecords,
+      });
+      await vi.waitFor(() => expect(latest?.status).toBe("unavailable"));
+      // Reconciliation failure must preserve the granted scope until a fresh read succeeds.
+      expect(latest?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
+      await client.retry();
+      expect(commandPosts).toHaveLength(1);
+      expect(reads).toBe(3);
+      await expect(completion).resolves.toMatchObject({ status: "accepted" });
+    } finally {
+      client.dispose();
+    }
+  });
+
   it("cancels an in-flight and queued command when switching roles and ignores the old reply", async () => {
     const response = deferred<Response>();
     const { client } = setup(response.promise);

@@ -24,7 +24,7 @@ import { derivedBedReleases } from "@/components/ward-management/ward-discharge-
  * with one owner — the product owner may revise what this form is called — so it lives in one
  * place and both seed writes reference it, rather than each carrying its own copy of the string.
  */
-export const SEEDED_TRANSPORT_FORM_REQUIRED = "Form 1A";
+const SEEDED_TRANSPORT_FORM_REQUIRED = "Form 1A";
 
 /**
  * Hand-authored movements covering the states volume alone cannot guarantee: three declines

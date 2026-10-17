@@ -28,7 +28,9 @@ import {
   type UndoStepType,
 } from "./ward-undo";
 import {
+  admissionCriteriaEligibility,
   dischargeIdentity,
+  dischargeMovement,
   readOpenedDischargeRecord,
   safeCounter,
   selectDischargeRecord,
@@ -36,6 +38,8 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
+// D-64: these two live beside the discharge records so the Discharges list can use them too.
+export { admissionCriteriaEligibility, dischargeMovement };
 import {
   isLeavingDestination,
   isFollowUpState,
@@ -156,7 +160,6 @@ import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
-import { criteriaEligibility } from "@/components/ward-management/ward-discharge-criteria";
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
@@ -1446,32 +1449,30 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
 }
 
-/** A previous stay must never decide this admission's discharge or transport state. */
-export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
-  return (
-    state.movements.find((movement) => movement.admissionId === admission.id) ??
-    state.movements.find(
-      (movement) =>
-        admission.patientId !== null &&
-        movement.patientId === admission.patientId &&
-        movement.admissionId === undefined &&
-        movement.closure === undefined,
-    )
-  );
-}
-
-/** The single legal-status lookup used by both the ward card and the command reducer. */
-export function admissionCriteriaEligibility(
+/**
+ * The legal status the bed panel shows for a stay, read from the same two records as
+ * `admissionCriteriaEligibility`, so the Legal tile and the criteria led discharge card agree.
+ */
+export function admissionLegalStatus(
   state: Pick<WardFlowState, "movements" | "patients">,
   admission: Admission,
-) {
-  const movement = dischargeMovement(state, admission);
+): string | undefined {
   const patient = uniqueRecord(state.patients, admission.patientId);
-  return criteriaEligibility(
-    patient?.legalStatus,
-    movement?.legalStatus,
-    activeCommunityTreatmentOrder(patient) !== undefined,
-  );
+  const patientStatus = patient?.legalStatus;
+  // A Form 5A in force excludes criteria led discharge even when the typed status was not changed.
+  if (activeCommunityTreatmentOrder(patient) !== undefined) {
+    return patientStatus !== undefined && /community treatment order/i.test(patientStatus)
+      ? patientStatus
+      : "Community treatment order, Form 5A";
+  }
+  // A patient record that excludes criteria led discharge outranks the movement, as it does there.
+  if (
+    patientStatus !== undefined &&
+    (/community treatment order/i.test(patientStatus) || patientRecordIsInvoluntary(patientStatus))
+  ) {
+    return patientStatus;
+  }
+  return dischargeMovement(state, admission)?.legalStatus ?? patientStatus;
 }
 
 /** A collected journey whose vehicle has not yet arrived or been stood down. */
@@ -2637,7 +2638,7 @@ export function reduceClinicalEvent(
             message: event.message,
             urgent: event.urgent,
           },
-        ],
+        ].slice(-500),
       };
     }
 
@@ -2670,8 +2671,12 @@ export function reduceClinicalEvent(
     case "CONVERT_PLANNED_ADMISSION": {
       return reducePlannedAdmission(state, event, decision);
     }
+    default: {
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
+    }
   }
-  return state;
 }
 
 // Passed to the RECORD_* and UNDO_* slices, which may not import this file at run time.

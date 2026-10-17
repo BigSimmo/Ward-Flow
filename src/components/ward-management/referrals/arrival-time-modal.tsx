@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
@@ -63,6 +63,7 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
   const now = useWardFlowClock();
+  const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
   const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
   const pullHoldMinutes = configuration.pullHoldMinutes;
@@ -119,14 +120,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="arrival-modal-title"
+        aria-labelledby={`${baseId}-arrival-modal-title`}
         tabIndex={-1}
         className={styles.dialog}
       >
         <div className={styles.head}>
           <div className={styles.headTitle}>
             <Clock size={20} className={styles.titleIcon} aria-hidden="true" />
-            <h2 id="arrival-modal-title" className={styles.title}>
+            <h2 id={`${baseId}-arrival-modal-title`} className={styles.title}>
               Update Arrival Time & Transport
             </h2>
           </div>
@@ -158,11 +159,11 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           ) : null}
 
           <div className={styles.field}>
-            <label htmlFor="arrival-mode-select" className={styles.label}>
+            <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
               Arrival Mode
             </label>
             <select
-              id="arrival-mode-select"
+              id={`${baseId}-arrival-mode-select`}
               value={arrivalMode}
               onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
               className={styles.control}
@@ -176,11 +177,11 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           </div>
 
           <div className={styles.field}>
-            <label htmlFor="tracking-number-input" className={styles.label}>
+            <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
               Transport CAD / Tracking Number (Optional)
             </label>
             <input
-              id="tracking-number-input"
+              id={`${baseId}-tracking-number-input`}
               type="text"
               placeholder="e.g. CAD-2026-8912 or SJA-412"
               value={trackingNumber}
@@ -190,11 +191,11 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           </div>
 
           <div className={styles.etaField}>
-            <div id="eta-presets-label" className={styles.label}>
+            <div id={`${baseId}-eta-presets-label`} className={styles.label}>
               Estimated Time of Arrival (ETA): <strong>{formatInstantWithDay(etaMinutes, now)} AWST</strong>
             </div>
 
-            <div className={styles.presets} role="group" aria-labelledby="eta-presets-label">
+            <div className={styles.presets} role="group" aria-labelledby={`${baseId}-eta-presets-label`}>
               {etaPresets.map((preset) => (
                 <button
                   key={preset.label}

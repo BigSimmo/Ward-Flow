@@ -32,11 +32,12 @@ import type { AuditReview } from "@/components/ward-management/ward-audit";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowOverride,
   useWardFlow,
+  useWardFlowSelect,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
 import type { Rejection } from "@/components/ward-management/ward-model";
@@ -66,7 +67,6 @@ import {
   type BreakGlassRecord,
 } from "./ward-access-store";
 
-export { chromeRoleForAccess, useAccessShellRole, useEffectiveWardAccess } from "./ward-access-store";
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
@@ -76,12 +76,10 @@ import styles from "./ward-access.module.css";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
-export { accessPlaceLabel } from "./ward-access-labels";
-
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
-export function useBreakGlassPatientIds(): ReadonlySet<string> {
+function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
@@ -109,19 +107,33 @@ function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
  * state field by field, so a list keeps its previous identity while it holds the same items, and a
  * reader of that field does not re-render for an unrelated change (review on PR #322).
  */
+function isSteadyContextKey(value: WardFlowContextValue, key: string): key is keyof WardFlowContextValue {
+  return key in value;
+}
+
+function copySteadyKey<K extends keyof WardFlowContextValue>(
+  target: WardFlowContextValue,
+  source: WardFlowContextValue,
+  key: K,
+): void {
+  target[key] = source[key];
+}
+
 function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
   const [steady, setSteady] = useState(next);
   let changed = false;
-  const merged = { ...next } as Record<string, unknown>;
-  const before = steady as unknown as Record<string, unknown>;
+  const merged: WardFlowContextValue = { ...next };
   for (const key of Object.keys(merged)) {
-    const was = before[key];
+    if (!isSteadyContextKey(merged, key)) continue;
+    const was = steady[key];
     const now = merged[key];
-    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) merged[key] = was;
+    if (was !== now && Array.isArray(was) && Array.isArray(now) && sameItems(was, now)) {
+      copySteadyKey(merged, steady, key);
+    }
     if (merged[key] !== was) changed = true;
   }
-  if (Object.keys(before).length !== Object.keys(merged).length) changed = true;
-  const result = changed ? (merged as unknown as WardFlowContextValue) : steady;
+  if (Object.keys(steady).length !== Object.keys(merged).length) changed = true;
+  const result = changed ? merged : steady;
   if (result !== steady) setSteady(result);
   return result;
 }
@@ -333,6 +345,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         plannedAdmissions: coordinator ? context.plannedAdmissions : [],
         supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
           coordinator,
+          wholeNetwork,
           unitIn,
           role: access.role,
           movements: scoped.movements,
@@ -418,7 +431,7 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const on = useWardFeatureFlag("role-access");
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
-  const scoped = useWardFlow();
+  const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
   if (!on || accessIsWholeNetwork(access)) return <>{children}</>;
@@ -566,7 +579,7 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
 }
 
 /** Says a record is open only through break glass, on the patient page. */
-export function WardBreakGlassNote({ patientId }: { patientId: string }) {
+function WardBreakGlassNote({ patientId }: { patientId: string }) {
   const glass = useBreakGlassPatientIds();
   if (!glass.has(patientId)) return null;
   return (
@@ -672,14 +685,23 @@ export function WardIdleLock() {
   );
 }
 
-/** Every print names who printed it, from where, and when (feature 11). */
-export function WardPrintFooter() {
+/** Reused inside isolated paper stacks as well as ordinary page print footers. */
+export function WardPrintAttribution({ at, className }: { at?: Instant; className?: string }) {
   const access = useEffectiveWardAccess();
   const { units, now } = useUnscopedWardFlow();
   return (
+    <span className={className} data-testid="ward-print-attribution">
+      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {formatInstantWithDay(at ?? now, now)}. Synthetic data.
+    </span>
+  );
+}
+
+/** Every print names who printed it, from where, and when (feature 11). */
+export function WardPrintFooter() {
+  return (
     <p className={styles.printFooter} data-testid="ward-print-footer">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at {formatInstant(now)}.
-      Synthetic data.
+      <WardPrintAttribution />
     </p>
   );
 }

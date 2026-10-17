@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import styles from "./ward-discharges-matrix.module.css";
 import type { Unit, BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
@@ -43,6 +43,7 @@ export function WardDischargesMatrix({
   endLeaveBed,
 }: WardDischargesMatrixProps) {
   const [subTab, setSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
+  const [, startTransition] = useTransition();
 
   return (
     <div className={styles.dischargesWrap}>
@@ -59,7 +60,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "all"}
-          onClick={() => setSubTab("all")}
+          onClick={() => startTransition(() => setSubTab("all"))}
         >
           All Discharges ({releasesCountedToday.length + unitLeaveBeds.length})
         </button>
@@ -67,7 +68,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "scheduled"}
-          onClick={() => setSubTab("scheduled")}
+          onClick={() => startTransition(() => setSubTab("scheduled"))}
         >
           Scheduled Departures ({releasesCountedToday.length})
         </button>
@@ -75,7 +76,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "leave"}
-          onClick={() => setSubTab("leave")}
+          onClick={() => startTransition(() => setSubTab("leave"))}
         >
           Leave &amp; AWOL ({unitLeaveBeds.length})
         </button>
@@ -83,7 +84,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "barriers"}
-          onClick={() => setSubTab("barriers")}
+          onClick={() => startTransition(() => setSubTab("barriers"))}
         >
           Discharge Barriers ({blockedReleases.length})
         </button>
@@ -91,7 +92,7 @@ export function WardDischargesMatrix({
           type="button"
           className={styles.streamTabBtn}
           data-active={subTab === "suburb"}
-          onClick={() => setSubTab("suburb")}
+          onClick={() => startTransition(() => setSubTab("suburb"))}
         >
           Catchment Team Lookup
         </button>

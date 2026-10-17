@@ -259,7 +259,7 @@ export function otherDepartureDestinations(departures: readonly Admission[]): st
  * `community-vocabulary.ts`'s own near-identical duplication note records the same reasoning. A
  * source missing from this map still renders, as its own raw value, via the `??` fallback below.
  */
-export const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> = {
+const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> = {
   community: "Community",
   crisis_service: "Crisis service",
   ambulance: "Ambulance",
@@ -296,7 +296,7 @@ export function referralOriginLabel(referral: CommunityScopedReferral): string {
  * makes for an admission, read here for the referral itself rather than for who it eventually
  * admitted. `undefined` when this referral never named this team at all.
  */
-export function communityAddressingFor(
+function communityAddressingFor(
   referral: CommunityScopedReferral,
   team: CommunityTeam,
 ): CommunityScopedAddressing | undefined {
@@ -307,7 +307,7 @@ export function caseloadStatutoryFormCode(row: CaseloadRow): string | undefined 
   return row.legalForm?.code;
 }
 /** Only a person-recorded expiry belongs in the current record. */
-export function caseloadRecordedExpiryAt(row: CaseloadRow): Instant | undefined {
+function caseloadRecordedExpiryAt(row: CaseloadRow): Instant | undefined {
   return row.legalForm?.dueAt;
 }
 export function caseloadRecordedExpiryLabel(row: CaseloadRow, now: Instant): string {

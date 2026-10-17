@@ -16,10 +16,7 @@ import { useOptionalWardFlowSelect, useWardFlowClock, useWardFlowSelect } from "
 type WardFlowEventType = WardFlowEvent["type"];
 
 /** What an event records besides its type, the desk raising it and the time. */
-export type WardEventFields<T extends WardFlowEventType> = Omit<
-  Extract<WardFlowEvent, { type: T }>,
-  "type" | "role" | "now"
->;
+type WardEventFields<T extends WardFlowEventType> = Omit<Extract<WardFlowEvent, { type: T }>, "type" | "role" | "now">;
 
 type FieldsArgument<T extends WardFlowEventType> = keyof WardEventFields<T> extends never
   ? []

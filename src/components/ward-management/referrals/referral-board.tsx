@@ -2,6 +2,7 @@
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
 import {
@@ -97,16 +98,13 @@ import { WardOffersSection } from "./ward-offers-section";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
-  BedMeetingSheet,
   BedsReady,
   DecisionClock,
   HeroTools,
-  IsbarSheet,
   REFERRAL_SOURCE_WORDS,
   ReferralAlerts,
   ReferralPatientTab,
   ReferralTimeline,
-  ShortcutsSheet,
   SummaryButton,
   WaitCell,
   WaitRunway,
@@ -122,6 +120,11 @@ import {
   type MeetingRow,
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
+
+// The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
+const BedMeetingSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.BedMeetingSheet), { ssr: false });
+const IsbarSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.IsbarSheet), { ssr: false });
+const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "../ward-pinned-switch.module.css";

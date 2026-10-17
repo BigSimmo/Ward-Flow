@@ -624,7 +624,7 @@ export function reduceBedEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }],
+        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }].slice(-500),
       };
     }
 
@@ -766,6 +766,13 @@ export function reduceBedEvent(
       });
       const next = { ...state, leaveBeds };
       return notices.length === 0 ? next : appendNotices(next, notices);
+    }
+
+    default: {
+      // Sub-reducer slice narrowed via `Extract<WardFlowEvent, ...>`; ensure every BedEvent case is handled.
+      const _exhaustive: never = event;
+      void _exhaustive;
+      return state;
     }
   }
 }

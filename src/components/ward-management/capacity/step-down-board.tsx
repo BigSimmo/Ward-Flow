@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/wf";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -18,7 +18,15 @@ import styles from "./step-down-board.module.css";
  * already has an open transfer movement; otherwise the control is not wired (D4).
  */
 export function StepDownBoard({ now }: { now: Instant }) {
-  const { admissions, units, movements, patients, referrals, dispatch, configuration } = useWardFlow();
+  const { admissions, units, movements, patients, referrals, dispatch, configuration } = useWardFlowSelect(
+    "admissions",
+    "units",
+    "movements",
+    "patients",
+    "referrals",
+    "dispatch",
+    "configuration",
+  );
   const patientOf = usePatientOf();
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
   const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});

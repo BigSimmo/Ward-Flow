@@ -8,6 +8,8 @@ import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/w
  * written to storage. `acceptedEventsForHistory` shapes it for the history selectors.
  */
 export type EventLogEntry = {
+  /** Monotonic within a scenario, so consumers can track entries across retention trims. */
+  sequence: number;
   type: WardFlowEvent["type"];
   role: WardFlowRole | undefined;
   now: Instant | undefined;
@@ -40,6 +42,7 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
   const role = "role" in event && typeof event.role === "string" ? (event.role as WardFlowRole) : undefined;
   const now = "now" in event && typeof event.now === "number" ? event.now : undefined;
   const entry: EventLogEntry = {
+    sequence: 0,
     type: event.type,
     role,
     now,

@@ -1,5 +1,7 @@
 "use client";
 
+import { downloadBlob } from "@/components/ward-management/ward-download";
+
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, Search, X } from "lucide-react";
@@ -208,14 +210,10 @@ export function StatisticsCapacityChart({
         row.onLeave,
       ]),
     ];
-    const url = URL.createObjectURL(
+    downloadBlob(
       new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      "ward-flow-synthetic-capacity.csv",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-capacity.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   const sortItems: MenuItem[] = (Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({

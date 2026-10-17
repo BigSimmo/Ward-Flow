@@ -183,7 +183,7 @@ export type CommunityTreatmentOrder = {
   earlier?: EndedCommunityTreatmentOrder[];
 };
 
-export type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
+type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
 
 /** True while a Form 5A is in force (not yet ended). */
 export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
@@ -231,7 +231,7 @@ export function patientAddedOnDayOf(patient: Patient, now: Instant): boolean {
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's
  *  own comment. `today` is passed rather than read so this stays deterministic. */
-export function patientAgeYears(patient: Patient, today: Date): number {
+export function patientAgeYears(patient: Pick<Patient, "dateOfBirth">, today: Date): number {
   // Read the birth date's own calendar fields. `new Date("YYYY-MM-DD")` is UTC midnight, which
   // local getters read as the day before in zones west of UTC.
   const [year, month, day] = patient.dateOfBirth.slice(0, 10).split("-").map(Number);
@@ -249,11 +249,8 @@ export function patientCohort(
   dateOfBirth: string,
   today: Date | string | number = new Date(),
 ): "Adult" | "Older adult" | "Youth" {
-  const born = new Date(dateOfBirth);
   const now = typeof today === "string" || typeof today === "number" ? new Date(today) : today;
-  let age = now.getFullYear() - born.getFullYear();
-  const monthDelta = now.getMonth() - born.getMonth();
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < born.getDate())) age -= 1;
+  const age = patientAgeYears({ dateOfBirth }, now);
   if (age < 25) return "Youth";
   if (age >= 65) return "Older adult";
   return "Adult";
@@ -318,7 +315,7 @@ export function patientDisplayName(patient: Patient): string {
  * - Digits only: DDMMYYYY, YYYYMMDD
  * - Partial: DD/MM, MM/YYYY, YYYY
  */
-export function matchDateOfBirth(dobIso: string, query: string): boolean {
+function matchDateOfBirth(dobIso: string, query: string): boolean {
   if (!dobIso || !query) return false;
   const clean = query.trim();
   if (clean.length < 2) return false;

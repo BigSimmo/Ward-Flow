@@ -1,6 +1,5 @@
 import type { CareJourney } from "./ward-care-journey";
 import {
-  BED_RELEASE_BLOCKERS,
   type BedReleaseBlocker,
   type DischargeDelayClearReason,
 } from "@/components/ward-management/ward-change-reasons";
@@ -325,7 +324,7 @@ export type PullReleaseReason = (typeof PULL_RELEASE_REASONS)[number];
  * `ward-admissions-seed.ts` and `tests/ward-admissions-seed.test.ts`.
  */
 export const DISCHARGE_ROLE_LABELS = ["Ward manager"] as const;
-export type DischargeRoleLabel = (typeof DISCHARGE_ROLE_LABELS)[number];
+type DischargeRoleLabel = (typeof DISCHARGE_ROLE_LABELS)[number];
 
 /**
  * A person inside a bed — or on their way to one, or gone from one.
@@ -757,11 +756,6 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
 
 export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_PRESENCE);
 
-/** Membership check for the blocker vocabulary — chosen, never typed. */
-export function isBedReleaseBlocker(value: string): value is BedReleaseBlocker {
-  return (BED_RELEASE_BLOCKERS as readonly string[]).includes(value);
-}
-
 /**
  * Whether this admission is consuming a bed right now.
  *
@@ -1026,7 +1020,7 @@ export function isPlannedAdmissionStayDays(value: unknown): value is number {
 export const PLANNED_ADMISSION_WINDOW_DAYS = 14;
 
 export const PLANNED_ADMISSION_STATES = ["booked", "cancelled", "arrived"] as const;
-export type PlannedAdmissionState = (typeof PLANNED_ADMISSION_STATES)[number];
+type PlannedAdmissionState = (typeof PLANNED_ADMISSION_STATES)[number];
 
 export type PlannedAdmission = {
   id: string;

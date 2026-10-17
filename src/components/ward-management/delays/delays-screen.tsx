@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import { dayOf } from "@/components/ward-management/ward-clock";
@@ -75,6 +75,7 @@ function readAliasFromLocation() {
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const [, startTransition] = useTransition();
   const thresholds = useDueSoonThresholds();
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
@@ -192,7 +193,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             type="button"
             className={styles.aliasBannerDismiss}
             onClick={() => {
-              setAliasBannerDismissed(true);
+              startTransition(() => {
+                setAliasBannerDismissed(true);
+              });
             }}
           >
             Dismiss

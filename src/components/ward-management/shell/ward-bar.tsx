@@ -51,6 +51,7 @@ import {
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import {
@@ -60,7 +61,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
-import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
+import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
@@ -86,7 +87,6 @@ import {
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-export { WardDemoClockPopover };
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
@@ -492,7 +492,7 @@ function PhoneMenuEntry({
   );
 }
 
-export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
+function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
   return phone ? undefined : action;
 }
 
@@ -502,7 +502,7 @@ export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boo
  * own primary (Record a decision, Contact a team, Export the figures) keeps it, so the bar still
  * holds one primary button.
  */
-export function routeBarAction(pathname: string): WardPrimaryAction {
+function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
   // The intake route IS the open referral slide-out, so a second referral trigger stays off there.
   if (action?.kind === "none" && pathname.replace(/\/$/, "") === WARD_REFERRAL_INTAKE_HREF) return action;
@@ -1130,6 +1130,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, [openReferral, roleCategory]);
 
   useEffect(() => {
+    function onHistoryTraversalCancelled() {
+      // Capture kept the panel open and restored its entry. The pending Back is finished,
+      // so a later close may try again without approving any other dirty form.
+      closingViaHistoryRef.current = null;
+    }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
       if (closing !== null) {
@@ -1146,8 +1151,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // Announce in the event, outside React's state updater/render phase.
       announceToWardShell("Closed.");
     }
+    window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
     window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
+      window.removeEventListener("popstate", onPopState);
+    };
   }, [openPanel]);
 
   useEffect(() => {

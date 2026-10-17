@@ -12,7 +12,7 @@ import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward
  * not arranged status (`Admission.followUp`) is known. The window is
  * `CLINICAL_VALUES.ctoFollowUpWindow`, applied to every discharge by the owner ruling of 15 Oct 2026.
  */
-export type FollowUpCheckStatus = "booked_within" | "booked_outside" | "arranged_no_date" | "not_arranged";
+type FollowUpCheckStatus = "booked_within" | "booked_outside" | "arranged_no_date" | "not_arranged";
 
 export type FollowUpCheck = {
   status: FollowUpCheckStatus;

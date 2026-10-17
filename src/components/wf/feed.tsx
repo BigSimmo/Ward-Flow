@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, Check, type LucideIcon } from "lucide-react";
 import { Button } from "./button";
 import { cx } from "./cx";
@@ -117,43 +117,6 @@ export function Avatar({
     >
       <span aria-hidden="true">{initials ?? initialsOf(name)}</span>
       {online ? <span className={styles.online} aria-hidden="true" /> : null}
-    </span>
-  );
-}
-
-export function AvatarStack({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cx(styles.stack, className)}>{children}</span>;
-}
-
-/** Shimmer block. Decorative: set `aria-busy` on the loading region. */
-export function Skeleton({
-  width = "100%",
-  height = 12,
-  radius,
-  className,
-}: {
-  width?: CSSProperties["width"];
-  height?: CSSProperties["height"];
-  radius?: "xs" | "sm" | "pill";
-  className?: string;
-}) {
-  return (
-    <span
-      className={cx(styles.sk, className)}
-      style={{ width, height, borderRadius: radius ? `var(--wf-r-${radius})` : undefined }}
-      aria-hidden="true"
-    />
-  );
-}
-
-/** A few skeleton lines with uneven widths. */
-export function SkeletonLines({ lines = 3, className }: { lines?: number; className?: string }) {
-  const widths = ["92%", "64%", "78%", "52%", "86%"];
-  return (
-    <span className={cx(styles.skLines, className)} aria-hidden="true">
-      {Array.from({ length: lines }, (_, index) => (
-        <Skeleton key={index} width={widths[index % widths.length]} />
-      ))}
     </span>
   );
 }

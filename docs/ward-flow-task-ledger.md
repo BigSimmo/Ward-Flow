@@ -346,3 +346,9 @@ was refused, and a fresh attempt was stopped after two unchanged tests timed out
 browser download and dashboard readiness also block required browser verification. R43 and these
 verification limits remain explicit; no hosted PR status, CI verdict, publication or deployment
 is implied.
+
+Publication alignment on 17 October integrates verified main `7b14c988` after four real merge
+conflicts. A fresh adversarial review identified and corrected command-result misclassification
+when a separate permissions refresh fails or gates the desk; its targeted regression reproduced
+the defect before passing. Focused shared-client and real PostgreSQL checks passed. The linked
+receipt records the current open-PR overlap and retains the full-unit/browser verification limits.
