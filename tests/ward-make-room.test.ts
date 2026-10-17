@@ -234,4 +234,22 @@ describe("make room plans", () => {
       after.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
     ).toBe(false);
   });
+
+  it("counts a step down recorded in a secure bed as freeing one", () => {
+    const { preview, chains } = previewChains();
+    const chain = chains.find(
+      (plan) => plan.movement.security === "Secure" && plan.targetUnit.lockedBeds >= plan.targetUnit.beds,
+    )!;
+    const leaving = chain.stepDowns.at(-1)!.admission;
+    const units = preview.units.map((unit) =>
+      unit.id === chain.targetUnit.id ? { ...unit, lockedBeds: unit.beds - 1, allocatableLocked: 0 } : unit,
+    );
+    const admissions = preview.admissions.map((admission) =>
+      admission.id === leaving.id ? { ...admission, bedKind: "locked" as const } : admission,
+    );
+    const after = chainsFor(admissions, units);
+    expect(
+      after.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
+    ).toBe(true);
+  });
 });

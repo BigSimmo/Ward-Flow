@@ -134,13 +134,14 @@ export function deriveMakeRoomChains(input: {
   const units = (): Unit[] => input.units.filter((unit) => !unit.isClosed).map(current);
 
   /**
-   * One patient arriving on (1) or leaving (-1) `unit` in the projection. A patient who needs a
-   * secure bed, or any patient on a ward where every bed is secure, takes or frees a secure bed too.
+   * One patient arriving on (1) or leaving (-1) `unit` in the projection. `secure` is a patient
+   * taking a secure bed, or leaving one recorded as secure. On a ward where every bed is secure,
+   * every move takes or frees one.
    */
   function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1, secure = false): void {
     const ward = current(unit);
-    const allSecure = ward.lockedBeds >= ward.beds;
-    const lockedChange = delta === 1 ? (secure || allSecure ? -1 : 0) : allSecure ? 1 : 0;
+    const locked = secure || ward.lockedBeds >= ward.beds;
+    const lockedChange = locked ? -delta : 0;
     projected.set(unit.id, {
       ...ward,
       allocatable: { ...ward.allocatable, value: Math.max(0, ward.allocatable.value - delta) },
@@ -162,11 +163,12 @@ export function deriveMakeRoomChains(input: {
 
   /**
    * The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one
-   * fails. Which kind of bed `leaving` frees is not recorded, so a patient who needs a secure bed is
-   * only offered a ward where every bed is secure, or one with a secure bed already free.
+   * fails. A patient who needs a secure bed is only offered it when `leaving` is recorded in a
+   * secure bed, every bed on the ward is secure, or a secure bed is already free. When the stay has
+   * no bed kind recorded, it is never counted as secure.
    */
   function checksIntoVacated(subject: EligibilitySubject, unit: Unit, leaving: Admission): GateResult[] | undefined {
-    const freesSecureBed = unit.lockedBeds >= unit.beds || lockedBedsFree(unit) > 0;
+    const freesSecureBed = leaving.bedKind === "locked" || unit.lockedBeds >= unit.beds || lockedBedsFree(unit) > 0;
     if (subject.security === "Secure" && !freesSecureBed) return undefined;
     const verdict = eligibility(subject, vacated(unit, leaving), now);
     return verdict.eligible ? verdict.gates : undefined;
@@ -239,7 +241,7 @@ export function deriveMakeRoomChains(input: {
       for (const step of stepDowns) used.add(step.admission.id);
       for (const step of stepDowns) {
         const sex = mixSexOf(step.admission.gender, step.admission.sex);
-        move(step.fromUnit, sex, -1);
+        move(step.fromUnit, sex, -1, step.admission.bedKind === "locked");
         move(step.toUnit, sex, 1);
       }
       move(targetUnit, mixSexOf(movement.gender, movement.sex), 1, movement.security === "Secure");
