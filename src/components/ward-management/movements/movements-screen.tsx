@@ -28,7 +28,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -350,6 +350,12 @@ export function MovementsScreen() {
   }, []);
 
   const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
+  const [keyboardTabFocus, setKeyboardTabFocus] = useState<"every" | "resolved" | null>(null);
+  useLayoutEffect(() => {
+    if (keyboardTabFocus !== boardTab) return;
+    document.getElementById(`movements-tab-${keyboardTabFocus}`)?.focus();
+    setKeyboardTabFocus(null);
+  }, [boardTab, keyboardTabFocus]);
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [sideView, setSideView] = useState<"transport" | "shape">("transport");
@@ -1311,7 +1317,10 @@ export function MovementsScreen() {
                         aria-selected={boardTab === tab.id}
                         tabIndex={boardTab === tab.id ? 0 : -1}
                         className={styles.boardTab}
-                        onClick={() => startTransition(() => setBoardTab(tab.id))}
+                        onClick={() => {
+                          setKeyboardTabFocus(null);
+                          startTransition(() => setBoardTab(tab.id));
+                        }}
                         onKeyDown={(event) => {
                           let next: "every" | "resolved";
                           if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
@@ -1320,8 +1329,8 @@ export function MovementsScreen() {
                           else if (event.key === "End") next = "resolved";
                           else return;
                           event.preventDefault();
+                          setKeyboardTabFocus(next);
                           startTransition(() => setBoardTab(next));
-                          document.getElementById(`movements-tab-${next}`)?.focus();
                         }}
                       >
                         {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
