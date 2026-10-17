@@ -1,0 +1,28 @@
+# Ward Flow UI and local server workflow
+
+Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.md](../../AGENTS.md) governs safeguards. The dedicated repository engine/tests own behaviour; current accepted appearance must be preserved.
+
+## Local server safety
+
+- If the user says `run`, execute `npm run ensure` and return the printed URL.
+- For UI or frontend changes, browser QA, screenshots, mobile checks or a local app link, run `npm run ensure` first, even if the user did not say `run`.
+- Never assume `localhost:3000`, `localhost:3001` or `localhost:3002`.
+- Never attach to a local server unless `/api/local-project-id` confirms it is this project.
+- Never kill or modify another project's server. If the stable port is busy, let `npm run ensure` choose the next safe URL.
+- Do not run a permanent watcher. Start or verify the server only when the task needs the app or the user asks.
+
+## Building UI
+
+React mockups, owner direction of 5 October 2026:
+
+- Build interactive mockups in React and TypeScript with the site's existing Next.js routes, reusable components and CSS Modules. Design the real components that can become the approved site. Never build a separate HTML or JavaScript UI that must be rewritten.
+- Reuse shared Ward Flow state, reducer actions and synthetic records rather than duplicating logic or data. Keep preview-only controls and fixtures small and separate. A shareable HTML preview bundles the same React components.
+- On approval, integrate the reviewed components directly and keep their working interactions. Run only checks that cover plausible changed behaviour, and avoid repeated full suites, builds or screenshot matrices. An explicit request for static images, plain HTML or another framework wins. None of this authorises publication or deployment.
+
+Design and wiring:
+
+- The working engine is authoritative for behaviour. The latest accepted app (current `main`, reconfirmed 2 October 2026) is authoritative for appearance. Historical drawings and token notes do not authorise a restyle. Keep status understandable and controls accessible.
+- Every offered control must work or accessibly expose why it is unavailable. Wire a new route into the real role navigation and verify it is reachable. Screenshots alone do not prove controls. Detail: [wiring-and-bundle-budget.md](wiring-and-bundle-budget.md).
+- Owner rules that fail reviews (D4 wording, D5 Act limits, no typed text in browser storage, privacy wording, design tokens) are in HOW-WE-WORK section 6.
+- Repository contracts and committed tests outrank generic external skills and style plugins. Never change committed tokens or tests to satisfy a generic rule, and name the rule when an external one drives a change.
+- Figma sync follows [figma-sync.md](figma-sync.md). Code is the source of truth.

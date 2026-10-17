@@ -37,6 +37,9 @@ function repoFixture(branch: string): string {
   writeFileSync(join(root, "README.md"), "base\n");
   git(root, "add", "README.md");
   git(root, "commit", "--quiet", "-m", "base");
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  copyFileSync(join(process.cwd(), "scripts/pre-commit-checks.mjs"), join(root, "scripts/pre-commit-checks.mjs"));
+  writeFileSync(join(root, "sign-out.md"), "Open sign-outs only\n");
   return root;
 }
 
@@ -53,7 +56,14 @@ function runFullHook(root: string, env: Record<string, string | undefined> = {})
   const result = spawnSync(BASH_BIN, [HOOK_PATH], {
     cwd: root,
     encoding: "utf8",
-    env: { ...process.env, ...env },
+    // These fixtures exercise shell admission/main/docs guards, without installed code-check tooling.
+    env: {
+      ...process.env,
+      WARD_SIGNOUT_FILE: join(root, "sign-out.md"),
+      SKIP_PRECOMMIT_LINT: "1",
+      SKIP_PRECOMMIT_TYPECHECK: "1",
+      ...env,
+    },
   });
   return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
@@ -192,7 +202,7 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
         join(root, "scripts", "pre-commit-checks.mjs"),
       );
       stageWardFile(root);
-      // An empty log is what makes an unsigned file a block; a missing log only warns.
+      // An empty log makes an unsigned file a block; missing logs also fail closed.
       writeFileSync(join(root, "sign-out.md"), "Open sign-outs only\n");
       return {
         root,
@@ -224,5 +234,13 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
       const result = runFullHook(root, { ...env, SKIP_SIGNOUT_GUARD: "1" });
       expect(result.status, result.stderr).toBe(0);
     });
+  });
+
+  it("runs the dependency-free staged admission regressions", { timeout: 90_000 }, () => {
+    const result = spawnSync(process.execPath, ["--test", "tests/ward-agent-admission.node.test.mjs"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
   });
 });

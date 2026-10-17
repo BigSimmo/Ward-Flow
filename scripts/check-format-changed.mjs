@@ -122,7 +122,7 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
     const { unsignedWardFiles, signOutConflicts, signOutLogOptional } = await import("./pre-commit-checks.mjs");
     const log = wardSignOutFile();
     if (!existsSync(log)) {
-      // Same rule as the pre-commit guard: only an unnamed default log off Windows may be absent.
+      // Same fail-closed admission as the commit hook on every host.
       if (!signOutLogOptional())
         throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
       console.warn(`Sign-out log not found at ${log}; formatting the named files without an ownership check.`);

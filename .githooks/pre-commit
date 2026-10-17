@@ -6,13 +6,19 @@ set -eu
 # --- Fast staged-file checks ------------------------------------------------------
 # Secret and real-patient-identifier scan, lint on changed lines, and a typecheck
 # scoped to the staged TypeScript files. All read the staged content. Details,
-# timings and escapes are in the script's header. Fails open only when the script
-# or node is absent (an older branch in another worktree), never on a finding.
+# timings and readiness skips are in the script's header. Missing admission
+# tooling fails closed; publication cannot turn a missing checker into clearance.
 # The sign-out clash check is ON by default. A single-user session may bypass it only by an
 # explicit choice for that commit: SKIP_SIGNOUT_GUARD=1 git commit ... (honoured by
 # scripts/pre-commit-checks.mjs). This hook never sets or defaults that variable.
 
-if [ -f scripts/pre-commit-checks.mjs ] && command -v node >/dev/null 2>&1; then
+if [ ! -f scripts/pre-commit-checks.mjs ] || ! command -v node >/dev/null 2>&1; then
+  echo "[pre-commit] BLOCKED: node and scripts/pre-commit-checks.mjs are required for staged safety/ownership admission." >&2
+  exit 1
+fi
+if [ "${SKIP_PRECOMMIT_READINESS:-}" = "1" ]; then
+  node scripts/pre-commit-checks.mjs --admission-only || exit 1
+else
   node scripts/pre-commit-checks.mjs || exit 1
 fi
 
@@ -62,6 +68,7 @@ ward_flow_index_check() {
   fi
 }
 
+ward_readiness_checks() {
 ward_flow_index_check "scripts/ward-flow/screen-map.mjs"   '^(design/third-edition-mockups/|src/app/mockups/ward-flow/|docs/ward-flow/SCREEN-MAP\.md$|scripts/ward-flow/screen-pairs\.mjs$)'
 ward_flow_index_check "scripts/ward-flow/rules-index.mjs"   '^(docs/ward-flow/lessons/|docs/ward-flow/RULES\.md$|scripts/ward-flow/rules-index\.mjs$)'
 ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/ward-flow/(archive/dated-notes/)?owner-.*\.md$|docs/ward-flow/(decisions|OWNER-RULINGS)\.md$)'
@@ -73,6 +80,7 @@ ward_flow_index_check "scripts/ward-flow/screen-verification.mjs"   '^(docs/ward
 if [ -f scripts/check-staged-docs.mjs ] && command -v node >/dev/null 2>&1; then
   node scripts/check-staged-docs.mjs --ward-indexes || exit 1
 fi
+}
 
 # --- Ward Flow main commit confirmation guard -----------------------------------
 # The former Database ward integration line is retired. In this dedicated repository, main and
@@ -99,6 +107,13 @@ if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
     fi
   fi
 fi
+
+if [ "${SKIP_PRECOMMIT_READINESS:-}" = "1" ]; then
+  echo "[pre-commit] readiness checks unrun by explicit publication scope; staged admission and main guard completed." >&2
+  exit 0
+fi
+
+ward_readiness_checks
 
 if [ "${SKIP_DOCS_SYNC_HOOK:-}" = "1" ]; then
   exit 0

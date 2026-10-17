@@ -4,27 +4,30 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = process.cwd();
 const agents = readFileSync(join(repoRoot, "AGENTS.md"), "utf8");
+const publication = readFileSync(join(repoRoot, "docs/agents/git-publication.md"), "utf8");
 const releasePath = join(repoRoot, ".agents", "skills", "release", "SKILL.md");
 const handoverPath = join(repoRoot, ".agents", "skills", "handover", "SKILL.md");
 const hookPath = join(repoRoot, ".claude", "hooks", "pr-handoff-stop.sh");
 
 describe("bare PR publication policy", () => {
   it("separates an explicit open-PR request from local readiness work", () => {
-    expect(agents).toContain("## Bare PR publication is not readiness work");
-    expect(agents).toContain("Do **not** run or wait for `npm run format`");
-    expect(agents).toContain("`npm run verify:pr-local`");
-    expect(agents).toContain("publish with `git commit --no-verify` and that guard's own scoped override");
-    expect(agents).toContain("instead of `git push --no-verify`");
-    expect(agents).toContain(
+    expect(agents).toContain("docs/agents/git-publication.md#bare-pr-publication-is-not-readiness-work");
+    expect(publication).toContain("## Bare PR publication is not readiness work");
+    expect(publication).toContain("Do **not** run or wait for `npm run format`");
+    expect(publication).toContain("`npm run verify:pr-local`");
+    expect(publication).toContain("`SKIP_PRECOMMIT_READINESS=1 git commit ...`");
+    expect(publication).toContain("`scripts/pre-commit-checks.mjs --admission-only`");
+    expect(publication).toContain("Never use `git commit --no-verify` or disable hooks to publish.");
+    expect(publication).toContain(
       "Never skip the push hook wholesale — the auto-merge ownership guard has no override and must never be bypassed",
     );
-    expect(agents).toContain("Do not babysit CI");
-    expect(agents).toContain("overrides generic branch-bundling, handover, review, and babysit instructions");
+    expect(publication).toContain("Do not babysit CI");
+    expect(publication).toContain("overrides generic branch-bundling, handover, review, and babysit instructions");
   });
 
   it("keeps normal formatting policy from overriding bare publication", () => {
-    expect(agents).toContain("This rule does not apply to the explicit bare PR publication route above.");
-    expect(agents).toContain("never an explicit bare PR publication");
+    expect(publication).toContain("This rule does not apply to the explicit bare PR publication route above.");
+    expect(publication).toContain("never an explicit bare PR publication");
   });
 
   it("prevents the release workflow from being selected for bare publication", () => {

@@ -26,21 +26,23 @@
  * file simply does not call it. Lint and typecheck skip with a notice when the
  * worktree has no node_modules; the scan needs only node and always runs.
  *
- * During a merge (MERGE_HEAD present) only the scan runs: a fold stages every
- * incoming change, and the fold procedure already runs the build and tests.
+ * During a merge (MERGE_HEAD present) the normal hook skips code readiness checks.
+ * Admission-only publication still requires the ownership check during a merge.
  *
  * Also: a clash guard. Staged files that another branch has signed out in the
  * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
  * "## Active sign-outs" lines `- date | who | branch | worktree | files`) block
- * the commit and name the owner. A missing file is treated as an empty log
- * (fail closed) on Windows or when WARD_SIGNOUT_FILE names it; elsewhere the
- * default log is optional, so a missing one gives a notice and no check.
+ * the commit and name the owner. A missing/unreadable log fails closed on every
+ * host. Isolated Cloud tasks configure their actual environment's coordination
+ * log with WARD_SIGNOUT_FILE; it does not prove other hosts' ownership state.
  *
  * Escapes, in order of preference:
  *   - a line containing `precommit-scan: allow` is skipped by the scan
  *     (for a deliberate synthetic identifier or a documented fake key);
  *   - SKIP_PRECOMMIT_LINT=1 / SKIP_PRECOMMIT_TYPECHECK=1 / SKIP_SIGNOUT_GUARD=1 skip one check;
- *   - `git commit --no-verify` skips every hook.
+ * --admission-only runs the staged scan and ownership checks without code
+ * readiness checks. It rejects SKIP_SIGNOUT_GUARD and does not waive ownership
+ * during merges. Never bypass this admission with git commit --no-verify.
  */
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -72,16 +74,15 @@ const SIGN_OUT_FILE =
     .replace(/\\/g, "/");
 
 /**
- * The shared log lives on Josh's Windows machine. Only an unnamed default log off Windows (a cloud
- * container, a Linux or macOS clone) may be absent without blocking. An explicit WARD_SIGNOUT_FILE
- * or WARD_FLOW_LOGS, or a Windows default that cannot be found still fails closed, so a typo or an unmounted drive
- * never switches the guard off.
+ * Compatibility helper used by formatter admission as well as the hook. A
+ * missing log never grants ownership clearance, including implicit Cloud paths.
  * @param {Record<string, string | undefined>} [env]
  * @param {string} [platform]
  */
 export function signOutLogOptional(env = process.env, platform = process.platform) {
-  // Empty values count as unset, matching the || fallbacks in SIGN_OUT_FILE above.
-  return !env.WARD_SIGNOUT_FILE && !env.WARD_FLOW_LOGS && platform !== "win32";
+  void env;
+  void platform;
+  return false;
 }
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */
@@ -729,11 +730,15 @@ async function typecheckChildMain() {
 
 async function main() {
   if (process.argv.includes(TYPECHECK_CHILD_FLAG)) return typecheckChildMain();
+  const admissionOnly = process.argv.includes("--admission-only");
   const started = Date.now();
   const root = git(["rev-parse", "--show-toplevel"]).trim();
   process.chdir(root);
-  const staged = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]).split("\0").filter(Boolean);
+  const staged = git(["diff", "--cached", "--name-only", "-z", "--no-renames", "--diff-filter=ACMRD"])
+    .split("\0")
+    .filter(Boolean);
   if (staged.length === 0) return 0;
+  const scanFiles = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]).split("\0").filter(Boolean);
 
   let failed = false;
   const report = [];
@@ -751,7 +756,7 @@ async function main() {
     "--dst-prefix=b/",
   ]);
   const added = parseAddedLines(diff);
-  const findings = scanAddedLines(added, staged);
+  const findings = scanAddedLines(added, scanFiles);
   report.push(`scan ${elapsed(scanStart)}`);
   if (findings.length > 0) {
     failed = true;
@@ -762,15 +767,18 @@ async function main() {
 
   const merging = existsSync(git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim());
 
-  // 1b. Ward ownership guard. Not during a fold's merge.
-  // A missing optional log (see signOutLogOptional) gives a notice and no check. Any other missing
-  // log reads as empty, so unsigned Ward files on a task branch still block.
+  // 1b. Ward ownership admission. Publication never waives it, even during a merge.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
-  const skipMissingLog = !signOutLogPresent && signOutLogOptional();
-  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && skipMissingLog) {
-    report.push(`sign-out guard skipped (no log at ${SIGN_OUT_FILE}; set WARD_SIGNOUT_FILE to use one)`);
+  if (admissionOnly && process.env.SKIP_SIGNOUT_GUARD === "1") {
+    failed = true;
+    console.error("[pre-commit] BLOCKED: admission-only publication cannot skip ownership admission.");
   }
-  if (!merging && process.env.SKIP_SIGNOUT_GUARD !== "1" && !skipMissingLog) {
+  if ((admissionOnly || !merging) && (admissionOnly || process.env.SKIP_SIGNOUT_GUARD !== "1")) {
+    if (!signOutLogPresent) {
+      failed = true;
+      console.error(`[pre-commit] BLOCKED: sign-out log unavailable at ${SIGN_OUT_FILE}.`);
+      console.error("  Configure the actual coordination log with WARD_SIGNOUT_FILE; absence is never clearance.");
+    }
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
     const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
     const clashes = signOutConflicts(staged, signOutText, branch, root);
@@ -800,8 +808,12 @@ async function main() {
     console.error(`[pre-commit] FAILED: ${report.join("; ")}; total ${elapsed(started)}`);
     return 1;
   }
-  const lintFiles = staged.filter((file) => LINT_EXTENSIONS.test(file));
-  const typeFiles = staged.filter((file) => TYPECHECK_EXTENSIONS.test(file) && !file.endsWith(".d.ts"));
+  if (admissionOnly) {
+    console.error(`[pre-commit] admission ok: ${report.join("; ")}; readiness checks unrun; total ${elapsed(started)}`);
+    return 0;
+  }
+  const lintFiles = scanFiles.filter((file) => LINT_EXTENSIONS.test(file));
+  const typeFiles = scanFiles.filter((file) => TYPECHECK_EXTENSIONS.test(file) && !file.endsWith(".d.ts"));
   const tooMany = lintFiles.length > MAX_FILES_FOR_CODE_CHECKS;
 
   if (merging) {
@@ -858,7 +870,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     (code) => process.exit(code),
     (error) => {
       console.error(`[pre-commit] checks crashed: ${error?.stack ?? error}`);
-      console.error("[pre-commit] Fix the checker, or commit with --no-verify and say so.");
+      console.error(
+        "[pre-commit] Admission is blocked until the checker or its inputs are repaired; do not bypass it.",
+      );
       process.exit(1);
     },
   );
