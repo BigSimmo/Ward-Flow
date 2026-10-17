@@ -165,6 +165,32 @@ export function mergeOwnershipScope(changes, incomingHeads, run = git) {
   }
 }
 
+// An index-to-incoming diff also contains files changed only by the current side.
+// Use tree provenance to admit only paths that the incoming side actually changed.
+export function filterAdmissionMergePaths(paths, incomingHeads, run = git) {
+  if (paths.length === 0) return [];
+  if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0])) return paths;
+  try {
+    const bases = run(["merge-base", "--all", "HEAD", incomingHeads[0]]).trim().split(/\r?\n/);
+    if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return paths;
+    const tree = (ref) => parseOwnershipTree(run(["ls-tree", "-r", "-z", "--full-tree", ref]));
+    const base = tree(bases[0]);
+    const head = tree("HEAD");
+    const incoming = tree(incomingHeads[0]);
+    const index = parseOwnershipTree(run(["ls-files", "--stage", "-z"]), true);
+    return paths.filter(
+      (file) =>
+        !(
+          head.get(file) !== base.get(file) &&
+          incoming.get(file) === base.get(file) &&
+          index.get(file) !== incoming.get(file)
+        ),
+    );
+  } catch {
+    return paths;
+  }
+}
+
 export function ownershipAdmission({
   ownershipPaths,
   requiredClaims = ownershipPaths,
@@ -849,7 +875,17 @@ async function main() {
   const root = git(["rev-parse", "--show-toplevel"]).trim();
   process.chdir(root);
   const scope = stagedScope();
-  if (scope.ownershipPaths.length === 0) return 0;
+  const mergeHeadPath = git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim();
+  const merging = existsSync(mergeHeadPath);
+  const incomingHeads = merging ? readFileSync(mergeHeadPath, "utf8").trim().split(/\r?\n/) : [];
+  const admissionMergePaths =
+    merging && admissionOnly
+      ? filterAdmissionMergePaths(
+          git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean),
+          incomingHeads,
+        )
+      : [];
+  if (scope.ownershipPaths.length === 0 && admissionMergePaths.length === 0) return 0;
   const scanFiles = scope.contentPaths;
 
   let failed = false;
@@ -877,9 +913,6 @@ async function main() {
     console.error(`  Remove it (use made-up data), or if it is deliberately fake add "${ALLOW_MARKER}" on that line.`);
   }
 
-  const mergeHeadPath = git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim();
-  const merging = existsSync(mergeHeadPath);
-
   // 1b. Admission covers every staged path, including deletions and rename sources.
   // Exact incoming tree identity can waive a new claim, never the active-overlap check.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
@@ -894,12 +927,8 @@ async function main() {
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");
     const mergeScope = merging
-      ? mergeOwnershipScope(scope.changes, readFileSync(mergeHeadPath, "utf8").trim().split(/\r?\n/))
+      ? mergeOwnershipScope(scope.changes, incomingHeads)
       : { cleanIncoming: [], requiredClaims: scope.ownershipPaths };
-    const admissionMergePaths =
-      merging && admissionOnly
-        ? git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean)
-        : [];
     const admission = ownershipAdmission({
       ownershipPaths: [...new Set([...scope.ownershipPaths, ...admissionMergePaths])],
       requiredClaims: [...new Set([...mergeScope.requiredClaims, ...admissionMergePaths])],
