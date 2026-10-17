@@ -39,6 +39,8 @@ export function StepDownBoard({ now }: { now: Instant }) {
   const stepDownSwapEnabled = useWardFeatureFlag("top25-step-down-swap");
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
   const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});
+  // Rows whose incoming matches are all shown, not only the first three.
+  const [allMatchesShown, setAllMatchesShown] = useState<ReadonlySet<string>>(() => new Set());
   // Fix list 1.5: raise by name. One REFER_TO_UNITS construction site for every Refer on this board,
   // sending the cap reason only when that movement is at the limit and a reason was chosen.
   const raise = useMemo(() => wardRaise(dispatch, "coordinator", now), [dispatch, now]);
@@ -136,7 +138,17 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             Incoming referrals that fit {row.fromUnit.name} now, with a bed free there:
                           </p>
                           <ul className={styles.wards} aria-label={`Incoming matches for ${row.fromUnit.name}`}>
-                            {row.swapCandidates.slice(0, 3).map((candidate) => {
+                            {(allMatchesShown.has(row.admission.id)
+                              ? row.swapCandidates
+                              : // Not yet referred first, so referred matches never fill every visible slot.
+                                [...row.swapCandidates]
+                                  .sort(
+                                    (a, b) =>
+                                      Number(a.incomingMovement.referredUnitIds.includes(row.fromUnit.id)) -
+                                      Number(b.incomingMovement.referredUnitIds.includes(row.fromUnit.id)),
+                                  )
+                                  .slice(0, 3)
+                            ).map((candidate) => {
                               const incoming = candidate.incomingMovement;
                               const incomingReferred = incoming.referredUnitIds.includes(row.fromUnit.id);
                               const incomingAtCap =
@@ -195,6 +207,15 @@ export function StepDownBoard({ now }: { now: Instant }) {
                               );
                             })}
                           </ul>
+                          {row.swapCandidates.length > 3 && !allMatchesShown.has(row.admission.id) ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setAllMatchesShown((previous) => new Set(previous).add(row.admission.id))}
+                            >
+                              Show all {row.swapCandidates.length} matches
+                            </Button>
+                          ) : null}
                         </>
                       ) : (
                         <p className={styles.meta} data-testid="step-down-swap-waiting">

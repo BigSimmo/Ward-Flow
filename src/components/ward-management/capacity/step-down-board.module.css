@@ -60,3 +60,10 @@
   padding-block-start: var(--wf-s-1);
   border-block-start: 1px dashed var(--wf-line);
 }
+
+/* Phone: the cap reason pickers keep the 48px tap-target floor the shared buttons have. */
+@media (max-width: 48rem) {
+  .capReason select {
+    min-height: 3rem;
+  }
+}
