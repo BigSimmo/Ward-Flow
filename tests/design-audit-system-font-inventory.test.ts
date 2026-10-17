@@ -109,6 +109,15 @@ describe("design audit: parsed Ward font inventory", () => {
     expect(result.findings).toHaveLength(1);
   });
 
+  it("keeps a relative alias unresolved beside a finite definition", () => {
+    const result = scan(
+      ".label { font-size: var(--size); }",
+      ":root { --size: 12px; --size: .6875em; }",
+    );
+    expect(result.findings).toEqual([]);
+    expect(result.unresolved).toHaveLength(1);
+  });
+
   it("cannot exchange a historical small rule for a new small rule in the same file", () => {
     const baseline = fontInventoryCounts(scan(".old { font-size: 11px; }").findings);
     expect(fontInventoryRises(scan("\n\n.old { font-size: 11px; }").findings, baseline)).toEqual([]);

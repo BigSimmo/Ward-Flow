@@ -67,6 +67,10 @@ function lengthPx(value, tokens, seen = new Set()) {
     const values = tokens.get(name);
     const resolved = values.map((item) => lengthPx(item, tokens, next));
     const sizes = resolved.filter(Number.isFinite);
+    // A finite branch cannot hide a relative branch that may render smaller than
+    // the floor. Only a concrete below-floor value is safe to report immediately.
+    if (sizes.some((size) => size < 12)) return Math.min(...sizes);
+    if (resolved.some((item) => item === undefined)) return undefined;
     if (sizes.length) return Math.min(...sizes);
     if (resolved.every(Number.isNaN)) return fallback.length ? lengthPx(fallback.join(","), tokens, next) : NaN;
     return undefined;
