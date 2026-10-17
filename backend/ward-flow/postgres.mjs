@@ -1189,6 +1189,8 @@ export function createWorkspaceStore(
     pushByRole,
     /** Granting access, cover or breaking glass needs a sign-in this recent. */
     stepUpMinutes: engine.STEP_UP_MINUTES,
+    /** A sign-in older than this is refused, so the person signs in again (ISM-0428). */
+    sessionLimitMinutes: engine.SESSION_LIMIT_MINUTES,
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set

@@ -727,6 +727,23 @@ describe("shared workspace connection", () => {
     expect(seen).not.toContain(2);
     client.dispose();
   });
+  it("signs out with the server's reason when the sign-in reaches the session limit", async () => {
+    let view: SharedView | undefined;
+    const error = "Signed out after 12 hours. Sign in again to carry on.";
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => Response.json({ code: "session-limit", error }, { status: 401 }),
+    });
+    await client.refresh().catch(() => {});
+    expect(view?.status).toBe("not-authorised");
+    expect(view?.error).toBe(error);
+    expect(view?.snapshot).toBeNull();
+    client.dispose();
+  });
   it("hands back step-up and role refusals on access steps instead of signing out", async () => {
     let view: SharedView | undefined;
     const bodies: unknown[] = [];

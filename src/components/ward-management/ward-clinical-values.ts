@@ -76,6 +76,8 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
 const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
 /** Josh signed the remaining synthetic values for the prototype on 16 Oct 2026, two of them changed (D-63). */
 const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-16" } as const;
+/** Josh signed the shared site's session limit for the prototype on 17 Oct 2026 (D-65). */
+const SIGNED_BY_JOSH_17_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-17" } as const;
 
 /**
  * Every clinical value, keyed for typed reads (`CLINICAL_VALUES.tierOneOverdue.value`). The order
@@ -501,6 +503,15 @@ export const CLINICAL_VALUES = {
     value: 12,
     unit: "hours",
     source: "D-63 (16 Oct 2026), one shift, the same figure as the break glass shift",
+  },
+  sessionLimit: {
+    ...SIGNED_BY_JOSH_17_OCT,
+    name: "The signed-in shared site asks for a fresh sign-in after",
+    group: "Access and privacy",
+    value: 12,
+    unit: "hours",
+    source:
+      "D-65 (17 Oct 2026), Australian Government ISM-0428: sessions end after at most twelve hours. Checked against the September 2026 ISM on cyber.gov.au",
   },
   stepUpWindow: {
     ...SIGNED_BY_JOSH_16_OCT,

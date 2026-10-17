@@ -138,7 +138,7 @@ export function createSharedHandler({
       });
     }
     let actorId;
-    /** @type {{ signedInAt?: number, aal?: string }} */
+    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string }} */
     const session = {};
     try {
       actorId = await authenticate(request.headers.get("authorization"), {
@@ -154,6 +154,27 @@ export function createSharedHandler({
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
         : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
     }
+    // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). It counts from
+    // the token's first sign-in factor, which a refresh or a later factor never moves, so the person
+    // signs in again with a password. A sign-in with no start time fails closed. Turning this
+    // device's phone alerts off still goes through, so the sign-out can stop them reaching it.
+    const limitMinutes = store.sessionLimitMinutes;
+    const started = session.startedAt;
+    if (
+      Number.isFinite(limitMinutes) &&
+      !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
+      path !== "/v1/workspace/push-unsubscribe"
+    )
+      return reply(
+        401,
+        {
+          code: "session-limit",
+          error: Number.isFinite(started)
+            ? `Signed out after ${limitMinutes / 60} hours. Sign in again to carry on.`
+            : "Signed out. Sign in again to carry on.",
+        },
+        "session_limit",
+      );
     const workingAs = request.headers.get(WORKING_AS)?.toLowerCase() ?? null;
     if (workingAs !== null && workingAs !== "bootstrap" && !UUID.test(workingAs))
       return reply(400, { error: "Working as names one of this account's roles" });

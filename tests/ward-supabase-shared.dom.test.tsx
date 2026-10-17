@@ -353,6 +353,36 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });
+it("turns this device's phone alerts off when the session limit signs the person out", async () => {
+  let revoked: boolean | undefined;
+  vi.mocked(releasePhonePush).mockImplementation(async (api) => {
+    revoked = await api.pushUnsubscribe("synthetic-endpoint");
+  });
+  const fetcher = vi.fn<(url: string | URL | Request, init?: RequestInit) => Promise<Response>>(async (url) =>
+    String(url).endsWith("/push-unsubscribe")
+      ? Response.json({ subscribed: false, revoked: true })
+      : String(url).includes("/v1/workspace")
+        ? Response.json({ code: "session-limit", error: "Signed out after 12 hours." }, { status: 401 })
+        : String(url).endsWith("/user")
+          ? Response.json(user)
+          : String(url).includes("/logout")
+            ? new Response(null, { status: 204 })
+            : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const { result } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  expect(result.current.status).toBe("not-authorised");
+  expect(result.current.error).toBe("Signed out after 12 hours.");
+  expect(result.current.signedIn).toBe(false);
+  await waitFor(() => expect(revoked).toBe(true));
+  const cleanupCall = fetcher.mock.calls.find(([url]) => String(url).endsWith("/push-unsubscribe"));
+  expect((cleanupCall?.[1]?.headers as Record<string, string>)?.authorization).toBe("Bearer access");
+  vi.mocked(releasePhonePush).mockResolvedValue();
+});
 it("pauses 3-second polling while document is hidden and refreshes immediately when visible", async () => {
   const snapshot = {
     dataMode: "prototype",

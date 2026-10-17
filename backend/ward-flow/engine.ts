@@ -326,6 +326,8 @@ export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: W
 export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
 /** A role not worked as for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = ACCESS_UNUSED_RULE_MINUTES;
+/** A sign-in lasts at most this long, however busy the desk (ISM-0428, D-65). */
+export const SESSION_LIMIT_MINUTES = CLINICAL_VALUES.sessionLimit.value * 60;
 
 /**
  * Why this cover may not be given, or `null` (feature 2): the same rule the Access tab uses. The

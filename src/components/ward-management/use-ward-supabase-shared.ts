@@ -8,6 +8,38 @@ import { clearReferralDraftSession } from "./referrals/referral-draft-store";
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
 import { SupabaseWardAuth, WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-supabase-auth";
+
+/**
+ * Before sign-out: revoke this account's phone alerts for this device, so the next person at a
+ * shared phone starts with them off. Best effort and bounded to two seconds, through a client of
+ * its own that reports nothing back. `token` was captured before the local session cleared.
+ */
+function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: string | null) {
+  if (!token || !loadedClient) return;
+  const cleanup = new loadedClient({
+    baseUrl: baseUrl.replace(/\/$/, ""),
+    token: async () => token,
+    changed: () => {},
+    workingAs: { get: () => chosen, set: () => {} },
+  });
+  let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+  void Promise.race([
+    releasePhonePush({
+      pushKey: () => cleanup.pushKey(),
+      pushStatus: (endpoint) => cleanup.pushStatus(endpoint),
+      pushSubscribe: (subscription) => cleanup.pushSubscribe(subscription),
+      pushUnsubscribe: (endpoint) => cleanup.pushUnsubscribe(endpoint),
+    }),
+    new Promise<void>((resolve) => {
+      cleanupTimer = setTimeout(resolve, 2000);
+    }),
+  ])
+    .catch(() => {})
+    .finally(() => {
+      clearTimeout(cleanupTimer);
+      cleanup.dispose();
+    });
+}
 export type WardCredentialForm = {
   open: boolean;
   recovery: boolean;
@@ -121,8 +153,12 @@ export function useWardSupabaseShared(enabled: boolean) {
           if (next.status === "not-authorised") {
             // A refused session or role ends this connection: stop polling, drop the refused
             // local session so it is not left stored, and keep the not-authorised message visible.
+            // A session limit sign-out turns this device's phone alerts off too (the server lets
+            // that one request through), so a signed-out phone is not sent them.
+            const token = instance.captureAccessTokenForSignOut();
             disconnect();
             setActNowAppBadge(0);
+            releasePhoneAlerts(baseUrl, token, workingAs.get());
             void instance.signOut().catch(() => {});
           }
           setView(next);
@@ -236,31 +272,7 @@ export function useWardSupabaseShared(enabled: boolean) {
             // the session has expired and the phone alert cleanup below cannot run.
             setActNowAppBadge(0);
             // Signed in means the client has loaded, so this cleanup still runs in the click.
-            if (token && loadedClient) {
-              const cleanup = new loadedClient({
-                baseUrl: base.toString().replace(/\/$/, ""),
-                token: async () => token,
-                changed: () => {},
-                workingAs: { get: () => chosen, set: () => {} },
-              });
-              let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
-              void Promise.race([
-                releasePhonePush({
-                  pushKey: () => cleanup.pushKey(),
-                  pushStatus: (endpoint) => cleanup.pushStatus(endpoint),
-                  pushSubscribe: (subscription) => cleanup.pushSubscribe(subscription),
-                  pushUnsubscribe: (endpoint) => cleanup.pushUnsubscribe(endpoint),
-                }),
-                new Promise<void>((resolve) => {
-                  cleanupTimer = setTimeout(resolve, 2000);
-                }),
-              ])
-                .catch(() => {})
-                .finally(() => {
-                  clearTimeout(cleanupTimer);
-                  cleanup.dispose();
-                });
-            }
+            releasePhoneAlerts(base.toString(), token, chosen);
             // Auth clears its local session synchronously; remote logout and phone cleanup are independent.
             // The local session is already cleared, so remote logout is best-effort.
             await auth!.signOut().catch(() => {});
