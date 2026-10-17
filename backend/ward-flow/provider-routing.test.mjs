@@ -260,3 +260,57 @@ test("the sign-in check reads which accounts hold a role from the shared workspa
   });
   assert.deepEqual(await roleHolders(), [nurse]);
 });
+
+test("a database adapter may supply its own createWorkspaceStore without loading postgres.mjs", async () => {
+  const config = readConfig(environment("postgres", "supabase"));
+  let customStoreCalled = false;
+  const customStore = {
+    viewer: bootstrapViewer,
+    ready: async () => {},
+    read: async () => ({ revision: 4, payload: { beds: [] }, dataMode: "prototype" }),
+    audit: async () => [],
+    command: async () => ({ status: 200, body: { revision: 5 } }),
+  };
+  const backend = await createBackend(config, {
+    database: {
+      postgres: async () => ({
+        createWorkspaceStore: (pool, settings) => {
+          assert.equal(pool, null);
+          assert.equal(settings.workspaceId, config.workspaceId);
+          customStoreCalled = true;
+          return customStore;
+        },
+      }),
+    },
+    auth: {
+      supabase: async () => async () => async () => config.coordinatorIds[0],
+    },
+    workspace: async () => {
+      throw new Error("postgres.mjs should not be loaded when adapter supplies createWorkspaceStore");
+    },
+    engine: async () => ({ fixture: "custom-engine" }),
+  });
+  assert.equal(customStoreCalled, true);
+  assert.equal(backend.sharedStore, customStore);
+  assert.equal(backend.pool, null);
+});
+
+test("a stateful database adapter keeps itself as the createWorkspaceStore receiver", async () => {
+  const config = readConfig(environment("postgres", "supabase"));
+  const customStore = { viewer: bootstrapViewer, ready: async () => {} };
+  const adapter = {
+    store: customStore,
+    createWorkspaceStore() {
+      return this.store;
+    },
+  };
+  const backend = await createBackend(config, {
+    database: { postgres: async () => adapter },
+    auth: { supabase: async () => async () => async () => config.coordinatorIds[0] },
+    workspace: async () => {
+      throw new Error("postgres.mjs should not be loaded when adapter supplies createWorkspaceStore");
+    },
+    engine: async () => ({ fixture: "custom-engine" }),
+  });
+  assert.equal(backend.sharedStore, customStore);
+});

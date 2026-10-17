@@ -20,6 +20,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { useWardSupabaseShared } from "@/components/ward-management/use-ward-supabase-shared";
+import { SupabaseWardAuth } from "@/components/ward-management/ward-supabase-auth";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 // Auth and HTTP are the only stand-ins: the production shared provider, hook, client,
@@ -346,5 +347,29 @@ describe("referral memory belongs to the signed-in person", () => {
     });
     expect(readKeptReferralDraft()).toBe(draft);
     expect(readLastReferrerContact()).toBe(contact);
+  });
+
+  it("keeps one auth adapter when an inline factory changes identity on every render", async () => {
+    let created = 0;
+    let disposed = 0;
+    const { result, rerender } = renderHook(() =>
+      useWardSupabaseShared(true, () => {
+        created += 1;
+        // The module mock above replaces SupabaseWardAuth with a synthetic adapter.
+        const auth = new SupabaseWardAuth({} as ConstructorParameters<typeof SupabaseWardAuth>[0]);
+        const dispose = auth.dispose.bind(auth);
+        auth.dispose = () => {
+          disposed += 1;
+          dispose();
+        };
+        return auth;
+      }),
+    );
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    rerender();
+    rerender();
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(created).toBe(1);
+    expect(disposed).toBe(0);
   });
 });

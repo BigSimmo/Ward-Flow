@@ -25,6 +25,36 @@ Other documents may name the provider in passing, but they link here for the pro
 settings and how to change it. When the database changes, change this page and the decision
 log first, then search the docs for the old provider's name and update any passing mention.
 
+## Selecting the Supabase connection
+
+The ChatGPT Supabase account for this repository is named **Ward Flow**. Its organisation is
+**Ward Flow**, ID `pacavezehklwafqskucg`. The separately connected **PsychSift** account is outside
+this repository's boundary. A browser dashboard session may use a different account from the
+connector, so opening the project in a browser is not a connector-access check.
+
+Before using the connector in a new chat or after reconnecting:
+
+1. Inspect the current tool's account choices. Select **Ward Flow** and, when the tool accepts
+   `link_id`, pass that account's currently exposed value explicitly on every call. Discover it
+   from the tool metadata; do not guess it, copy another account's value or retain a connection
+   ID as a permanent project setting. Reconnection can change the available identifiers.
+2. Read the project identified above through that connection. Require project name **Ward Flow**,
+   project ID `zakzoemeedfepxcstsou` and organisation ID `pacavezehklwafqskucg` to match before
+   proceeding. Matching a connection label alone is insufficient. If the tool offers no account
+   selector, verify the bound account can read this exact project first.
+3. If the account is missing, the identity differs or access is denied, stop the requested
+   operation and inspect connection scope. Any diagnostic project/organisation listing must use
+   the same selected account where supported and expose only relevant metadata. Do not fall back
+   to PsychSift, change permissions or create a replacement project to work around account
+   selection. If reconnection or organisation access is needed, have the owner complete that
+   authorisation, then repeat the identity check.
+
+This check establishes connector access only. Runtime HTTP allowlisting, synthetic browser
+credentials, hosted workflow acceptance and backup/restore evidence are separate requirements.
+A successful metadata read or `ACTIVE_HEALTHY` status does not complete those checks. Keep
+connection IDs in the current private checkpoint when needed, never credentials in repository
+guidance. Fresh tool metadata and the verified project take precedence over a remembered ID.
+
 ## Where the provider is chosen
 
 | What                                          | Where                                                                                                                             |
