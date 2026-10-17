@@ -107,7 +107,9 @@ export function deriveStepDownSwapCandidates(input: {
   now: Instant;
 }): { candidates: StepDownSwapCandidate[]; placementReview: Movement[] } {
   const { fromUnit } = input;
-  if (fromUnit.isClosed || fromUnit.allocatable.value <= 0) return { candidates: [], placementReview: [] };
+  // "Actually free" is the bounded Ready figure: allocatable AND physically empty, never closed.
+  const freeNow = boundedBedAvailability(fromUnit).available;
+  if (freeNow <= 0) return { candidates: [], placementReview: [] };
   const matches = input.movements
     .filter(
       (movement) =>
@@ -117,7 +119,7 @@ export function deriveStepDownSwapCandidates(input: {
         movement.acceptedUnitId !== fromUnit.id &&
         REFERRABLE_MOVEMENT_STAGES.includes(movement.stage) &&
         // A Secure movement is offered only if a locked bed is actually free on this ward.
-        (movement.security !== "Secure" || lockedBedsFree(fromUnit) > 0),
+        (movement.security !== "Secure" || Math.min(lockedBedsFree(fromUnit), freeNow) > 0),
     )
     .map((incomingMovement) => ({
       incomingMovement,

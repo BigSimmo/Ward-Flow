@@ -11,6 +11,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { deriveStepDownBoard } from "@/components/ward-management/ward-step-down";
@@ -44,7 +46,12 @@ export function StepDownBoard({ now }: { now: Instant }) {
   // Fix list 1.5: raise by name. One REFER_TO_UNITS construction site for every Refer on this board,
   // sending the cap reason only when that movement is at the limit and a reason was chosen.
   const raise = useMemo(() => wardRaise(dispatch, "coordinator", now), [dispatch, now]);
+  // Referring is the bed coordinator's (EVENT_ROLE REFER_TO_UNITS). Another desk that can open
+  // Capacity, such as a bed manager, sees the board read-only rather than raising as coordinator.
+  const canRefer = useEffectiveWardAccess().role === "coordinator";
+  const NOT_COORDINATOR = "Only the bed coordinator can refer.";
   const refer = (movement: Movement, unitId: string, reason: ReferralCapReason | "" | undefined) => {
+    if (!canRefer) return;
     raise("REFER_TO_UNITS", {
       movementId: movement.id,
       unitIds: [unitId],
@@ -109,11 +116,14 @@ export function StepDownBoard({ now }: { now: Instant }) {
                               disabled={row.transferMovement.referredUnitIds.includes(ward.unit.id)}
                               // At the limit Refer waits for a reason, then sends it with the refer.
                               disabledReason={
-                                !row.transferMovement.referredUnitIds.includes(ward.unit.id) &&
-                                row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap &&
-                                !capReasons[row.admission.id]
-                                  ? "Choose a reason above to ask more wards than the usual limit."
-                                  : undefined
+                                !canRefer && !row.transferMovement.referredUnitIds.includes(ward.unit.id)
+                                  ? NOT_COORDINATOR
+                                  : !row.transferMovement.referredUnitIds.includes(ward.unit.id) &&
+                                      row.transferMovement.referredUnitIds.length >=
+                                        configuration.parallelReferralCap &&
+                                      !capReasons[row.admission.id]
+                                    ? "Choose a reason above to ask more wards than the usual limit."
+                                    : undefined
                               }
                               onClick={() => {
                                 const movement = row.transferMovement;
@@ -151,10 +161,12 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             ).map((candidate) => {
                               const incoming = candidate.incomingMovement;
                               const incomingReferred = incoming.referredUnitIds.includes(row.fromUnit.id);
-                              const incomingAtCap =
+                              // The picker stays while the movement is at the limit, so a chosen reason
+                              // can still be seen and changed; only Refer waits for one.
+                              const incomingCapped =
                                 !incomingReferred &&
-                                incoming.referredUnitIds.length >= configuration.parallelReferralCap &&
-                                !capReasons[incoming.id];
+                                incoming.referredUnitIds.length >= configuration.parallelReferralCap;
+                              const incomingAtCap = incomingCapped && !capReasons[incoming.id];
                               return (
                                 <li key={incoming.id} className={styles.ward} data-testid="step-down-swap-option">
                                   <span>
@@ -166,7 +178,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                         : "Open"}
                                     )
                                   </span>
-                                  {incomingAtCap ? (
+                                  {incomingCapped ? (
                                     <label className={styles.capReason}>
                                       <span>Incoming referral is at the usual limit; choose a reason.</span>
                                       <select
@@ -193,9 +205,11 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                     disabledReason={
                                       incomingReferred
                                         ? `Already referred to ${row.fromUnit.name}.`
-                                        : incomingAtCap
-                                          ? "Choose a reason above to ask more wards than the usual limit."
-                                          : undefined
+                                        : !canRefer
+                                          ? NOT_COORDINATOR
+                                          : incomingAtCap
+                                            ? "Choose a reason above to ask more wards than the usual limit."
+                                            : undefined
                                     }
                                     onClick={() => {
                                       if (!incomingReferred) refer(incoming, row.fromUnit.id, capReasons[incoming.id]);
@@ -219,7 +233,9 @@ export function StepDownBoard({ now }: { now: Instant }) {
                         </>
                       ) : (
                         <p className={styles.meta} data-testid="step-down-swap-waiting">
-                          Incoming referrals show here once a bed on {row.fromUnit.name} is actually free.
+                          {boundedBedAvailability(row.fromUnit).available > 0
+                            ? `No incoming referral can be offered for ${row.fromUnit.name} here now.`
+                            : `Incoming referrals show here once a bed on ${row.fromUnit.name} is actually free.`}
                         </p>
                       )}
                       {row.placementReview.length > 0 ? (

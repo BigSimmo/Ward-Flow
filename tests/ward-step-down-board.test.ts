@@ -128,6 +128,13 @@ describe("inter-ward step-down swap pairing (Top 25 item 16, D-30)", () => {
       now: NOW_ANCHOR,
     });
     expect(full).toEqual({ candidates: [], placementReview: [] });
+    // An allocatable slot with no physically empty bed is not a free bed either.
+    const noEmptyBed = deriveStepDownSwapCandidates({
+      fromUnit: { ...withBeds(row.fromUnit, 1), empty: { ...row.fromUnit.empty, value: 0 } },
+      movements: state.movements,
+      now: NOW_ANCHOR,
+    });
+    expect(noEmptyBed).toEqual({ candidates: [], placementReview: [] });
   });
 
   // Owner ruling (17 Oct 2026, 10:13 PM AWST), item 4: a movement needing a gender placement review
