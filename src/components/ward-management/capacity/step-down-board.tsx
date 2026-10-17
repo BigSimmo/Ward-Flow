@@ -134,7 +134,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                           const incomingAtCap =
                             !incomingReferred &&
                             candidate.incomingMovement.referredUnitIds.length >= configuration.parallelReferralCap &&
-                            !capReasons[row.admission.id];
+                            !capReasons[candidate.incomingMovement.id];
                           const transferAtCap =
                             transferNeedsRefer &&
                             (row.transferMovement?.referredUnitIds.length ?? 0) >= configuration.parallelReferralCap &&
@@ -155,6 +155,23 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                     : "Open"}
                                 )
                               </span>
+                              {incomingAtCap ? (
+                                <label className={styles.capReason}>
+                                  <span>Incoming referral is at the usual limit; choose a reason.</span>
+                                  <select
+                                    value={capReasons[candidate.incomingMovement.id] ?? ""}
+                                    onChange={(e) =>
+                                      setCapReasons((previous) => ({
+                                        ...previous,
+                                        [candidate.incomingMovement.id]: e.target.value as ReferralCapReason | "",
+                                      }))
+                                    }
+                                  >
+                                    <option value="">Choose reason</option>
+                                    {REFERRAL_CAP_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+                                  </select>
+                                </label>
+                              ) : null}
                               <Button
                                 size="sm"
                                 variant="sec"
@@ -166,8 +183,11 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                       : undefined
                                 }
                                 onClick={() => {
-                                  const selectedReason = capReasons[row.admission.id]
+                                  const transferReason = capReasons[row.admission.id]
                                     ? (capReasons[row.admission.id] as ReferralCapReason)
+                                    : undefined;
+                                  const incomingReason = capReasons[candidate.incomingMovement.id]
+                                    ? (capReasons[candidate.incomingMovement.id] as ReferralCapReason)
                                     : undefined;
                                   if (row.transferMovement && transferNeedsRefer) {
                                     dispatch({
@@ -177,8 +197,8 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                       movementId: row.transferMovement.id,
                                       unitIds: [primaryStepDownWard.id],
                                       ...(row.transferMovement.referredUnitIds.length >=
-                                        configuration.parallelReferralCap && selectedReason
-                                        ? { overCapReason: selectedReason }
+                                        configuration.parallelReferralCap && transferReason
+                                        ? { overCapReason: transferReason }
                                         : {}),
                                     });
                                   }
@@ -190,8 +210,8 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                       movementId: candidate.incomingMovement.id,
                                       unitIds: [row.fromUnit.id],
                                       ...(candidate.incomingMovement.referredUnitIds.length >=
-                                        configuration.parallelReferralCap && selectedReason
-                                        ? { overCapReason: selectedReason }
+                                        configuration.parallelReferralCap && incomingReason
+                                        ? { overCapReason: incomingReason }
                                         : {}),
                                     });
                                   }
