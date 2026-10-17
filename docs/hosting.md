@@ -61,6 +61,57 @@ the production browser run passed 118, skipped one and exposed one Referrals Esc
 That defect was corrected, with 37 focused tests, lint/typecheck and its targeted browser
 regression passing. Broad gates were not repeated after this final fix at the owner's request.
 
+## Shared backend and signed-in site — 16 October 2026
+
+Owner approved hosting the shared backend (16 October 2026) so live sign-in and saving can be
+tested. Two services were added to the same Ward Flow project and environment, Singapore region,
+both following `BigSimmo/Ward-Flow` `main`. The open public demo (`ward-flow`) is unchanged and
+stays in local mode, because shared mode puts a sign-in screen in front of every page.
+
+| Item     | Backend                                                      | Signed-in site                                              |
+| -------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`) | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
+| Address  | https://ward-flow-backend-production.up.railway.app          | https://ward-flow-shared-production.up.railway.app          |
+| Port     | 8080                                                         | 8080                                                        |
+| Health   | `/healthz` (liveness only; `/readyz` checks the database)    | `/api/health`                                               |
+| Sleeping | Off                                                          | On                                                          |
+
+Backend settings (Railway dashboard):
+
+- Build: `npm ci --prefix backend/ward-flow --include=dev && npm --prefix backend/ward-flow run build:engine`.
+- Start: `sh -c 'printf "%s\n" "$WARD_SUPABASE_CA_PEM" > /tmp/supabase-ca.pem && exec node backend/ward-flow/server.mjs'`.
+  The Supabase pooler certificate chains to the public Supabase Root 2021 CA, which Node does not
+  trust by default. The start command writes it from a variable, so no certificate file is in the
+  deployment archive.
+- Variables: the [Supabase settings template](../backend/ward-flow/infra/supabase-settings.template.env)
+  values, with every blank one filled: `WARD_COORDINATOR_USER_IDS` (the coordinator test
+  account), `WARD_WORKSPACE_ID` (the shared workspace), `WARD_SUPABASE_PUBLISHABLE_KEY`,
+  `WARD_ALLOWED_ORIGIN` set to the signed-in site, `WARD_TRUSTED_PROXY_ADDRESSES=*`,
+  `WARD_SUPABASE_CA_CERT_FILE=/tmp/supabase-ca.pem`, `HOST=0.0.0.0` and `PORT=8080`, plus
+  `WARD_SUPABASE_CA_PEM`. The backend refuses to start in shared mode if the coordinator or
+  workspace id is missing. Phone push is off (no VAPID keys).
+  `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
+  password was set privately by the owner and lives only in Railway.
+- Watch paths: `backend/ward-flow`, `src/components/ward-management` (the engine bundles it),
+  `package.json`, `package-lock.json` and `tsconfig.json`.
+
+Signed-in site settings: the same build and start commands as `ward-flow`, plus
+`NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, `NEXT_PUBLIC_WARD_AUTH_PROVIDER=supabase`, the approved
+Supabase URL, `NEXT_PUBLIC_WARD_API_BASE_URL` set to the backend, and
+`NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY` as a Railway reference to the backend's
+`WARD_SUPABASE_PUBLISHABLE_KEY`, so the key is kept in one place. These are fixed at build time, so
+a change needs a rebuild.
+
+Checked 17 October 2026 against the hosted services: the backend's authenticated `/readyz`
+answered 200 with the database ready, the coordinator test account signed in, a save moved the
+workspace from revision 1 to 2 after a reload, and a second save at the old revision got 409. The
+seven other synthetic `@example.test` accounts were given roles through the backend's own access
+routes, each for 30 days (bed manager at RPH, the Dabakarn ward, RPH ED, the Midland community
+team, transport officer, executive and access admin). The signed-in site answered 200 with a
+content security policy naming only the backend and the Supabase project. Signing in through the
+signed-in site in a browser was not checked. Railway Singapore is offshore, so this hosting is
+for synthetic data only.
+
 ## Known limits
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
