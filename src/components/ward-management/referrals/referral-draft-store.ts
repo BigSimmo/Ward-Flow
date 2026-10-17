@@ -13,6 +13,16 @@ import {
 let keptStorageKey: string | undefined;
 let recoverySaved = true;
 export const referralRecoverySaved = () => recoverySaved;
+/** The reminder lasts until charts are attached again or the recovered draft is cleared. */
+export function draftNeedsChartReattachment(draft: unknown, charts: readonly unknown[]): boolean {
+  return (
+    charts.length === 0 &&
+    typeof draft === "object" &&
+    draft !== null &&
+    "needsChartReattachment" in draft &&
+    draft.needsChartReattachment === true
+  );
+}
 let kept: unknown = null;
 /** Wall-clock milliseconds when the draft was last kept, for the "Draft kept" age. */
 let keptAtMs: number | null = null;

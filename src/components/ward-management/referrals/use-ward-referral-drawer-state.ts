@@ -42,6 +42,7 @@ import { documentationError, EMPTY_DOCUMENTATION, type DocumentationDraft } from
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
+  draftNeedsChartReattachment,
   keepReferralDraft,
   readKeptReferralDraftAt,
   readLastReferrerContact,
@@ -394,12 +395,8 @@ export function useWardReferralDrawerState({
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
   const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(kept?.communityNeeds ?? {});
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
-
-  const needsChartReattachment =
-    !!(kept as (KeptDraft & { needsChartReattachment?: boolean }) | null)?.needsChartReattachment &&
-    documentation.charts.length === 0;
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
-    needsChartReattachment,
+    needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
     activePatientKey,
     destType,
     activeSection,
@@ -1415,7 +1412,7 @@ export function useWardReferralDrawerState({
     draftNow,
     draftRestored: draftRestored && kept !== null,
     draftSessionSaved,
-    needsChartReattachment,
+    needsChartReattachment: draftNow.needsChartReattachment,
     clearRecoveredDraft: () => {
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);
