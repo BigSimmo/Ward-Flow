@@ -62,17 +62,20 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
-  it("defaults both new features on for development and demo, off for production", () => {
+  it("defaults new features on for development and demo, and graduates ready top25-* flags to production", () => {
     for (const environment of ["development", "demo"] as const) {
       const resolved = resolveWardFeatureFlags({ environment, server: {}, device: {} });
       expect(flag(resolved, "bed-meeting-tv")).toMatchObject({ on: true, source: "default" });
       expect(flag(resolved, "demo-reset")).toMatchObject({ on: true, source: "default" });
     }
+    expect(
+      flag(resolveWardFeatureFlags({ environment: "development", server: {}, device: {} }), "role-access").on,
+    ).toBe(false);
+    expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
-    // D-65 (17 Oct 2026): Josh switched criteria led discharge on in production and kept its flag,
-    // so it can still be switched off. Every other flag stays off there until it is removed (D-62).
     const onInProduction = production.filter((entry) => entry.on).map((entry) => entry.name);
-    expect(onInProduction).toEqual(["top25-criteria-led-discharge"]);
+    expect(onInProduction).toEqual(WARD_FEATURE_FLAG_NAMES.filter((name) => name.startsWith("top25-")));
+    expect(flag(production, "awol-bed-hold-review").on).toBe(false);
   });
 
   it("lets the device beat the server, and the server beat the default", () => {

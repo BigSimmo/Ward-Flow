@@ -41,8 +41,9 @@ afterEach(() => {
 });
 
 describe("eddMovedBadge", () => {
-  it("names a date moved three or more times and nothing below that", () => {
-    expect(eddMovedBadge(2)).toBeNull();
+  it("names a date moved two or more times and nothing below that", () => {
+    expect(eddMovedBadge(1)).toBeNull();
+    expect(eddMovedBadge(2)).toBe("Date moved 2 times");
     expect(eddMovedBadge(3)).toBe("Date moved 3 times");
     expect(eddMovedBadge(null)).toBeNull();
   });

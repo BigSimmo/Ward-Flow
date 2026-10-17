@@ -253,16 +253,14 @@ export function WardBedDossierDrawer({
 
   const observation = bedItem?.isSpecialling ? "1:1" : bedItem?.highAcuity ? "High acuity" : "Not 1:1";
 
-  // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here. The
-  // engine takes a barrier only from the long stay prompt day, so before then it says so instead.
+  // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here.
   const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
-  const longStayDays = CLINICAL_VALUES.longStayPrompt.value;
   const dueForPrep =
     dischargePrepOn && admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
   const barrierRow =
     dischargePrepOn && admission && bedItem?.admissionId ? (
       <Row label="Barrier">
-        {onSetBarrier && stayDays !== null && stayDays >= longStayDays ? (
+        {onSetBarrier && stayDays !== null ? (
           <select
             className={styles.select}
             aria-label="Discharge barrier"
@@ -281,10 +279,7 @@ export function WardBedDossierDrawer({
             ))}
           </select>
         ) : (
-          (admission.dischargeBarrier ??
-          (stayDays !== null && stayDays < longStayDays
-            ? `None recorded. A barrier can be recorded from day ${longStayDays} of the stay.`
-            : "None recorded"))
+          (admission.dischargeBarrier ?? "None recorded")
         )}
       </Row>
     ) : null;
@@ -304,10 +299,7 @@ export function WardBedDossierDrawer({
     ) : null;
   const prepNote = dueForPrep ? (
     <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
-      Due out within {prepHours} hours.
-      {stayDays !== null && stayDays < longStayDays
-        ? " Sort anything that could hold up the discharge before the day."
-        : " Record any discharge barrier now so it can be sorted before the day."}
+      Due out within {prepHours} hours. Record any discharge barrier now so it can be sorted before the day.
     </p>
   ) : null;
   // Top 25 item 9 (D-60): criteria led discharge, on the Plan to leave tab and the phone sheet.

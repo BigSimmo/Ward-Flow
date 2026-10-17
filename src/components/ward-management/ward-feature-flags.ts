@@ -56,8 +56,8 @@ export const WARD_FEATURE_FLAGS = {
       "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
     owner: "Josh",
     added: "2026-10-15",
-    // Off everywhere until Josh tries it (`?flags=role-access:on` turns it on for one device).
-    defaults: { development: false, demo: false, production: false },
+    // Enabled in demo builds so deployed/shared prototype sessions enforce role access by default.
+    defaults: { development: false, demo: true, production: false },
     removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
   },
   "top25-discharge-prep": {
@@ -66,7 +66,7 @@ export const WARD_FEATURE_FLAGS = {
       "Patients due out within a day show on the ward with their discharge barrier, so the barrier can be set before the day.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-criteria-led-discharge": {
@@ -85,7 +85,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "Confirming a discharge offers pharmacy, transport and cleaning notices to send in one go.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-cleaning-reminder": {
@@ -94,7 +94,7 @@ export const WARD_FEATURE_FLAGS = {
       "A bed still being made ready after the set time asks the ward to confirm it is ready. It never opens the bed itself.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-broadcast-extend": {
@@ -102,7 +102,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "The alert banner can extend an active broadcast alert or stand it down.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-next-ward": {
@@ -110,7 +110,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "When a ward declines, the next eligible wards are suggested from the same matching rules.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-stuck-handover": {
@@ -119,7 +119,7 @@ export const WARD_FEATURE_FLAGS = {
       "An accepted patient still waiting to leave after the transport target is flagged to the sending team.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-admission-checklist": {
@@ -127,7 +127,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "A short checklist for the receiving ward before the patient arrives.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-prematch-cleaning": {
@@ -135,7 +135,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "A bed being made ready can be matched, and a medical pause on the patient is shown.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-long-stay-dossier": {
@@ -144,7 +144,7 @@ export const WARD_FEATURE_FLAGS = {
       "Patients past the long stay prompt show one summary of the barrier, the days waiting and the next step.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-edd-drift": {
@@ -152,7 +152,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "A badge shows when a discharge date has moved several times.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-needs-you-roles": {
@@ -160,7 +160,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "The Needs you list shows items owned by the signed in role on each screen.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-silent-ward": {
@@ -169,7 +169,7 @@ export const WARD_FEATURE_FLAGS = {
       "A ward that has not answered a referral gets reminders at the set times. Nothing is moved automatically.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-legal-radar": {
@@ -177,7 +177,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "Paper legal forms show time left using the one shared rule and the due soon settings.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-awol-tracker": {
@@ -185,7 +185,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "The absent without leave steps and bed hold show as one tracker with time since absent.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "awol-bed-hold-review": {
@@ -204,7 +204,7 @@ export const WARD_FEATURE_FLAGS = {
       "A patient can be referred to at most the set number of wards at once, and other requests are withdrawn when one ward accepts.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-step-down-board": {
@@ -213,7 +213,16 @@ export const WARD_FEATURE_FLAGS = {
       "Step down candidates are matched to wards using the main eligibility rules, including single sex, risk and legal checks.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
+    removeWhen: "Josh signs off the item in the real screens after review.",
+  },
+  "top25-step-down-swap": {
+    label: "Step down swap pairing",
+    description:
+      "Pairs a step down candidate who has a ready open receiving bed with an incoming referral that fits the freed acute or secure bed.",
+    owner: "Josh",
+    added: "2026-10-17",
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "make-room-chains": {
@@ -232,7 +241,7 @@ export const WARD_FEATURE_FLAGS = {
       "Every discharge shows whether follow up within seven days is arranged, with extra items for a community treatment order. It warns and never blocks.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-ed-wait-ladder": {
@@ -240,7 +249,7 @@ export const WARD_FEATURE_FLAGS = {
     description: "ED waits show one set of escalation steps from the shared thresholds.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
   "top25-walk-round": {
@@ -249,7 +258,7 @@ export const WARD_FEATURE_FLAGS = {
       "On a phone, a bed strip above the ward's bed list walks the ward one bed at a time in bed order, with reviewed and changed marks for this round.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
