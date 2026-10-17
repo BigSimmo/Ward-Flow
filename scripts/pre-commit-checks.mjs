@@ -168,10 +168,11 @@ export function mergeOwnershipScope(changes, incomingHeads, run = git) {
 // An index-to-incoming diff also contains files changed only by the current side.
 // Use tree provenance to admit only paths that the incoming side actually changed.
 export function filterAdmissionMergePaths(paths, incomingHeads, run = git) {
-  if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0]) || paths.length === 0) return [];
+  if (paths.length === 0) return [];
+  if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0])) return paths;
   try {
     const bases = run(["merge-base", "--all", "HEAD", incomingHeads[0]]).trim().split(/\r?\n/);
-    if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return [];
+    if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return paths;
     const tree = (ref) => parseOwnershipTree(run(["ls-tree", "-r", "-z", "--full-tree", ref]));
     const base = tree(bases[0]);
     const head = tree("HEAD");
