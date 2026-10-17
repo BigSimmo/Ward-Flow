@@ -1,9 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
 
+const ORGANISATION_REGISTRY = "docs/ward-flow/organisation/registry.json";
 const organisationRoots = (() => {
   try {
-    const registry = JSON.parse(readFileSync("docs/ward-flow/organisation/registry.json", "utf8"));
+    const registry = JSON.parse(readFileSync(ORGANISATION_REGISTRY, "utf8"));
     return Array.isArray(registry.roots) ? registry.roots : null;
   } catch {
     return null;
@@ -100,7 +101,8 @@ export function documentChecks(entries) {
         /^docs\/ward-flow\/(?:RULES\.md|lessons\/[^/]+\.md)$/u.test(file) ||
         file === "scripts/ward-flow/rules-index.mjs",
     ),
-    organisation: files.some(matchesOrganisationRoot),
+    // A registry edit always runs the check, even one that narrows the roots this reads.
+    organisation: files.some((file) => file === ORGANISATION_REGISTRY || matchesOrganisationRoot(file)),
   };
 }
 

@@ -144,6 +144,17 @@ describe("maintained document CI scope", () => {
   ])("checks registered organisation root %s", (file) => {
     expect(documentChecks(entries(file)).organisation).toBe(true);
   });
+  it.each([
+    "docs/ward-flow/lessons/nested/example.md",
+    "src/components/ward-management/board/ward-board.tsx",
+    "scripts/ward-flow/organisation/core.mjs",
+    "design/v9/notes/board.png",
+  ])("checks nested files under a ** organisation root: %s", (file) => {
+    expect(documentChecks(entries(file)).organisation).toBe(true);
+  });
+  it("leaves the organisation check off for files outside every registered root", () => {
+    expect(documentChecks(entries("backend/ward-flow/server.mjs")).organisation).toBe(false);
+  });
   it("required workflow keeps the doc links, facts, safety wording, planned index/organisation checks, and the bounded synthetic check", () => {
     const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
     for (const flag of ["owner_index", "rules_index", "organisation"])
