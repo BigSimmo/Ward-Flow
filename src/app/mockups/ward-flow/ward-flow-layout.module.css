@@ -216,7 +216,7 @@
 }
 
 :global(html[data-wf-bar-ready]) .loadingNote {
-  display: none;
+  visibility: hidden;
 }
 
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
