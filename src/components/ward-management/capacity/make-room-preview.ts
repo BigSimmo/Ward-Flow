@@ -4,36 +4,33 @@ import type { Unit } from "@/components/ward-management/ward-model";
 /**
  * PREVIEW ONLY, for the Make room plan cards (option B, picked 17 Oct 2026). The demo network has
  * no patient marked for step down and almost every ward has a Ready bed, so no chain would show. On
- * this screen only, this marks a few synthetic stays as step down candidates, fills four wards and
- * makes one open ward women only, so the panel shows a two move and a three move chain. It changes
- * no stored state, and is removed when "Start plan" is wired to real step down marks.
+ * this screen only, this marks three synthetic voluntary stays as step down candidates (a transfer
+ * puts anyone not voluntary in a secure bed), fills three wards and makes three wards single sex, so
+ * the panel shows a two move and a three move chain. It changes no stored state, and is removed
+ * when "Start plan" is wired to real step down marks.
  */
-const PREVIEW_FULL_WARDS = ["rph-adult-secure", "bty-adult-secure", "arm-adult-open", "rgh-adult-secure"];
-const PREVIEW_WOMEN_ONLY_WARD = "sjgm-adult-open";
-/** Ward, and the recorded sex of the stay to mark there (undefined means the first stay). */
-const PREVIEW_CANDIDATES: readonly (readonly [string, string | undefined])[] = [
-  ["rph-adult-secure", "Male"],
-  ["arm-adult-open", "Female"],
-  ["rgh-adult-secure", undefined],
-];
+const PREVIEW_FULL_WARDS = ["rph-adult-secure", "arm-adult-open", "scgh-adult-open"];
+const PREVIEW_SINGLE_SEX_WARDS: Readonly<Record<string, "Female only" | "Male only">> = {
+  "bty-adult-secure": "Female only",
+  "sjgm-adult-open": "Female only",
+  "gry-adult-secure": "Male only",
+};
+/** The synthetic stays marked for step down. */
+const PREVIEW_CANDIDATES = new Set(["AD-RPHS-11", "AD-ARMA-01", "AD-SCGA-05"]);
 
 export function makeRoomPreview(input: { admissions: readonly Admission[]; units: readonly Unit[] }): {
   admissions: Admission[];
   units: Unit[];
 } {
-  const marked = new Set<string>();
-  const admissions = input.admissions.map((admission) => {
-    const wanted = PREVIEW_CANDIDATES.find(([unitId]) => unitId === admission.unitId);
-    if (!wanted || admission.state !== "occupied" || marked.has(admission.unitId)) return admission;
-    if (wanted[1] !== undefined && admission.sex !== wanted[1]) return admission;
-    marked.add(admission.unitId);
-    return { ...admission, stepDownCandidate: true };
-  });
+  const admissions = input.admissions.map((admission) =>
+    PREVIEW_CANDIDATES.has(admission.id) ? { ...admission, stepDownCandidate: true } : admission,
+  );
   const units = input.units.map((unit) => {
     if (PREVIEW_FULL_WARDS.includes(unit.id)) {
       return { ...unit, allocatable: { ...unit.allocatable, value: 0 }, empty: { ...unit.empty, value: 0 } };
     }
-    if (unit.id === PREVIEW_WOMEN_ONLY_WARD) return { ...unit, sexDesignation: "Female only" as const };
+    const sexDesignation = PREVIEW_SINGLE_SEX_WARDS[unit.id];
+    if (sexDesignation) return { ...unit, sexDesignation };
     return unit;
   });
   return { admissions, units };

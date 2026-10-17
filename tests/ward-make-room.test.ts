@@ -29,6 +29,13 @@ function chainsFor(
   });
 }
 
+/** The seed movements, with one referral asking for a secure bed. */
+function secureMovement(id: string): Movement[] {
+  return seedWardFlowState().movements.map((movement) =>
+    movement.id === id ? { ...movement, security: "Secure" as const } : movement,
+  );
+}
+
 function previewChains() {
   const preview = makeRoomPreview(seedWardFlowState());
   return { preview, chains: chainsFor(preview.admissions, preview.units) };
@@ -145,6 +152,9 @@ describe("make room plans", () => {
             sexDesignation: seedWardFlowState().units.find((seed) => seed.id === unit.id)!.sexDesignation,
             allocatable: { ...unit.allocatable, value: 2 },
             empty: { ...unit.empty, value: 2 },
+            // Both free beds secure, so a step down who is not voluntary can take one, as a transfer needs.
+            lockedBeds: Math.max(2, unit.lockedBeds),
+            allocatableLocked: 2,
             sexMix: { Female: 0, Male: 0 },
           },
     );
@@ -221,35 +231,49 @@ describe("make room plans", () => {
 
   it("never counts on a freed bed being secure on a ward with open beds too", () => {
     const { preview, chains } = previewChains();
-    const chain = chains.find(
-      (plan) => plan.movement.security === "Secure" && plan.targetUnit.lockedBeds >= plan.targetUnit.beds,
-    )!;
+    const chain = chains.find((plan) => plan.targetUnit.lockedBeds >= plan.targetUnit.beds)!;
     expect(chain).toBeDefined();
-    // The same ward with one open bed, and no secure bed free: the bed a step down frees may be the open one.
+    const movements = secureMovement(chain.movement.id);
+    const offered = (plans: ReturnType<typeof chainsFor>) =>
+      plans.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id);
+    // Asking for a secure bed on an all-secure ward still gets the plan.
+    expect(offered(chainsFor(preview.admissions, preview.units, { movements }))).toBe(true);
+    // The same ward with one open bed and no secure bed free: the bed a step down frees may be the open one.
     const units = preview.units.map((unit) =>
       unit.id === chain.targetUnit.id ? { ...unit, lockedBeds: unit.beds - 1, allocatableLocked: 0 } : unit,
     );
-    const after = chainsFor(preview.admissions, units);
-    expect(
-      after.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
-    ).toBe(false);
-  });
-
-  it("counts a step down recorded in a secure bed as freeing one", () => {
-    const { preview, chains } = previewChains();
-    const chain = chains.find(
-      (plan) => plan.movement.security === "Secure" && plan.targetUnit.lockedBeds >= plan.targetUnit.beds,
-    )!;
+    expect(offered(chainsFor(preview.admissions, units, { movements }))).toBe(false);
+    // Unless the stay leaving is recorded in a secure bed.
     const leaving = chain.stepDowns.at(-1)!.admission;
-    const units = preview.units.map((unit) =>
-      unit.id === chain.targetUnit.id ? { ...unit, lockedBeds: unit.beds - 1, allocatableLocked: 0 } : unit,
-    );
     const admissions = preview.admissions.map((admission) =>
       admission.id === leaving.id ? { ...admission, bedKind: "locked" as const } : admission,
     );
+    expect(offered(chainsFor(admissions, units, { movements }))).toBe(true);
+  });
+
+  it("only steps a patient who is not voluntary down into a free secure bed, as a transfer does", () => {
+    const { preview, chains } = previewChains();
+    const first = chains[0]!.stepDowns[0]!;
+    // The preview's step downs are voluntary. Mark the first one's stay as having no legal status
+    // recorded, which a transfer treats as needing a secure bed, and take every secure bed away.
+    const admissions = preview.admissions.map((admission) =>
+      admission.id === first.admission.id
+        ? { ...admission, movementId: null, patientId: "no-such-patient" as (typeof admission)["patientId"] }
+        : admission,
+    );
+    const units = preview.units.map((unit) => ({ ...unit, allocatableLocked: 0 }));
     const after = chainsFor(admissions, units);
-    expect(
-      after.some((plan) => plan.movement.id === chain.movement.id && plan.targetUnit.id === chain.targetUnit.id),
-    ).toBe(true);
+    expect(after.some((plan) => plan.stepDowns.some((step) => step.admission.id === first.admission.id))).toBe(false);
+  });
+
+  it("never steps a patient down to a ward with no specialling place left, as a transfer refuses", () => {
+    const { preview, chains } = previewChains();
+    const first = chains[0]!.stepDowns[0]!;
+    const admissions = preview.admissions.map((admission) =>
+      admission.id === first.admission.id ? { ...admission, specialling: true } : admission,
+    );
+    const units = preview.units.map((unit) => ({ ...unit, speciallingCapacity: 0 }));
+    const after = chainsFor(admissions, units);
+    expect(after.some((plan) => plan.stepDowns.some((step) => step.admission.id === first.admission.id))).toBe(false);
   });
 });
