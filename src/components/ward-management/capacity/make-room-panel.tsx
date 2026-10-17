@@ -9,8 +9,9 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { GateResult } from "@/components/ward-management/ward-eligibility";
 import { deriveMakeRoomChains, type MakeRoomChain } from "@/components/ward-management/ward-make-room";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -69,6 +70,12 @@ function readyBeds(unit: Unit) {
   return boundedBedAvailability(unit).available;
 }
 
+/** Said beside the Ready figure, in the other screens' wording. Silent when nothing is being made ready. */
+function preparationNote(pending: number) {
+  if (pending === 0) return "";
+  return ` ${pending} of the ready ${pending === 1 ? "bed is" : "beds are"} still being made ready.`;
+}
+
 function Checks({ checks }: { checks: GateResult[] }) {
   const names = checks.flatMap((check) => CHECK_LABELS[check.gate] ?? []);
   return (
@@ -80,7 +87,7 @@ function Checks({ checks }: { checks: GateResult[] }) {
   );
 }
 
-function Stepper({ moves }: { moves: Move[] }) {
+function Stepper({ moves, bedReleases }: { moves: Move[]; bedReleases: BedRelease[] }) {
   return (
     <ol className={styles.stepper}>
       {moves.map((move, index) => (
@@ -106,7 +113,7 @@ function Stepper({ moves }: { moves: Move[] }) {
             <p className={styles.stepSub}>
               From {move.fromName}.{" "}
               {index === 0
-                ? `${move.to.name} has ${readyBeds(move.to)} Ready ${readyBeds(move.to) === 1 ? "bed" : "beds"} now.`
+                ? `${move.to.name} has ${readyBeds(move.to)} Ready ${readyBeds(move.to) === 1 ? "bed" : "beds"} now.${preparationNote(bedsPendingPreparation(move.to.id, bedReleases))}`
                 : `Takes the bed freed by step ${index}.`}
             </p>
             <Checks checks={move.checks} />
@@ -190,8 +197,9 @@ function PlanFooter({ chain }: { chain: MakeRoomChain }) {
  * 17 Oct 2026). It only suggests: starting a plan is not wired yet.
  */
 export function MakeRoomPanel({ now }: { now: Instant }) {
-  const { admissions, units, movements, patients, referrals } = useWardFlowSelect(
+  const { admissions, units, movements, patients, referrals, bedReleases } = useWardFlowSelect(
     "admissions",
+    "bedReleases",
     "units",
     "movements",
     "patients",
@@ -235,7 +243,7 @@ export function MakeRoomPanel({ now }: { now: Instant }) {
                 <li key={chain.movement.id} className={styles.plan}>
                   <PlanHeader chain={chain} moves={moves} now={now} />
                   <RouteStrip chain={chain} moves={moves} />
-                  <Stepper moves={moves} />
+                  <Stepper moves={moves} bedReleases={bedReleases} />
                   <PlanFooter chain={chain} />
                 </li>
               );
