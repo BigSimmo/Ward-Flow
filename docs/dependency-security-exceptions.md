@@ -65,6 +65,8 @@ supported `fsModuleCachePath` setting now keeps it in the existing worktree-spec
 cache. A new regression failed before this change and passed afterwards. Following another
 normal clean install, all 56 runner-safety and installed-lock cases passed, then the unchanged
 installed-lock parity check passed without restamping.
+The separate benchmark configuration uses its own worktree-specific module cache too: all 13
+benchmarks passed after a normal clean install, followed by the unchanged parity check passing.
 
 ## Historical patched advisory roots — 16 October 2026
 

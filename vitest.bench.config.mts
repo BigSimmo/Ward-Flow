@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import codspeedPlugin from "@codspeed/vitest-plugin";
 import { defineConfig } from "vitest/config";
+import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
 
 // Performance benchmarks only (`npm run bench`). Kept apart from vitest.config.mts so the unit
 // suite, its projects and coverage floors are untouched. The CodSpeed plugin is inert outside a
@@ -8,6 +9,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [codspeedPlugin()],
   test: {
+    fsModuleCachePath: `${vitestCacheDirectory(process.cwd())}/bench-modules`,
     environment: "node",
     benchmark: {
       include: ["bench/**/*.bench.ts"],
