@@ -447,12 +447,14 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
   async function run({
     merging = true,
     incoming = incomingFile,
+    currentOnly = "",
     log = "Open sign-outs only\n",
     logPresent = true,
     skipGuard = false,
   }: {
     merging?: boolean;
     incoming?: string;
+    currentOnly?: string;
     log?: string;
     logPresent?: boolean;
     skipGuard?: boolean;
@@ -471,9 +473,33 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
         if (args[0] === "rev-parse" && args[1] === "--show-toplevel") return fixtureRoot;
         if (args[0] === "rev-parse" && args[1] === "--git-path") return mergeHeadPath;
         if (args[0] === "rev-parse" && args[1] === "--abbrev-ref") return "ward/probe";
-        if (args[0] === "diff" && args[2] === "--name-only") return incoming ? `${incoming}\0` : "";
-        if (args[0] === "diff" && args[2] === "-U0") return "";
+        if (args.join(" ") === "diff --cached --name-only -z --no-renames MERGE_HEAD")
+          return [incoming, currentOnly].filter(Boolean).join("\0") + (incoming || currentOnly ? "\0" : "");
+        if (
+          args.join(" ") ===
+          "diff --cached -U0 --no-color --no-ext-diff --diff-filter=ACMRT --src-prefix=a/ --dst-prefix=b/"
+        )
+          return "";
+        if (args.join(" ") === "merge-base --all HEAD " + "a".repeat(40)) return "b".repeat(40);
+        if (args[0] === "ls-tree" && args.at(-1) === "b".repeat(40))
+          return [
+            `100644 blob ${"1".repeat(40)}\t${incomingFile}`,
+            currentOnly && `100644 blob ${"1".repeat(40)}\t${currentOnly}`,
+          ].filter(Boolean).join("\0") + "\0";
+        if (args[0] === "ls-tree" && args.at(-1) === "a".repeat(40))
+          return `100644 blob ${"2".repeat(40)}\t${incomingFile}\0`;
+        if (args[0] === "ls-tree" && args.at(-1) === "HEAD")
+          return [
+            `100644 blob ${"1".repeat(40)}\t${incomingFile}`,
+            currentOnly && `100644 blob ${"3".repeat(40)}\t${currentOnly}`,
+          ].filter(Boolean).join("\0") + "\0`;
+        if (args.join(" ") === "ls-files --stage -z") return "";
         throw new Error(`Unexpected git call: ${args.join(" ")}`);
+      },
+      filterAdmissionMergePaths: (paths: string[], heads: string[]) => {
+        expect(heads).toEqual(["a".repeat(40)]);
+        expect(paths).toEqual([incoming, currentOnly].filter(Boolean));
+        return currentOnly ? paths.filter((file) => file !== currentOnly) : paths;
       },
       stagedScope: () => ({ changes: [], ownershipPaths: [], contentPaths: [] }),
       existsSync: (file: string) => (file === mergeHeadPath ? merging : file === signOutFile && logPresent),
@@ -522,5 +548,10 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
   it("keeps truly empty non-merge and identical incoming merge admissions empty", async () => {
     expect(await run({ merging: false, logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
     expect(await run({ incoming: "", logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
+  });
+
+  it("does not admit a current-side-only path from the index-to-incoming diff", async () => {
+    const result = await run({ incoming: "", currentOnly: "docs/ward-flow/current.md", logPresent: false });
+    expect(result).toMatchObject({ code: 0, admissions: 0 });
   });
 });

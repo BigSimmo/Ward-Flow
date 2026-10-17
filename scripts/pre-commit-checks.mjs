@@ -165,6 +165,31 @@ export function mergeOwnershipScope(changes, incomingHeads, run = git) {
   }
 }
 
+// An index-to-incoming diff also contains files changed only by the current side.
+// Use tree provenance to admit only paths that the incoming side actually changed.
+export function filterAdmissionMergePaths(paths, incomingHeads, run = git) {
+  if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0]) || paths.length === 0) return [];
+  try {
+    const bases = run(["merge-base", "--all", "HEAD", incomingHeads[0]]).trim().split(/\r?\n/);
+    if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return [];
+    const tree = (ref) => parseOwnershipTree(run(["ls-tree", "-r", "-z", "--full-tree", ref]));
+    const base = tree(bases[0]);
+    const head = tree("HEAD");
+    const incoming = tree(incomingHeads[0]);
+    const index = parseOwnershipTree(run(["ls-files", "--stage", "-z"]), true);
+    return paths.filter(
+      (file) =>
+        !(
+          head.get(file) !== base.get(file) &&
+          incoming.get(file) === base.get(file) &&
+          index.get(file) !== incoming.get(file)
+        ),
+    );
+  } catch {
+    return paths;
+  }
+}
+
 export function ownershipAdmission({
   ownershipPaths,
   requiredClaims = ownershipPaths,
@@ -851,9 +876,13 @@ async function main() {
   const scope = stagedScope();
   const mergeHeadPath = git(["rev-parse", "--git-path", "MERGE_HEAD"]).trim();
   const merging = existsSync(mergeHeadPath);
+  const incomingHeads = merging ? readFileSync(mergeHeadPath, "utf8").trim().split(/\r?\n/) : [];
   const admissionMergePaths =
     merging && admissionOnly
-      ? git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean)
+      ? filterAdmissionMergePaths(
+          git(["diff", "--cached", "--name-only", "-z", "--no-renames", "MERGE_HEAD"]).split("\0").filter(Boolean),
+          incomingHeads,
+        )
       : [];
   if (scope.ownershipPaths.length === 0 && admissionMergePaths.length === 0) return 0;
   const scanFiles = scope.contentPaths;
@@ -897,7 +926,7 @@ async function main() {
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");
     const mergeScope = merging
-      ? mergeOwnershipScope(scope.changes, readFileSync(mergeHeadPath, "utf8").trim().split(/\r?\n/))
+      ? mergeOwnershipScope(scope.changes, incomingHeads)
       : { cleanIncoming: [], requiredClaims: scope.ownershipPaths };
     const admission = ownershipAdmission({
       ownershipPaths: [...new Set([...scope.ownershipPaths, ...admissionMergePaths])],
