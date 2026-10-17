@@ -125,18 +125,26 @@ export function renderReferralMatchTiers({
                         </div>
                       </div>
                       {needsGenderPlacement(c.unit.id) ? (
-                        <button
+                        <Button
+                          variant="pri"
+                          size="md"
+                          data-placement-action
                           type="button"
-                          className={styles.btnGood}
                           data-testid={`ward-referral-match-tier-1-gender-placement-${c.unit.id}`}
                           onClick={() => revealGenderPlacementForm(c.unit.id)}
                         >
                           Check placement at {c.unit.name}
-                        </button>
+                        </Button>
                       ) : (
-                        <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
+                        <Button
+                          variant="pri"
+                          size="md"
+                          data-placement-action
+                          type="button"
+                          onClick={() => handleAccept(c.unit.id)}
+                        >
                           Accept at {c.unit.name}
-                        </button>
+                        </Button>
                       )}
                     </div>
 

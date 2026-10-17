@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   GENDER_PLACEMENT_REASONS,
@@ -247,24 +248,35 @@ export function MatchRow({
                 />
                 I have checked this placement with the ward
               </label>
-              <button
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
                 type="submit"
-                className={styles.matchOverrideButton}
-                disabled={genderPlacementReason === "" || !genderPlacementChecked}
+                disabledReason={
+                  genderPlacementReason === ""
+                    ? "Choose a placement reason before accepting."
+                    : !genderPlacementChecked
+                      ? "Confirm you have checked this placement with the ward before accepting."
+                      : undefined
+                }
+                reasonDisplay="tooltip"
                 data-testid={`ward-referral-match-gender-placement-submit-${unit.id}`}
               >
                 Record reason and accept at {unit.name}
-              </button>
+              </Button>
             </form>
           ) : (
-            <button
+            <Button
+              variant="pri"
+              size="md"
+              data-placement-action
               type="button"
-              className={styles.acceptButton}
               data-testid={`ward-referral-match-accept-${unit.id}`}
               onClick={() => onAccept(unit.id)}
             >
               Accept at {unit.name}
-            </button>
+            </Button>
           )}
         </div>
       ) : (
@@ -296,21 +308,20 @@ export function MatchRow({
                   </option>
                 ))}
               </select>
-              <button
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
                 type="button"
-                className={styles.matchOverrideButton}
                 data-testid={`ward-referral-match-override-accept-${unit.id}`}
-                aria-disabled={overrideReason === undefined ? "true" : undefined}
-                aria-describedby={
-                  overrideReason === undefined ? `ward-referral-match-override-blocked-${unit.id}` : undefined
-                }
-                title={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
+                disabledReason={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
+                reasonDisplay="tooltip"
                 onClick={
                   overrideReason === undefined ? ignoreUnavailableActivation : () => onAccept(unit.id, overrideReason)
                 }
               >
                 Accept anyway at {unit.name}
-              </button>
+              </Button>
             </div>
             {overrideReason === undefined ? (
               <span id={`ward-referral-match-override-blocked-${unit.id}`} className="sr-only">

@@ -50,7 +50,7 @@ import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./ref
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
-import { StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import {
   GATE_LABELS,
   DECLINE_REASON_UNCHOSEN,
@@ -639,14 +639,16 @@ export function ReferralMatchView({
     communityAddressing && communityAddressing.state === "queued" && communityAddressing.withdrawnAt === undefined ? (
       <>
         <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
-          <button
+          <Button
+            variant="pri"
+            size="md"
+            data-placement-action
             type="button"
-            className={styles.acceptButton}
             data-testid="ward-referral-match-accept-community_team"
             onClick={handleCommunityAccept}
           >
             Accept referral
-          </button>
+          </Button>
         </div>
         <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
           <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
@@ -673,19 +675,18 @@ export function ReferralMatchView({
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="sec"
+            size="md"
+            data-placement-action="decline"
+            disabledReason={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
+            reasonDisplay="tooltip"
             type="button"
-            className={styles.declineButton}
             data-testid="ward-referral-match-decline-community_team"
-            aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
-            aria-describedby={
-              communityDeclineReason === undefined ? "ward-referral-match-decline-blocked-community_team" : undefined
-            }
-            title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
             onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
           >
             Decline referral
-          </button>
+          </Button>
           {communityDeclineReason === undefined ? (
             <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
               {DECLINE_REASON_UNCHOSEN_COMMUNITY}
@@ -704,9 +705,11 @@ export function ReferralMatchView({
           data-testid="ward-referral-match-accept-controls-emergency_department"
         >
           {!edAcceptConfirmOpen ? (
-            <button
+            <Button
+              variant="pri"
+              size="md"
+              data-placement-action
               type="button"
-              className={styles.acceptPresentationBtn}
               data-testid="ward-referral-match-accept-emergency_department"
               onClick={() => setEdAcceptConfirmOpen(true)}
             >
@@ -724,17 +727,19 @@ export function ReferralMatchView({
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <span>Accept presentation</span>
-            </button>
+            </Button>
           ) : (
-            <div className={styles.confirmGroup}>
-              <button
+            <div className={styles.confirmActionRow}>
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
                 type="button"
-                className={styles.confirmAcceptBtn}
                 data-testid="ward-referral-match-confirm-accept-emergency_department"
                 onClick={handleEdAccept}
               >
                 Confirm acceptance
-              </button>
+              </Button>
               <button
                 type="button"
                 className={styles.cancelBtn}
@@ -772,15 +777,14 @@ export function ReferralMatchView({
                 </option>
               ))}
             </select>
-            <button
+            <Button
+              variant="sec"
+              size="md"
+              data-placement-action="decline"
+              disabledReason={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+              reasonDisplay="tooltip"
               type="button"
-              className={styles.declineButton}
               data-testid="ward-referral-match-decline-emergency_department"
-              aria-disabled={edDeclineReason === undefined ? "true" : undefined}
-              aria-describedby={
-                edDeclineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
-              }
-              title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
               onClick={
                 edDeclineReason === undefined
                   ? ignoreUnavailableActivation
@@ -788,7 +792,7 @@ export function ReferralMatchView({
               }
             >
               Decline referral
-            </button>
+            </Button>
           </div>
           {edDeclineReason === undefined ? (
             <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
@@ -986,14 +990,15 @@ export function ReferralMatchView({
               <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
                 Back
               </button>
-              <button
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action="decline"
+                disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+                reasonDisplay="tooltip"
                 type="button"
-                className={ph.pri}
                 data-tone="danger"
                 data-testid="ward-referral-match-decline"
-                aria-disabled={declineReason === undefined ? "true" : undefined}
-                aria-describedby="ward-referral-match-decline-blocked"
-                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
                 onClick={
                   declineReason === undefined
                     ? ignoreUnavailableActivation
@@ -1004,19 +1009,27 @@ export function ReferralMatchView({
                 }
               >
                 <span className={ph.ell}>Decline referral</span>
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
-                Decline
-              </button>
-              <button
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action
                 type="button"
-                className={ph.pri}
+                onClick={() => setPhoneDeclining(true)}
+              >
+                Decline
+              </Button>
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
+                disabledReason={pick === undefined ? "No unit to accept at in this network." : undefined}
+                reasonDisplay="tooltip"
+                type="button"
                 data-testid="ward-referral-match-phone-accept"
-                aria-disabled={pick === undefined ? "true" : undefined}
-                title={pick === undefined ? "No unit to accept at in this network." : undefined}
                 onClick={
                   pick === undefined
                     ? ignoreUnavailableActivation
@@ -1026,7 +1039,7 @@ export function ReferralMatchView({
                 }
               >
                 <span className={ph.ell}>{pick ? `Accept at ${pick.unit.name}` : "Accept"}</span>
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -1299,17 +1312,18 @@ export function ReferralMatchView({
             </option>
           ))}
         </select>
-        <button
+        <Button
+          variant="sec"
+          size="md"
+          data-placement-action="decline"
+          disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+          reasonDisplay="tooltip"
           type="button"
-          className={styles.declineButton}
           data-testid="ward-referral-match-decline"
-          aria-disabled={declineReason === undefined ? "true" : undefined}
-          aria-describedby={declineReason === undefined ? "ward-referral-match-decline-blocked" : undefined}
-          title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
           onClick={declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("psychiatric_ward")}
         >
           Decline referral
-        </button>
+        </Button>
         {declineReason === undefined ? (
           <span id="ward-referral-match-decline-blocked" className="sr-only">
             {DECLINE_REASON_UNCHOSEN}

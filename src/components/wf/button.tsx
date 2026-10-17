@@ -65,7 +65,8 @@ export function buttonClass({
 
 /**
  * v6 button. Real `<button>`, `type="button"` by default, 2px focus outline with 2px offset
- * (white on the hero). Heights come from tokens, so `pointer:coarse` lifts them to 44px.
+ * (white on the hero). Heights follow density/pointer tokens. `data-placement-action` keeps
+ * medium placement decisions at least 48px across phone, tablet and desktop.
  */
 export function Button(props: ButtonProps) {
   const {
