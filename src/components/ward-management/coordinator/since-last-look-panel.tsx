@@ -1,9 +1,7 @@
 "use client";
 
 import { History } from "lucide-react";
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
-
-import { createBrowserStore } from "@/lib/client-store-factory";
+import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { Badge, Button, Card, CardHead, Stat, StatGroup, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -12,6 +10,8 @@ import { currentShiftStartInstant } from "@/components/ward-management/ward-boar
 import styles from "./home.module.css";
 import {
   changesSinceInstant,
+  scopedChangesSinceLastLook,
+  scopeLastLookWorld,
   changesSinceLastLook,
   hasAnyChange,
   LAST_LOOK_STORAGE_KEY,
@@ -36,17 +36,17 @@ import { useOptionalWardFlowSelect, useDueSoonThresholds } from "@/components/wa
 /** Fired after a same-tab write; the native `storage` event only reaches other tabs. */
 const CHANGE_EVENT = "ward-flow-last-look-change";
 
-function readStored(): string | null {
+function readStored(key: string): string | null {
   try {
-    return window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY);
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-function writeSnapshot(snapshot: LastLookSnapshot): void {
+function writeSnapshot(snapshot: LastLookSnapshot, key: string): void {
   try {
-    window.sessionStorage.setItem(LAST_LOOK_STORAGE_KEY, JSON.stringify(snapshot));
+    window.sessionStorage.setItem(key, JSON.stringify(snapshot));
   } catch {
     // Private browsing or a full quota: the list simply starts fresh next time.
   }
@@ -62,10 +62,9 @@ function subscribe(onChange: () => void) {
   };
 }
 
-let pendingLeaveSave: number | undefined;
+const pendingLeaveSaves = new Map<string, number>();
 
-// `null` on the server and in the hydration render, so both agree; the stored value follows.
-const useStoredLastLook = createBrowserStore(subscribe, readStored, null);
+const serverLastLook = () => null;
 
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
@@ -104,7 +103,8 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
     changes.newMovementIds.length +
     changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0) +
     changes.newDelays.length +
-    changes.newEscalationIds.length
+    changes.newEscalationIds.length +
+    (changes.updates?.length ?? 0)
   );
 }
 
@@ -112,50 +112,69 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
  * Remembers the picture when the coordinator leaves Home and compares it with now. Lives on the
  * screen, not the panel, so the hero can count new events while the panel itself is closed.
  */
-export function useSinceLastLook(world: LastLookWorld, now: Instant) {
+export function useSinceLastLook(
+  world: LastLookWorld,
+  now: Instant,
+  options?: { scopeKey: string; windowMinutes?: number },
+) {
+  const scopeKey = options?.scopeKey;
+  const windowMinutes = options?.windowMinutes ?? 15;
+  const storageKey = scopeKey ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}` : LAST_LOOK_STORAGE_KEY;
+  const scoped = useMemo(() => (scopeKey ? scopeLastLookWorld(world, scopeKey) : world), [world, scopeKey]);
   const thresholds = useDueSoonThresholds();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
   const current = useMemo(
-    () => takeLastLookSnapshot({ ...world, worldGeneration: generation, userId }, now, thresholds),
-    [world, now, thresholds, generation, userId],
+    () => takeLastLookSnapshot({ ...scoped, worldGeneration: generation, userId }, now, thresholds, scopeKey),
+    [scoped, now, thresholds, generation, userId, scopeKey],
   );
   const latest = useRef(current);
   useEffect(() => {
     latest.current = current;
   }, [current]);
 
-  const stored = useStoredLastLook();
+  const read = useCallback(() => readStored(storageKey), [storageKey]);
+  const stored = useSyncExternalStore(subscribe, read, serverLastLook);
   const previous = useMemo(() => parseLastLookSnapshot(stored), [stored]);
 
   // Saved on the way out (route change, reload, tab close), never on arrival. The unmount save
   // waits one task and a remount cancels it: React's development double-mount unmounts and
   // remounts at once, and saving there would overwrite the picture before it was compared.
   useEffect(() => {
-    if (pendingLeaveSave !== undefined) {
-      window.clearTimeout(pendingLeaveSave);
-      pendingLeaveSave = undefined;
-    }
-    const saveOnLeave = () => writeSnapshot(latest.current);
+    const timer = pendingLeaveSaves.get(storageKey);
+    if (timer !== undefined) window.clearTimeout(timer);
+    pendingLeaveSaves.delete(storageKey);
+    const saveOnLeave = () => {
+      // A cleanup from another account/world must never write that world's picture.
+      const snapshot = latest.current;
+      if (snapshot.userId === userId && snapshot.worldGeneration === generation && snapshot.scopeKey === scopeKey)
+        writeSnapshot(snapshot, storageKey);
+    };
     window.addEventListener("pagehide", saveOnLeave);
     return () => {
       window.removeEventListener("pagehide", saveOnLeave);
-      pendingLeaveSave = window.setTimeout(() => {
-        pendingLeaveSave = undefined;
-        saveOnLeave();
-      }, 0);
+      pendingLeaveSaves.set(
+        storageKey,
+        window.setTimeout(() => {
+          pendingLeaveSaves.delete(storageKey);
+          saveOnLeave();
+        }, 0),
+      );
     };
-  }, []);
+  }, [storageKey, userId, generation, scopeKey]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
   const changes = useMemo(
     () =>
-      changesSinceLastLook(previous, current, world) ?? changesSinceInstant(world, currentShiftStartInstant(now), now),
-    [previous, current, world, now],
+      scopeKey
+        ? scopedChangesSinceLastLook(previous, current, windowMinutes)
+        : (changesSinceLastLook(previous, current, world) ??
+          changesSinceInstant(world, currentShiftStartInstant(now), now)),
+    [previous, current, world, now, scopeKey, windowMinutes],
   );
-  const markSeen = useCallback(() => writeSnapshot(latest.current), []);
+  const markSeen = useCallback(() => writeSnapshot(latest.current, storageKey), [storageKey]);
   return { changes, markSeen };
 }
 
@@ -174,6 +193,14 @@ export function sinceSheetDescription(changes: ChangesSinceLastLook | undefined,
 
 function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
   const groups: SinceGroup[] = [];
+  for (const [kind, label] of [
+    ["referral", "referral"],
+    ["movement", "journey"],
+    ["release", "bed release"],
+  ] as const) {
+    const count = changes.updates?.filter((update) => update.kind === kind).length ?? 0;
+    if (count) groups.push({ key: kind, tone: "info", title: `${plural(count, label, `${label}s`)} updated` });
+  }
   const bedsTotal = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
   if (changes.newReferralIds.length > 0) {
     groups.push({

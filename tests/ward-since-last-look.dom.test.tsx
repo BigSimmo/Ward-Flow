@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
@@ -6,13 +7,14 @@ import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
   takeLastLookSnapshot,
+  scopeLastLookWorld,
 } from "@/components/ward-management/coordinator/since-last-look";
 import { useSinceLastLook } from "@/components/ward-management/coordinator/since-last-look-panel";
 import {
   SharedAccessContext,
   type SharedAccessApi,
 } from "@/components/ward-management/shell/ward-shared-access-context";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider, WardFlowOverride } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -119,5 +121,93 @@ describe("actual last-look provider fences", () => {
     expect(screen.getByTestId("look-basis").textContent).toBe("look");
     fireEvent.click(screen.getByText("Reset world"));
     expect(screen.getByTestId("look-basis").textContent).toBe("shift");
+  });
+});
+
+import { SinceLastLookPill } from "@/components/ward-management/since-last-look-pill";
+import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+
+function ScopedFixture() {
+  const base = useWardFlow();
+  const [step, setStep] = useState(0);
+  const movement = {
+    ...base.movements[0]!,
+    acceptedUnitId: base.units[0]!.id,
+    stage: step === 0 ? ("accepted_awaiting_bed" as const) : ("arrived" as const),
+    closure: step === 0 ? undefined : { at: NOW, outcome: "arrived" as const, reason: "" },
+  };
+  return (
+    <>
+      <button onClick={() => setStep(1)}>Synthetic arrival</button>
+      <WardFlowOverride value={{ ...base, worldGeneration: 0, movements: [movement], referrals: [], bedReleases: [] }}>
+        <SinceLastLookPill scopeKey={`ward:${base.units[0]!.id}`} />
+        <SinceLastLookPill scopeKey={`ed:${movement.originEdId}`} />
+        <SinceLastLookPill scopeKey="ward:unrelated" />
+      </WardFlowOverride>
+    </>
+  );
+}
+
+describe("scoped Ward and ED last-look sheets", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("captures reviewed rows, isolates acknowledgements, and preserves arrivals while open", async () => {
+    const state = seedWardFlowState();
+    const unitId = state.units[0]!.id;
+    const movement = { ...state.movements[0]!, acceptedUnitId: unitId, stage: "placement_requested" as const };
+    const world = { ...state, movements: [movement], referrals: [], bedReleases: [] };
+    for (const scopeKey of [`ward:${unitId}`, `ed:${movement.originEdId}`]) {
+      const picture = takeLastLookSnapshot(
+        scopeLastLookWorld(world, scopeKey),
+        NOW - 5,
+        DEFAULT_DUE_SOON_THRESHOLDS,
+        scopeKey,
+      );
+      window.sessionStorage.setItem(`${LAST_LOOK_STORAGE_KEY}:${scopeKey}`, JSON.stringify(picture));
+    }
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <ScopedFixture />
+      </WardFlowProvider>,
+    );
+    const ward = within(screen.getByTestId(`since-last-look-ward:${unitId}`));
+    const ed = within(screen.getByTestId(`since-last-look-ed:${movement.originEdId}`));
+    expect(ward.getByRole("button")).toHaveTextContent("1 update");
+    expect(ed.getByRole("button")).toHaveTextContent("1 update");
+    expect(within(screen.getByTestId("since-last-look-ward:unrelated")).getByRole("button")).toHaveTextContent(
+      "0 updates",
+    );
+    const trigger = ward.getByRole("button");
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(trigger).toHaveTextContent("0 updates");
+    expect(ed.getByRole("button")).toHaveTextContent("1 update");
+    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toHaveTextContent("1 journey updated");
+    fireEvent.click(screen.getByText("Synthetic arrival"));
+    expect(trigger).toHaveTextContent("1 update");
+    expect(screen.getByRole("dialog")).toHaveTextContent("1 journey updated");
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+    fireEvent.click(trigger);
+    expect(trigger).toHaveTextContent("0 updates");
+  });
+
+  it("renders the tracker on both routed Ward and ED headers", () => {
+    const state = seedWardFlowState();
+    const ward = render(
+      <WardFlowProvider initialNow={NOW}>
+        <WardScreen unitId={state.units[0]!.id} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId(`since-last-look-ward:${state.units[0]!.id}`)).toBeInTheDocument();
+    ward.unmount();
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <EdScreen edId={state.movements[0]!.originEdId} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId(`since-last-look-ed:${state.movements[0]!.originEdId}`)).toBeInTheDocument();
   });
 });

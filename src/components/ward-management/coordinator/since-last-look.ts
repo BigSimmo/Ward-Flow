@@ -1,6 +1,11 @@
 import { DELAY_CAUSE_COPY, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import {
+  MOVEMENT_STAGES,
+  REFERRAL_ADDRESSING_STATES,
+  BED_RELEASE_STATES,
+} from "@/components/ward-management/ward-model";
 import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
 /**
@@ -19,7 +24,9 @@ import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-man
 export const LAST_LOOK_STORAGE_KEY = "ward-flow-coordinator-last-look";
 
 export type LastLookSnapshot = {
-  version: 2;
+  version: 2 | 3;
+  scopeKey?: string;
+  records?: ScopedLookRecord[];
   worldGeneration: number;
   userId: string;
   /** The demo clock when this picture was taken. */
@@ -55,6 +62,7 @@ export type ChangesSinceLastLook = {
    * start of the shift read from recorded times (`shift`, `changesSinceInstant`). Absent means look.
    */
   basis?: "look" | "shift";
+  updates?: { kind: ScopedLookRecord["kind"]; id: string }[];
   newReferralIds: string[];
   /** New journeys with no front-door referral of their own (a referral's journey is not counted twice). */
   newMovementIds: string[];
@@ -67,6 +75,7 @@ export function takeLastLookSnapshot(
   world: LastLookWorld,
   now: Instant,
   thresholds: DueSoonThresholds,
+  scopeKey?: string,
 ): LastLookSnapshot {
   const open = world.movements.filter(isOpen);
   const readyByUnit: Record<string, number> = {};
@@ -78,7 +87,8 @@ export function takeLastLookSnapshot(
     for (const movement of group.movements) delayKeys.push(`${movement.id}:${group.cause}`);
   }
   return {
-    version: 2,
+    version: scopeKey ? 3 : 2,
+    ...(scopeKey ? { scopeKey, records: scopedLookRecords(world) } : {}),
     worldGeneration: world.worldGeneration ?? 0,
     userId: world.userId ?? "local-demo",
     at: now,
@@ -184,7 +194,8 @@ export function hasAnyChange(changes: ChangesSinceLastLook): boolean {
       changes.newMovementIds.length +
       changes.bedsFreed.length +
       changes.newDelays.length +
-      changes.newEscalationIds.length >
+      changes.newEscalationIds.length +
+      (changes.updates?.length ?? 0) >
     0
   );
 }
@@ -232,7 +243,7 @@ function stringArray(field: unknown): boolean {
 }
 function snapshotHeaderInvalid(v: Record<string, unknown>): boolean {
   return (
-    v.version !== 2 ||
+    (v.version !== 2 && v.version !== 3) ||
     !Number.isSafeInteger(v.worldGeneration) ||
     typeof v.userId !== "string" ||
     typeof v.at !== "number" ||
@@ -251,5 +262,164 @@ function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const v = value as Record<string, unknown>;
   if (snapshotHeaderInvalid(v) || snapshotListsInvalid(v) || snapshotReadyCountsInvalid(v)) return undefined;
+  if (
+    v.version === 3 &&
+    (typeof v.scopeKey !== "string" || !Array.isArray(v.records) || !v.records.every(validScopedRecord))
+  )
+    return undefined;
   return value as LastLookSnapshot;
+}
+
+/** Fixed IDs, enum indexes and operational instants only; never typed text. */
+type ScopedLookRecord = { kind: "referral" | "movement" | "release"; id: string; values: number[]; at: Instant };
+function validScopedRecord(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    ["referral", "movement", "release"].includes(v.kind as string) &&
+    typeof v.id === "string" &&
+    typeof v.at === "number" &&
+    Number.isFinite(v.at) &&
+    Array.isArray(v.values) &&
+    v.values.every((n) => typeof n === "number" && Number.isFinite(n))
+  );
+}
+
+export function scopeLastLookWorld(world: LastLookWorld, scopeKey: string): LastLookWorld {
+  const ward = scopeKey.startsWith("ward:");
+  const id = scopeKey.slice(scopeKey.indexOf(":") + 1);
+  const movements = world.movements.filter((m) =>
+    ward
+      ? m.acceptedUnitId === id ||
+        m.referredUnitIds.includes(id) ||
+        m.withdrawnReferrals.some((r) => r.unitId === id) ||
+        m.referralAnswerHistory?.some((r) => r.unitId === id)
+      : m.originEdId === id,
+  );
+  const referralIds = new Set(movements.map((m) => m.referralId));
+  return {
+    ...world,
+    movements: ward
+      ? movements.map((m) => ({
+          ...m,
+          referredUnitIds: m.referredUnitIds.filter((unitId) => unitId === id),
+          acceptedUnitId: m.acceptedUnitId === id ? id : undefined,
+          referralAnswerHistory: m.referralAnswerHistory?.filter((a) => a.unitId === id),
+          withdrawnReferrals: m.withdrawnReferrals.filter((a) => a.unitId === id),
+        }))
+      : movements,
+    referrals: world.referrals
+      .filter(
+        (r) =>
+          referralIds.has(r.id) ||
+          r.destinations.some((a) =>
+            ward
+              ? a.destination.kind === "psychiatric_ward" && (a.destination.unitId === id || a.acceptedUnitId === id)
+              : a.destination.kind === "emergency_department" && a.destination.edId === id,
+          ),
+      )
+      .map((r) =>
+        ward
+          ? {
+              ...r,
+              destinations: r.destinations.filter(
+                (a) =>
+                  a.destination.kind === "psychiatric_ward" && (a.destination.unitId === id || a.acceptedUnitId === id),
+              ),
+            }
+          : r,
+      ),
+    units: ward ? world.units.filter((u) => u.id === id) : [],
+    bedReleases: ward ? world.bedReleases.filter((r) => r.unitId === id) : [],
+  };
+}
+
+function scopedLookRecords(world: LastLookWorld): ScopedLookRecord[] {
+  return [
+    ...world.referrals.map((r) => {
+      const times = [
+        r.raisedAt,
+        r.inDepartmentAt ?? -1,
+        r.triagedAt ?? -1,
+        ...r.destinations.flatMap((a) => [
+          a.referredAt ?? -1,
+          a.decidedAt ?? -1,
+          a.withdrawnAt ?? -1,
+          a.waitlistedAt ?? -1,
+        ]),
+      ];
+      return {
+        kind: "referral" as const,
+        id: r.id,
+        values: [
+          ...r.destinations.flatMap((a) => [
+            REFERRAL_ADDRESSING_STATES.indexOf(a.state),
+            a.withdrawnAt === undefined ? 0 : 1,
+          ]),
+          ...times,
+        ],
+        at: Math.max(...times),
+      };
+    }),
+    ...world.movements.map((m) => {
+      const t = m.transport;
+      const times = [
+        m.openedAt,
+        m.acceptedAt ?? -1,
+        m.leftDepartmentAt ?? -1,
+        m.closure?.at ?? -1,
+        m.referredAt ?? -1,
+        t?.acceptedAt ?? -1,
+        t?.enRouteAt ?? -1,
+        t?.collectedAt ?? -1,
+        t?.arrivedAt ?? -1,
+        t?.cancelledAt ?? -1,
+        ...m.stageChanges.map((c) => c.at),
+        ...(m.referralAnswerHistory ?? []).map((a) => a.at),
+        ...m.withdrawnReferrals.map((a) => a.at),
+      ];
+      return {
+        kind: "movement" as const,
+        id: m.id,
+        values: [
+          MOVEMENT_STAGES.indexOf(m.stage),
+          m.referredUnitIds.length,
+          m.acceptedUnitId === undefined ? 0 : 1,
+          ...times,
+        ],
+        at: Math.max(...times),
+      };
+    }),
+    ...world.bedReleases.map((r) => ({
+      kind: "release" as const,
+      id: r.id,
+      values: [BED_RELEASE_STATES.indexOf(r.state), Number(r.preparing), r.confirmedAt],
+      at: r.confirmedAt,
+    })),
+  ];
+}
+
+/** Old pictures need recorded timestamps; never guess when an unobserved transition occurred. */
+export function scopedChangesSinceLastLook(
+  previous: LastLookSnapshot | undefined,
+  current: LastLookSnapshot,
+  windowMinutes: number,
+): ChangesSinceLastLook {
+  const valid =
+    previous?.version === 3 &&
+    previous.scopeKey === current.scopeKey &&
+    previous.scenario === current.scenario &&
+    previous.worldGeneration === current.worldGeneration &&
+    previous.userId === current.userId &&
+    previous.at <= current.at;
+  const since = Math.max(valid ? previous.at : -Infinity, current.at - windowMinutes);
+  const before = new Map((valid ? (previous.records ?? []) : []).map((r) => [`${r.kind}:${r.id}`, r]));
+  const updates = (current.records ?? [])
+    .filter((r) => {
+      const old = before.get(`${r.kind}:${r.id}`);
+      if (old && JSON.stringify(old.values) === JSON.stringify(r.values)) return false;
+      return (valid && previous.at >= since) || (r.at >= since && r.at <= current.at);
+    })
+    .map(({ kind, id }) => ({ kind, id }));
+  return { since, newReferralIds: [], newMovementIds: [], bedsFreed: [], newDelays: [], newEscalationIds: [], updates };
 }

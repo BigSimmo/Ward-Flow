@@ -1,0 +1,13 @@
+.slot {
+  display: inline-flex;
+  flex: 0 0 15rem;
+  inline-size: 15rem;
+  max-inline-size: 100%;
+  min-block-size: var(--ward-tap, 3rem);
+  align-items: center;
+}
+.pill {
+  inline-size: 100%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

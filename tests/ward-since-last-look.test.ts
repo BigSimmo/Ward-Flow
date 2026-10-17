@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   changesSinceLastLook,
+  scopedChangesSinceLastLook,
+  scopeLastLookWorld,
   hasAnyChange,
   parseLastLookSnapshot,
   takeLastLookSnapshot,
@@ -146,4 +148,108 @@ describe("last-look world and account fences", () => {
     const after = takeLastLookSnapshot({ ...world, ...next }, next.at, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(changesSinceLastLook(before, after, world)).toBeUndefined();
   });
+});
+
+describe("scoped fifteen-minute deltas", () => {
+  it("detects status changes on existing movement IDs and isolates units", () => {
+    const world = seededWorld();
+    const movement = world.movements[0]!;
+    const unitId = world.units[0]!.id;
+    const beforeWorld = {
+      ...world,
+      movements: [{ ...movement, acceptedUnitId: unitId, stage: "accepted_awaiting_bed" as const }],
+    };
+    const scoped = scopeLastLookWorld(beforeWorld, `ward:${unitId}`);
+    const before = takeLastLookSnapshot(scoped, NOW - 5, DEFAULT_DUE_SOON_THRESHOLDS, `ward:${unitId}`);
+    const later = {
+      ...scoped,
+      movements: [
+        {
+          ...scoped.movements[0]!,
+          stage: "arrived" as const,
+          closure: { at: NOW, outcome: "arrived" as const, reason: "" },
+        },
+      ],
+    };
+    const after = takeLastLookSnapshot(later, NOW, DEFAULT_DUE_SOON_THRESHOLDS, `ward:${unitId}`);
+    expect(scopedChangesSinceLastLook(before, after, 15).updates).toEqual([{ kind: "movement", id: movement.id }]);
+    expect(scopeLastLookWorld(beforeWorld, "ward:unrelated").movements).toEqual([]);
+  });
+
+  it("uses the actual fifteen-minute boundary and never dates an unknown old transition", () => {
+    const world = scopeLastLookWorld(seededWorld(), "ed:unrelated");
+    const before = takeLastLookSnapshot(world, NOW - 60, DEFAULT_DUE_SOON_THRESHOLDS, "ed:unrelated");
+    const after = {
+      ...before,
+      at: NOW,
+      records: [{ kind: "movement" as const, id: "WF-SYNTHETIC", values: [1], at: NOW - 16 }],
+    };
+    expect(scopedChangesSinceLastLook(before, after, 15)).toMatchObject({ since: NOW - 15, updates: [] });
+    after.records[0]!.at = NOW - 15;
+    expect(scopedChangesSinceLastLook(before, after, 15).updates).toHaveLength(1);
+    expect(scopedChangesSinceLastLook(undefined, after, 15).since).toBe(NOW - 15);
+  });
+
+  it("rejects malformed scoped records and starts fresh across world/account changes", () => {
+    const before = takeLastLookSnapshot(seededWorld(), NOW - 5, DEFAULT_DUE_SOON_THRESHOLDS, "ward:synthetic");
+    expect(
+      parseLastLookSnapshot(JSON.stringify({ ...before, records: [{ kind: "note", values: ["typed"] }] })),
+    ).toBeUndefined();
+    const after = { ...before, userId: "another-account", at: NOW };
+    expect(scopedChangesSinceLastLook(before, after, 15).since).toBe(NOW - 15);
+    expect(scopedChangesSinceLastLook({ ...before, worldGeneration: 99 }, after, 15).since).toBe(NOW - 15);
+  });
+});
+
+it("keeps another ward's answer on a shared referral outside this ward's delta", () => {
+  const world = seededWorld();
+  const ownId = world.units[0]!.id;
+  const otherId = world.units[1]!.id;
+  const source = world.referrals.find((r) => r.destinations.some((a) => a.destination.kind === "psychiatric_ward"))!;
+  const addressing = source.destinations.find((a) => a.destination.kind === "psychiatric_ward")!;
+  const own = { ...addressing, destination: { ...addressing.destination, unitId: ownId }, state: "queued" as const };
+  const other = { ...own, destination: { ...own.destination, unitId: otherId } };
+  const beforeWorld = { ...world, movements: [], referrals: [{ ...source, destinations: [own, other] }] };
+  const before = takeLastLookSnapshot(
+    scopeLastLookWorld(beforeWorld, `ward:${ownId}`),
+    NOW - 5,
+    DEFAULT_DUE_SOON_THRESHOLDS,
+    `ward:${ownId}`,
+  );
+  const later = {
+    ...beforeWorld,
+    referrals: [{ ...source, destinations: [own, { ...other, state: "declined" as const, decidedAt: NOW }] }],
+  };
+  const after = takeLastLookSnapshot(
+    scopeLastLookWorld(later, `ward:${ownId}`),
+    NOW,
+    DEFAULT_DUE_SOON_THRESHOLDS,
+    `ward:${ownId}`,
+  );
+  expect(scopedChangesSinceLastLook(before, after, 15).updates).toEqual([]);
+});
+
+it("scopes ED referrals by explicit address or linked sender department, never a site code", () => {
+  const world = seededWorld();
+  const movement = world.movements[0]!;
+  const referral = world.referrals[0]!;
+  const edId = movement.originEdId;
+  const addressed = {
+    ...referral,
+    id: "RF-SYNTHETIC-ED",
+    destinations: [
+      {
+        destination: { kind: "emergency_department" as const, edId, purpose: "psychiatric_review" as const },
+        state: "queued" as const,
+      },
+    ],
+  };
+  const linked = { ...referral, id: "RF-SYNTHETIC-SENDER" };
+  const scoped = scopeLastLookWorld(
+    { ...world, movements: [{ ...movement, referralId: linked.id }], referrals: [addressed, linked] },
+    `ed:${edId}`,
+  );
+  expect(scoped.referrals.map((r) => r.id)).toEqual([addressed.id, linked.id]);
+  const unrelated = scopeLastLookWorld({ ...world, movements: [], referrals: [linked] }, `ed:${edId}`);
+  expect(unrelated.referrals).toEqual([]);
 });
