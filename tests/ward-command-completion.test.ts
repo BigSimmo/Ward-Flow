@@ -91,6 +91,47 @@ describe("command-specific terminal completion", () => {
   });
 });
 
+it("allows an accepted Undo to queue while another command is saving", async () => {
+  const saveReply = deferred<Response>();
+  const posts: { event: import("@/components/ward-management/ward-flow-events").WardFlowEvent }[] = [];
+  let latest: import("@/components/ward-management/ward-shared-client").SharedView | undefined;
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => "test",
+    changed: (view) => {
+      latest = view;
+    },
+    fetch: async (_url, options) => {
+      if (!options?.body) return Response.json({ snapshot: snapshot(1) });
+      posts.push(JSON.parse(options.body as string));
+      return posts.length === 2 ? saveReply.promise : Response.json({ snapshot: snapshot(posts.length + 1) });
+    },
+  });
+  try {
+    await client.refresh();
+    const accepted = await client.dispatchConfirmed(event);
+    const saving = client.dispatch(event);
+    await vi.waitFor(() => expect(posts).toHaveLength(2));
+    expect(latest?.status).toBe("saving");
+    expect(accepted.canUndo?.()).toBe(true);
+    const undo = client.dispatchConfirmed({
+      type: "UNDO_REFER_TO_UNITS",
+      role: "coordinator",
+      now: 642,
+      movementId: "WF-030",
+      recordSeq: 42,
+    });
+    expect(posts).toHaveLength(2);
+    saveReply.resolve(Response.json({ snapshot: snapshot(3) }));
+    await expect(saving).resolves.toMatchObject({ status: "accepted" });
+    await expect(undo).resolves.toMatchObject({ status: "accepted" });
+    expect(posts).toHaveLength(3);
+    expect(posts[2].event).toMatchObject({ type: "UNDO_REFER_TO_UNITS", recordSeq: 42 });
+  } finally {
+    client.dispose();
+  }
+});
+
 describe("working-role changes", () => {
   it.each([401, 403, 409, "session"] as const)(
     "preserves a confirmed acceptance when reconciliation gates the desk (%s)",

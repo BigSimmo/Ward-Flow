@@ -196,7 +196,7 @@ export function useUndoableStep({
                       title:
                         "Undo is unavailable until the shared board is ready. Review the board before trying again.",
                     });
-                    return;
+                    return false;
                   }
                   const undoPending = {
                     prior: rejectionCountRef.current,
@@ -207,6 +207,7 @@ export function useUndoableStep({
                     ...(watch.seq === undefined ? {} : { recordSeq: watch.seq }),
                   } as WardFlowEvent;
                   submit(undoEvent, undoPending);
+                  return undefined;
                 },
               },
             }),

@@ -3,7 +3,7 @@ import { SupportNotificationChecklist } from "@/components/ward-management/movem
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ToastInput } from "@/components/wf";
+import { ToastProvider, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
@@ -24,9 +24,15 @@ function Harness({
   push,
 }: {
   dispatch: (event: WardFlowEvent) => Promise<WardCommandOutcome>;
-  push: (toast: ToastInput) => string;
+  push?: (toast: ToastInput) => string;
 }) {
-  const { run } = useUndoableStep({ dispatch, now: 642, routeRole: "coordinator", rejections: [], toast: { push } });
+  const { run } = useUndoableStep({
+    dispatch,
+    now: 642,
+    routeRole: "coordinator",
+    rejections: [],
+    toast: push ? { push } : undefined,
+  });
   return (
     <button
       onClick={() =>
@@ -126,37 +132,93 @@ it("refuses a stale accepted toast's Undo after the command lifetime ends", asyn
   });
 });
 
-it("blocks an accepted toast's Undo until the shared board is ready, then keeps its original sequence", async () => {
-  let ready = true;
+it.each(["retry", "expire"] as const)(
+  "keeps the real blocked Undo button and its original window (%s)",
+  async (next) => {
+    vi.useFakeTimers();
+    let ready = true;
+    const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
+      commandId: "accepted",
+      status: "accepted",
+      undoRecords: [acceptedRecord],
+      isCurrent: () => true,
+      canUndo: () => ready,
+    }));
+    const mounted = render(
+      <ToastProvider>
+        <Harness dispatch={dispatch} />
+      </ToastProvider>,
+    );
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByText("Record"));
+      });
+      const undo = screen.getByRole("button", { name: "Undo" });
+      const original = undo.closest('[data-testid="toast"]')!;
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      ready = false;
+      await act(async () => {
+        fireEvent.click(undo);
+      });
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "Undo" })).toBe(undo);
+      expect(undo).not.toHaveAttribute("aria-disabled", "true");
+      expect(original).toHaveAttribute("data-undo", "running");
+      if (next === "retry") {
+        ready = true;
+        await act(async () => {
+          fireEvent.click(undo);
+        });
+        expect(dispatch).toHaveBeenCalledTimes(2);
+        expect(dispatch.mock.calls[1]![0]).toMatchObject({
+          type: "UNDO_REFER_TO_UNITS",
+          recordSeq: acceptedRecord.seq,
+        });
+        expect(original).not.toBeInTheDocument();
+      } else {
+        act(() => {
+          vi.advanceTimersByTime(5999);
+        });
+        expect(screen.getByRole("button", { name: "Undo" })).toBe(undo);
+        act(() => {
+          vi.advanceTimersByTime(1);
+        });
+        ready = true;
+        expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+        expect(original).not.toBeInTheDocument();
+        expect(dispatch).toHaveBeenCalledTimes(1);
+      }
+    } finally {
+      mounted.unmount();
+      vi.useRealTimers();
+    }
+  },
+);
+
+it("consumes the real Undo button when the command lifetime has permanently ended", async () => {
   const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
     commandId: "accepted",
     status: "accepted",
     undoRecords: [acceptedRecord],
-    isCurrent: () => true,
-    canUndo: () => ready,
+    isCurrent: () => false,
+    canUndo: () => false,
   }));
-  const push = vi.fn<(input: ToastInput) => string>(() => "toast");
-  render(<Harness dispatch={dispatch} push={push} />);
+  render(
+    <ToastProvider>
+      <Harness dispatch={dispatch} />
+    </ToastProvider>,
+  );
   await act(async () => {
     fireEvent.click(screen.getByText("Record"));
   });
-  const undo = push.mock.calls[0]![0].undo!;
-  expect(push.mock.calls[0]![0].title).toBe("Confirmed step");
-  ready = false;
   await act(async () => {
-    undo.onUndo();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
   });
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   expect(dispatch).toHaveBeenCalledTimes(1);
-  expect(push.mock.calls[1]![0]).toMatchObject({
-    tone: "warning",
-    title: expect.stringContaining("shared board is ready"),
-  });
-  ready = true;
-  await act(async () => {
-    undo.onUndo();
-  });
-  expect(dispatch).toHaveBeenCalledTimes(2);
-  expect(dispatch.mock.calls[1]![0]).toMatchObject({ type: "UNDO_REFER_TO_UNITS", recordSeq: acceptedRecord.seq });
+  expect(screen.getByText(/workspace or working role changed/)).toBeInTheDocument();
 });
 
 it("does not attach a later record to an accepted step that has no fresh Undo record", async () => {

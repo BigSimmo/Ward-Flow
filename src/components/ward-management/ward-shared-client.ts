@@ -404,7 +404,7 @@ export class SharedWorkspaceClient {
             !roleSignal.aborted &&
             generation === this.viewGeneration &&
             this.worldEpoch === worldEpoch,
-          canUndo: () => this.view.status === "ready",
+          canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
         });
       }),
     );

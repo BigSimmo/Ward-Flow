@@ -17,7 +17,8 @@ export type ToastUndo = {
   /** Defaults to "Undo". */
   label?: string;
   durationMs: number;
-  onUndo: () => void;
+  /** Return false when temporarily blocked to keep this toast's existing Undo window. */
+  onUndo: () => void | false;
   /**
    * Called once when the window ends without Undo. Through `ToastProvider` that includes the X and
    * the toast being pushed out by newer ones, so a deferred action can commit here.
@@ -124,8 +125,12 @@ function UndoButton({ undo, phase, finish }: { undo: ToastUndo; phase: UndoPhase
       aria-disabled={phase !== "running" || undefined}
       onClick={() => {
         if (phase !== "running") return;
-        finish();
-        undo.onUndo();
+        let blocked = false;
+        try {
+          blocked = undo.onUndo() === false;
+        } finally {
+          if (!blocked) finish();
+        }
       }}
     >
       {undo.label ?? "Undo"}
