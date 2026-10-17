@@ -48,6 +48,7 @@ export function EdAdmissionChecklist({ movement, referrals }: { movement: Moveme
                   variant="ghost"
                   size="sm"
                   aria-pressed={item.state === "done"}
+                  aria-label={`${item.state === "done" ? "Clear" : "Mark done"}: ${item.label}`}
                   onClick={() => toggleOverride(item.key as keyof AdmissionChecklistOverrides, item.state === "done")}
                 >
                   {item.state === "done" ? "Clear" : "Mark done"}

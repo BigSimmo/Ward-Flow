@@ -5,7 +5,9 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/wf";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
+import type { Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -32,6 +34,18 @@ export function StepDownBoard({ now }: { now: Instant }) {
   const stepDownSwapEnabled = useWardFeatureFlag("top25-step-down-swap");
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
   const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});
+  // Fix list 1.5: raise by name. One REFER_TO_UNITS construction site for every Refer on this board,
+  // sending the cap reason only when that movement is at the limit and a reason was chosen.
+  const raise = useMemo(() => wardRaise(dispatch, "coordinator", now), [dispatch, now]);
+  const refer = (movement: Movement, unitId: string, reason: ReferralCapReason | "" | undefined) => {
+    raise("REFER_TO_UNITS", {
+      movementId: movement.id,
+      unitIds: [unitId],
+      ...(movement.referredUnitIds.length >= configuration.parallelReferralCap && reason
+        ? { overCapReason: reason }
+        : {}),
+    });
+  };
   const rows = useMemo(
     () => deriveStepDownBoard({ admissions, units, movements, patients, referrals, now }),
     [admissions, units, movements, patients, referrals, now],
@@ -97,17 +111,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                               onClick={() => {
                                 const movement = row.transferMovement;
                                 if (!movement) return;
-                                dispatch({
-                                  type: "REFER_TO_UNITS",
-                                  role: "coordinator",
-                                  now,
-                                  movementId: movement.id,
-                                  unitIds: [ward.unit.id],
-                                  ...(movement.referredUnitIds.length >= configuration.parallelReferralCap &&
-                                  capReasons[row.admission.id]
-                                    ? { overCapReason: capReasons[row.admission.id] as ReferralCapReason }
-                                    : {}),
-                                });
+                                refer(movement, ward.unit.id, capReasons[row.admission.id]);
                               }}
                             >
                               {row.transferMovement.referredUnitIds.includes(ward.unit.id) ? "Referred" : "Refer"}
@@ -183,37 +187,15 @@ export function StepDownBoard({ now }: { now: Instant }) {
                                       : undefined
                                 }
                                 onClick={() => {
-                                  const transferReason = capReasons[row.admission.id]
-                                    ? (capReasons[row.admission.id] as ReferralCapReason)
-                                    : undefined;
-                                  const incomingReason = capReasons[candidate.incomingMovement.id]
-                                    ? (capReasons[candidate.incomingMovement.id] as ReferralCapReason)
-                                    : undefined;
                                   if (row.transferMovement && transferNeedsRefer) {
-                                    dispatch({
-                                      type: "REFER_TO_UNITS",
-                                      role: "coordinator",
-                                      now,
-                                      movementId: row.transferMovement.id,
-                                      unitIds: [primaryStepDownWard.id],
-                                      ...(row.transferMovement.referredUnitIds.length >=
-                                        configuration.parallelReferralCap && transferReason
-                                        ? { overCapReason: transferReason }
-                                        : {}),
-                                    });
+                                    refer(row.transferMovement, primaryStepDownWard.id, capReasons[row.admission.id]);
                                   }
                                   if (!incomingReferred) {
-                                    dispatch({
-                                      type: "REFER_TO_UNITS",
-                                      role: "coordinator",
-                                      now,
-                                      movementId: candidate.incomingMovement.id,
-                                      unitIds: [row.fromUnit.id],
-                                      ...(candidate.incomingMovement.referredUnitIds.length >=
-                                        configuration.parallelReferralCap && incomingReason
-                                        ? { overCapReason: incomingReason }
-                                        : {}),
-                                    });
+                                    refer(
+                                      candidate.incomingMovement,
+                                      row.fromUnit.id,
+                                      capReasons[candidate.incomingMovement.id],
+                                    );
                                   }
                                 }}
                               >

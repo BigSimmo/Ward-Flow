@@ -66,7 +66,7 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     render(<EdAdmissionChecklist movement={movement({ legalStatus: "Voluntary" })} referrals={[]} />);
     const card = screen.getByTestId("ward-ed-admission-checklist");
     expect(within(card).getByText("Arrival checklist, 1 of 5 recorded")).toBeTruthy();
-    const markDoneButtons = within(card).getAllByRole("button", { name: "Mark done" });
+    const markDoneButtons = within(card).getAllByRole("button", { name: /^Mark done: / });
     expect(markDoneButtons).toHaveLength(2);
     fireEvent.click(markDoneButtons[0]!);
     expect(within(card).getByText("Arrival checklist, 2 of 5 recorded")).toBeTruthy();
