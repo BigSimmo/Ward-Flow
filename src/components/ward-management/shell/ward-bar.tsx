@@ -1585,7 +1585,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
         <span
           className={styles.mark}
-          title="Patient and flow data are synthetic; WA hospital sites and health-service names are real. Not a medical device or clinical decision support."
+          title="Patient and flow data are synthetic; WA hospital sites and health-service names are real. Not approved for clinical use."
         >
           <span className={styles.markLong}>Synthetic </span>prototype
         </span>

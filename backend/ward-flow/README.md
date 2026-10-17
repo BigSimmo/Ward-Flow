@@ -40,7 +40,7 @@ to `005`. These source files do not establish a current hosted connection or dep
 - `GET /v1/workspace/access` and `POST /v1/workspace/access/grant`, `/approve` and `/revoke` are
   for the access admin and the statewide coordinator. Nobody grants themselves a role or one wider
   than their own, and every role has an end date. All granted roles work immediately, including
-  existing coordinator and access-admin grants with no approval record (D-65). Each change is
+  existing coordinator and access-admin grants with no approval record (D-66). Each change is
   audited. The legacy `/approve` route returns 422 without changing approval history.
 - `POST /v1/workspace/break-glass` (`patientId`, `reason`) opens one patient's record, read only,
   for a ward, ED, community team or bed manager, for the time in the clinical values module. Each

@@ -7,7 +7,7 @@
       "flags": "i",
       "allowWhen": "\\b(retired|removed|replaced|superseded|no longer|without|no second)\\b",
       "since": "2026-10-17",
-      "why": "D-65 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype.",
+      "why": "D-66 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype.",
       "instead": "Granted roles work immediately. Keep grant authority, scope, expiry, revocation and audit requirements."
     },
     {

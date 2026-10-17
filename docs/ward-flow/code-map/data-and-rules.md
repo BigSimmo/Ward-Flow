@@ -201,15 +201,15 @@ capacity figure anywhere in this group is real.
 
 ## Legal (Mental Health Act forms and clocks)
 
-- **`src/components/ward-management/ward-legal-clock.ts`** (286 lines, 8 importers) — Every Mental
-  Health Act 2014 form clock: durations, expiry computation from an entered start (written /
-  received / made / continuation), reminder offsets, and country-region extensions (which are
-  recorded acts via `RECORD_COUNTRY_EXTENSION`, never automatic). Key exports: `computeLegalClock`,
-  `maximumDurationMinutes`, `extendLegalClockForCountry`, `reminderInstants`, `isArrivalLate`,
-  `leaveBedNeedsOpenWarning`, `LEGAL_CLOCK_FORM_CODES`, `HANDOVER_COMPLETION_WINDOWS`,
-  `EXPECT_FLAG_VOLUNTARY_MINUTES` (48h), `EXPECT_FLAG_INVOLUNTARY_MINUTES` (7 days). No section
-  numbers or computed legal thresholds appear in any UI string sourced from elsewhere — this file
-  is the one place a duration is allowed to exist.
+- **`src/components/ward-management/ward-legal-clock.ts`** — Legal-form vocabulary, compatibility
+  types and operational warnings; it does not compute legal expiry or extension periods. The
+  record keeps the expiry typed from the paper form. Key exports: `LEGAL_CLOCK_FORM_CODES`,
+  `isLegalClockFormCode`, `isArrivalLate`, `leaveBedNeedsOpenWarning` and `HANDOVER_COMPLETION_WINDOWS`.
+  [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
+  separately permits sourced periods and section references in
+  `src/components/ward-management/legal-forms/act-periods-demo.ts`, labelled "Synthetic demo, not
+  legally checked". That display never writes a calculated `dueAt`; Forms 1B and 3D have no demo
+  period until a source is confirmed.
 - **`src/components/ward-management/ward-legal-forms.ts`** (73 lines, 30 importers) — The picker
   list of selectable legal forms and how a form names itself on screen. Deliberately its own module
   rather than part of `ward-model.ts`, so a guard (`tests/ward-flow-single-source.test.ts`) can

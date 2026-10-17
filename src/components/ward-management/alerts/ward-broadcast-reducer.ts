@@ -2,7 +2,7 @@ import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import type { AuditDecision } from "../ward-audit";
 import { enumValue, finiteInstant } from "../ward-audit";
 import type { Instant } from "../ward-clock";
-import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
+import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { REFERRAL_DECLINE_REASONS, type Unit } from "../ward-model";
 import { edById } from "../ward-sites";
@@ -197,7 +197,7 @@ export function reduceBroadcastAlertEvent(
               ...a,
               status: "stood_down" as const,
               stoodDownAt: event.now,
-              stoodDownBy: (event.stoodDownByRole ?? event.role) as WardFlowRole,
+              stoodDownBy: event.role,
             }
           : a,
       );

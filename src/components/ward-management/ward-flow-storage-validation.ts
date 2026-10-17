@@ -24,13 +24,14 @@ import {
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
-import { isDischargeCriteriaRecord } from "./ward-discharge-criteria";
+import { isFixedOnlyDischargeCriteriaRecord } from "./ward-discharge-criteria";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
+import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -287,6 +288,7 @@ const movement = z
     admissionId: link,
     sourceAdmissionId: link,
     acceptedUnitId: link,
+    pullExpiresAt: z.optional(finite),
     closure: z.optional(closureRule),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
@@ -333,13 +335,14 @@ const admission = z.looseObject({
   homeRegion: nullableText,
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
-  blockReason: nullableText,
+  blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
-  // Criteria are fixed-list values with finite times, never typed text (D-60).
-  dischargeCriteria: z.optional(z.nullable(z.custom(isDischargeCriteriaRecord))),
+  // Browser storage holds fixed-list criteria with finite times only. Typed patient specific criteria
+  // are refused on restore, the second fence behind the typed-text lock (D-60, D-65).
+  dischargeCriteria: z.optional(z.nullable(z.custom(isFixedOnlyDischargeCriteriaRecord))),
   careJourney: z.optional(z.custom(validCareJourney)),
   followUp: z.nullable(
     z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),

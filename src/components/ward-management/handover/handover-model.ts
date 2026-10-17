@@ -346,13 +346,9 @@ export function destinationText(row: HandoverRow): string {
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   const collected = isCollected(row);
-  if (
-    !collected &&
-    row.pullExpiresAt !== undefined &&
-    (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
-  ) {
-    const hold = bedHold(row.pullExpiresAt, now)!;
-    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+  const hold = collected ? null : bedHold(row.pullExpiresAt, now);
+  if (hold !== null && (row.formDueAt === undefined || hold.expiresAt <= row.formDueAt)) {
+    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
   return collected ? "In transit" : null;

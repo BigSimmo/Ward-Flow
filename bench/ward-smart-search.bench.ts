@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { describe, test } from "vitest";
 
 import { detectSearchIntent, searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -17,25 +17,35 @@ function search(query: string) {
 }
 
 describe("smart search", () => {
-  bench("person name prefix", () => {
-    search("ann");
+  test("person name prefix", async ({ bench }) => {
+    await bench("person name prefix", () => {
+      search("ann");
+    }).run();
   });
 
-  bench("movement identifier", () => {
-    search("WF-009");
+  test("movement identifier", async ({ bench }) => {
+    await bench("movement identifier", () => {
+      search("WF-009");
+    }).run();
   });
 
-  bench("place name", () => {
-    search("secure");
+  test("place name", async ({ bench }) => {
+    await bench("place name", () => {
+      search("secure");
+    }).run();
   });
 
-  bench("no match", () => {
-    search("zzzz-no-such-thing");
+  test("no match", async ({ bench }) => {
+    await bench("no match", () => {
+      search("zzzz-no-such-thing");
+    }).run();
   });
 
-  bench("detect intent", () => {
-    detectSearchIntent("WF-009");
-    detectSearchIntent("ann able");
-    detectSearchIntent("transport");
+  test("detect intent", async ({ bench }) => {
+    await bench("detect intent", () => {
+      detectSearchIntent("WF-009");
+      detectSearchIntent("ann able");
+      detectSearchIntent("transport");
+    }).run();
   });
 });

@@ -225,7 +225,7 @@ export function WardFlowSignInScreen() {
               <span className={styles.noticeMore}>Details</span>
             </summary>
             <div className={styles.noticeBody}>
-              <p>Ward Flow is a prototype, not a medical device and not clinical decision support.</p>
+              <p>Ward Flow is a prototype, not approved for clinical use or clinical decision support.</p>
               <p>
                 Every ward state, movement, referral, clock, count and figure on these screens is invented. The hospital
                 sites and health services are real WA names.
@@ -474,8 +474,8 @@ export function WardFlowSignInScreen() {
           Synthetic prototype
         </span>
         <p className={styles.footerNote} data-ward-type-floor="banner">
-          Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
-          not clinical decision support.
+          Every ward state, movement, referral, clock and figure on these screens is invented. Not approved for clinical
+          use or clinical decision support.
         </p>
         <p className={styles.footerMeta}>No account or session is created</p>
       </aside>

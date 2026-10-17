@@ -1344,7 +1344,7 @@ export function PatientSearchPage() {
 
         <WardPrototypeFooter
           testId="ward-patient-search-governance"
-          note="Demonstration records only — Not a medical device. Cross-setting index across people, movements, active referrals and beds."
+          note="Demonstration records only — Not approved for clinical use. Cross-setting index across people, movements, active referrals and beds."
         />
       </main>
     </div>

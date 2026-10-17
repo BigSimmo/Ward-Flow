@@ -400,7 +400,8 @@ export const CLINICAL_VALUES = {
     group: "Discharge, leave and absence",
     value: 4 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: "D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service",
+    source:
+      "D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service. Review warning paused by D-65 (flag awol-bed-hold-review)",
   },
   ctoFollowUpWindow: {
     ...SIGNED_BY_JOSH,
@@ -482,7 +483,8 @@ export const CLINICAL_VALUES = {
     group: "Access and privacy",
     value: 15,
     unit: "minutes",
-    source: "D-63 (16 Oct 2026), Australian Government ISM-0428: lock after at most 15 minutes of inactivity",
+    source:
+      "D-63 (16 Oct 2026), Australian Government ISM-0428: lock after at most 15 minutes of inactivity. Checked against the September 2026 ISM on cyber.gov.au (D-65)",
   },
   smallNumberHidden: {
     ...SIGNED_BY_JOSH_16_OCT,
@@ -523,7 +525,7 @@ export const CLINICAL_VALUES = {
     value: 45,
     unit: "days",
     source:
-      "D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days",
+      "D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days. Checked against the September 2026 ISM on cyber.gov.au (D-65)",
   },
 } satisfies Record<string, ClinicalValueEntry>;
 

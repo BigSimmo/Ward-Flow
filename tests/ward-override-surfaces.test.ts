@@ -446,10 +446,10 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // v10 pass 3 (10 Oct 2026): the shared Undo hook forwards events it is handed. Read on that date:
   // every caller builds its step and its undo as object literals with a literal `type` at the call
   // site, so the construction-site scan above still sees and counts each one.
+  // R01 (16 Oct 2026): step and Undo now share submit(event, ...), whose one dispatch(event)
+  // forwards the caller-built event. Their literal construction sites remain scanned above.
   "src/components/ward-management/use-undoable-step.ts :: event":
-    "useUndoableStep's run(): dispatches the step its caller built with a literal type",
-  "src/components/ward-management/use-undoable-step.ts :: undoEvent":
-    "useUndoableStep's toast Undo: dispatches the undo event its caller built with a literal type",
+    "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
   // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
   // caller names. Every `raise("TYPE", ...)` call is scanned above with its literal type.
   "src/components/ward-management/ward-flow-raise.ts :: { ...fields, type, role, now } as WardFlowEvent":
@@ -658,7 +658,9 @@ describe("ward override-surface guard", () => {
     // 0 -> 2, v10 pass 3 (10 Oct 2026): the two forwarding calls in use-undoable-step.ts, each
     // named with its reason in DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE.
     // 2 -> 3, fix list 1.5 (15 Oct 2026): the named raise helper in ward-flow-raise.ts.
-    expect(nonLiteralDispatchCalls.length).toBe(3);
+    // 3 -> 2, R01 (16 Oct 2026): Undo's dispatch(undoEvent) and run's dispatch(event) now
+    // converge on submit(...), which retains the one direct dispatch(event) forwarding site.
+    expect(nonLiteralDispatchCalls.length).toBe(2);
   });
 
   /**

@@ -107,6 +107,7 @@ function whenText(at: Instant, now: Instant): string {
 
 const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
   active: { label: "Active", tone: "success" },
+  inactive: { label: "Not active yet: the server is not updated", tone: "warning" },
   unused: { label: "Switched off, not used", tone: "closed" },
   ended: { label: "Ended", tone: "neutral" },
 };

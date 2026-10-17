@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, globSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { COVERAGE_INVENTORY_ROOTS } from "./coverage-contract.mjs";
+import { COVERAGE_INVENTORY_ROOTS, COVERAGE_INCLUDE_GLOBS, COVERAGE_EXCLUDE_GLOBS } from "./coverage-contract.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -22,9 +22,26 @@ export function missingCoverageRoots(sourceFiles, expectedRoots = COVERAGE_INVEN
   return expectedRoots.filter((expectedRoot) => !sourceFiles.some((file) => file.startsWith(expectedRoot)));
 }
 
-export function checkCoverageInventory(lcovSource, expectedRoots = COVERAGE_INVENTORY_ROOTS) {
-  const sourceFiles = lcovSourceFiles(lcovSource);
-  return { sourceFiles, missing: missingCoverageRoots(sourceFiles, expectedRoots) };
+export function coveragePopulation(base = root) {
+  return globSync(COVERAGE_INCLUDE_GLOBS, { cwd: base, exclude: [...COVERAGE_EXCLUDE_GLOBS] })
+    .filter((file) => statSync(path.join(base, file)).isFile())
+    .map((file) => file.replaceAll("\\", "/"))
+    .sort();
+}
+
+export function checkCoverageInventory(lcovSource, { root: base = root } = {}) {
+  const prefix = `${path.resolve(base).replaceAll("\\", "/")}/`;
+  const sourceFiles = lcovSourceFiles(lcovSource).map((file) =>
+    file.startsWith(prefix) ? file.slice(prefix.length) : file,
+  );
+  const population = coveragePopulation(base);
+  const expected = new Set(population);
+  return {
+    sourceFiles,
+    missing: population.filter((file) => !sourceFiles.includes(file)),
+    invalid: sourceFiles.filter((file) => !expected.has(file)),
+    population,
+  };
 }
 
 function main(argv = process.argv.slice(2)) {
@@ -43,9 +60,9 @@ function main(argv = process.argv.slice(2)) {
     console.error("[coverage-inventory] FAIL — LCOV contains no source-file records.");
     return 1;
   }
-  if (result.missing.length > 0) {
+  if (result.missing.length > 0 || result.invalid.length > 0) {
     console.error(
-      `[coverage-inventory] FAIL — declared coverage root(s) are absent from LCOV: ${result.missing.join(", ")}.`,
+      `[coverage-inventory] FAIL — missing executable files: ${result.missing.join(", ")}; invalid LCOV paths: ${result.invalid.join(", ")}.`,
     );
     return 1;
   }

@@ -48,6 +48,8 @@ export function sharedMembership(row: SharedMembership, now: Instant): AccessMem
     grantedAt: now + minutes.granted,
     expiresAt: now + minutes.expires,
     approvedBy: row.approvedBy,
+    // Only an older backend sends `approved: false`; it still refuses this role until it is updated.
+    ...(row.kind !== "cover" && row.approved === false ? { blockedByOlderServer: true } : {}),
     lastUsedAt: typeof minutes.lastUsed === "number" ? now + minutes.lastUsed : null,
     revokedAt: null,
   };

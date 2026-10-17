@@ -139,24 +139,31 @@ describe("the Access tab", () => {
     expect(screen.queryByTestId("ward-access-waiting")).not.toBeInTheDocument();
   });
 
-  it("shows a legacy pending admin as active without inventing an approver", () => {
-    const membership = sharedMembership(
-      {
-        id: "membership-admin",
-        actorId: "synthetic-admin",
-        role: "admin",
-        scope: { kind: "statewide" },
-        kind: "role",
-        grantedBy: "synthetic-coordinator",
-        approved: false,
-        approvedBy: null,
-        minutes: { granted: -60, expires: 1440, lastUsed: null },
-      },
-      NOW_ANCHOR,
-    );
+  const sharedRow = (approved: boolean, kind: "role" | "cover" = "role") => ({
+    id: "membership-admin",
+    actorId: "synthetic-admin",
+    role: "admin",
+    scope: { kind: "statewide" },
+    kind,
+    grantedBy: "synthetic-coordinator",
+    approved,
+    approvedBy: null,
+    minutes: { granted: -60, expires: 1440, lastUsed: null },
+  });
+
+  it("shows a grant with empty approval fields as active without inventing an approver", () => {
+    const membership = sharedMembership(sharedRow(true), NOW_ANCHOR);
     expect(membership).not.toBeNull();
     expect(membership!.approvedBy).toBeNull();
     expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("active");
+  });
+
+  it("shows a role an older backend still holds back as inactive, never Active", () => {
+    const membership = sharedMembership(sharedRow(false), NOW_ANCHOR);
+    expect(membership).not.toBeNull();
+    expect(membership!.approvedBy).toBeNull();
+    expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("inactive");
+    expect(membershipStatus(sharedMembership(sharedRow(false, "cover"), NOW_ANCHOR)!, NOW_ANCHOR)).toBe("active");
   });
 
   it("changes nothing when the confirm is cancelled", async () => {
@@ -224,7 +231,6 @@ describe("the Access tab", () => {
       })),
       listCovers: vi.fn(async () => []),
       grantAccess: vi.fn(async () => grants.shift() ?? null),
-      approveAccess: vi.fn(async () => null),
       revokeAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
@@ -264,7 +270,6 @@ describe("the Access tab", () => {
       listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
       listCovers: vi.fn(async () => []),
       grantAccess: vi.fn(async () => "step-up" as const),
-      approveAccess: vi.fn(async () => null),
       revokeAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),

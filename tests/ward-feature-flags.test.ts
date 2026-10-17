@@ -69,7 +69,10 @@ describe("resolveWardFeatureFlags", () => {
       expect(flag(resolved, "demo-reset")).toMatchObject({ on: true, source: "default" });
     }
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
-    expect(production.every((entry) => !entry.on)).toBe(true);
+    // D-65 (17 Oct 2026): Josh switched criteria led discharge on in production and kept its flag,
+    // so it can still be switched off. Every other flag stays off there until it is removed (D-62).
+    const onInProduction = production.filter((entry) => entry.on).map((entry) => entry.name);
+    expect(onInProduction).toEqual(["top25-criteria-led-discharge"]);
   });
 
   it("lets the device beat the server, and the server beat the default", () => {

@@ -279,6 +279,20 @@ describe("shared view response ordering", () => {
     let finishCommand!: (response: Response) => void;
     let granted = false;
     let reads = 0;
+    const accepted = snapshot(2);
+    accepted.payload.state.undoRecords = [
+      {
+        kind: "step",
+        undoType: "UNDO_REFER_TO_UNITS",
+        action: "REFER_TO_UNITS",
+        subjectId: "WF-030",
+        at: 642,
+        seq: 42,
+        role: "coordinator",
+        unitId: null,
+        changes: [],
+      },
+    ];
     const opened = (revision: number): SharedSnapshot => ({
       ...snapshot(revision),
       payload: {
@@ -306,15 +320,18 @@ describe("shared view response ordering", () => {
       },
     });
     await client.refresh();
-    client.dispatch(event);
+    const completion = client.dispatchConfirmed(event);
     await vi.waitFor(() => expect(finishCommand).toBeDefined());
     await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
-    finishCommand(Response.json({ snapshot: snapshot(2) }));
+    finishCommand(Response.json({ snapshot: accepted }));
+    const outcome = await completion;
+    expect(outcome).toMatchObject({ status: "accepted", undoRecords: accepted.payload.state.undoRecords });
     await vi.waitFor(() => expect(view?.status).toBe("ready"));
     expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
     expect(reads).toBe(2);
+    expect(outcome.canUndo?.()).toBe(true);
     client.dispose();
   });
 
@@ -734,7 +751,7 @@ describe("shared workspace connection", () => {
     await client.refresh();
     const grant = { actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4", role: "ward", scope: {}, expiresInMinutes: 60 };
     await expect(client.grantAccess(grant)).resolves.toBe("step-up");
-    await expect(client.approveAccess("m1")).resolves.toBe("That role is wider than your own.");
+    await expect(client.revokeAccess("m1")).resolves.toBe("That role is wider than your own.");
     await expect(client.revokeAccess("m1")).resolves.toBeNull();
     await expect(client.pushSubscribe({ endpoint: "https://push.example.test/1", keys: {} })).resolves.toBe("role");
     expect(view?.status).toBe("ready");

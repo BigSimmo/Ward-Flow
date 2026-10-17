@@ -38,6 +38,12 @@ const MOCKUP_IGNORES = ["**/*-mockups/**", "**/*-mockups.tsx", "**/*-mockup.tsx"
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // ESLint 10 removed context.getFilename(), which eslint-plugin-react (a dependency of
+  // eslint-config-next, last released 7.37.5, peer range stops at ESLint 9) calls only to
+  // auto-detect the React version, so every react/* rule crashed. Naming the version skips
+  // that detection. Keep it in step with the "react" major in package.json, and drop this
+  // once eslint-plugin-react ships ESLint 10 support.
+  { settings: { react: { version: "19" } } },
   // Accessibility: eslint-config-next only enables a narrow jsx-a11y subset
   // (alt-text, aria-props, role validity). Add `label-has-associated-control`
   // so a <label> that isn't wired to a control is caught in CI — a real markup

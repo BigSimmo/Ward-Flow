@@ -1,7 +1,11 @@
 // @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { randomUUID } from "node:crypto";
+import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
+import { once } from "node:events";
+import { createHandler, listen } from "./server.mjs";
+import { createSupabaseAuthenticator } from "./supabase-auth.mjs";
+import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
 import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
@@ -1015,7 +1019,7 @@ test(
       assert.equal(closed.recentGrant, false);
 
       // Coordinator and access admin grants work immediately, including existing rows whose
-      // approval fields are null. No approval record is manufactured (D-65).
+      // approval fields are null. No approval record is manufactured (D-66).
       const pending = await store.grantAccess(leadView, {
         actorId: admin,
         role: "admin",
@@ -1390,6 +1394,146 @@ test(
 );
 
 test(
+  "real PostgreSQL: authenticated HTTP save, independent reload, conflict and retry compose",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const workspaceId = randomUUID();
+    const [actor, colleague, outsider] = [randomUUID(), randomUUID(), randomUUID()];
+    const at = new Date("2026-10-07T10:00:00Z");
+    const pools = [new Pool({ connectionString: url, max: 2 }), new Pool({ connectionString: url, max: 2 })];
+    const servers = [];
+    const logs = [];
+    const config = {
+      coordinatorIds: [actor, colleague],
+      origin: null,
+      host: "127.0.0.1",
+      port: 0,
+      supabase: {
+        projectRef: APPROVED_SUPABASE_PROJECT,
+        url: APPROVED_SUPABASE_URL,
+        publishableKey: "synthetic-offline-only",
+      },
+    };
+    const key = generateKeyPairSync("ec", { namedCurve: "P-256" });
+    const part = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const token = (sub) => {
+      const data = `${part({ alg: "ES256", kid: "local-integration", typ: "JWT" })}.${part({
+        sub,
+        iss: `${APPROVED_SUPABASE_URL}/auth/v1`,
+        aud: "authenticated",
+        role: "authenticated",
+        iat: at.getTime() / 1000,
+        exp: at.getTime() / 1000 + 3600,
+      })}`;
+      return `Bearer ${data}.${sign("sha256", Buffer.from(data), { key: key.privateKey, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
+    };
+    // Only the public-key response is supplied offline. Signature/claims authentication,
+    // HTTP parsing/role selection, SQL transactions, receipts and engine are the real code.
+    const authenticate = createSupabaseAuthenticator(config, {
+      now: () => at.getTime(),
+      fetch: async (endpoint) => {
+        assert.equal(endpoint, `${APPROVED_SUPABASE_URL}/auth/v1/.well-known/jwks.json`);
+        return Response.json({
+          keys: [{ ...key.publicKey.export({ format: "jwk" }), kid: "local-integration", alg: "ES256", use: "sig" }],
+        });
+      },
+    });
+    const start = async (pool) => {
+      const sharedStore = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+      const server = listen(
+        createHandler({ config, sharedStore, authenticate, log: (entry) => logs.push(entry) }),
+        config,
+      );
+      servers.push(server);
+      await once(server, "listening");
+      const address = server.address();
+      assert.ok(address && typeof address === "object", "owned HTTP server must bind a TCP address");
+      return `http://127.0.0.1:${address.port}/v1/workspace`;
+    };
+    const request = (endpoint, auth, body) =>
+      fetch(endpoint, {
+        method: body ? "POST" : "GET",
+        headers: { authorization: auth, "content-type": "application/json" },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+    try {
+      await migrate(pools[0]);
+      const first = await start(pools[0]);
+      const credential = token(actor);
+      const parts = credential.split(".");
+      const forged = `${parts[0]}.${parts[1]}.${Buffer.alloc(64).toString("base64url")}`;
+      for (const bad of ["", forged]) assert.equal((await request(first, bad)).status, 401);
+      assert.equal((await request(first, token(outsider))).status, 403);
+      assert.equal(
+        (await pools[0].query("SELECT count(*)::int AS count FROM ward_flow.workspaces WHERE id=$1", [workspaceId]))
+          .rows[0].count,
+        0,
+      );
+
+      const initialResponse = await request(first, credential);
+      assert.equal(initialResponse.status, 200);
+      const { snapshot: initial } = await initialResponse.json();
+      assert.equal(initial.revision, 1);
+      const unitId = initial.payload.state.units[0].id;
+      const body = {
+        classification: "synthetic",
+        commandId: randomUUID(),
+        expectedRevision: initial.revision,
+        actorId: outsider,
+        event: { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId },
+      };
+      const savedResponse = await request(`${first}/commands`, credential, body);
+      assert.equal(savedResponse.status, 200);
+      const saved = await savedResponse.json();
+      assert.equal(saved.outcome, "accepted");
+      assert.equal(saved.snapshot.revision, 2);
+      const recorded = saved.snapshot.payload.state.refreshRequests.at(-1);
+      assert.equal(recorded.unitId, unitId);
+      assert.equal(recorded.byRole, "coordinator");
+
+      // Separate HTTP listener, store instance, connection pool and authenticated account.
+      const second = await start(pools[1]);
+      const reloadedResponse = await request(second, token(colleague));
+      assert.equal(reloadedResponse.status, 200);
+      const { snapshot: reloaded } = await reloadedResponse.json();
+      assert.equal(reloaded.revision, 2);
+      assert.deepEqual(reloaded.payload, saved.snapshot.payload);
+      const staleResponse = await request(`${second}/commands`, token(colleague), { ...body, commandId: randomUUID() });
+      assert.equal(staleResponse.status, 409);
+      const stale = await staleResponse.json();
+      assert.equal(stale.outcome, "stale");
+      assert.equal(stale.snapshot.revision, 2);
+      assert.deepEqual(stale.snapshot.payload, reloaded.payload);
+
+      const retryResponse = await request(`${first}/commands`, credential, body);
+      assert.equal(retryResponse.status, 200);
+      const retry = await retryResponse.json();
+      assert.equal(retry.replayed, true);
+      assert.equal(retry.snapshot.revision, 2);
+      assert.deepEqual(retry.snapshot.payload.state.refreshRequests, reloaded.payload.state.refreshRequests);
+      const audit = await pools[1].query(
+        "SELECT actor_id, outcome, prior_revision, revision FROM ward_flow.audit WHERE workspace_id=$1 AND action='REQUEST_CAPACITY_REFRESH' ORDER BY sequence",
+        [workspaceId],
+      );
+      assert.deepEqual(audit.rows, [
+        { actor_id: actor, outcome: "accepted", prior_revision: "1", revision: "2" },
+        { actor_id: colleague, outcome: "stale", prior_revision: "2", revision: "2" },
+      ]);
+      assert.doesNotMatch(JSON.stringify(logs), new RegExp(`${actor}|${outsider}|${credential.slice(7)}`));
+    } finally {
+      await Promise.all(
+        servers.map(
+          (server) => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+        ),
+      );
+      await Promise.all(pools.map((pool) => pool.end()));
+      // Audit is append-only: leave these UUID-scoped rows to the disposable DB owner.
+    }
+  },
+);
+
+test(
   "real PostgreSQL: shared views follow cover changes and recheck access after the workspace lock",
   { skip: !url },
   async (t) => {
@@ -1614,6 +1758,44 @@ test(
           revoker.release();
         }
       });
+      for (const poll of [false, true]) {
+        await t.test(
+          `HTTP ${poll ? "poll" : "full read"} replies use the authority refreshed after cover ends`,
+          async () => {
+            const { createHandler } = await import("./server.mjs");
+            const f = await fixture();
+            const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+            const cover = await f.cover();
+            const wider = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+            assert.ok(wider.payload.state.patients.length > first.payload.state.patients.length);
+            const handler = createHandler({
+              config: { coordinatorIds: [f.lead], origin: "http://localhost", workspaceId: f.workspaceId },
+              authenticate: async () => f.nurse,
+              sharedStore: {
+                ...f.store,
+                viewer: async (actorId, options) => {
+                  const view = await f.store.viewer(actorId, options);
+                  // Interleave a real committed revoke after the HTTP layer has resolved the desk.
+                  assert.equal((await f.store.revokeAccess(f.leadView, cover.id)).status, 200);
+                  return view;
+                },
+              },
+              log: () => {},
+            });
+            const response = await handler(
+              new Request(`http://localhost/v1/workspace${poll ? `?since=${first.revision}` : ""}`, {
+                headers: { authorization: "Bearer synthetic-test" },
+              }),
+            );
+            assert.equal(response.status, 200);
+            const value = await response.json();
+            assert.deepEqual(value.access, { role: "ward", scope: { kind: "ward", unitIds: [f.unitA] } });
+            assert.equal(value.workingAs, f.base.id);
+            assert.deepEqual(value.snapshot.payload.state.patients, first.payload.state.patients);
+            assert.equal(value.snapshot.revision, first.revision);
+          },
+        );
+      }
       await t.test("same-revision polls send fresh scopes after cover grant, revoke and expiry", async () => {
         const f = await fixture();
         const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));

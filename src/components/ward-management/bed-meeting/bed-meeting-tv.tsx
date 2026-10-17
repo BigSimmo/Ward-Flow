@@ -177,7 +177,8 @@ function More({ count, noun, one = noun }: { count: number; noun: string; one?: 
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
   return (
     <p className={styles.footer}>
-      {scope} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not a medical device.
+      {scope} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not approved for
+      clinical use.
     </p>
   );
 }

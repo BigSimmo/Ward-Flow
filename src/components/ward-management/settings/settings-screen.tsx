@@ -1,5 +1,6 @@
 "use client";
 
+import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -604,7 +605,9 @@ export function SettingsScreen() {
         railOpen,
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      downloadBlob(blob, `ward-flow-rules-${new Date().toISOString().slice(0, 10)}.json`);
+      const day = perthCalendarDay(new Date());
+      const date = `${day.year}-${String(day.monthIndex + 1).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
+      downloadBlob(blob, `ward-flow-rules-${date}.json`);
       showToast("Rules exported.");
     } catch {
       showToast("Rules could not be exported.");
@@ -1389,7 +1392,7 @@ export function SettingsScreen() {
       ) : null}
       <WardPrototypeFooter
         testId="ward-settings-governance"
-        note="Synthetic records · Not a medical device · Changes remembered for this browser only"
+        note="Synthetic records · Not approved for clinical use · Changes remembered for this browser only"
       />
     </>
   );

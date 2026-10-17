@@ -51,10 +51,16 @@ function ResetScenario() {
     </button>
   );
 }
-function openFirstRecord() {
+function openFirstRecord(worklist?: HTMLElement) {
   fireEvent.click(screen.getByRole("button", { name: /^History/ }));
-  const rows = within(screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row");
-  const opener = rows.flatMap((row) => within(row).queryAllByRole("button"))[0];
+  const rows = within(worklist ?? screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row");
+  // Only the first record is exercised; later row buttons add no assertion.
+  let openers: HTMLElement[] = [];
+  for (const row of rows) {
+    openers = within(row).queryAllByRole("button");
+    if (openers.length > 0) break;
+  }
+  const opener = openers[0];
   expect(opener).toBeDefined();
   const name = opener.textContent ?? "";
   expect(name.length).toBeGreaterThan(0);
@@ -69,8 +75,7 @@ function renderBoard() {
     </WardFlowProvider>,
   );
 }
-function expectDeniedDetail(name: string) {
-  const detail = screen.getByRole("region", { name: "Selected discharge details" });
+function expectDeniedDetail(name: string, detail = screen.getByRole("region", { name: "Selected discharge details" })) {
   expect(detail).toHaveTextContent("This record could not be opened. Select it again to retry.");
   expect(within(detail).queryByRole("heading", { name })).not.toBeInTheDocument();
   expect(within(detail).queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
@@ -90,20 +95,23 @@ describe("DischargeBoard guarded detail access", () => {
   it("shows a retryable failure when allocating an open receipt throws", () => {
     access.mode = "allocation-failed";
     renderBoard();
-    const name = openFirstRecord();
-    expectDeniedDetail(name);
-    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent(
-      "Select a record to view dates, blockers and ward follow-up.",
-    );
-    access.mode = "normal";
+    // Selection and closing replace contents, not these named regions or the detail shell.
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
+    const detail = screen.getByRole("region", { name: "Selected discharge details" });
+    const detailShell = detail.parentElement!;
+    const name = openFirstRecord(worklist);
+    expect(detail).toBeInTheDocument();
+    expectDeniedDetail(name, detail);
+    expect(within(detailShell).getByRole("button", { name: "Close" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(within(detailShell).queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    expect(detail).toBeInTheDocument();
+    expect(detail).toHaveTextContent("Select a record to view dates, blockers and ward follow-up.");
+    access.mode = "normal";
+    expect(worklist).toBeInTheDocument();
     fireEvent.click(within(worklist).getByRole("button", { name }));
-    expect(
-      within(screen.getByRole("region", { name: "Selected discharge details" })).getByRole("heading", { name }),
-    ).toBeInTheDocument();
+    expect(detail).toBeInTheDocument();
+    expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
   });
 
   it("removes opened details when a scenario reset invalidates the receipt", () => {

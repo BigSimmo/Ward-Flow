@@ -32,7 +32,7 @@ import { wardAdmissions } from "@/components/ward-management/ward-admissions-see
  * Two jobs, both required by the brief:
  *
  *  1. Every "APP ONLY" item the contract's three-way diff found — the sentence saying this board
- *     is not a medical device, the phone card list, the two-sentence "no fraction" counts framing
+ *     is not approved for clinical use, the phone card list, the two-sentence "no fraction" counts framing
  *     — must still be there after the upgrade, asserted BY NAME (testid or exact wording), not by
  *     a generic smoke check that would pass on a screen missing half of them.
  *  2. The one finding the brief calls out as the most dangerous: the drawing carries the
@@ -71,7 +71,7 @@ describe("out-of-area upgrade — functional layout and clean presentation", () 
     const banner = screen.getByTestId("ward-out-of-area-governance");
     expect(banner.tagName).toBe("FOOTER");
     expect(banner).toHaveTextContent("Synthetic prototype");
-    expect(banner).toHaveTextContent("Not a medical device");
+    expect(banner).toHaveTextContent("Not approved for clinical use");
     expect(screen.queryByTestId("ward-out-of-area-threshold-notice")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-out-of-area-synthetic-notice")).not.toBeInTheDocument();
   });

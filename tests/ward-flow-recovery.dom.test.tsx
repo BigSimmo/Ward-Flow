@@ -86,7 +86,9 @@ describe("conservative demo recovery", () => {
       expect(saved().state.units.find((candidate: { id: string }) => candidate.id === unit.id)).toEqual(accepted);
       view.unmount();
       mount();
-      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+      );
       expect(current.units.find((candidate) => candidate.id === unit.id)).toEqual(accepted);
     },
   );
@@ -206,7 +208,9 @@ describe("conservative demo recovery", () => {
     expect(current.now).toBe(NOW_ANCHOR + 15);
     expect(boardNow).toBe(current.now);
     expect(saved().state.handoverSignOffs.at(-1).at).toBe(NOW_ANCHOR + 10);
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+    );
   });
   it.each(["now", "savedAtAbsolute"])("rejects missing clock metadata %s", (key) => {
     const view = mount();
@@ -262,7 +266,9 @@ describe("conservative demo recovery", () => {
     mounts = 0;
     render(consumerTree());
     expect(mounts).toBe(1);
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+    );
   });
   it("starts one-time screen state from the restored day when a changed day is reloaded", () => {
     const first = render(consumerTree());
@@ -447,7 +453,9 @@ describe("reviewed event privacy", () => {
     const signOffs = saved().state.handoverSignOffs.length;
     view.unmount();
     mount();
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+    );
     expect(saved().state.handoverSignOffs).toHaveLength(signOffs);
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("Synthetic-private-team-text");
   });

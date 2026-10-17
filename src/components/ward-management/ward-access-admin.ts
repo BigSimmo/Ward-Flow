@@ -8,7 +8,7 @@
  * server can never disagree about who may give what.
  *
  * - Nobody grants themselves a role, and nobody grants a role wider than their own place.
- * - Every granted role works immediately; no second approval is required (D-65).
+ * - Every granted role works immediately; no second approval is required (D-66).
  * - Every role has an end date. One not used for the set time is switched off by itself.
  * - Cover is given by a coordinator, or by a nurse in charge or ED clinician for their own ward
  *   or ED, to a colleague, for one shift at most. It needs no admin, because an admin is not on at
@@ -49,6 +49,11 @@ export type AccessMembership = {
   readonly grantedAt: Instant;
   readonly expiresAt: Instant;
   readonly approvedBy: string | null;
+  /**
+   * Set only when an older shared backend, which still wants a second approval, reports this role
+   * as not yet usable. The website then shows it as inactive instead of falsely "Active".
+   */
+  readonly blockedByOlderServer?: boolean;
   /** The last time the person worked as this role, or `null` if never. */
   readonly lastUsedAt: Instant | null;
   readonly revokedAt: Instant | null;
@@ -171,14 +176,16 @@ export function revokeRefusal(input: {
   return null;
 }
 
-export type MembershipStatus = "active" | "unused" | "ended";
+export type MembershipStatus = "active" | "inactive" | "unused" | "ended";
 
 /**
- * Where a role stands now. "Unused" is a role not worked as for the set time: it is switched off
+ * Where a role stands now. "Inactive" is a role an older shared backend still holds back for an
+ * approval it no longer gets (only seen while the website is updated before the backend). "Unused" is a role not worked as for the set time: it is switched off
  * by itself, and the review list says so. Cover is too short ever to go unused.
  */
 export function membershipStatus(membership: AccessMembership, now: Instant): MembershipStatus {
   if (membership.revokedAt !== null || membership.expiresAt <= now) return "ended";
+  if (membership.blockedByOlderServer) return "inactive";
   if (membership.kind === "role" && (membership.lastUsedAt ?? membership.grantedAt) <= now - ACCESS_UNUSED_MINUTES)
     return "unused";
   return "active";

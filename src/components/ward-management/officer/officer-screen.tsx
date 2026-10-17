@@ -2183,7 +2183,7 @@ export function OfficerScreen() {
 
         <WardPrototypeFooter
           testId="ward-officer-governance"
-          note="All outstanding jobs; closed movements excluded · Providers identify organisations · Not a medical device"
+          note="All outstanding jobs; closed movements excluded · Providers identify organisations · Not approved for clinical use"
         />
       </main>
 

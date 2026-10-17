@@ -1630,7 +1630,8 @@ describe("Task 5 — match view failure branches (referralCandidates, matchReaso
     for (const referral of wardReferrals) {
       const candidates = referralCandidates(
         referral,
-        wardOf(referral).destination,
+        // This guard examines the whole network, independent of an existing recipient.
+        { ...wardOf(referral).destination, unitId: undefined },
         withMadeUpForensicWard(units),
         NOW_ANCHOR,
       );

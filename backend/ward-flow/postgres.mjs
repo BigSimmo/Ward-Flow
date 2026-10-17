@@ -455,6 +455,7 @@ export function createWorkspaceStore(
     }
   }
   async function read(actorId, view) {
+    if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
     const { rows } = await pool.query(
       "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
@@ -480,12 +481,18 @@ export function createWorkspaceStore(
       at.setTime(clock().getTime());
       const current = await resolveViewer(actorId, { workingAs: view.membershipId }, client, at, version);
       if (current.status !== "ok") throw new Error("role-ended");
+      // The HTTP reply uses this request's view for its access metadata too.
+      Object.assign(view, current);
       return snapshot(rows[0], at, current);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });
     if (current.status !== "ok") throw new Error("role-ended");
-    return transaction(async (client, now) => snapshot(await lock(client, actorId, now, current), now, current));
+    return transaction(async (client, now) => {
+      const row = await lock(client, actorId, now, current);
+      Object.assign(view, current);
+      return snapshot(row, now, current);
+    });
   }
   /**
    * Who this account is working as. The role always comes from here, never from the browser.
@@ -634,7 +641,7 @@ export function createWorkspaceStore(
     grantedAt: new Date(row.granted_at).toISOString(),
     expiresAt: new Date(row.expires_at).toISOString(),
     lastUsedAt: row.last_used_at ? new Date(row.last_used_at).toISOString() : null,
-    // Kept for older clients: every role is usable without a separate approval (D-65).
+    // Kept for older clients: every role is usable without a separate approval (D-66).
     approved: true,
     approvedBy: row.approved_by,
     minutes: {
@@ -982,7 +989,7 @@ export function createWorkspaceStore(
     },
     /**
      * Gives a person a role at a place until a set time. Nobody grants themselves a role or one
-     * wider than their own. Granted roles work immediately without another approval (D-65).
+     * wider than their own. Granted roles work immediately without another approval (D-66).
      */
     async grantAccess(view, request) {
       const blocked = accessRefusal(view);
