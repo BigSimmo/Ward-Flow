@@ -11,7 +11,7 @@ import styles from "./statistics-bed-map.module.css";
 
 export type BedMapKind = "occupied" | "leave" | "pulled" | "ready" | "prep" | "closed";
 
-export type BedMapCell = {
+type BedMapCell = {
   kind: BedMapKind;
   /** The synthetic admission number in this bed, when a record can be matched to it. Never a name. */
   admissionId: string | null;

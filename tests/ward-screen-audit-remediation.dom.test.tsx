@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -19,6 +19,13 @@ import { WardIndex } from "@/components/ward-management/wards/ward-index";
 const RPH_ADULT_SECURE = "rph-adult-secure";
 
 describe("WardScreen & WardIndex audit remediation", () => {
+  beforeEach(() => {
+    // The screen mirrors the open bed drawer in the URL and history state. An earlier test that left
+    // a drawer open would otherwise make the next mount call history.back(), whose asynchronous
+    // popstate closes that test's own drawer at a moment that depends on the jsdom version.
+    window.history.replaceState(null, "", "/");
+  });
+
   it("persists discharge blocker on an occupied bed without a pre-existing PendingBedRelease and allows clearing it", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

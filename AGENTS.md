@@ -58,6 +58,7 @@ Ward Flow is a prototype for coordinating psychiatric ward beds, referrals, move
 - That includes indirect calls inside scripts, tests, release checks, PR tooling and review automation, and network Git reads such as `git fetch`.
 - Prefer local, static, mocked or offline checks. If a check would touch a provider, report the command and ask first. Local connector or MCP configuration is not authority to call a provider.
 - Ward Flow's database and sign-in provider is <!-- fact:database-provider -->Supabase<!-- /fact -->, recorded in one place: [DATABASE.md](docs/ward-flow/DATABASE.md). Read it before database work. When the provider changes, update that page and the decision log, not other docs. Azure is retired (D-55).
+- Before Supabase connector calls, follow [account selection and project verification](docs/ward-flow/DATABASE.md#selecting-the-supabase-connection). An available connector or a working browser login does not establish which account a tool call uses.
 - Ward Flow's resources are separate from PsychSift's. Never use PsychSift credentials, Supabase projects, Railway services, deployments, migrations or RAG instructions here. Before any live action, verify the named Ward Flow resource, its data boundary and your authority.
 - Dated hosting records do not prove what is deployed now. Browser, server, local PostgreSQL, hosted provider and deployed behaviour are separate evidence. A backend is not ready until its authenticated shared save, reload and conflict path pass.
 

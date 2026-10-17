@@ -7,7 +7,13 @@ import { clearReferralDraftSession } from "./referrals/referral-draft-store";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
-import { SupabaseWardAuth, WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-supabase-auth";
+import {
+  SupabaseWardAuth,
+  WardAuthError,
+  consumeRecoveryFragment,
+  WARD_AUTH_STORAGE_KEY,
+  type WardBrowserAuthAdapter,
+} from "./ward-supabase-auth";
 
 /**
  * Before sign-out: revoke this account's phone alerts for this device, so the next person at a
@@ -76,10 +82,24 @@ const workingAs = {
     }
   },
 };
-export function useWardSupabaseShared(enabled: boolean) {
+const defaultCreateAuth = (): WardBrowserAuthAdapter =>
+  new SupabaseWardAuth({
+    url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
+    publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
+    storage: window.sessionStorage,
+    coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
+  });
+export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBrowserAuthAdapter = defaultCreateAuth) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  // Latest factory, read when the session boots. Updated in an effect (not during render) and
+  // declared before the boot effect so it is current when that effect runs; the boot effect keys
+  // on `enabled` only, so an inline factory with a new identity each render does not reconnect.
+  const createAuthRef = useRef(createAuth);
+  useEffect(() => {
+    createAuthRef.current = createAuth;
+  }, [createAuth]);
   const [previousEnabled, setPreviousEnabled] = useState(enabled);
   if (previousEnabled !== enabled) {
     // Reset before rendering children when the selected provider changes.
@@ -103,7 +123,7 @@ export function useWardSupabaseShared(enabled: boolean) {
     let closed = false;
     let timer: ReturnType<typeof setInterval> | undefined;
     let onVisibilityChange: (() => void) | undefined;
-    let auth: SupabaseWardAuth | null = null;
+    let auth: WardBrowserAuthAdapter | null = null;
     let connectedActorId: string | null = null;
     const disconnect = (forgetDrafts = true) => {
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
@@ -214,12 +234,7 @@ export function useWardSupabaseShared(enabled: boolean) {
           ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
         if (base.username || base.password || (base.protocol !== "https:" && !loopback))
           throw new Error("Missing shared configuration");
-        auth = new SupabaseWardAuth({
-          url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
-          publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
-          storage: window.sessionStorage,
-          coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
-        });
+        auth = createAuthRef.current();
         actions.current = {
           signUp: (email, password) =>
             run(async () => {
