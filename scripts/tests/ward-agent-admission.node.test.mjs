@@ -8,11 +8,21 @@ import { test } from "node:test";
 import { signOutLogOptional } from "../pre-commit-checks.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const hook = path.join(root, ".githooks/pre-commit");
+const hook = path.join(root, ".githooks", "pre-commit").replace(/\\/g, "/");
 const file = "docs/ward-flow/admission-probe.md";
 const branch = "ward/admission-fixture";
 const gitBash = "C:/Program Files/Git/bin/bash.exe";
 const bash = process.platform === "win32" && existsSync(gitBash) ? gitBash : "bash";
+if (process.platform === "win32") {
+  const probe = spawnSync(bash, ["-c", 'uname -s && test -f "$1"', "ward-admission-shell-probe", hook], {
+    encoding: "utf8",
+    timeout: 10_000,
+  });
+  assert.ok(
+    probe.status === 0 && /^(?:MINGW|MSYS)/.test(probe.stdout ?? ""),
+    `Windows admission fixtures require Git Bash (MINGW/MSYS) with access to the native hook path; selected ${bash}. WSL or unavailable Bash cannot run these fixtures. ${probe.error?.message ?? probe.stderr?.trim() ?? ""}`,
+  );
+}
 
 function fixture(t) {
   const dir = mkdtempSync(path.join(tmpdir(), "ward-admission-"));
