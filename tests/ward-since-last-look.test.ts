@@ -296,3 +296,100 @@ it("counts recorded transport arrivals, referral answers and ward releases witho
     { kind: "release", id: release.id },
   ]);
 });
+
+it("retains this ward's own closed answer but ignores subsequent movement at another ward", () => {
+  const world = seededWorld();
+  const movement = world.movements.find((m) => m.transport)!;
+  const wardA = world.units[0]!.id;
+  const wardB = world.units[1]!.id;
+  const scope = `ward:${wardA}`;
+  const initial = {
+    ...world,
+    referrals: [],
+    bedReleases: [],
+    movements: [
+      {
+        ...movement,
+        referredUnitIds: [wardA, wardB],
+        acceptedUnitId: undefined,
+        stage: "destination_review" as const,
+        referralAnswerHistory: [],
+        withdrawnReferrals: [],
+      },
+    ],
+  };
+  const picture = (w: LastLookWorld, at: number) =>
+    takeLastLookSnapshot(scopeLastLookWorld(w, scope), at, DEFAULT_DUE_SOON_THRESHOLDS, scope);
+  const before = picture(initial, NOW - 5);
+  const declined = {
+    ...initial,
+    movements: [
+      {
+        ...initial.movements[0]!,
+        referredUnitIds: [wardB],
+        referralAnswerHistory: [{ unitId: wardA, at: NOW - 4, answer: "declined" as const }],
+      },
+    ],
+  };
+  const closed = picture(declined, NOW - 4);
+  expect(scopedChangesSinceLastLook(before, closed, 15).updates).toEqual([{ kind: "movement", id: movement.id }]);
+  const acceptedElsewhere = {
+    ...declined,
+    movements: [
+      {
+        ...declined.movements[0]!,
+        acceptedUnitId: wardB,
+        acceptedAt: NOW - 3,
+        stage: "accepted_awaiting_bed" as const,
+        transport: { ...movement.transport!, collectedAt: NOW - 2, arrivedAt: NOW - 1 },
+        stageChanges: [{ at: NOW - 3, to: "accepted_awaiting_bed" as const, by: "ward" }],
+      },
+    ],
+  };
+  expect(scopedChangesSinceLastLook(closed, picture(acceptedElsewhere, NOW), 15).updates).toEqual([]);
+  const withdrawn = {
+    ...declined,
+    movements: [
+      {
+        ...declined.movements[0]!,
+        withdrawnReferrals: [{ unitId: wardA, at: NOW, reason: "coordinator_withdrew" as const }],
+      },
+    ],
+  };
+  expect(scopedChangesSinceLastLook(closed, picture(withdrawn, NOW), 15).updates).toEqual([
+    { kind: "movement", id: movement.id },
+  ]);
+});
+
+it("counts an explicit incoming ED referral's recorded physical arrival, independently of its sender site", () => {
+  const world = seededWorld();
+  const referral = world.referrals[0]!;
+  const edId = world.movements[0]!.originEdId;
+  const scope = `ed:${edId}`;
+  const beforeWorld = {
+    ...world,
+    movements: [],
+    referrals: [
+      {
+        ...referral,
+        triagedAt: undefined,
+        inDepartmentAt: undefined,
+        destinations: [
+          {
+            state: "queued" as const,
+            destination: { kind: "emergency_department" as const, edId, purpose: "psychiatric_review" as const },
+          },
+        ],
+      },
+    ],
+  };
+  const before = takeLastLookSnapshot(
+    scopeLastLookWorld(beforeWorld, scope),
+    NOW - 5,
+    DEFAULT_DUE_SOON_THRESHOLDS,
+    scope,
+  );
+  const afterWorld = { ...beforeWorld, referrals: [{ ...beforeWorld.referrals[0]!, inDepartmentAt: NOW }] };
+  const after = takeLastLookSnapshot(scopeLastLookWorld(afterWorld, scope), NOW, DEFAULT_DUE_SOON_THRESHOLDS, scope);
+  expect(scopedChangesSinceLastLook(before, after, 15).updates).toEqual([{ kind: "referral", id: referral.id }]);
+});

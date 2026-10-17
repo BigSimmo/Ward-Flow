@@ -88,7 +88,7 @@ export function takeLastLookSnapshot(
   }
   return {
     version: scopeKey ? 3 : 2,
-    ...(scopeKey ? { scopeKey, records: scopedLookRecords(world) } : {}),
+    ...(scopeKey ? { scopeKey, records: scopedLookRecords(world, scopeKey) } : {}),
     worldGeneration: world.worldGeneration ?? 0,
     userId: world.userId ?? "local-demo",
     at: now,
@@ -334,7 +334,7 @@ export function scopeLastLookWorld(world: LastLookWorld, scopeKey: string): Last
   };
 }
 
-function scopedLookRecords(world: LastLookWorld): ScopedLookRecord[] {
+function scopedLookRecords(world: LastLookWorld, scopeKey: string): ScopedLookRecord[] {
   return [
     ...world.referrals.map((r) => {
       const times = [
@@ -362,19 +362,23 @@ function scopedLookRecords(world: LastLookWorld): ScopedLookRecord[] {
       };
     }),
     ...world.movements.map((m) => {
-      const t = m.transport;
+      const wardId = scopeKey.startsWith("ward:") ? scopeKey.slice(5) : undefined;
+      // Historical arms remain so this ward can see its own decline/withdrawal. Once its arm
+      // closes, another ward's acceptance, journey stages and transport are outside this scope.
+      const active = wardId === undefined || m.acceptedUnitId === wardId || m.referredUnitIds.includes(wardId);
+      const t = active ? m.transport : undefined;
       const times = [
         m.openedAt,
-        m.acceptedAt ?? -1,
-        m.leftDepartmentAt ?? -1,
-        m.closure?.at ?? -1,
-        m.referredAt ?? -1,
+        active ? (m.acceptedAt ?? -1) : -1,
+        active ? (m.leftDepartmentAt ?? -1) : -1,
+        active ? (m.closure?.at ?? -1) : -1,
+        active ? (m.referredAt ?? -1) : -1,
         t?.acceptedAt ?? -1,
         t?.enRouteAt ?? -1,
         t?.collectedAt ?? -1,
         t?.arrivedAt ?? -1,
         t?.cancelledAt ?? -1,
-        ...m.stageChanges.map((c) => c.at),
+        ...(active ? m.stageChanges.map((c) => c.at) : []),
         ...(m.referralAnswerHistory ?? []).map((a) => a.at),
         ...m.withdrawnReferrals.map((a) => a.at),
       ];
@@ -382,7 +386,7 @@ function scopedLookRecords(world: LastLookWorld): ScopedLookRecord[] {
         kind: "movement" as const,
         id: m.id,
         values: [
-          MOVEMENT_STAGES.indexOf(m.stage),
+          active ? MOVEMENT_STAGES.indexOf(m.stage) : -1,
           m.referredUnitIds.length,
           m.acceptedUnitId === undefined ? 0 : 1,
           ...times,
