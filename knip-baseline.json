@@ -13,7 +13,6 @@
   "exports:src/components/ward-management/statistics/statistics-summary-phone.tsx:RangeChoices",
   "exports:src/components/ward-management/ward-change-reasons.ts:DISCHARGE_DELAY_REASONS",
   "exports:src/components/ward-management/ward-derivations.ts:MORE_RESTRICTIVE_NOTE",
-  "exports:src/components/ward-management/ward-derivations.ts:isArrivalLate",
   "exports:src/components/ward-management/ward-derivations.ts:isMoreRestrictiveThanRequired",
   "exports:src/components/ward-management/ward-derivations.ts:leaveBedNeedsOpenWarning",
   "exports:src/components/ward-management/ward-derivations.ts:movementTimeline",
