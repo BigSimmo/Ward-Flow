@@ -117,11 +117,13 @@ function openAuditTrail() {
 }
 
 describe("GovernanceView", () => {
-  it("carries the not-a-medical-device statement, the same wording the coordinator screen uses", () => {
+  it("carries the clinical-use restriction, the same wording the coordinator screen uses", () => {
     renderGovernance();
     const notice = screen.getByTestId("ward-governance-medical-device-notice");
-    expect(notice).toHaveTextContent("This screen is not a medical device. It orders operational placement work only");
-    expect(notice.querySelector("strong")).toHaveTextContent("not a medical device");
+    expect(notice).toHaveTextContent(
+      "This screen is not approved for clinical use. It orders operational placement work only",
+    );
+    expect(notice.querySelector("strong")).toHaveTextContent("not approved for clinical use");
   });
 
   it("describes a recorded override without inventing a historical gate verdict", () => {

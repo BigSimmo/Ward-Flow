@@ -28,7 +28,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -350,6 +350,14 @@ export function MovementsScreen() {
   }, []);
 
   const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
+  // A ref, not state: it only records which tab a key press asked to focus, so the layout effect
+  // below can move focus once the new selection has committed. Nothing renders from it.
+  const keyboardTabFocus = useRef<"every" | "resolved" | null>(null);
+  useLayoutEffect(() => {
+    if (keyboardTabFocus.current !== boardTab) return;
+    document.getElementById(`movements-tab-${boardTab}`)?.focus();
+    keyboardTabFocus.current = null;
+  }, [boardTab]);
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [sideView, setSideView] = useState<"transport" | "shape">("transport");
@@ -1311,7 +1319,23 @@ export function MovementsScreen() {
                         aria-selected={boardTab === tab.id}
                         tabIndex={boardTab === tab.id ? 0 : -1}
                         className={styles.boardTab}
-                        onClick={() => startTransition(() => setBoardTab(tab.id))}
+                        onClick={() => {
+                          keyboardTabFocus.current = null;
+                          startTransition(() => setBoardTab(tab.id));
+                        }}
+                        onKeyDown={(event) => {
+                          let next: "every" | "resolved";
+                          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                            next = tab.id === "every" ? "resolved" : "every";
+                          } else if (event.key === "Home") next = "every";
+                          else if (event.key === "End") next = "resolved";
+                          else return;
+                          event.preventDefault();
+                          // Selection is unchanged (Home on the first tab, End on the last): the tab is
+                          // already focused and no commit follows, so there is nothing to wait for.
+                          keyboardTabFocus.current = next === boardTab ? null : next;
+                          startTransition(() => setBoardTab(next));
+                        }}
                       >
                         {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
                             other count on these screens uses, and a ruling rather than a default. */}
@@ -1878,7 +1902,7 @@ export function MovementsScreen() {
 
         <WardPrototypeFooter
           testId="ward-movements-governance"
-          note="Patient journeys, transport legs and departments are invented · Not a medical device"
+          note="Patient journeys, transport legs and departments are invented · Not approved for clinical use"
         />
         <MovementDrawer
           // P2 item 4 (2026-09-17 review): remounts on every patient change, so a reason chosen

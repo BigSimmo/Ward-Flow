@@ -944,7 +944,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         <WardPrototypeFooter
           testId="ward-discharge-governance"
-          note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not a medical device"
+          note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not approved for clinical use"
         />
       </main>
     </div>

@@ -496,19 +496,19 @@ describe("ReferralBoard", () => {
   });
 
   /**
-   * M7 (fix round C): the brief requires the "not a medical device" prose on BOTH screens. The
+   * M7 (fix round C): the brief requires the "not approved for clinical use" prose on BOTH screens. The
    * board's banner sits at the top of `<main>`, above two sections and two tables — the match
    * view mounts below all of it, so on a phone the coordinator taking the accept decision has
    * scrolled past it. Asserted on the match panel specifically, not on the document, so deleting
    * the match view's own copy cannot be masked by the board's.
    */
-  it("the match view carries its own 'not a medical device' statement, where the decision is taken", () => {
+  it("the match view carries its own 'not approved for clinical use' statement, where the decision is taken", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-001"));
 
     const panel = screen.getByTestId("ward-referral-match-panel");
     const governance = within(panel).getByTestId("ward-referral-match-governance");
-    expect(governance).toHaveTextContent(/not a medical device/i);
+    expect(governance).toHaveTextContent(/not approved for clinical use/i);
     /*
      * WAS `/never ranks units by suitability/i` until 2026-09-04. Owner ruling: the product ranks
      * wards by fit TODAY, so a screen promising it never ranks is false, and "does not yet rank" is
@@ -2294,7 +2294,7 @@ describe("OutOfAreaBoard — the governance and disclaimer notices", () => {
     renderLedger();
     const banner = screen.getByTestId("ward-out-of-area-governance");
     expect(banner.tagName).toBe("FOOTER");
-    expect(banner).toHaveTextContent("Not a medical device");
+    expect(banner).toHaveTextContent("Not approved for clinical use");
   });
 });
 

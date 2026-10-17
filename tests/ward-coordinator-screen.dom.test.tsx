@@ -37,7 +37,7 @@ describe("CoordinatorScreen", () => {
 
     const footer = screen.getByTestId("ward-coordinator-governance");
     expect(footer).toBeInTheDocument();
-    expect(footer).toHaveTextContent("Demo coordinator view · Not a medical device");
+    expect(footer).toHaveTextContent("Demo coordinator view · Not approved for clinical use");
     expect(footer).toHaveTextContent("Synthetic prototype");
   });
 

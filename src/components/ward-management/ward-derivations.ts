@@ -1024,7 +1024,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
 
   return units
     .map((unit) => {
-      const verdict = eligibility(movement, unit, now);
+      const verdict = closureAwareVerdict(unit, eligibility(movement, unit, now));
       const failing = verdict.gates.filter((gate) => !gate.pass);
       /*
        * 🔴 Owner reversal, item 2, 17 September 2026: a Non-binary movement failing ONLY
@@ -1122,6 +1122,26 @@ export function blockingGate(verdict: ReturnType<typeof eligibility>) {
   );
 }
 
+/**
+ * Owner decision, 17 October 2026: a closed ward is not offered as a destination. The pull itself
+ * already refuses a new reservation there (`ward-flow-placement-events.ts`), so this only stops the
+ * lists offering what the pull would refuse. It returns the LIST's own copy of the verdict:
+ * `eligibility()` and the lenient `allocatable_bed` pull rule are unchanged, and the reason shown
+ * names the closure rather than a bed count. Shared by `shortlistCandidates` and
+ * `eligibleCandidatesAmong`, so the shortlist and the Home bedflow agree.
+ */
+function closureAwareVerdict(unit: Unit, verdict: ReturnType<typeof eligibility>): ReturnType<typeof eligibility> {
+  if (!unit.isClosed) return verdict;
+  return {
+    eligible: false,
+    gates: verdict.gates.map((gate) =>
+      gate.gate === "allocatable_bed"
+        ? { ...gate, pass: false, detail: `${unit.name} is closed; a new bed cannot be reserved there` }
+        : gate,
+    ),
+  };
+}
+
 /** Eligible first, then what a reason can buy, then what nothing can. Stable within each group, so
  *  the order inside a group is `units`' own and nothing is ranked against its neighbours. */
 function rankOf(availability: ShortlistAvailability): number {
@@ -1143,7 +1163,7 @@ export function eligibleCandidatesAmong(movement: Movement, units: Unit[], now: 
   // existed; only the ORDER within that set can move.
   const eligibleFirst = units
     .filter((unit) => unit.cohort === movement.cohort)
-    .map((unit) => ({ unit, verdict: eligibility(movement, unit, now) }))
+    .map((unit) => ({ unit, verdict: closureAwareVerdict(unit, eligibility(movement, unit, now)) }))
     .sort((a, b) => Number(b.verdict.eligible) - Number(a.verdict.eligible))
     .slice(0, limit);
   // Within that fixed set, a candidate matching the movement's own security requirement is

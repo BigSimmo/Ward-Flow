@@ -81,6 +81,25 @@ describe("previously unexposed workflow commands", () => {
 });
 
 describe("checked paper continuation paths", () => {
+  it.each(["3B", "4A", "4C"])("explains unsupported Form %s before submitting a continuation", (formCode) => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Workspace />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Continuation form" }), {
+      target: { value: formCode },
+    });
+    fireEvent.change(screen.getByLabelText("Form written date and time"), {
+      target: { value: "2026-10-07T10:00" },
+    });
+    const action = screen.getByRole("button", { name: "Record legal form continuation" });
+    expect(action).toHaveAttribute("aria-disabled", "true");
+    expect(action).toHaveAccessibleDescription(`Form ${formCode} continuation is not recorded in this prototype.`);
+    fireEvent.click(action);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it.each(["3A", "3C", "4A", "5A"])("refuses a country extension on Form %s without changing paper facts", (code) => {
     const state = seedWardFlowState();
     const m = state.movements.find((m) => !m.closure)!;

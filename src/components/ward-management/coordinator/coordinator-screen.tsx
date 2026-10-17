@@ -1138,7 +1138,7 @@ export function CoordinatorScreen() {
           testId="ward-coordinator-governance"
           note={
             <>
-              Demo coordinator view · Not a medical device
+              Demo coordinator view · Not approved for clinical use
               <span
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}

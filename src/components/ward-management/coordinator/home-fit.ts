@@ -34,6 +34,8 @@ export function fitKind(candidate: ShortlistCandidate, movement?: Movement): Fit
 }
 
 function baseFitKind(candidate: ShortlistCandidate): FitKind {
+  // A closed ward is never "fits, no bed now": no bed will free up there, so it reads as not fitting.
+  if (candidate.unit.isClosed) return "no";
   if (candidate.availability === "eligible") return "bed";
   if (candidate.availability === "overridable" || candidate.availability === "previously_declined") return "review";
   const failing = candidate.verdict.gates.filter((gate) => !gate.pass && !INFORMATIONAL_GATES.includes(gate.gate));

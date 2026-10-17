@@ -87,12 +87,12 @@ function renderScreen() {
  * only ever needed a per-ward or per-group figure to stay proven, never a network total that does
  * not exist.
  *
- * The old wording asserted `toHaveTextContent("not a medical device")` — a phrase this banner does
+ * The old wording asserted `toHaveTextContent("not approved for clinical use")` — a phrase this banner does
  * not carry. `expectSays` is used, not an exact match, for the same reason
  * `tests/helpers/ward-caption.ts` gives for every other caption in this suite: a caption reworded
  * keeps meaning what it means, and pinning the sentence goes red on a legitimate rewording — but the
  * concepts asserted here (invented data, no real hospital, not a clinical record) are the substance
- * an old "not a medical device" reader was also relying on, restated in this screen's own words.
+ * an old "not approved for clinical use" reader was also relying on, restated in this screen's own words.
  */
 describe("Case 1 — Capacity identifies synthetic data via the governance footer", () => {
   it("keeps the synthetic prototype disclosure visible in the footer", () => {
@@ -101,7 +101,7 @@ describe("Case 1 — Capacity identifies synthetic data via the governance foote
     const governance = screen.getByTestId("ward-capacity-governance");
     expect(within(governance).getByText("Synthetic prototype")).toBeVisible();
     expect(governance).toHaveTextContent(/Statewide bed capacity/u);
-    expect(governance).toHaveTextContent(/Not a medical device/u);
+    expect(governance).toHaveTextContent(/Not approved for clinical use/u);
   });
 });
 

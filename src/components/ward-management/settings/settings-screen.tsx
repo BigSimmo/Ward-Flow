@@ -1389,7 +1389,7 @@ export function SettingsScreen() {
       ) : null}
       <WardPrototypeFooter
         testId="ward-settings-governance"
-        note="Synthetic records · Not a medical device · Changes remembered for this browser only"
+        note="Synthetic records · Not approved for clinical use · Changes remembered for this browser only"
       />
     </>
   );

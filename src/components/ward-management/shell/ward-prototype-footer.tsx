@@ -11,7 +11,7 @@ export interface WardPrototypeFooterProps {
 
 export function WardPrototypeFooter({
   testId,
-  note = "Western Australia Mental Health Bed Flow Prototype · All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures · Not a medical device",
+  note = "Western Australia Mental Health Bed Flow Prototype · All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures · Not approved for clinical use",
   extra,
   style,
   className,
@@ -34,7 +34,7 @@ export function WardPrototypeFooter({
         </span>
         {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
             kept for screen readers. Hidden above phone. */}
-        <span className={styles.phoneTail}>· invented records · not a medical device</span>
+        <span className={styles.phoneTail}>· invented records · not for clinical use</span>
         <span className={styles.footerNote} data-ward-type-floor="banner">
           {note}
         </span>
