@@ -75,7 +75,7 @@ export function isDischargeCriterion(value: unknown): value is DischargeCriterio
 }
 
 /** A typed patient specific criterion: trimmed, within the length bound and not a fixed criterion. */
-export function isPatientSpecificCriterionText(value: unknown): value is string {
+function isPatientSpecificCriterionText(value: unknown): value is string {
   return (
     typeof value === "string" &&
     value.length > 0 &&

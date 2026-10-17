@@ -339,6 +339,30 @@ describe("complete guarded local care journey", () => {
       expect(next.admissions).toBe(state.admissions);
     }
   });
+  it("shows a community team typed criteria only as numbered placeholders (D-65)", () => {
+    const { state, admission } = fixture();
+    const option = COMMUNITY_TEAM_PAGES[0]!;
+    admission.referralId = state.referrals[0]!.id;
+    state.referrals[0]!.destinations = [
+      { destination: { kind: "community_team", teamName: option.name }, state: "accepted" },
+    ];
+    admission.dischargeCriteria = {
+      setAt: 1,
+      items: [
+        { criterion: "Accommodation confirmed", metAt: 2 },
+        { criterion: "Walks to the shop with staff", metAt: null, patientSpecific: true },
+      ],
+    };
+    const community = selectDischargeRecord(state, { role: "community", actingTeamId: option.id }, admission.id);
+    if (community.status !== "allowed") throw new Error("community read denied");
+    expect(community.value.dischargeCriteria?.items).toEqual([
+      { criterion: "Accommodation confirmed", metAt: 2 },
+      { criterion: "Patient specific criterion 1", metAt: null, patientSpecific: true },
+    ]);
+    const coordinator = selectDischargeRecord(state, { role: "coordinator" }, admission.id);
+    if (coordinator.status !== "allowed") throw new Error("coordinator read denied");
+    expect(coordinator.value.dischargeCriteria?.items[1]?.criterion).toBe("Walks to the shop with staff");
+  });
   it("accepts only this community team's explicit referral link", () => {
     const { state, admission } = fixture();
     const option = COMMUNITY_TEAM_PAGES[0]!;
