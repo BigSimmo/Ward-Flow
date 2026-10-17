@@ -4,10 +4,12 @@ import type { Unit } from "@/components/ward-management/ward-model";
 /**
  * PREVIEW ONLY, for the Make room plan cards (option B, picked 17 Oct 2026). The demo network has
  * no patient marked for step down and almost every ward has a Ready bed, so no chain would show. On
- * this screen only, this marks three synthetic voluntary stays as step down candidates (a transfer
- * puts anyone not voluntary in a secure bed), fills three wards and makes three wards single sex, so
- * the panel shows a two move and a three move chain. It changes no stored state, and is removed
- * when "Start plan" is wired to real step down marks.
+ * this screen only, this marks three synthetic stays as step down candidates, fills three wards and
+ * makes three wards single sex, so the panel shows a two move and a three move chain. Two of the
+ * stays are recorded as voluntary. AD-ARMA-01 has no legal status recorded, so, like any transfer of
+ * a patient who is not voluntary, its step down takes a secure bed on a secure ward; the preview
+ * records no legal status for it. It changes no stored state, and is removed when "Start plan" is
+ * wired to real step down marks.
  */
 const PREVIEW_FULL_WARDS = ["rph-adult-secure", "arm-adult-open", "scgh-adult-open"];
 const PREVIEW_SINGLE_SEX_WARDS: Readonly<Record<string, "Female only" | "Male only">> = {

@@ -11,6 +11,7 @@ import { deriveMakeRoomChains, MAKE_ROOM_MAX_MOVES } from "../src/components/war
 import type { BedRelease, Movement } from "../src/components/ward-management/ward-model";
 import { boundedBedAvailability } from "../src/components/ward-management/ward-ready-beds";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
+import { stayLegalStatus } from "../src/components/ward-management/ward-stay-legal";
 
 function chainsFor(
   admissions = seedWardFlowState().admissions,
@@ -353,5 +354,28 @@ describe("make room plans", () => {
     expect(planned(units.map((unit) => (unit.id === target.id ? { ...unit, speciallingCapacity: 2 } : unit)))).toBe(
       true,
     );
+  });
+
+  it("states the preview stays' legal status as recorded, never assumed voluntary", () => {
+    const state = seedWardFlowState();
+    const preview = makeRoomPreview(state);
+    const statuses = Object.fromEntries(
+      preview.admissions
+        .filter((admission) => admission.stepDownCandidate === true)
+        .map((admission) => [
+          admission.id,
+          stayLegalStatus(admission, {
+            movements: state.movements,
+            patients: state.patients,
+            referrals: state.referrals,
+          }),
+        ]),
+    );
+    expect(statuses).toEqual({ "AD-RPHS-11": "Voluntary", "AD-ARMA-01": undefined, "AD-SCGA-05": "Voluntary" });
+    // The stay with no legal status recorded steps down into a secure bed, as a transfer would put it.
+    const step = chainsFor(preview.admissions, preview.units)
+      .flatMap((chain) => chain.stepDowns)
+      .find((move) => move.admission.id === "AD-ARMA-01")!;
+    expect(step.toUnit.lockedBeds).toBeGreaterThan(0);
   });
 });
