@@ -113,12 +113,26 @@ export function deriveMakeRoomChains(input: {
   // Each step down candidate is offered in one chain only, so two suggestions never count on the
   // same patient moving.
   const used = new Set<string>();
-  // Ready beds already promised to an earlier chain, by ward, so one bed is never offered twice.
-  const claimed = new Map<string, number>();
+  // Each ward as it will be once the plans already offered have run: a Ready bed taken, and the sex
+  // mix moved with every patient. Later plans are checked against this, so one bed is never offered
+  // twice and a plan never counts on company that an earlier plan has moved away.
+  const projected = new Map<string, Unit>();
+  const current = (unit: Unit): Unit => projected.get(unit.id) ?? unit;
+  const units = (): Unit[] => input.units.map(current);
+
+  /** One patient arriving on (1) or leaving (-1) `unit` in the projection. */
+  function move(unit: Unit, sex: ReturnType<typeof mixSexOf>, delta: 1 | -1): void {
+    const ward = current(unit);
+    projected.set(unit.id, {
+      ...ward,
+      allocatable: { ...ward.allocatable, value: Math.max(0, ward.allocatable.value - delta) },
+      empty: { ...ward.empty, value: Math.max(0, ward.empty.value - delta) },
+      sexMix: adjustSexMix(ward.sexMix, sex, delta),
+    });
+  }
 
   function fitsWithBed(subject: EligibilitySubject, unit: Unit): boolean {
-    const free = boundedBedAvailability(unit).available - (claimed.get(unit.id) ?? 0);
-    return free > 0 && eligibility(subject, unit, now).eligible;
+    return boundedBedAvailability(unit).available > 0 && eligibility(subject, unit, now).eligible;
   }
 
   /** The checks `subject` passes going into `unit` once `leaving` has moved out, or undefined if one fails. */
@@ -139,7 +153,7 @@ export function deriveMakeRoomChains(input: {
   ): MakeRoomStepDown[] | undefined {
     if (movesLeft < 1) return undefined;
     const service = serviceOf(full);
-    const others = input.units.filter(
+    const others = units().filter(
       (unit) => !visited.has(unit.id) && serviceOf(unit) === service && unit.id !== full.id,
     );
     const onWard = candidates.filter(
@@ -180,7 +194,7 @@ export function deriveMakeRoomChains(input: {
     // Same health service only. A referral that already has a ward there with a Ready bed needs no
     // room made.
     const service = movementService(movement);
-    const local = input.units.filter((unit) => serviceOf(unit) === service);
+    const local = units().filter((unit) => serviceOf(unit) === service);
     if (local.some((unit) => fitsWithBed(movement, unit))) continue;
     for (const targetUnit of local) {
       if (!isFull(targetUnit) || !fitsExceptForBed(movement, targetUnit, now)) continue;
@@ -188,8 +202,12 @@ export function deriveMakeRoomChains(input: {
       const checks = stepDowns && checksIntoVacated(movement, targetUnit, stepDowns.at(-1)!.admission);
       if (!stepDowns || !checks) continue;
       for (const step of stepDowns) used.add(step.admission.id);
-      const readyWard = stepDowns[0]!.toUnit.id;
-      claimed.set(readyWard, (claimed.get(readyWard) ?? 0) + 1);
+      for (const step of stepDowns) {
+        const sex = mixSexOf(step.admission.gender, step.admission.sex);
+        move(step.fromUnit, sex, -1);
+        move(step.toUnit, sex, 1);
+      }
+      move(targetUnit, mixSexOf(movement.gender, movement.sex), 1);
       chains.push({ movement, targetUnit, stepDowns, checks });
       break;
     }

@@ -112,4 +112,50 @@ describe("make room plans", () => {
       for (const step of chain.stepDowns) expect(step.checks.every((gate) => gate.pass)).toBe(true);
     }
   });
+
+  it("checks every first move against the ward as earlier plans leave it", () => {
+    // Stress the preview as above, but with two Ready beds and no occupants on every ward with room,
+    // so later plans would put a patient alone into a bed an earlier plan has half used.
+    const preview = makeRoomPreview(seedWardFlowState());
+    const fullWards = new Set(
+      preview.units.filter((unit) => boundedBedAvailability(unit).available === 0).map((unit) => unit.id),
+    );
+    const admissions = preview.admissions.map((admission) =>
+      fullWards.has(admission.unitId) && admission.state === "occupied"
+        ? { ...admission, stepDownCandidate: true }
+        : admission,
+    );
+    const units = preview.units.map((unit) =>
+      fullWards.has(unit.id)
+        ? unit
+        : {
+            ...unit,
+            // Undo the preview's women only ward, so men and women compete for the same beds.
+            sexDesignation: seedWardFlowState().units.find((seed) => seed.id === unit.id)!.sexDesignation,
+            allocatable: { ...unit.allocatable, value: 2 },
+            empty: { ...unit.empty, value: 2 },
+            sexMix: { Female: 0, Male: 0 },
+          },
+    );
+    const chains = chainsFor(admissions, units);
+    expect(chains.length).toBeGreaterThan(1);
+    // Replay the plans in order, keeping each Ready ward's beds and sex mix up to date.
+    const ward = new Map(units.map((unit) => [unit.id, unit]));
+    for (const chain of chains) {
+      const first = chain.stepDowns[0]!;
+      const into = ward.get(first.toUnit.id)!;
+      const sex = mixSexOf(first.admission.gender, first.admission.sex)!;
+      const sameSex = into.sexMix[sex] ?? 0;
+      const free = boundedBedAvailability(into).available;
+      expect(free).toBeGreaterThan(0);
+      // The sex mix rule: same-sex company already there, or more than one free bed.
+      expect(sameSex > 0 || free > 1).toBe(true);
+      ward.set(into.id, {
+        ...into,
+        allocatable: { ...into.allocatable, value: into.allocatable.value - 1 },
+        empty: { ...into.empty, value: into.empty.value - 1 },
+        sexMix: { ...into.sexMix, [sex]: sameSex + 1 },
+      });
+    }
+  });
 });
