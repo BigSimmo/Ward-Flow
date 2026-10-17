@@ -184,8 +184,8 @@ describe("working-role changes", () => {
     accepted.payload.state.undoRecords = [
       {
         kind: "bed-placement",
-        admissionId: "synthetic-stay",
-        unitId: "ward-test",
+        admissionId: accepted.payload.state.admissions[0].id,
+        unitId: accepted.payload.state.admissions[0].unitId,
         at: 642,
         role: "coordinator",
         beforeBed: null,
@@ -220,34 +220,62 @@ describe("working-role changes", () => {
       await vi.waitFor(() => expect(commandPosts).toHaveLength(1));
       await expect(client.breakGlass("synthetic-patient", "handover")).resolves.toBeNull();
       commandReply.resolve(Response.json({ snapshot: accepted }));
-      await expect(completion).resolves.toMatchObject({
-        status: "accepted",
-        undoRecords: accepted.payload.state.undoRecords,
-      });
+      const outcome = await completion;
+      expect(outcome).toMatchObject({ status: "accepted", undoRecords: accepted.payload.state.undoRecords });
       await vi.waitFor(() => expect(latest?.status).toBe("unavailable"));
+      expect(outcome.canUndo?.()).toBe(false);
       // Reconciliation failure must preserve the granted scope until a fresh read succeeds.
       expect(latest?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
       await client.retry();
       expect(commandPosts).toHaveLength(1);
       expect(reads).toBe(3);
+      await vi.waitFor(() => expect(latest?.status).toBe("ready"));
+      expect(outcome.canUndo?.()).toBe(true);
       await expect(completion).resolves.toMatchObject({ status: "accepted" });
     } finally {
       client.dispose();
     }
   });
 
-  it("cancels an in-flight and queued command when switching roles and ignores the old reply", async () => {
-    const response = deferred<Response>();
-    const { client } = setup(response.promise);
-    await client.refresh();
-    const first = client.dispatch(event);
-    const queued = client.dispatch(event);
-    client.switchRole();
-    await expect(first).resolves.toMatchObject({ status: "cancelled" });
-    await expect(queued).resolves.toMatchObject({ status: "cancelled" });
-    response.resolve(Response.json({ snapshot: snapshot(9) }));
-    client.dispose();
+  it.each(["switch", "choose"] as const)(
+    "reports a sent command as uncertain and cancels queued work when roles %s",
+    async (change) => {
+      const response = deferred<Response>();
+      const { client, fetcher } = setup(response.promise);
+      await client.refresh();
+      const first = client.dispatch(event);
+      const queued = client.dispatch(event);
+      await vi.waitFor(() => expect(fetcher.mock.calls.some(([, options]) => options?.body)).toBe(true));
+      if (change === "switch") client.switchRole();
+      else client.chooseRole("bootstrap");
+      await expect(first).resolves.toMatchObject({
+        status: "failed",
+        message: expect.stringContaining("may have been applied"),
+      });
+      await expect(queued).resolves.toMatchObject({ status: "cancelled" });
+      response.resolve(Response.json({ snapshot: snapshot(9) }));
+      await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, options]) => !options?.body)).toHaveLength(2));
+      expect(fetcher.mock.calls.filter(([, options]) => options?.body)).toHaveLength(1);
+      await expect(first).resolves.toMatchObject({ status: "failed" });
+      client.dispose();
+    },
+  );
+  it("switches roles after an uncertain save without replaying its retained pending command", async () => {
+    const { client, fetcher } = setup(Promise.resolve(Response.json({}, { status: 503 })));
+    try {
+      await client.refresh();
+      const completion = client.dispatchConfirmed(event);
+      await expect(completion).resolves.toMatchObject({ status: "failed" });
+      client.switchRole();
+      await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, options]) => !options?.body)).toHaveLength(2));
+      await client.retry();
+      expect(fetcher.mock.calls.filter(([, options]) => options?.body)).toHaveLength(1);
+      await expect(completion).resolves.toMatchObject({ status: "failed" });
+    } finally {
+      client.dispose();
+    }
   });
+
   it("does not send an old command under a new role when its token arrives late", async () => {
     const token = deferred<string>();
     let tokenCalls = 0;

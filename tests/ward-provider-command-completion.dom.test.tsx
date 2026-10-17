@@ -5,7 +5,12 @@ import { CoordinatorCockpit } from "@/components/ward-management/coordinator/coo
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { tryReadDemoState, tryWriteDemoState } from "@/components/ward-management/ward-flow-demo-storage";
+import {
+  tryReadDemoState,
+  tryWriteDemoState,
+  WARD_FLOW_DEMO_STORAGE_VERSION,
+} from "@/components/ward-management/ward-flow-demo-storage";
+import { buildScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import { absoluteWallClockMinutes, demoDayZero } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -187,4 +192,61 @@ it("expires a local accepted completion when the world is reset", () => {
   expect(result?.isCurrent?.()).toBe(true);
   fireEvent.click(screen.getByText("Reset fenced"));
   expect(result?.isCurrent?.()).toBe(false);
+});
+
+it("cancels a pre-adoption command when a scenario file replaces its world", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-17T10:00:00Z"));
+  const imported = wardFlowReducer(seedWardFlowState(), {
+    type: "ADVANCE_CLOCK",
+    role: "demo",
+    now: NOW_ANCHOR,
+    minutes: 90,
+  });
+  expect(imported.rejections).toHaveLength(0);
+  const file = buildScenarioFile(imported, NOW_ANCHOR + 90, WARD_FLOW_DEMO_STORAGE_VERSION, new Date());
+  expect(file.ok).toBe(true);
+  if (!file.ok) throw new Error(file.reason);
+  const scenarioJson = file.json;
+  const finished = vi.fn();
+  let dispatched = false;
+  function EarlyScenarioLoad() {
+    const { dispatch, loadScenarioFile, now, worldGeneration } = useWardFlow();
+    useLayoutEffect(() => {
+      if (dispatched) return;
+      dispatched = true;
+      // Layout effects precede saved-session adoption. This command would be accepted
+      // on the seed, but loading a file discards that seed before the promise settles.
+      const pending = dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes: 15 });
+      expect(pending).toBeInstanceOf(Promise);
+      void Promise.resolve(pending).then(finished);
+      expect(finished).not.toHaveBeenCalled();
+      expect(loadScenarioFile?.(scenarioJson)).toEqual({ ok: true });
+    }, [dispatch, loadScenarioFile]);
+    return (
+      <output data-testid="scenario-load-world">
+        {now}:{worldGeneration}
+      </output>
+    );
+  }
+  await act(async () => {
+    render(
+      <StrictMode>
+        <WardFlowProvider>
+          <EarlyScenarioLoad />
+        </WardFlowProvider>
+      </StrictMode>,
+    );
+  });
+  expect(finished).toHaveBeenCalledTimes(1);
+  expect(finished).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: "cancelled",
+      message: expect.stringContaining("scenario was replaced"),
+    }),
+  );
+  expect(finished.mock.calls[0]![0].isCurrent?.()).toBe(false);
+  expect(screen.getByTestId("scenario-load-world").textContent).toBe(
+    `${NOW_ANCHOR + 90}:${imported.worldGeneration + 1}`,
+  );
 });

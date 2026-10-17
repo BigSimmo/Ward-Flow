@@ -1,7 +1,7 @@
 "use client";
 
 import { useUndoableStep } from "../use-undoable-step";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -86,6 +86,7 @@ export function SupportNotificationChecklist({
   );
   const now = useWardFlowClock();
   const headingId = useId();
+  const editingRevisionRef = useRef(0);
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
   const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
   const [who, setWho] = useState("");
@@ -123,6 +124,7 @@ export function SupportNotificationChecklist({
       : undefined;
 
   function startEditing(party: SupportNotificationParty) {
+    editingRevisionRef.current += 1;
     setEditing(party);
     setOutcome("told");
     setWho("");
@@ -147,6 +149,13 @@ export function SupportNotificationChecklist({
     }
     setTimeError(null);
     setSubmittedAt(rejections.length);
+    const submittedRevision = editingRevisionRef.current;
+    const closeSubmittedDraft = () => {
+      // An earlier save cannot dismiss a reopened form or edits made while it was pending.
+      if (editingRevisionRef.current !== submittedRevision) return;
+      editingRevisionRef.current += 1;
+      setEditing(null);
+    };
     const target =
       subject.occasion === "discharge" ? { admissionId: subject.subjectId } : { movementId: subject.subjectId };
     runRecorded(
@@ -163,9 +172,9 @@ export function SupportNotificationChecklist({
         });
         if (completion && "then" in completion)
           void completion.then((result) => {
-            if (result.status === "accepted") setEditing(null);
+            if (result.status === "accepted") closeSubmittedDraft();
           });
-        else if (completion?.status === "accepted") setEditing(null);
+        else if (completion?.status === "accepted") closeSubmittedDraft();
         return completion;
       },
       {
@@ -233,7 +242,10 @@ export function SupportNotificationChecklist({
                     label="Outcome"
                     items={OUTCOME_ITEMS}
                     value={outcome}
-                    onChange={setOutcome}
+                    onChange={(value) => {
+                      editingRevisionRef.current += 1;
+                      setOutcome(value);
+                    }}
                   />
                   {outcome === "told" ? (
                     <div className={styles.fields}>
@@ -243,11 +255,20 @@ export function SupportNotificationChecklist({
                           maxLength={SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}
                           autoComplete="off"
                           onChange={(event) => {
+                            editingRevisionRef.current += 1;
                             setWho(event.target.value);
                           }}
                         />
                       </Field>
-                      <Segmented<ToldDay> label="Day told" items={DAY_ITEMS} value={day} onChange={setDay} />
+                      <Segmented<ToldDay>
+                        label="Day told"
+                        items={DAY_ITEMS}
+                        value={day}
+                        onChange={(value) => {
+                          editingRevisionRef.current += 1;
+                          setDay(value);
+                        }}
+                      />
                       <Field label="Time told" hint="24h" error={timeError ?? undefined}>
                         <TextInput
                           value={time}
@@ -255,6 +276,7 @@ export function SupportNotificationChecklist({
                           placeholder="HH:MM"
                           maxLength={5}
                           onChange={(event) => {
+                            editingRevisionRef.current += 1;
                             setTime(event.target.value);
                           }}
                         />
@@ -267,6 +289,7 @@ export function SupportNotificationChecklist({
                         maxLength={SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS}
                         autoComplete="off"
                         onChange={(event) => {
+                          editingRevisionRef.current += 1;
                           setReason(event.target.value);
                         }}
                       />
@@ -277,6 +300,7 @@ export function SupportNotificationChecklist({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        editingRevisionRef.current += 1;
                         setEditing(null);
                       }}
                     >

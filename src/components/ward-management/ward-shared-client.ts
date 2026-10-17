@@ -67,11 +67,11 @@ export type WardCommandOutcome = {
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
   undoRecords?: WardFlowState["undoRecords"];
-  /** False when the accepted command cannot safely be followed by an Undo dispatch. */
-  undoRecordsVisible?: boolean;
   generation?: number;
   /** Memory-only fence for an accepted toast; never serialized with workspace state. */
   isCurrent?: () => boolean;
+  /** Current board availability, separate from the command's permanent lifetime fence. */
+  canUndo?: () => boolean;
 };
 export type WardCommandDispatch = (event: WardFlowEvent) => void | WardCommandOutcome | Promise<WardCommandOutcome>;
 type QueuedCommand = { event: WardFlowEvent; commandId: string; confirmed: boolean; worldEpoch: number };
@@ -92,6 +92,8 @@ type PendingCommand = {
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
+  /** A started POST may have committed even when changing roles aborts its response. */
+  private sentCommandId: string | null = null;
   private queue: QueuedCommand[] = [];
   private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
   private roleLifetime = new AbortController();
@@ -100,9 +102,8 @@ export class SharedWorkspaceClient {
     status: WardCommandOutcome["status"],
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
-    undoRecordsVisible?: boolean,
   ) {
-    this.completions.get(commandId)?.({ commandId, status, message, undoRecords, undoRecordsVisible });
+    this.completions.get(commandId)?.({ commandId, status, message, undoRecords });
     this.completions.delete(commandId);
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
@@ -112,7 +113,17 @@ export class SharedWorkspaceClient {
   private cancelAll(message: string) {
     if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
     this.pending = null;
+    this.sentCommandId = null;
     this.cancelQueued(message);
+  }
+  private cancelForRoleChange() {
+    if (this.pending && this.sentCommandId === this.pending.commandId)
+      this.settle(
+        this.pending.commandId,
+        "failed",
+        "The working role changed while this action was being saved. It may have been applied. Review the board before trying again.",
+      );
+    this.cancelAll("Your working role changed. Review the board before trying again.");
   }
   private disposed = false;
   private busy = false;
@@ -210,6 +221,8 @@ export class SharedWorkspaceClient {
     const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
     const send = async (as: string | null) => {
+      if (path === "/v1/workspace/commands" && body && "commandId" in body)
+        this.sentCommandId = body.commandId as string;
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -391,6 +404,7 @@ export class SharedWorkspaceClient {
             !roleSignal.aborted &&
             generation === this.viewGeneration &&
             this.worldEpoch === worldEpoch,
+          canUndo: () => this.view.status === "ready",
         });
       }),
     );
@@ -438,6 +452,7 @@ export class SharedWorkspaceClient {
         // An ended role is this command's own definitive answer, though it also bumps the generation.
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
+        this.sentCommandId = null;
         let reconciliationFailed = false;
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
@@ -449,8 +464,7 @@ export class SharedWorkspaceClient {
               command.commandId,
               response.ok ? "accepted" : "refused",
               response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
-              response.ok ? [] : undefined,
-              response.ok ? false : undefined,
+              response.ok ? value.snapshot.payload.state.undoRecords : undefined,
             );
             // Keep the definitive command result, but read the newly granted view rather than
             // replacing it with the command's earlier scope. Retry retains the same command ID.
@@ -502,8 +516,7 @@ export class SharedWorkspaceClient {
             command.commandId,
             response.ok ? "accepted" : "refused",
             response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
-            response.ok ? [] : undefined,
-            response.ok ? false : undefined,
+            response.ok ? value.snapshot.payload.state.undoRecords : undefined,
           );
           this.publish({
             status: "unavailable",
@@ -606,8 +619,7 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
-    if (this.busy || this.pending) return;
-    this.cancelAll("Your working role changed. Review the board before trying again.");
+    this.cancelForRoleChange();
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;
@@ -619,8 +631,7 @@ export class SharedWorkspaceClient {
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
-    if (this.busy || this.pending) return;
-    this.cancelAll("Your working role changed. Review the board before trying again.");
+    this.cancelForRoleChange();
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;

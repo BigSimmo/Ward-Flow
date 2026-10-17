@@ -4,6 +4,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
+import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import {
   activeSnooze,
@@ -133,11 +134,13 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
     const admissionId = inboxItemId.slice(dischargePrefix.length);
     return state.admissions.some((admission) => admission.id === admissionId);
   }
-  // Audit A3-1: an absence row names the stay, which must still be absent.
+  // Match absentOnOrder: only a live stay on an order can produce an absence row.
   const absencePrefix = INBOX_CATEGORIES.absent_without_leave.idPrefix;
   if (inboxItemId.startsWith(absencePrefix)) {
     const admissionId = inboxItemId.slice(absencePrefix.length);
-    return state.leaveBeds.some((bed) => bed.admissionId === admissionId && bed.absentWithoutLeave !== undefined);
+    const admission = state.admissions.find((stay) => stay.id === admissionId);
+    if (!admission || admission.state === "departed" || !isOnOrder(stayLegalStatus(admission, state))) return false;
+    return state.leaveBeds.some((bed) => bed.admissionId === admissionId && Boolean(bed.absentWithoutLeave));
   }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;

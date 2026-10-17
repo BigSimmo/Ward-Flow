@@ -1709,18 +1709,44 @@ export function WardBoard({
       }
       dispatchAndReport(
         () => {
+          const commands: ReturnType<WardCommandDispatch>[] = [];
           if (matchingLeave) {
-            raise("END_LEAVE_BED", {
-              leaveBedId: matchingLeave.id,
-              actingUnitId: unit.id,
-            });
+            commands.push(
+              raise("END_LEAVE_BED", {
+                leaveBedId: matchingLeave.id,
+                actingUnitId: unit.id,
+              }),
+            );
           }
           if (isAwayAtEd) {
-            raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
-              admissionId: item.selectableKey!,
-              actingUnitId: unit.id,
-            });
+            commands.push(
+              raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+                admissionId: item.selectableKey!,
+                actingUnitId: unit.id,
+              }),
+            );
           }
+          const completed = commands.filter((command): command is WardCommandOutcome =>
+            Boolean(command && !("then" in command)),
+          );
+          const pending = commands.filter((command): command is Promise<WardCommandOutcome> =>
+            Boolean(command && "then" in command),
+          );
+          const summarize = (outcomes: WardCommandOutcome[]) => {
+            const unaccepted = outcomes.find((outcome) => outcome.status !== "accepted");
+            if (unaccepted && outcomes.some((outcome) => outcome.status === "accepted"))
+              return {
+                ...unaccepted,
+                message:
+                  "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+              };
+            return unaccepted ?? outcomes[0];
+          };
+          // This action may save both records. Success belongs to the whole action, including
+          // either command's refusal/failure; legacy synchronous void adapters keep their path.
+          if (pending.length)
+            return Promise.all(pending).then((finished) => summarize([...completed, ...finished]) ?? finished[0]!);
+          return summarize(completed);
         },
         `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
         `Returned to ward: this patient marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,

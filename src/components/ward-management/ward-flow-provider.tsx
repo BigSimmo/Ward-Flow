@@ -481,7 +481,8 @@ function wardFlowContainerReducer(
         event,
         outcome: {
           status: "cancelled" as const,
-          message: "The scenario was replaced before the action could be restored. Review the loaded board before trying again.",
+          message:
+            "The scenario was replaced before the action could be restored. Review the loaded board before trying again.",
         },
       })),
     };

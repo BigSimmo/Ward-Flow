@@ -1,4 +1,7 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { WardFlowProvider, WardFlowOverride, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
+import "@testing-library/jest-dom/vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ToastInput } from "@/components/wf";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -123,6 +126,39 @@ it("refuses a stale accepted toast's Undo after the command lifetime ends", asyn
   });
 });
 
+it("blocks an accepted toast's Undo until the shared board is ready, then keeps its original sequence", async () => {
+  let ready = true;
+  const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
+    commandId: "accepted",
+    status: "accepted",
+    undoRecords: [acceptedRecord],
+    isCurrent: () => true,
+    canUndo: () => ready,
+  }));
+  const push = vi.fn<(input: ToastInput) => string>(() => "toast");
+  render(<Harness dispatch={dispatch} push={push} />);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Record"));
+  });
+  const undo = push.mock.calls[0]![0].undo!;
+  expect(push.mock.calls[0]![0].title).toBe("Confirmed step");
+  ready = false;
+  await act(async () => {
+    undo.onUndo();
+  });
+  expect(dispatch).toHaveBeenCalledTimes(1);
+  expect(push.mock.calls[1]![0]).toMatchObject({
+    tone: "warning",
+    title: expect.stringContaining("shared board is ready"),
+  });
+  ready = true;
+  await act(async () => {
+    undo.onUndo();
+  });
+  expect(dispatch).toHaveBeenCalledTimes(2);
+  expect(dispatch.mock.calls[1]![0]).toMatchObject({ type: "UNDO_REFER_TO_UNITS", recordSeq: acceptedRecord.seq });
+});
+
 it("does not attach a later record to an accepted step that has no fresh Undo record", async () => {
   const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
     commandId: "accepted-no-op",
@@ -139,4 +175,103 @@ it("does not attach a later record to an accepted step that has no fresh Undo re
     body: "No Undo record is available for this step.",
   });
   expect(push.mock.calls[0]![0]).not.toHaveProperty("undo");
+});
+
+it("does not borrow a later provider record when this accepted command omits its own Undo records", async () => {
+  let finish!: (outcome: WardCommandOutcome) => void;
+  const completion = new Promise<WardCommandOutcome>((resolve) => {
+    finish = resolve;
+  });
+  const push = vi.fn<(input: ToastInput) => string>(() => "toast");
+  function LatestRecords({ records }: { records: (typeof acceptedRecord)[] }) {
+    const flow = useWardFlow();
+    return (
+      <WardFlowOverride value={{ ...flow, undoRecords: records }}>
+        <Harness dispatch={() => completion} push={push} />
+      </WardFlowOverride>
+    );
+  }
+  const view = (records: (typeof acceptedRecord)[]) => (
+    <WardFlowProvider initialNow={642}>
+      <LatestRecords records={records} />
+    </WardFlowProvider>
+  );
+  const { rerender } = render(view([]));
+  fireEvent.click(screen.getByText("Record"));
+  rerender(view([acceptedRecord]));
+  await act(async () => {
+    finish({ commandId: "no-command-record", status: "accepted" });
+    await completion;
+  });
+  expect(push.mock.calls[0]![0]).toMatchObject({
+    title: "Confirmed step",
+    body: "No Undo record is available for this step.",
+  });
+  expect(push.mock.calls[0]![0]).not.toHaveProperty("undo");
+});
+
+function ChecklistCompletionHarness({ dispatch }: { dispatch: (event: WardFlowEvent) => Promise<WardCommandOutcome> }) {
+  const flow = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...flow, dispatch }}>
+      <SupportNotificationChecklist admissionId="AD-LEFT-01" role="coordinator" />
+    </WardFlowOverride>
+  );
+}
+function pendingChecklistSave() {
+  let finish!: (value: WardCommandOutcome) => void;
+  const completion = new Promise<WardCommandOutcome>((resolve) => {
+    finish = resolve;
+  });
+  const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(() => completion);
+  render(
+    <WardFlowProvider initialNow={642}>
+      <ChecklistCompletionHarness dispatch={dispatch} />
+    </WardFlowProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
+  const form = screen.getByRole("form", { name: "Record Carer" });
+  fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic first draft" } });
+  fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+  expect(dispatch).toHaveBeenCalledTimes(1);
+  expect(dispatch.mock.calls[0]?.[0].type).toBe("RECORD_SUPPORT_NOTIFICATION");
+  return {
+    form,
+    async settle(status: WardCommandOutcome["status"]) {
+      await act(async () => {
+        finish({ commandId: "mine", status, message: "Review this save" });
+        await completion;
+      });
+    },
+  };
+}
+
+describe("support notification editing lifetime", () => {
+  it.each(["another party", "same party", "edited current draft"] as const)(
+    "keeps the %s when an earlier save is accepted",
+    async (replacement) => {
+      const pending = pendingChecklistSave();
+      const party = replacement === "another party" ? "Personal support person" : "Carer";
+      if (replacement !== "edited current draft") {
+        fireEvent.click(within(pending.form).getByRole("button", { name: "Cancel" }));
+        fireEvent.click(screen.getByRole("button", { name: `Record ${party}` }));
+      }
+      const current = screen.getByRole("form", { name: `Record ${party}` });
+      fireEvent.change(within(current).getByLabelText("Who was told"), {
+        target: { value: "Synthetic current draft" },
+      });
+      await pending.settle("accepted");
+      expect(screen.getByRole("form", { name: `Record ${party}` })).toBeInTheDocument();
+      expect(within(current).getByLabelText("Who was told")).toHaveValue("Synthetic current draft");
+    },
+  );
+  it.each(["accepted", "refused", "failed"] as const)(
+    "closes the unchanged submitting form only when %s",
+    async (status) => {
+      const pending = pendingChecklistSave();
+      await pending.settle(status);
+      if (status === "accepted") expect(screen.queryByRole("form", { name: "Record Carer" })).not.toBeInTheDocument();
+      else expect(screen.getByRole("form", { name: "Record Carer" })).toBeInTheDocument();
+    },
+  );
 });

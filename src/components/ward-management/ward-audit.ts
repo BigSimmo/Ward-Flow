@@ -341,10 +341,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
 }
 
 function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
-  const role = enumValue(
-    Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[],
-    event.role,
-  );
+  const role = enumValue(Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[], event.role);
   return {
     role,
     actingUnitId:

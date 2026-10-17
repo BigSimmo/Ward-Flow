@@ -6,6 +6,8 @@ import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { blockedDischargesByReason } from "@/components/ward-management/statistics/statistics-derivations";
 import { causeOf } from "@/components/ward-management/delays/delays-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
+import { isOnOrder, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { inboxRowExists } from "@/components/ward-management/ward-inbox-reducer";
 import { eligibleCandidatesAmong, buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
@@ -14,6 +16,24 @@ import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR as now } from "@/components/ward-management/ward-sites";
 
 const copy = () => JSON.parse(JSON.stringify(seedWardFlowState())) as ReturnType<typeof seedWardFlowState>;
+
+function onOrderAbsenceState() {
+  const state = copy();
+  const admission = state.admissions.find(
+    (stay) => stay.state === "occupied" && isOnOrder(stayLegalStatus(stay, state)),
+  )!;
+  expect(admission).toBeDefined();
+  const absent = wardFlowReducer(state, {
+    type: "RECORD_ABSENT_WITHOUT_LEAVE",
+    role: "ward",
+    now,
+    actingUnitId: admission.unitId,
+    admissionId: admission.id,
+  });
+  expect(absent.rejections).toHaveLength(0);
+  expect(isValidStoredWardFlowState(absent)).toBe(true);
+  return absent;
+}
 
 describe("audit domain boundary regressions, 16 October 2026", () => {
   it.each([null, NaN, Infinity, "700"])("R02 rejects malformed expiry %s at restoration", (expiry) => {
@@ -111,11 +131,11 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
   );
 
   it("R44 acknowledges an admission-backed absence and refuses a missing absence row", () => {
-    const state = copy();
-    const bed = state.leaveBeds[0];
-    bed.absentWithoutLeave = { since: now - 1, steps: [] };
+    const state = onOrderAbsenceState();
+    const bed = state.leaveBeds.find((row) => row.absentWithoutLeave !== undefined)!;
     const inboxItemId = INBOX_CATEGORIES.absent_without_leave.idPrefix + bed.admissionId;
     expect(isValidStoredWardFlowState(state)).toBe(true);
+    expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(true);
     expect(inboxRowExists(state, inboxItemId)).toBe(true);
     const next = wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId });
     expect(next.rejections).toHaveLength(0);
@@ -139,6 +159,47 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
     const wrongRole = wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "ward", now, inboxItemId });
     expect(wrongRole.rejections).toHaveLength(1);
     expect(wrongRole.inboxAcknowledgements).toBe(state.inboxAcknowledgements);
+  });
+
+  it("R44 refuses an AWOL id for a valid voluntary stay that has no derived inbox row", () => {
+    const state = copy();
+    const bed = state.leaveBeds[0];
+    const admission = state.admissions.find((stay) => stay.id === bed.admissionId)!;
+    const movement = state.movements.find((row) => row.id === admission.movementId);
+    const patient = state.patients.find((row) => row.id === admission.patientId)!;
+    if (movement) movement.legalStatus = "Voluntary";
+    patient.legalStatus = "Voluntary";
+    bed.absentWithoutLeave = { since: now - 1, steps: [] };
+    const inboxItemId = INBOX_CATEGORIES.absent_without_leave.idPrefix + admission.id;
+    expect(admission.state).toBe("occupied");
+    expect(isValidStoredWardFlowState(state)).toBe(true);
+    expect(isOnOrder(stayLegalStatus(admission, state))).toBe(false);
+    expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(false);
+    expect(inboxRowExists(state, inboxItemId)).toBe(false);
+    const next = wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId });
+    expect(next.rejections).toHaveLength(1);
+    expect(next.inboxAcknowledgements).toBe(state.inboxAcknowledgements);
+    expect(next.admissions).toBe(state.admissions);
+    expect(next.leaveBeds).toBe(state.leaveBeds);
+  });
+
+  it.each(["departed", "missing admission", "returned"])("R44 refuses an absent-stay row after %s", (lifecycle) => {
+    const state = onOrderAbsenceState();
+    const bed = state.leaveBeds.find((row) => row.absentWithoutLeave !== undefined)!;
+    const admission = state.admissions.find((stay) => stay.id === bed.admissionId)!;
+    const inboxItemId = INBOX_CATEGORIES.absent_without_leave.idPrefix + admission.id;
+    expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(true);
+    if (lifecycle === "departed") admission.state = "departed";
+    if (lifecycle === "missing admission")
+      state.admissions = state.admissions.filter((stay) => stay.id !== admission.id);
+    if (lifecycle === "returned") delete bed.absentWithoutLeave;
+    expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(false);
+    expect(inboxRowExists(state, inboxItemId)).toBe(false);
+    const next = wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId });
+    expect(next.rejections).toHaveLength(1);
+    expect(next.inboxAcknowledgements).toBe(state.inboxAcknowledgements);
+    expect(next.admissions).toBe(state.admissions);
+    expect(next.leaveBeds).toBe(state.leaveBeds);
   });
 
   it("R24 audits a wrong-ward departure refusal as scope without changing the stay", () => {

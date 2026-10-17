@@ -163,15 +163,8 @@ export function useUndoableStep({
       watch.seq =
         pending.guard === false && !pending.outcome
           ? undefined
-          : newRecordSeq(pending.outcome?.undoRecords ?? undoRecords, watch);
-      if (
-        pending.outcome &&
-        UNDO_STEP_TYPES.includes(undoType as UndoStepType) &&
-        (pending.outcome.undoRecordsVisible === false ||
-          (Array.isArray(pending.outcome.undoRecords) &&
-            pending.outcome.undoRecords.length > 0 &&
-            watch.seq === undefined))
-      ) {
+          : newRecordSeq(pending.outcome ? pending.outcome.undoRecords : undoRecords, watch);
+      if (pending.outcome && UNDO_STEP_TYPES.includes(undoType as UndoStepType) && watch.seq === undefined) {
         sink.push({ tone: "info", title: pending.success, body: "No Undo record is available for this step." });
         continue;
       }
@@ -194,6 +187,14 @@ export function useUndoableStep({
                       tone: "warning",
                       title:
                         "Undo is unavailable because the workspace or working role changed. Review the current board.",
+                    });
+                    return;
+                  }
+                  if (pending.outcome?.canUndo && !pending.outcome.canUndo()) {
+                    sink.push({
+                      tone: "warning",
+                      title:
+                        "Undo is unavailable until the shared board is ready. Review the board before trying again.",
                     });
                     return;
                   }

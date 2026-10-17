@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useLayoutEffect } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { WardBoard } from "@/components/ward-management/board/ward-board";
-import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { wardAdmissions, WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
+import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 
 /**
  * 🔴 **THE BOARD PRINTS AN "ON LEAVE" FIGURE AND USED TO COUNT IT OVER AN EMPTY ARRAY.**
@@ -110,4 +111,125 @@ describe("the bed board's On leave figure counts real leave beds", () => {
       `${without.name} has no leave bed and the board still reports one — the figure has become a constant`,
     ).toBe(0);
   });
+});
+
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+const awayAdmission = wardAdmissions.find((admission) => admission.awayAtEmergencyDepartmentSince !== null);
+if (!awayAdmission) throw new Error("The seed must contain an admission away at an emergency department.");
+function PendingReturnBoard({
+  both,
+  dispatch,
+}: {
+  both: boolean;
+  dispatch: (event: WardFlowEvent) => Promise<WardCommandOutcome>;
+}) {
+  const flow = useWardFlow();
+  const leave = flow.leaveBeds[0];
+  if (!leave || !awayAdmission) throw new Error("The return fixture needs a leave bed and an absent admission.");
+  const leaveBeds = flow.leaveBeds.filter((bed) => bed.admissionId !== awayAdmission.id);
+  if (both)
+    leaveBeds.push({ ...leave, id: "return-test-leave", admissionId: awayAdmission.id, unitId: awayAdmission.unitId });
+  return (
+    <WardFlowOverride value={{ ...flow, leaveBeds, dispatch }}>
+      <WardBoard unitId={awayAdmission.unitId} />
+    </WardFlowOverride>
+  );
+}
+describe("Mark them back command completion", () => {
+  it.each([false, true])("waits for all own return saves with a leave record=%s", async (both) => {
+    const finishes: ((result: WardCommandOutcome) => void)[] = [];
+    const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(
+      () =>
+        new Promise((resolve) => {
+          finishes.push(resolve);
+        }),
+    );
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <PendingReturnBoard both={both} dispatch={dispatch} />
+      </WardFlowProvider>,
+    );
+    const row = screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`);
+    fireEvent.click(within(row).getByRole("button", { name: "Mark them back" }));
+    expect(dispatch.mock.calls.map(([event]) => event.type)).toEqual(
+      both
+        ? ["END_LEAVE_BED", "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"]
+        : ["RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"],
+    );
+    expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
+    if (both) {
+      await act(async () => {
+        finishes[0]!({ commandId: "leave", status: "accepted" });
+      });
+      expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
+    }
+    await act(async () => {
+      finishes.at(-1)!({ commandId: "return", status: "accepted" });
+    });
+    expect(screen.getByTestId("ward-board-toast")).toHaveTextContent("Returned to ward:");
+  });
+  it.each([
+    ["refused", 0],
+    ["failed", 0],
+    ["refused", 1],
+    ["failed", 1],
+  ] as const)("reports %s from return command %s instead of success", async (status, unaccepted) => {
+    const finishes: ((result: WardCommandOutcome) => void)[] = [];
+    const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(
+      () =>
+        new Promise((resolve) => {
+          finishes.push(resolve);
+        }),
+    );
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <PendingReturnBoard both dispatch={dispatch} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(
+      within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
+        name: "Mark them back",
+      }),
+    );
+    expect(finishes).toHaveLength(2);
+    expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
+    await act(async () => {
+      finishes[unaccepted]!({
+        commandId: "unaccepted",
+        status,
+        message: "This action is outside your working scope. Nothing was changed.",
+      });
+      finishes[1 - unaccepted]!({ commandId: "accepted", status: "accepted" });
+    });
+    expect(screen.getByTestId("ward-board-toast")).toHaveTextContent(
+      "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+    );
+    expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Nothing was changed.");
+    expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Returned to ward:");
+  });
+});
+
+it("preserves the original refusal when neither return command was accepted", async () => {
+  const message = "This action is outside your working scope. Nothing was changed.";
+  const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
+    commandId: "refused",
+    status: "refused",
+    message,
+  }));
+  render(
+    <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+      <PendingReturnBoard both dispatch={dispatch} />
+    </WardFlowProvider>,
+  );
+  await act(async () => {
+    fireEvent.click(
+      within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
+        name: "Mark them back",
+      }),
+    );
+  });
+  expect(dispatch).toHaveBeenCalledTimes(2);
+  expect(screen.getByTestId("ward-board-toast")).toHaveTextContent(message);
+  expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Part of this return was saved");
 });
