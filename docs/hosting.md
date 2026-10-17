@@ -99,6 +99,16 @@ Supabase URL, `NEXT_PUBLIC_WARD_API_BASE_URL` set to the backend, and
 `WARD_SUPABASE_PUBLISHABLE_KEY`, so the key is kept in one place. These are fixed at build time, so
 a change needs a rebuild.
 
+Checked 17 October 2026 against the hosted services: the backend's authenticated `/readyz`
+answered 200 with the database ready, the coordinator test account signed in, a save moved the
+workspace from revision 1 to 2 after a reload, and a second save at the old revision got 409. The
+seven other synthetic `@example.test` accounts were given roles through the backend's own access
+routes, each for 30 days (bed manager at RPH, the Dabakarn ward, RPH ED, the Midland community
+team, transport officer, executive and access admin). The signed-in site answered 200 with a
+content security policy naming only the backend and the Supabase project. Signing in through the
+signed-in site in a browser was not checked. Railway Singapore is offshore, so this hosting is
+for synthetic data only.
+
 ## Known limits
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
