@@ -64,7 +64,7 @@ it("refuses to format when an explicitly named sign-out log is missing", () => {
     });
 });
 it.skipIf(process.platform === "win32")(
-  "formats named files without an ownership check when the default log is absent off Windows",
+  "rejects named files when the default sign-out log is absent off Windows",
   async () => {
     const { root } = fixture();
     const previous = { file: process.env.WARD_SIGNOUT_FILE, logs: process.env.WARD_FLOW_LOGS, home: process.env.HOME };
@@ -73,9 +73,8 @@ it.skipIf(process.platform === "win32")(
     // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
     process.env.HOME = root;
     try {
-      // The fixture has no node_modules, so reaching the Prettier lookup proves the missing log did not block.
       await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
-        "Locked local Prettier unavailable",
+        "sign-out log unavailable",
       );
     } finally {
       if (previous.file !== undefined) process.env.WARD_SIGNOUT_FILE = previous.file;
