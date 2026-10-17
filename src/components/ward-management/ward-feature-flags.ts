@@ -225,6 +225,16 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the item in the real screens after review.",
   },
+  "make-room-chains": {
+    label: "Make room plans",
+    description:
+      "Mockups only: a waiting referral whose ward is full shows how stepping down patients already marked for step down could free a bed, in two or three moves.",
+    owner: "Josh",
+    added: "2026-10-17",
+    // Mockup stage with preview data, so on only for a local build until Josh picks a design.
+    defaults: { development: true, demo: false, production: false },
+    removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
+  },
   "top25-follow-up-7day": {
     label: "Seven day follow up check",
     description:
