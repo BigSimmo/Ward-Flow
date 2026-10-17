@@ -13,6 +13,8 @@
     "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
     "migrate:postgres": "node --env-file-if-exists=.env migrate-postgres.mjs",
     "migrate:supabase": "node --env-file-if-exists=.env migrate-supabase.mjs",
+    "prune:postgres": "node --env-file-if-exists=.env prune-receipts.mjs postgres",
+    "prune:supabase": "node --env-file-if-exists=.env prune-receipts.mjs supabase",
     "prune:receipts:postgres": "node --env-file-if-exists=.env prune-receipts.mjs postgres",
     "prune:receipts:supabase": "node --env-file-if-exists=.env prune-receipts.mjs supabase"
   },
