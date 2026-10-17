@@ -93,6 +93,8 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  const createAuthRef = useRef(createAuth);
+  createAuthRef.current = createAuth;
   const [previousEnabled, setPreviousEnabled] = useState(enabled);
   if (previousEnabled !== enabled) {
     // Reset before rendering children when the selected provider changes.
@@ -227,7 +229,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
         if (base.username || base.password || (base.protocol !== "https:" && !loopback))
           throw new Error("Missing shared configuration");
-        auth = createAuth();
+        auth = createAuthRef.current();
         actions.current = {
           signUp: (email, password) =>
             run(async () => {
@@ -328,7 +330,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
       auth?.dispose();
       actions.current = null;
     };
-  }, [enabled, createAuth]);
+  }, [enabled]);
   return {
     ...view,
     signedIn,
