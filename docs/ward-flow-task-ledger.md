@@ -353,7 +353,7 @@ when a separate permissions refresh fails or gates the desk; its targeted regres
 the defect before passing. Focused shared-client and real PostgreSQL checks passed. The linked
 receipt records the current open-PR overlap and retains the full-unit/browser verification limits.
 
-## §7.82 — Open owner questions from PR #383 review threads (17 October 2026)
+## §7.82 — Decided owner questions from PR #383 review threads (17 October 2026)
 
 Two product and privacy questions for Josh came out of the PR #383 review and are carried here instead of as open review threads. No code change has been made for either. Both were decided on 17 October 2026 (D-65) and are kept here only as a record.
 
