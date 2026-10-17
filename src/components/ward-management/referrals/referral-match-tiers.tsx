@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/wf/button";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { type BedRelease } from "@/components/ward-management/ward-model";
@@ -31,6 +32,8 @@ export function renderReferralMatchTiers({
   handleAccept,
   admissions,
   bedReleases,
+  turnaroundForUnit,
+  handleFlagTurnaround,
 }: {
   tier1Candidates: ReferralCandidate[];
   tier2Candidates: ReferralCandidate[];
@@ -46,6 +49,11 @@ export function renderReferralMatchTiers({
   handleAccept: (unitId: string) => void;
   admissions: readonly Admission[];
   bedReleases: readonly BedRelease[];
+  turnaroundForUnit: (unitId: string) => {
+    disabledReason?: string;
+    recordedSource?: "cld" | "departure";
+  };
+  handleFlagTurnaround: (unitId: string) => void;
 }) {
   return (
     <div className={styles.tierAccordionGroup} data-testid="ward-referral-tier-accordion-group">
@@ -225,6 +233,7 @@ export function renderReferralMatchTiers({
                 const gateKey = `alt2-t2-${c.unit.id}`;
                 const isGatesExpanded = expandedUnitGates.has(gateKey);
                 const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+                const turnaround = turnaroundForUnit(c.unit.id);
 
                 return (
                   <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
@@ -241,18 +250,18 @@ export function renderReferralMatchTiers({
                         </div>
                       </div>
                       <div className={styles.unitActionStatusWrap}>
-                        <button
-                          type="button"
-                          className={styles.btnSubtle}
-                          aria-disabled="true"
-                          aria-describedby={`turnaround-unavailable-${c.unit.id}`}
-                          title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
-                          onClick={ignoreUnavailableActivation}
+                        <Button
+                          variant="sec"
+                          size="md"
+                          disabledReason={turnaround.disabledReason}
+                          onClick={() => handleFlagTurnaround(c.unit.id)}
                         >
                           Flag Turnaround Priority
-                        </button>
-                        <span id={`turnaround-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
-                          This turnaround prioritisation is unavailable: scheduling workflow not recorded
+                        </Button>
+                        <span className={styles.unitNoticeMuted}>
+                          {turnaround.recordedSource
+                            ? `Turnaround preference recorded for ${turnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                            : "Records a preference only; placement and transport still need confirmation."}
                         </span>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { type Dispatch, type ReactNode } from "react";
+import { useState, type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -63,6 +63,9 @@ import { BandGroup, MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
 import { renderReferralMatchTiers } from "./referral-match-tiers";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
 const NO_RELEASES: readonly BedRelease[] = [];
@@ -120,8 +123,25 @@ export function ReferralMatchView({
   admissions = NO_ADMISSIONS,
   bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
-  // Every hook this view has is called inside `useReferralMatchState`, above every early return below.
+  // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases");
+  const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
+  const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
+  const turnaroundRejection =
+    turnaroundRejectionStart !== null && rejections.length > turnaroundRejectionStart
+      ? rejections
+          .slice(turnaroundRejectionStart)
+          .findLast(
+            (rejection) =>
+              (rejection.attempted === "FLAG_MOVEMENT_TURNAROUND_PRIORITY" ||
+                rejection.attempted === "FLAG_REFERRAL_TURNAROUND_PRIORITY") &&
+              (rejection.movementId === referral.id ||
+                turnaroundState?.movements.some(
+                  (movement) => movement.referralId === referral.id && movement.id === rejection.movementId,
+                )),
+          )
+      : undefined;
   const {
     bandGroupsOpenByDefault,
     declineReason,
@@ -194,6 +214,59 @@ export function ReferralMatchView({
     groupedUnitCount > 0 && notRecordedIndex >= 0 && bandGroupCounts[notRecordedIndex].units === groupedUnitCount;
 
   const tier1Candidates = candidates.filter(candidateAccepts);
+  const linkedMovements = turnaroundState?.movements.filter((movement) => movement.referralId === referral.id) ?? [];
+  const linkedMovement =
+    linkedMovements.find((movement) => !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId) ??
+    linkedMovements[0];
+  const turnaroundForUnit = (unitId: string) => {
+    if (!turnaroundState) return { disabledReason: "Live referral and movement records are unavailable." };
+    if (
+      linkedMovements.filter(
+        (movement) => !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId,
+      ).length > 1
+    )
+      return { disabledReason: "Multiple linked movements require coordinator review." };
+    if (
+      linkedMovement &&
+      (linkedMovement.closure || linkedMovement.stage === "arrived" || linkedMovement.acceptedUnitId)
+    )
+      return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
+    const source = unitTurnaroundSource(turnaroundState, unitId, now, cldEnabled);
+    if (!source)
+      return { disabledReason: "No current CLD-ready admission or unblocked confirmed departure on this unit." };
+    const preference = linkedMovement?.turnaroundPriority ?? (linkedMovement ? undefined : referral.turnaroundPriority);
+    if (preference?.unitId === unitId && preference.source === source)
+      return {
+        disabledReason: "Turnaround preference already recorded for this unit.",
+        recordedSource: source,
+        source,
+      };
+    return { source };
+  };
+  const handleFlagTurnaround = (unitId: string) => {
+    const { disabledReason, source } = turnaroundForUnit(unitId);
+    if (disabledReason || !source) return;
+    setTurnaroundRejectionStart(rejections.length);
+    dispatch(
+      linkedMovement
+        ? {
+            type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
+            role: "coordinator",
+            now,
+            movementId: linkedMovement.id,
+            unitId,
+            ...{ source },
+          }
+        : {
+            type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+            role: "coordinator",
+            now,
+            referralId: referral.id,
+            unitId,
+            ...{ source },
+          },
+    );
+  };
   const tier2Candidates = candidates.filter(
     (c) =>
       !candidateAccepts(c) &&
@@ -1123,6 +1196,11 @@ export function ReferralMatchView({
       ) : null}
 
       {/* TIER ACCORDION GROUP — cohesive container with zero white space between closed tabs */}
+      {turnaroundRejection ? (
+        <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
+          Turnaround preference not recorded: {turnaroundRejection.reason}
+        </p>
+      ) : null}
       {renderReferralMatchTiers({
         tier1Candidates,
         tier2Candidates,
@@ -1138,6 +1216,8 @@ export function ReferralMatchView({
         handleAccept,
         admissions,
         bedReleases,
+        turnaroundForUnit,
+        handleFlagTurnaround,
       })}
 
       <section className={styles.geographySection}>

@@ -31,6 +31,7 @@ import {
   type HealthService,
   type Movement,
   type Referral,
+  type TurnaroundPriority,
 } from "@/components/ward-management/ward-model";
 import {
   FORM_TIMING_FACTOR_LABEL,
@@ -45,13 +46,16 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { liveTurnaroundPreference } from "@/components/ward-management/ward-turnaround-priority";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { referralState } from "@/components/ward-management/ward-referrals";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
@@ -173,6 +177,14 @@ export function PriorityQueue({
   units = [],
 }: PriorityQueueProps) {
   const dueSoonThresholds = useDueSoonThresholds();
+  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases");
+  const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
+  const turnaroundLabel = (preference: TurnaroundPriority | undefined) => {
+    const live = turnaroundState && liveTurnaroundPreference(turnaroundState, preference, now, cldEnabled);
+    return live
+      ? `Turnaround Candidate: Bed clearing via ${live.source === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}`
+      : null;
+  };
   const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
@@ -295,6 +307,10 @@ export function PriorityQueue({
                 (arrival.mode ? (ARRIVAL_MODE_LABELS[arrival.mode] ?? arrival.mode) : "Transit"))
               : undefined;
             const dimmed = highlight !== undefined && !matchesHighlight(movement);
+            const turnaround =
+              !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId
+                ? turnaroundLabel(movement.turnaroundPriority)
+                : null;
             const flagDetail = movement.flaggedUrgent
               ? movement.urgentFlag
                 ? `Flagged urgent by ${WARD_FLOW_ROLE_LABELS[movement.urgentFlag.by]} at ${formatInstantWithDay(movement.urgentFlag.at, now)}: ${changeReasonLabels[movement.urgentFlag.reason]}.`
@@ -347,6 +363,7 @@ export function PriorityQueue({
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
+                    {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
                     {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
                     {movement.atsCategory === undefined ? (
                       <SrOnly>ATS not recorded</SrOnly>
@@ -466,6 +483,12 @@ export function PriorityQueue({
           referralQueue.map((referral) => {
             const selected = referral.id === selectedReferralId;
             const waited = Math.max(now - referral.raisedAt, 0);
+            const turnaround =
+              referralState(referral) === "queued" &&
+              referral.destinations.some((arm) => arm.state === "queued" && arm.withdrawnAt === undefined) &&
+              !turnaroundState?.movements.some((movement) => movement.referralId === referral.id)
+                ? turnaroundLabel(referral.turnaroundPriority)
+                : null;
             return (
               <button
                 key={referral.id}
@@ -490,6 +513,7 @@ export function PriorityQueue({
                   </span>
                   <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
                   <span className={styles.queueMarks}>
+                    {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
                     <span className={styles.queueMark}>
                       {referral.atsCategory === undefined ? "ATS not recorded" : `ATS ${referral.atsCategory}`}
                     </span>
