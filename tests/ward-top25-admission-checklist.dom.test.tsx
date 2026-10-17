@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { EdAdmissionChecklist } from "@/components/ward-management/ed/ed-admission-checklist";
-import { admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
+import { NOT_WIRED, admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -33,8 +33,8 @@ describe("Top 25 item 14: admission arrival checklist", () => {
       medical_clearance: "outstanding",
       legal_form: "done",
       transport: "outstanding",
-      contraband_search: "outstanding",
-      medication_chart: "outstanding",
+      contraband_search: "not_wired",
+      medication_chart: "not_wired",
     });
     const ready = movement({
       medicalClearance: { cleared: true, at: 10 } as Movement["medicalClearance"],
@@ -46,6 +46,22 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     expect(states(ready).transport).toBe("done");
     expect(states(ready).contraband_search).toBe("done");
     expect(states(ready).medication_chart).toBe("done");
+  });
+
+  it("ignores local draft overrides when deriving recorded completion", () => {
+    const items = admissionChecklist(movement({ legalStatus: "Voluntary" }), [], {
+      contraband_search: true,
+      medication_chart: true,
+    });
+    for (const key of ["contraband_search", "medication_chart"]) {
+      expect(items.find((item) => item.key === key)).toMatchObject({ state: "not_wired", detail: NOT_WIRED });
+    }
+    const recorded = admissionChecklist(movement({ contrabandSearchDone: true, medicationChartDone: false }), [], {
+      contraband_search: false,
+      medication_chart: true,
+    });
+    expect(recorded.find((item) => item.key === "contraband_search")?.state).toBe("done");
+    expect(recorded.find((item) => item.key === "medication_chart")?.state).toBe("outstanding");
   });
 
   it("asks for the legal form receipt when a form is on the record", () => {
@@ -62,14 +78,26 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     expect(missing?.detail).toBe("Legal form not on this record");
   });
 
-  it("lets the ED clinician mark contraband search and medication chart done on the checklist card", () => {
-    render(<EdAdmissionChecklist movement={movement({ legalStatus: "Voluntary" })} referrals={[]} />);
+  it("does not offer local completion controls for checks that cannot be recorded", () => {
+    const { rerender } = render(
+      <EdAdmissionChecklist movement={movement({ legalStatus: "Voluntary" })} referrals={[]} />,
+    );
     const card = screen.getByTestId("ward-ed-admission-checklist");
-    expect(within(card).getByText("Arrival checklist, 1 of 5 recorded")).toBeTruthy();
-    const markDoneButtons = within(card).getAllByRole("button", { name: /^Mark done: / });
-    expect(markDoneButtons).toHaveLength(2);
-    fireEvent.click(markDoneButtons[0]!);
-    expect(within(card).getByText("Arrival checklist, 2 of 5 recorded")).toBeTruthy();
+    expect(within(card).getByText("Arrival checklist, 1 of 3 recorded")).toBeTruthy();
+    expect(within(card).getAllByText(NOT_WIRED)).toHaveLength(2);
+    expect(within(card).queryByRole("button", { name: /^Mark done: / })).toBeNull();
+    expect(within(card).queryByText("Checked in ED")).toBeNull();
+    expect(within(card).queryByText("Ready for ward")).toBeNull();
+
+    rerender(
+      <EdAdmissionChecklist
+        movement={movement({ legalStatus: "Voluntary", contrabandSearchDone: true, medicationChartDone: true })}
+        referrals={[]}
+      />,
+    );
+    expect(within(card).getByText("Arrival checklist, 3 of 5 recorded")).toBeTruthy();
     expect(within(card).getByText("Checked in ED")).toBeTruthy();
+    expect(within(card).getByText("Ready for ward")).toBeTruthy();
+    expect(within(card).queryByText(NOT_WIRED)).toBeNull();
   });
 });

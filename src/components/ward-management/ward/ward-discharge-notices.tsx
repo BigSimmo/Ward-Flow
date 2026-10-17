@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
+import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import {
   SUPPORT_SERVICE_TYPES,
   type SupportServiceType,
@@ -14,9 +15,11 @@ const SERVICE_LABELS: Record<SupportServiceType, string> = {
   cleaning: "Cleaning, bed made ready",
 };
 
+export const NOT_WIRED = "Not wired in this prototype.";
+
 /**
  * Top 25 item 1: after the ward confirms a discharge, the pharmacy, transport and cleaning notices
- * it can send for the bed.
+ * it can send for the bed. Unconnected notices remain explicitly not wired.
  */
 export function WardDischargeNotices({
   bedLabel,
@@ -31,26 +34,11 @@ export function WardDischargeNotices({
   dueSoonHours: number | null;
   /** Optional controlled set of services already notified for this release. */
   sentServices?: ReadonlySet<SupportServiceType>;
-  /** Optional callback when a service notice is sent. */
+  /** Requests a notice; sentServices changes only after confirmed completion. */
   onSendService?: (service: SupportServiceType) => void;
   onClose: () => void;
 }) {
   const baseId = useId();
-  const [localSent, setLocalSent] = useState<ReadonlySet<SupportServiceType>>(() => new Set());
-  const effectiveSent = sentServices ?? localSent;
-
-  const handleSend = (service: SupportServiceType) => {
-    if (effectiveSent.has(service)) return;
-    if (onSendService) {
-      onSendService(service);
-    } else {
-      setLocalSent((prev) => {
-        const next = new Set(prev);
-        next.add(service);
-        return next;
-      });
-    }
-  };
 
   return (
     <Card
@@ -71,26 +59,41 @@ export function WardDischargeNotices({
         </p>
         <ul className={styles.list}>
           {SUPPORT_SERVICE_TYPES.map((service) => {
-            const isSent = effectiveSent.has(service);
+            const isSent = sentServices?.has(service) === true;
             return (
               <li key={service} className={styles.row} data-sent={isSent ? "true" : "false"}>
                 <span className={styles.service}>{SERVICE_LABELS[service]}</span>
-                <Button
-                  variant="sec"
-                  size="sm"
-                  aria-pressed={isSent}
-                  aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
-                  onClick={() => handleSend(service)}
-                >
-                  {isSent ? "Notice sent" : "Send notice"}
-                </Button>
+                {onSendService || isSent ? (
+                  <Button
+                    variant="sec"
+                    size="sm"
+                    aria-disabled={isSent}
+                    aria-pressed={isSent}
+                    aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
+                    onClick={() => {
+                      if (!isSent) onSendService?.(service);
+                    }}
+                  >
+                    {isSent ? "Notice sent" : "Send notice"}
+                  </Button>
+                ) : (
+                  <NotWiredButton
+                    variant="sec"
+                    size="sm"
+                    label="Send notice"
+                    name={`Send ${SERVICE_LABELS[service]} notice`}
+                    aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
+                  />
+                )}
                 <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
                   {isSent ? (
                     <Badge tone="success" size="sm">
                       Sent
                     </Badge>
-                  ) : (
+                  ) : onSendService ? (
                     "Ready to send"
+                  ) : (
+                    NOT_WIRED
                   )}
                 </span>
               </li>
