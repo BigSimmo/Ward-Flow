@@ -85,6 +85,8 @@ export type StepDownBoardRow = {
    * covering it). They are never offered as a swap; the board routes them to Placement.
    */
   placementReview: Movement[];
+  /** Whether `fromUnit` has a bed actually free now (the bounded Ready figure is above 0). */
+  fromUnitHasFreeBed: boolean;
 };
 
 /** A movement whose recorded sex and gender need a coordinator placement for this ward first. */
@@ -189,6 +191,7 @@ export function deriveStepDownBoard(input: {
       transferMovement,
       swapCandidates: swap.candidates,
       placementReview: swap.placementReview,
+      fromUnitHasFreeBed: boundedBedAvailability(fromUnit).available > 0,
     });
   }
   return rows;

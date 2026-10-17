@@ -12,7 +12,6 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { deriveStepDownBoard } from "@/components/ward-management/ward-step-down";
@@ -233,7 +232,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                         </>
                       ) : (
                         <p className={styles.meta} data-testid="step-down-swap-waiting">
-                          {boundedBedAvailability(row.fromUnit).available > 0
+                          {row.fromUnitHasFreeBed
                             ? `No incoming referral can be offered for ${row.fromUnit.name} here now.`
                             : `Incoming referrals show here once a bed on ${row.fromUnit.name} is actually free.`}
                         </p>
