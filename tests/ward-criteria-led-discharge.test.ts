@@ -20,7 +20,12 @@ import {
   dischargeCriteriaStatus,
   isDischargeCriteriaRecord,
   nextDischargeCriteria,
+  PATIENT_SPECIFIC_CRITERIA_MAX,
+  PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
 } from "@/components/ward-management/ward-discharge-criteria";
+import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 
 // Top 25 item 9 (D-60): criteria led discharge for patients recorded as voluntary only.
 
@@ -358,5 +363,143 @@ describe("criteria led discharge on boards and at departure (D-64)", () => {
     };
     expect(admissionCriteriaEligibility(state, admission)).toBe("cto");
     expect(admissionLegalStatus(state, admission)).toMatch(/community treatment order/i);
+  });
+});
+
+describe("patient specific typed criteria (D-65)", () => {
+  const TYPED = "Lives with sister until flat repairs done";
+  const psychiatrist = (patientSpecific: unknown[], criteria: unknown[] = ["Accommodation confirmed"]) => ({
+    criteria,
+    met: [],
+    setByTreatingPsychiatrist: true,
+    patientSpecific,
+  });
+
+  it("adds typed criteria after the fixed ones, marked patient specific, and ticks and counts them", () => {
+    const set = nextDischargeCriteria(null, psychiatrist([TYPED]), "voluntary", 100);
+    if (!("record" in set) || !set.record) throw new Error("set refused");
+    expect(set.record.items).toEqual([
+      { criterion: "Accommodation confirmed", metAt: null },
+      { criterion: TYPED, metAt: null, patientSpecific: true },
+    ]);
+    expect(isDischargeCriteriaRecord(set.record)).toBe(true);
+    const ticked = nextDischargeCriteria(
+      set.record,
+      {
+        criteria: ["Accommodation confirmed", TYPED],
+        met: [TYPED],
+        setByTreatingPsychiatrist: false,
+        tick: { criterion: TYPED, met: true },
+      },
+      "voluntary",
+      150,
+    );
+    if (!("record" in ticked) || !ticked.record) throw new Error("tick refused");
+    expect(ticked.record.items[1]).toEqual({ criterion: TYPED, metAt: 150, patientSpecific: true });
+    expect(dischargeCriteriaStatus(ticked.record, "voluntary", 150)).toMatchObject({ kind: "in_progress", met: 1 });
+  });
+
+  it("allows typed criteria alone, and refuses too many, too long, blank or a copy of a fixed one", () => {
+    expect("record" in nextDischargeCriteria(null, psychiatrist([TYPED], []), "voluntary", 0)).toBe(true);
+    const tooMany = Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX + 1 }, (_, i) => `Typed ${i}`);
+    expect(nextDischargeCriteria(null, psychiatrist(tooMany), "voluntary", 0)).toHaveProperty("refusal");
+    const tooLong = "x".repeat(PATIENT_SPECIFIC_CRITERION_MAX_LENGTH + 1);
+    for (const bad of [tooLong, "", " padded ", "Transport home arranged", 7]) {
+      expect(nextDischargeCriteria(null, psychiatrist([bad]), "voluntary", 0)).toHaveProperty("refusal");
+    }
+    expect(nextDischargeCriteria(null, psychiatrist([TYPED, TYPED]), "voluntary", 0)).toEqual({
+      refusal: "Each discharge criterion can be chosen once.",
+    });
+  });
+
+  it("lets only the treating psychiatrist add typed criteria, and keeps them on a ward tick", () => {
+    const set = nextDischargeCriteria(null, psychiatrist([TYPED]), "voluntary", 0);
+    if (!("record" in set) || !set.record) throw new Error("set refused");
+    // A ward change that slips in new typed text is refused, the stored list is the only source.
+    expect(
+      nextDischargeCriteria(
+        set.record,
+        {
+          criteria: ["Accommodation confirmed", TYPED, "Something new"],
+          met: [],
+          setByTreatingPsychiatrist: false,
+          patientSpecific: [TYPED, "Something new"],
+        },
+        "voluntary",
+        10,
+      ),
+    ).toHaveProperty("refusal");
+    expect(
+      nextDischargeCriteria(
+        set.record,
+        {
+          criteria: [],
+          met: [],
+          setByTreatingPsychiatrist: false,
+          tick: { criterion: "Something new", met: true },
+        },
+        "voluntary",
+        10,
+      ),
+    ).toEqual({ refusal: "Only a chosen discharge criterion can be marked met." });
+  });
+
+  it("refuses a stored record whose typed criteria are unmarked, too many or too long", () => {
+    const item = (criterion: string) => ({ criterion, metAt: null, patientSpecific: true });
+    expect(isDischargeCriteriaRecord({ setAt: 1, items: [{ criterion: TYPED, metAt: null }] })).toBe(false);
+    expect(
+      isDischargeCriteriaRecord({ setAt: 1, items: [{ criterion: TYPED, metAt: null, patientSpecific: false }] }),
+    ).toBe(false);
+    const four = Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX + 1 }, (_, i) => item(`Typed ${i}`));
+    expect(isDischargeCriteriaRecord({ setAt: 1, items: four })).toBe(false);
+    const long = item("x".repeat(PATIENT_SPECIFIC_CRITERION_MAX_LENGTH + 1));
+    expect(isDischargeCriteriaRecord({ setAt: 1, items: [long] })).toBe(false);
+  });
+
+  it("treats a dispatch naming a typed criterion as typed text, and fixed criteria only as safe", () => {
+    const base = {
+      type: "SET_DISCHARGE_CRITERIA" as const,
+      role: "ward" as const,
+      now: 0,
+      admissionId: "a",
+      criteria: ["Accommodation confirmed"],
+      met: [],
+      setByTreatingPsychiatrist: true,
+    };
+    expect(eventCarriesTypedTextPayload(base)).toBe(false);
+    expect(eventCarriesTypedTextPayload({ ...base, patientSpecific: [TYPED] })).toBe(true);
+    expect(
+      eventCarriesTypedTextPayload({
+        ...base,
+        criteria: ["Accommodation confirmed", TYPED],
+        setByTreatingPsychiatrist: false,
+        tick: { criterion: TYPED, met: true },
+      }),
+    ).toBe(true);
+  });
+
+  it("sets typed criteria through the reducer for a voluntary patient", () => {
+    const seeded = seedWardFlowStateAt(NOW_ANCHOR);
+    const admissionId = voluntaryStay(seeded);
+    const state = withVoluntary(seeded, admissionId);
+    const after = wardFlowReducer(state, setCriteria(admissionId, NOW_ANCHOR, { patientSpecific: [TYPED] }));
+    expect(lastRejection(state, after)).toBeUndefined();
+    const record = after.admissions.find((a) => a.id === admissionId)!.dischargeCriteria!;
+    expect(record.items.at(-1)).toEqual({ criterion: TYPED, metAt: null, patientSpecific: true });
+  });
+
+  it("never restores typed criteria from browser storage, while shared storage holds them (D-65)", () => {
+    const withCriteria = (items: unknown[]): WardFlowState => {
+      const seeded = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as WardFlowState;
+      (seeded.admissions[0] as { dischargeCriteria: unknown }).dischargeCriteria = { setAt: 1, items };
+      return seeded;
+    };
+    const fixed = { criterion: "Accommodation confirmed", metAt: null };
+    const typed = { criterion: TYPED, metAt: null, patientSpecific: true };
+    expect(isValidStoredWardFlowState(withCriteria([fixed]))).toBe(true);
+    expect(isValidStoredWardFlowState(withCriteria([fixed, typed]))).toBe(false);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, typed]))).toBe(true);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, { ...typed, criterion: "x".repeat(121) }]))).toBe(false);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, { ...typed, patientSpecific: false }]))).toBe(false);
   });
 });

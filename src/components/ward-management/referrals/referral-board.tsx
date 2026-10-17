@@ -1508,7 +1508,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
         <WardPrototypeFooter
           testId="ward-referral-board-governance"
-          note="It places nobody; coordinators record referral decisions one at a time · Not a medical device"
+          note="It places nobody; coordinators record referral decisions one at a time · Not approved for clinical use"
         />
       </main>
     </div>

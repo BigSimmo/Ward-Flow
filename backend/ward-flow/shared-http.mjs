@@ -235,13 +235,14 @@ export function createSharedHandler({
       }
       const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
-        const workspace = {
+        // A locked store read can refresh this request's role and joined cover.
+        const workspace = () => ({
           role: view.access.role,
           access: view.access,
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
-        };
+        });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const since = Number(new URL(request.url).searchParams.get("since"));
@@ -249,14 +250,14 @@ export function createSharedHandler({
           const polled = await store.poll(actorId, since, view);
           if (polled.notModified) {
             if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
-            return reply(200, { ...workspace, data, notModified: true, revision: polled.revision, now: polled.now });
+            return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });
           }
           if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
-          return reply(200, { ...workspace, data, snapshot: polled.snapshot });
+          return reply(200, { ...workspace(), data, snapshot: polled.snapshot });
         }
         const snapshot = await store.read(actorId, view);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
-        return reply(200, { ...workspace, data, snapshot });
+        return reply(200, { ...workspace(), data, snapshot });
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads

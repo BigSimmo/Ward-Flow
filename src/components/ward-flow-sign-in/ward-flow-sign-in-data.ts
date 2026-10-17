@@ -289,7 +289,7 @@ export const SIGN_IN_REFUSED: readonly SignInRefused[] = [
  * soften it.
  */
 export const SIGN_IN_READ_FIRST: readonly SignInRefused[] = [
-  { words: "Prototype, not a medical device", where: "Not clinical decision support.", brief: "Not decision support" },
+  { words: "Prototype, not for clinical use", where: "Not clinical decision support.", brief: "Not decision support" },
   {
     words: "Every figure here is invented",
     where: "The hospital sites and health services are real WA names.",

@@ -504,7 +504,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
         )}
         <WardPrototypeFooter
           testId="ward-person-governance"
-          note="Suburb and catchment team pairings use the recorded catchment table · Not a medical device"
+          note="Suburb and catchment team pairings use the recorded catchment table · Not approved for clinical use"
         />
       </main>
     </div>

@@ -55,7 +55,7 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
           {stamp.time === null ? "As at — the moment shown is not recorded." : `As at ${stamp.time}`}
         </p>
       </div>
-      <p className={styles.disclosure}>Synthetic prototype · {stamp.dayNote}. Not a medical device.</p>
+      <p className={styles.disclosure}>Synthetic prototype · {stamp.dayNote}. Not approved for clinical use.</p>
 
       <div className={styles.grid}>
         <section className={styles.section} aria-labelledby="bed-meeting-capacity" data-testid="bed-meeting-capacity">

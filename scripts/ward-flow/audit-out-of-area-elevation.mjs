@@ -204,6 +204,7 @@ async function main() {
           return (
             text.includes("Placements, home addresses, and travel estimates are invented") ||
             text.includes("not a medical device") ||
+            text.toLowerCase().includes("not approved for clinical use") ||
             text.includes("Invented placement threshold")
           );
         });

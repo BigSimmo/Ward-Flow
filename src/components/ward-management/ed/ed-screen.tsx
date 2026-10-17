@@ -469,7 +469,10 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}
 
-        <WardPrototypeFooter testId="ward-ed-governance" note="Emergency department census · Not a medical device" />
+        <WardPrototypeFooter
+          testId="ward-ed-governance"
+          note="Emergency department census · Not approved for clinical use"
+        />
       </main>
       {arrivalPlanMovement ? (
         <ArrivalTimeModal

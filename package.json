@@ -145,7 +145,7 @@
     "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.4",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.6",
@@ -159,7 +159,7 @@
     "tailwindcss": "^4.3.1",
     "tsx": "^4.23.12",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.4"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

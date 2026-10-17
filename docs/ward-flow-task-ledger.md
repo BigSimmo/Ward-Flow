@@ -352,3 +352,10 @@ conflicts. A fresh adversarial review identified and corrected command-result mi
 when a separate permissions refresh fails or gates the desk; its targeted regression reproduced
 the defect before passing. Focused shared-client and real PostgreSQL checks passed. The linked
 receipt records the current open-PR overlap and retains the full-unit/browser verification limits.
+
+## §7.82 — Open owner questions from PR #383 review threads (17 October 2026)
+
+Two product and privacy questions for Josh came out of the PR #383 review and are carried here instead of as open review threads. No code change has been made for either.
+
+1. **Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text.
+2. **Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use.

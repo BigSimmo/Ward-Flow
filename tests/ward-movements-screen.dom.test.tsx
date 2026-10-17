@@ -558,6 +558,28 @@ describe("the movements board never shows a closed movement as a person still wa
     }
   });
 
+  it("selects and focuses either movement tab using arrows, Home and End", () => {
+    renderScreen();
+    const open = screen.getByRole("tab", { name: /Open and resolved/u });
+    const resolved = screen.getByRole("tab", { name: /Resolved today/u });
+    open.focus();
+    for (const [key, expected] of [
+      ["ArrowRight", resolved],
+      ["ArrowLeft", open],
+      ["End", resolved],
+      ["Home", open],
+      ["ArrowLeft", resolved],
+      ["ArrowRight", open],
+    ] as const) {
+      fireEvent.keyDown(document.activeElement!, { key });
+      expect(expected).toHaveFocus();
+      expect(expected).toHaveAttribute("aria-selected", "true");
+      expect(expected).toHaveAttribute("tabindex", "0");
+      expect(expected === open ? resolved : open).toHaveAttribute("tabindex", "-1");
+      expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", expected.id);
+    }
+  });
+
   it("labels every resolved-today row from its recorded closure outcome", () => {
     const resolvedToday = wardMovements.filter(
       (movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(NOW),

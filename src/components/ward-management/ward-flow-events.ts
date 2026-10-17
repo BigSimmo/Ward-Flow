@@ -8,7 +8,6 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { DischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -2034,14 +2033,22 @@ export type WardFlowEvent =
       now: Instant;
       actingUnitId?: string;
       admissionId: string;
-      /** The chosen criteria in order, or null to clear them. */
-      criteria: DischargeCriterion[] | null;
+      /**
+       * The chosen criteria in order, or null to clear them. A ward tick or change also lists the
+       * stored patient specific criteria, which are typed text (D-65).
+       */
+      criteria: string[] | null;
       /** The chosen criteria now met. */
-      met: DischargeCriterion[];
+      met: string[];
       /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
       setByTreatingPsychiatrist: boolean;
+      /**
+       * D-65: typed patient specific criteria the treating psychiatrist set, added after the fixed
+       * ones. A dispatch carrying typed criteria locks browser storage (`eventCarriesTypedTextPayload`).
+       */
+      patientSpecific?: string[];
       /** One criterion ticked or unticked, applied to the stored list rather than replacing it. */
-      tick?: { criterion: DischargeCriterion; met: boolean };
+      tick?: { criterion: string; met: boolean };
     }
   | {
       type: "RECORD_ED_MEDICAL_DETERIORATION";

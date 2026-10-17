@@ -823,7 +823,7 @@ export function DataPane({
               </div>
               <div>
                 <dt>Status</dt>
-                <dd>Not a medical device</dd>
+                <dd>Not approved for clinical use</dd>
               </div>
               <div>
                 <dt>Sign-in</dt>

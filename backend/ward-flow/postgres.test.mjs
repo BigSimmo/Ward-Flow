@@ -1747,6 +1747,44 @@ test(
           revoker.release();
         }
       });
+      for (const poll of [false, true]) {
+        await t.test(
+          `HTTP ${poll ? "poll" : "full read"} replies use the authority refreshed after cover ends`,
+          async () => {
+            const { createHandler } = await import("./server.mjs");
+            const f = await fixture();
+            const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+            const cover = await f.cover();
+            const wider = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+            assert.ok(wider.payload.state.patients.length > first.payload.state.patients.length);
+            const handler = createHandler({
+              config: { coordinatorIds: [f.lead], origin: "http://localhost", workspaceId: f.workspaceId },
+              authenticate: async () => f.nurse,
+              sharedStore: {
+                ...f.store,
+                viewer: async (actorId, options) => {
+                  const view = await f.store.viewer(actorId, options);
+                  // Interleave a real committed revoke after the HTTP layer has resolved the desk.
+                  assert.equal((await f.store.revokeAccess(f.leadView, cover.id)).status, 200);
+                  return view;
+                },
+              },
+              log: () => {},
+            });
+            const response = await handler(
+              new Request(`http://localhost/v1/workspace${poll ? `?since=${first.revision}` : ""}`, {
+                headers: { authorization: "Bearer synthetic-test" },
+              }),
+            );
+            assert.equal(response.status, 200);
+            const value = await response.json();
+            assert.deepEqual(value.access, { role: "ward", scope: { kind: "ward", unitIds: [f.unitA] } });
+            assert.equal(value.workingAs, f.base.id);
+            assert.deepEqual(value.snapshot.payload.state.patients, first.payload.state.patients);
+            assert.equal(value.snapshot.revision, first.revision);
+          },
+        );
+      }
       await t.test("same-revision polls send fresh scopes after cover grant, revoke and expiry", async () => {
         const f = await fixture();
         const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
