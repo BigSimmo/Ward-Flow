@@ -137,6 +137,13 @@ describe("maintained document CI scope", () => {
       organisation: true,
     });
   });
+  it.each([
+    "src/components/wf/sheet.tsx",
+    "src/app/ward-flow-shell-tokens.module.css",
+    "tests/helpers/ward-fixture.ts",
+  ])("checks registered organisation root %s", (file) => {
+    expect(documentChecks(entries(file)).organisation).toBe(true);
+  });
   it("required workflow keeps the doc links, facts, safety wording, planned index/organisation checks, and the bounded synthetic check", () => {
     const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
     for (const flag of ["owner_index", "rules_index", "organisation"])

@@ -1,5 +1,24 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
+
+const organisationRoots = (() => {
+  try {
+    const registry = JSON.parse(readFileSync("docs/ward-flow/organisation/registry.json", "utf8"));
+    return Array.isArray(registry.roots) ? registry.roots : null;
+  } catch {
+    return null;
+  }
+})();
+const matchesOrganisationRoot = (file) => {
+  if (!organisationRoots) return true;
+  return organisationRoots.some((root) => {
+    const expression = String(root)
+      .replace(/[.+^${}()|[\]\\]/gu, "\\$&")
+      .replace(/\*\*/gu, ".*")
+      .replace(/\*/gu, "[^/]*");
+    return new RegExp(`^${expression}$`, "u").test(file);
+  });
+};
 
 const sha = /^[0-9a-f]{40}$/i;
 const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
@@ -82,15 +101,7 @@ export function documentChecks(entries) {
         /^docs\/ward-flow\/(?:RULES\.md|lessons\/[^/]+\.md)$/u.test(file) ||
         file === "scripts/ward-flow/rules-index.mjs",
     ),
-    organisation: files.some(
-      (file) =>
-        file.startsWith("docs/ward-flow/") ||
-        file.startsWith("scripts/ward-flow/organisation") ||
-        file.startsWith("src/components/ward-management/") ||
-        file.startsWith("src/app/mockups/ward-flow/") ||
-        file.startsWith("tests/ward-") ||
-        file.startsWith("tests/ui-ward-"),
-    ),
+    organisation: files.some(matchesOrganisationRoot),
   };
 }
 
