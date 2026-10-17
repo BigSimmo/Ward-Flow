@@ -186,3 +186,35 @@ for (const rollbackFails of [false, true]) {
     assert.deepEqual(releases, [rollbackFails ? rollback : undefined]);
   });
 }
+
+test("pruneReceipts refuses invalid retention windows and prunes expired command receipts in 5,000-row batches per workspace", async () => {
+  const { RECEIPT_RETENTION_DAYS, pruneReceipts } = await import("./prune-receipts.mjs");
+  assert.equal(RECEIPT_RETENTION_DAYS, 7);
+
+  for (const invalid of [0, -1, 1.5, Number.NaN, "7"]) {
+    await assert.rejects(
+      pruneReceipts({ query: async () => ({ rows: [] }) }, { days: /** @type {any} */ (invalid) }),
+      /Invalid receipt retention/,
+    );
+  }
+
+  const calls = [];
+  const counts = [5_000, 120, 0];
+  const pool = {
+    async query(sql, params) {
+      calls.push({ sql, params });
+      if (sql === "SELECT id FROM ward_flow.workspaces") {
+        return { rows: [{ id: "ws-alpha" }, { id: "ws-beta" }] };
+      }
+      return { rowCount: counts.shift() ?? 0, rows: [] };
+    },
+  };
+
+  const removed = await pruneReceipts(pool, { days: 14 });
+  assert.equal(removed, 5_120);
+  assert.equal(calls.length, 4);
+  assert.deepEqual(calls[1]?.params, ["ws-alpha", 14, 5_000]);
+  assert.deepEqual(calls[2]?.params, ["ws-alpha", 14, 5_000]);
+  assert.deepEqual(calls[3]?.params, ["ws-beta", 14, 5_000]);
+  assert.match(calls[1]?.sql ?? "", /DELETE FROM ward_flow\.commands WHERE ctid IN/);
+});

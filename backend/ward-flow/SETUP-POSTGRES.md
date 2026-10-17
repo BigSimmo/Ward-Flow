@@ -4,7 +4,7 @@ Ward Flow uses Supabase (decision D-55) and keeps this generic PostgreSQL adapte
 
 ## Administrator prerequisites
 
-Runtime startup never applies migrations. Shared readiness requires migrations **1 through 5**, including the fixed search paths on the audit and workspace-mode trigger functions and the composite push/command indexes. Keep a new runtime stopped until the schema and runtime grants are ready.
+Runtime startup never applies migrations. Shared readiness requires migrations **1 through 5** (and accepts **6 through 9** for row-level security, prototype-only workspace enforcement, role memberships/break-glass, and cover/access requests), including the fixed search paths on the audit and workspace-mode trigger functions and the composite push/command indexes. Keep a new runtime stopped until the schema and runtime grants are ready.
 
 Inspect the exact database target, ownership and contents first. Preserve a recoverable backup before a migration. A matching migration number alone is insufficient. The generic PostgreSQL CLI checks the existing `ward_flow` catalogue and refuses unfamiliar tables, functions, constraints, triggers, sequences, ownership or migration histories. Do not delete an unexpected namespace to make setup pass.
 
@@ -25,7 +25,7 @@ After separate authority for the chosen target and administrator operation, invo
 node --env-file=C:/private/ward-migration.env backend/ward-flow/migrate-postgres.mjs
 ```
 
-The CLI preflights the namespace, applies the supported migrations, then installs [restricted runtime grants](infra/postgres-runtime-role.sql). It creates no database or provider project, transfers no records and runs no deployment. It installs the fixed runtime role without embedding its password. Set the role's password privately with the administrator's `psql` command `\password wardflow_backend`, then put the matching value in the runtime URL. Remove the administrator URL from the runtime environment.
+The CLI preflights the namespace, applies the supported migrations (`001`–`009`), then installs [restricted runtime grants](infra/postgres-runtime-role.sql). It creates no database or provider project, transfers no records and runs no deployment. It installs the fixed runtime role without embedding its password. Set the role's password privately with the administrator's `psql` command `\password wardflow_backend`, then put the matching value in the runtime URL. Remove the administrator URL from the runtime environment. To prune `ward_flow.commands` idempotency receipts older than `RECEIPT_RETENTION_DAYS` (default 7 days) without touching `ward_flow.audit`, run `npm --prefix backend/ward-flow run prune:postgres` (or `prune:receipts:postgres`, invoking `prune-receipts.mjs postgres`) with the private migration environment.
 
 Schema migration and role grants are separate transactions. If the grants fail after the schema transaction commits, keep the runtime stopped, inspect the exact administrator failure privately and re-run the same reviewed CLI after correcting it. Supported existing versions are retained and the grant stage can be repeated. Do not roll back data by deleting the namespace or switch to an administrator login for the application. Unknown or incompatible state needs owner review and an authorised recovery from the preserved backup.
 
