@@ -5,14 +5,18 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { eligibility } from "../src/components/ward-management/ward-eligibility";
+import { lockedBedsFree } from "../src/components/ward-management/ward-bed-designation";
+import type { Movement, Unit } from "../src/components/ward-management/ward-model";
 import { boundedBedAvailability } from "../src/components/ward-management/ward-ready-beds";
 import {
   deriveStepDownBoard,
   deriveStepDownSwapCandidates,
-  freedStepDownUnit,
   stepDownSubject,
 } from "../src/components/ward-management/ward-step-down";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+
+const GENDER_REASON = GENDER_PLACEMENT_REASONS[0];
 
 function board(mark: (admission: { id: string }) => boolean) {
   const state = seedWardFlowState();
@@ -74,23 +78,28 @@ describe("step-down board uses the main matching engine (Top 25 item 8)", () => 
 });
 
 describe("inter-ward step-down swap pairing (Top 25 item 16, D-30)", () => {
-  it("models one freed bed on fromUnit and matches only incoming movements that pass every eligibility gate", () => {
-    const { state, rows } = board(() => true);
-    const rowWithWard = rows.find((row) => row.wards.length > 0);
-    expect(rowWithWard).toBeDefined();
-    if (!rowWithWard) return;
-
-    const fullUnit = {
-      ...rowWithWard.fromUnit,
-      allocatable: { ...rowWithWard.fromUnit.allocatable, value: 0 },
-      empty: { ...rowWithWard.fromUnit.empty, value: 0 },
+  function withBeds(unit: Unit, allocatable: number, allocatableLocked = unit.allocatableLocked): Unit {
+    return {
+      ...unit,
+      isClosed: false,
+      allocatable: { ...unit.allocatable, value: allocatable },
+      empty: { ...unit.empty, value: allocatable },
+      allocatableLocked,
     };
-    const freed = freedStepDownUnit(fullUnit);
-    expect(freed.allocatable.value).toBe(1);
-    expect(freed.empty.value).toBe(1);
+  }
 
-    const candidates = deriveStepDownSwapCandidates({
-      fromUnit: fullUnit,
+  function rowWithWard() {
+    const { state, rows } = board(() => true);
+    const row = rows.find((candidate) => candidate.wards.length > 0);
+    expect(row).toBeDefined();
+    return { state, row: row! };
+  }
+
+  it("matches only incoming movements that pass every eligibility gate on the live ward", () => {
+    const { state, row } = rowWithWard();
+    const unit = withBeds(row.fromUnit, 3);
+    const { candidates } = deriveStepDownSwapCandidates({
+      fromUnit: unit,
       movements: state.movements,
       now: NOW_ANCHOR,
     });
@@ -98,10 +107,87 @@ describe("inter-ward step-down swap pairing (Top 25 item 16, D-30)", () => {
     for (const candidate of candidates) {
       expect(candidate.incomingMovement.closure).toBeUndefined();
       expect(candidate.incomingMovement.sourceAdmissionId).toBeUndefined();
+      expect(candidate.verdict).toEqual(eligibility(candidate.incomingMovement, unit, NOW_ANCHOR));
       expect(candidate.verdict.eligible).toBe(true);
-      expect(candidate.verdict.gates.find((gate) => gate.gate === "gender_designation")?.pass).toBe(true);
-      expect(candidate.verdict.gates.find((gate) => gate.gate === "cohort")?.pass).toBe(true);
     }
+  });
+
+  // Owner ruling (17 Oct 2026, 10:13 PM AWST), item 3: the incoming leg is offered only once the bed
+  // is actually free. No modelled freed bed, no combined swap.
+  it("offers no incoming leg while the step-down ward is full, however well a movement would fit a freed bed", () => {
+    const { state, row } = rowWithWard();
+    const withBed = deriveStepDownSwapCandidates({
+      fromUnit: withBeds(row.fromUnit, 1),
+      movements: state.movements,
+      now: NOW_ANCHOR,
+    });
+    expect(withBed.candidates.length + withBed.placementReview.length).toBeGreaterThan(0);
+    const full = deriveStepDownSwapCandidates({
+      fromUnit: withBeds(row.fromUnit, 0, 0),
+      movements: state.movements,
+      now: NOW_ANCHOR,
+    });
+    expect(full).toEqual({ candidates: [], placementReview: [] });
+  });
+
+  // Owner ruling (17 Oct 2026, 10:13 PM AWST), item 4: a movement needing a gender placement review
+  // is never offered as a swap; it is listed for Placement instead.
+  it("routes a movement needing a gender placement review to Placement instead of offering it", () => {
+    const { state, row } = rowWithWard();
+    const unit = withBeds(row.fromUnit, 3);
+    const base = deriveStepDownSwapCandidates({ fromUnit: unit, movements: state.movements, now: NOW_ANCHOR });
+    const sexVariants: Movement["sex"][] = ["Not recorded", "Another term"];
+    let routed = 0;
+    for (const { incomingMovement } of base.candidates) {
+      for (const sex of sexVariants) {
+        const needsReview: Movement = { ...incomingMovement, sex, genderPlacements: [] };
+        const others = state.movements.filter((movement) => movement.id !== incomingMovement.id);
+        const result = deriveStepDownSwapCandidates({
+          fromUnit: unit,
+          movements: [...others, needsReview],
+          now: NOW_ANCHOR,
+        });
+        expect(result.candidates.map((candidate) => candidate.incomingMovement.id)).not.toContain(needsReview.id);
+        if (eligibility(needsReview, unit, NOW_ANCHOR).eligible) {
+          expect(result.placementReview.map((movement) => movement.id)).toContain(needsReview.id);
+          routed += 1;
+          // With the coordinator's placement for this ward recorded, it is an ordinary match again.
+          const placed: Movement = {
+            ...needsReview,
+            genderPlacements: [
+              { at: NOW_ANCHOR, by: "coordinator", unitIds: [unit.id], reason: GENDER_REASON, wardChecked: true },
+            ],
+          };
+          const afterPlacement = deriveStepDownSwapCandidates({
+            fromUnit: unit,
+            movements: [...others, placed],
+            now: NOW_ANCHOR,
+          });
+          expect(afterPlacement.placementReview.map((movement) => movement.id)).not.toContain(placed.id);
+        }
+      }
+    }
+    expect(routed, "the seed must exercise at least one gender-review match").toBeGreaterThan(0);
+  });
+
+  // Owner ruling (17 Oct 2026, 10:13 PM AWST), item 5: a Secure incoming patient is offered only if a
+  // locked bed is actually free.
+  it("offers a Secure incoming movement only when a locked bed is actually free", () => {
+    const { state } = board(() => true);
+    const lockedUnit = state.units.find((unit) => unit.lockedBeds > 0 && !unit.isClosed);
+    expect(lockedUnit).toBeDefined();
+    const noLockedFree = withBeds(lockedUnit!, 3, 0);
+    const lockedFree = withBeds(lockedUnit!, 3, 1);
+    expect(lockedBedsFree(noLockedFree)).toBe(0);
+    expect(lockedBedsFree(lockedFree)).toBe(1);
+    const secure = state.movements
+      .filter((movement) => !movement.closure && movement.sourceAdmissionId === undefined)
+      .map((movement): Movement => ({ ...movement, security: "Secure" }));
+    const without = deriveStepDownSwapCandidates({ fromUnit: noLockedFree, movements: secure, now: NOW_ANCHOR });
+    expect(without).toEqual({ candidates: [], placementReview: [] });
+    const withLocked = deriveStepDownSwapCandidates({ fromUnit: lockedFree, movements: secure, now: NOW_ANCHOR });
+    expect(withLocked.candidates.length + withLocked.placementReview.length).toBeGreaterThan(0);
+    for (const candidate of withLocked.candidates) expect(candidate.incomingMovement.security).toBe("Secure");
   });
 
   it("withholds swap candidates when no open receiving ward has a Ready bed now", () => {

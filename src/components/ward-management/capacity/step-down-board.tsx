@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
@@ -18,18 +19,22 @@ import styles from "./step-down-board.module.css";
 /**
  * Top 25 item 8 (`top25-step-down-board`) and item 16 (`top25-step-down-swap`): each step-down
  * candidate with the wards that pass the main eligibility gates and have a Ready bed now, plus
- * incoming movements that fit `fromUnit` once the step-down bed opens.
+ * incoming movements that fit `fromUnit` with a bed actually free there. Owner ruling (17 Oct 2026,
+ * 10:13 PM AWST): no combined swap, each leg is referred on its own; a movement needing a gender
+ * placement review is routed to Placement instead of being offered here.
  */
 export function StepDownBoard({ now }: { now: Instant }) {
-  const { admissions, units, movements, patients, referrals, dispatch, configuration } = useWardFlowSelect(
-    "admissions",
-    "units",
-    "movements",
-    "patients",
-    "referrals",
-    "dispatch",
-    "configuration",
-  );
+  const { admissions, units, movements, patients, referrals, dispatch, configuration, setFocusMovementId } =
+    useWardFlowSelect(
+      "admissions",
+      "units",
+      "movements",
+      "patients",
+      "referrals",
+      "dispatch",
+      "configuration",
+      "setFocusMovementId",
+    );
   const patientOf = usePatientOf();
   const stepDownSwapEnabled = useWardFeatureFlag("top25-step-down-swap");
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
@@ -123,96 +128,101 @@ export function StepDownBoard({ now }: { now: Instant }) {
                       ))}
                     </ul>
                   )}
-                  {stepDownSwapEnabled && primaryStepDownWard && row.swapCandidates.length > 0 ? (
+                  {stepDownSwapEnabled && primaryStepDownWard ? (
                     <div className={styles.swapSection} data-testid="step-down-swap-candidates">
-                      <p className={styles.meta}>
-                        Incoming referrals that fit {row.fromUnit.name} once this bed opens (via{" "}
-                        {primaryStepDownWard.name}):
-                      </p>
-                      <ul className={styles.wards} aria-label={`Incoming swap matches for ${row.fromUnit.name}`}>
-                        {row.swapCandidates.slice(0, 3).map((candidate) => {
-                          const incomingReferred = candidate.incomingMovement.referredUnitIds.includes(row.fromUnit.id);
-                          const transferNeedsRefer =
-                            row.transferMovement !== undefined &&
-                            !row.transferMovement.referredUnitIds.includes(primaryStepDownWard.id);
-                          const incomingAtCap =
-                            !incomingReferred &&
-                            candidate.incomingMovement.referredUnitIds.length >= configuration.parallelReferralCap &&
-                            !capReasons[candidate.incomingMovement.id];
-                          const transferAtCap =
-                            transferNeedsRefer &&
-                            (row.transferMovement?.referredUnitIds.length ?? 0) >= configuration.parallelReferralCap &&
-                            !capReasons[row.admission.id];
-                          const alreadyPaired = incomingReferred && !transferNeedsRefer;
-                          return (
-                            <li
-                              key={candidate.incomingMovement.id}
-                              className={styles.ward}
-                              data-testid="step-down-swap-option"
-                            >
-                              <span>
-                                {patientOf(candidate.incomingMovement).displayName} (
-                                {candidate.incomingMovement.security === "Secure"
-                                  ? "Secure"
-                                  : candidate.incomingMovement.highAcuity
-                                    ? "High acuity"
-                                    : "Open"}
-                                )
-                              </span>
-                              {incomingAtCap ? (
-                                <label className={styles.capReason}>
-                                  <span>Incoming referral is at the usual limit; choose a reason.</span>
-                                  <select
-                                    value={capReasons[candidate.incomingMovement.id] ?? ""}
-                                    onChange={(e) =>
-                                      setCapReasons((previous) => ({
-                                        ...previous,
-                                        [candidate.incomingMovement.id]: e.target.value as ReferralCapReason | "",
-                                      }))
+                      {row.swapCandidates.length > 0 ? (
+                        <>
+                          <p className={styles.meta}>
+                            Incoming referrals that fit {row.fromUnit.name} now, with a bed free there:
+                          </p>
+                          <ul className={styles.wards} aria-label={`Incoming matches for ${row.fromUnit.name}`}>
+                            {row.swapCandidates.slice(0, 3).map((candidate) => {
+                              const incoming = candidate.incomingMovement;
+                              const incomingReferred = incoming.referredUnitIds.includes(row.fromUnit.id);
+                              const incomingAtCap =
+                                !incomingReferred &&
+                                incoming.referredUnitIds.length >= configuration.parallelReferralCap &&
+                                !capReasons[incoming.id];
+                              return (
+                                <li key={incoming.id} className={styles.ward} data-testid="step-down-swap-option">
+                                  <span>
+                                    {patientOf(incoming).displayName} (
+                                    {incoming.security === "Secure"
+                                      ? "Secure"
+                                      : incoming.highAcuity
+                                        ? "High acuity"
+                                        : "Open"}
+                                    )
+                                  </span>
+                                  {incomingAtCap ? (
+                                    <label className={styles.capReason}>
+                                      <span>Incoming referral is at the usual limit; choose a reason.</span>
+                                      <select
+                                        value={capReasons[incoming.id] ?? ""}
+                                        onChange={(e) =>
+                                          setCapReasons((previous) => ({
+                                            ...previous,
+                                            [incoming.id]: e.target.value as ReferralCapReason | "",
+                                          }))
+                                        }
+                                      >
+                                        <option value="">Choose reason</option>
+                                        {REFERRAL_CAP_REASONS.map((reason) => (
+                                          <option key={reason} value={reason}>
+                                            {reason}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  ) : null}
+                                  <Button
+                                    size="sm"
+                                    variant="sec"
+                                    disabledReason={
+                                      incomingReferred
+                                        ? `Already referred to ${row.fromUnit.name}.`
+                                        : incomingAtCap
+                                          ? "Choose a reason above to ask more wards than the usual limit."
+                                          : undefined
                                     }
+                                    onClick={() => {
+                                      if (!incomingReferred) refer(incoming, row.fromUnit.id, capReasons[incoming.id]);
+                                    }}
                                   >
-                                    <option value="">Choose reason</option>
-                                    {REFERRAL_CAP_REASONS.map((reason) => (
-                                      <option key={reason} value={reason}>
-                                        {reason}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              ) : null}
-                              <Button
-                                size="sm"
-                                variant="sec"
-                                disabledReason={
-                                  alreadyPaired
-                                    ? "Already referred for this step-down swap."
-                                    : incomingAtCap || transferAtCap
-                                      ? "Choose a reason above to ask more wards than the usual limit."
-                                      : undefined
-                                }
-                                onClick={() => {
-                                  if (row.transferMovement && transferNeedsRefer) {
-                                    refer(row.transferMovement, primaryStepDownWard.id, capReasons[row.admission.id]);
-                                  }
-                                  if (!incomingReferred) {
-                                    refer(
-                                      candidate.incomingMovement,
-                                      row.fromUnit.id,
-                                      capReasons[candidate.incomingMovement.id],
-                                    );
-                                  }
-                                }}
-                              >
-                                {alreadyPaired
-                                  ? "Swap referred"
-                                  : row.transferMovement
-                                    ? "Refer swap pair"
-                                    : `Refer to ${row.fromUnit.name}`}
-                              </Button>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                                    {incomingReferred ? "Referred" : `Refer to ${row.fromUnit.name}`}
+                                  </Button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </>
+                      ) : (
+                        <p className={styles.meta} data-testid="step-down-swap-waiting">
+                          Incoming referrals show here once a bed on {row.fromUnit.name} is actually free.
+                        </p>
+                      )}
+                      {row.placementReview.length > 0 ? (
+                        <div data-testid="step-down-swap-placement-review">
+                          <p className={styles.meta}>
+                            Needs a gender placement review for {row.fromUnit.name} first, so not offered here:
+                          </p>
+                          <ul className={styles.wards}>
+                            {row.placementReview.map((movement) => (
+                              <li key={movement.id} className={styles.ward}>
+                                <Link
+                                  href="/mockups/ward-flow"
+                                  data-testid={`step-down-placement-review-${movement.id}`}
+                                  onClick={() => {
+                                    setFocusMovementId(movement.id);
+                                  }}
+                                >
+                                  Review {patientOf(movement).displayName} in Placement
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </li>

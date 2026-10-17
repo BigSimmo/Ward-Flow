@@ -1,14 +1,19 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import {
-  adjustSexMix,
   eligibility,
-  mixSexOf,
   type EligibilitySubject,
   type EligibilityVerdict,
 } from "@/components/ward-management/ward-eligibility";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
-import type { LegalStatus, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  genderReviewNeeded,
+  type LegalStatus,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
@@ -68,56 +73,55 @@ export type StepDownBoardRow = {
   transferMovement: Movement | undefined;
   /**
    * Top 25 item 16 (`top25-step-down-swap`, D-30): open incoming admission movements that pass
-   * `eligibility()` on `fromUnit` once this step-down frees a bed on `fromUnit`. Empty when no
+   * `eligibility()` on the LIVE `fromUnit`. Owner ruling (17 Oct 2026, 10:13 PM AWST): the incoming
+   * leg is offered only once a bed there is actually free, never against a modelled freed bed, and
+   * there is no combined swap. A Secure movement needs a locked bed actually free. Empty when no
    * receiving step-down ward has a Ready bed now.
    */
   swapCandidates: StepDownSwapCandidate[];
+  /**
+   * Owner ruling (17 Oct 2026, 10:13 PM AWST): movements that would otherwise match but need a
+   * coordinator gender placement review for `fromUnit` (`genderReviewNeeded`, no placement record
+   * covering it). They are never offered as a swap; the board routes them to Placement.
+   */
+  placementReview: Movement[];
 };
 
-/**
- * Models `fromUnit` with one bed freed by stepping `admission` down to an open receiving ward, so
- * the incoming leg of a step-down swap is checked by the SAME `eligibility()` gates (`authorisation`,
- * `cohort`, `security`, `gender_designation` D-31, `forensic`, `sex_mix`, `prior_decline`,
- * `capacity_freshness`, `allocatable_bed`) rather than a second rule set.
- */
-export function freedStepDownUnit(fromUnit: Unit, departing?: Admission): Unit {
-  const departingSex = departing === undefined ? undefined : mixSexOf(departing.gender, departing.sex);
-  return {
-    ...fromUnit,
-    isClosed: fromUnit.isClosed,
-    allocatable: {
-      ...fromUnit.allocatable,
-      value: fromUnit.allocatable.value + 1,
-    },
-    empty: {
-      ...fromUnit.empty,
-      value: fromUnit.empty.value + 1,
-    },
-    sexMix: departing === undefined ? fromUnit.sexMix : adjustSexMix(fromUnit.sexMix, departingSex, -1),
-  };
+/** A movement whose recorded sex and gender need a coordinator placement for this ward first. */
+function needsGenderPlacementReview(movement: Movement, unitId: string): boolean {
+  return (
+    genderReviewNeeded(movement.gender, movement.sex) &&
+    !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(unitId))
+  );
 }
 
+/**
+ * Incoming movements for the step-down swap, split into those the board may refer to `fromUnit`
+ * now and those it routes to Placement for a gender placement review. Both are checked against the
+ * live `fromUnit`, so nothing is offered until a bed there is actually free.
+ */
 export function deriveStepDownSwapCandidates(input: {
   fromUnit: Unit;
-  departingAdmission?: Admission;
   movements: readonly Movement[];
   transferMovementId?: string;
   now: Instant;
-}): StepDownSwapCandidate[] {
-  if (input.fromUnit.isClosed) return [];
-  const unitAfterStepDown = freedStepDownUnit(input.fromUnit, input.departingAdmission);
-  return input.movements
+}): { candidates: StepDownSwapCandidate[]; placementReview: Movement[] } {
+  const { fromUnit } = input;
+  if (fromUnit.isClosed || fromUnit.allocatable.value <= 0) return { candidates: [], placementReview: [] };
+  const matches = input.movements
     .filter(
       (movement) =>
         !movement.closure &&
         movement.id !== input.transferMovementId &&
         movement.sourceAdmissionId === undefined &&
-        movement.acceptedUnitId !== input.fromUnit.id &&
-        REFERRABLE_MOVEMENT_STAGES.includes(movement.stage),
+        movement.acceptedUnitId !== fromUnit.id &&
+        REFERRABLE_MOVEMENT_STAGES.includes(movement.stage) &&
+        // A Secure movement is offered only if a locked bed is actually free on this ward.
+        (movement.security !== "Secure" || lockedBedsFree(fromUnit) > 0),
     )
     .map((incomingMovement) => ({
       incomingMovement,
-      verdict: eligibility(incomingMovement, unitAfterStepDown, input.now),
+      verdict: eligibility(incomingMovement, fromUnit, input.now),
     }))
     .filter((candidate) => candidate.verdict.eligible)
     .sort((a, b) => {
@@ -126,6 +130,12 @@ export function deriveStepDownSwapCandidates(input: {
       if (bAcuityOrSecure !== aAcuityOrSecure) return bAcuityOrSecure - aAcuityOrSecure;
       return a.incomingMovement.openedAt - b.incomingMovement.openedAt;
     });
+  return {
+    candidates: matches.filter((candidate) => !needsGenderPlacementReview(candidate.incomingMovement, fromUnit.id)),
+    placementReview: matches
+      .filter((candidate) => needsGenderPlacementReview(candidate.incomingMovement, fromUnit.id))
+      .map((candidate) => candidate.incomingMovement),
+  };
 }
 
 export function deriveStepDownBoard(input: {
@@ -161,17 +171,23 @@ export function deriveStepDownBoard(input: {
         !movement.closure &&
         REFERRABLE_MOVEMENT_STAGES.includes(movement.stage),
     );
-    const swapCandidates =
+    const swap =
       wards.length > 0
         ? deriveStepDownSwapCandidates({
             fromUnit,
-            departingAdmission: admission,
             movements: input.movements,
             transferMovementId: transferMovement?.id,
             now: input.now,
           })
-        : [];
-    rows.push({ admission, fromUnit, wards, transferMovement, swapCandidates });
+        : { candidates: [], placementReview: [] };
+    rows.push({
+      admission,
+      fromUnit,
+      wards,
+      transferMovement,
+      swapCandidates: swap.candidates,
+      placementReview: swap.placementReview,
+    });
   }
   return rows;
 }
