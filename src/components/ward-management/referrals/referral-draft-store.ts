@@ -38,12 +38,12 @@ export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion, st
   keptStorageKey = storageKey;
   if (storageKey) {
     // Attachment bytes stay in memory. A refresh restores choices/text and requires reattachment.
-    const copy = draft as { documentation?: { charts?: unknown[] } };
+    const copy = draft as { documentation?: { charts?: unknown[] }; needsChartReattachment?: boolean };
     const projection = copy.documentation
       ? {
           ...copy,
           documentation: { ...copy.documentation, charts: [] },
-          needsChartReattachment: !!copy.documentation.charts?.length,
+          needsChartReattachment: !!copy.documentation.charts?.length || !!copy.needsChartReattachment,
         }
       : copy;
     recoverySaved = writeSessionDraft(storageKey, JSON.stringify(projection), draftSessionVersion());

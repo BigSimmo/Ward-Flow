@@ -85,3 +85,10 @@ it("bounds session text and excludes attachment bytes while preserving the memor
   expect(readSessionDraft(key)).not.toContain("synthetic-attachment-bytes");
   expect(JSON.parse(readSessionDraft(key)!)).toEqual({ documentation: { charts: [] }, needsChartReattachment: true });
 });
+
+it("retains the attachment reattach reminder through later recovered autosaves", () => {
+  clearSessionDrafts();
+  const key = sessionDraftKey("demo", "referral", "new");
+  keepReferralDraft({ documentation: { charts: [] }, needsChartReattachment: true }, undefined, key);
+  expect(JSON.parse(readSessionDraft(key)!)).toMatchObject({ needsChartReattachment: true });
+});
