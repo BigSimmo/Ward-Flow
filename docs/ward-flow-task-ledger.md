@@ -353,9 +353,18 @@ when a separate permissions refresh fails or gates the desk; its targeted regres
 the defect before passing. Focused shared-client and real PostgreSQL checks passed. The linked
 receipt records the current open-PR overlap and retains the full-unit/browser verification limits.
 
+Post-merge close-out, 17 October: PR #381 landed as `ed9d59e7`. Final integrated head `d5100884`
+passed [Ward Flow CI #2533](https://github.com/BigSimmo/Ward-Flow/actions/runs/39000996265), including
+all required components, eight unit shards and three browser groups. That hosted result supersedes
+the earlier pending full-unit/browser and integration observations. Read-only Railway records show
+the app, backend and shared frontend deployed from the merged commit; fresh authenticated browser
+acceptance remains open because this execution environment blocks the hosted domain. The
+[same resolution receipt](superpowers/plans/2026-10-16-audit-resolution-results.md#post-merge-close-out-and-remaining-acceptance--17-october-2026)
+records the deployed identities, open PR overlaps and R43's unchanged upstream block and 22 October review.
+
 ## §7.82 — Open owner questions from PR #383 review threads (17 October 2026)
 
 Two product and privacy questions for Josh came out of the PR #383 review and are carried here instead of as open review threads. No code change has been made for either.
 
-1. **Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text.
+1. **Community teams and typed discharge criteria — decided 17 October 2026**: Josh accepted the post-merge recommendation to retain numbered placeholders for community readers in the prototype. Commit 678d14d already implements this: the count and tick times match the ward without exposing the typed text. Sharing that text would need a separate owner decision; no behaviour change is required for the accepted choice.
 2. **Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use.
