@@ -216,5 +216,12 @@ test("pruneReceipts refuses invalid retention windows and prunes expired command
   assert.deepEqual(calls[1]?.params, ["ws-alpha", 14, 5_000]);
   assert.deepEqual(calls[2]?.params, ["ws-alpha", 14, 5_000]);
   assert.deepEqual(calls[3]?.params, ["ws-beta", 14, 5_000]);
-  assert.match(calls[1]?.sql ?? "", /DELETE FROM ward_flow\.commands WHERE ctid IN/);
+  const deletionCalls = calls.slice(1);
+  for (const call of deletionCalls) {
+    assert.match(call.sql, /DELETE FROM ward_flow\.commands WHERE ctid IN/);
+    assert.match(call.sql, /workspace_id=\$1/);
+    assert.match(call.sql, /committed_at < now\(\) - make_interval\(days => \$2\)/);
+    assert.match(call.sql, /LIMIT \$3/);
+    assert.deepEqual(call.params?.slice(1), [14, 5_000]);
+  }
 });
