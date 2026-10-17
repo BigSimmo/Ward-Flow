@@ -86,13 +86,18 @@ export function WardDischargeCriteriaCard({
   const canTick = onChange !== undefined && (status.kind === "in_progress" || status.kind === "all_met");
   const typedToSave = typed.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
   const nothingChosen = chosen.length === 0 && typedToSave.length === 0;
-  const typedRows = typed.length < PATIENT_SPECIFIC_CRITERIA_MAX ? [...typed, ""] : typed;
+  // The reducer refuses a typed criterion that repeats another or names a fixed one, so Save waits.
+  const typedRepeats = typedToSave.some(
+    (entry, index) => isDischargeCriterion(entry) || typedToSave.indexOf(entry) !== index,
+  );
+  const cannotSave = nothingChosen || typedRepeats || !attested || !patientTold;
+  // Rows keep their place when one is cleared, so a focused field never shifts to another criterion.
+  const typedRows = typed.length < PATIENT_SPECIFIC_CRITERIA_MAX && !typed.includes("") ? [...typed, ""] : typed;
   const setTypedAt = (index: number, value: string) =>
     setTyped((current) => {
       const next = [...current];
       next[index] = value;
-      // A cleared row goes, so the spare empty row is always the last one.
-      return next.filter((entry) => entry.length > 0);
+      return next;
     });
   const toggleMet = (criterion: string, met: boolean) => {
     onChange?.({
@@ -223,7 +228,7 @@ export function WardDischargeCriteriaCard({
               <Button
                 className={styles.touchTarget}
                 variant="sec"
-                disabled={nothingChosen || !attested || !patientTold}
+                disabled={cannotSave}
                 onClick={() => {
                   onChange({
                     criteria: chosen,
@@ -240,7 +245,12 @@ export function WardDischargeCriteriaCard({
                 Cancel
               </Button>
             </div>
-            {nothingChosen || !attested || !patientTold ? (
+            {typedRepeats ? (
+              <p className={styles.note} data-testid="ward-drawer-criteria-typed-repeat">
+                Each patient specific criterion must be different and not one of the listed criteria.
+              </p>
+            ) : null}
+            {cannotSave ? (
               <p className={styles.note}>
                 Choose or type at least one criterion, confirm the treating psychiatrist set them and that the patient
                 was told.

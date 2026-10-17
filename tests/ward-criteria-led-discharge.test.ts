@@ -24,6 +24,8 @@ import {
   PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
 } from "@/components/ward-management/ward-discharge-criteria";
 import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 
 // Top 25 item 9 (D-60): criteria led discharge for patients recorded as voluntary only.
 
@@ -484,5 +486,20 @@ describe("patient specific typed criteria (D-65)", () => {
     expect(lastRejection(state, after)).toBeUndefined();
     const record = after.admissions.find((a) => a.id === admissionId)!.dischargeCriteria!;
     expect(record.items.at(-1)).toEqual({ criterion: TYPED, metAt: null, patientSpecific: true });
+  });
+
+  it("never restores typed criteria from browser storage, while shared storage holds them (D-65)", () => {
+    const withCriteria = (items: unknown[]): WardFlowState => {
+      const seeded = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as WardFlowState;
+      (seeded.admissions[0] as { dischargeCriteria: unknown }).dischargeCriteria = { setAt: 1, items };
+      return seeded;
+    };
+    const fixed = { criterion: "Accommodation confirmed", metAt: null };
+    const typed = { criterion: TYPED, metAt: null, patientSpecific: true };
+    expect(isValidStoredWardFlowState(withCriteria([fixed]))).toBe(true);
+    expect(isValidStoredWardFlowState(withCriteria([fixed, typed]))).toBe(false);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, typed]))).toBe(true);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, { ...typed, criterion: "x".repeat(121) }]))).toBe(false);
+    expect(isValidSharedWardFlowState(withCriteria([fixed, { ...typed, patientSpecific: false }]))).toBe(false);
   });
 });

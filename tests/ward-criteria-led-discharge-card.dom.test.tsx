@@ -139,4 +139,30 @@ describe("criteria led discharge card", () => {
       tick: { criterion: "Lives with sister until flat repairs done", met: true },
     });
   });
+  it("keeps each typed row in place when one is cleared, and refuses a repeat (D-65)", () => {
+    const onChange = vi.fn();
+    render(<WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+    const row = (n: number) => screen.getByTestId(`ward-drawer-criteria-typed-${n}`);
+    fireEvent.change(row(1), { target: { value: "Walks to the shop with staff" } });
+    fireEvent.change(row(2), { target: { value: "Sleeping six hours" } });
+    fireEvent.change(row(1), { target: { value: "" } });
+    expect(row(1)).toHaveValue("");
+    expect(row(2)).toHaveValue("Sleeping six hours");
+    fireEvent.change(row(1), { target: { value: "Sleeping six hours" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Set by the treating psychiatrist" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Patient told they are on criteria led discharge" }));
+    expect(screen.getByRole("button", { name: "Save criteria" })).toBeDisabled();
+    expect(screen.getByTestId("ward-drawer-criteria-typed-repeat")).toBeInTheDocument();
+    fireEvent.change(row(1), { target: { value: "Accommodation confirmed" } });
+    expect(screen.getByRole("button", { name: "Save criteria" })).toBeDisabled();
+    fireEvent.change(row(1), { target: { value: "Walks to the shop with staff" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save criteria" }));
+    expect(onChange).toHaveBeenCalledWith({
+      criteria: [],
+      met: [],
+      setByTreatingPsychiatrist: true,
+      patientSpecific: ["Walks to the shop with staff", "Sleeping six hours"],
+    });
+  });
 });

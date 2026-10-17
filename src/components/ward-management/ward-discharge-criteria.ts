@@ -122,6 +122,14 @@ export function isDischargeCriteriaRecord(value: unknown): value is DischargeCri
   });
 }
 
+/**
+ * A record browser storage may hold: fixed-list criteria only. Typed patient specific criteria are
+ * typed text, so a saved state holding them is refused on restore (D-18, D-65).
+ */
+export function isFixedOnlyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
+  return isDischargeCriteriaRecord(value) && !value.items.some(isPatientSpecificItem);
+}
+
 /** Where the criteria stand now. A patient no longer recorded as voluntary pauses them. */
 export function dischargeCriteriaStatus(
   record: DischargeCriteriaRecord | null | undefined,
