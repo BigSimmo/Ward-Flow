@@ -59,7 +59,9 @@ describe("Wave-2 chrome tap targets — rail Raise Referral and home link", () =
     expect(css).not.toMatch(/\.btnRailReferral\b/);
     const rail = read("src/components/ward-management/shell/ward-rail.tsx");
     expect(rail).not.toMatch(/ward-rail-referral-trigger/);
-    expect(read("src/components/ward-management/shell/ward-bar.tsx")).toMatch(/data-testid="ward-bar-primary-action"/);
+    expect(read("src/components/ward-management/shell/ward-bar-controls.tsx")).toMatch(
+      /data-testid="ward-bar-primary-action"/,
+    );
   });
 
   it(".brandLink (Ward Flow home) pins min-height to --ward-tap / --spacing-tap", () => {

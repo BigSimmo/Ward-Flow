@@ -1,22 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import dynamic from "next/dynamic";
-import {
-  Bell,
-  Check,
-  ChevronDown,
-  ClipboardCheck,
-  Hospital,
-  ListChecks,
-  Menu as MenuIcon,
-  Plus,
-  RotateCcwClock,
-  Search,
-  Siren,
-  Users,
-  Wrench,
-} from "lucide-react";
+import { RotateCcwClock, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   startTransition,
@@ -31,14 +16,7 @@ import {
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
-import {
-  StatusGlyph,
-  WF_BAND_SCROLLED_PX,
-  publishLiveClock,
-  useIsPhone,
-  useWfBandActive,
-  type WfTone,
-} from "@/components/wf";
+import { publishLiveClock, useIsPhone, useWfBandActive } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
@@ -48,10 +26,10 @@ import {
   subscribeGlarePreference,
   subscribeThemePreference,
 } from "@/lib/theme-client";
-import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
-import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import {
   useDueSoonThresholds,
@@ -61,36 +39,14 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
-import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
-import {
-  WARD_ADD_PERSON_HREF,
-  WARD_ALERTS_HREF,
-  WARD_ED_HREF,
-  WARD_HOME_HREF,
-  WARD_NAV,
-  WARD_NEW_REFERRAL_MENU,
-  WARD_REFERRAL_INTAKE_HREF,
-  WARD_VIEWS,
-  resolveWardPrimaryAction,
-  resolveWardScreenTitle,
-} from "@/components/ward-management/ward-nav";
-import { wardPlaceFor, wardPlaceIdFor } from "@/components/ward-management/ward-place";
-import { edById, edShortName } from "@/components/ward-management/ward-sites";
-import {
-  edHealthService,
-  SERVICE_SCOPED_SCREENS,
-  unitHealthService,
-} from "@/components/ward-management/ward-service-scope";
-import {
-  STATISTICS_COMPARE_HREF,
-  STATISTICS_OVERVIEW_HREF,
-} from "@/components/ward-management/statistics/statistics-sections";
+import type { HealthService } from "@/components/ward-management/ward-model";
+import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
+import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
-  type ReferralSheetCategory,
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -107,18 +63,49 @@ import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tool
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
-import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { dischargeHref, edHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
-import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
+import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { dischargeHref, movementHref } from "./ward-facade";
+import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter } from "./ward-access";
+import {
+  ALERTS_ACCESS_ENTRY,
+  REFERRAL_BOARD_HREF,
+  SERVICE_SWATCH_KEY,
+  activityChangeCategory,
+  drawerCloseHistoryStep,
+  fixedServiceFor,
+  focusAlertsQueue,
+  isDrawerPanel,
+  isPendingNavigation,
+  isReferralSheetPath,
+  phoneBarAction,
+  roleReferralCategory,
+  routeBarAction,
+  wardBarRouteTitle,
+  withRoleCategory,
+  type ActivityCategoryFilter,
+  type ActivityPart,
+  type ReferralOpenRequest,
+  type WardBarPopoverId,
+} from "./ward-bar-model";
+import { useBandScrolled, useBarScrolled } from "./ward-bar-scroll";
+import {
+  PhoneMenuEntry,
+  WardBarDrawerTriggers,
+  WardBarPrimaryAction,
+  WardBarServiceSelector,
+} from "./ward-bar-controls";
+import { WardBarActivityBody } from "./ward-bar-activity";
 import styles from "./ward-bar.module.css";
+
+// Moved to `ward-bar-model.ts`; re-exported so existing importers keep working.
+export { drawerCloseHistoryStep, isPendingNavigation };
 
 /**
  * Ward Flow's third-edition bar (`docs/ward-flow/plans/2026-09-10-third-edition-build-master-
@@ -230,64 +217,6 @@ import styles from "./ward-bar.module.css";
  * kind of decision "stop and hand it back" exists for.
  */
 
-type WardBarPopoverId = "service" | "primary" | "activity" | "tasks" | "tools" | "referral";
-type ActivityPart = "activity" | "tally";
-type ActivityCategoryFilter = "all" | Exclude<WardActivityCategory, "other">;
-
-const ACTIVITY_CATEGORY_CHIPS: { id: ActivityCategoryFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "escalation", label: "Escalations" },
-  { id: "decline", label: "Declines" },
-  { id: "referral", label: "Referrals" },
-  { id: "transfer", label: "Transfers" },
-];
-
-/** v6 rule 7: one glyph per tone. The word beside it carries the meaning. */
-const ACTIVITY_GLYPH: Record<WardActivityEventTone, WfTone> = {
-  danger: "danger",
-  warning: "warning",
-  info: "info",
-};
-
-const ACTIVITY_TONE_WORD: Record<WardActivityEventTone, string> = {
-  danger: "Act now",
-  warning: "Needs you",
-  info: "Update",
-};
-
-function activityChangeCategory(change: { category?: WardActivityCategory }): WardActivityCategory {
-  return change.category ?? "other";
-}
-
-const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
-  id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service";
-
-const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
-  "North Metro": "north",
-  "South Metro": "south",
-  "East Metro": "east",
-  WACHS: "wachs",
-  CAHS: "cahs",
-  Private: "private",
-};
-
-/** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
- *  Screen readers only: the painted note and its "scopes the lists" hint were removed at the
- *  owner's request (9 Oct 2026). */
-const SERVICE_SCOPED_SCREEN_LIST =
-  SERVICE_SCOPED_SCREENS.length > 1
-    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-    : SERVICE_SCOPED_SCREENS.join(", ");
-/** The painted sheet line (shell-1, 13 Oct 2026): it used to promise "What every page and count
- *  shows", which most pages do not honour. It now names only the screens that read the choice. */
-const SERVICE_SCOPE_SHEET_LINE = `Narrows the ${SERVICE_SCOPED_SCREEN_LIST} lists`;
-const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED_SCREEN_LIST} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
-
-/** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
- *  in one place so the three "not wired" primary-action kinds and any future caller share the
- *  identical wording rather than each typing a close paraphrase. */
-const NOT_WIRED_SUFFIX = "is not wired in this prototype.";
-
 /*
  * The ward appearance controls (Tools, rail, Settings, Community) are views over the app's ONE theme
  * switch in `@/lib/theme-client`. Before that the ward kept its own key while the rest of the app
@@ -334,236 +263,6 @@ export type WardBarProps = {
   /** Fires whenever the Service selector changes, so a future host page can scope its own data. */
   onServiceChange?: (service: HealthService | null) => void;
 };
-
-/**
- * What closing a drawer does to history. A drawer pushes its own history entry when it opens, so
- * that the browser's Back closes it; closing it by hand normally steps back past that entry. But
- * when a link inside the drawer has just been followed and its page has not arrived, that entry is
- * still current, and stepping back would cancel the chosen page. Then the entry is only relabelled.
- */
-export function drawerCloseHistoryStep({
-  drawerEntryIsCurrent,
-  navigationPending,
-  canGoBack,
-}: {
-  drawerEntryIsCurrent: boolean;
-  navigationPending: boolean;
-  canGoBack: boolean;
-}): "back" | "clear" | "none" {
-  if (!drawerEntryIsCurrent) return "none";
-  if (navigationPending || !canGoBack) return "clear";
-  return "back";
-}
-
-/** True when following `href` from `current` leaves this page for another page on this site. */
-export function isPendingNavigation(href: string, current: string): boolean {
-  const target = new URL(href, current);
-  const here = new URL(current);
-  return target.origin === here.origin && target.pathname !== here.pathname;
-}
-
-/**
- * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
- * the page it sits on the page with no fill; once the page scrolls its controls condense and it
- * turns solid. Its layout height stays fixed so scrolling never moves the content below it.
- * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
- */
-const SCROLLED_AFTER_PX = 8;
-const RESTING_BELOW_PX = 2;
-
-function useBarScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    if (!enabled) return;
-    // Phone scrolls inside the work column (`[data-wf-scroller]`), not the window, so iOS Safari's
-    // toolbar never collapses and the fixed dock stays put (Josh, 12 Oct 2026). The window is still
-    // watched in case a page is ever shown without the shell's column.
-    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
-      // Separate entry and exit thresholds avoid flicker during small scroll reversals or bounce.
-      setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : SCROLLED_AFTER_PX));
-    };
-    const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(update);
-    };
-    frame = window.requestAnimationFrame(update);
-    scroller?.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      scroller?.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [barRef, enabled]);
-
-  return enabled && scrolled;
-}
-
-/**
- * Desktop and tablet band header (v10 section 7.1, Josh 10 Oct 2026, option 1). True once the
- * page has scrolled past 4px. The desktop work column scrolls inside `[data-wf-scroller]`; below
- * 1000px the window scrolls instead, so both are watched. Off on phone, which keeps its own bar.
- */
-function useBandScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
-      setScrolled(offset > WF_BAND_SCROLLED_PX);
-    };
-    const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(update);
-    };
-    frame = window.requestAnimationFrame(update);
-    scroller?.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      scroller?.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [barRef, enabled]);
-
-  return enabled && scrolled;
-}
-
-/** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
-const NEW_REFERRAL_ACTION: WardPrimaryAction = {
-  kind: "new-referral",
-  label: "New referral",
-  menu: WARD_NEW_REFERRAL_MENU,
-};
-
-/**
- * The phone bar's Menu button and the phone menu it opens. The menu opens only on the phone; above
- * 48rem the rail's own sheet answers Menu.
- */
-function PhoneMenuEntry({
-  menuRef,
-  tasksCount,
-  activityUnread,
-  roleCategory,
-  onOpenDrawer,
-  onOpenReferral,
-  liveOverSheet,
-}: {
-  /** Keeps Menu tappable while a sheet sits below the bar (see `headerLiveOverSheet`). */
-  liveOverSheet: boolean;
-  menuRef: RefObject<HTMLButtonElement | null>;
-  tasksCount: number;
-  activityUnread: number;
-  roleCategory: ReferralSheetCategory;
-  onOpenDrawer: (id: "tasks" | "activity" | "tools") => void;
-  onOpenReferral: (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => void;
-}) {
-  return (
-    <>
-      <button
-        type="button"
-        ref={menuRef}
-        className={styles.phoneOnly}
-        aria-label="Menu"
-        aria-haspopup="dialog"
-        aria-controls="ward-phone-menu"
-        data-testid="ward-bar-phone-menu"
-        data-sheet-inert-skip={liveOverSheet ? "" : undefined}
-        onClick={(event) => openWardMenu(event.currentTarget)}
-      >
-        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
-      </button>
-      <WardPhoneMenu
-        returnFocusRef={menuRef}
-        tasksCount={tasksCount}
-        activityUnread={activityUnread}
-        onOpenDrawer={onOpenDrawer}
-        onNewReferral={() => onOpenReferral({ category: roleCategory }, menuRef.current)}
-      />
-    </>
-  );
-}
-
-function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
-  return phone ? undefined : action;
-}
-
-/**
- * The universal desktop header (Josh, 9 Oct 2026): "ensure that referral is on every single page".
- * A route with no action of its own, or a deliberate "none", shows New referral. A route with its
- * own primary (Record a decision, Contact a team, Export the figures) keeps it, so the bar still
- * holds one primary button.
- */
-function routeBarAction(pathname: string): WardPrimaryAction {
-  const action = resolveWardPrimaryAction(pathname);
-  // The intake route IS the open referral slide-out, so a second referral trigger stays off there.
-  if (action?.kind === "none" && pathname.replace(/\/$/, "") === WARD_REFERRAL_INTAKE_HREF) return action;
-  return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
-}
-
-/** What the referral slide-out opens with. `id` changes on every open, so each open starts fresh. */
-type ReferralOpenRequest = ReferralSheetRequest & { readonly id: number };
-
-/** Where a referral comes from when nothing else says: the current role's own side, else a ward. */
-function roleReferralCategory(role: string): ReferralSheetCategory {
-  if (role === "ed") return "ed";
-  if (role === "community") return "community";
-  return "ward";
-}
-
-/** A link that names no `source` takes the role's side rather than the module's default. */
-function withRoleCategory(
-  request: ReferralSheetRequest,
-  search: URLSearchParams,
-  category: ReferralSheetCategory,
-): ReferralSheetRequest {
-  return search.get("source")?.trim() ? request : { ...request, category };
-}
-
-/** The Referrals board the slide-out route sits over, read from the rail rather than retyped. */
-const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.href ?? WARD_HOME_HREF;
-
-/**
- * The Alerts button on the Alerts screen: moves focus to the first row of the queue (or the queue
- * itself when it is empty) instead of opening the same list again in a drawer.
- */
-function focusAlertsQueue(openCount: number) {
-  const focusQueue = () => {
-    const target =
-      // A snoozed row is not outstanding work, so focus lands on the first active row.
-      document.querySelector<HTMLElement>('[data-alert-id]:not([data-snoozed]) [data-testid="ward-alerts-open"]') ??
-      document.querySelector<HTMLElement>('section[aria-label="Alerts"]');
-    if (target) {
-      if (!target.matches("a, button") && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-      target.scrollIntoView({ block: "nearest" });
-      target.focus();
-    }
-    announceToWardShell(`You are on Alerts. ${openCount} invented alerts outstanding.`);
-  };
-  // Broadcast, Notices or History may be showing, with no queue rows mounted. Choose the Now tab
-  // first and focus once it has drawn, so the section fallback is only for an empty queue.
-  const nowTab = document.getElementById("alerts-tab-now");
-  if (nowTab && nowTab.getAttribute("aria-selected") !== "true") {
-    nowTab.click();
-    requestAnimationFrame(focusQueue);
-  } else {
-    focusQueue();
-  }
-}
-
-/** The Alerts screen as an access entry, to ask whether this desk's role may open it. */
-const ALERTS_ACCESS_ENTRY = [{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }] as const;
-
-function isReferralSheetPath(pathname: string): boolean {
-  return pathname.replace(/\/+$/, "") === WARD_REFERRAL_INTAKE_HREF;
-}
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const network = useWardNetwork();
@@ -708,62 +407,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const place = wardPlaceFor(pathname, units);
-  // Phone (v10 mockup): the patient, movement and add pages name the page itself in the lean bar.
-  const phoneRouteTitle = !isPhone
-    ? undefined
-    : pathname === WARD_ADD_PERSON_HREF
-      ? "Add patient"
-      : /^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
-        ? "Patient"
-        : /^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
-          ? "Movement"
-          : // The statistics tab's own word, so the lean bar never mixes "Statistics compare" with "EDs".
-            /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
-            ? (
-                {
-                  services: "Services",
-                  wards: "Wards",
-                  eds: "EDs",
-                  teams: "Teams",
-                  overview: "Overview",
-                  compare: "Compare",
-                } as const
-              )[
-                pathname.replace(/\/$/u, "").split("/").pop() as
-                  "services" | "wards" | "eds" | "teams" | "overview" | "compare"
-              ]
-            : /^\/mockups\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
-              ? "Weekly"
-              : place?.kind === "ward" && /\/answer\/?$/u.test(pathname)
-                ? "Ward answer"
-                : place?.kind === "ed"
-                  ? // The short name ("RPH ED") fits the lean bar; the full name is in the hero.
-                    edShortName(edById(wardPlaceIdFor(pathname) ?? "")) || place.name
-                  : undefined;
-  const routeTitle =
-    phoneRouteTitle ??
-    (/^\/mockups\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
-    (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
-    (pathname === settingsHref() ? "Settings" : undefined) ??
-    (pathname === officerHref() ? "Transport" : undefined) ??
-    (pathname === onCallHref() ? "On-call" : undefined) ??
-    (/^\/mockups\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
-    (/^\/mockups\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
-    (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
-    (/^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
-    (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
-    (/^\/mockups\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
-    place?.name ??
-    [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
-    (pathname === STATISTICS_OVERVIEW_HREF
-      ? "Statistics overview"
-      : pathname === STATISTICS_COMPARE_HREF
-        ? "Statistics compare"
-        : "Ward Flow");
+  const routeTitle = wardBarRouteTitle(pathname, place, isPhone);
 
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
@@ -1372,26 +1016,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
   // Fixed jurisdiction resolution for place-specific views
-  const fixedService = useMemo<HealthService | undefined>(() => {
-    if (place) {
-      if (place.kind === "ward") {
-        const unitMatch =
-          /^\/mockups\/ward-flow\/ward\/([^/]+)/.exec(pathname) ??
-          /^\/mockups\/ward-flow\/board\/([^/]+)/.exec(pathname);
-        const unitId = unitMatch ? decodeURIComponent(unitMatch[1]) : undefined;
-        const currentUnit = unitId ? units.find((u) => u.id === unitId) : units.find((u) => u.name === place.name);
-        if (currentUnit) return unitHealthService(currentUnit);
-      }
-      if (place.kind === "ed") {
-        const edMatch = /^\/mockups\/ward-flow\/ed\/([^/]+)/.exec(pathname);
-        if (edMatch) return edHealthService(decodeURIComponent(edMatch[1]));
-      }
-      if (place.kind === "team") {
-        return undefined;
-      }
-    }
-    return undefined;
-  }, [pathname, place, units]);
+  const fixedService = useMemo<HealthService | undefined>(
+    () => fixedServiceFor(pathname, place, units),
+    [pathname, place, units],
+  );
 
   const isFixedJurisdiction = fixedService !== undefined;
   const activeService = isFixedJurisdiction ? fixedService : service;
@@ -1467,112 +1095,25 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           </span>
         </div>
 
-        <div className={styles.scopeBadgeContainer}>
-          <button
-            type="button"
-            ref={serviceTriggerRef}
-            className={styles.scopeBadgeBtn}
-            data-testid="ward-bar-service-trigger"
-            data-service={activeSwatchKey}
-            // The phone service line takes the band's ink from its own attribute: CI WebKit did not
-            // restyle it from the bar's data-band alone (release gate, 15 Oct 2026).
-            data-band={isPhone ? bandState : undefined}
-            data-locked={isFixedJurisdiction ? "true" : undefined}
-            aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
-            aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
-            aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
-            aria-label={isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeServiceBadgeLabel}`}
-            onClick={() => {
-              if (isFixedJurisdiction) {
-                announceToWardShell(`${routeTitle} is in ${activeService}.`);
-                return;
-              }
-              if (openPanel === "service") {
-                closePopover("service", false);
-              } else {
-                openPopover("service");
-              }
-            }}
-          >
-            <span className={styles.scopeDot} aria-hidden="true" />
-            <span className={styles.scopeBadgeLabel}>{activeServiceBadgeLabel}</span>
-            {!isFixedJurisdiction && (
-              <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
-            )}
-            <span className="sr-only">{activeServiceBadgeLabel}</span>
-          </button>
-          {isPhone ? (
-            <span className={styles.scopeLive} aria-hidden="true">
-              {scopeWaitingCount} waiting · {activeServiceBadgeLabel}
-            </span>
-          ) : null}
-
-          {isPhone && !isFixedJurisdiction && openPanel === "service" ? (
-            <div
-              className={styles.serviceScrim}
-              data-ward-service-scrim=""
-              data-sheet-inert-skip=""
-              aria-hidden="true"
-              onClick={() => closePopover("service", false)}
-            />
-          ) : null}
-          {!isFixedJurisdiction && openPanel === "service" ? (
-            <div
-              id="ward-bar-service-panel"
-              ref={servicePanelRef}
-              className={styles.servicePanel}
-              role={isPhone ? "dialog" : "group"}
-              aria-modal={isPhone ? true : undefined}
-              aria-label="Choose a health service"
-              data-testid="ward-bar-service-panel"
-            >
-              <p className={styles.popoverHead}>Service</p>
-              {/* Phone (v10 service sheet): the quiet line under the title. */}
-              <p className={styles.serviceSheetNote} aria-hidden="true">
-                {SERVICE_SCOPE_SHEET_LINE}
-              </p>
-              <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
-              <button
-                type="button"
-                className={styles.serviceOption}
-                aria-pressed={service === null}
-                onClick={() => selectService(null)}
-              >
-                <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
-                {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
-                <span className={styles.serviceName}>Statewide</span>
-                <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
-                  {waitingText(allWaitingCount)}
-                </span>
-                <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
-              </button>
-              <hr className={styles.popoverRule} />
-              {HEALTH_SERVICES.map((candidate) => {
-                const waitingCount = waiting.byService.get(candidate) ?? 0;
-                return (
-                  <button
-                    key={candidate}
-                    type="button"
-                    className={styles.serviceOption}
-                    aria-pressed={service === candidate}
-                    onClick={() => selectService(candidate)}
-                  >
-                    <span
-                      className={styles.serviceDot}
-                      data-service={SERVICE_SWATCH_KEY[candidate]}
-                      aria-hidden="true"
-                    />
-                    <span className={styles.serviceName}>{candidate}</span>
-                    <span className={styles.serviceOptionCount} aria-hidden="true">
-                      {waitingText(waitingCount)}
-                    </span>
-                    <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
+        <WardBarServiceSelector
+          serviceTriggerRef={serviceTriggerRef}
+          servicePanelRef={servicePanelRef}
+          activeSwatchKey={activeSwatchKey}
+          isPhone={isPhone}
+          bandState={bandState}
+          isFixedJurisdiction={isFixedJurisdiction}
+          openPanel={openPanel}
+          activeService={activeService}
+          activeServiceBadgeLabel={activeServiceBadgeLabel}
+          routeTitle={routeTitle}
+          closePopover={closePopover}
+          openPopover={openPopover}
+          scopeWaitingCount={scopeWaitingCount}
+          service={service}
+          selectService={selectService}
+          allWaitingCount={allWaitingCount}
+          waiting={waiting}
+        />
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
@@ -1612,78 +1153,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         </div>
       </div>
 
-      <div className={styles.drawerTriggers}>
-        <button
-          type="button"
-          ref={activityTriggerRef}
-          className={styles.drawerTrigger}
-          data-bar-mode="activity"
-          data-testid="ward-bar-activity-trigger"
-          aria-haspopup="dialog"
-          aria-expanded={openPanel === "activity"}
-          aria-controls="ward-bar-activity-drawer"
-          onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
-        >
-          <RotateCcwClock className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-          <span className={styles.triggerLabel}>Activity</span>
-          {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
-          <span className="sr-only">
-            {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
-            {activityHasUnread ? `, ${unreadNoticeCount} unread` : ""}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          ref={tasksTriggerRef}
-          className={styles.drawerTrigger}
-          data-bar-mode="tasks"
-          data-testid="ward-bar-tasks-trigger"
-          aria-haspopup={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "dialog"}
-          aria-expanded={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : openPanel === "tasks"}
-          aria-controls={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "ward-bar-tasks-drawer"}
-          aria-current={onAlertsScreen ? "page" : undefined}
-          onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
-        >
-          {oneAlertsQueue ? (
-            <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-          ) : (
-            <>
-              <ListChecks
-                className={`${styles.triggerIcon} ${styles.tasksWide}`}
-                aria-hidden="true"
-                strokeWidth={1.75}
-              />
-              {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
-              <ClipboardCheck
-                className={`${styles.triggerIcon} ${styles.tasksPhone}`}
-                aria-hidden="true"
-                strokeWidth={1.75}
-              />
-            </>
-          )}
-          <span className={styles.triggerLabel}>{oneAlertsQueue ? "Alerts" : "Tasks"}</span>
-          <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
-            {tasksActiveCount}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          ref={toolsTriggerRef}
-          className={styles.drawerTrigger}
-          data-bar-mode="tools"
-          data-testid="ward-bar-tools-trigger"
-          aria-haspopup="dialog"
-          aria-expanded={openPanel === "tools"}
-          aria-controls="ward-bar-tools-drawer"
-          onClick={() => (openPanel === "tools" ? closePopover("tools", false) : openPopover("tools"))}
-        >
-          <Wrench className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-          <span className={styles.triggerLabel}>Tools</span>
-          <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
-        </button>
-      </div>
+      <WardBarDrawerTriggers
+        activityTriggerRef={activityTriggerRef}
+        tasksTriggerRef={tasksTriggerRef}
+        toolsTriggerRef={toolsTriggerRef}
+        openPanel={openPanel}
+        closePopover={closePopover}
+        openPopover={openPopover}
+        activityHasUnread={activityHasUnread}
+        unreadNoticeCount={unreadNoticeCount}
+        shownActivity={shownActivity}
+        oneAlertsQueue={oneAlertsQueue}
+        isPhone={isPhone}
+        onAlertsScreen={onAlertsScreen}
+        tasksActiveCount={tasksActiveCount}
+      />
 
       {/*
        * ⚠️ **THE PRIMARY ACTION IS A SIBLING OF `.drawerTriggers`, NEVER A MEMBER OF IT, AND THAT
@@ -1699,100 +1183,16 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
        * v6 (7 Oct 2026): one primary split button. The caret sits in its own segment behind a fine
        * divider; the whole control still opens the same menu, so no action changed.
        */}
-      {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}
-      {primaryAction?.kind === "new-referral" ? (
-        <div className={styles.primaryWrap}>
-          <button
-            type="button"
-            ref={primaryTriggerRef}
-            className={`${styles.primary} ${styles.referralPrimary}`}
-            data-testid="ward-bar-primary-action"
-            aria-haspopup="true"
-            aria-expanded={openPanel === "primary"}
-            aria-controls="ward-bar-primary-panel"
-            onClick={() => (openPanel === "primary" ? closePopover("primary", false) : openPopover("primary"))}
-          >
-            <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
-            <span className={styles.primaryPrefix}>New </span>
-            <span className={styles.primaryMain}>referral</span>
-            <span className={styles.referralChevron} aria-hidden="true">
-              <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
-            </span>
-          </button>
-          {openPanel === "primary" ? (
-            <div
-              id="ward-bar-primary-panel"
-              ref={primaryPanelRef}
-              className={styles.primaryPanel}
-              role="menu"
-              aria-label={primaryAction.label}
-              data-testid="ward-bar-primary-panel"
-            >
-              {primaryAction.menu.map((entry) => {
-                const MenuIcon =
-                  entry.destination === "community" ? Users : entry.destination === "ed" ? Siren : Hospital;
-                return (
-                  <Link
-                    key={entry.destination}
-                    href={entry.href}
-                    role="menuitem"
-                    className={styles.primaryMenuItem}
-                    data-testid={`ward-bar-primary-menu-${entry.destination}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openReferral(
-                        { category: roleCategory, destination: entry.destination },
-                        primaryTriggerRef.current,
-                      );
-                    }}
-                  >
-                    <MenuIcon className={styles.menuIcon} aria-hidden="true" strokeWidth={1.75} />
-                    {entry.label}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      ) : primaryAction && primaryAction.kind !== "none" ? (
-        <div className={styles.primaryWrap}>
-          <button
-            type="button"
-            ref={primaryTriggerRef}
-            className={`${styles.primary} ${styles.referralPrimary}`}
-            data-testid="ward-bar-primary-action"
-            aria-haspopup="true"
-            aria-expanded={openPanel === "primary"}
-            aria-controls="ward-bar-primary-panel"
-            onClick={() => {
-              if (openPanel === "primary") {
-                closePopover("primary", false);
-                return;
-              }
-              openPopover("primary");
-              announceToWardShell(`${primaryAction.label} ${NOT_WIRED_SUFFIX}`);
-            }}
-          >
-            <span className={styles.primaryMain}>{primaryAction.label}</span>
-            <span className={styles.referralChevron} aria-hidden="true">
-              <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
-            </span>
-          </button>
-          {openPanel === "primary" ? (
-            <div
-              id="ward-bar-primary-panel"
-              ref={primaryPanelRef}
-              className={styles.primaryPanel}
-              role="group"
-              aria-label={primaryAction.label}
-              data-testid="ward-bar-primary-panel"
-            >
-              <p className={styles.popoverHead}>{primaryAction.label}</p>
-              <p className={styles.popoverNote}>Not wired in this prototype.</p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <WardBarPrimaryAction
+        primaryAction={primaryAction}
+        primaryTriggerRef={primaryTriggerRef}
+        primaryPanelRef={primaryPanelRef}
+        openPanel={openPanel}
+        closePopover={closePopover}
+        openPopover={openPopover}
+        openReferral={openReferral}
+        roleCategory={roleCategory}
+      />
 
       <Sheet
         id="ward-bar-activity-drawer"
@@ -1852,304 +1252,34 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         footerClassName={styles.drawerFooter}
       >
-        {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on
-            the larger layouts; every notice keeps its Mark as read. */}
-        {isPhone ? null : (
-          <div className={styles.activitySegments} role="group" aria-label="Activity sections">
-            <div className={styles.segTrack}>
-              <button
-                type="button"
-                className={styles.segBtn}
-                aria-pressed={activityPart === "activity"}
-                aria-controls="ward-bar-activity-events"
-                onClick={() => setActivityPart("activity")}
-              >
-                Activity
-                <span>{shownActivity?.changes.length ?? 0}</span>
-              </button>
-              <button
-                type="button"
-                className={styles.segBtn}
-                aria-pressed={activityPart === "tally"}
-                aria-controls="ward-bar-activity-tally"
-                onClick={() => setActivityPart("tally")}
-              >
-                Live tally
-                <span>{shownActivity?.pageTitle ?? "Current page"}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activityPart === "activity" && !isPhone ? (
-          <div className={styles.activityToolbar}>
-            <div className={styles.drawerSummary}>
-              <div>
-                <strong>{shownActivity?.changes.length ?? 0}</strong>
-                <span>Recorded events</span>
-              </div>
-              <div>
-                <strong>{unreadNoticeCount}</strong>
-                <span>Unread notices</span>
-              </div>
-              {lastActivityAt === undefined ? (
-                <div>
-                  <strong>{formatInstant(now)}</strong>
-                  <span>Demo time</span>
-                </div>
-              ) : (
-                <div>
-                  <strong>{formatInstantWithDay(lastActivityAt, now)}</strong>
-                  <span>Last event</span>
-                </div>
-              )}
-            </div>
-            <label className={styles.drawerSearch}>
-              <Search aria-hidden="true" strokeWidth={1.75} />
-              <input
-                aria-label="Search activity"
-                placeholder="Search events and notices"
-                value={activityQuery}
-                onChange={(event) => setActivityQuery(event.target.value)}
-              />
-            </label>
-            <div
-              className={styles.filterChipsTrack}
-              role="group"
-              aria-label="Filter events by category"
-              data-testid="ward-bar-activity-category-filters"
-            >
-              {ACTIVITY_CATEGORY_CHIPS.map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  className={styles.filterChip}
-                  aria-pressed={activityCategoryFilter === chip.id}
-                  data-testid={`ward-bar-activity-filter-${chip.id}`}
-                  onClick={() => startTransition(() => setActivityCategoryFilter(chip.id))}
-                >
-                  {chip.label}
-                  <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <section
-          id="ward-bar-activity-events"
-          className={styles.activitySection}
-          hidden={!isPhone && activityPart !== "activity"}
-        >
-          {scopedNotices.length > 0 ? (
-            <div className={styles.card}>
-              {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
-                  `scopedNotices.length`, even though read notices stay in the list below. */}
-              <div className={styles.cardHead}>
-                <p className={styles.activityHead}>
-                  Notices <span>· {unreadNoticeCount} unread</span>
-                </p>
-                <button
-                  type="button"
-                  className={styles.switchBtn}
-                  aria-pressed={unreadOnly}
-                  onClick={() => setUnreadOnly(!unreadOnly)}
-                >
-                  Unread only
-                  <span className={styles.switchTrack} aria-hidden="true" />
-                </button>
-              </div>
-              {visibleNotices.length === 0 ? <p className={styles.cardEmpty}>No notices match these filters.</p> : null}
-              <ol className={styles.activityFeed} aria-label="Notices">
-                {visibleNotices.map((notice) => {
-                  const isRead = notice.readAt !== undefined;
-                  return (
-                    <li key={notice.id} className={styles.noticeRow} data-tone="info" data-notice-read={isRead}>
-                      <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                      <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
-                      <div className={styles.noticeContent}>
-                        <span>{noticeText(notice.sentence)}</span>
-                        {/* No automatic read on opening the drawer — this is the only place
-                            `MARK_NOTICE_READ` is dispatched from, and only a person's own click
-                            reaches it (item 48, Q2, owner answer 48). */}
-                        {isRead ? (
-                          <span className={styles.noticeReadLabel}>Read</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className={styles.noticeMarkRead}
-                            onClick={() => markNoticeRead(notice.id)}
-                          >
-                            Mark as read
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          ) : null}
-          <div className={styles.card}>
-            <div className={`${styles.cardHead} ${styles.changesHead}`}>
-              <p className={styles.activityHead}>
-                Recent changes <span className={styles.countPill}>{filteredActivityChanges.length}</span>
-              </p>
-            </div>
-            {!shownActivity && scopedNotices.length === 0 ? (
-              <p className={styles.cardEmpty}>{service ? `No event today in ${service}.` : "No event today."}</p>
-            ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
-              <p className={styles.cardEmpty}>No event today.</p>
-            ) : filteredActivityChanges.length === 0 ? (
-              <div className={styles.activityEmpty}>
-                <span className={styles.emptyIcon} aria-hidden="true">
-                  <Search aria-hidden="true" strokeWidth={1.75} />
-                </span>
-                <strong>No matching events</strong>
-                <p>Try another search or event category.</p>
-                <button
-                  type="button"
-                  className={styles.quietBtn}
-                  onClick={() => {
-                    setActivityQuery("");
-                    setActivityCategoryFilter("all");
-                  }}
-                >
-                  Clear event filters
-                </button>
-              </div>
-            ) : (
-              <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
-                {filteredActivityChanges.map((change) => {
-                  const tone = activityToneFor(change.id);
-                  return (
-                    <li
-                      key={change.id}
-                      className={styles.feedRow}
-                      data-tone={tone}
-                      data-category={activityChangeCategory(change)}
-                    >
-                      <time className={styles.feedTime}>{change.time}</time>
-                      <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={9} className={styles.feedGlyph} />
-                      <span className={styles.feedText}>{change.text}</span>
-                      <span className={styles.eventLabel} data-tone={tone}>
-                        {ACTIVITY_TONE_WORD[tone]}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
-          {!isPhone && ((shownActivity && shownActivity.changes.length > 0) || publishedChecks.length > 0) ? (
-            <div className={styles.card}>
-              {shownActivity && shownActivity.changes.length > 0 ? (
-                <p className={styles.activityKey}>
-                  {(["danger", "warning", "info"] as const).map((tone) => (
-                    <span key={tone}>
-                      <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={8} />
-                      {ACTIVITY_TONE_WORD[tone]}
-                    </span>
-                  ))}
-                </p>
-              ) : null}
-              {publishedChecks.length > 0 ? (
-                <details className={styles.figureChecks} data-testid="ward-bar-figure-checks">
-                  <summary>
-                    <StatusGlyph
-                      tone={reconciledCheckCount === publishedChecks.length ? "success" : "danger"}
-                      size={9}
-                    />
-                    <span>
-                      Figure checks · {reconciledCheckCount} of {publishedChecks.length} reconcile
-                    </span>
-                    <ChevronDown className={styles.detailsCaret} aria-hidden="true" strokeWidth={1.75} />
-                  </summary>
-                  <div>
-                    {publishedChecks.map((check) => (
-                      <span key={check.label}>
-                        <StatusGlyph tone={check.ok ? "success" : "danger"} size={8} />
-                        {check.label} · {check.ok ? "Reconciles" : "Does not reconcile"}
-                      </span>
-                    ))}
-                  </div>
-                </details>
-              ) : null}
-            </div>
-          ) : null}
-        </section>
-
-        <section
-          id="ward-bar-activity-tally"
-          className={styles.activitySection}
-          hidden={isPhone || activityPart !== "tally"}
-        >
-          {shownActivity ? (
-            <>
-              <p className={styles.activityTitle}>{shownActivity.pageTitle} now</p>
-              {shownActivity.tiles.length > 0 ? (
-                <div className={styles.activityTiles}>
-                  {shownActivity.tiles.map((tile) => (
-                    <div key={tile.label} className={styles.activityTile} data-tone={tile.tone}>
-                      <b>{tile.value}</b>
-                      <small>
-                        {tile.tone ? (
-                          <StatusGlyph tone={tile.tone === "good" ? "success" : tile.tone} size={8} />
-                        ) : null}
-                        {tile.label}
-                      </small>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              {usesDerivedActivity ? (
-                <div className={styles.card}>
-                  <table className={styles.tallyDepartments}>
-                    <caption>
-                      Emergency departments
-                      <span className={styles.countPill} aria-hidden="true">
-                        {commandActivity.departments.length}
-                      </span>
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Department</th>
-                        <th scope="col">Waiting</th>
-                        <th scope="col">Longest</th>
-                        <th scope="col">Due times passed</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {commandActivity.departments.map((row) => (
-                        <tr key={row.ed.id}>
-                          <th scope="row">
-                            <Link
-                              href={edHref(row.ed.id)}
-                              onClick={() => closePopover("activity", false)}
-                              title={row.ed.name}
-                            >
-                              {row.ed.siteCode}
-                            </Link>
-                          </th>
-                          <td>{row.waiting}</td>
-                          <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
-                          <td data-breached={row.breaching > 0}>
-                            {row.breaching > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
-                            {row.breaching}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <p className={styles.activityEmpty}>
-              {service ? `No tally for this page in ${service}.` : "No tally for this page."}
-            </p>
-          )}
-        </section>
+        <WardBarActivityBody
+          isPhone={isPhone}
+          activityPart={activityPart}
+          setActivityPart={setActivityPart}
+          shownActivity={shownActivity}
+          unreadNoticeCount={unreadNoticeCount}
+          lastActivityAt={lastActivityAt}
+          now={now}
+          activityQuery={activityQuery}
+          setActivityQuery={setActivityQuery}
+          activityCategoryFilter={activityCategoryFilter}
+          setActivityCategoryFilter={setActivityCategoryFilter}
+          activityCategoryCounts={activityCategoryCounts}
+          scopedNotices={scopedNotices}
+          unreadOnly={unreadOnly}
+          setUnreadOnly={setUnreadOnly}
+          visibleNotices={visibleNotices}
+          noticeText={noticeText}
+          markNoticeRead={markNoticeRead}
+          filteredActivityChanges={filteredActivityChanges}
+          service={service}
+          activityToneFor={activityToneFor}
+          publishedChecks={publishedChecks}
+          reconciledCheckCount={reconciledCheckCount}
+          usesDerivedActivity={usesDerivedActivity}
+          commandActivity={commandActivity}
+          closePopover={closePopover}
+        />
       </Sheet>
 
       <Sheet
