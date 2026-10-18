@@ -1170,8 +1170,12 @@ button.taskLabel[aria-pressed="true"] {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Stacked below the list, the aside joins the page scroll: no second, contained scroller. */
   .aside {
     position: static;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   .nextCard {
