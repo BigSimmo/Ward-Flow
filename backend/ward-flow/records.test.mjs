@@ -102,6 +102,28 @@ test("lists without their own ids are kept by position, so adding to one never c
   );
 });
 
+test("dropping the oldest entry or adding at the end rewrites no other row", () => {
+  const log = (...ids) => ({ version: 1, state: { log: ids.map((id) => ({ id })) } });
+  const rows = stored([], planSave([], log("a", "b", "c"), 1));
+  // Like the audit list at its cap: the oldest goes, a new one is added.
+  const capped = planSave(rows, log("b", "c", "d"), 2);
+  assert.deepEqual(
+    capped.upserts.map((part) => [part.recordId, part.ordinal, part.revision]),
+    [["d", 3, 2]],
+  );
+  assert.deepEqual(capped.deletes, [{ collection: "log", recordId: "a" }]);
+  const next = stored(rows, capped);
+  assert.deepEqual(assembleWorld(capped.core, next), log("b", "c", "d"));
+  // A real reordering numbers the list again, rewriting only rows whose position changed and
+  // keeping each row's revision.
+  const moved = planSave(next, log("d", "b", "c"), 3);
+  assert.deepEqual(
+    moved.upserts.map((part) => [part.recordId, part.ordinal, part.revision]),
+    [["d", 0, 2]],
+  );
+  assert.deepEqual(assembleWorld(moved.core, stored(next, moved)), log("d", "b", "c"));
+});
+
 test("a save against an older revision clashes only with someone else's change to the same record", async () => {
   const engine = await import("./dist/engine.mjs");
   const base = engine.seedWorld(at);

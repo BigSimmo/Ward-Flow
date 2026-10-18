@@ -121,6 +121,36 @@ function wholeFields(core) {
   return new Set(Object.keys(core.state).filter((key) => !markerKind(core.state[key])));
 }
 
+/** The largest position a row is given before a list is numbered from 0 again. */
+const MAX_ORDINAL = 2_000_000_000;
+
+/**
+ * Keeps the stored positions of an `item` list whose kept rows are still in their stored order and
+ * whose new rows all come after them, giving the new rows the next positions. So dropping the
+ * oldest entry (the audit list at its cap) or adding at the end rewrites no other row. Any other
+ * reordering numbers the list from 0 again. `assembleWorld` sorts by position, so gaps are fine.
+ * @param {Part[]} list the list's parts, in the world's order
+ * @param {Map<string, StoredRow>} current
+ */
+function keepOrdinals(list, current) {
+  let last = -1;
+  let seenNew = false;
+  for (const part of list) {
+    const row = current.get(partKey(part.collection, part.recordId));
+    if (!row || row.kind !== part.kind) {
+      seenNew = true;
+      continue;
+    }
+    if (seenNew || row.ordinal <= last) return;
+    last = row.ordinal;
+  }
+  if (last + list.length > MAX_ORDINAL) return;
+  for (const part of list) {
+    const row = current.get(partKey(part.collection, part.recordId));
+    part.ordinal = row && row.kind === part.kind ? row.ordinal : ++last;
+  }
+}
+
 /**
  * What a save must write, given the rows stored now and the world after the change: the rows to
  * add or rewrite (each with the revision its content last changed at) and the keys to remove.
@@ -130,6 +160,15 @@ function wholeFields(core) {
 export function planSave(stored, world, revision) {
   const { core, parts } = splitWorld(world);
   const current = new Map(stored.map((row) => [partKey(row.collection, row.record_id), row]));
+  /** @type {Map<string, Part[]>} */
+  const lists = new Map();
+  for (const part of parts.values())
+    if (part.kind === "item") {
+      const list = lists.get(part.collection);
+      if (list) list.push(part);
+      else lists.set(part.collection, [part]);
+    }
+  for (const list of lists.values()) keepOrdinals(list, current);
   const upserts = [];
   for (const [key, part] of parts) {
     const row = current.get(key);
