@@ -73,11 +73,14 @@ test.describe("native history and handover print @mockup", () => {
         .locator("#refDocInput")
         .evaluate((input) => (input as HTMLInputElement).value === "Synthetic clinician"),
     ).toBe(true);
+    // D-67 (17 Oct 2026): the synthetic referral drawer may keep a session-scoped `wf-draft:v1:`
+    // recovery copy. Typed text must appear nowhere else: no other session key, never localStorage.
     expect(
       await page.evaluate(() =>
-        [sessionStorage, localStorage].some((storage) =>
-          Object.values(storage).some((value) => value.includes("Synthetic clinician")),
-        ),
+        [
+          ...Object.entries(sessionStorage).filter(([key]) => !key.startsWith("wf-draft:v1:")),
+          ...Object.entries(localStorage),
+        ].some(([, value]) => value.includes("Synthetic clinician")),
       ),
     ).toBe(false);
     expect(prompts).toBe(0);

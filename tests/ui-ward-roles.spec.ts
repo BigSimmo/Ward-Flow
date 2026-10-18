@@ -1499,7 +1499,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // happened"). It must carry BOTH aria-disabled and a stated reason naming this ward. ---
     await openAllArrivals(page);
     await expect(pullButton).toHaveAttribute("aria-disabled", "true");
-    await expect(pullButton).toHaveAttribute("title", /No allocatable bed remains at Dabakarn/);
+    // The wf Button carries the reason as an accessible description plus tooltip, not `title`.
+    await expect(pullButton).toHaveAccessibleDescription(/No allocatable bed remains at Dabakarn/);
 
     // --- Step 5: click through to the coordinator — the role switcher's real <Link>, never a
     // goto. Coordinator is never ambiguous (spec §9: "Statewide — no ward or department"). ---
