@@ -18,7 +18,7 @@
  * - Anything else (numbers, text) stays on the workspace row.
  */
 
-export const MARKER = "$records";
+const MARKER = "$records";
 
 /** @typedef {"item" | "index" | "entry"} RecordKind */
 /** @typedef {{ collection: string, recordId: string, kind: RecordKind, ordinal: number, body: unknown }} Part */
