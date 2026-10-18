@@ -92,9 +92,9 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["legalFormReceiptCorrections", history({ by: text, reason: text })],
   ["genderChanges", history({ by: text, to: text })],
   ["supersededExaminations", history({ outcome: text })],
-  ...["destinations", "corrections", "genderPlacements", "urgentFlagHistory", "uploadedForms"].map(
-    (key) => [key, records] as const,
-  ),
+  // Make Room and eligibility read `unitIds`; the tick is only ever stored as `true`.
+  ["genderPlacements", history({ by: text, unitIds: strings, reason: text, wardChecked: z.literal(true) })],
+  ...["destinations", "corrections", "urgentFlagHistory", "uploadedForms"].map((key) => [key, records] as const),
   ["legalForm", legalFormRule],
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],

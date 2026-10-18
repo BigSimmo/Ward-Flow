@@ -544,11 +544,15 @@ describe("ancillary role gates while a save is in flight (WF-027)", () => {
     async (gate) => {
       const reply = deferred<Response>();
       let commandPosts = 0;
+      const workingAsSet = vi.fn();
       const client = new SharedWorkspaceClient({
         baseUrl: "https://example.test",
         token: async () => "test",
         changed: () => {},
-        ...(gate === "stored-role-ended" ? { workingAs: { get: () => "synthetic-role", set: () => {} } } : {}),
+        // A stored role must be a UUID, or the client drops it before the role-ended branch runs.
+        ...(gate === "stored-role-ended"
+          ? { workingAs: { get: () => "550e8400-e29b-41d4-a716-446655440000", set: workingAsSet } }
+          : {}),
         fetch: async (url) => {
           if (String(url).endsWith("/commands")) {
             commandPosts++;
@@ -568,6 +572,7 @@ describe("ancillary role gates while a save is in flight (WF-027)", () => {
         await vi.waitFor(() => expect(commandPosts).toBe(1));
         const queued = client.dispatch(event);
         await client.pushKey().catch(() => {});
+        if (gate === "stored-role-ended") expect(workingAsSet).toHaveBeenCalledWith(null);
         const outcome = await first;
         expect(outcome).toMatchObject({ status: "failed", message: expect.stringMatching(/may have been applied/) });
         await expect(queued).resolves.toMatchObject({ status: "cancelled" });

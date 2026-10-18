@@ -106,6 +106,19 @@ describe("retained buzz acknowledgement identity (WF-001)", () => {
     expect(buzzKeys(next.refreshRequests)[0]).toBe(survivor);
     expect(buzzKeys(JSON.parse(JSON.stringify(next.refreshRequests)))[0]).toBe(survivor);
   });
+
+  it("never freezes a legacy occurrence key onto an id already in the list", () => {
+    let state = seedWardFlowStateAt(0);
+    const unitId = state.units[0]!.id;
+    const legacy = { unitId, at: NOW - 1, byRole: "coordinator" };
+    const legacyKey = buzzKeys([legacy])[0]!;
+    state = { ...state, refreshRequests: [legacy, { ...legacy, id: legacyKey }] };
+    expect(new Set(buzzKeys(state.refreshRequests)).size).toBe(2);
+    state = wardFlowReducer(state, { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: NOW, unitId });
+    expect(state.refreshRequests).toHaveLength(3);
+    expect(new Set(state.refreshRequests.map((request) => request.id)).size).toBe(3);
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+  });
 });
 
 describe("community criteria at the serialized snapshot boundary (WF-025)", () => {

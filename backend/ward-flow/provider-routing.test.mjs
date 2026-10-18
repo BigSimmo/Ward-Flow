@@ -261,6 +261,13 @@ test("the sign-in check reads which accounts hold a role from the shared workspa
   assert.deepEqual(await roleHolders(), [nurse]);
 });
 
+test("an inherited database reader never replaces the built-in reader", () => {
+  const env = environment("postgres", "supabase");
+  delete env.WARD_POSTGRES_DATABASE_URL;
+  const inherited = Object.create({ postgres: () => null });
+  assert.throws(() => readConfig(env, { database: inherited }), /Invalid portable PostgreSQL configuration/);
+});
+
 test("a pool-free adapter supplies its configuration and store without a PostgreSQL URL or module", async () => {
   const env = environment("postgres", "supabase");
   delete env.WARD_POSTGRES_DATABASE_URL;

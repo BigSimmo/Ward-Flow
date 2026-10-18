@@ -16,12 +16,20 @@ export interface BuzzKeySource {
  * the ward-screen unread count share this rule.
  */
 export function buzzKeys(requests: readonly BuzzKeySource[]): string[] {
+  // A legacy occurrence key never repeats an id already in the list, so a frozen list stays distinct.
+  const taken = new Set(requests.flatMap((buzz) => (buzz.id ? [buzz.id] : [])));
   const seen = new Map<string, number>();
   return requests.map((buzz) => {
     const base = `${buzz.unitId}:${buzz.at}:${buzz.byRole}:${buzz.message ?? ""}:${buzz.urgent === true}`;
-    const n = seen.get(base) ?? 0;
+    let n = seen.get(base) ?? 0;
+    if (buzz.id) {
+      seen.set(base, n + 1);
+      return buzz.id;
+    }
+    while (taken.has(`${base}#${n}`)) n += 1;
     seen.set(base, n + 1);
-    return buzz.id ?? `${base}#${n}`;
+    taken.add(`${base}#${n}`);
+    return `${base}#${n}`;
   });
 }
 

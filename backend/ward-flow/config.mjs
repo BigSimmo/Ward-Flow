@@ -57,7 +57,12 @@ export function readConfig(env = process.env, dependencies = {}) {
   if (shared) {
     // Custom stores can inject their own configuration reader alongside their runtime adapter.
     // Normal startup always uses the built-in reader and its full URL validation.
-    const readDatabase = dependencies.database?.[databaseProvider] ?? DATABASE_PROVIDERS[databaseProvider];
+    // Own properties only: an inherited key must never stand in for a built-in reader.
+    const injected = dependencies.database;
+    const readDatabase =
+      injected && Object.hasOwn(injected, databaseProvider)
+        ? injected[databaseProvider]
+        : DATABASE_PROVIDERS[databaseProvider];
     postgres = readDatabase(env);
     if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
       throw new Error("Invalid workspace configuration");
