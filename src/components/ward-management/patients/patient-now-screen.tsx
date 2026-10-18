@@ -47,8 +47,6 @@ import {
   ARRIVAL_MODE_LABELS,
 } from "@/components/ward-management/ward-model";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
-import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
-import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   activeCommunityTreatmentOrder,
@@ -62,6 +60,9 @@ import {
 import { PersonScreen } from "./person-screen";
 import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
+// These dialogs have no initial-page content. Load them only after their action is opened.
+const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
+const UploadFormsModal = dynamic(() => import("../referrals/upload-forms-modal").then((m) => m.UploadFormsModal));
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
 const loadTransitOperations = () => import("./patient-transit-operations");
@@ -2433,19 +2434,19 @@ export function PatientNowScreen({
         </div>
       )}
 
-      {targetMovement && (
-        <>
-          <ArrivalTimeModal
-            isOpen={showArrivalTimeModal}
-            onClose={() => setShowArrivalTimeModal(false)}
-            movement={targetMovement}
-          />
-          <UploadFormsModal
-            isOpen={showUploadFormsModal}
-            onClose={() => setShowUploadFormsModal(false)}
-            movement={targetMovement}
-          />
-        </>
+      {targetMovement && showArrivalTimeModal && (
+        <ArrivalTimeModal
+          isOpen={showArrivalTimeModal}
+          onClose={() => setShowArrivalTimeModal(false)}
+          movement={targetMovement}
+        />
+      )}
+      {targetMovement && showUploadFormsModal && (
+        <UploadFormsModal
+          isOpen={showUploadFormsModal}
+          onClose={() => setShowUploadFormsModal(false)}
+          movement={targetMovement}
+        />
       )}
       {liveMovement ? (
         <>
