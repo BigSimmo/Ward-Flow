@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,9 +29,73 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
+import { setForceDynamicLoading } from "./setup/jsdom.setup";
 
 describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
   describe("Option 0 & Option 4: Patient Now Screen - Pulled Bed Banner, Arrival Time & Forms Modals", () => {
+    it("allows cancelling document details before their code arrives and never reopens the cancelled dialog", async () => {
+      const page = () => (
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <PatientNowScreen movementId="WF-004" />
+        </WardFlowProvider>
+      );
+      const view = render(page());
+      fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
+      const trigger = screen.getByTestId("ward-patient-upload-forms-btn");
+      setForceDynamicLoading(true);
+      trigger.focus();
+      fireEvent.click(trigger);
+      const pending = screen.getByRole("dialog", { name: /Record document details/i });
+      expect(within(pending).getByRole("status").textContent).toBe("Loading document details…");
+      expect(screen.queryByTestId("confirm-upload-form-button") === null).toBe(true);
+      fireEvent.keyDown(pending, { key: "Escape" });
+      expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
+      await waitFor(() => expect(document.activeElement === trigger).toBe(true));
+      setForceDynamicLoading(false);
+      view.rerender(page());
+      expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
+      setForceDynamicLoading(true);
+      fireEvent.click(trigger);
+      expect(
+        within(screen.getByRole("dialog", { name: /Record document details/i })).getByRole("status").textContent,
+      ).toBe("Loading document details…");
+      setForceDynamicLoading(false);
+      view.rerender(page());
+      const opened = await screen.findByRole("dialog", { name: /Record document details/i });
+      expect(within(opened).getByLabelText("Upload document file") !== null).toBe(true);
+      expect(opened.contains(document.activeElement)).toBe(true);
+      fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+      await waitFor(() => expect(document.activeElement === trigger).toBe(true));
+    });
+    it("opens document details on first use, restores focus on Escape and resets the draft on reopening", async () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <PatientNowScreen movementId="WF-004" />
+        </WardFlowProvider>,
+      );
+      expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
+      fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
+      const trigger = screen.getByTestId("ward-patient-upload-forms-btn");
+      trigger.focus();
+      fireEvent.click(trigger);
+      const dialog = await screen.findByRole("dialog", { name: /Record document details/i });
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      const kind = within(dialog).getByRole("combobox") as HTMLSelectElement;
+      const initialKind = kind.value;
+      fireEvent.change(kind, { target: { value: kind.options[1]!.value } });
+      fireEvent.change(within(dialog).getByLabelText("Upload document file"), {
+        target: { files: [new File(["synthetic"], "synthetic-draft.pdf", { type: "application/pdf" })] },
+      });
+      expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBeNull();
+      fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+      expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
+      await waitFor(() => expect(document.activeElement === trigger).toBe(true));
+      fireEvent.click(trigger);
+      const reopened = await screen.findByRole("dialog", { name: /Record document details/i });
+      expect((within(reopened).getByRole("combobox") as HTMLSelectElement).value === initialKind).toBe(true);
+      expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBe("true");
+      expect((within(reopened).getByLabelText("Upload document file") as HTMLInputElement).value).toBe("");
+    });
     it("renders Pulled Bed Banner with action buttons on a pulled bed movement (WF-004)", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>

@@ -214,3 +214,22 @@ The approved read-only fetch found five newer main commits. The clean isolated t
 - F07 adds optional `SharedSnapshot.accessContext` (64 lowercase hex) produced by the actual store from versioned workspace/account/membership/effective access and sorted active record-grant expiry metadata. The token excludes clinical revision and clock; it conveys no permission. The client validates and preserves it. Shared reports without a current valid token fail closed; clinical screens remain compatible. Same-revision report capture additionally waits for exact payload adoption without remounting clinical drafts.
 - DOMAIN owns the additional backend store/SQL test and shared-client/type test paths; PRIVACY owns the additional provider/readiness regression paths. The private exact-file log contains all claims and independent source reviews.
 - Full unit and manifest verification will run as one complete `1/1` gate shard, collecting the maintained coverage blobs; the maintained merge-reports path then checks unchanged whole-suite thresholds and executable inventory. This avoids a duplicate full test execution without excluding any file. The clean-tree gate prerequisite requires the guarded local checkpoint above.
+
+## Task 12: Finding-driven escalation F11 — initial movement script budget
+
+The first stable snapshot `845645e7` passed all 1,206 root files (13,500 tests, zero failures, one unavailable historical replay), unchanged coverage thresholds/inventory, backend 214/214 with actual local PostgreSQL, selected Chromium 216/217 (one existing skip), and live keyboard 29/29. Its movement route nevertheless measured 624 KB against the unchanged 623 KB first-load script limit; four other routes passed. The failed budget is retained, not hidden by those passes.
+
+Verified-main comparison used a separate preserved detached worktree, normal exact-lock install and same-version production build. Main measured 622 KB on that route and passed all five budgets. Necessary privacy/outcome code stays intact. The smallest identified correction is to defer the unopened upload dialog using the patient screen's existing dynamic-import/idle-preload pattern. It is the only eager importer; the stateless wrapper already unmounts its stateful inner dialog on close.
+
+**Owned files:** FEEDBACK additionally owns `src/components/ward-management/patients/patient-now-screen.tsx` and `tests/ward-advanced-features.dom.test.tsx`, after exact ownership check and append-only claim. This is a named measured regression, not speculative expansion.
+
+- [x] Preserve original budget failure and attributable main comparison.
+- [x] Split only unopened upload-modal code, preserving document metadata boundaries, permissions, drafts, dismissal and focus return. Provide appropriate loading behaviour at the new asynchronous boundary using existing patterns.
+- [x] Extend existing behavioural coverage for opening, Escape/focus return, reopening/reset and metadata-only dispatch. Distinguish new regression protection from the actual packaged-budget RED.
+- [x] Independent interface reviewer challenges new asynchronous and focus lifecycles before final freeze.
+- [ ] Format/check exact owned files, run focused tests and normal guarded checkpoint. Then run complete final-source unit/coverage and selected available-browser gates on a new retained artifact; remeasure all unchanged budgets and live keyboard behaviour.
+- [ ] Retain first-source evidence separately; reuse unchanged backend/SQL evidence only with explicit dependency-closure justification. No threshold increase, safety weakening, hidden exclusion or rewriting of previous results.
+
+This extra finite wave is required by the reproduced budget breach. It is expected to add a focused implementation/review and one full final-source verification cycle; no publication or hosted activity is added.
+
+F11 implementation checkpoint: 54 focused tests and the strengthened 10-test loading/focus suite pass. Full source lint/typecheck pass. Independent reviewer accepted the frozen two-file change, while actual packaged size and real chunk-failure behaviour remain pending. The final browser build runs before the last full unit cycle so the measured budget can be checked early; expensive wide suites remain serial.

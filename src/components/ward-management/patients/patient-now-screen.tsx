@@ -17,7 +17,16 @@ import {
   Scale,
   Truck,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
@@ -48,7 +57,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
-import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
+import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   activeCommunityTreatmentOrder,
@@ -66,7 +75,35 @@ import { preloadWhenIdle } from "../preload-when-idle";
 // fetched once the page is idle, rather than with the patient page.
 const loadTransitOperations = () => import("./patient-transit-operations");
 const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
-preloadWhenIdle(loadTransitOperations);
+// Document details have no closed-state work. Keep their code off the first load, with the same
+// idle preload as Transit operations and a cancellable, focus-managed dialog while loading.
+const loadUploadForms = () => import("../referrals/upload-forms-modal");
+const UploadFormsCloseContext = createContext<(() => void) | null>(null);
+function UploadFormsPending({ failed = false }: { failed?: boolean }) {
+  const onClose = useContext(UploadFormsCloseContext);
+  if (!onClose) return null;
+  return (
+    <Dialog open onClose={onClose} title="Record document details">
+      <p role={failed ? "alert" : "status"}>
+        {failed
+          ? "Document details could not load. Close this dialog and reload the page before trying again."
+          : "Loading document details…"}
+      </p>
+    </Dialog>
+  );
+}
+function UploadFormsUnavailable() {
+  return <UploadFormsPending failed />;
+}
+const UploadFormsModal = dynamic<UploadFormsModalProps>(
+  () =>
+    loadUploadForms().then(
+      (module) => module.UploadFormsModal,
+      () => UploadFormsUnavailable,
+    ),
+  { loading: () => <UploadFormsPending /> },
+);
+preloadWhenIdle(loadTransitOperations, loadUploadForms);
 import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
@@ -110,6 +147,7 @@ import {
   Button,
   Card,
   CardHead,
+  Dialog,
   JourneyStrip,
   LiveChip,
   type JourneyStage,
@@ -2440,11 +2478,11 @@ export function PatientNowScreen({
             onClose={() => setShowArrivalTimeModal(false)}
             movement={targetMovement}
           />
-          <UploadFormsModal
-            isOpen={showUploadFormsModal}
-            onClose={() => setShowUploadFormsModal(false)}
-            movement={targetMovement}
-          />
+          {showUploadFormsModal ? (
+            <UploadFormsCloseContext.Provider value={() => setShowUploadFormsModal(false)}>
+              <UploadFormsModal isOpen onClose={() => setShowUploadFormsModal(false)} movement={targetMovement} />
+            </UploadFormsCloseContext.Provider>
+          ) : null}
         </>
       )}
       {liveMovement ? (
