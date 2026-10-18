@@ -48,4 +48,4 @@ ALTER TABLE ward_flow.record_access ENABLE ROW LEVEL SECURITY;
 CREATE POLICY runtime_only ON ward_flow.record_access USING (current_user = 'wardflow_backend') WITH CHECK (current_user = 'wardflow_backend');
 ALTER TABLE ward_flow.session_sign_outs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY runtime_only ON ward_flow.session_sign_outs USING (current_user = 'wardflow_backend') WITH CHECK (current_user = 'wardflow_backend');
-INSERT INTO ward_flow.migrations(version) VALUES(10);
+INSERT INTO ward_flow.migrations(version) VALUES(11);

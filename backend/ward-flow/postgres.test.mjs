@@ -631,9 +631,25 @@ test(
         assert.equal(replay.body.snapshot, undefined);
         const full = await shared.command(actor, commandId, 1, refresh);
         assert.equal(full.body.snapshot.revision, 2);
-        const stale = await shared.command(actor, randomUUID(), 1, refresh, { revisionOnly: true });
+        // A save made against an older revision still applies when nobody else changed its records,
+        // and is refused when they did.
+        const unitId = refresh.unitId;
+        const unit = full.body.snapshot.payload.state.units.find((row) => row.id === unitId);
+        const confirm = {
+          type: "CONFIRM_CAPACITY",
+          role: "ward",
+          unitId,
+          actingUnitId: unitId,
+          value: unit.allocatable.value,
+          expectedRevision: unit.allocatable.revision ?? 0,
+        };
+        const kept = await shared.command(actor, randomUUID(), 1, confirm, { revisionOnly: true });
+        assert.equal(kept.status, 200);
+        assert.equal(kept.body.commandRevision, 3);
+        const stale = await shared.command(actor, randomUUID(), 2, confirm, { revisionOnly: true });
         assert.equal(stale.status, 409);
-        assert.equal(stale.body.snapshot.revision, 2, "a stale command always carries the board");
+        assert.match(stale.body.error, /Someone else changed this record first/);
+        assert.equal(stale.body.snapshot.revision, 3, "a stale command always carries the board");
       });
       await t.test("demo controls are refused on the shared workspace unless switched on", async () => {
         const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
@@ -681,7 +697,7 @@ test(
 );
 
 test(
-  "real PostgreSQL: row-level security lets only the runtime role through, and 010, 009, 008, 007 then 006 roll back to 5",
+  "real PostgreSQL: row-level security lets only the runtime role through, and 011, 010, 009, 008, 007 then 006 roll back to 5",
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
@@ -714,7 +730,7 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 12);
+      assert.equal(tables.length, 13);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
@@ -744,6 +760,9 @@ test(
           "GRANT UPDATE (last_used_at) ON ward_flow.memberships",
         ],
         ["REVOKE INSERT ON ward_flow.access_requests", "GRANT INSERT ON ward_flow.access_requests"],
+        // From 10 it adds, rewrites and removes record rows, and may not empty or reference the table.
+        ["REVOKE DELETE ON ward_flow.workspace_records", "GRANT DELETE ON ward_flow.workspace_records"],
+        ["GRANT TRUNCATE ON ward_flow.workspace_records", "REVOKE TRUNCATE ON ward_flow.workspace_records"],
       ]) {
         await owner.query(`${change} ${change.startsWith("GRANT") ? "TO" : "FROM"} wardflow_backend`);
         await assert.rejects(runtimeOk(runtime), /unsafe/, change);
@@ -790,19 +809,22 @@ test(
       await owner.query("DROP ROLE IF EXISTS wardflow_rls_probe");
       await owner.query("CREATE ROLE wardflow_rls_probe NOLOGIN");
       await owner.query(
-        "GRANT USAGE ON SCHEMA ward_flow TO wardflow_rls_probe; GRANT SELECT, INSERT ON ward_flow.workspaces, ward_flow.audit TO wardflow_rls_probe",
+        "GRANT USAGE ON SCHEMA ward_flow TO wardflow_rls_probe; GRANT SELECT, INSERT ON ward_flow.workspaces, ward_flow.audit, ward_flow.workspace_records TO wardflow_rls_probe",
       );
       const probe = as("wardflow_rls_probe");
       pools.push(probe);
       assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.workspaces")).rows[0].n, 0);
       assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.audit")).rows[0].n, 0);
+      assert.equal((await probe.query("SELECT count(*)::int AS n FROM ward_flow.workspace_records")).rows[0].n, 0);
       await assert.rejects(
         probe.query("INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES (gen_random_uuid(), 1, '{}')"),
         /row-level security/,
       );
       await probe.end();
       pools.pop();
-      await owner.query("REVOKE ALL ON ward_flow.workspaces, ward_flow.audit FROM wardflow_rls_probe");
+      await owner.query(
+        "REVOKE ALL ON ward_flow.workspaces, ward_flow.audit, ward_flow.workspace_records FROM wardflow_rls_probe",
+      );
       await owner.query("REVOKE ALL ON SCHEMA ward_flow FROM wardflow_rls_probe; DROP ROLE wardflow_rls_probe");
 
       // Each rollback, newest first, takes the database back one step and the same backend keeps
@@ -828,16 +850,20 @@ test(
       await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /roll back 008 first/);
       await assert.rejects(rollBack("./infra/rollback-008-role-access.sql"), /not at migration 8/);
       await assert.rejects(rollBack("./infra/rollback-009-access-cover-requests.sql"), /not at migration 9/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 10);
+      await assert.rejects(rollBack("./infra/rollback-010-workspace-records.sql"), /not at migration 10/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 11);
+      let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
-        ["./infra/rollback-010-record-access-and-sign-out.sql", 9],
+        ["./infra/rollback-011-record-access-and-sign-out.sql", 10],
+        ["./infra/rollback-010-workspace-records.sql", 9],
         ["./infra/rollback-009-access-cover-requests.sql", 8],
         ["./infra/rollback-008-role-access.sql", 7],
         ["./infra/rollback-007-prototype-only.sql", 6],
         ["./infra/rollback-006-row-level-security.sql", 5],
       ]) {
         if (version === 7) assert.equal((await store.viewer(actor, { bootstrap: true })).version, 8);
+        if (version === 9) beforeRecordsRollback = (await store.read(actor)).payload;
         await rollBack(file);
         assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, version);
         if (version === 7) {
@@ -847,6 +873,14 @@ test(
           assert.equal((await store.roleHolders()).includes(actor), false);
           // The access routes say roles need 008 rather than failing on the missing table.
           assert.equal((await store.listAccess(await store.viewer(actor, { bootstrap: true }))).status, 409);
+        }
+        if (version === 9) {
+          // Every record is back in the workspace row, exactly as it was, and the rows table is gone.
+          const { rows } = await owner.query("SELECT payload FROM ward_flow.workspaces");
+          assert.deepEqual(rows[0].payload, beforeRecordsRollback);
+          assert.equal((await owner.query("SELECT to_regclass('ward_flow.workspace_records') AS t")).rows[0].t, null);
+          // The cached version still says 10; the read finds the table gone and reads the version again.
+          assert.deepEqual((await store.read(actor)).payload, beforeRecordsRollback);
         }
         await verifyPostgresNamespace(owner);
         await runtimeOk(runtime);
@@ -993,7 +1027,7 @@ test(
       const granted = await store.read(nurse, nurseView);
       assert.equal(granted.accessContext, opened.body.snapshot.accessContext);
       // The same patient's absolute expiry matters too: canonical(Date) alone would turn both into {}.
-      // Break glass rows are append-only from migration 10, so the test lifts the guard for this one edit.
+      // Break glass rows are append-only from migration 11, so the test lifts the guard for this one edit.
       await pool.query("ALTER TABLE ward_flow.break_glass DISABLE TRIGGER protect_break_glass");
       await pool.query(
         "UPDATE ward_flow.break_glass SET until=until + interval '1 second' WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3",
@@ -1247,13 +1281,16 @@ test(
         /role-ended/,
       );
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
-      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (009,
-      // which keeps every audit row, goes first).
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (011,
+      // 010 and 009, which keep every audit row, go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
         await client.query(
-          await readFile(new URL("./infra/rollback-010-record-access-and-sign-out.sql", import.meta.url), "utf8"),
+          await readFile(new URL("./infra/rollback-011-record-access-and-sign-out.sql", import.meta.url), "utf8"),
+        );
+        await client.query(
+          await readFile(new URL("./infra/rollback-010-workspace-records.sql", import.meta.url), "utf8"),
         );
         await client.query(
           await readFile(new URL("./infra/rollback-009-access-cover-requests.sql", import.meta.url), "utf8"),
@@ -1553,7 +1590,7 @@ test(
 );
 
 test(
-  "real PostgreSQL: authenticated HTTP save, independent reload, conflict and retry compose",
+  "real PostgreSQL: two people signed in save at once; different records both keep, the same record conflicts, reload and retry",
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
@@ -1686,27 +1723,98 @@ test(
       const { snapshot: reloaded } = await reloadedResponse.json();
       assert.equal(reloaded.revision, 2);
       assert.deepEqual(reloaded.payload, saved.snapshot.payload);
-      const staleResponse = await request(`${second}/commands`, token(colleague), { ...body, commandId: randomUUID() });
-      assert.equal(staleResponse.status, 409);
-      const stale = await staleResponse.json();
-      assert.equal(stale.outcome, "stale");
-      assert.equal(stale.snapshot.revision, 2);
-      assert.deepEqual(stale.snapshot.payload, reloaded.payload);
+      // The colleague saves against the revision they loaded before the first save. It touches no
+      // record the first save changed, so it is kept too: two requests, nothing overwritten.
+      const alongsideResponse = await request(`${second}/commands`, token(colleague), {
+        ...body,
+        commandId: randomUUID(),
+      });
+      assert.equal(alongsideResponse.status, 200);
+      const alongside = await alongsideResponse.json();
+      assert.equal(alongside.snapshot.revision, 3);
+      assert.deepEqual(
+        alongside.snapshot.payload.state.refreshRequests.slice(-2).map((row) => row.unitId),
+        [unitId, unitId],
+      );
+
+      // Two people change two different movements at the same moment, both from revision 3: both save.
+      const urgency = (movementId, value) => ({
+        classification: "synthetic",
+        commandId: randomUUID(),
+        expectedRevision: 3,
+        event: {
+          type: "CHANGE_URGENCY",
+          role: "coordinator",
+          now: 600,
+          movementId,
+          urgency: value,
+          reason: "reassessed",
+        },
+      });
+      const [one, two] = await Promise.all([
+        request(`${first}/commands`, credential, urgency("WF-001", 2)),
+        request(`${second}/commands`, token(colleague), urgency("WF-002", 1)),
+      ]);
+      assert.deepEqual([one.status, two.status], [200, 200]);
+      const both = (await (await request(second, token(colleague))).json()).snapshot;
+      assert.equal(both.revision, 5);
+      const urgencyOf = (snapshot, id) => snapshot.payload.state.movements.find((row) => row.id === id).urgency;
+      assert.deepEqual([urgencyOf(both, "WF-001"), urgencyOf(both, "WF-002")], [2, 1]);
+
+      // Both change the same movement at the same moment, from revision 5: exactly one is kept, and
+      // the other is told someone else changed it first, with the board to review.
+      const raced = await Promise.all([
+        request(`${first}/commands`, credential, { ...urgency("WF-003", 2), expectedRevision: 5 }),
+        request(`${second}/commands`, token(colleague), { ...urgency("WF-003", 3), expectedRevision: 5 }),
+      ]);
+      assert.deepEqual(raced.map((response) => response.status).sort(), [200, 409]);
+      const [won, lost] = raced[0].status === 200 ? raced : [raced[1], raced[0]];
+      const winner = await won.json();
+      const loser = await lost.json();
+      assert.equal(loser.outcome, "stale");
+      assert.match(loser.error, /Someone else changed this record first/);
+      assert.equal(loser.snapshot.revision, 6);
+      assert.equal(urgencyOf(loser.snapshot, "WF-003"), urgencyOf(winner.snapshot, "WF-003"));
+      // The person told about the clash reloads and saves again; this time it is kept.
+      const reloadedRace = (
+        await (
+          await request(lost === raced[0] ? first : second, lost === raced[0] ? credential : token(colleague))
+        ).json()
+      ).snapshot;
+      assert.equal(reloadedRace.revision, 6);
+      const again = await request(
+        lost === raced[0] ? `${first}/commands` : `${second}/commands`,
+        lost === raced[0] ? credential : token(colleague),
+        { ...urgency("WF-003", 1), expectedRevision: 6 },
+      );
+      assert.equal(again.status, 200);
+      assert.equal(urgencyOf((await again.json()).snapshot, "WF-003"), 1);
 
       const retryResponse = await request(`${first}/commands`, credential, body);
       assert.equal(retryResponse.status, 200);
       const retry = await retryResponse.json();
       assert.equal(retry.replayed, true);
-      assert.equal(retry.snapshot.revision, 2);
-      assert.deepEqual(retry.snapshot.payload.state.refreshRequests, reloaded.payload.state.refreshRequests);
+      assert.equal(retry.snapshot.revision, 7);
+      assert.equal(
+        retry.snapshot.payload.state.refreshRequests.length,
+        alongside.snapshot.payload.state.refreshRequests.length,
+      );
       const audit = await pools[1].query(
         "SELECT actor_id, outcome, prior_revision, revision FROM ward_flow.audit WHERE workspace_id=$1 AND action='REQUEST_CAPACITY_REFRESH' ORDER BY sequence",
         [workspaceId],
       );
       assert.deepEqual(audit.rows, [
         { actor_id: actor, outcome: "accepted", prior_revision: "1", revision: "2" },
-        { actor_id: colleague, outcome: "stale", prior_revision: "2", revision: "2" },
+        { actor_id: colleague, outcome: "accepted", prior_revision: "2", revision: "3" },
       ]);
+      const raceAudit = await pools[1].query(
+        "SELECT outcome, prior_revision, revision FROM ward_flow.audit WHERE workspace_id=$1 AND action='CHANGE_URGENCY' ORDER BY sequence",
+        [workspaceId],
+      );
+      assert.deepEqual(
+        raceAudit.rows.map((row) => row.outcome),
+        ["accepted", "accepted", "accepted", "stale", "accepted"],
+      );
       assert.doesNotMatch(JSON.stringify(logs), new RegExp(`${actor}|${outsider}|${credential.slice(7)}`));
     } finally {
       await Promise.all(

@@ -4,10 +4,12 @@ import {
   ACCESS_COVER_MIGRATION,
   LATEST_MIGRATION,
   MINIMUM_RUNTIME_MIGRATION,
+  RECORDS_MIGRATION,
   RECORD_ACCESS_MIGRATION,
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
+import { assembleWorld, conflicts, markerKind, planSave, splitWorld } from "./records.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** Desks with a phone turned on, read a page at a time when new alerts are queued. */
@@ -26,6 +28,14 @@ const LAST_USED_EVERY_MS = 3_600_000;
 const inUse = (param) => `(m.kind = 'cover' OR coalesce(m.last_used_at, m.granted_at) > ${param}::timestamptz)`;
 /** Open requests for access kept at once, so made-up accounts cannot fill the table. */
 const MAX_OPEN_REQUESTS = 200;
+/** The most a whole workspace may hold, as before migration 10 split it into rows. */
+const MAX_WORLD_BYTES = 8_388_608;
+const RECORD_COLUMNS = "collection, record_id, kind, ordinal, revision, body";
+/** Whether a stored workspace row stands in for rows of `ward_flow.workspace_records`. */
+const hasMarkers = (payload) =>
+  !!payload?.state &&
+  typeof payload.state === "object" &&
+  Object.values(payload.state).some((value) => markerKind(value));
 /** The same desk opening the same record on the same screen again this soon adds no new row. */
 const VIEW_REPEAT_MS = 60_000;
 /** Most record access rows one read returns. */
@@ -221,17 +231,125 @@ export function createWorkspaceStore(
       client.release(rollbackFailure);
     }
   }
-  async function lock(client, actorId, at, view) {
-    let { rows } = await client.query(
-      "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
+  /**
+   * Whether this workspace's records are kept as rows (migration 10). A stored row with markers
+   * says so by itself. One without them is a whole workspace (from before 10, or written by hand):
+   * once this store has seen the database at 10, the next save moves it into rows. The cached
+   * version is only a hint here, so a lock never waits on reading it.
+   */
+  function keepsRecords(payload) {
+    return hasMarkers(payload) || known.version >= RECORDS_MIGRATION;
+  }
+  /**
+   * The workspace row with its whole world in `payload`, read without a lock. Once the database is
+   * known to be at 10, one statement reads the workspace row and its records together, so they
+   * always come from the same moment. Until then the workspace row is read alone, and read again
+   * with its records if it turns out to hold markers.
+   */
+  async function readWorld(connection, columns = "data_mode, revision, payload") {
+    for (let attempt = 0; ; attempt += 1) {
+      const records = known.version >= RECORDS_MIGRATION;
+      try {
+        const { rows } = await connection.query(
+          `SELECT ${columns}${records ? `, (SELECT coalesce(jsonb_agg(jsonb_build_object('collection', r.collection, 'record_id', r.record_id, 'kind', r.kind, 'ordinal', r.ordinal, 'revision', r.revision, 'body', r.body)), '[]'::jsonb) FROM ward_flow.workspace_records r WHERE r.workspace_id = w.id) AS records` : ""} FROM ward_flow.workspaces w WHERE id=$1 AND data_mode='prototype'`,
+          [workspaceId],
+        );
+        const row = rows[0];
+        if (!row) return null;
+        if (records) return { ...row, payload: assembleWorld(row.payload, row.records) };
+        if (attempt === 0 && hasMarkers(row.payload)) {
+          known = { version: 0, until: 0 };
+          if ((await schemaVersion()) >= RECORDS_MIGRATION) continue;
+        }
+        return row;
+      } catch (error) {
+        forgetVersionOnMissing(error);
+        if (attempt === 0 && error?.code === "42P01") continue;
+        throw error;
+      }
+    }
+  }
+  /**
+   * The workspace row under `lock` ("UPDATE" or "SHARE"), with its whole world in `payload`, the
+   * stored workspace row in `core` and its records in `stored`. The records are read after the
+   * lock is held, so a save that committed while this waited is never missed.
+   */
+  async function lockedWorld(client, mode) {
+    const { rows } = await client.query(
+      `SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR ${mode}`,
       [workspaceId],
     );
-    if (!rows.length) {
+    const row = rows[0];
+    if (!row) return null;
+    if (!keepsRecords(row.payload)) return { ...row, core: null, stored: [] };
+    const { rows: stored } = await client.query(
+      `SELECT ${RECORD_COLUMNS} FROM ward_flow.workspace_records WHERE workspace_id=$1`,
+      [workspaceId],
+    );
+    return { ...row, core: row.payload, stored, payload: assembleWorld(row.payload, stored) };
+  }
+  /**
+   * Saves `world` at `revision` over `row` from `lockedWorld`. From migration 10 only the records
+   * whose content or place in a list changed are written, and each keeps the revision its content
+   * last changed at; before 10 the whole world is the workspace row.
+   */
+  async function saveWorld(client, row, world, revision, at) {
+    if (!row.core) {
+      await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
+        workspaceId,
+        revision,
+        world,
+        at,
+      ]);
+      return;
+    }
+    if (JSON.stringify(world).length > MAX_WORLD_BYTES) throw new Error("Workspace too large");
+    const plan = planSave(row.stored, world, revision);
+    await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
+      workspaceId,
+      revision,
+      plan.core,
+      at,
+    ]);
+    await writeRecords(client, plan, at);
+  }
+  async function writeRecords(client, plan, at) {
+    if (plan.deletes.length)
+      await client.query(
+        "DELETE FROM ward_flow.workspace_records WHERE workspace_id=$1 AND (collection, record_id) IN (SELECT * FROM unnest($2::text[], $3::text[]))",
+        [workspaceId, plan.deletes.map((row) => row.collection), plan.deletes.map((row) => row.recordId)],
+      );
+    if (plan.upserts.length)
+      await client.query(
+        "INSERT INTO ward_flow.workspace_records(workspace_id, collection, record_id, kind, ordinal, revision, body, updated_at) SELECT $1, r.collection, r.record_id, r.kind, r.ordinal, r.revision, r.body, $3 FROM jsonb_to_recordset($2::jsonb) AS r(collection text, record_id text, kind text, ordinal integer, revision bigint, body jsonb) ON CONFLICT (workspace_id, collection, record_id) DO UPDATE SET kind=EXCLUDED.kind, ordinal=EXCLUDED.ordinal, body=EXCLUDED.body, updated_at=CASE WHEN ward_flow.workspace_records.revision = EXCLUDED.revision THEN ward_flow.workspace_records.updated_at ELSE EXCLUDED.updated_at END, revision=EXCLUDED.revision",
+        [
+          workspaceId,
+          JSON.stringify(
+            plan.upserts.map((part) => ({
+              collection: part.collection,
+              record_id: part.recordId,
+              kind: part.kind,
+              ordinal: part.ordinal,
+              revision: part.revision,
+              body: part.body,
+            })),
+          ),
+          at,
+        ],
+      );
+  }
+  async function lock(client, actorId, at, view) {
+    let row = await lockedWorld(client, "UPDATE");
+    if (!row) {
+      const seed = engine.seedWorld(at);
+      const records = (await schemaVersion()) >= RECORDS_MIGRATION;
+      const split = records ? splitWorld(seed) : null;
       const created = await client.query(
         "INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES ($1, 1, $2) ON CONFLICT DO NOTHING RETURNING id",
-        [workspaceId, engine.seedWorld(at)],
+        [workspaceId, split ? split.core : seed],
       );
-      if (created.rowCount)
+      if (created.rowCount) {
+        if (split) await writeRecords(client, planSave([], seed, 1), at);
         await audit(client, view, actorId, {
           action: "INITIALISE_WORKSPACE",
           outcome: "accepted",
@@ -239,14 +357,12 @@ export function createWorkspaceStore(
           revision: 1,
           changes: {},
         });
-      ({ rows } = await client.query(
-        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
-        [workspaceId],
-      ));
+      }
+      row = await lockedWorld(client, "UPDATE");
     }
     at.setTime(clock().getTime());
-    if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
-    if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
+    if (row?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
+    if (!engine.validWorld(row.payload)) throw new Error("Stored workspace is incompatible");
     // A selected ward desk can include several cover memberships. Resolve all of them again
     // under the same workspace lock as revocation, using the time after any lock wait. Checking
     // only the selected/base membership would leave ended cover in the request's write scope.
@@ -255,7 +371,7 @@ export function createWorkspaceStore(
       if (current.status !== "ok") throw new Error("role-ended");
       Object.assign(view, current);
     }
-    return rows[0];
+    return row;
   }
   /**
    * Inside the workspace lock: the act-now rows not announced at the last evaluation. The first
@@ -359,12 +475,9 @@ export function createWorkspaceStore(
     try {
       const at = clock();
       const readRed = async () => {
-        const { rows: worlds } = await pool.query(
-          "SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
-          [workspaceId],
-        );
-        if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return null;
-        const world = worlds[0].payload;
+        const stored = await readWorld(pool, "payload");
+        if (!stored || !engine.validWorld(stored.payload)) return null;
+        const world = stored.payload;
         return { world, red: new Map(engine.actNowAlerts(world, at).map((alert) => [alert.id, alert])) };
       };
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
@@ -493,11 +606,8 @@ export function createWorkspaceStore(
   async function read(actorId, view) {
     if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
-    const { rows } = await pool.query(
-      "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
-      [workspaceId],
-    );
-    if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at, view);
+    const stored = await readWorld(pool);
+    if (stored && engine.validWorld(stored.payload)) return snapshot(stored, at, view);
     return transaction(async (client, now) => snapshot(await lock(client, actorId, now, view), now, view));
   }
   /**
@@ -509,17 +619,14 @@ export function createWorkspaceStore(
   async function scopedRead(actorId, view) {
     const version = await schemaVersion();
     const ready = await transaction(async (client, at) => {
-      const { rows } = await client.query(
-        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR SHARE",
-        [workspaceId],
-      );
-      if (!rows[0] || !engine.validWorld(rows[0].payload)) return null;
+      const row = await lockedWorld(client, "SHARE");
+      if (!row || !engine.validWorld(row.payload)) return null;
       at.setTime(clock().getTime());
       const current = await resolveViewer(actorId, { workingAs: view.membershipId }, client, at, version);
       if (current.status !== "ok") throw new Error("role-ended");
       // The HTTP reply uses this request's view for its access metadata too.
       Object.assign(view, current);
-      return snapshot(rows[0], at, current);
+      return snapshot(row, at, current);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });
@@ -902,12 +1009,9 @@ export function createWorkspaceStore(
     async sweepPush() {
       if (!push) return;
       await transaction(async (client, at) => {
-        const { rows } = await client.query(
-          "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
-          [workspaceId],
-        );
-        if (!rows[0] || !engine.validWorld(rows[0].payload)) return;
-        await evaluatePush(client, rows[0].payload, rows[0].payload, at, null);
+        const row = await lockedWorld(client, "UPDATE");
+        if (!row || !engine.validWorld(row.payload)) return;
+        await evaluatePush(client, row.payload, row.payload, at, null);
       });
       await deliver();
     },
@@ -976,10 +1080,7 @@ export function createWorkspaceStore(
         [workspaceId],
       );
       if (whole || view.access.scope.kind === "statewide") return rows;
-      const world = await pool.query("SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'", [
-        workspaceId,
-      ]);
-      const payload = world.rows[0]?.payload;
+      const payload = (await readWorld(pool, "payload"))?.payload;
       if (!payload || !engine.validWorld(payload)) return [];
       return rows.filter((row) => {
         const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
@@ -1231,7 +1332,7 @@ export function createWorkspaceStore(
      * Readiness review item 9: who opened which patient record. One row each time a desk opens a
      * patient or movement page, naming its role and place. A repeat by the same account of the
      * same record on the same screen within a minute adds nothing, so a reload cannot flood the
-     * log. The table refuses every change and removal (migration 10). Before 10 nothing is kept.
+     * log. The table refuses every change and removal (migration 11). Before 11 nothing is kept.
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
@@ -1272,7 +1373,7 @@ export function createWorkspaceStore(
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token
      * expires. The row lasts as long as any token of that sign-in could still be accepted: the
-     * session limit from when it began. Sign-outs past that are removed. Before migration 10 it
+     * session limit from when it began. Sign-outs past that are removed. Before migration 11 it
      * answers false and the sign-in ends when its token expires.
      */
     async signOutSession(actorId, sessionId, startedAt) {
@@ -1292,7 +1393,7 @@ export function createWorkspaceStore(
       return true;
     },
     /**
-     * Whether this sign-in was signed out here. From migration 10 a sign-in with no session id
+     * Whether this sign-in was signed out here. From migration 11 a sign-in with no session id
      * cannot be signed out, so it is refused too.
      */
     async sessionSignedOut(sessionId) {
@@ -1392,7 +1493,9 @@ export function createWorkspaceStore(
         let outcome = "stale";
         let status = 409;
         let changes = {};
-        let reason = "The workspace changed. Review the latest board before trying again.";
+        let reason = row.core
+          ? "Someone else changed this record first. Review the latest board before trying again."
+          : "The workspace changed. Review the latest board before trying again.";
         let code = null;
         const priorRevision = Number(row.revision);
         // The sender's own role and place, checked before the revision, so a desk never learns
@@ -1409,20 +1512,34 @@ export function createWorkspaceStore(
           outcome = "denied";
           status = 422;
           reason = "Demo controls are switched off on the shared workspace.";
-        } else if (priorRevision === expectedRevision) {
+        } else if (
+          priorRevision === expectedRevision ||
+          (row.core && expectedRevision > 0 && expectedRevision < priorRevision)
+        ) {
+          // From migration 10 a command sent against an older revision still applies to the
+          // latest workspace, unless someone else has since changed a record it changes or names.
           const applied = engine.applyCommand(row.payload, event, at);
-          ({ outcome, changes, reason } = applied);
-          status = outcome === "accepted" ? 200 : 422;
-          if (outcome === "accepted") {
+          const after = applied.outcome === "accepted" ? applied.world : row.payload;
+          const stale =
+            priorRevision !== expectedRevision &&
+            conflicts({
+              stored: row.stored,
+              core: row.core,
+              before: row.payload,
+              after,
+              event,
+              expectedRevision,
+              priorRevision,
+            });
+          if (!stale) {
+            ({ outcome, changes, reason } = applied);
+            status = outcome === "accepted" ? 200 : 422;
+          }
+          if (!stale && outcome === "accepted") {
             const before = row.payload;
             row.revision = priorRevision + 1;
             row.payload = applied.world;
-            await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
-              workspaceId,
-              row.revision,
-              row.payload,
-              at,
-            ]);
+            await saveWorld(client, row, row.payload, row.revision, at);
             if (push) {
               // Phone push must never cost the coordinator their change: an evaluation error rolls
               // back to here, is logged, and the command still commits.

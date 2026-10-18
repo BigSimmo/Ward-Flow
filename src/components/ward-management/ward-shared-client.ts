@@ -524,8 +524,14 @@ export class SharedWorkspaceClient {
               reconciliationFailed = true;
             }
           }
-        } else if (response.ok && Number.isSafeInteger(value.commandRevision))
-          this.headRevision = Math.max(this.headRevision, value.commandRevision);
+        } else if (response.ok && Number.isSafeInteger(value.commandRevision)) {
+          // A command sent against an older revision can land on top of other desks' saves. This
+          // tab has not seen those, so it moves its base on only when nothing came in between;
+          // otherwise the server keeps checking later commands against what this tab last saw.
+          if (value.commandRevision === command.expectedRevision + 1)
+            this.headRevision = Math.max(this.headRevision, value.commandRevision);
+          else this.needsRefresh = true;
+        }
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
@@ -563,7 +569,7 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? "Another coordinator changed the board. Your action was not applied; review the latest state."
+                ? "Someone else changed this first. Your action was not applied; review the latest state."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"

@@ -196,9 +196,9 @@ SELECT current_user AS role,
       AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.access_requests', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
       AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.access_requests', 'REFERENCES')
     ELSE true END
-    -- Migration 10: record access rows are only added and read, never changed or removed. A
+    -- Migration 11: record access rows are only added and read, never changed or removed. A
     -- sign-out row is added, read, and removed once it has lapsed, and nothing in it changes.
-    AND CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN
+    AND CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 11) THEN
       pg_catalog.has_table_privilege(r.oid, 'ward_flow.record_access', 'SELECT')
       AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.record_access', 'INSERT')
       AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.record_access_id_seq', 'USAGE')
@@ -212,6 +212,16 @@ SELECT current_user AS role,
       AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.session_sign_outs', 'UPDATE,REFERENCES')
     ELSE true END
   ELSE true END AS access_grants,
+  -- Migration 10: each record of the workspace is a row the backend reads, adds, rewrites and
+  -- removes. Before it, the table does not exist.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'INSERT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'UPDATE')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'DELETE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.workspace_records', 'REFERENCES')
+  ELSE true END AS records_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
     OR pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'CREATE')
@@ -242,14 +252,14 @@ SELECT current_user AS role,
       WHERE n.nspname = 'ward_flow' AND (c.relrowsecurity OR c.relforcerowsecurity))
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'ward_flow') END AS rls_valid,
-  -- Exactly the guard triggers in the schema, whatever their state: two, and from migration 10
+  -- Exactly the guard triggers in the schema, whatever their state: two, and from migration 11
   -- four, adding the record access and break glass guards.
-  (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN 4 ELSE 2 END
+  (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 11) THEN 4 ELSE 2 END
     FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'ward_flow' AND NOT t.tgisinternal)
-  AND (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN 4 ELSE 2 END
+  AND (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 11) THEN 4 ELSE 2 END
     FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
@@ -301,6 +311,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "restricted_grants",
       "push_grants",
       "access_grants",
+      "records_grants",
       "audit_append_only",
       "browser_denied",
       "guards_valid",

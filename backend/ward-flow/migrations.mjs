@@ -58,8 +58,13 @@ export const MIGRATIONS = Object.freeze([
   },
   {
     version: 10,
-    file: "010-record-access-and-sign-out.sql",
-    sha256: "e69396e45246d0ff88ee41a423edf8ae076d9375c0f6a7492965e11ee926616e",
+    file: "010-workspace-records.sql",
+    sha256: "fde6544232eb2294aea9477a4ddf2f5ad7c9b9d2f7cafdb13e0cfa557a19ce07",
+  },
+  {
+    version: 11,
+    file: "011-record-access-and-sign-out.sql",
+    sha256: "92e8edd61d97502e9827004c5abd6dcfc88deebead7668b9ae58c6ded97812cd",
   },
 ]);
 
@@ -67,12 +72,14 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
- * (7), role access (8), cover with requests (9) and the record access log with sign-outs (10) are
- * applied to a live database separately, so the backend runs on 5 to 10: it can deploy before those
- * migrations, and keeps running if their infra/rollback-*.sql scripts take the database back. Before
- * 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there is no cover, no request
- * for access, no "not used" switch-off and no phone alert by role. Before 10 opening a record is
- * not logged and a sign-out does not end the sign-in's token on this server.
+ * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 11:
+ * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
+ * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
+ * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
+ * the workspace is saved as one record, so any change refuses every other save made against an older
+ * revision. Before 11 opening a record is not logged and a sign-out does not end the sign-in's token
+ * on this server.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
@@ -82,8 +89,11 @@ export const ROLE_ACCESS_MIGRATION = 8;
 /** The first schema with cover, requests for access, last used times and alerts by role (migration 9). */
 export const ACCESS_COVER_MIGRATION = 9;
 
-/** The first schema with the record access log and server-side sign-outs (migration 10). */
-export const RECORD_ACCESS_MIGRATION = 10;
+/** The first schema that saves each record of the workspace as its own row (migration 10). */
+export const RECORDS_MIGRATION = 10;
+
+/** The first schema with the record access log and server-side sign-outs (migration 11). */
+export const RECORD_ACCESS_MIGRATION = 11;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

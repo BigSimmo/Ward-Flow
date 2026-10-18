@@ -9,8 +9,8 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | ------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------- |
 | `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set                                  | `backend/ward-flow/config.mjs`  |
 | `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set                               | `backend/ward-flow/config.mjs`  |
-| `latest-migration`  | 010-record-access-and-sign-out              | Newest shared-workspace database migration                                              | `backend/ward-flow/migrations/` |
-| `migration-count`   | 10                                          | Numbered database migrations                                                            | `backend/ward-flow/migrations/` |
+| `latest-migration`  | 011-record-access-and-sign-out              | Newest shared-workspace database migration                                              | `backend/ward-flow/migrations/` |
+| `migration-count`   | 11                                          | Numbered database migrations                                                            | `backend/ward-flow/migrations/` |
 | `ward-route-count`  | 50                                          | `page.tsx` routes under `/mockups/ward-flow`                                            | `src/app/mockups/ward-flow/`    |
 | `app-route-count`   | 52                                          | Pages and route handlers under `/mockups`: the Ward Flow routes plus sign-in and digest | `src/app/mockups/`              |
 | `latest-decision`   | D-67                                        | Newest entry in the decision log                                                        | `docs/ward-flow/decisions.md`   |
