@@ -1,17 +1,15 @@
 # Ward Flow documentation archive
 
-Historical documents no longer live in the working tree. Every one is kept in Git at tag
-`docs-archive-2026-10-18`, which points at `main` commit `0a469c6`
-(`0a469c61260a49aaa94733f948ae1d53f4d3f5e6`), the last commit before they were removed.
+Historical documents no longer live in the working tree. Every one is kept in Git history at
+`main` commit `0a469c6` (`0a469c61260a49aaa94733f948ae1d53f4d3f5e6`), the last commit before they
+were removed. That commit is part of `main`, so it stays in every full clone.
 
 Read or restore a file:
 
 ```sh
-git show docs-archive-2026-10-18:docs/ward-flow/reports/remediation-2026-10-08.md
-git checkout docs-archive-2026-10-18 -- docs/ward-flow/reports/remediation-2026-10-08.md
+git show 0a469c6:docs/ward-flow/reports/remediation-2026-10-08.md
+git checkout 0a469c6 -- docs/ward-flow/reports/remediation-2026-10-08.md
 ```
-
-If the tag is not in your clone, use the commit instead: `git show 0a469c6:<path>`.
 
 ## Removed on 18 October 2026
 
