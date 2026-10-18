@@ -346,6 +346,7 @@ describe("owner pins carried over from the retired full-page form", () => {
       act(() => vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS - 1));
       const draftKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("wf-draft:v1:"));
       expect(draftKeys).toEqual([]);
+      expect(setItem.mock.calls.some(([key]) => String(key).startsWith("wf-draft:v1:"))).toBe(false);
       expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     } finally {
       setItem.mockRestore();
