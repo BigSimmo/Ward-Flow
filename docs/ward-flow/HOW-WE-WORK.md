@@ -5,6 +5,8 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
+_Updated 2026-10-17 - narrow main-sync exception aligned with AGENTS.md; Documentation owns._
+
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
 > `AGENTS.md` wins. The former local Ward-line fold queue and lock are historical. Section 4
@@ -86,7 +88,10 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - Commit each coherent unit as you go, on your own branch only.
 - Stage explicit paths. **Never `git add -A` or `git add .`. Never `git stash`.** Verify the
   destination and applicable authority before any push.
-- Never merge or rebase other branches into your branch.
+- Do not merge other task branches into your branch or rebase your branch. An already-authorised
+  merge of current main into a task branch follows the narrower exception in
+  [AGENTS.md Git safety](../../AGENTS.md#git-safety). Preserve its ownership, confirmation and
+  auto-merge restrictions; this exception does not grant general integration or history-rewrite authority.
 - The pre-commit checks inspect a disposable staged snapshot. Unrelated unstaged or untracked
   files do not by themselves block an owned commit. Preserve peers' files. If a real ownership
   conflict or required check blocks the commit, record its exact paths and reason in the existing

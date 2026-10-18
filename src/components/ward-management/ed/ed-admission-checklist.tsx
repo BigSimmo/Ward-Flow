@@ -8,9 +8,9 @@ import edStyles from "./ed.module.css";
 import styles from "./ed-admission-checklist.module.css";
 
 /**
- * Admission arrival checklist (Top 25 item 14, flag `top25-admission-checklist`). Read only: each
- * tick comes from a recorded fact (`admissionChecklist`), and the two checks with no record in this
- * prototype say so. Shown on the ED person card once a ward has accepted the patient.
+ * Admission arrival checklist (Top 25 item 14, flag `top25-admission-checklist`).
+ * Reads recorded facts only. The search and medication checks without recorded values are not
+ * wired; this card cannot record a completion.
  */
 export function EdAdmissionChecklist({ movement, referrals }: { movement: Movement; referrals: readonly Referral[] }) {
   const items = admissionChecklist(movement, referrals);

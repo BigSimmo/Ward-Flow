@@ -168,3 +168,35 @@ Fresh lockfile audits still report five high development package entries for the
 Read-only Railway deployment records identify this same merged commit for the main app, backend and shared frontend. The app deployment `f34b174f-83f7-4d44-9ef0-0eff3424df6e` and backend deployment `906d84d0-21b6-4cc0-9d18-73408145439a` report success; the shared frontend deployment `f21c47cb-c62d-4df9-afc6-66fd03c1e286` reports sleeping. These observations establish deployed source identity and provider status, not authenticated application acceptance.
 
 Direct access to the hosted app's health endpoint was blocked by this execution environment's network policy (CONNECT HTTP 403). No live authenticated save, reload or conflict check was performed in this follow-up. The separate dated hosting record describes earlier synthetic-account HTTP checks; it is not fresh browser evidence for this deployment. Physical Safari and installed-PWA acceptance also remain unverified. Complete these checks with approved network access and a configured synthetic test session before claiming them passed.
+
+## Current-main follow-up — 17 October 2026
+
+This continuation reviewed main `5875823b5322f0b4ed2f5239628f88d40ea0195e` after PR #335
+merged. The current dependency path and toolchain snapshot are recorded in
+[the dependency follow-up](../../dependency-security-exceptions.md). jsdom 30.1.3 requires
+Undici `^8.12.1`, while the inherited global override left 8.11.2 locked. Raising that override's
+minimum to `^8.12.1` lets npm select 8.12.2. Only that package's version, URL and integrity change
+in the lock; unrelated platform metadata is preserved. This aligns a declared development
+requirement; no application runtime failure was reproduced.
+
+A fresh locked install with lifecycle scripts, installed-lock parity, dependency-tree inspection,
+owned formatting, documentation checks, full lint and typecheck passed. The full unit gate
+requires a committed clean tree and did not execute before this checkpoint; browser journeys
+also remained unrun at that boundary. These checks are not a full-suite or merge-readiness
+verdict. Current candidate results belong with the exact published head's checks and task receipt.
+
+Four parallel source reviews covered recent backend/auth adapters and pruning changes, merged
+dependency compatibility, and open PRs #396 and #397. No concrete backend regression was found
+within that scope. At reviewed heads `216fde77` (#396) and `b0f5fbe6` (#397), required CI had
+failed. Review confirmed local-only discharge/checklist success claims and a hypothetical-versus-
+current referral suitability mismatch in #396; #397 had an unterminated test string and an
+ambiguous-merge admission fallback that discarded required paths. Proposed repairs are retained
+privately for exact-file ownership coordination with those active PRs. These are separate from
+this dependency correction, and are not claimed applied or passing here.
+
+The fresh full lockfile audit still reports five high development entries for the one R43 advisory;
+the production audit reports zero vulnerabilities. The registry still reports braces 3.0.3, so R43
+remains open with its 22 October review. No unsupported downgrade or advisory suppression was
+used. Hosted acceptance, current deployed revision, backup/recovery acceptance, physical Safari
+and installed-PWA checks remain unverified. No Railway or Supabase access was attempted in this
+continuation; the reported host-grant rejection remains unresolved.

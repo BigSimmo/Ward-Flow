@@ -1,7 +1,7 @@
 # Dependency security follow-up
 
 Current advisory review: 17 October 2026, from main
-`ed9d59e71a294787e4fd32c8363ee875c7b63161` and the npm registry. This is the canonical record for
+`5875823b5322f0b4ed2f5239628f88d40ea0195e` and the npm registry. This is the canonical record for
 the remaining advisory. The dated installation evidence below is retained separately. This record
 covers dependency maintenance for synthetic local development; it does not approve clinical use.
 
@@ -15,10 +15,10 @@ covers dependency maintenance for synthetic local development; it does not appro
   vulnerability remains open and upstream-blocked.
 - **Supported parent updates:** the latest `micromatch` 4.0.8 still requires `braces ^3.0.3`;
   `fast-glob` 3.3.3 still requires that micromatch line. Even `@next/eslint-plugin-next` 16.4.2
-  pins `fast-glob` 3.3.1. Open dependency PR #335's Next 16.4.0 update therefore does not close
+  pins `fast-glob` 3.3.1. Merged dependency PR #335 retains this chain and therefore does not close
   this advisory. Updating these packages solely for R43 would leave the vulnerable parser present.
-- **Dependency path:** development-only `eslint-config-next` 16.3.6 → `@next/eslint-plugin-next`
-  16.3.6 → `fast-glob` 3.3.1 → `micromatch` 4.0.8 → `braces` 3.0.3. The five audit package entries
+- **Dependency path:** development-only `eslint-config-next` 16.4.0 → `@next/eslint-plugin-next`
+  16.4.0 → `fast-glob` 3.3.1 → `micromatch` 4.0.8 → `braces` 3.0.3. The five audit package entries
   describe one inherited advisory, not five separate vulnerabilities.
 - **Trigger and consequence:** an adversarial deeply nested brace glob can exhaust the parser's
   stack and terminate a developer or CI tooling process.
@@ -43,7 +43,19 @@ covers dependency maintenance for synthetic local development; it does not appro
   accepts external glob patterns. Re-run `npm view braces version`, `npm explain braces` and
   `npm audit --json`; install a supported patch and verify the lint contracts when available.
 
-## Current toolchain and install evidence — 17 October 2026
+## Current toolchain — 17 October 2026, after PR #335
+
+Current main selects Next 16.4.2, React and React DOM 19.3.0, ESLint 10.12.0,
+`eslint-config-next` 16.4.0, Vitest and coverage-v8 5.0.5, Vite 8.2.2 and PostCSS 8.5.30.
+The follow-up raises the Undici override minimum to `^8.12.1`, matching jsdom 30.1.3's
+requirement; npm's native lock resolution selects Undici 8.12.2. This repairs a development
+consumer's declared dependency range, with no reproduced application failure claimed.
+A fresh locked install passes the unchanged installed-lock parity guard. The fresh full
+lockfile audit still reports the same five development entries for SEC-003, and the production
+lockfile audit reports zero vulnerabilities. These checks do not establish full application,
+browser or hosted acceptance.
+
+## Historical toolchain and install evidence — 17 October 2026, before PR #335
 
 The assessed lock selects Next 16.3.8, React 19.2.8, ESLint 10.12.0,
 `eslint-config-next` 16.3.6, Vitest and coverage-v8 5.0.5, Codspeed's Vitest plugin 6.0.1,
@@ -77,15 +89,15 @@ its installation allowlist entry agree. All other application versions are retai
 locked install, image processing, source-map/TOML consumer checks, the production audit and the
 integration build before claiming the candidate's full verification.
 
-## Toolchain constraints and historical verification
+## Historical toolchain constraints and verification
 
-The merged lock selects PostCSS 8.5.30, Vite 8.2.2, Codspeed's Vitest plugin 6.0.1, and matching
+The pre-#335 merged lock selected PostCSS 8.5.30, Vite 8.2.2, Codspeed's Vitest plugin 6.0.1, and matching
 Vitest/coverage-v8 5.0.5 after PR #336. Next is 16.3.8, its ESLint configuration/plugin are 16.3.6,
 and ESLint is 10.12.0 after PR #338. The direct PostCSS dependency and override require at least
 8.5.26, satisfying Vite's declared `^8.5.26` dependency; no forced Vite override is present.
 
 The earlier 16 October verification used Vitest 4.1.11 with lifecycle scripts disabled. It is
-historical evidence, not a check of this merged toolchain. The current ESLint configuration names
+historical evidence, not a check of this merged toolchain. The retained ESLint configuration names
 React 19 explicitly for the inherited React plugin's ESLint 10 compatibility workaround. That
 plugin's declared peer range still stops at ESLint 9, so installation can warn about its peer
 range. The final integrated PR #381 passed whole-tree lint in hosted CI; no broader upstream peer
