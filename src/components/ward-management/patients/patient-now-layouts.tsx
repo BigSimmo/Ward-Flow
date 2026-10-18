@@ -4,7 +4,7 @@ import { ChevronRight, Phone, PhoneCall } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useOptionalToast } from "@/components/wf";
-import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 
 import type { CallRow } from "./patient-call-list";

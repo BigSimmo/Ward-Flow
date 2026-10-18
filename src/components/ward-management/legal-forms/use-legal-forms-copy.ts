@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { useOptionalToast } from "@/components/wf";
-import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * Clipboard copy for the Legal forms screen. `copied` names the last successful copy for two
