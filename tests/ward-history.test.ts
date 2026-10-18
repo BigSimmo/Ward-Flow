@@ -30,7 +30,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Stay discharge blocker (15 Oct 2026) adds RECORD_STAY_DISCHARGE_BLOCKER and CLEAR_STAY_DISCHARGE_BLOCKER.
       // Top 25 item 25 (15 Oct 2026) adds EXTEND_BROADCAST_ALERT.
       // Top 25 item 9 (D-60, 15 Oct 2026) adds SET_DISCHARGE_CRITERIA.
-      // Turnaround staging adds one movement and one referral preference event.
+      // CLD turnaround priority (handover, 17 Oct 2026) adds FLAG_MOVEMENT_TURNAROUND_PRIORITY and
+      // FLAG_REFERRAL_TURNAROUND_PRIORITY.
       expect(allEventTypes.length).toBe(133);
 
       for (const eventType of allEventTypes) {

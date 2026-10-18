@@ -1355,8 +1355,9 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "RECORD_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_BLOCKER",
   "FLAG_MOVEMENT_URGENT",
-  "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
   "CLEAR_MOVEMENT_URGENT_FLAG",
+  // CLD turnaround priority (handover, 17 Oct 2026): carries `movementId` and acts on that movement.
+  "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
   // Task 5 (2026-09-04). Both carry `movementId` and act on one named movement, same as
   // RELEASE_PULL/CANCEL_TRANSPORT above — and, like those two, STEP_BACK_STAGE is excluded from
   // the round-robin sweep (see that `continue` and its comment) and exercised in the dedicated

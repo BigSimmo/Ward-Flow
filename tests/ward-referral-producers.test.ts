@@ -57,7 +57,6 @@ const WRITTEN_ELSEWHERE: Record<string, string> = {
   raisedAt: "set to the event's own now",
   // Phase 8 D8-6, recorded later by a coordinator if it happened at all — never at intake.
   localBedSought: "RECORD_LOCAL_BED_SOUGHT, after the referral exists",
-  turnaroundPriority: "FLAG_REFERRAL_TURNAROUND_PRIORITY, after receiving gates and clearing-bed readiness pass",
   medicalClearance: "RECORD_MEDICAL_CLEARANCE, after the referral exists",
   // RB7, build plan item 27 (2026-09-17): a correction is added AFTER the referral exists — the
   // whole point of `corrections` is that it is append-only and separate from the original
@@ -66,6 +65,10 @@ const WRITTEN_ELSEWHERE: Record<string, string> = {
   // T12 (item 9): the front door's own accountability record for a Non-binary placement decided
   // at acceptance time, not at intake — RECEIVE_REFERRAL has no unit to place anyone at yet.
   genderPlacements: "ACCEPT_REFERRAL, when a coordinator accepts a Non-binary ward referral",
+  // CLD turnaround priority (handover, 17 Oct 2026): a coordinator flags it on a referral that already
+  // exists and has a destination in view, so it cannot come from the front door.
+  turnaroundPriority:
+    "FLAG_REFERRAL_TURNAROUND_PRIORITY, raised by a coordinator after receiving gates and clearing-bed readiness pass",
   // Ward-to-ward transfer (ef1807cda1, 1b1c5bb2ba): RECEIVE_REFERRAL does write it, but only for a
   // psychiatric_ward source (`event.source === "psychiatric_ward" ? event.originUnitId : undefined`),
   // as the model's own comment specifies, so the plain `field: event.field` form above cannot see it.

@@ -361,6 +361,8 @@ describe("PR15 discharge and referral provenance", () => {
       expect(button).toHaveAttribute("aria-disabled", "true");
       const reason = document.getElementById(button.getAttribute("aria-describedby")!)!;
       expect(reason.textContent).toContain("unavailable");
+      // The wf Button states its disabledReason as the accessible description and a hover tooltip,
+      // not a title attribute (placement touch targets, 17 Oct 2026).
       expect(button).toHaveAccessibleDescription(/unavailable/);
       fireEvent.click(button);
     }
