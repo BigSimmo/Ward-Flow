@@ -64,6 +64,7 @@ import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -239,9 +240,6 @@ const MATCH_LABEL: Record<MatchKind, string> = {
   "same-name": "Same name",
   near: "Similar spelling",
 };
-
-/** How long an accepted shared save waits for its snapshot to bring the new record. */
-const SHARED_SNAPSHOT_WAIT_MS = 3000;
 
 export function AddPatientForm() {
   const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
@@ -527,7 +525,7 @@ export function AddPatientForm() {
       lateSubmissionRef.current = prior;
       setSavedOutsideView(`${saved}. ${note}`);
       toast?.push({ tone: "success", title: saved, body: note });
-    }, SHARED_SNAPSHOT_WAIT_MS);
+    }, SHARED_REFRESH_MS);
     return () => window.clearTimeout(timer);
     // clearForm and finishSubmission only set state; the timer starts once per accepted save.
     // eslint-disable-next-line react-hooks/exhaustive-deps

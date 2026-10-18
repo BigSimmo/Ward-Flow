@@ -423,6 +423,8 @@ function countsOnlyAdmission(admission: Admission): Admission {
       "leftAt",
       "dischargeBarrier",
       "stepDownCandidate",
+      // Redacted to counts and tick times below, after grant expansion (#403).
+      "dischargeCriteria",
     ]),
     tentativeDiagnosis: null,
     followUp: admission.followUp

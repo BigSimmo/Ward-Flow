@@ -208,7 +208,7 @@ export function rememberDowntimePack(
 }
 
 /** True when the remembered pack was taken in another world generation (a reset or scenario switch). */
-export function downtimePackIsStale(worldGeneration: number): boolean {
+function downtimePackIsStale(worldGeneration: number): boolean {
   return lastPack !== null && packGeneration !== null && packGeneration !== worldGeneration;
 }
 

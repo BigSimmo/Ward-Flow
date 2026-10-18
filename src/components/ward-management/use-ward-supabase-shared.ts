@@ -5,6 +5,7 @@ import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
@@ -200,7 +201,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
       timer = setInterval(() => {
         if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
         void client.refresh();
-      }, 3000);
+      }, SHARED_REFRESH_MS);
     };
     const run = async (action: () => Promise<void>) => {
       if (closed || !auth) return;
