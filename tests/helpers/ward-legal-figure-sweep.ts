@@ -2074,6 +2074,33 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     accepted.add("WITHDRAW_WARD_REQUEST");
     offenders.push(...offendingFormsIn(wardRequestWithdrawn, `WITHDRAW_WARD_REQUEST(${code})`));
 
+    // CLD turnaround priority (handover, 17 Oct 2026). The round-robin reaches this for most codes,
+    // but not reliably for every one: its precondition (a waiting, unplaced movement whose code the
+    // receiving unit's clinical and legal gates allow, on a unit with a current CLD-ready or
+    // confirmed departure) is often consumed by placement first. It is not structurally impossible
+    // for any selectable code, so it is driven here on a freshly referred movement instead of being
+    // excused. Every unit is tried; the reducer's own gates pick the ones that accept.
+    const forTurnaround = buildReferredMovementFor(code, NOW_ANCHOR);
+    const turnaroundAttempts = forTurnaround.state.units.map((unit) =>
+      wardFlowReducer(forTurnaround.state, {
+        type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
+        role: EVENT_ROLE.FLAG_MOVEMENT_TURNAROUND_PRIORITY[0],
+        now: NOW_ANCHOR,
+        movementId: forTurnaround.movementId,
+        unitId: unit.id,
+      }),
+    );
+    const turnaroundFlagged = turnaroundAttempts.filter(
+      (next) => next.rejections.length === forTurnaround.state.rejections.length,
+    );
+    expect(
+      turnaroundFlagged.length,
+      `FLAG_MOVEMENT_TURNAROUND_PRIORITY for Form ${code} was refused on every unit: ${turnaroundAttempts.at(-1)?.rejections.at(-1)?.reason}`,
+    ).toBeGreaterThan(0);
+    accepted.add("FLAG_MOVEMENT_TURNAROUND_PRIORITY");
+    for (const next of turnaroundFlagged)
+      offenders.push(...offendingFormsIn(next, `FLAG_MOVEMENT_TURNAROUND_PRIORITY(${code})`));
+
     const forFormReceived = buildHeldMovementFor(code, NOW_ANCHOR);
     if (supplyDueAt) {
       forFormReceived.state = wardFlowReducer(forFormReceived.state, {
