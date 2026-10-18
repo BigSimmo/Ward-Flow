@@ -25,7 +25,11 @@
   align-items: center;
   gap: 0.625rem;
   min-width: 0;
-  flex: 1 1 auto;
+  /* A 20rem basis, not auto: on a wide column the note wraps inside this group and the footer
+     stays one row. With an auto basis the whole authority pill dropped to a second row at 1361px,
+     the footer grew past the rail budget in ward-shell.module.css (--ward-rail-height), and pinned
+     rails were pushed up under the header at the end of the scroll. */
+  flex: 1 1 20rem;
 }
 
 .prototypeBadge {
