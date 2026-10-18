@@ -37,11 +37,10 @@ docs/ward-flow/control/evidence/receipts/*.json
 # feeling scrupulous; five chats each remembering is not a control.
 docs/ward-flow/control/work-claims.md
 
-# Byte-pinned Ward Flow design prototypes.
-# `tests/ward-statistics-v3-language.test.ts` and `-v4-` compare each mockup HTML against
-# `statistics-language-*.css` BYTE FOR BYTE. Prettier formats CSS as CSS and HTML as HTML, so a
-# whole-tree format pass reflows the two differently and the embedded copy stops matching. Measured
-# 2026-09-10: `npm run format` broke 10 of these tests at once. These files are artefacts, not code.
+# Ward Flow design prototypes are artefacts, not code. Each mockup HTML embeds a copy of a
+# `statistics-language-*.css` or design-language block; Prettier formats CSS as CSS and HTML as HTML,
+# so a whole-tree format pass would reflow the two differently. The byte-for-byte tests that once
+# enforced the match were retired on 18 October 2026; the files stay unformatted to avoid churn.
 design/prototypes/
 
 # The ward journey map's GENERATED output. `npm run ward:journey` rewrites each of these from

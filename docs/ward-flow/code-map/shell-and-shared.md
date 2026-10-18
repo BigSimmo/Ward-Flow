@@ -313,8 +313,7 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/ward-flow-shell-tokens.module.css`** (456 lines) — the third-edition token layer:
   every CSS custom property the sixteen third-edition screens and the shell components paint with,
   copied verbatim from the approved drawing's own `:root` block. Lives under `src/app/`, **not**
-  under `src/components/ward-management/`, specifically so `tests/ward-raw-colour.test.ts` (which
-  walks only the latter, recursively, forbidding any literal hex/`rgb()`/`hsl()`) does not have to
+  under `src/components/ward-management/`, originally so the raw-colour scan of the latter (retired 18 October 2026) did not have to
   make an exception for it — this file's whole job is to declare that raw colour once. Composed
   directly by ~39 files (`grep`, this map): every third-edition screen module, plus
   `shell/ward-bar.module.css`, `shell/ward-rail.module.css`,
@@ -479,8 +478,7 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   measured `scrollWidth` check (this is a Server Component with no access to that measurement
   itself). 15 importers.
 - **`ward-table/ward-table.module.css`** (289 lines) — the canonical `.table` block;
-  `tests/ward-table-single-source.test.ts` asserts no other stylesheet under `ward-management/`
-  re-declares it. `ed`, `ward-management-modes` and `ward-management-network` are deliberately NOT
+  other stylesheets under `ward-management/` compose it rather than re-declaring it. `ed`, `ward-management-modes` and `ward-management-network` are deliberately NOT
   migrated onto it — their tables use different token layers, border modes and sticky headers by
   design, not by drift.
 

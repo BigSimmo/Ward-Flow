@@ -40,7 +40,7 @@ with a build contract"). **Dispatches:** `ACKNOWLEDGE_INBOX_ITEM`, `DISPATCH_BRO
 `STAND_DOWN_BROADCAST_ALERT`. **Reads:** `buildActionInbox`, `isOpen` (`ward-derivations.ts`).
 **Tests:** `ward-alerts-*` (five files), plus repo-wide guards `ward-broadcast-alerts.dom.test.tsx`,
 `ward-dialog-accessibility.dom.test.tsx`, `ward-landmarks.test.ts`, `ward-nav.test.ts`,
-`ward-no-dead-ends.dom.test.tsx`, `ward-primitives-shared.test.ts`, `ward-reanchor.test.ts`.
+`ward-no-dead-ends.dom.test.tsx`, `ward-reanchor.test.ts`.
 `ward-broadcast-banner.tsx` (in `shell/`) and `ward-flow-events.ts` also import this folder.
 
 - **`src/components/ward-management/alerts/alerts-screen.tsx`** (1495 lines) — the Alerts screen:
@@ -106,7 +106,7 @@ batch, so a preceding service's visible trailing edge cannot replace the service
 `BED_RELEASE_BLOCKED_FIGURE_LABEL`, `bedReleaseStateLabels` (`ward-derivations.ts`), plus this
 folder's own `capacity-derivations.ts`. **Tests:** the dozen-plus `ward-capacity-*` files,
 `ward-agent2-stress-test.test.ts`, `ward-bed-release.dom.test.tsx`,
-`ward-facade-agrees-with-screens.test.ts`, `ward-mono-face-earns-its-place.test.ts`,
+`ward-facade-agrees-with-screens.test.ts`,
 `ward-refinement-discharge-ui.dom.test.tsx`, `ward-service-capacity-tracker.test.ts`, plus
 repo-wide guards.
 
@@ -259,7 +259,7 @@ build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 1
 `referralForMovement`, `stageCopy` (`ward-derivations.ts`), `openWorkBeforeShiftEnd` and friends
 (`ward-board-time-features.ts`). **Tests:** the dozen `ward-handover*` files plus
 `ward-advanced-features.dom.test.tsx`, `ward-community-durations-not-dates.test.ts`,
-`ward-drawing-match-r2-12.test.ts`, `ward-pull-vocabulary.dom.test.tsx`,
+`ward-pull-vocabulary.dom.test.tsx`,
 `ward-screen-handover-link.dom.test.tsx`, `ward-service-scope.test.ts`,
 `ward-settings-screen.dom.test.tsx`, plus repo-wide guards. Also imported by
 `ward/ward-screen.tsx` (a handover link/summary on the ward screen).
@@ -287,7 +287,7 @@ build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 1
 **Route:** `/hub`. **Mockup:** `search-hub-third-edition.html`. **Dispatches:** none — read-only
 search/preview screen. **Reads:** its own `hub-derivations.ts`, plus
 `COMMUNITY_TEAM_PAGES`, `unitCapacity`, `wardServiceOrder`, `bedsPendingPreparation`. **Tests:**
-`viewport-fill-contract.test.ts`, `ward-hub-*` (five files), plus repo-wide guards.
+`ward-hub-*` (five files), plus repo-wide guards.
 
 - **`src/components/ward-management/hub/hub-browser-memory.ts`** (142 lines) — per-viewer
   `localStorage` memory for pinned and recently-opened hub entries (`usePinnedHubIds`,
@@ -392,10 +392,9 @@ person doing four things on a phone" — deliberately not folded into `movements
 `ward-change-reasons.ts`. **Tests:** `ward-advanced-features.dom.test.tsx`,
 `ward-back-sync-and-focus-trap.dom.test.tsx`, `ward-builder-2-features.dom.test.tsx`,
 `ward-diversion-controls.dom.test.tsx`, `ward-governance-enumerations.dom.test.tsx`,
-`ward-management-role.dom.test.tsx`, `ward-management-role.test.ts`,
+`ward-management-role.dom.test.tsx`,
 `ward-officer-blocked-reason-parity.test.ts`, `ward-officer-kpi-and-copy.dom.test.tsx`,
-`ward-officer-print.test.ts`, `ward-officer-stepper.dom.test.tsx`,
-`ward-print-ink-specificity.test.ts`, `ward-withdraw-acceptance-refusal.test.ts`, plus repo-wide
+`ward-officer-stepper.dom.test.tsx`, `ward-withdraw-acceptance-refusal.test.ts`, plus repo-wide
 guards.
 
 - **`src/components/ward-management/officer/officer-screen.tsx`** (1212 lines) — the one-handed
@@ -433,7 +432,7 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 `ward-admissions.ts`, `ward-distance.ts`, `ward-referrals.ts`, `ward-flow-events.ts`. **Tests:**
 `ward-flow-single-source.test.ts`, `ward-out-of-area-figure-direction.dom.test.tsx`,
 `ward-out-of-area-live-state.dom.test.tsx`, `ward-out-of-area-upgrade.dom.test.tsx`,
-`ward-print-ink-specificity.test.ts`, `ward-referral-screens.dom.test.tsx`, plus repo-wide guards.
+`ward-referral-screens.dom.test.tsx`, plus repo-wide guards.
 
 **10 October 2026, option A (two columns):** the register runs on the left; a right column holds
 This shift, Home regions and beds and Ready to go home until a person is picked, then swaps them
@@ -639,7 +638,7 @@ coverage of logic, not a screen), `ward-component-reachability.test.ts`,
 index screen. **Reads:** `unitCapacity`, `wardServiceOrder` (`ward-derivations.ts`),
 `bedsPendingPreparation` (`ward-bed-availability.ts`), `unitHasLockedBeds`/`unitHasOpenBeds`
 (`ward-bed-designation.ts`). **Tests:** `ward-flow-service-coverage.test.ts`,
-`ward-management-print-coverage.test.ts`, `ward-register-inpatient-form-codes.test.ts`,
+`ward-register-inpatient-form-codes.test.ts`,
 `ward-screen-overview-and-entry.dom.test.tsx` (imports `WardIndex` from here alongside `WardScreen`
 from the separate `ward/` folder — the two are easy to conflate by name), plus repo-wide guards.
 

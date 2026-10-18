@@ -815,6 +815,293 @@
       "after": 0,
       "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/worktree-inventory.mjs (worktree inventory), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
       "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/app-announcements-root.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/contextual-back-navigation-contract.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/statistics-v4-primitives-tokens.test.ts",
+      "before": 11,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/viewport-fill-contract.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-answer-bar-dock.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-capacity-network-row-de-emphasis.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-chrome-owner.test.ts",
+      "before": 11,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-css-important-ratchet.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-delays-spread-lanes.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-design-language-canonical.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-drawing-match-r2-12.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-hub-bar-colours.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-management-print-coverage.test.ts",
+      "before": 11,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-management-print.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-print-ink-specificity.test.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-shell-print-ancestor.test.ts",
+      "before": 13,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-management-role.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-mockup-tokens-resolve.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-mono-face-earns-its-place.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-primitives-shared.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-raw-colour.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-referral-overdue-selection-css.test.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-route-component-binding.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-shell-fill.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-sidebar-phone-contract.test.ts",
+      "before": 7,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-static-inline-style-ratchet.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-statistics-pinned-dock.test.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-statistics-v3-language.test.ts",
+      "before": 10,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-statistics-v4-language.test.ts",
+      "before": 15,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-stylesheet-duplicate-block.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-table-min-width.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-table-panel-inset.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-table-phone-swap.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-table-single-source.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-handover-print.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-officer-print.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-referrals-print.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-clinical-rail-token-bridge.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-delays-type-ranks.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-statistics-grid-tracks-fit-the-container.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-style-drift-ratchet.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
+      "approvedOn": "2026-10-18"
     }
   ]
 }

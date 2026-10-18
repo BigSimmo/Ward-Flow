@@ -241,8 +241,7 @@ baseline.
   surface, third-edition headings, service sentence, cancel-unavailable), `ward-bed-release.dom.test.tsx`,
   `ward-release-day.test.ts` / `ward-release-day-chooser.dom.test.tsx`,
   `ward-notification-center.dom.test.tsx`, `ward-suburb-team-panel.dom.test.tsx`,
-  `ward-override-control.dom.test.tsx`, `ward-answer-current-facts.dom.test.tsx`,
-  `ward-drawing-match-r2-12.test.ts`.
+  `ward-override-control.dom.test.tsx`, `ward-answer-current-facts.dom.test.tsx`.
 
 ### Files
 
@@ -319,7 +318,7 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   this module), `ward-ed-to-community-referral.test.ts`, `ward-parallel-referral-cap-ui.dom.test.tsx`,
   `ward-document-metadata.dom.test.tsx`,
   `ward-governance-enumerations.dom.test.tsx`, `ward-facade-agrees-with-screens.test.ts`,
-  `ward-owner-decisions-2026-09-16.test.ts`, `ward-referrals-print.test.ts`.
+  `ward-owner-decisions-2026-09-16.test.ts`.
 
 ### Files
 
@@ -456,10 +455,10 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **Tests:** 17 files: `ward-patient-search.dom.test.tsx`, `ward-patient-typeahead.dom.test.tsx`,
   `ward-search-preview.dom.test.tsx`, `ward-search-access-record.test.ts`,
   `ward-search-refusals.test.ts`, `ward-patient-typed-text-not-in-url.dom.test.tsx`,
-  `ward-print-ink-specificity.test.ts`, `ward-add-patient.dom.test.tsx`,
+  `ward-add-patient.dom.test.tsx`,
   `ward-referral-sending-team-display.test.ts`, plus shared `ward-nav.test.ts`,
-  `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`, `ward-primitives-shared.test.ts`,
-  `ward-management-print-coverage.test.ts`, `ward-governance-enumerations.dom.test.tsx`, and two
+  `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`,
+  `ward-governance-enumerations.dom.test.tsx`, and two
   non-ward guard tests (`guard-push.test.ts`, `pre-commit-ward-flow-main-guard.test.ts`) that
   happen to reference a path string in this folder rather than its behaviour.
 - **Reachability note:** `record-preview.tsx` is imported by `patient-search.tsx` but confirm
@@ -542,11 +541,11 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `ward-statistics-*` specs by area (community × 7, ed × 6, ward × 6, service × 3, sections × 4,
   claims/derivations/absence/demonstration, discharge-date coverage/populations, null-referral-id,
   empty-bed spread/exclusion, grid-tracks-fit, number-agreement, today-counts, ready-not-yet-gone),
-  `statistics-v4-primitives-tokens.test.ts`, `ward-composes-targets.test.ts`,
+  `ward-composes-targets.test.ts`,
   `ward-declined-by-all-precedence.test.ts`, `ward-pending-preparation-populations.test.ts`,
   `ward-screen-verification-lib.test.ts`, `ward-length-of-stay-population.dom.test.tsx`, plus
   shared `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`,
-  `ward-primitives-shared.test.ts`, `ward-browser-build-css.test.ts`.
+  `ward-browser-build-css.test.ts`.
 
 ### Files
 
