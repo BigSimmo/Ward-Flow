@@ -1872,15 +1872,17 @@
 
 .filterChipsTrack {
   overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.filterChipsTrack::-webkit-scrollbar {
-  display: none;
+  scrollbar-width: thin;
+  scroll-padding-inline: 0.375rem;
 }
 
 .filterChipsTrack .filterChip {
   flex: 1 0 auto;
+}
+
+/* An inset ring stays visible when a category scrolls into keyboard focus at either edge. */
+.filterChipsTrack .filterChip:focus-visible {
+  outline-offset: -2px;
 }
 
 .activitySection {
@@ -3428,5 +3430,18 @@
     .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
       min-height: var(--spacing-tap, 3rem);
     }
+  }
+}
+
+/* Bright-room mode uses opaque chrome; forced colours and printing keep their own palette. */
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .bar {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :global(:root[data-mode="glare"]) .bar::before {
+    background: none;
   }
 }

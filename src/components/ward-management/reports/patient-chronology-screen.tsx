@@ -177,6 +177,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   // Phone only: the patient name in the hero opens this list of people to choose from.
   const [pickerOpen, setPickerOpen] = useState(false);
   const tableScroll = useRef<HTMLDivElement>(null);
+  const patientSelect = useRef<HTMLSelectElement>(null);
 
   // Read once per world (the read returns a fresh copy each call), and only for the coordinator.
   const auditEvents = useMemo(() => {
@@ -295,6 +296,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const patientPicker = (
     <Select
+      ref={patientSelect}
       aria-label="Patient"
       value={patientId}
       onChange={(event) => choosePatient(event.target.value)}
@@ -915,7 +917,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         ) : (
           <Card aria-labelledby={`${baseId}-none`}>
             <CardHead id={`${baseId}-none`} icon={ListOrdered} title="No patient chosen" />
-            <p className={styles.cardNote}>Choose a patient above to read every recorded event for them, in order.</p>
+            <div className={styles.chronologyStart}>
+              <p>Choose a patient to read every recorded event for them, in order.</p>
+              <Button variant="sec" icon={Search} onClick={() => patientSelect.current?.focus()}>
+                Choose a patient
+              </Button>
+            </div>
           </Card>
         )}
 

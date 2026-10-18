@@ -3,6 +3,7 @@
  * tests/ward-hub-bar-colours.test.ts resolves through the shell palette. */
 
 .screen {
+  --wf-page-canvas: var(--wf-canvas);
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   min-width: 0;
   min-height: 100%;

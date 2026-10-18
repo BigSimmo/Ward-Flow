@@ -4,6 +4,7 @@ import { localCommandOutcome, useLocalCommandCompletion, type LocalCommandState 
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
@@ -1381,31 +1382,34 @@ function WardFlowWorld({
   return (
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
-        {(storageUnavailable || container.recoveryNotice) && (
-          <p role="status">
-            {storageUnavailable
-              ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice ?? ""}`.trim()
-              : container.recoveryNotice}
-          </p>
-        )}
-        <WardDemoNotSavedContext.Provider
-          value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+        <WardRecoveryNoticeContext.Provider
+          value={
+            storageUnavailable
+              ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
+                ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
+                : STORAGE_UNAVAILABLE
+              : (container.recoveryNotice ?? null)
+          }
         >
-          <ToastDeviceSaveContext.Provider value={savesOnDevice}>
-            <WardFlowClockContext.Provider value={now}>
-              {/*
-               * Remounts the screens once, and only when a saved day that differs from the seed was
-               * restored: screens initialise drafts and selections from provider data once
-               * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-               * must start again from the restored world rather than keep the seed's. A first visit, or a
-               * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-               */}
-              <WardSharedAccess connection={sharedConnection}>
-                <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
-              </WardSharedAccess>
-            </WardFlowClockContext.Provider>
-          </ToastDeviceSaveContext.Provider>
-        </WardDemoNotSavedContext.Provider>
+          <WardDemoNotSavedContext.Provider
+            value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+          >
+            <ToastDeviceSaveContext.Provider value={savesOnDevice}>
+              <WardFlowClockContext.Provider value={now}>
+                {/*
+                 * Remounts the screens once, and only when a saved day that differs from the seed was
+                 * restored: screens initialise drafts and selections from provider data once
+                 * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+                 * must start again from the restored world rather than keep the seed's. A first visit, or a
+                 * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+                 */}
+                <WardSharedAccess connection={sharedConnection}>
+                  <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+                </WardSharedAccess>
+              </WardFlowClockContext.Provider>
+            </ToastDeviceSaveContext.Provider>
+          </WardDemoNotSavedContext.Provider>
+        </WardRecoveryNoticeContext.Provider>
       </WardClockContext.Provider>
     </WardFlowOverride>
   );

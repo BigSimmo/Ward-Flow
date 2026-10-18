@@ -29,4 +29,12 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--ward-tap, 3rem);
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.links a:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }

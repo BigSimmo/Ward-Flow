@@ -18,6 +18,7 @@
   max-width: 100%;
   overflow-x: clip;
   color: var(--ink);
+  --wf-page-canvas: var(--ground);
   background: var(--ground);
   font-family: var(--body);
   font-variant-numeric: tabular-nums;

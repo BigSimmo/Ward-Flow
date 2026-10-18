@@ -1522,7 +1522,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                All checks ({sortedGates.length})
+                All ({sortedGates.length})
               </button>
               <button
                 type="button"
@@ -1537,7 +1537,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                Show open gates only ({notMetCount})
+                Open ({notMetCount})
               </button>
             </div>
           </div>

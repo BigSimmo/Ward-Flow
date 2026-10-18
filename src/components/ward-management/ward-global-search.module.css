@@ -289,6 +289,14 @@
   }
 }
 
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .popup {
+    background: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .popup {
     background: var(--wf-surface);
