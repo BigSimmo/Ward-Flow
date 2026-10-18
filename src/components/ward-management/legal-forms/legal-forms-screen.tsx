@@ -1,6 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useWardRaise } from "../ward-flow-raise";
+
+import { useState } from "react";
+import { useLegalFormsCopy } from "./use-legal-forms-copy";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
@@ -140,7 +143,12 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: string } = {}) {
+export function LegalFormsScreen(props: { initialMovementId?: string } = {}) {
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
+  return <LegalFormsWorkspace key={worldGeneration} {...props} />;
+}
+
+function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string }) {
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -161,8 +169,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
   // who acted (the coordinator here) rather than a borrowed "ED".
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
-  const { run: runStep } = useUndoableStep({
+  const { run: runStep, offer: offerStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -183,9 +192,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   });
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
-  const [copyNotice, setCopyNotice] = useState<string | null>(null);
-  const copyAttemptRef = useRef(0);
+  const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -253,9 +260,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
 
   // Carer, PSP and MHAS apply to completed moves of involuntary patients (PR #159), so this card
   // reads recent arrivals, transfers and discharges, not the open moves in the table.
-  const tellSubjects = recentTellSubjects(
-    { movements, admissions, patients, referrals, units, supportNotifications },
-    now,
+  const tellInput = { movements, admissions, patients, referrals, units, supportNotifications };
+  const tellSubjects = recentTellSubjects(tellInput, now, false).filter(
+    (subject) => subject.missing.length > 0 || subject.key === tell?.key,
   );
   const partyCount = (party: SupportNotificationParty) =>
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
@@ -264,27 +271,11 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     setTell({ party, key: first?.key ?? null });
   };
 
-  const copyText = async (key: string, text: string) => {
-    const attempt = ++copyAttemptRef.current;
-    setCopied(null);
-    setCopyNotice(null);
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(text);
-      if (copyAttemptRef.current !== attempt) return;
-      setCopied(key);
-      window.setTimeout(() => {
-        if (copyAttemptRef.current === attempt) setCopied(null);
-      }, 2000);
-    } catch {
-      if (copyAttemptRef.current === attempt) setCopyNotice("Could not copy. Check clipboard access and try again.");
-    }
-  };
   const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
 
   const openRecord = (movementId?: string) => {
-    // The generic button starts with no patient, so an earlier shortcut never carries over.
-    setRecordDraft((current) => ({ ...current, movement: movementId ?? "" }));
+    // An explicit subject wins; the generic entry resumes its unsent synthetic draft.
+    if (movementId) setRecordDraft((current) => ({ ...current, movement: movementId }));
     setRecordOpen(true);
   };
 
@@ -517,6 +508,15 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
     : undefined;
 
+  const formTimesCard = (
+    <Card aria-label="Check a form time" className={styles.formTimesCard}>
+      <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
+      <CardBody>
+        <WardFormTimes />
+      </CardBody>
+    </Card>
+  );
+
   const taskStrip = (
     <div className={styles.strip}>
       <Card aria-label="Forms in force">
@@ -646,13 +646,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               );
             })}
           </ul>
-        </CardBody>
-      </Card>
-      {/* Form times (Tools review, 15 Oct 2026): typed times only, rule D5. Also in Tools. */}
-      <Card aria-label="Check a form time" className={styles.formTimesCard}>
-        <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
-        <CardBody>
-          <WardFormTimes />
         </CardBody>
       </Card>
     </div>
@@ -800,6 +793,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
             </Card>
             <PhoneSheet open={phoneTasks} onClose={() => setPhoneTasks(false)} title="Record and tell" height="tall">
               {taskStrip}
+              {formTimesCard}
             </PhoneSheet>
             <PhoneSheet
               open={selected !== null}
@@ -1036,6 +1030,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                     onSelect={select}
                   />
                 )}
+                {formTimesCard}
               </div>
               {isTabletPortrait && selected ? (
                 // Tablet portrait (v10): the form opens as a drawer over the list.
@@ -1071,22 +1066,29 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            runStep(
-              {
-                type: "RECORD_LEGAL_FORM_WRITTEN",
-                role: routeRole,
-                now,
-                movementId,
-                formCode,
-                writtenAt,
-              },
-              {
-                success: `Form ${formCode} recorded`,
-                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-                undone: "Form record undone.",
-              },
-            );
-            return true;
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", {
+              movementId,
+              formCode,
+              writtenAt,
+            });
+            const accepted = (outcome: Awaited<typeof completion>) => {
+              offerStep(
+                {
+                  success: `Form ${formCode} recorded`,
+                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+                  undone: "Form record undone.",
+                },
+                { completion: outcome },
+              );
+              return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
+            };
+            const unconfirmed = () =>
+              accepted({
+                commandId: "",
+                status: "failed",
+                message: "Save is not confirmed. Review the board before trying again.",
+              });
+            return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
         <ExtendSheet

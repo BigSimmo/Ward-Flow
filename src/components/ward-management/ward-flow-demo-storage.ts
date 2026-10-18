@@ -8,7 +8,6 @@ import {
   WARD_FLOW_STORED_STATE_VERSION,
   withInboxStreamADefaults,
 } from "./ward-flow-storage-validation";
-import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 
 /**
  * The demonstration's one saved session in `sessionStorage`: its shape, its version, and the guarded
@@ -163,7 +162,6 @@ export function tryWriteDemoState(
 }
 
 export function clearWardFlowDemoState(): boolean {
-  clearWardFlowDraftCaches();
   if (typeof window === "undefined") return false;
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);

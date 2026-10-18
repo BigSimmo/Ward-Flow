@@ -231,10 +231,23 @@ export function DowntimePackScreen() {
             title="Downtime pack"
             titleMeta={unavailable ? "Snapshot unavailable" : "Taking snapshot"}
           />
-          {unavailable && (
+          {unavailable ? (
             <p className={styles.cardNote} role="status">
               {unavailable}
             </p>
+          ) : (
+            <Card aria-labelledby="downtime-preparing-title" className={styles.packLoading}>
+              <CardHead id="downtime-preparing-title" icon={FileText} title="Preparing the downtime pack" />
+              <p role="status" className={styles.cardNote}>
+                Taking a snapshot of beds, the ED queue, pending moves and legal forms.
+              </p>
+              <div className={styles.packLoadingRows} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </Card>
           )}
         </main>
       </div>

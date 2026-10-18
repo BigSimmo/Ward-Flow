@@ -133,9 +133,9 @@
 
 .siteName {
   display: inline-block;
-  max-width: 104px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   vertical-align: bottom;
 }
 

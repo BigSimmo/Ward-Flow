@@ -6,6 +6,7 @@
  */
 .screen {
   min-width: 0;
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
 }
 
@@ -156,19 +157,14 @@
   white-space: nowrap;
 }
 
-/* The six highlight chips sit in the register (v10), count first, on the page surface. They
- * scroll sideways rather than wrap. */
+/* Keep the complete bounded set of highlight chips visible, including the final chip. */
 .pills {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
   padding: var(--wf-s-2) var(--wf-s-4) 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  /* The chips scroll sideways; the fade says there is more. */
-  mask-image: linear-gradient(90deg, black calc(100% - 1.5rem), transparent);
 }
 
 .pill {
@@ -453,6 +449,15 @@
 .table td {
   height: 52px;
   vertical-align: middle;
+}
+
+/* Home region and current placement answer different questions. Keep both labels readable
+   rather than hiding the end of a ward or region name behind an ellipsis. */
+.table .two > .cellText,
+.table td:nth-child(3) .two > span {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .colPatient {

@@ -230,6 +230,7 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
   off the device as before.
 - **Why:** A refusal locked the whole session's saving though it held no typed text. A read-only
   privacy recheck against the 17 September finding found no new risk.
+- **Subsequent exception (17 October 2026):** D-67 permits session draft recovery for the explicitly opted-in synthetic referral and legal forms. The general typed-event state saving lock remains unchanged.
 
 ## D-19. Rulings of 25 September, evening (walkthrough, leave beds, PsychSift, gender display)
 
@@ -755,3 +756,10 @@ is inferred.
 - **Decision:** Remove the second approval requirement for coordinator and access-admin role grants in the synthetic Ward Flow prototype. An authorised grant works immediately. Existing unexpired, unrevoked and recently used grants with null approval fields also work; their history is preserved rather than recording an approval that did not happen. The compatibility `/approve` endpoint refuses an unnecessary approval without changing the record.
 - **Still required:** Sign-in, an authorised granter, no self grants, a valid place within the granter's scope, a future end date, automatic switch off when unused, revocation, recent sign-in for access changes, and the existing audit trail. This decision does not authorise real patient data.
 - **Why:** The only bootstrap coordinator could grant the synthetic test admin a role but could not also provide its second approval. Josh chose to remove that prototype requirement. This replaces the second approval part of the role access plan; it is a policy change, not evidence of independent approval.
+
+## D-67. Recover synthetic form drafts within the browser session (17 October 2026)
+
+- **Date:** 17 October 2026 (`2026-10-17`). **Decided by:** Josh in the five-task Ward Flow handover thread. The request specifies 500ms sessionStorage draft recovery for referral and legal forms, then authorises implementation: "Go ahead and update and perfect the plan and launch it now and work autonomously for me and fix all the issues you have confirmed".
+- **Decision:** Permit typed drafts only for the explicitly opted-in synthetic referral drawer and legal form editor, scoped to the current account/session, scenario and form subject. Restore into the form for human review; never submit or change a clinical record automatically. Show a restored-draft notice with Clear. Successful submission, sign-out, session termination and reset clear the relevant drafts and invalidate pending writes. Rejected submissions retain the draft for correction.
+- **Boundary:** This is a narrow exception to D-18 for the synthetic prototype. The general typed-event state saving lock remains in force. No real patient information is authorised. Do not put draft text in localStorage, URLs, logs, screenshots, commit messages or memory services. Browser session restoration may preserve sessionStorage across a restart, so browser-close deletion is not a guaranteed property.
+- **Why:** The existing memory-only referral draft survives closing and reopening its drawer but is lost on refresh. The requested exception supports refresh recovery while preserving explicit session cleanup and human submission.

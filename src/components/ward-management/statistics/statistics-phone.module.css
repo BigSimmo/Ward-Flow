@@ -5,6 +5,7 @@
   padding: var(--wf-s-3);
   box-sizing: border-box;
   background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }

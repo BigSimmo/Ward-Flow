@@ -1,5 +1,40 @@
 # Engine: reducer, events, state and persistence
 
+## Synthetic form recovery — 17 October 2026
+
+`ward-session-drafts.ts` owns D-67's opt-in, versioned session draft envelopes, account and
+scenario boundaries, bounded lifetime and cleanup fences. `use-dirty-state-guard.ts` offers
+500ms persistence only when a form supplies a storage key; other guards retain navigation
+protection. `referrals/referral-draft-lifecycle.ts` owns the one memory/session cleanup object;
+provider/auth cleanup imports only that small module. `referral-draft-cache.ts` validates restored
+projections through `referral-draft-validation.ts`, while `referral-draft-hooks.ts` owns recovery
+and autosave. The existing `referral-draft-store.ts` entry point retains current caller APIs. The referral draft store remains its form's single autosave owner and omits chart
+bytes from recovery. Provider world adoption, reset and local auth cleanup invalidate outgoing
+writes without removing the general typed-event state privacy lock. Legal form saves clear a
+draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,
+`tests/ward-draft-recovery.dom.test.tsx` and existing guard, drawer, auth and provider privacy suites.
+
+## Turnaround validation follow-up — 18 October 2026
+
+`movementHasOpenTurnaroundRequest` checks the selected receiving ward against its live referral arm,
+or the explicit requested-unit list for an older movement without a linked referral. Both the
+reducer and referral controls use the same rule. CLD source hints follow the existing feature-flag
+policy: device choices may apply in development/demo, while production keeps server authority.
+The shared command generator, legal-figure sweeps, history inventory and referral-producer contract
+exercise both turnaround events.
+
+## Turnaround preferences — 17 October 2026
+
+`ward-turnaround-priority.ts` derives eligible CLD readiness from occupied admissions, the
+existing legal-status lookup and current criteria expiry. It distinguishes CLD from an unblocked
+confirmed departure. Coordinator-only `FLAG_REFERRAL_TURNAROUND_PRIORITY` and
+`FLAG_MOVEMENT_TURNAROUND_PRIORITY` record a waiting patient's unit preference, never a bed
+allocation or transport booking. Referral conversion retains the preference. Storage validation,
+shared command schemas, history labels and synthetic timestamp reanchoring cover both events.
+`liveTurnaroundPreference` prevents a historical preference from claiming a currently clearing
+bed. Focused coverage lives in `tests/ward-cld-turnaround-priority.test.ts` and the existing
+event-permission, referral-model and reanchor tests.
+
 ## Shared coordinator implementation — 7 October 2026
 
 The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)

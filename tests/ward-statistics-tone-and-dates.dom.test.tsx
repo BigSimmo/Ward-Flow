@@ -70,10 +70,23 @@ function renderInProvider(node: ReactNode, initialDayZero = PINNED_DAY_ZERO) {
 describe("Weekly ED waits (stats-9)", () => {
   it("tones a wait of two days or more red, as the ED page does, and says when the figure stops", () => {
     asPhone();
-    renderInProvider(<WeeklyReportScreen />);
+    // Wednesday keeps the seeded two-day wait inside the previous week, so the
+    // red-tone branch is exercised as well as the ordinary shorter waits.
+    render(
+      <ToastProvider>
+        <WardFlowProvider
+          initialNow={NOW_ANCHOR}
+          initialDayZero={demoDayZero(new Date("2026-10-07T12:00:00+08:00")).getTime()}
+        >
+          <WeeklyReportScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
     // The seeded last full week has long waits, one still open (the audit's own example).
     const list = screen.getByRole("list", { name: /^ED waits over/u });
     const rows = within(list).getAllByRole("listitem");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.textContent ?? "")?.[1] ?? 0) >= 2)).toBe(true);
     // D-39: never a WF- journey id; an AD- number or "Not yet admitted".
     expect(list.textContent).not.toMatch(/WF-/u);
     for (const row of rows) expect(row.textContent).toMatch(/^(AD-|Not yet admitted)/u);

@@ -371,6 +371,11 @@ describe("the set of ward files that render through a portal", () => {
     ).toEqual([]);
   });
 
+  it("canonical Button's portalled tooltip help is hidden on paper", () => {
+    const block = printBlock(stripCssComments(read("src/components/wf/tooltip.module.css")));
+    expect(/\.tip\s*\{[^}]*display:\s*none\s*!important/u.test(block)).toBe(true);
+  });
+
   it("the rail's portalled More pages content has its own paper reset", () => {
     const block = printBlock(stripCssComments(read("src/components/ward-management/shell/ward-rail.module.css")));
     expect(/\.moreSheet\s*\*/u.test(block)).toBe(true);

@@ -1,6 +1,9 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
+import { draftSessionVersion, sessionDraftKey } from "../ward-session-drafts";
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { ChevronLeft, Clock } from "lucide-react";
 
 import {
@@ -196,21 +199,63 @@ export function RecordFormSheet({
   labelOf: (movement: Movement) => string;
   now?: Instant;
   recordUnavailable?: string;
-  onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean;
+  onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean | Promise<boolean>;
 }) {
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const submissionVersion = useRef(0);
+  const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration");
+  const scenario = world?.scenario ?? "standard";
+  const [storageKey] = useState(() =>
+    sessionDraftKey(`${scenario}/${world?.worldGeneration ?? 0}`, "legal-record", "new"),
+  );
+  const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
+    storageKey: world && !world.sessionAdopted ? undefined : storageKey,
+    isDirty: !!timeOnForm || !!draft.movement,
+    value: JSON.stringify({ ...draft, timeOnForm }),
+    onRestore: (raw) => {
+      try {
+        const restored: unknown = JSON.parse(raw);
+        if (
+          !restored ||
+          typeof restored !== "object" ||
+          !("movement" in restored) ||
+          typeof restored.movement !== "string" ||
+          !("form" in restored) ||
+          typeof restored.form !== "string" ||
+          !("timeOnForm" in restored) ||
+          typeof restored.timeOnForm !== "string"
+        )
+          return false;
+        if (restored.movement && !openMovements.some((movement) => movement.id === restored.movement)) return false;
+        onDraft({ movement: restored.movement, form: restored.form });
+        setTimeOnForm(restored.timeOnForm);
+        return true;
+      } catch {
+        return false; /* A damaged form draft never becomes a legal record. */
+      }
+    },
+  });
+  const priorMovement = useRef(draft.movement);
+  useEffect(() => {
+    if (priorMovement.current && priorMovement.current !== draft.movement) {
+      submissionVersion.current += 1;
+      clearDraft();
+      setTimeOnForm("");
+      setSaving(false);
+    }
+    priorMovement.current = draft.movement;
+  }, [draft.movement, clearDraft]);
   const typeRef = useRef<HTMLSelectElement | null>(null);
   const baseId = useId();
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
-  // Dismissing without saving drops the typed time, so it never greets the next patient's form.
-  const dismiss = () => {
-    setTimeOnForm("");
-    onClose();
-  };
+  // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
+  const dismiss = onClose;
   const saveBlockReason =
+    (saving ? "Saving form…" : undefined) ??
     recordUnavailable ??
     (!draft.movement
       ? "Choose a movement first."
@@ -237,6 +282,9 @@ export function RecordFormSheet({
           <Button
             variant="ghost"
             onClick={() => {
+              submissionVersion.current += 1;
+              setSaving(false);
+              clearDraft();
               onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
               setTimeOnForm("");
               setFormKey((key) => key + 1);
@@ -252,12 +300,30 @@ export function RecordFormSheet({
             title={saveBlockReason}
             onClick={() => {
               if (saveBlockReason || parsedWrittenAt === null) return;
-              const accepted = onSaveForm
-                ? onSaveForm({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt })
-                : true;
-              if (accepted) {
-                setTimeOnForm("");
-                onClose();
+              const owner = draftSessionVersion();
+              const submission = ++submissionVersion.current;
+              setSaving(true);
+              const finish = (accepted: boolean) => {
+                if (submission !== submissionVersion.current) return;
+                // Release this request's spinner even if its session has ended. The owner fence
+                // still prevents an old acceptance from clearing or closing a newer draft.
+                setSaving(false);
+                if (owner !== draftSessionVersion()) return;
+                if (accepted) {
+                  clearDraft();
+                  setTimeOnForm("");
+                  onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+                  onClose();
+                }
+              };
+              try {
+                const result =
+                  onSaveForm?.({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt }) ??
+                  false;
+                if (typeof result === "boolean") finish(result);
+                else void result.then(finish, () => finish(false));
+              } catch {
+                finish(false);
               }
             }}
           >
@@ -266,10 +332,13 @@ export function RecordFormSheet({
         </div>
       }
     >
+      {!draftSaved ? <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p> : null}
+      {draftRestored ? <p role="status">Draft restored from this session — use Clear to remove it.</p> : null}
       <div key={formKey} className={styles.recordForm}>
         <Field label="Form type" id={`${baseId}-legal-forms-new-instrument`}>
           <Select
             ref={typeRef}
+            disabled={saving}
             value={draft.form}
             onChange={(event) => onDraft({ ...draft, form: event.target.value })}
           >
@@ -281,7 +350,15 @@ export function RecordFormSheet({
           </Select>
         </Field>
         <Field label="Movement" id={`${baseId}-legal-forms-new-movement`}>
-          <Select value={draft.movement} onChange={(event) => onDraft({ ...draft, movement: event.target.value })}>
+          <Select
+            disabled={saving}
+            value={draft.movement}
+            onChange={(event) => {
+              clearDraft();
+              setTimeOnForm("");
+              onDraft({ ...draft, movement: event.target.value });
+            }}
+          >
             <option value="">Choose a movement</option>
             {openMovements.map((movement) => (
               <option key={movement.id} value={movement.id}>
@@ -301,6 +378,7 @@ export function RecordFormSheet({
               inputMode="numeric"
               autoComplete="off"
               aria-required="true"
+              disabled={saving}
               value={timeOnForm}
               onChange={(event) => setTimeOnForm(event.target.value)}
             />

@@ -3,6 +3,7 @@ import { SCHEMA_TYPES, validSharedCommand } from "../backend/ward-flow/command-s
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { CHART_MAX_BYTES } from "@/components/ward-management/referrals/referral-submission";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { buildTurnaroundFixture } from "./helpers/ward-turnaround-fixture";
 import { nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
 
 const allowed = (event: WardFlowEvent) => (EVENT_ROLE[event.type] as readonly string[]).includes(event.role);
@@ -31,6 +32,33 @@ describe("shared command schemas", () => {
         }
         state = next;
       }
+    }
+    // These commands require a current occupied departure; random unrelated events rarely
+    // construct that narrow window. Build it through real commands, then exercise both schemas.
+    const fixture = buildTurnaroundFixture();
+    for (const event of [
+      {
+        type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
+        role: "coordinator",
+        now: fixture.now,
+        movementId: fixture.movementId,
+        unitId: fixture.unitId,
+        source: "departure",
+      },
+      {
+        type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+        role: "coordinator",
+        now: fixture.now,
+        referralId: fixture.referralId,
+        unitId: fixture.unitId,
+        source: "departure",
+      },
+    ] as const) {
+      const next = wardFlowReducer(fixture.state, event);
+      expect(next.rejections).toEqual(fixture.state.rejections);
+      expect(next).not.toBe(fixture.state);
+      accepted.add(event.type);
+      if (!validSharedCommand(JSON.parse(JSON.stringify(event)))) refused.push(event.type);
     }
     expect(refused).toEqual([]);
     expect(SCHEMA_TYPES.filter((type) => accepted.has(type)).length).toBeGreaterThan(SCHEMA_TYPES.length / 2);

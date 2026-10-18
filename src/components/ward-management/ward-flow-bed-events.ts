@@ -1,3 +1,4 @@
+import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { isDischargeBarrier } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
@@ -624,7 +625,15 @@ export function reduceBedEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }].slice(-500),
+        refreshRequests: appendRefreshRequest(
+          state.refreshRequests,
+          {
+            unitId: unit.id,
+            at: event.now,
+            byRole: event.role,
+          },
+          state.worldGeneration,
+        ),
       };
     }
 

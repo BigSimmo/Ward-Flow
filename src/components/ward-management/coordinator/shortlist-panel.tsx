@@ -6,7 +6,7 @@ import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { Button, Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -1375,10 +1375,12 @@ export function ShortlistPanel({
                 {/* S-8 (audit 13 Oct 2026): the coordinator can do everything, so an offer the
                     coordinator made can also be accepted here for that ward, not only withdrawn. */}
                 {unit && !movement.acceptedUnitId ? (
-                  <button
+                  <Button
+                    variant="pri"
+                    size="md"
+                    data-placement-action
                     type="button"
                     data-testid={`ward-shortlist-accept-for-ward-${id}`}
-                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                     onClick={() =>
                       runStep(
                         { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id },
@@ -1396,7 +1398,7 @@ export function ShortlistPanel({
                     }
                   >
                     Accept for this ward
-                  </button>
+                  </Button>
                 ) : null}
                 {unit ? (
                   <Link
@@ -1522,7 +1524,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                All checks ({sortedGates.length})
+                All ({sortedGates.length})
               </button>
               <button
                 type="button"
@@ -1537,7 +1539,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                Show open gates only ({notMetCount})
+                Open ({notMetCount})
               </button>
             </div>
           </div>

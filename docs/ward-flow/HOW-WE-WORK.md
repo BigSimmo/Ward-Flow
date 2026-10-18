@@ -192,10 +192,14 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   the record; the engine never writes computed `dueAt`. Everything else in D5 is unchanged.
 - **No typed text in browser storage** (called D-11 in helper briefs; owner ruling D-11 itself is the
   two-ledger rule). New events are classified in `ward-flow-persistence-classification.ts`, and any id
-  or free-text field needs review.
+  or free-text field needs review. [D-67](decisions.md#d-67-recover-synthetic-form-drafts-within-the-browser-session-17-october-2026)
+  allows only the explicitly opted-in synthetic referral and legal form session drafts; it does not
+  remove the general typed-event state saving lock.
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
 - **Design tokens only, no hex.** In Ward Flow v9/v10 (`design/v9/design-system-v9.md`, owner ruling 9 Oct 2026: _"Check the 48px PsychSift knob. Ward is 44"_), standard rows use `--wf-row-default: 44px`, touch/phone rows use `--wf-row-touch: 52px`, and desktop buttons use `--wf-target: 28px`; legacy `--ward-*` surfaces retain `--ward-tap: 48px` (`var(--spacing-tap, 3rem)`).
+  The 17 October handover explicitly requires the migrated Accept, Pull and Decline placement
+  buttons to retain the 48px `--ward-tap` floor on phone and tablet; this is a scoped action change.
 - **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
   and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
   disclosure and understandable status. Compact badges still need meaningful accessible labels.

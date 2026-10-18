@@ -4,8 +4,10 @@ import { localCommandOutcome, useLocalCommandCompletion, type LocalCommandState 
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
-import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
+import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
@@ -645,7 +647,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
 export function WardFlowProvider({ children, initialNow, initialDayZero }: WardFlowProviderProps) {
   const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
   useEffect(() => {
-    clearWardFlowDraftCaches();
+    clearLegacySessionDrafts();
   }, []);
   /**
    * `null` until the mount effect below runs. While null, the world is the deterministic anchor
@@ -844,6 +846,7 @@ function WardFlowWorld({
       }
       const before = commandsRef.current.world;
       const next = wardFlowReducer(before, event);
+      if (before.worldGeneration !== next.worldGeneration) clearReferralDraftSession();
       commandsRef.current.world = next;
       dispatchContainer(event);
       broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
@@ -863,6 +866,9 @@ function WardFlowWorld({
   useLayoutEffect(() => {
     syncWorldGlobals(state);
   }, [state]);
+  useLayoutEffect(() => {
+    if (container.sessionAdopted) setDraftScenarioScope(`${state.scenario}/${state.worldGeneration}`);
+  }, [state.scenario, state.worldGeneration, container.sessionAdopted]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -1210,6 +1216,7 @@ function WardFlowWorld({
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
+      clearReferralDraftSession();
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",
@@ -1382,31 +1389,34 @@ function WardFlowWorld({
   return (
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
-        {(storageUnavailable || container.recoveryNotice) && (
-          <p role="status">
-            {storageUnavailable
-              ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice ?? ""}`.trim()
-              : container.recoveryNotice}
-          </p>
-        )}
-        <WardDemoNotSavedContext.Provider
-          value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+        <WardRecoveryNoticeContext.Provider
+          value={
+            storageUnavailable
+              ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
+                ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
+                : STORAGE_UNAVAILABLE
+              : (container.recoveryNotice ?? null)
+          }
         >
-          <ToastDeviceSaveContext.Provider value={savesOnDevice}>
-            <WardFlowClockContext.Provider value={now}>
-              {/*
-               * Remounts the screens once, and only when a saved day that differs from the seed was
-               * restored: screens initialise drafts and selections from provider data once
-               * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-               * must start again from the restored world rather than keep the seed's. A first visit, or a
-               * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-               */}
-              <WardSharedAccess connection={sharedConnection}>
-                <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
-              </WardSharedAccess>
-            </WardFlowClockContext.Provider>
-          </ToastDeviceSaveContext.Provider>
-        </WardDemoNotSavedContext.Provider>
+          <WardDemoNotSavedContext.Provider
+            value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+          >
+            <ToastDeviceSaveContext.Provider value={savesOnDevice}>
+              <WardFlowClockContext.Provider value={now}>
+                {/*
+                 * Remounts the screens once, and only when a saved day that differs from the seed was
+                 * restored: screens initialise drafts and selections from provider data once
+                 * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+                 * must start again from the restored world rather than keep the seed's. A first visit, or a
+                 * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+                 */}
+                <WardSharedAccess connection={sharedConnection}>
+                  <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+                </WardSharedAccess>
+              </WardFlowClockContext.Provider>
+            </ToastDeviceSaveContext.Provider>
+          </WardDemoNotSavedContext.Provider>
+        </WardRecoveryNoticeContext.Provider>
       </WardClockContext.Provider>
     </WardFlowOverride>
   );

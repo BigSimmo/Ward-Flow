@@ -42,8 +42,8 @@ verdict it names that document.
    role. Who may send which event is the `EVENT_ROLE` table.
 6. **Time is synthetic.** `ward-clock.ts` is the only file that reads the real clock; the demo clock
    only moves through `ADVANCE_CLOCK`. Tests share one instant unless they advance it.
-7. **Saves go to `sessionStorage`, and stop once anything typed happens.** Typed free text never
-   reaches browser storage (the privacy lock).
+7. **Demo state saves stop once anything typed happens.** D-67 separately permits bounded
+   synthetic referral/legal form session drafts; submitted state retains the typed-event privacy lock.
 8. **The rendered app is the current design authority; the engine is the behaviour authority.** The
    drawings in `design/third-edition-mockups/` are background. See [Ward Flow's entry point](../README.md).
 9. **The current base is public Ward Flow `main`.** Verify the checkout and `origin` before any remote

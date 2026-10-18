@@ -220,6 +220,9 @@ export function reduceReferralSendEvent(
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
         // guard above refuses anything that does not resolve.
         referralId: raisedFrom?.id ?? event.referralId,
+        ...(raisedFrom?.turnaroundPriority === undefined
+          ? {}
+          : { turnaroundPriority: { ...raisedFrom.turnaroundPriority } }),
         /**
          * Owner ruling R-2026-09-04-D: the absence is written down, not left empty. A runtime
          * movement with no id says `not_asked`; only `RECORD_NO_REFERRAL`, where somebody answers

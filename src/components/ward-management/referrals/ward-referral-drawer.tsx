@@ -6,7 +6,8 @@ import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival
 import styles from "./ward-referral-drawer.module.css";
 import { WardReferralInbox } from "./ward-referral-inbox";
 import { duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
-import { StatusGlyph } from "@/components/wf";
+import { useWardFlowSelect } from "../ward-flow-provider";
+import { StatusGlyph, Button } from "@/components/wf";
 import {
   type WardReferralDrawerProps,
   type DrawerView,
@@ -41,9 +42,11 @@ export function WardReferralDrawer(props: WardReferralDrawerProps) {
     props.initialUnitIds?.join(","),
     round,
   ].join("|");
+  const { sessionAdopted, worldGeneration } = useWardFlowSelect("sessionAdopted", "worldGeneration");
+  if (!sessionAdopted) return null;
   return (
     <WardReferralDrawerContent
-      key={requestKey}
+      key={`${worldGeneration}:${requestKey}`}
       {...props}
       view={view}
       onViewChange={setView}
@@ -103,6 +106,20 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
         }}
       >
         <ReferralDrawerHead s={s} />
+        {s.draftRestored ? (
+          <p role="status">
+            Draft restored from this session —{" "}
+            <Button variant="ghost" size="sm" onClick={s.clearRecoveredDraft}>
+              Clear
+            </Button>
+          </p>
+        ) : null}
+        {s.needsChartReattachment ? (
+          <p role="status">Attachments are not recovered. Reattach charts before sending.</p>
+        ) : null}
+        {!s.draftSessionSaved ? (
+          <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p>
+        ) : null}
 
         <div className={styles.sheetMain}>
           {isPhone && phMode === "sheet" ? (

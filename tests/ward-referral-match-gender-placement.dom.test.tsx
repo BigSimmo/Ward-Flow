@@ -113,7 +113,11 @@ describe("ReferralMatchView: a non-binary placement explains itself, then succee
     );
 
     const submit = screen.getByTestId(`ward-referral-match-gender-placement-submit-${UNIT_ID}`);
-    expect((submit as HTMLButtonElement).disabled).toBe(true);
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(submit).not.toBeDisabled();
+    expect(submit).toHaveAccessibleDescription("Choose a placement reason before accepting.");
+    fireEvent.click(submit);
+    expect(screen.getByTestId(`ward-referral-match-gender-placement-form-${UNIT_ID}`)).toBeInTheDocument();
   });
 
   it("with a reason chosen and the tick checked, the acceptance succeeds", () => {

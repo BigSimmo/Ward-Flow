@@ -4139,6 +4139,7 @@
  * labels that truncate rather than wrap. Scoped to the register so the intake form is untouched. */
 
 .screen[data-ward-design="v6"] {
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
@@ -5559,4 +5560,20 @@
   display: block;
   font-size: 0.82rem;
   margin-top: 0.2rem;
+}
+
+/* Canonical placement controls retain the existing decision grid without bespoke button skins. */
+.unitCardTop:has(> [data-placement-action]) {
+  flex-wrap: wrap;
+}
+
+.v10AskActions [data-placement-action="decline"],
+.v10AskActions span:has(> [data-placement-action="decline"]) {
+  grid-column: 1;
+  width: 100%;
+}
+
+.v10AskActions > .matchRowTop > [data-placement-action],
+.v10AskActions > .matchRowTop > span:has(> [data-placement-action]) {
+  width: 100%;
 }

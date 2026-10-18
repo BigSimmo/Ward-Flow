@@ -977,6 +977,10 @@ export function HandoverPage() {
           onToggleMeeting={toggleMeeting}
           history={<HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />}
         />
+        <WardPrototypeFooter
+          testId="ward-handover-governance"
+          note="Synthetic data · Not approved for clinical use · Printed copies carry the time they were taken"
+        />
       </main>
     );
   }

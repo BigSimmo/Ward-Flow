@@ -13,6 +13,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
 
 let current: ReturnType<typeof useWardFlow>;
 let boardNow: number;
@@ -28,6 +29,7 @@ function Probe() {
 function mount() {
   return render(
     <WardFlowProvider>
+      <WardRecoveryNotice />
       <Probe />
     </WardFlowProvider>,
   );
@@ -250,6 +252,7 @@ describe("conservative demo recovery", () => {
   }
   const consumerTree = () => (
     <WardFlowProvider>
+      <WardRecoveryNotice />
       <Probe />
       <OneTimeConsumer />
     </WardFlowProvider>

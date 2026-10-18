@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
-import { clearReferralDraftSession } from "./referrals/referral-draft-store";
+import { setDraftAccount } from "./ward-session-drafts";
+import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
@@ -158,7 +159,8 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
       loadedClient = SharedWorkspaceClient;
       if (closed || !auth?.userId || auth.isRecovery) return;
       const actorId = auth.userId;
-      disconnect(connectedActorId !== actorId);
+      disconnect(connectedActorId !== null && connectedActorId !== actorId);
+      setDraftAccount(actorId);
       connectedActorId = actorId;
       setSignedIn(true);
       setForm({ open: false, recovery: false, busy: false, message: null });
@@ -320,6 +322,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           setView({ ...emptyView, status: "ready" });
         } else if (auth.userId) await connect();
         else {
+          clearReferralDraftSession();
           setView({ ...emptyView, status: "ready" });
           if (confirmation)
             setForm((old) => ({ ...old, open: true, message: "Email link processed. Sign in to continue." }));
@@ -331,7 +334,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
     void boot();
     return () => {
       closed = true;
-      disconnect();
+      disconnect(false);
       auth?.dispose();
       actions.current = null;
     };

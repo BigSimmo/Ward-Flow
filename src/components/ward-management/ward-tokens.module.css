@@ -327,6 +327,33 @@
  * ⚠️ AND THE POINT OF CORRECTING IT RATHER THAN QUIETLY DROPPING IT: a true-sounding "none currently
  * is" stops the next reader looking. That is what it did.
  */
+/* Legacy data primitives can declare these roles below a shell carrier. Give
+ * them the same readable glare values without changing their normal palette. */
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .wardTokens.wardTokens {
+    color-scheme: light;
+    --ward-ground: var(--wf-canvas);
+    --ward-canvas: var(--wf-surface);
+    --ward-chrome: var(--wf-surface-2);
+    --ward-subtle: var(--wf-surface-2);
+    --ward-border: var(--wf-line-2);
+    --ward-border-strong: var(--wf-line-3);
+    --ward-divider: var(--wf-line);
+    --ward-text: var(--wf-ink-1);
+    --ward-heading: var(--wf-ink-1);
+    --ward-muted: var(--wf-ink-3);
+    --ward-blue: var(--wf-accent);
+    --ward-blue-soft: var(--wf-accent-tint);
+    --ward-blue-border: var(--wf-accent);
+    --ward-success: var(--wf-success-ink);
+    --ward-success-soft: var(--wf-fit-tint);
+    --ward-warning: var(--wf-warning-ink);
+    --ward-warning-soft: var(--wf-hold-tint);
+    --ward-danger: var(--wf-danger-ink);
+    --ward-danger-soft: var(--wf-act-tint);
+  }
+}
+
 @media (forced-colors: active) {
   .wardTokens.wardTokens {
     --ward-feature-start: Canvas;

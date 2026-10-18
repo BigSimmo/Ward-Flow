@@ -68,6 +68,10 @@ import {
   referralState,
 } from "@/components/ward-management/ward-referrals";
 import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
+import {
+  DECLINE_REASON_UNCHOSEN,
+  OVERRIDE_REASON_UNCHOSEN,
+} from "@/components/ward-management/referrals/referral-match-model";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { installMatchMediaStub } from "./setup/jsdom.setup";
@@ -694,7 +698,8 @@ describe("ReferralBoard", () => {
         (button as HTMLButtonElement).disabled,
         "native disabled removes the tab stop, so the stated reason below can never be reached",
       ).toBe(false);
-      expect(button.getAttribute("title") ?? "", "the control is unavailable and does not say why").not.toBe("");
+      // The reason is the wf Button's disabledReason: an accessible description (aria-describedby), not a title.
+      expect(button).toHaveAccessibleDescription(OVERRIDE_REASON_UNCHOSEN);
 
       const select = screen.getByTestId(`ward-referral-match-override-reason-${unitId}`) as HTMLSelectElement;
       // ⚠️ STARTS UNCHOSEN. A pre-selected first option would file a clinical justification nobody
@@ -867,7 +872,8 @@ describe("ReferralBoard", () => {
     // Not native `disabled` — that removes the tab stop, so a ward moving by keyboard would never
     // reach the control and never hear why it is unavailable.
     expect((button as HTMLButtonElement).disabled).toBe(false);
-    expect(button.getAttribute("title") ?? "", "the control is unavailable and does not say why").not.toBe("");
+    // The reason is the wf Button's disabledReason: an accessible description (aria-describedby), not a title.
+    expect(button).toHaveAccessibleDescription(DECLINE_REASON_UNCHOSEN);
 
     // ⚠️ AND THE ACTIVATION ITSELF IS REFUSED, NOT ONLY THE BUTTON DISCOURAGED. `aria-disabled`
     // deliberately keeps the control focusable, so it CAN still be activated — the record must not

@@ -3,6 +3,7 @@
    pill tabs, one inset list with group bands, and a sticky bar with Copy summary and Sign off. */
 
 .phone {
+  --wf-page-canvas: var(--wf-canvas);
   --ph-tap: var(--ward-tap, var(--spacing-tap, 3rem));
   display: flex;
   flex-direction: column;

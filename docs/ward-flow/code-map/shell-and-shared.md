@@ -1,5 +1,24 @@
 # Routes, shell, navigation and shared UI
 
+## Placement touch targets — 17 October 2026
+
+`wf/button.module.css` gives canonical medium Buttons marked `data-placement-action` a scoped
+48px minimum via the ward tap token. This covers Accept, Pull and Decline in the ward home list,
+arrivals corridor, coordinator shortlist and referral candidate/review actions without changing
+other desktop button density. `disabledReason` keeps an unavailable action discoverable and
+explains its actual gate. Confirmation, decline rationale and documented placement-review
+handlers remain caller-owned. Focused interaction coverage is in
+`tests/ward-placement-controls.dom.test.tsx` and the existing v10 primitive, gender-placement,
+ward refusal and coordinator Undo suites.
+
+## Design audit corrections — 17 October 2026
+
+The shell now presents recovery messages through `shell/ward-recovery-notice.tsx` inside the work column, preserving provider-owned wording and save behaviour. Loading feedback remains in normal flow. Desktop footer disclosures wrap; print styles release the fixed-height shell ancestors so reports paginate. Glare bridges legacy and current token roles to opaque, readable screen surfaces while retaining forced-colours and print rules. `--wf-page-canvas` follows each actual page background so hero lips match without repainting the accepted page canvas.
+
+The text-size guard now also inventories parsed font-size and font shorthand declarations through `scripts/ward-flow/font-size-inventory.mjs`, with an independent baseline and explicit unresolved-size reporting. Historical token-string ratchets remain in place.
+
+Read the [implementation and evidence record](../../superpowers/plans/2026-10-17-design-audit-resolution.md) for per-item audit dispositions and verification limits.
+
 ## Feature flags, bed meeting TV and demo reset — 15 October 2026
 
 Unfinished work now ships in the real screens behind a feature flag instead of on a hidden page.

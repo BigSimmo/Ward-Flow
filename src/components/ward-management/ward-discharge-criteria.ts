@@ -353,3 +353,17 @@ export function nextDischargeCriteria(
     },
   };
 }
+
+/** Numbered typed-criterion placeholders for community and count-only executive snapshots. */
+export function communityDischargeCriteria(
+  record: DischargeCriteriaRecord | null | undefined,
+): DischargeCriteriaRecord | null {
+  if (!record) return null;
+  let typed = 0;
+  return {
+    ...record,
+    items: record.items.map((item) =>
+      isPatientSpecificItem(item) ? { ...item, criterion: `Patient specific criterion ${++typed}` } : item,
+    ),
+  };
+}

@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import {
+  Button,
   CheckingFoot,
   CountCircle,
   DataRow,
@@ -269,5 +270,43 @@ describe("WardBar band state (desktop and tablet)", () => {
       release = null;
     });
     expect(screen.getByTestId("ward-bar")).not.toHaveAttribute("data-band");
+  });
+});
+
+describe("placement Button availability", () => {
+  it("exposes its real gate to keyboard users and blocks submit until it clears", () => {
+    const submit = vi.fn((event) => event.preventDefault());
+    const view = render(
+      <form onSubmit={submit}>
+        <Button
+          type="submit"
+          variant="pri"
+          size="md"
+          data-placement-action
+          disabledReason="No allocatable bed remains."
+          reasonDisplay="tooltip"
+        >
+          Pull patient
+        </Button>
+      </form>,
+    );
+    let button = screen.getByRole("button", { name: "Pull patient" });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("No allocatable bed remains.");
+    button.focus();
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    expect(submit).not.toHaveBeenCalled();
+    view.rerender(
+      <form onSubmit={submit}>
+        <Button type="submit" variant="pri" size="md" data-placement-action>
+          Pull patient
+        </Button>
+      </form>,
+    );
+    button = screen.getByRole("button", { name: "Pull patient" });
+    fireEvent.click(button);
+    expect(submit).toHaveBeenCalledTimes(1);
   });
 });

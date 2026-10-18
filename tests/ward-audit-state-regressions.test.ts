@@ -248,4 +248,21 @@ describe("audit core state regressions", () => {
     payload.state.broadcastAlerts = alerts;
     expect(readScenarioFile(JSON.stringify(payload), 5).ok).toBe(false);
   });
+  it("rejects a restored gender placement record without its full shape", () => {
+    const state = JSON.parse(JSON.stringify(seedWardFlowState()));
+    const placement = {
+      at: now,
+      by: "coordinator",
+      unitIds: [state.units[0].id],
+      reason: "A single room is available on this ward",
+      wardChecked: true,
+    };
+    state.movements[0].genderPlacements = [placement];
+    expect(isValidStoredWardFlowState(state)).toBe(true);
+    const withoutUnits = Object.fromEntries(Object.entries(placement).filter(([key]) => key !== "unitIds"));
+    for (const malformed of [{}, withoutUnits, { ...placement, wardChecked: false }]) {
+      state.movements[0].genderPlacements = [malformed];
+      expect(isValidStoredWardFlowState(state)).toBe(false);
+    }
+  });
 });

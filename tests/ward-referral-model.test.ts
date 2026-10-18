@@ -493,6 +493,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Putting a patient above every urgency tier, and taking them back down. Neither refuses
     // anybody: raising one patient's place in a queue is not a decision against another, and no
     // unit is declining a placement.
+    FLAG_MOVEMENT_TURNAROUND_PRIORITY: false,
+    FLAG_REFERRAL_TURNAROUND_PRIORITY: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,
@@ -967,6 +969,7 @@ describe("referrals fixture — the awkward cases (seed rule 4)", () => {
  */
 describe("Referral privacy — structural", () => {
   const ALLOWED_REFERRAL_FIELDS = [
+    "turnaroundPriority",
     // Owner-requested confirmed drawer dossier, 7 October 2026. No patient identity is copied.
     "intake",
     "id",
@@ -1318,6 +1321,7 @@ describe("Referral privacy — structural", () => {
       // supplied — which is what makes this literal a guard rather than a sample.
       patientId: "PT-A1",
       id: "REF-CANON",
+      turnaroundPriority: { unitId: "rph-adult-secure", flaggedAt: NOW_ANCHOR, source: "cld" },
       // Present because `Required<Referral>` demands every optional field. ⚠️ On a REAL referral
       // its absence means nobody has assessed clearance — NOT "not cleared" — so this literal is
       // the one place the field appears without carrying that distinction.

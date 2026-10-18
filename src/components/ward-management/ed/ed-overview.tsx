@@ -38,6 +38,7 @@ type EdOverviewDepartment = {
 type EdOverviewChip = { id: string; label: string; value: number; tone?: WfTone };
 
 type Props = {
+  sinceLastLook?: ReactNode;
   departmentId: string;
   departments: EdOverviewDepartment[];
   /** People on this department's psychiatry board: the answer title's figure. */
@@ -68,6 +69,7 @@ function serviceShort(service: string): string {
  */
 export function EdOverview({
   departmentId,
+  sinceLastLook,
   departments,
   onBoard,
   chips,
@@ -141,6 +143,7 @@ export function EdOverview({
                   </Button>
                 </span>
               ) : null}
+              {sinceLastLook}
               {raiseButton}
             </>
           }
@@ -197,6 +200,7 @@ export function EdOverview({
                   On TV
                 </Link>
               ) : null}
+              {sinceLastLook}
               {raiseButton}
             </>
           }
