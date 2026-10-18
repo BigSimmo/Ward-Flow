@@ -15,7 +15,8 @@ const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/alerts/alerts-screen.tsx": 7,
   "src/components/ward-management/alerts/global-alert-panels.tsx": 1,
   "src/components/ward-management/capacity/capacity-phone-wards.tsx": 1,
-  "src/components/ward-management/capacity/capacity-screen.tsx": 2,
+  "src/components/ward-management/capacity/capacity-screen.tsx": 1,
+  "src/components/ward-management/capacity/capacity-ward-sidebar.tsx": 1,
   "src/components/ward-management/capacity/planned-admissions-panel.tsx": 4,
   "src/components/ward-management/capacity/step-down-board.tsx": 1,
   "src/components/ward-management/community/community-screen.tsx": 1,
@@ -46,7 +47,8 @@ const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/ward-global-search.tsx": 1,
   "src/components/ward-management/ward-tasks-drawer.tsx": 8,
   "src/components/ward-management/ward/ward-arrivals-corridor.tsx": 3,
-  "src/components/ward-management/ward/ward-screen.tsx": 7,
+  "src/components/ward-management/ward/ward-screen-overlays.tsx": 1,
+  "src/components/ward-management/ward/ward-screen.tsx": 6,
 };
 
 function screenFiles(dir: string): string[] {

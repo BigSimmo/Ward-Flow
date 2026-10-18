@@ -104,7 +104,17 @@ interface Screen {
   readonly source: string;
 }
 
-const SCREENS: Screen[] = COMPONENTS.map((file) => ({ file, source: stripComments(readFileSync(file, "utf8")) }));
+// `ward-screen.tsx` was split into `ward-screen-*.tsx` parts (18 October 2026) to keep it under the
+// line cap. The parts are one screen, so they are read as one: the qualifier is stated once for it.
+const SCREEN_PART = /\/ward\/ward-screen-[^/]+\.tsx$/u;
+const SCREENS: Screen[] = COMPONENTS.filter((file) => !SCREEN_PART.test(file)).map((file) => ({
+  file,
+  source: stripComments(
+    [file, ...(file.endsWith("/ward/ward-screen.tsx") ? COMPONENTS.filter((part) => SCREEN_PART.test(part)) : [])]
+      .map((path) => readFileSync(path, "utf8"))
+      .join("\n"),
+  ),
+}));
 
 /** A component that renders a ready-BED figure, in code rather than in prose. */
 function rendersReadyFigure(screen: Screen): boolean {
