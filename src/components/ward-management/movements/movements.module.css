@@ -760,6 +760,7 @@
  * contract above; the drawer remains on legacy tokens because it portals outside this screen. */
 .screen {
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  --wf-page-canvas: var(--ground);
   display: block;
   min-height: 100%;
   color: var(--ink);

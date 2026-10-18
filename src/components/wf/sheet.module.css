@@ -20,6 +20,14 @@
   font-family: var(--wf-font);
 }
 
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) :where(.panel) {
+    background: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 :where(.header) {
   border-color: var(--wf-line);
 }

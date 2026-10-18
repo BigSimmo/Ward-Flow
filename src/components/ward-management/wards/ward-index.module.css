@@ -1,6 +1,7 @@
 /* All wards, v6. Tokens only; layout follows design/pages-v6/Wards.png at 1440 wide. */
 
 .screen {
+  --wf-page-canvas: var(--wf-canvas);
   min-width: 0;
   background: var(--wf-canvas);
   color: var(--wf-ink-1);

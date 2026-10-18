@@ -150,6 +150,9 @@ describe("the Ward Flow token layer", () => {
     expect(blocks.length, "the token layer declares no @media block at all").toBeGreaterThan(0);
     const forced = blocks.filter((block) => block.includes("(forced-colors: active)"));
     expect(forced.length, "expected exactly one forced-colours block").toBe(1);
+    const glare = blocks.filter((block) => block.includes("screen and (forced-colors: none)"));
+    expect(glare, "expected exactly one screen-only glare override").toHaveLength(1);
+    expect(glare[0]).toContain(':global(:root[data-mode="glare"]) .wardTokens.wardTokens');
 
     for (const token of REQUIRED) {
       expect(base.split(`${token}:`).length - 1, `${token} in the base block`).toBe(1);
@@ -168,11 +171,13 @@ describe("the Ward Flow token layer", () => {
     // blocks would satisfy every `toBeLessThanOrEqual(1)` above.
     for (const token of ["--ward-border", "--ward-divider"]) {
       expect(forced[0].split(`${token}:`).length - 1, `${token} re-pointed under forced colours`).toBe(1);
-      // And the raw file therefore carries two — the exact count the original
-      // guard called a defect. This is the regression pin: it states the thing
-      // that used to fail, and asserts it is legitimate.
-      expect(TOKENS.split(`${token}:`).length - 1, `${token} across the whole file`).toBe(2);
+      // Glare is another legitimate conditional override. Pin its actual role
+      // and scope rather than allowing arbitrary extra whole-file declarations.
+      expect(glare[0].split(`${token}:`).length - 1, `${token} re-pointed under glare`).toBe(1);
+      expect(TOKENS.split(`${token}:`).length - 1, `${token} across the whole file`).toBe(3);
     }
+    expect(glare[0]).toContain("--ward-border: var(--wf-line-2)");
+    expect(glare[0]).toContain("--ward-divider: var(--wf-line)");
   });
 
   it("keeps a panel distinguishable from the ground — by its EDGE, not by the two tokens differing", () => {

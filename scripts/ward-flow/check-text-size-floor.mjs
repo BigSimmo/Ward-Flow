@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// SYS-05 extension: the historical token-string ratchet below is now accompanied
+// by a parsed font-size/font shorthand inventory. It includes wf primitives,
+// resolves simple aliases/fallbacks and rejects new sub-12px signatures. The long
+// historical notes below describe the legacy arm, not the combined coverage.
 /**
  * Ratchet: the count of `--text-3xs` and `--text-2xs` uses in ward CSS may FALL, never RISE.
  *
@@ -168,6 +172,13 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  FONT_SWEEP_GLOBS,
+  FONT_TOKEN_FILES,
+  FONT_SHELL_TOKEN_FILE,
+  fontInventoryRises,
+  inventoryFontSizes,
+} from "./font-size-inventory.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -369,6 +380,43 @@ const perFile = files.map((file) => ({ file, count: countFile(file) })).filter((
 const total = perFile.reduce((sum, entry) => sum + entry.count, 0);
 const currentByFile = new Map(perFile.map((entry) => [entry.file, entry.count]));
 
+// --root is an existing test-fixture hook for the legacy ratchet. Its fixtures do
+// not contain the real token sheets. Pass --font-baseline to exercise both arms
+// in such a fixture; ordinary repository runs always execute the parsed arm.
+const fontBaselineOverride = flagValue("--font-baseline");
+if (!rootOverride || fontBaselineOverride) {
+  const fontFiles = execFileSync("git", ["ls-files", "--", ...FONT_SWEEP_GLOBS.map((glob) => `:(glob)${glob}`)], {
+    cwd: repo,
+    encoding: "utf8",
+  })
+    .split("\n")
+    .filter(Boolean);
+  if (fontFiles.length < MINIMUM_FILES_SWEPT) throw new Error("Parsed font inventory sweep unexpectedly collapsed.");
+  const fontTokens = FONT_TOKEN_FILES.map((file) => readFileSync(join(repo, file), "utf8"));
+  const inventory = inventoryFontSizes(
+    new Map(fontFiles.map((file) => [file, readFileSync(join(repo, file), "utf8")])),
+    fontTokens,
+    [readFileSync(join(repo, FONT_SHELL_TOKEN_FILE), "utf8")],
+  );
+  const fontBaseline = JSON.parse(
+    readFileSync(fontBaselineOverride ?? join(scriptDir, "font-size-inventory-baseline.json"), "utf8"),
+  );
+  if (!fontBaseline.counts || typeof fontBaseline.counts !== "object")
+    throw new Error("Parsed font inventory baseline is missing signature counts.");
+  const rises = fontInventoryRises(inventory.findings, fontBaseline.counts);
+  console.log(
+    `[font-inventory] ${inventory.files} stylesheets, ${inventory.declarations} screen font declarations; ${inventory.findings.length} resolved below 12px, ${inventory.unresolved.length} unresolved (need browser verification).`,
+  );
+  if (rises.length) {
+    for (const rise of rises)
+      console.error(
+        `[font-inventory] NEW sub-12px signature: ${rise.signature.join(" | ")} (${rise.was} → ${rise.now})`,
+      );
+    process.exit(1);
+  }
+  console.log("[font-inventory] No new sub-12px resolved declarations. Legacy token ratchet follows.");
+}
+
 if (!existsSync(baselinePath)) {
   console.error(`[text-size-floor] REFUSED: no baseline at ${baselinePath}. This ratchet cannot run without one.`);
   process.exit(2);
@@ -490,6 +538,6 @@ if (risen.length > 0) {
 console.log("Not risen in any file. (Falling is welcome — it means a rebuilt screen raised existing text.)\n");
 console.log("⚠️  This is a ratchet, not a floor check: a pass means no file's count rose above its OWN pinned");
 console.log("    baseline, nothing more. It does not mean these screens are legible, it does not enforce the");
-console.log("    12px floor anywhere, and it cannot see a new sub-12px size written as a raw 10px/11px instead");
-console.log("    of through --text-3xs/--text-2xs, or written outside the globs above.\n");
+console.log("    12px floor everywhere. The separate parsed inventory checks raw sizes, shorthand and simple");
+console.log("    aliases in its wider Ward CSS population; unresolved sizes still need browser verification.\n");
 process.exit(0);

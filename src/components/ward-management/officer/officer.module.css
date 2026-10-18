@@ -3,6 +3,7 @@
  * timeline and table come from the wf primitives. Tokens only.
  */
 .screen {
+  --wf-page-canvas: var(--wf-canvas);
   min-width: 0;
   background: var(--wf-canvas);
 }

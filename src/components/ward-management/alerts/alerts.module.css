@@ -7,6 +7,7 @@
   min-width: 0;
   min-height: 100%;
   color: var(--wf-ink-1);
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
   font-family: var(--wf-font);
 }
@@ -311,11 +312,9 @@ button.check[aria-pressed="true"] {
   gap: var(--wf-s-1);
   min-width: 0;
   overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.chipRow::-webkit-scrollbar {
-  display: none;
+  padding-block: var(--wf-s-1);
+  scrollbar-width: thin;
+  scroll-padding-inline: var(--wf-s-1);
 }
 
 .chipRow > * {

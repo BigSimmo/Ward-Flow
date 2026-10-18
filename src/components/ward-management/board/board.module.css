@@ -4601,6 +4601,7 @@
     --body: var(--wf-font);
     --display: var(--wf-font);
     --mono: var(--wf-mono);
+    --wf-page-canvas: var(--wf-canvas);
     background: var(--wf-canvas);
   }
 

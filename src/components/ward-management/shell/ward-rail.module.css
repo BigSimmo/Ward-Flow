@@ -889,13 +889,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  mask-image: linear-gradient(
-    180deg,
-    transparent 0,
-    var(--wf-ink-1) 8px,
-    var(--wf-ink-1) calc(100% - 16px),
-    transparent
-  );
+  scroll-padding-block: 0.5rem;
 }
 
 .railNav {
@@ -2460,5 +2454,51 @@
   .rail,
   .rail[data-rail="closed"] {
     display: none;
+  }
+}
+
+/* Match the opaque glare surfaces without changing the accepted light/dark rail. */
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .rail,
+  :global(:root[data-mode="glare"]) .rail::before,
+  :global(:root[data-mode="glare"]) .appearancePopover,
+  :global(:root[data-mode="glare"]) .moreSheet {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* When summaries and utilities fill a short desktop window, scroll the complete rail instead
+   of squeezing its navigation to a few pixels. Pop-outs escape that scrollport beside the rail. */
+@media screen and (min-width: 1001px) and (max-height: 32rem) {
+  .rail {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scroll-padding-block: 0.5rem;
+    background: var(--wf-surface);
+  }
+
+  .rail .railScroll {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .rail[data-rail] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown) {
+    position: fixed;
+    top: auto;
+    bottom: 0.75rem;
+    left: 17.375rem;
+    max-width: calc(100vw - 18rem);
+    max-height: calc(100dvh - var(--wf-data-bar-height, 0px) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .rail[data-rail="closed"] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown),
+  .rail[data-tablet="landscape"] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown) {
+    left: calc(var(--rail-closed-w) + 0.375rem);
   }
 }

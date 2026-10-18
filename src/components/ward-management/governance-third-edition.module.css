@@ -12,6 +12,7 @@
 }
 
 .governanceRoute {
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
 }
 

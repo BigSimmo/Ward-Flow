@@ -481,7 +481,7 @@ export function MovementHorizonGantt({
                         <div
                           key={lane.id}
                           className={styles.ganttLaneRow}
-                          style={{ height: `${trackHeight}px` } as CSSProperties}
+                          style={{ minHeight: `max(var(--horizon-row-min), ${trackHeight}px)` } as CSSProperties}
                         >
                           <div className={styles.ganttLaneLabel} title={lane.name}>
                             <span className={styles.ganttLaneName}>{lane.name}</span>

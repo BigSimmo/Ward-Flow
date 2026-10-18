@@ -167,7 +167,7 @@
 .edGrid {
   display: grid;
   /* auto-fit, not auto-fill: the tiles share the whole width rather than leaving empty columns. */
-  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -241,13 +241,12 @@
 
 .edLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   min-width: 0;
-  overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
-  white-space: nowrap;
 }
 
 .edMono {
@@ -255,12 +254,12 @@
   letter-spacing: -0.02em;
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .edWord {
   font-size: var(--wf-fs-12);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* Narrow tiles drop the service name next to the code (v10 Home content rules). */
@@ -706,12 +705,13 @@
 
 .groupHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   width: 100%;
   min-height: var(--wf-h-md);
   margin: 0;
-  padding: 0 var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4);
   border: 0;
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
@@ -724,27 +724,21 @@
   background: var(--wf-hover);
 }
 
-/* Site review (12 Oct 2026): the service name read "NORTH M…" because it was the only part of the
-   head allowed to shrink. The name now keeps its width and the ward count gives way first. */
+/* Keep both the service and its ward count readable when the bedflow column narrows. */
 .groupName {
-  flex: none;
+  flex: 1 1 9rem;
   min-width: 0;
-  overflow: hidden;
   color: var(--wf-ink-1);
   font-weight: 600;
-  text-overflow: ellipsis;
   font-size: var(--wf-fs-12);
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .groupCount {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
+  flex: none;
   color: var(--wf-ink-3);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1304,7 +1298,7 @@ button.registerRow:hover {
     bottom: -1px;
     height: var(--wf-band-lip);
     border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
-    background: var(--wf-canvas);
+    background: var(--wf-page-canvas, var(--wf-canvas));
     box-shadow: 0 -1px 0 var(--wf-hero-edge);
     pointer-events: none;
   }
@@ -1445,26 +1439,21 @@ button.registerRow:hover {
 }
 
 /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
-   wraps, when the screen is too narrow for every department (desktop and both tablets). A fade at
-   the right edge says there is more. */
+   wraps, when the screen is too narrow for every department (desktop and both tablets). The
+   scrollbar exposes overflow without obscuring the last tile or its focus indicator. */
 @media (min-width: 48.0625rem) {
   .edGrid {
     grid-auto-flow: column;
     grid-template-columns: none;
-    grid-auto-columns: minmax(6.5rem, 1fr);
+    grid-auto-columns: minmax(9rem, 1fr);
     overflow-x: auto;
     scrollbar-width: thin;
+    padding-inline: var(--wf-s-1);
+    scroll-padding-inline: var(--wf-s-1);
   }
 
   .edCell:last-child {
     border-right: 0;
-  }
-}
-
-@media (min-width: 48.0625rem) and (max-width: 75rem) {
-  .edGrid {
-    grid-auto-columns: minmax(8.5rem, 1fr);
-    mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 2.5rem), transparent);
   }
 }
 
@@ -1824,14 +1813,13 @@ button.registerRow:hover {
     padding: var(--wf-s-3) var(--wf-s-4);
   }
 
-  /* ED chips: dot, code, count, glyph and the longest wait. The word "waiting" stays in the
-     button's spoken name. The row runs to the screen edge and fades out there. */
+  /* Leave space for the last chip and its focus ring; a permanent mask hid both at the end. */
   .edGrid {
     margin-right: calc(-1 * var(--wf-s-4));
-    padding: 2px var(--wf-s-3) 2px 2px;
+    padding: 2px var(--wf-s-4) var(--wf-s-2) 2px;
     margin-left: -2px;
-    -webkit-mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 28px), transparent);
+    scrollbar-width: thin;
+    scroll-padding-inline: var(--wf-s-2) var(--wf-s-4);
   }
 
   .edButton {
@@ -1892,7 +1880,9 @@ button.registerRow:hover {
   }
 
   .edLine {
+    flex-wrap: nowrap;
     gap: 6px;
+    white-space: nowrap;
   }
 
   .edLine .edMono {
