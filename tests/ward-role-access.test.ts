@@ -44,6 +44,8 @@ import {
  * Role access plan PR 1 (Josh, 15 Oct 2026). The table is pinned to the plan's section 4, every
  * route answers to it, and the scoped workspace never hands a desk a patient outside its care.
  */
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 const BASE = "/mockups/ward-flow";
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
@@ -78,6 +80,14 @@ describe("the access table", () => {
     expect(screenDecision(north, screenForPath(path), places).open).toBe(true);
     expect(screenDecision(south, screenForPath(path), places)).toEqual({ open: false, why: "place" });
     expect(screenDecision(STATEWIDE_COORDINATOR, screenForPath(path), places).open).toBe(true);
+  });
+
+  it("reads the record id behind a coded patient or movement address, so the access check sees the person", () => {
+    // D-39 links carry a code, never the id. The page check compares ids, so the code is read first.
+    expect(screenForPath(patientHref("PT-0001"))).toEqual({ screen: "patient", patientId: "PT-0001" });
+    expect(screenForPath(movementHref("WF-012"))).toEqual({ screen: "movements", movementId: "WF-012" });
+    // An old link with the raw id still names the same record.
+    expect(screenForPath(`${BASE}/people/PT-0001`)).toEqual({ screen: "patient", patientId: "PT-0001" });
   });
 
   it("keeps a one-ED or one-team desk out of the index of every ED or team", () => {

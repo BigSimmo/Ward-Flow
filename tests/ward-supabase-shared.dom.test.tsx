@@ -350,7 +350,10 @@ it("stops polling and signs out the view when the workspace refuses access", asy
   expect(result.current.error).toMatch(/Ward Flow role/);
   expect(result.current.signedIn).toBe(false);
   expect(interval.mock.calls.some(([, ms]) => ms === 3000)).toBe(false);
-  expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(1);
+  const workspaceCalls = fetcher.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/v1/workspace"));
+  // One refused read, no polling, and at most one request asking the server to end the sign-in.
+  expect(workspaceCalls.filter((url) => !url.endsWith("/v1/workspace/sign-out"))).toHaveLength(1);
+  expect(workspaceCalls.filter((url) => url.endsWith("/v1/workspace/sign-out")).length).toBeLessThanOrEqual(1);
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });
 it("turns this device's phone alerts off when the session limit signs the person out", async () => {

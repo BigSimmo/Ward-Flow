@@ -25,22 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const [from, expected] of [
-  [null, [1, 2, 3, 4, 5, 6, 7, 8, 9]],
-  [1, [2, 3, 4, 5, 6, 7, 8, 9]],
-  [2, [3, 4, 5, 6, 7, 8, 9]],
-  [3, [4, 5, 6, 7, 8, 9]],
-  [4, [5, 6, 7, 8, 9]],
-  [5, [6, 7, 8, 9]],
-  [6, [7, 8, 9]],
-  [7, [8, 9]],
-  [8, [9]],
-  [9, []],
-]) {
-  test(`migration runner advances ${from ?? "fresh"} to version 9 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
+  const expected = Array.from({ length: 11 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 11 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 9);
+    assert.equal(db.current(), 11);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -56,7 +46,7 @@ for (const [from, expected] of [
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 10, "5"]) {
+  for (const version of [0, 12, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -137,6 +127,34 @@ test("migration 9 adds cover, requests and alerts by role without dropping anyth
   assert.ok(endCover >= 0 && dropKind >= 0 && endCover < dropKind);
   assert.match(undo, /IS DISTINCT FROM 9/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 9;/);
+});
+
+test("migration 10 moves each list and map into its own rows, and its rollback puts them back first", async () => {
+  const sql = await readFile(new URL("./migrations/010-workspace-records.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-010-workspace-records.sql", import.meta.url), "utf8");
+  assert.doesNotMatch(sql, /DROP|DELETE|TRUNCATE/);
+  assert.match(sql, /CREATE TABLE ward_flow\.workspace_records/);
+  assert.match(sql, /ALTER TABLE ward_flow\.workspace_records ENABLE ROW LEVEL SECURITY;/);
+  assert.match(sql, /REFERENCES ward_flow\.workspaces\(id, data_mode\)/);
+  assert.match(undo, /IS DISTINCT FROM 10/);
+  const restore = undo.indexOf("UPDATE ward_flow.workspaces w SET payload");
+  const drop = undo.indexOf("DROP TABLE ward_flow.workspace_records;");
+  assert.ok(restore >= 0 && drop >= 0 && restore < drop);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 10;/);
+});
+
+test("migration 11 keeps record openings and break glass rows append-only, and its rollback refuses any other version", async () => {
+  const sql = await readFile(new URL("./migrations/011-record-access-and-sign-out.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-011-record-access-and-sign-out.sql", import.meta.url), "utf8");
+  assert.doesNotMatch(sql, /^\s*(?:DROP|DELETE|UPDATE|ALTER TABLE ward_flow\.(?!record_access|session_sign_outs))/m);
+  assert.match(
+    sql,
+    /CREATE TRIGGER protect_record_access BEFORE UPDATE OR DELETE OR TRUNCATE ON ward_flow\.record_access/,
+  );
+  assert.match(sql, /CREATE TRIGGER protect_break_glass BEFORE UPDATE OR DELETE OR TRUNCATE ON ward_flow\.break_glass/);
+  assert.equal(sql.match(/ENABLE ROW LEVEL SECURITY/g)?.length, 2);
+  assert.match(undo, /IS DISTINCT FROM 11/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 11;/);
 });
 
 test("one migration list: every SQL file is listed once, in order, and matches its checksum", async () => {

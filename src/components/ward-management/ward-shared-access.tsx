@@ -11,6 +11,7 @@ import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
+import { SharedSessionContext, type SharedSession } from "./shell/ward-shared-session-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
@@ -48,6 +49,8 @@ export type WardSharedConnection = SharedView & {
   switchRole?: () => void;
   /** The step-up sign-in with the account's own password. */
   reauthenticate?: (password: string) => Promise<void>;
+  /** Tells the server this desk opened a patient's record. Best effort; nothing when not connected. */
+  logRecordView?: (patientId: string, surface: "patient" | "movement") => void;
 };
 
 /**
@@ -137,6 +140,9 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     enabled,
     pushApi,
     accessApi,
+    logRecordView: (patientId, surface) => {
+      void supabase.client.current?.logRecordView(patientId, surface);
+    },
     dispatch: (event) =>
       supabase.client.current?.dispatchConfirmed(event) ??
       Promise.resolve({
@@ -147,6 +153,14 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     signOut: supabase.signOut,
   };
 }
+
+/**
+ * Readiness review item 12: a new or recovered password is a passphrase of at least this length,
+ * following the Australian Government ISM's passphrase guidance for single-factor sign-in (check
+ * the current ISM before changing it). The sign-in service's own minimum is set to match in its
+ * settings (docs/ward-flow/RETENTION-AND-BACKUP.md, steps for Josh).
+ */
+const NEW_PASSWORD_MIN_LENGTH = 15;
 
 function WardCredentialFields({ form }: { form: WardCredentialForm }) {
   const [signup, setSignup] = useState(false);
@@ -197,10 +211,17 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
-          minLength={form.recovery || signup ? 8 : undefined}
+          minLength={form.recovery || signup ? NEW_PASSWORD_MIN_LENGTH : undefined}
+          aria-describedby={form.recovery || signup ? "ward-new-password-hint" : undefined}
           disabled={form.busy}
         />
       </label>
+      {(form.recovery || signup) && (
+        <p id="ward-new-password-hint">
+          At least {NEW_PASSWORD_MIN_LENGTH} characters. A short phrase of unrelated words is easiest to remember. Use a
+          password of your own; never share one between accounts.
+        </p>
+      )}
       {(form.recovery || signup) && (
         <label>
           Confirm new password
@@ -285,6 +306,23 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     [pushKind, pushApi],
   );
   const { accessApi, reauthenticate } = connection;
+  // The connection's functions are new on every render; the session reads the latest through a
+  // ref, so the idle lock and the record log do not restart on every poll.
+  const latest = useRef(connection);
+  useEffect(() => {
+    latest.current = connection;
+  });
+  const sessionOpen = connection.enabled && connection.signedIn;
+  const session = useMemo<SharedSession | null>(
+    () =>
+      sessionOpen
+        ? {
+            signOut: () => latest.current.signOut(),
+            logRecordView: (patientId, surface) => latest.current.logRecordView?.(patientId, surface),
+          }
+        : null,
+    [sessionOpen],
+  );
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
   const sharedAccess = useMemo(
     () => (connected && accessApi ? { api: accessApi, actorId } : null),
@@ -333,40 +371,42 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     >
       <PhonePushAccessContext.Provider value={pushAccess}>
         <StepUpReauthContext.Provider value={connected && reauthenticate ? reauthenticate : null}>
-          <SharedAccessContext.Provider value={sharedAccess}>
-            <DataModeSlotContext.Provider value={setSlot}>
-              <DataModeContext.Provider value={dataMode}>
-                {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-                {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
-                {showLiveInfo && (
-                  <section className={styles.notice} aria-label="Hospital records unavailable">
-                    <h1>Hospital records are not connected</h1>
-                    <p>
-                      Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode
-                      uses invented records, including when it connects to a shared database.
-                    </p>
-                    <p>
-                      Hospital approval, a separate clinical database and the data connection must be configured before
-                      that mode can open. Selecting this option does not connect or relabel any data.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowLiveInfo(false);
-                      }}
-                    >
-                      Return to prototype
-                    </button>
-                  </section>
-                )}
-                <div hidden={showLiveInfo} inert={showLiveInfo}>
-                  <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                    {children}
-                  </WardSharedWorkspaceContent>
-                </div>
-              </DataModeContext.Provider>
-            </DataModeSlotContext.Provider>
-          </SharedAccessContext.Provider>
+          <SharedSessionContext.Provider value={session}>
+            <SharedAccessContext.Provider value={sharedAccess}>
+              <DataModeSlotContext.Provider value={setSlot}>
+                <DataModeContext.Provider value={dataMode}>
+                  {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
+                  {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
+                  {showLiveInfo && (
+                    <section className={styles.notice} aria-label="Hospital records unavailable">
+                      <h1>Hospital records are not connected</h1>
+                      <p>
+                        Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype
+                        mode uses invented records, including when it connects to a shared database.
+                      </p>
+                      <p>
+                        Hospital approval, a separate clinical database and the data connection must be configured
+                        before that mode can open. Selecting this option does not connect or relabel any data.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowLiveInfo(false);
+                        }}
+                      >
+                        Return to prototype
+                      </button>
+                    </section>
+                  )}
+                  <div hidden={showLiveInfo} inert={showLiveInfo}>
+                    <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
+                      {children}
+                    </WardSharedWorkspaceContent>
+                  </div>
+                </DataModeContext.Provider>
+              </DataModeSlotContext.Provider>
+            </SharedAccessContext.Provider>
+          </SharedSessionContext.Provider>
         </StepUpReauthContext.Provider>
       </PhonePushAccessContext.Provider>
     </DowntimePackBoundary>

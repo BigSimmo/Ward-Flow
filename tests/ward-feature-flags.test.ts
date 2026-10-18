@@ -74,8 +74,26 @@ describe("resolveWardFeatureFlags", () => {
     expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
     const onInProduction = production.filter((entry) => entry.on).map((entry) => entry.name);
-    expect(onInProduction).toEqual(WARD_FEATURE_FLAG_NAMES.filter((name) => name.startsWith("top25-")));
+    expect(onInProduction).toEqual(
+      WARD_FEATURE_FLAG_NAMES.filter((name) => name.startsWith("top25-") || name === "role-access"),
+    );
     expect(flag(production, "awol-bed-hold-review").on).toBe(false);
+  });
+
+  it("keeps role access on in production whatever the server setting says (review item 14)", () => {
+    const resolved = resolveWardFeatureFlags({
+      environment: "production",
+      server: { "role-access": false },
+      device: { "role-access": false },
+    });
+    expect(flag(resolved, "role-access")).toMatchObject({ on: true, source: "default", deviceCanChange: false });
+    // Outside production the switch still works, so a demonstration can show the whole view.
+    expect(
+      flag(
+        resolveWardFeatureFlags({ environment: "demo", server: { "role-access": false }, device: {} }),
+        "role-access",
+      ).on,
+    ).toBe(false);
   });
 
   it("lets the device beat the server, and the server beat the default", () => {

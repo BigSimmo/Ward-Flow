@@ -1223,4 +1223,44 @@ describe("shared workspace traffic", () => {
     expect(reads).toEqual(["https://example.test/v1/workspace"]);
     client.dispose();
   });
+
+  it("keeps checking queued commands against the last board it saw when someone else saved in between", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const reads: string[] = [];
+    let revision = 1;
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url, options) => {
+        if (!options?.body) {
+          reads.push(String(url));
+          return Response.json({ snapshot: snapshot(revision) });
+        }
+        const body = JSON.parse(String(options.body));
+        bodies.push(body);
+        // Another desk saves just before the second command lands.
+        revision += bodies.length === 2 ? 2 : 1;
+        return body.reply === "revision"
+          ? Response.json({ outcome: "accepted", commandRevision: revision })
+          : Response.json({ outcome: "accepted", commandRevision: revision, snapshot: snapshot(revision) });
+      },
+    });
+    await client.refresh();
+    client.dispatch(event);
+    client.dispatch(event);
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(3));
+    // The third command is not sent against 4, which would hide the other desk's save at 3.
+    expect(bodies.map((body) => [body.expectedRevision, body.reply])).toEqual([
+      [1, undefined],
+      [2, "revision"],
+      [2, undefined],
+    ]);
+    await vi.waitFor(() => expect(reads).toHaveLength(2));
+    client.dispose();
+  });
 });

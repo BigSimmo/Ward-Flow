@@ -20,7 +20,13 @@ const ROUTES = new Map([
   ["/v1/workspace/access/request", "access_request"],
   ["/v1/workspace/access/decide", "access_decide"],
   ["/v1/workspace/break-glass", "break_glass"],
+  ["/v1/workspace/record-access", "record_access"],
+  ["/v1/workspace/sign-out", "sign_out"],
 ]);
+/** The screens that open a patient's record, as the record access log names them. */
+const VIEW_SURFACES = new Set(["patient", "movement"]);
+/** A synthetic person or movement id, as the workspace names them. */
+const RECORD_ID = /^(?:PT|WF)-[A-Za-z0-9-]{1,96}$/;
 /**
  * The powerful steps (feature 9): giving, approving or ending a role, giving cover, answering a
  * request for access and opening a record outside your care. Each needs a recent sign-in.
@@ -138,7 +144,7 @@ export function createSharedHandler({
       });
     }
     let actorId;
-    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string }} */
+    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string, sessionId?: string }} */
     const session = {};
     try {
       actorId = await authenticate(request.headers.get("authorization"), {
@@ -175,6 +181,34 @@ export function createSharedHandler({
         },
         "session_limit",
       );
+    // A signed-out sign-in is refused at once, not when its token expires (readiness review item
+    // 8). Turning this device's phone alerts off still goes through, as for the session limit.
+    if (store.sessionSignedOut && path !== "/v1/workspace/push-unsubscribe") {
+      try {
+        if (await store.sessionSignedOut(session.sessionId))
+          return reply(401, { code: "signed-out", error: "Signed out. Sign in again to carry on." }, "signed_out");
+      } catch (error) {
+        note.failure = errorFields(error);
+        return storageFailure(error)
+          ? reply(503, { error: "Database unavailable; try again shortly" }, "storage_unavailable")
+          : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
+      }
+    }
+    // Sign-out needs no role, so an account without one can end its own sign-in too.
+    if (path === "/v1/workspace/sign-out") {
+      if (request.method !== "POST") return reply(405, { error: "Method not allowed" });
+      if (!store.signOutSession || typeof session.sessionId !== "string") return reply(200, { signedOut: false });
+      try {
+        return reply(200, {
+          signedOut: await store.signOutSession(actorId, session.sessionId, session.startedAt),
+        });
+      } catch (error) {
+        note.failure = errorFields(error);
+        return storageFailure(error)
+          ? reply(503, { error: "Database unavailable; sign out again shortly" }, "storage_unavailable")
+          : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
+      }
+    }
     const workingAs = request.headers.get(WORKING_AS)?.toLowerCase() ?? null;
     if (workingAs !== null && workingAs !== "bootstrap" && !UUID.test(workingAs))
       return reply(400, { error: "Working as names one of this account's roles" });
@@ -286,6 +320,22 @@ export function createSharedHandler({
         if (!whole && view.access.role !== "admin")
           return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
         return reply(200, { events: await store.audit(view) });
+      }
+      if (path === "/v1/workspace/record-access") {
+        // Every desk logs the records it opens. Only the statewide coordinator reads the log.
+        if (request.method === "GET") {
+          if (!whole) return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
+          const patient = new URL(request.url).searchParams.get("patient");
+          if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
+          return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });
+        }
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        if (typeof body?.patientId !== "string" || !RECORD_ID.test(body.patientId) || !VIEW_SURFACES.has(body?.surface))
+          return reply(400, { error: "A patient and a screen are required" });
+        if (!store.logView) return reply(200, { logged: false });
+        const result = await store.logView(view, body.patientId, body.surface);
+        return reply(result.status, result.body);
       }
       if (path === "/v1/workspace/access" && request.method === "GET") {
         const result = await store.listAccess(view);

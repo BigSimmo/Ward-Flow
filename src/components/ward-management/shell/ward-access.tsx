@@ -74,6 +74,7 @@ import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
 import { SharedAccessContext } from "./ward-shared-access-context";
+import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-access.module.css";
 import { DowntimePackBoundary } from "../reports/downtime-pack-context";
 
@@ -452,9 +453,16 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
-  if (!on || accessIsWholeNetwork(access)) return <>{children}</>;
-  const places = wardPlaceLookup(unscoped.units);
   const address = screenForPath(pathname);
+  const logged = recordViewFor(address, unscoped.movements);
+  if (!on || accessIsWholeNetwork(access))
+    return (
+      <>
+        {logged ? <WardRecordViewLog {...logged} /> : null}
+        {children}
+      </>
+    );
+  const places = wardPlaceLookup(unscoped.units);
   const decision = screenDecision(access, address, places);
   if (!decision.open) return <ClosedScreen access={access} />;
   if (address?.movementId !== undefined && !scoped.movements.some((movement) => movement.id === address.movementId))
@@ -473,10 +481,38 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   if (!seen) return <ClosedScreen access={access} patientId={person ?? subject} />;
   return (
     <>
+      {logged ? <WardRecordViewLog {...logged} /> : null}
       {person && glass.has(person) ? <WardBreakGlassNote patientId={person} /> : null}
       {children}
     </>
   );
+}
+
+/**
+ * The patient a patient or movement page shows, for the record access log: a movement is traced to
+ * its patient, so the log names the person. Undefined on every other page.
+ */
+export function recordViewFor(
+  address: ReturnType<typeof screenForPath>,
+  movements: readonly { id: string; patientId?: string }[],
+): { patientId: string; surface: "patient" | "movement" } | undefined {
+  const id = address?.screen === "patient" ? address.patientId : address?.movementId;
+  if (id === undefined) return undefined;
+  const patientId = id.startsWith("WF-") ? (movements.find((movement) => movement.id === id)?.patientId ?? id) : id;
+  return { patientId, surface: address?.screen === "patient" ? "patient" : "movement" };
+}
+
+/**
+ * Readiness review item 9: in the signed-in shared workspace, an opened patient or movement page is
+ * logged on the server, who and as which desk, in a log nobody can change. Logged once on opening,
+ * and again only when the page shows someone else. Nothing in the local demo.
+ */
+function WardRecordViewLog({ patientId, surface }: { patientId: string; surface: "patient" | "movement" }) {
+  const session = useContext(SharedSessionContext);
+  useEffect(() => {
+    session?.logRecordView(patientId, surface);
+  }, [session, patientId, surface]);
+  return null;
 }
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
@@ -649,18 +685,21 @@ export function WardBreakGlassReview() {
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
 /**
- * Shared computer lock (feature 10): after the set time with no use, the screen is covered and every
- * break glass grant ends at once. The desk keeps its own access, so unlocking never widens it.
+ * Shared computer lock (feature 10, readiness review item 8): after the set time with no use, the
+ * screen is covered and every break glass grant ends at once. The desk keeps its own access, so
+ * unlocking never widens it. It runs on every build, whatever the role access switch says. In the
+ * signed-in shared workspace the lock also signs out, here and on the server, so the next person
+ * needs the password to carry on; the local demo has no sign-in, so it stays a privacy screen.
  */
 export function WardIdleLock() {
-  const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
-  const [locked, setLocked] = useState(false);
+  const session = useContext(SharedSessionContext);
+  const [locked, setLocked] = useState<false | "screen" | "signed-out">(false);
   const lockRef = useRef<HTMLDivElement | null>(null);
   const minutes = CLINICAL_VALUES.idleLock.value;
   // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
   useModalFocus({
-    open: locked,
+    open: locked !== false,
     onClose: () => undefined,
     panelRef: lockRef,
     closeOnEscape: false,
@@ -669,11 +708,11 @@ export function WardIdleLock() {
   });
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
-    if (!on) return;
     const lock = () => {
       lockWardDesk();
       forgetStepUp();
-      setLocked(true);
+      if (session) session.signOut();
+      setLocked((current) => current || (session ? "signed-out" : "screen"));
     };
     let timer = window.setTimeout(lock, minutes * 60_000);
     const reset = () => {
@@ -685,18 +724,21 @@ export function WardIdleLock() {
       window.clearTimeout(timer);
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset);
     };
-  }, [on, access, minutes]);
+  }, [access, minutes, session]);
   if (!locked) return null;
   return (
     <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
-        <h1 id="ward-idle-lock-title">Locked after {minutes} minutes</h1>
+        <h1 id="ward-idle-lock-title">
+          {locked === "signed-out" ? `Signed out after ${minutes} minutes` : `Locked after ${minutes} minutes`}
+        </h1>
         <p>
-          The screen was covered so the next person cannot see this desk&apos;s patients, and any record opened outside
-          your care is closed again.
+          {locked === "signed-out"
+            ? "You were signed out so the next person cannot see this desk's patients or act as you. Sign in again to carry on."
+            : "The screen was covered so the next person cannot see this desk's patients, and any record opened outside your care is closed again."}
         </p>
         <Button variant="pri" data-testid="ward-idle-unlock" onClick={() => setLocked(false)}>
-          Carry on
+          {locked === "signed-out" ? "Sign in again" : "Carry on"}
         </Button>
       </div>
     </div>

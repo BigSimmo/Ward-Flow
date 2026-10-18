@@ -598,3 +598,70 @@ test("cover, requests and answers check their fields; asking for access needs no
   });
   assert.equal((await (await early.handler(request("/access"))).json()).canRequest, false);
 });
+
+test("a signed-out sign-in is refused on every route at once; sign-out needs no role", async () => {
+  const signedOut = new Set();
+  const named = [];
+  const { calls, handler } = setup(other, "prototype", {
+    sessionSignedOut: async (sessionId) => signedOut.has(sessionId),
+    signOutSession: async (actorId, sessionId, startedAt) => {
+      named.push([actorId, sessionId, Number.isFinite(startedAt)]);
+      signedOut.add(sessionId);
+      return true;
+    },
+  });
+  // The fake sign-in has no session id, so the store is asked about `undefined` and says no.
+  assert.equal((await handler(request())).status, 403);
+  // An account with no role can still end its own sign-in; with no session id nothing is named.
+  assert.deepEqual(await (await handler(request("/sign-out", {}))).json(), { signedOut: false });
+  assert.equal((await handler(request("/sign-out"))).status, 405);
+  assert.deepEqual(named, []);
+  signedOut.add(undefined);
+  for (const path of ["", "/audit", "/commands", "/record-access", "/access/request"]) {
+    const response = await handler(request(path, path === "" || path === "/audit" ? undefined : body));
+    assert.equal(response.status, 401, path);
+    assert.equal((await response.json()).code, "signed-out");
+  }
+  // Turning this device's phone alerts off still goes through, as for the session limit.
+  assert.notEqual((await handler(request("/push-unsubscribe", { endpoint: "https://push.example/1" }))).status, 401);
+  assert.equal(calls.length, 0);
+});
+
+test("a database outage while checking a sign-out is a 503, never a pass", async () => {
+  const outage = Object.assign(new Error("Connection terminated unexpectedly"), { code: "08006" });
+  const { calls, handler } = setup(coordinator, "prototype", {
+    sessionSignedOut: async () => {
+      throw outage;
+    },
+  });
+  assert.equal((await handler(request())).status, 503);
+  assert.equal(calls.length, 0);
+});
+
+test("every desk logs the records it opens; only the statewide coordinator reads the log", async () => {
+  const logged = [];
+  const store = {
+    logView: async (view, patientId, surface) => {
+      logged.push([view.access.role, patientId, surface]);
+      return { status: 200, body: { logged: true } };
+    },
+    recordViews: async (_view, patient) => [{ patient_id: patient ?? "PT-1001" }],
+  };
+  const ward = setup(other, "prototype", { ...store, viewer: async () => wardView });
+  const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
+  assert.deepEqual(await opened.json(), { logged: true });
+  assert.deepEqual(logged, [["ward", "PT-1001", "movement"]]);
+  assert.equal((await ward.handler(request("/record-access"))).status, 403);
+  for (const bad of [
+    { patientId: "Jane Citizen", surface: "patient" },
+    { patientId: "PT-1001", surface: "search" },
+    { patientId: "PT-1001" },
+    { patientId: `PT-${"1".repeat(100)}`, surface: "patient" },
+  ])
+    assert.equal((await ward.handler(request("/record-access", bad))).status, 400, JSON.stringify(bad));
+  assert.equal(logged.length, 1);
+  const lead = setup(coordinator, "prototype", store);
+  const views = await lead.handler(request("/record-access?patient=PT-2002"));
+  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }] });
+  assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
+});
