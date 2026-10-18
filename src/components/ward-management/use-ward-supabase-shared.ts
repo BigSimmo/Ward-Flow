@@ -18,9 +18,12 @@ import {
 } from "./ward-supabase-auth";
 
 /**
- * Before sign-out: revoke this account's phone alerts for this device, so the next person at a
- * shared phone starts with them off. Best effort and bounded to two seconds, through a client of
- * its own that reports nothing back. `token` was captured before the local session cleared.
+ * At sign-out: revoke this account's phone alerts for this device, so the next person at a shared
+ * phone starts with them off, then end the sign-in on the server, so its token is refused at once
+ * rather than when it expires (readiness review item 8). The alerts go first, because the server
+ * refuses everything but turning them off once the sign-in has ended. Best effort, each step
+ * bounded to two seconds, through a client of its own that reports nothing back. `token` was
+ * captured before the local session cleared.
  */
 function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: string | null) {
   if (!token || !loadedClient) return;
@@ -30,23 +33,28 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
     changed: () => {},
     workingAs: { get: () => chosen, set: () => {} },
   });
-  let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
-  void Promise.race([
-    releasePhonePush({
-      pushKey: () => cleanup.pushKey(),
-      pushStatus: (endpoint) => cleanup.pushStatus(endpoint),
-      pushSubscribe: (subscription) => cleanup.pushSubscribe(subscription),
-      pushUnsubscribe: (endpoint) => cleanup.pushUnsubscribe(endpoint),
-    }),
-    new Promise<void>((resolve) => {
-      cleanupTimer = setTimeout(resolve, 2000);
-    }),
-  ])
-    .catch(() => {})
-    .finally(() => {
-      clearTimeout(cleanupTimer);
-      cleanup.dispose();
-    });
+  const bounded = async (step: () => Promise<unknown>) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      step(),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, 2000);
+      }),
+    ])
+      .catch(() => {})
+      .finally(() => clearTimeout(timer));
+  };
+  void (async () => {
+    await bounded(() =>
+      releasePhonePush({
+        pushKey: () => cleanup.pushKey(),
+        pushStatus: (endpoint) => cleanup.pushStatus(endpoint),
+        pushSubscribe: (subscription) => cleanup.pushSubscribe(subscription),
+        pushUnsubscribe: (endpoint) => cleanup.pushUnsubscribe(endpoint),
+      }),
+    );
+    await bounded(() => cleanup.signOutServer());
+  })().finally(() => cleanup.dispose());
 }
 export type WardCredentialForm = {
   open: boolean;

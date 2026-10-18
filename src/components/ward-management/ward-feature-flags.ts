@@ -12,6 +12,7 @@
  *   2. The server's `NEXT_PUBLIC_WARD_FLAGS` setting, for example `bed-meeting-tv=off,demo-reset=on`.
  *   3. The registry default for the environment (`NEXT_PUBLIC_WARD_ENVIRONMENT`, else development
  *      for a local build and demo for a deployed build).
+ * A flag marked `safeguard` skips all three in production and is always on there.
  *
  * A device choice holds only a flag name from this registry and on or off, never typed text.
  */
@@ -30,6 +31,11 @@ export type WardFeatureFlagDefinition = {
   defaults: Record<WardEnvironment, boolean>;
   /** What has to happen before the flag and its off path are deleted. */
   removeWhen: string;
+  /**
+   * A safeguard is on in production whatever the server setting or a device says, so an access
+   * control fails closed: a typo or a stray setting cannot switch it off.
+   */
+  safeguard?: true;
 };
 
 export const WARD_FEATURE_FLAGS = {
@@ -56,8 +62,11 @@ export const WARD_FEATURE_FLAGS = {
       "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
     owner: "Josh",
     added: "2026-10-15",
-    // Enabled in demo builds so deployed/shared prototype sessions enforce role access by default.
-    defaults: { development: false, demo: true, production: false },
+    // Readiness review item 14 (18 Oct 2026): on by default in demo and production builds, and a
+    // safeguard, so production cannot switch it off. The server already scopes shared reads and
+    // saves to each account's role; this switch is the browser half.
+    defaults: { development: false, demo: true, production: true },
+    safeguard: true,
     removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
   },
   "top25-discharge-prep": {
@@ -340,6 +349,8 @@ export function resolveWardFeatureFlags(input: {
   const deviceCanChange = input.environment !== "production";
   return WARD_FEATURE_FLAG_NAMES.map((name) => {
     const definition: WardFeatureFlagDefinition = WARD_FEATURE_FLAGS[name];
+    if (definition.safeguard && input.environment === "production")
+      return { name, definition, on: true, source: "default", deviceCanChange: false };
     const device = deviceCanChange ? input.device[name] : undefined;
     if (device !== undefined) return { name, definition, on: device, source: "device", deviceCanChange };
     const server = input.server[name];

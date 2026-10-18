@@ -1,0 +1,73 @@
+import "@testing-library/jest-dom/vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+
+import { WardIdleLock, recordViewFor } from "@/components/ward-management/shell/ward-access";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { screenForPath } from "@/components/ward-management/ward-role-access";
+import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+
+const IDLE_MS = CLINICAL_VALUES.idleLock.value * 60_000;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  cleanup();
+  resetWardAccessStoreForTests();
+  setWardFeatureFlagOnDevice("role-access", null);
+  vi.useRealTimers();
+});
+
+it("covers the screen after the idle time even with role access switched off (review item 8)", () => {
+  setWardFeatureFlagOnDevice("role-access", false);
+  render(<WardIdleLock />);
+  act(() => vi.advanceTimersByTime(IDLE_MS - 1_000));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  // Use restarts the clock.
+  fireEvent.keyDown(window, { key: "a" });
+  act(() => vi.advanceTimersByTime(IDLE_MS - 1_000));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => vi.advanceTimersByTime(2_000));
+  expect(screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` })).toBeVisible();
+  fireEvent.click(screen.getByTestId("ward-idle-unlock"));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("signs out of the shared workspace when it locks, so the next person needs the password", () => {
+  const signOut = vi.fn();
+  render(
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  act(() => vi.advanceTimersByTime(IDLE_MS));
+  expect(signOut).toHaveBeenCalledTimes(1);
+  expect(
+    screen.getByRole("dialog", { name: `Signed out after ${CLINICAL_VALUES.idleLock.value} minutes` }),
+  ).toBeVisible();
+  expect(screen.getByTestId("ward-idle-unlock")).toHaveTextContent("Sign in again");
+});
+
+it("logs the person a patient or movement page shows, and nothing on other pages (review item 9)", () => {
+  const movements = [{ id: "WF-012", patientId: "PT-0042" as const }];
+  expect(recordViewFor(screenForPath(patientHref("PT-0001")), movements)).toEqual({
+    patientId: "PT-0001",
+    surface: "patient",
+  });
+  // A movement is traced to its patient, on either page.
+  expect(recordViewFor(screenForPath(movementHref("WF-012")), movements)).toEqual({
+    patientId: "PT-0042",
+    surface: "movement",
+  });
+  expect(recordViewFor(screenForPath(patientHref("WF-012")), movements)).toEqual({
+    patientId: "PT-0042",
+    surface: "patient",
+  });
+  expect(recordViewFor(screenForPath("/mockups/ward-flow/capacity"), movements)).toBeUndefined();
+});

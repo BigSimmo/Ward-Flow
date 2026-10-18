@@ -327,7 +327,8 @@ export class SharedWorkspaceClient {
     // A role refusal on an access step comes back as its reason, not as a sign-out.
     if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
     // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
-    if (response.status === 401 && value?.code === "session-limit")
+    // Or it was signed out, here or on another tab: the server refuses its tokens at once.
+    if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
       throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
     if (response.status === 401 || response.status === 403)
       throw denied("Sign in with an account assigned a Ward Flow role.");
@@ -647,6 +648,26 @@ export class SharedWorkspaceClient {
     const { response, value } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
     if (!response.ok) throw new Error("Phone alerts were not turned off");
     return value?.revoked === true;
+  }
+  /**
+   * Readiness review item 9: tells the server this desk opened a patient's record, on the patient
+   * or movement page. The server keeps it in a log nobody can change. Best effort: a failure never
+   * stops the page, and the server ignores a repeat within a minute.
+   */
+  async logRecordView(patientId: string, surface: "patient" | "movement"): Promise<void> {
+    try {
+      await this.request("/v1/workspace/record-access", { patientId, surface });
+    } catch {
+      // Logged on the next opening; the page itself is unaffected.
+    }
+  }
+  /**
+   * Readiness review item 8: ends this sign-in on the server, so its token is refused at once
+   * rather than when it expires. True when the server recorded it.
+   */
+  async signOutServer(): Promise<boolean> {
+    const { response, value } = await this.request("/v1/workspace/sign-out", {});
+    return response.ok && value?.signedOut === true;
   }
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
