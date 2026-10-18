@@ -88,19 +88,41 @@ describe("Act period reading for a movement", () => {
 });
 
 describe("Act period countdown for a young person", () => {
-  it("counts a Youth movement down to the shorter under-18 period on Forms 6A, 6B and 6C", () => {
+  it("counts down to the under-18 period on Forms 6A, 6B and 6C when the date of birth shows under 18", () => {
     const start = NOW - 60;
     for (const code of ["6A", "6B"]) {
-      const reading = actPeriodReading(withForm(code, start, "Youth"), DAY_ZERO)!;
+      const reading = actPeriodReading(withForm(code, start, "Youth"), DAY_ZERO, "2010-01-01")!;
       expect(reading.band, code).toBe("under18");
       expect(reading.endsAt, code).toBe(start + 14 * 24 * 60);
       expect(actPeriodCountdownText(reading, NOW), code).toMatch(/^Under-18 period would end/);
     }
-    const sixC = actPeriodReading(withForm("6C", start, "Youth"), DAY_ZERO)!;
+    const sixC = actPeriodReading(withForm("6C", start, "Youth"), DAY_ZERO, "2010-01-01")!;
     expect(sixC.endsAt).toBe(start + 28 * 24 * 60);
   });
 
-  it("keeps the adult period for Adult and Older adult movements", () => {
+  it("keeps the adult period for a Youth patient whose date of birth shows 18 or over", () => {
+    // The Youth cohort runs to 24, so a 21 year old is Youth and still an adult under the Act.
+    const reading = actPeriodReading(withForm("6A", NOW - 60, "Youth"), DAY_ZERO, "2005-01-01")!;
+    expect(reading.band).toBe("adult");
+    expect(reading.endsAt).toBe(NOW - 60 + 21 * 24 * 60);
+    expect(actPeriodCountdownText(reading, NOW)).toMatch(/^Adult period would end/);
+  });
+
+  it("reads the age when the period started, not today", () => {
+    // Turns 18 on 1 Sept 2026, the demo's day zero; a form written the evening before is under 18.
+    const reading = actPeriodReading(withForm("6A", -120, "Youth"), DAY_ZERO, "2008-09-01")!;
+    expect(reading.band).toBe("under18");
+    expect(actPeriodReading(withForm("6A", 60, "Youth"), DAY_ZERO, "2008-09-01")!.band).toBe("adult");
+  });
+
+  it("shows the shorter period, and says the age was not recorded, for a Youth movement with no date of birth", () => {
+    const reading = actPeriodReading(withForm("6A", NOW - 60, "Youth"), DAY_ZERO)!;
+    expect(reading.band).toBe("unknown");
+    expect(reading.endsAt).toBe(NOW - 60 + 14 * 24 * 60);
+    expect(actPeriodCountdownText(reading, NOW)).toMatch(/^Under-18 period would end \(age not recorded/);
+  });
+
+  it("keeps the adult period for Adult and Older adult movements with no date of birth", () => {
     for (const cohort of ["Adult", "Older adult"] as const) {
       const reading = actPeriodReading(withForm("6A", NOW - 60, cohort), DAY_ZERO)!;
       expect(reading.band, cohort).toBe("adult");
@@ -108,16 +130,17 @@ describe("Act period countdown for a young person", () => {
     }
   });
 
-  it("uses the adult period for a Youth movement where no source gives an under-18 one", () => {
-    const reading = actPeriodReading(withForm("3A", NOW - 60, "Youth"), DAY_ZERO)!;
+  it("uses the adult period where no source gives an under-18 one", () => {
+    const reading = actPeriodReading(withForm("3A", NOW - 60, "Youth"), DAY_ZERO, "2010-01-01")!;
     expect(reading.endsAt).toBe(NOW - 60 + 24 * 60);
     expect(actPeriodCountdownText(reading, NOW)).toMatch(/^Period would end/);
   });
 
-  it("orders a Youth 6A ahead of an adult 6A opened at the same time", () => {
-    const adult = { ...withForm("6A", undefined, "Adult"), id: "WF-901", openedAt: NOW - 10 * 24 * 60 } as Movement;
-    const youth = { ...withForm("6A", undefined, "Youth"), id: "WF-902", openedAt: NOW - 10 * 24 * 60 } as Movement;
-    expect(orderByActPeriodShare([adult, youth], NOW, DAY_ZERO).map((movement) => movement.id)).toEqual([
+  it("orders an under-18 6A ahead of an adult 6A opened at the same time", () => {
+    const adult = { ...withForm("6A", undefined, "Youth"), id: "WF-901", openedAt: NOW - 10 * 24 * 60 } as Movement;
+    const young = { ...withForm("6A", undefined, "Youth"), id: "WF-902", openedAt: NOW - 10 * 24 * 60 } as Movement;
+    const dateOfBirthOf = (movement: Movement) => (movement.id === "WF-902" ? "2010-01-01" : "2005-01-01");
+    expect(orderByActPeriodShare([adult, young], NOW, DAY_ZERO, dateOfBirthOf).map((movement) => movement.id)).toEqual([
       "WF-902",
       "WF-901",
     ]);

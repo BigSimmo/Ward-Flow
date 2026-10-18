@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { criteriaEligibility } from "../src/components/ward-management/ward-discharge-criteria";
-import { patientRecordIsInvoluntary } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  admissionCriteriaEligibility,
+  admissionLegalStatus,
+  patientRecordIsInvoluntary,
+  seedWardFlowState,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import {
   classifyLegalStatus,
   legalStatusIsDetained,
@@ -93,5 +99,23 @@ describe("criteria led discharge reads the same classes", () => {
 
   it("lets a community treatment order in force outrank everything", () => {
     expect(criteriaEligibility("Voluntary", "Voluntary", true)).toBe("cto");
+  });
+});
+
+describe("the Legal tile agrees with criteria led discharge", () => {
+  it("shows a patient record on a referral for examination, not the movement's Voluntary", () => {
+    const seeded = seedWardFlowState();
+    const admission = seeded.admissions.find((a) => a.state === "occupied" && a.patientId);
+    if (!admission) throw new Error("no occupied stay with a patient in the seed");
+    const state: WardFlowState = {
+      ...seeded,
+      patients: seeded.patients.map((patient) =>
+        patient.id === admission.patientId
+          ? { ...patient, legalStatus: "Referred for psychiatric examination", communityTreatmentOrder: undefined }
+          : patient,
+      ),
+    };
+    expect(admissionCriteriaEligibility(state, admission)).toBe("involuntary");
+    expect(admissionLegalStatus(state, admission)).toBe("Referred for psychiatric examination");
   });
 });

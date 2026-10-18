@@ -230,6 +230,7 @@ export type FocusTab = "now" | "form" | "history";
  */
 export function FocusPanel({
   movement,
+  dateOfBirth,
   name,
   umrn,
   edName,
@@ -253,6 +254,8 @@ export function FocusPanel({
   copied,
 }: {
   movement: Movement;
+  /** The linked patient's date of birth, which decides whether an under-18 Act period applies. */
+  dateOfBirth?: string;
   name: string;
   umrn: string;
   edName: string;
@@ -283,7 +286,7 @@ export function FocusPanel({
   const legalForm = movement.legalForm;
   const standing = clockStanding(movement, now, thresholds);
   const breached = isLegalDeadlineBreached(movement, now);
-  const reading = actPeriodReading(movement, dayZero);
+  const reading = actPeriodReading(movement, dayZero, dateOfBirth);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
   const recordedDraft = (): WrittenDraft => ({ ...BLANK_WRITTEN, region: legalForm?.region ?? BLANK_WRITTEN.region });

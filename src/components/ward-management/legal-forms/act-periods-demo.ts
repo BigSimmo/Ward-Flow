@@ -4,7 +4,8 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import type { Cohort, Movement } from "@/components/ward-management/ward-model";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { patientAgeYears } from "@/components/ward-management/ward-patients";
 
 /**
  * ACT PERIODS — SYNTHETIC DEMO ONLY, NOT LEGALLY CHECKED.
@@ -141,20 +142,30 @@ export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): 
 }
 
 /**
- * Which of a form's periods a countdown runs to. Only the Adult and Older adult cohorts are counted
- * on the adult period. A Youth movement may be a person under 18, and the record holds no exact
- * age, so it counts down to the under-18 period wherever a source gives one: the shorter period, so
- * a young person's clock never shows more time than the Act allows.
+ * Which of a form's periods a countdown runs to (review 18 Oct 2026, item 1, and the PR #410 review).
+ *
+ * - `adult` / `under18`: from the linked patient's date of birth, as their age when the period
+ *   started. This is the only source of an exact age.
+ * - With no date of birth, an Adult or Older adult movement is `adult` (both cohorts are 25 and
+ *   over). A Youth movement is `unknown`: the Youth cohort runs to 24, so the person may or may not
+ *   be under 18. `unknown` counts down to the shorter, under-18 period, so a young person's clock
+ *   never shows more time than the Act allows, and the screen says the age was not recorded.
  */
-type ActPeriodBand = "adult" | "under18";
+type ActPeriodBand = "adult" | "under18" | "unknown";
 
-function actPeriodBandFor(cohort: Cohort | undefined): ActPeriodBand {
-  return cohort === "Adult" || cohort === "Older adult" ? "adult" : "under18";
+function actPeriodBandFor(
+  movement: Pick<Movement, "cohort">,
+  start: Instant,
+  dayZero: Date,
+  dateOfBirth: string | undefined,
+): ActPeriodBand {
+  if (dateOfBirth) return patientAgeYears({ dateOfBirth }, calendarDateOf(start, dayZero)) < 18 ? "under18" : "adult";
+  return movement.cohort === "Adult" || movement.cohort === "Older adult" ? "adult" : "unknown";
 }
 
 /** The period length for that band: the under-18 period when the source gives one, else the adult. */
 function actPeriodLength(period: ActPeriod, band: ActPeriodBand): PeriodLength {
-  return band === "under18" && period.under18 !== undefined ? period.under18 : period.adult;
+  return band !== "adult" && period.under18 !== undefined ? period.under18 : period.adult;
 }
 
 export type ActPeriodReading = {
@@ -171,17 +182,21 @@ export type ActPeriodReading = {
  * What the Act period would give for this movement's current form. Counts from `formedAt`, the
  * time a person typed from the form, and from nothing else: no written time, no countdown.
  *
- * The countdown follows the movement's cohort (`actPeriodBandFor`): a Youth movement counts to the
- * under-18 period where a source gives a different one, every other cohort to the adult period. The
- * sentence names both periods wherever they differ.
+ * The countdown follows the person's age when the period started (`actPeriodBandFor`), from the
+ * linked patient's `dateOfBirth` where the caller has one. The sentence names both periods wherever
+ * they differ.
  */
-export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodReading | undefined {
+export function actPeriodReading(
+  movement: Movement,
+  dayZero: Date,
+  dateOfBirth?: string,
+): ActPeriodReading | undefined {
   const code = movement.legalForm?.code;
   if (code === undefined) return undefined;
   const period = actPeriodFor(code);
   if (!period) return undefined;
   const text = actPeriodSentence(period);
-  const band = actPeriodBandFor(movement.cohort);
+  const band = actPeriodBandFor(movement, movement.formedAt ?? movement.openedAt, dayZero, dateOfBirth);
   const endsAt =
     movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, actPeriodLength(period, band), dayZero);
   return { period, band, endsAt, text };
@@ -209,8 +224,10 @@ export function actPeriodCountdownText(reading: ActPeriodReading, now: Instant):
     reading.period.under18 === undefined
       ? "Period would end"
       : reading.band === "under18"
-        ? "Under-18 period would end (Youth cohort, may be under 18)"
-        : "Adult period would end";
+        ? "Under-18 period would end"
+        : reading.band === "unknown"
+          ? "Under-18 period would end (age not recorded, so the shorter period is shown)"
+          : "Adult period would end";
   const remaining = reading.endsAt - now;
   return remaining < 0
     ? `${ending} ${formatInstantWithDay(reading.endsAt, now)}, ${splitDuration(-remaining)} ago.`
@@ -234,11 +251,16 @@ export function actPeriodLineText(reading: ActPeriodReading, movement: Movement,
  * 2026). Used only to order the "Time not written" group; never shown as a figure or a deadline.
  * Undefined when the form has no sourced period.
  */
-function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): number | undefined {
+function actPeriodShareUsed(
+  movement: Movement,
+  now: Instant,
+  dayZero: Date,
+  dateOfBirth: string | undefined,
+): number | undefined {
   const code = movement.legalForm?.code;
   const period = code === undefined ? undefined : actPeriodFor(code);
   if (!period) return undefined;
-  const length = actPeriodLength(period, actPeriodBandFor(movement.cohort));
+  const length = actPeriodLength(period, actPeriodBandFor(movement, movement.openedAt, dayZero, dateOfBirth));
   const span = addPeriod(movement.openedAt, length, dayZero) - movement.openedAt;
   return span > 0 ? (now - movement.openedAt) / span : undefined;
 }
@@ -248,8 +270,17 @@ function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): nu
  * a 24-hour detention order outranks a 21-day treatment order. Forms with no sourced period keep
  * their incoming order (longest in ED first) after them.
  */
-export function orderByActPeriodShare(rows: readonly Movement[], now: Instant, dayZero: Date): Movement[] {
-  const keyed = rows.map((movement, index) => ({ movement, index, share: actPeriodShareUsed(movement, now, dayZero) }));
+export function orderByActPeriodShare(
+  rows: readonly Movement[],
+  now: Instant,
+  dayZero: Date,
+  dateOfBirthOf: (movement: Movement) => string | undefined = () => undefined,
+): Movement[] {
+  const keyed = rows.map((movement, index) => ({
+    movement,
+    index,
+    share: actPeriodShareUsed(movement, now, dayZero, dateOfBirthOf(movement)),
+  }));
   keyed.sort((a, b) => {
     if (a.share !== undefined && b.share !== undefined && a.share !== b.share) return b.share - a.share;
     if (a.share !== undefined && b.share === undefined) return -1;

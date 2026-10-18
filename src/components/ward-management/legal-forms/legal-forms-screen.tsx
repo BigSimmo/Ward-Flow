@@ -203,7 +203,11 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   // Audit A3-6 (13 Oct 2026): "Time not written" holds forms that do carry Act periods, so it is
   // never folded and runs by share of the demo Act period used, counted from arrival in ED. It
   // replaces the 11 Oct fold after 5 on a phone and 10 elsewhere.
-  const noDeadline = orderByActPeriodShare(legalFormGroupRows(movements, now, "no-deadline"), now, dayZero);
+  const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
+  // The linked patient's date of birth decides whether an under-18 Act period applies.
+  const dateOfBirthOf = (movement: Movement) => patientOf(movement).patient?.dateOfBirth;
+  const noDeadlineRows = legalFormGroupRows(movements, now, "no-deadline");
+  const noDeadline = orderByActPeriodShare(noDeadlineRows, now, dayZero, dateOfBirthOf);
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
@@ -212,7 +216,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   const upcoming = withDeadline.length - passed;
   const actNow = withDeadline.filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
 
-  const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const nameOf = (movement: Movement) => patientOf(movement).formalName;
   const umrnOf = (movement: Movement) => patientOf(movement).umrn;
   const edNameOf = (movement: Movement) => {
@@ -422,6 +425,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
     <FocusPanel
       key={selected.id}
       movement={selected}
+      dateOfBirth={dateOfBirthOf(selected)}
       name={nameOf(selected)}
       umrn={umrnOf(selected)}
       edName={edNameOf(selected)}

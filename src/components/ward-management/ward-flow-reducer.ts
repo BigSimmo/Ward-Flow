@@ -1,4 +1,4 @@
-import { legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
+import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
 import {
@@ -1473,11 +1473,10 @@ export function admissionLegalStatus(
       ? patientStatus
       : "Community treatment order, Form 5A";
   }
-  // A patient record that excludes criteria led discharge outranks the movement, as it does there.
-  if (
-    patientStatus !== undefined &&
-    (/community treatment order/i.test(patientStatus) || patientRecordIsInvoluntary(patientStatus))
-  ) {
+  // A patient record that excludes criteria led discharge outranks the movement, as it does there
+  // (`criteriaEligibility`): a community treatment order, detained, or on a referral for examination.
+  const recordClass = classifyLegalStatus(patientStatus);
+  if (recordClass === "cto" || recordClass === "detained" || recordClass === "referred") {
     return patientStatus;
   }
   return dischargeMovement(state, admission)?.legalStatus ?? patientStatus;
