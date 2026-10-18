@@ -66,13 +66,18 @@ function lengthPx(value, tokens, seen = new Set()) {
   if (tokens.has(name)) {
     const values = tokens.get(name);
     const resolved = values.map((item) => lengthPx(item, tokens, next));
-    const sizes = resolved.filter(Number.isFinite);
+    // A guaranteed-invalid branch (missing or cyclic) renders the var() fallback wherever that
+    // branch applies, so a valid 12px branch must not mask an 11px fallback behind it.
+    const fallbackSize =
+      fallback.length && resolved.some(Number.isNaN) ? lengthPx(fallback.join(","), tokens, next) : NaN;
+    const branches = resolved.map((item) => (Number.isNaN(item) ? fallbackSize : item));
+    const sizes = branches.filter(Number.isFinite);
     // A finite branch cannot hide a relative branch that may render smaller than
     // the floor. Only a concrete below-floor value is safe to report immediately.
     if (sizes.some((size) => size < 12)) return Math.min(...sizes);
-    if (resolved.some((item) => item === undefined)) return undefined;
+    if (branches.some((item) => item === undefined)) return undefined;
     if (sizes.length) return Math.min(...sizes);
-    if (resolved.every(Number.isNaN)) return fallback.length ? lengthPx(fallback.join(","), tokens, next) : NaN;
+    if (branches.every(Number.isNaN)) return NaN;
     return undefined;
   }
   return fallback.length ? lengthPx(fallback.join(","), tokens, next) : NaN;
@@ -113,7 +118,9 @@ function tokensIn(root) {
 export function inventoryFontSizes(stylesheets, tokenStylesheets = [], shellTokenStylesheets = []) {
   const inherited = new Map();
   for (const css of tokenStylesheets) {
-    for (const [name, value] of tokensIn(postcss.parse(css))) inherited.set(name, value);
+    // Token layers add branches: a later layer may scope its definition to another selector.
+    for (const [name, value] of tokensIn(postcss.parse(css)))
+      inherited.set(name, [...(inherited.get(name) ?? []), ...value]);
   }
   const shellTokens = new Map(inherited);
   for (const css of shellTokenStylesheets) {
@@ -128,7 +135,13 @@ export function inventoryFontSizes(stylesheets, tokenStylesheets = [], shellToke
     // and shared primitives can render outside it (including portalled menus),
     // so never assume the shell's 12px aliases for those files.
     const inWardShell = /^src\/(?:components\/ward-management\/|app\/mockups\/ward-flow\/)/.test(file);
-    const tokens = new Map([...(inWardShell ? shellTokens : inherited), ...tokensIn(root)]);
+    // Outside the Ward shell, a selector-scoped local definition cannot prove every use sits
+    // inside that selector, so it adds branches to the inherited token instead of replacing it.
+    const base = inWardShell ? shellTokens : inherited;
+    const tokens = new Map(base);
+    for (const [name, values] of tokensIn(root)) {
+      tokens.set(name, inWardShell ? values : [...(base.get(name) ?? []), ...values]);
+    }
     root.walkDecls(/^(font-size|font)$/i, (decl) => {
       if (isPrintOnly(decl)) return;
       declarations += 1;

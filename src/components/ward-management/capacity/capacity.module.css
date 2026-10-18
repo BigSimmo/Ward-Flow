@@ -1453,10 +1453,6 @@
     white-space: normal;
   }
 
-  .phoneWardSub > span {
-    white-space: nowrap;
-  }
-
   .phoneWardReady {
     display: flex;
     flex: none;

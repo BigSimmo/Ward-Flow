@@ -115,6 +115,32 @@ describe("design audit: parsed Ward font inventory", () => {
     expect(result.unresolved).toHaveLength(1);
   });
 
+  it("does not let a valid 12px branch mask the fallback an invalid override renders", () => {
+    const result = scan(
+      ".a { font-size: var(--token, 11px); }",
+      ":root { --token: 12px; } .x { --token: var(--missing); }",
+    );
+    expect(result.findings.map((item) => item.sizePx)).toEqual([11]);
+  });
+
+  it("keeps an inherited smaller token branch beside a local definition outside the Ward shell", () => {
+    const result = inventoryFontSizes(
+      new Map([
+        ["src/components/wf/menu.module.css", ".menu { --small: 12px; } .tooltip { font-size: var(--small); }"],
+      ]),
+      [":root { --small: 10px; }"],
+    );
+    expect(result.findings.map((item) => item.selector)).toEqual([".tooltip"]);
+  });
+
+  it("keeps a smaller branch from an earlier token layer that a later layer redefines", () => {
+    const result = inventoryFontSizes(
+      new Map([["src/components/wf/menu.module.css", ".tooltip { font-size: var(--small); }"]]),
+      [":root { --small: 10px; }", ".theme { --small: 12px; }"],
+    );
+    expect(result.findings.map((item) => item.sizePx)).toEqual([10]);
+  });
+
   it("cannot exchange a historical small rule for a new small rule in the same file", () => {
     const baseline = fontInventoryCounts(scan(".old { font-size: 11px; }").findings);
     expect(fontInventoryRises(scan("\n\n.old { font-size: 11px; }").findings, baseline)).toEqual([]);
