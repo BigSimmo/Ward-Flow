@@ -85,7 +85,8 @@ const scalarFields = (core) => Object.keys(core.state).filter((key) => !markerKi
  * @param {StoredRow[]} rows
  */
 export function assembleWorld(stored, rows) {
-  const { [REVISIONS]: _revisions, ...core } = stored;
+  const core = { ...stored };
+  delete core[REVISIONS];
   const byCollection = new Map();
   for (const row of rows) {
     const list = byCollection.get(row.collection);
