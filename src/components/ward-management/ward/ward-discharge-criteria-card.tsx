@@ -252,8 +252,8 @@ export function WardDischargeCriteriaCard({
                   const finish = (result: void | WardCommandOutcome) => {
                     savingRef.current = false;
                     setSaving(false);
-                    if (draftRevision.current !== revision) return;
                     if (result?.status === "accepted" && result.isCurrent?.() !== false) {
+                      if (draftRevision.current !== revision) return;
                       draftRevision.current += 1;
                       setEditing(false);
                     } else {
