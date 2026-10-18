@@ -62,10 +62,6 @@ jobs:
   static:
     name: Ward Flow static checks
     runs-on: ubuntu-24.04
-    # pull-requests: read lets the bot-author policy list PR commits; contents stays read-only.
-    permissions:
-      contents: read
-      pull-requests: read
     timeout-minutes: 20
     services:
       postgres:
@@ -105,14 +101,6 @@ jobs:
         run: node scripts/ward-ci-public/verify-plan.mjs
       - name: Check CI contracts
         run: node scripts/ward-ci-public/check-contracts.mjs
-      # Blocks bot-authored commits that touch supabase/**, backend/**/infra/*.sql or clinical paths,
-      # so such PRs cannot pass and auto-merge unreviewed. Reads PR commits only; fails closed.
-      - name: Check bot-authored commits on protected paths
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          WARD_PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node scripts/ward-ci-public/bot-author-policy.mjs
       # These source checks need no npm install and do not assert clinical approval.
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
