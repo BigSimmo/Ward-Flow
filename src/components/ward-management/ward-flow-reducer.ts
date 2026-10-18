@@ -1,3 +1,4 @@
+import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
@@ -2629,16 +2630,13 @@ export function reduceClinicalEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [
-          ...state.refreshRequests,
-          {
-            unitId: unit.id,
-            at: event.now,
-            byRole: event.role,
-            message: event.message,
-            urgent: event.urgent,
-          },
-        ].slice(-500),
+        refreshRequests: appendRefreshRequest(state.refreshRequests, {
+          unitId: unit.id,
+          at: event.now,
+          byRole: event.role,
+          message: event.message,
+          urgent: event.urgent,
+        }),
       };
     }
 

@@ -353,3 +353,17 @@ export function nextDischargeCriteria(
     },
   };
 }
+
+/** Community desks receive numbered typed-criterion placeholders, including on shared snapshots. */
+export function communityDischargeCriteria(
+  record: DischargeCriteriaRecord | null | undefined,
+): DischargeCriteriaRecord | null {
+  if (!record) return null;
+  let typed = 0;
+  return {
+    ...record,
+    items: record.items.map((item) =>
+      isPatientSpecificItem(item) ? { ...item, criterion: `Patient specific criterion ${++typed}` } : item,
+    ),
+  };
+}

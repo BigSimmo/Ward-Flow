@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Badge, Button, Checkbox, Field, TextInput } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -15,6 +15,7 @@ import {
   type DischargeCriteriaRecord,
   type DischargeCriterion,
 } from "@/components/ward-management/ward-discharge-criteria";
+import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import drawerStyles from "./ward-bed-dossier-drawer.module.css";
 import styles from "./ward-discharge-criteria-card.module.css";
 
@@ -43,9 +44,13 @@ export function WardDischargeCriteriaCard({
   record: DischargeCriteriaRecord | null | undefined;
   eligibility: CriteriaEligibility;
   now: Instant;
-  onChange?: (update: DischargeCriteriaUpdate) => void;
+  onChange?: (update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
 }) {
   const [editing, setEditing] = useState(false);
+  const draftRevision = useRef(0);
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [chosen, setChosen] = useState<DischargeCriterion[]>([]);
   // D-65: typed patient specific criteria (WACHS form MR28 Part B), up to the set number.
   const [typed, setTyped] = useState<string[]>([]);
@@ -61,6 +66,8 @@ export function WardDischargeCriteriaCard({
   const metList = items.filter((item) => item.metAt !== null).map((item) => item.criterion);
 
   const openEditor = () => {
+    draftRevision.current += 1;
+    setSaveMessage(null);
     setChosen(items.map((item) => item.criterion).filter(isDischargeCriterion));
     setTyped(items.filter(isPatientSpecificItem).map((item) => item.criterion));
     setAttested(false);
@@ -93,12 +100,14 @@ export function WardDischargeCriteriaCard({
   const cannotSave = nothingChosen || typedRepeats || !attested || !patientTold;
   // Rows keep their place when one is cleared, so a focused field never shifts to another criterion.
   const typedRows = typed.length < PATIENT_SPECIFIC_CRITERIA_MAX && !typed.includes("") ? [...typed, ""] : typed;
-  const setTypedAt = (index: number, value: string) =>
+  const setTypedAt = (index: number, value: string) => {
+    draftRevision.current += 1;
     setTyped((current) => {
       const next = [...current];
       next[index] = value;
       return next;
     });
+  };
   const toggleMet = (criterion: string, met: boolean) => {
     onChange?.({
       criteria: items.map((item) => item.criterion),
@@ -176,7 +185,12 @@ export function WardDischargeCriteriaCard({
         ) : null}
 
         {editing && onChange ? (
-          <fieldset className={styles.editor}>
+          <fieldset
+            className={styles.editor}
+            onChange={() => {
+              draftRevision.current += 1;
+            }}
+          >
             <legend className={styles.legend}>Criteria the treating psychiatrist set</legend>
             {DISCHARGE_CRITERIA.map((criterion) => (
               <Checkbox
@@ -228,23 +242,59 @@ export function WardDischargeCriteriaCard({
               <Button
                 className={styles.touchTarget}
                 variant="sec"
-                disabled={cannotSave}
+                disabled={cannotSave || saving}
                 onClick={() => {
-                  onChange({
-                    criteria: chosen,
-                    met: [],
-                    setByTreatingPsychiatrist: true,
-                    ...(typedToSave.length > 0 ? { patientSpecific: typedToSave } : {}),
-                  });
+                  if (savingRef.current) return;
+                  const revision = draftRevision.current;
+                  savingRef.current = true;
+                  setSaving(true);
+                  setSaveMessage(null);
+                  const finish = (result: void | WardCommandOutcome) => {
+                    savingRef.current = false;
+                    setSaving(false);
+                    if (draftRevision.current !== revision) return;
+                    if (result?.status === "accepted" && result.isCurrent?.() !== false) {
+                      draftRevision.current += 1;
+                      setEditing(false);
+                    } else {
+                      setSaveMessage(
+                        result?.message ??
+                          "Criteria were not confirmed saved. Your draft is still here. Review the board before trying again.",
+                      );
+                    }
+                  };
+                  try {
+                    const completion = onChange({
+                      criteria: chosen,
+                      met: [],
+                      setByTreatingPsychiatrist: true,
+                      ...(typedToSave.length > 0 ? { patientSpecific: typedToSave } : {}),
+                    });
+                    if (completion && "then" in completion) void completion.then(finish, () => finish());
+                    else finish(completion);
+                  } catch {
+                    finish();
+                  }
+                }}
+              >
+                {saving ? "Saving criteria…" : "Save criteria"}
+              </Button>
+              <Button
+                className={styles.touchTarget}
+                variant="ghost"
+                onClick={() => {
+                  draftRevision.current += 1;
                   setEditing(false);
                 }}
               >
-                Save criteria
-              </Button>
-              <Button className={styles.touchTarget} variant="ghost" onClick={() => setEditing(false)}>
                 Cancel
               </Button>
             </div>
+            {saveMessage ? (
+              <p className={styles.note} role="alert">
+                {saveMessage}
+              </p>
+            ) : null}
             {typedRepeats ? (
               <p className={styles.note} data-testid="ward-drawer-criteria-typed-repeat">
                 Each patient specific criterion must be different and not one of the listed criteria.

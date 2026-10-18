@@ -872,8 +872,8 @@ export function ReferralMatchView({
               </ul>
             ) : null}
             <p className={ph.note} data-testid="ward-referral-match-governance">
-              Not approved for clinical use. Units are listed in the network&apos;s fixed order; a coordinator decides
-              each placement. {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+              Not approved for clinical use. Within each group, units follow the network&apos;s fixed order; a
+              coordinator decides each placement. {SYNTHETIC_TRAVEL_TIMES_NOTICE}
             </p>
             {phone}
             {referral.localBedSought ? (
@@ -1092,9 +1092,9 @@ export function ReferralMatchView({
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <span>
-                <strong>Not approved for clinical use.</strong> Every unit is listed in fixed network order — this view
-                places nobody: a coordinator decides each placement, one at a time, and nothing is accepted until
-                recorded ·{" "}
+                <strong>Not approved for clinical use.</strong> Within each group, units follow fixed network order —
+                this view places nobody: a coordinator decides each placement, one at a time, and nothing is accepted
+                until recorded ·{" "}
                 <span className={styles.syntheticNoticeInline} data-testid="ward-referral-match-synthetic-notice">
                   {SYNTHETIC_TRAVEL_TIMES_NOTICE}
                 </span>

@@ -1,3 +1,4 @@
+import { communityDischargeCriteria } from "./ward-discharge-criteria";
 /**
  * **THE SCOPED WORKSPACE — what one role at one place is given to look at (role access plan,
  * sections 4, 5, 7 and 15, Josh's go 15 Oct 2026).**
@@ -654,6 +655,15 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     for (const referral of workspace.referrals)
       if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id))
         referrals.push(referral);
+  }
+
+  // Apply after grant expansion as well: community snapshots never carry typed criterion text.
+  if (access.role === "community") {
+    admissions = admissions.map((admission) =>
+      admission.dischargeCriteria
+        ? { ...admission, dischargeCriteria: communityDischargeCriteria(admission.dischargeCriteria) }
+        : admission,
+    );
   }
 
   const patientIds = new Set<string>(grantIds);

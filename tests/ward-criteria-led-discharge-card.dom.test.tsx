@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -7,6 +7,8 @@ import { CRITERIA_VOLUNTARY_ONLY } from "@/components/ward-management/ward-disch
 import { WardDischargeCriteriaCard } from "@/components/ward-management/ward/ward-discharge-criteria-card";
 
 // Top 25 item 9 (D-60): the criteria card on the bed panel's Plan to leave tab.
+
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 
 const NOW = 10_000;
 const RECORD = {
@@ -21,7 +23,7 @@ afterEach(cleanup);
 
 describe("criteria led discharge card", () => {
   it("sets criteria only once the treating psychiatrist is confirmed", () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn().mockReturnValue({ commandId: "criteria", status: "accepted" });
     render(<WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />);
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(
       "No criteria set by the treating psychiatrist.",
@@ -43,7 +45,7 @@ describe("criteria led discharge card", () => {
   });
 
   it("ticks a criterion met and says when all are met", () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn().mockReturnValue({ commandId: "criteria", status: "accepted" });
     const { rerender } = render(
       <WardDischargeCriteriaCard record={RECORD} eligibility="voluntary" now={NOW} onChange={onChange} />,
     );
@@ -105,7 +107,7 @@ describe("criteria led discharge card", () => {
   });
 
   it("adds typed patient specific criteria to the save and marks them on the list (D-65)", () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn().mockReturnValue({ commandId: "criteria", status: "accepted" });
     const { rerender } = render(
       <WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />,
     );
@@ -140,7 +142,7 @@ describe("criteria led discharge card", () => {
     });
   });
   it("keeps each typed row in place when one is cleared, and refuses a repeat (D-65)", () => {
-    const onChange = vi.fn();
+    const onChange = vi.fn().mockReturnValue({ commandId: "criteria", status: "accepted" });
     render(<WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
     const row = (n: number) => screen.getByTestId(`ward-drawer-criteria-typed-${n}`);
@@ -164,5 +166,82 @@ describe("criteria led discharge card", () => {
       setByTreatingPsychiatrist: true,
       patientSpecific: ["Walks to the shop with staff", "Sleeping six hours"],
     });
+  });
+});
+
+describe("criteria save confirmation (WF-026)", () => {
+  function draft() {
+    fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+    fireEvent.change(screen.getByTestId("ward-drawer-criteria-typed-1"), {
+      target: { value: "Synthetic typed draft" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Set by the treating psychiatrist" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Patient told they are on criteria led discharge" }));
+  }
+  function pending() {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const promise = new Promise<WardCommandOutcome>((resolve) => {
+      finish = resolve;
+    });
+    const onChange = vi.fn(() => promise);
+    render(<WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />);
+    draft();
+    fireEvent.click(screen.getByRole("button", { name: "Save criteria" }));
+    expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Synthetic typed draft");
+    expect(screen.getByRole("button", { name: "Saving criteria…" })).toBeDisabled();
+    return { finish, promise, onChange };
+  }
+  it.each(["refused", "failed", "cancelled"] as const)(
+    "keeps the exact typed draft when the save is %s",
+    async (status) => {
+      const { finish, promise } = pending();
+      await act(async () => {
+        finish({ commandId: "criteria", status, message: "Synthetic save outcome" });
+        await promise;
+      });
+      expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Synthetic typed draft");
+      expect(screen.getByRole("alert")).toHaveTextContent("Synthetic save outcome");
+      expect(screen.getByRole("button", { name: "Save criteria" })).toBeEnabled();
+    },
+  );
+  it("closes only after confirmation of the submitted draft", async () => {
+    const { finish, promise, onChange } = pending();
+    expect(onChange).toHaveBeenCalledOnce();
+    await act(async () => {
+      finish({ commandId: "criteria", status: "accepted" });
+      await promise;
+    });
+    expect(screen.queryByTestId("ward-drawer-criteria-typed-1")).not.toBeInTheDocument();
+  });
+  it.each(["edit", "reopen"])("does not close a newer draft after %s", async (action) => {
+    const { finish, promise } = pending();
+    if (action === "reopen") {
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      draft();
+    }
+    fireEvent.change(screen.getByTestId("ward-drawer-criteria-typed-1"), {
+      target: { value: "Newer synthetic draft" },
+    });
+    await act(async () => {
+      finish({ commandId: "criteria", status: "accepted" });
+      await promise;
+    });
+    expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Newer synthetic draft");
+  });
+  it("keeps the draft and exposes a save error when the callback rejects", async () => {
+    render(
+      <WardDischargeCriteriaCard
+        record={null}
+        eligibility="voluntary"
+        now={NOW}
+        onChange={() => Promise.reject(new Error("offline"))}
+      />,
+    );
+    draft();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save criteria" }));
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("not confirmed saved");
+    expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Synthetic typed draft");
   });
 });

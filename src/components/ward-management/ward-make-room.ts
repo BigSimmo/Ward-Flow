@@ -14,7 +14,13 @@ import {
 import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
-import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  genderReviewNeeded,
+  type BedRelease,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -56,12 +62,24 @@ export type MakeRoomChain = {
   checks: GateResult[];
 };
 
+/** The coordinator must have reviewed the proposed ward before a plan can claim passing checks.
+ * Stay-based subjects have no placement record, so they wait for review via the movement path. */
+function hasGenderPlacement(subject: EligibilitySubject, unit: Unit): boolean {
+  return (
+    !genderReviewNeeded(subject.gender, subject.sex) ||
+    (subject.genderPlacements ?? []).some((record) => record.unitIds.includes(unit.id))
+  );
+}
+
 const FREE_BED_GATES: readonly string[] = ["allocatable_bed", "sex_mix"];
 
 /** A ward that fits on every check, ignoring only whether a bed is free now. A first filter: the
  * real answer comes from `vacated()`, since freeing a bed also changes the ward's sex mix. */
 function fitsExceptForBed(subject: EligibilitySubject, unit: Unit, now: Instant): boolean {
-  return eligibility(subject, unit, now).gates.every((gate) => gate.pass || FREE_BED_GATES.includes(gate.gate));
+  return (
+    hasGenderPlacement(subject, unit) &&
+    eligibility(subject, unit, now).gates.every((gate) => gate.pass || FREE_BED_GATES.includes(gate.gate))
+  );
 }
 
 /**
@@ -207,6 +225,7 @@ export function deriveMakeRoomChains(input: {
    * would take, staffed for them, and every check passing.
    */
   function fitsWithBed(subject: EligibilitySubject, unit: Unit, admission?: Admission): boolean {
+    if (!hasGenderPlacement(subject, unit)) return false;
     if (openBedsNow(unit, releases) < 1) return false;
     if (!bedAndStaffing(subject, unit, admission)) return false;
     return eligibility(subject, unit, now).eligible;
@@ -223,6 +242,7 @@ export function deriveMakeRoomChains(input: {
     leaving: Admission,
     admission?: Admission,
   ): GateResult[] | undefined {
+    if (!hasGenderPlacement(subject, unit)) return undefined;
     const room = vacated(unit, leaving);
     if (!bedAndStaffing(subject, room, admission, leaving)) return undefined;
     const verdict = eligibility(subject, room, now);

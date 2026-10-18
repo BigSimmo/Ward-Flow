@@ -419,7 +419,7 @@ const leaveBed = z.looseObject({
   absentWithoutLeave: z.optional(absence),
 });
 
-const refreshRequest = z.looseObject({ unitId: text, at: finite, byRole: text });
+const refreshRequest = z.looseObject({ id: z.optional(text), unitId: text, at: finite, byRole: text });
 
 const auditEvent = z
   .looseObject({

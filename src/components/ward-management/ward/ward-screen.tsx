@@ -3542,7 +3542,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onSetCriteria={
                     criteriaLedOn && criteriaGate.allowed
                       ? (admissionId, update) => {
-                          raiseAsRouteRole("SET_DISCHARGE_CRITERIA", { actingUnitId: unitId, admissionId, ...update });
+                          return raiseAsRouteRole("SET_DISCHARGE_CRITERIA", {
+                            actingUnitId: unitId,
+                            admissionId,
+                            ...update,
+                          });
                         }
                       : undefined
                   }

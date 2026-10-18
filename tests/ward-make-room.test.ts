@@ -3,6 +3,7 @@
 // already marked for step down, each move checked by the main eligibility gates.
 
 import { describe, expect, it } from "vitest";
+import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
 
 import { makeRoomPreview } from "../src/components/ward-management/capacity/make-room-preview";
 import { eligibility, mixSexOf } from "../src/components/ward-management/ward-eligibility";
@@ -378,4 +379,52 @@ describe("make room plans", () => {
       .find((move) => move.admission.id === "AD-ARMA-01")!;
     expect(step.toUnit.lockedBeds).toBeGreaterThan(0);
   });
+});
+
+describe("ward-specific coordinator review before Make room claims passing checks (WF-078)", () => {
+  it.each(["Non-binary", undefined] as const)(
+    "waits for a placement record covering the target for gender %s",
+    (gender) => {
+      const { preview, chains } = previewChains();
+      const original = chains[1]!;
+      const targetId = original.targetUnit.id;
+      const units = preview.units.map((unit) =>
+        unit.id === targetId
+          ? { ...unit, sexDesignation: "Undesignated" as const, sexMix: { Female: 10, Male: 1 } }
+          : unit,
+      );
+      const movements = seedWardFlowState().movements.map((movement) =>
+        movement.id === original.movement.id
+          ? { ...movement, gender, sex: "Female" as const, referredUnitIds: [targetId], genderPlacements: undefined }
+          : movement,
+      );
+      const contains = (plans: ReturnType<typeof chainsFor>) =>
+        plans.some((plan) => plan.movement.id === original.movement.id && plan.targetUnit.id === targetId);
+      // Baseline: otherwise identical binary-gender/sex movement is feasible after the vacancy.
+      const binary = movements.map((movement) =>
+        movement.id === original.movement.id ? { ...movement, gender: "Female" as const } : movement,
+      );
+      expect(contains(chainsFor(preview.admissions, units, { movements: binary }))).toBe(true);
+      expect(contains(chainsFor(preview.admissions, units, { movements }))).toBe(false);
+      const reviewed = (unitId: string): Movement[] =>
+        movements.map((movement) =>
+          movement.id === original.movement.id
+            ? {
+                ...movement,
+                genderPlacements: [
+                  {
+                    at: NOW_ANCHOR,
+                    by: "coordinator",
+                    unitIds: [unitId],
+                    reason: GENDER_PLACEMENT_REASONS[0],
+                    wardChecked: true,
+                  },
+                ],
+              }
+            : movement,
+        );
+      expect(contains(chainsFor(preview.admissions, units, { movements: reviewed("another-ward") }))).toBe(false);
+      expect(contains(chainsFor(preview.admissions, units, { movements: reviewed(targetId) }))).toBe(true);
+    },
+  );
 });

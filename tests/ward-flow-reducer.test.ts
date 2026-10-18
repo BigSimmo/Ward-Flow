@@ -2432,7 +2432,7 @@ describe("bed release privacy", () => {
       });
       expect(after.rejections).toHaveLength(0);
       const req = after.refreshRequests.at(-1)!;
-      expect(req).toEqual({ unitId: unit.id, at: NOW, byRole: "coordinator" });
+      expect(req).toEqual({ id: "buzz:1", unitId: unit.id, at: NOW, byRole: "coordinator" });
     });
 
     it("S1-7: ACCEPT_IN_PRINCIPLE clears waitlistedUnitIds to undefined", () => {

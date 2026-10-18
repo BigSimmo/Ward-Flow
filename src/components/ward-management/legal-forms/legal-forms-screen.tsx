@@ -254,7 +254,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const tellSubjects = recentTellSubjects(
     { movements, admissions, patients, referrals, units, supportNotifications },
     now,
-  );
+    false,
+  ).filter((subject) => subject.missing.length > 0 || subject.key === tell?.key);
   const partyCount = (party: SupportNotificationParty) =>
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
   const tellNext = (party: SupportNotificationParty) => {

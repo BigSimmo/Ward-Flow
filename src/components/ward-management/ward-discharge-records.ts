@@ -1,6 +1,6 @@
 import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
-import { criteriaEligibility, isPatientSpecificItem, type CriteriaEligibility } from "./ward-discharge-criteria";
+import { criteriaEligibility, communityDischargeCriteria, type CriteriaEligibility } from "./ward-discharge-criteria";
 import type { Movement } from "./ward-model";
 import { activeCommunityTreatmentOrder, type Patient } from "./ward-patients";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -129,13 +129,7 @@ function criteriaFor(
   record: Admission["dischargeCriteria"],
 ): DischargeRecord["dischargeCriteria"] {
   if (!record || actor.role !== "community") return record ?? null;
-  let typed = 0;
-  return {
-    ...record,
-    items: record.items.map((item) =>
-      isPatientSpecificItem(item) ? { ...item, criterion: `Patient specific criterion ${++typed}` } : item,
-    ),
-  };
+  return communityDischargeCriteria(record);
 }
 
 function project(state: WardFlowState, admission: Admission, actor: WardRecordActor): DischargeRecord {

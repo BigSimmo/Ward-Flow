@@ -124,6 +124,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
       expect(next.refreshRequests).toHaveLength(state.refreshRequests.length + 1);
       const latestRequest = next.refreshRequests[next.refreshRequests.length - 1]!;
       expect(latestRequest).toEqual({
+        id: "buzz:1",
         unitId: unit.id,
         at: now,
         byRole: "coordinator",
@@ -147,6 +148,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
       expect(next.rejections).toHaveLength(state.rejections.length);
       const latestRequest = next.refreshRequests[next.refreshRequests.length - 1]!;
       expect(latestRequest).toEqual({
+        id: "buzz:1",
         unitId: unit.id,
         at: now,
         byRole: "bed_manager",
@@ -171,6 +173,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
       expect(next.rejections).toHaveLength(state.rejections.length);
       const latestRequest = next.refreshRequests[next.refreshRequests.length - 1]!;
       expect(latestRequest).toEqual({
+        id: "buzz:1",
         unitId: unit.id,
         at: now,
         byRole: "executive",
