@@ -1087,7 +1087,15 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               );
               return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
             };
-            return completion && "then" in completion ? completion.then(accepted) : accepted(completion);
+            return completion && "then" in completion
+              ? completion.then(accepted, () =>
+                  accepted({
+                    commandId: "",
+                    status: "failed",
+                    message: "Save is not confirmed. Review the board before trying again.",
+                  }),
+                )
+              : accepted(completion);
           }}
         />
         <ExtendSheet
