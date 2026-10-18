@@ -105,6 +105,10 @@ const tableColumns = {
     "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid!,patient_id:text!,reason:text!,opened_at:timestamp with time zone!=now(),until:timestamp with time zone!",
   access_requests:
     "id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,role:text!,scope:jsonb!,requested_at:timestamp with time zone!=now(),decision:text,decided_by:uuid,decided_at:timestamp with time zone",
+  record_access:
+    "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid,actor_role:text!,actor_scope:jsonb!,patient_id:text!,surface:text!,viewed_at:timestamp with time zone!=now()",
+  session_sign_outs:
+    "session_id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,signed_out_at:timestamp with time zone!=now(),until:timestamp with time zone!",
 };
 
 /** Columns later migrations added to an existing table, in the order they were added. */
@@ -125,6 +129,8 @@ const tableSince = {
   memberships: 8,
   break_glass: 8,
   access_requests: 9,
+  record_access: 10,
+  session_sign_outs: 10,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -179,6 +185,14 @@ const checks = {
     "decided_by <> actor_id",
     "(decision IS NULL) = (decided_by IS NULL) AND (decision IS NULL) = (decided_at IS NULL)",
   ],
+  record_access: [
+    "data_mode = 'prototype'",
+    `actor_role = ANY (${ACCESS_ROLES})`,
+    "jsonb_typeof(actor_scope) = 'object' AND octet_length(actor_scope::text) <= 4096",
+    "length(patient_id) >= 1 AND length(patient_id) <= 100",
+    "surface = ANY (ARRAY['patient','movement'])",
+  ],
+  session_sign_outs: ["data_mode = 'prototype'", "until > signed_out_at"],
 };
 
 /** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
@@ -205,6 +219,8 @@ const primaryKeys = {
   memberships: ["id"],
   break_glass: ["id"],
   access_requests: ["id"],
+  record_access: ["id"],
+  session_sign_outs: ["session_id"],
 };
 
 const indexes = [
@@ -228,18 +244,37 @@ const indexes = [
   [8, "break_glass_actor", "break_glass", "workspace_id, actor_id, until DESC", false],
   [9, "access_requests_pkey", "access_requests", "id", true],
   [9, "access_requests_one_open", "access_requests", "workspace_id, actor_id", true, "decision IS NULL"],
+  [10, "record_access_pkey", "record_access", "id", true],
+  [10, "record_access_patient", "record_access", "workspace_id, patient_id, viewed_at DESC", false],
+  [10, "record_access_actor", "record_access", "workspace_id, actor_id, viewed_at DESC", false],
+  [10, "session_sign_outs_pkey", "session_sign_outs", "session_id", true],
 ];
 
+/** Each guard trigger function, the table it guards and the migration that added it. */
 const protectors = {
   protect_audit: {
+    since: 1,
     table: "audit",
     type: 58,
     body: "BEGIN RAISE EXCEPTION 'Ward Flow audit records are append-only'; END",
   },
   protect_workspace_mode: {
+    since: 2,
     table: "workspaces",
     type: 19,
     body: "BEGIN IF NEW.data_mode IS DISTINCT FROM OLD.data_mode THEN RAISE EXCEPTION 'Ward Flow workspace data mode cannot be changed'; END IF; RETURN NEW; END",
+  },
+  protect_record_access: {
+    since: 10,
+    table: "record_access",
+    type: 58,
+    body: "BEGIN RAISE EXCEPTION 'Ward Flow record access entries are append-only'; END",
+  },
+  protect_break_glass: {
+    since: 10,
+    table: "break_glass",
+    type: 58,
+    body: "BEGIN RAISE EXCEPTION 'Ward Flow break glass records are append-only'; END",
   },
 };
 
@@ -339,6 +374,25 @@ function expectedConstraints(version, tables) {
       deletion: "a",
     });
   }
+  if (version >= 10) {
+    for (const table of ["record_access", "session_sign_outs"])
+      result.push({
+        table,
+        type: "f",
+        keys: ["workspace_id", "data_mode"],
+        target: "workspaces",
+        foreign: ["id", "data_mode"],
+        deletion: "a",
+      });
+    result.push({
+      table: "record_access",
+      type: "f",
+      keys: ["membership_id"],
+      target: "memberships",
+      foreign: ["id"],
+      deletion: "a",
+    });
+  }
   if (version >= 9) {
     result.push({
       table: "access_requests",
@@ -367,6 +421,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
     "audit_sequence_seq",
     ...(version >= 3 ? ["push_subscriptions_id_seq"] : []),
     ...(version >= 8 ? ["break_glass_id_seq"] : []),
+    ...(version >= 10 ? ["record_access_id_seq"] : []),
   ];
   const expectedObjects = [
     ...tables,
@@ -436,7 +491,7 @@ function verifyCatalog(catalog, version, runtimeRole) {
     if (index < 0) refuse();
     expected.splice(index, 1);
   }
-  const names = version >= 2 ? Object.keys(protectors) : ["protect_audit"];
+  const names = Object.keys(protectors).filter((name) => version >= protectors[name].since);
   if (catalog.functions.length !== names.length || catalog.triggers.length !== names.length) refuse();
   for (const name of names) {
     const fn = catalog.functions.find((f) => f.name === name);

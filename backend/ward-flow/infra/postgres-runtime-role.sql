@@ -77,6 +77,13 @@ DO $$ BEGIN
     GRANT SELECT, INSERT ON ward_flow.access_requests TO wardflow_backend;
     GRANT UPDATE (decision, decided_by, decided_at) ON ward_flow.access_requests TO wardflow_backend;
   END IF;
+  -- Migration 10: record access rows are only added and read. A sign-out row is added, read, and
+  -- removed once the token it refuses would have expired anyway.
+  IF to_regclass('ward_flow.record_access') IS NOT NULL THEN
+    GRANT SELECT, INSERT ON ward_flow.record_access TO wardflow_backend;
+    GRANT USAGE, SELECT ON SEQUENCE ward_flow.record_access_id_seq TO wardflow_backend;
+    GRANT SELECT, INSERT, DELETE ON ward_flow.session_sign_outs TO wardflow_backend;
+  END IF;
 END $$;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC;

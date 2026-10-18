@@ -556,6 +556,7 @@ test("a verified token reports when the account last signed in, for the step-up 
     "ec-1",
     claims({
       aal: "aal1",
+      session_id: "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE",
       amr: [
         { method: "password", timestamp: signedIn - 600 },
         { method: "password", timestamp: signedIn },
@@ -563,13 +564,21 @@ test("a verified token reports when the account last signed in, for the step-up 
     }),
   );
   assert.equal(await verify(token, { session }), coordinator);
-  // The session limit counts from the oldest factor, step-up from the newest.
-  assert.deepEqual(session, { signedInAt: signedIn * 1000, startedAt: (signedIn - 600) * 1000, aal: "aal1" });
-  // A token with no sign-in record leaves the time unknown, so step-up asks again.
+  // The session limit counts from the oldest factor, step-up from the newest. The sign-in's own
+  // id is what a sign-out names.
+  assert.deepEqual(session, {
+    signedInAt: signedIn * 1000,
+    startedAt: (signedIn - 600) * 1000,
+    aal: "aal1",
+    sessionId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  });
+  // A token with no sign-in record leaves the time unknown, so step-up asks again. A session id
+  // that is not a UUID is not kept, so it can never name another sign-in.
   const unknown = {};
-  await verify(signed("ES256", "ec-1"), { session: unknown });
+  await verify(signed("ES256", "ec-1", claims({ session_id: "not-a-session" })), { session: unknown });
   assert.equal(unknown.signedInAt, undefined);
   assert.equal(unknown.startedAt, undefined);
+  assert.equal(unknown.sessionId, undefined);
   // A refused token fills nothing.
   const refused = {};
   await assert.rejects(verify(`${token}x`, { session: refused }));

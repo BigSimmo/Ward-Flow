@@ -681,7 +681,7 @@ test(
 );
 
 test(
-  "real PostgreSQL: row-level security lets only the runtime role through, and 009, 008, 007 then 006 roll back to 5",
+  "real PostgreSQL: row-level security lets only the runtime role through, and 010, 009, 008, 007 then 006 roll back to 5",
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
@@ -714,7 +714,7 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 10);
+      assert.equal(tables.length, 12);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
@@ -762,6 +762,29 @@ test(
         runtime.query("UPDATE ward_flow.access_requests SET role='admin' WHERE false"),
         /permission denied/,
       );
+      // From 10 record openings are only added and read, and even the owner cannot change them.
+      // A lapsed sign-out may be removed; nothing in one changes.
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.record_access SET patient_id='PT-0' WHERE false"),
+        /permission denied/,
+      );
+      await assert.rejects(runtime.query("DELETE FROM ward_flow.record_access WHERE false"), /permission denied/);
+      await assert.rejects(owner.query("DELETE FROM ward_flow.record_access WHERE false"), /append-only/);
+      await assert.rejects(owner.query("UPDATE ward_flow.break_glass SET reason='other' WHERE false"), /append-only/);
+      await runtime.query("DELETE FROM ward_flow.session_sign_outs WHERE false");
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.session_sign_outs SET until=now() WHERE false"),
+        /permission denied/,
+      );
+      for (const [change, undo] of [
+        ["GRANT UPDATE (surface) ON ward_flow.record_access", "REVOKE UPDATE (surface) ON ward_flow.record_access"],
+        ["REVOKE DELETE ON ward_flow.session_sign_outs", "GRANT DELETE ON ward_flow.session_sign_outs"],
+      ]) {
+        await owner.query(`${change} ${change.startsWith("GRANT") ? "TO" : "FROM"} wardflow_backend`);
+        await assert.rejects(runtimeOk(runtime), /unsafe/, change);
+        await owner.query(`${undo} ${undo.startsWith("GRANT") ? "TO" : "FROM"} wardflow_backend`);
+      }
+      await runtimeOk(runtime);
 
       // A role with a grant it should never have still sees and writes nothing.
       await owner.query("DROP ROLE IF EXISTS wardflow_rls_probe");
@@ -804,9 +827,11 @@ test(
       );
       await assert.rejects(rollBack("./infra/rollback-007-prototype-only.sql"), /roll back 008 first/);
       await assert.rejects(rollBack("./infra/rollback-008-role-access.sql"), /not at migration 8/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 9);
+      await assert.rejects(rollBack("./infra/rollback-009-access-cover-requests.sql"), /not at migration 9/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 10);
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-010-record-access-and-sign-out.sql", 9],
         ["./infra/rollback-009-access-cover-requests.sql", 8],
         ["./infra/rollback-008-role-access.sql", 7],
         ["./infra/rollback-007-prototype-only.sql", 6],
@@ -968,10 +993,13 @@ test(
       const granted = await store.read(nurse, nurseView);
       assert.equal(granted.accessContext, opened.body.snapshot.accessContext);
       // The same patient's absolute expiry matters too: canonical(Date) alone would turn both into {}.
+      // Break glass rows are append-only from migration 10, so the test lifts the guard for this one edit.
+      await pool.query("ALTER TABLE ward_flow.break_glass DISABLE TRIGGER protect_break_glass");
       await pool.query(
         "UPDATE ward_flow.break_glass SET until=until + interval '1 second' WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3",
         [workspaceId, nurse, outsiders[0].id],
       );
+      await pool.query("ALTER TABLE ward_flow.break_glass ENABLE TRIGGER protect_break_glass");
       const extended = await store.read(nurse, nurseView);
       assert.notEqual(extended.accessContext, granted.accessContext);
       assert.equal(extended.revision, granted.revision);
@@ -1224,6 +1252,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-010-record-access-and-sign-out.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-009-access-cover-requests.sql", import.meta.url), "utf8"),
         );
@@ -1555,6 +1586,7 @@ test(
         exp: at.getTime() / 1000 + 3600,
         // The session limit reads the sign-in time against the server's own clock.
         amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }],
+        session_id: randomUUID(),
       })}`;
       return `Bearer ${data}.${sign("sha256", Buffer.from(data), { key: key.privateKey, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
     };
@@ -1621,6 +1653,31 @@ test(
       const recorded = saved.snapshot.payload.state.refreshRequests.at(-1);
       assert.equal(recorded.unitId, unitId);
       assert.equal(recorded.byRole, "coordinator");
+
+      // Opening a record is logged once a minute per account, record and screen; only the
+      // statewide coordinator reads the log. A sign-out ends that sign-in at once, not when its
+      // token expires, and another sign-in of the same account carries on.
+      const patientId = initial.payload.state.patients[0].id;
+      const opened = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
+      assert.equal(opened.status, 200);
+      assert.deepEqual(await opened.json(), { logged: true });
+      await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
+      assert.equal(
+        (await request(`${first}/record-access`, credential, { patientId: "Jane Citizen", surface: "patient" })).status,
+        400,
+      );
+      const views = await (await request(`${first}/record-access?patient=${patientId}`, credential)).json();
+      assert.equal(views.views.length, 1);
+      assert.equal(views.views[0].actor_role, "coordinator");
+      assert.equal(views.views[0].surface, "patient");
+      const leaving = token(actor);
+      assert.equal((await request(first, leaving)).status, 200);
+      const signedOut = await request(`${first}/sign-out`, leaving, {});
+      assert.deepEqual(await signedOut.json(), { signedOut: true });
+      const after = await request(first, leaving);
+      assert.equal(after.status, 401);
+      assert.equal((await after.json()).code, "signed-out");
+      assert.equal((await request(first, credential)).status, 200);
 
       // Separate HTTP listener, store instance, connection pool and authenticated account.
       const second = await start(pools[1]);
@@ -1902,7 +1959,7 @@ test(
               config: { coordinatorIds: [f.lead], origin: "http://localhost", workspaceId: f.workspaceId },
               /** @param {string} _token @param {{ session?: { startedAt?: number } }} [context] */
               authenticate: async (_token, { session } = {}) => {
-                if (session) session.startedAt = Date.now();
+                if (session) Object.assign(session, { startedAt: Date.now(), sessionId: randomUUID() });
                 return f.nurse;
               },
               sharedStore: {

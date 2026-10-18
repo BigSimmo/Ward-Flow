@@ -98,7 +98,8 @@ function validTokenTimes(claims, at) {
  * role here draws on its own small allowance, so made-up accounts cannot crowd out real desks.
  * Malformed, expired, not-yet-valid and wrong-issuer tokens never reach Supabase. A token verified
  * locally stays valid until it expires
- * (Supabase access tokens last an hour), even after sign-out, as with Supabase's own getClaims.
+ * (Supabase access tokens last an hour), as with Supabase's own getClaims. A sign-out recorded by
+ * this server (shared-http.mjs, `sessionId` below) refuses it before then.
  */
 export function createSupabaseAuthenticator(config, dependencies = {}) {
   if (config.supabase?.projectRef !== APPROVED_SUPABASE_PROJECT || config.supabase?.url !== APPROVED_SUPABASE_URL)
@@ -323,8 +324,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   };
   /**
    * `session`, when given, is filled once the token is verified: `signedInAt` and `startedAt`
-   * (above) and `aal`.
-   * The subject is still the only return value.
+   * (above), `aal`, and `sessionId`, the sign-in's own id, which a sign-out names so this server
+   * refuses that sign-in's tokens before they expire. The subject is still the only return value.
    */
   return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
     const verified = (userId, claims) => {
@@ -332,6 +333,10 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
         session.signedInAt = signedInAt(claims);
         session.startedAt = startedAt(claims);
         session.aal = typeof claims?.aal === "string" ? claims.aal : undefined;
+        session.sessionId =
+          typeof claims?.session_id === "string" && UUID.test(claims.session_id)
+            ? claims.session_id.toLowerCase()
+            : undefined;
       }
       return userId;
     };

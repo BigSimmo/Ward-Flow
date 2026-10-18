@@ -56,17 +56,23 @@ export const MIGRATIONS = Object.freeze([
     file: "009-access-cover-requests.sql",
     sha256: "b00a48946cbe64298019d0c5a4734d4fd4d9157af5636fc075656e7a08c65cb2",
   },
+  {
+    version: 10,
+    file: "010-record-access-and-sign-out.sql",
+    sha256: "e69396e45246d0ff88ee41a423edf8ae076d9375c0f6a7492965e11ee926616e",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
- * (7), role access (8) and cover with requests (9) are applied to a live database separately, so
- * the backend runs on 5 to 9: it can deploy before those migrations, and keeps running if their
- * infra/rollback-*.sql scripts take the database back. Before 8 only the WARD_COORDINATOR_USER_IDS
- * accounts can sign in. Before 9 there is no cover, no request for access, no "not used" switch-off
- * and no phone alert by role.
+ * (7), role access (8), cover with requests (9) and the record access log with sign-outs (10) are
+ * applied to a live database separately, so the backend runs on 5 to 10: it can deploy before those
+ * migrations, and keeps running if their infra/rollback-*.sql scripts take the database back. Before
+ * 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there is no cover, no request
+ * for access, no "not used" switch-off and no phone alert by role. Before 10 opening a record is
+ * not logged and a sign-out does not end the sign-in's token on this server.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
@@ -75,6 +81,9 @@ export const ROLE_ACCESS_MIGRATION = 8;
 
 /** The first schema with cover, requests for access, last used times and alerts by role (migration 9). */
 export const ACCESS_COVER_MIGRATION = 9;
+
+/** The first schema with the record access log and server-side sign-outs (migration 10). */
+export const RECORD_ACCESS_MIGRATION = 10;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

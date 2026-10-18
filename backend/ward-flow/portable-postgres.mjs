@@ -196,6 +196,21 @@ SELECT current_user AS role,
       AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.access_requests', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
       AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.access_requests', 'REFERENCES')
     ELSE true END
+    -- Migration 10: record access rows are only added and read, never changed or removed. A
+    -- sign-out row is added, read, and removed once it has lapsed, and nothing in it changes.
+    AND CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN
+      pg_catalog.has_table_privilege(r.oid, 'ward_flow.record_access', 'SELECT')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.record_access', 'INSERT')
+      AND pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.record_access_id_seq', 'USAGE')
+      AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.record_access', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+      AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.record_access', 'UPDATE,REFERENCES')
+      AND NOT pg_catalog.has_sequence_privilege(r.oid, 'ward_flow.record_access_id_seq', 'UPDATE')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.session_sign_outs', 'SELECT')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.session_sign_outs', 'INSERT')
+      AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.session_sign_outs', 'DELETE')
+      AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.session_sign_outs', 'UPDATE,TRUNCATE,REFERENCES,TRIGGER')
+      AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.session_sign_outs', 'UPDATE,REFERENCES')
+    ELSE true END
   ELSE true END AS access_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
@@ -227,12 +242,15 @@ SELECT current_user AS role,
       WHERE n.nspname = 'ward_flow' AND (c.relrowsecurity OR c.relforcerowsecurity))
     AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy p JOIN pg_catalog.pg_class c ON c.oid = p.polrelid
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'ward_flow') END AS rls_valid,
-  -- Exactly two user triggers in the schema, whatever their state, and both are the guards.
-  (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
+  -- Exactly the guard triggers in the schema, whatever their state: two, and from migration 10
+  -- four, adding the record access and break glass guards.
+  (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN 4 ELSE 2 END
+    FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'ward_flow' AND NOT t.tgisinternal)
-  AND (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
+  AND (SELECT count(*) = CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN 4 ELSE 2 END
+    FROM pg_catalog.pg_trigger t
     JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     JOIN pg_catalog.pg_proc p ON p.oid = t.tgfoid
@@ -250,7 +268,15 @@ SELECT current_user AS role,
           AND pg_catalog.regexp_replace(p.prosrc, '[[:space:]]+', '', 'g') =
             pg_catalog.regexp_replace('BEGIN IF NEW.data_mode IS DISTINCT FROM OLD.data_mode THEN
               RAISE EXCEPTION ''Ward Flow workspace data mode cannot be changed'';
-              END IF; RETURN NEW; END', '[[:space:]]+', '', 'g')))
+              END IF; RETURN NEW; END', '[[:space:]]+', '', 'g'))
+        OR (c.relname = 'record_access' AND t.tgname = 'protect_record_access'
+          AND p.proname = 'protect_record_access' AND t.tgtype = 58
+          AND pg_catalog.regexp_replace(p.prosrc, '[[:space:]]+', '', 'g') =
+            pg_catalog.regexp_replace('BEGIN RAISE EXCEPTION ''Ward Flow record access entries are append-only''; END', '[[:space:]]+', '', 'g'))
+        OR (c.relname = 'break_glass' AND t.tgname = 'protect_break_glass'
+          AND p.proname = 'protect_break_glass' AND t.tgtype = 58
+          AND pg_catalog.regexp_replace(p.prosrc, '[[:space:]]+', '', 'g') =
+            pg_catalog.regexp_replace('BEGIN RAISE EXCEPTION ''Ward Flow break glass records are append-only''; END', '[[:space:]]+', '', 'g')))
   ) AS guards_valid
 FROM runtime r`;
 

@@ -4,6 +4,7 @@ import {
   ACCESS_COVER_MIGRATION,
   LATEST_MIGRATION,
   MINIMUM_RUNTIME_MIGRATION,
+  RECORD_ACCESS_MIGRATION,
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
@@ -25,6 +26,10 @@ const LAST_USED_EVERY_MS = 3_600_000;
 const inUse = (param) => `(m.kind = 'cover' OR coalesce(m.last_used_at, m.granted_at) > ${param}::timestamptz)`;
 /** Open requests for access kept at once, so made-up accounts cannot fill the table. */
 const MAX_OPEN_REQUESTS = 200;
+/** The same desk opening the same record on the same screen again this soon adds no new row. */
+const VIEW_REPEAT_MS = 60_000;
+/** Most record access rows one read returns. */
+const VIEW_LIST_LIMIT = 200;
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -1222,6 +1227,85 @@ export function createWorkspaceStore(
     stepUpMinutes: engine.STEP_UP_MINUTES,
     /** A sign-in older than this is refused, so the person signs in again (ISM-0428). */
     sessionLimitMinutes: engine.SESSION_LIMIT_MINUTES,
+    /**
+     * Readiness review item 9: who opened which patient record. One row each time a desk opens a
+     * patient or movement page, naming its role and place. A repeat by the same account of the
+     * same record on the same screen within a minute adds nothing, so a reload cannot flood the
+     * log. The table refuses every change and removal (migration 10). Before 10 nothing is kept.
+     */
+    async logView(view, patientId, surface) {
+      if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
+      const at = clock();
+      await pool
+        .query(
+          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9)",
+          [
+            workspaceId,
+            view.actorId,
+            view.membershipId ?? null,
+            view.access.role,
+            view.access.scope,
+            patientId,
+            surface,
+            at,
+            new Date(at.getTime() - VIEW_REPEAT_MS),
+          ],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      return { status: 200, body: { logged: true } };
+    },
+    /**
+     * The newest record openings, optionally for one patient. Only the statewide coordinator reads
+     * them; the HTTP layer refuses everyone else before this runs.
+     */
+    async recordViews(view, patientId = null) {
+      if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
+      const { rows } = await pool.query(
+        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype'${patientId ? " AND patient_id=$2" : ""} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        patientId ? [workspaceId, patientId] : [workspaceId],
+      );
+      return rows;
+    },
+    /**
+     * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token
+     * expires. The row lasts as long as any token of that sign-in could still be accepted: the
+     * session limit from when it began. Sign-outs past that are removed. Before migration 10 it
+     * answers false and the sign-in ends when its token expires.
+     */
+    async signOutSession(actorId, sessionId, startedAt) {
+      if ((await schemaVersion()) < RECORD_ACCESS_MIGRATION) return false;
+      const at = clock();
+      const limitMs = engine.SESSION_LIMIT_MINUTES * 60_000;
+      const from = Number.isFinite(startedAt) ? Math.min(startedAt, at.getTime()) : at.getTime();
+      const until = new Date(Math.max(from + limitMs, at.getTime() + 60_000));
+      await pool.query(
+        "INSERT INTO ward_flow.session_sign_outs(session_id, workspace_id, actor_id, signed_out_at, until) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (session_id) DO NOTHING",
+        [sessionId, workspaceId, actorId, at, until],
+      );
+      await pool.query("DELETE FROM ward_flow.session_sign_outs WHERE workspace_id=$1 AND until < $2", [
+        workspaceId,
+        at,
+      ]);
+      return true;
+    },
+    /**
+     * Whether this sign-in was signed out here. From migration 10 a sign-in with no session id
+     * cannot be signed out, so it is refused too.
+     */
+    async sessionSignedOut(sessionId) {
+      if ((await schemaVersion()) < RECORD_ACCESS_MIGRATION) return false;
+      if (typeof sessionId !== "string") return true;
+      const { rows } = await pool
+        .query("SELECT 1 FROM ward_flow.session_sign_outs WHERE session_id=$1 LIMIT 1", [sessionId])
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      return rows.length > 0;
+    },
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set
