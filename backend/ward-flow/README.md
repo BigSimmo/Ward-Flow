@@ -63,14 +63,16 @@ to `005`. These source files do not establish a current hosted connection or dep
   `shared-http.mjs` (workspace routes).
 - Domain: `engine.ts`, built to `dist/engine.mjs` by `build-engine.mjs`. `push.mjs` builds and
   sends Web Push act-now alerts.
-- Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state),
+- Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state), `records.mjs`
+  (how a workspace is split into one row per record from migration 10, and when a save clashes),
   `postgres-preflight.mjs` (catalogue preflight before migrations), `migrate.mjs` (migrations in
   order) and `migrations.mjs` (the one migration list, latest version and file checksums; a new
   migration is one entry there plus its SQL file).
 - Traffic: the 3 second poll sends `?since=<revision>`, and an unchanged workspace answers with its
   revision and clock only. A command queued behind others asks for `reply: "revision"`, so its
   accepted reply has no snapshot. The saved workspace keeps the newest 1,000 audit entries (plus
-  any an audit review names); the `audit` table keeps every one.
+  any an audit review names); the `audit` table keeps every one. A changed workspace is still sent
+  whole to each desk on its next poll; only saving is per record (migration 10).
 - Commands (`command-schemas.ts`): every command needs a known type, its sender's own allowed role
   (never defaulted) and bounded plain JSON; the core bed-flow commands also have zod field schemas.
 - Demo controls (advance clock, reset or set scenario) are refused on the shared workspace unless
@@ -100,7 +102,7 @@ to `005`. These source files do not establish a current hosted connection or dep
   (`*` on Railway, which is reachable only through its proxy). A locally
   verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 9):
+- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 10):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -128,7 +130,17 @@ to `005`. These source files do not establish a current hosted connection or dep
     asks stays in the no-role allowance. Granting, approving, removing, cover, answering a request
     and break glass need a sign-in within the step-up window, or the server answers `step-up`.
     `infra/rollback-009-access-cover-requests.sql` ends all cover, turns off membership phone
-    alerts and takes a database back to 8. The backend accepts versions 5 to 9.
+    alerts and takes a database back to 8.
+  - `010-workspace-records.sql`: each referral, bed (ward), movement, patient, admission and every
+    other list or map entry is its own row in `ward_flow.workspace_records`, with the workspace
+    revision at which its content last changed. Existing workspaces are moved across in the same
+    transaction, so either every record moves or nothing changes. A save writes only the rows it
+    changed. A save sent against an older revision still applies when nobody else has changed a
+    record it changes or names since then; otherwise it is refused (409, "Someone else changed this
+    record first"). Before 10, any change refuses every save made against an older revision.
+    `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
+    a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
+    The backend accepts versions 5 to 10.
 
 ## Boundaries
 

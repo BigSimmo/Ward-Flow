@@ -105,6 +105,8 @@ const tableColumns = {
     "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid!,patient_id:text!,reason:text!,opened_at:timestamp with time zone!=now(),until:timestamp with time zone!",
   access_requests:
     "id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,role:text!,scope:jsonb!,requested_at:timestamp with time zone!=now(),decision:text,decided_by:uuid,decided_at:timestamp with time zone",
+  workspace_records:
+    "workspace_id:uuid!,data_mode:text!='prototype',collection:text!,record_id:text!,kind:text!,ordinal:integer!,revision:bigint!,body:jsonb!,updated_at:timestamp with time zone!=now()",
 };
 
 /** Columns later migrations added to an existing table, in the order they were added. */
@@ -125,6 +127,7 @@ const tableSince = {
   memberships: 8,
   break_glass: 8,
   access_requests: 9,
+  workspace_records: 10,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -179,6 +182,16 @@ const checks = {
     "decided_by <> actor_id",
     "(decision IS NULL) = (decided_by IS NULL) AND (decision IS NULL) = (decided_at IS NULL)",
   ],
+  workspace_records: [
+    "data_mode = 'prototype'",
+    "collection ~ '^[A-Za-z][A-Za-z0-9]{0,63}$'",
+    "length(record_id) >= 1 AND length(record_id) <= 200",
+    "kind = ANY (ARRAY['item','index','entry'])",
+    "ordinal >= 0",
+    "revision > 0",
+    "octet_length(body::text) <= 1048576",
+    "kind <> 'item' OR (jsonb_typeof(body) = 'object' AND body ->> 'id' = record_id)",
+  ],
 };
 
 /** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
@@ -205,6 +218,7 @@ const primaryKeys = {
   memberships: ["id"],
   break_glass: ["id"],
   access_requests: ["id"],
+  workspace_records: ["workspace_id", "collection", "record_id"],
 };
 
 const indexes = [
@@ -228,6 +242,7 @@ const indexes = [
   [8, "break_glass_actor", "break_glass", "workspace_id, actor_id, until DESC", false],
   [9, "access_requests_pkey", "access_requests", "id", true],
   [9, "access_requests_one_open", "access_requests", "workspace_id, actor_id", true, "decision IS NULL"],
+  [10, "workspace_records_pkey", "workspace_records", "workspace_id, collection, record_id", true],
 ];
 
 const protectors = {
@@ -357,6 +372,15 @@ function expectedConstraints(version, tables) {
       deletion: "a",
     });
   }
+  if (version >= 10)
+    result.push({
+      table: "workspace_records",
+      type: "f",
+      keys: ["workspace_id", "data_mode"],
+      target: "workspaces",
+      foreign: ["id", "data_mode"],
+      deletion: "a",
+    });
   return result;
 }
 

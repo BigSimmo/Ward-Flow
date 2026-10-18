@@ -197,6 +197,16 @@ SELECT current_user AS role,
       AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.access_requests', 'REFERENCES')
     ELSE true END
   ELSE true END AS access_grants,
+  -- Migration 10: each record of the workspace is a row the backend reads, adds, rewrites and
+  -- removes. Before it, the table does not exist.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 10) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'INSERT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'UPDATE')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'DELETE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.workspace_records', 'REFERENCES')
+  ELSE true END AS records_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
     OR pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'CREATE')
@@ -275,6 +285,7 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "restricted_grants",
       "push_grants",
       "access_grants",
+      "records_grants",
       "audit_append_only",
       "browser_denied",
       "guards_valid",

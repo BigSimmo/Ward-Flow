@@ -562,7 +562,7 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? "Another coordinator changed the board. Your action was not applied; review the latest state."
+                ? "Someone else changed this first. Your action was not applied; review the latest state."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"

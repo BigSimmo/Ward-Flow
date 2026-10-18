@@ -73,6 +73,10 @@ DO $$ BEGIN
     GRANT SELECT, INSERT ON ward_flow.access_requests TO wardflow_backend;
     GRANT UPDATE (decision, decided_by, decided_at) ON ward_flow.access_requests TO wardflow_backend;
   END IF;
+  -- Migration 10: each record of the workspace is its own row, added, rewritten and removed.
+  IF to_regclass('ward_flow.workspace_records') IS NOT NULL THEN
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.workspace_records TO wardflow_backend;
+  END IF;
 END $$;
 -- Remove explicit per-schema browser defaults for future tables/sequences.
 -- After each migration repeat the explicit REVOKE ALL ON ALL FUNCTIONS above and

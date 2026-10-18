@@ -77,6 +77,10 @@ DO $$ BEGIN
     GRANT SELECT, INSERT ON ward_flow.access_requests TO wardflow_backend;
     GRANT UPDATE (decision, decided_by, decided_at) ON ward_flow.access_requests TO wardflow_backend;
   END IF;
+  -- Migration 10: each record of the workspace is its own row, added, rewritten and removed.
+  IF to_regclass('ward_flow.workspace_records') IS NOT NULL THEN
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.workspace_records TO wardflow_backend;
+  END IF;
 END $$;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC;
