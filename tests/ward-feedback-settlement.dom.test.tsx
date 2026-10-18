@@ -140,6 +140,31 @@ describe("patient registration command settlement", () => {
       expect(router.push.mock.calls[0]?.[0] === patientHref(own.id)).toBe(true);
     },
   );
+
+  it("finishes an accepted shared save whose record stays outside the desk's view, echoing only typed text", async () => {
+    vi.useFakeTimers();
+    try {
+      const command = deferred<WardCommandOutcome>();
+      const dispatch = vi.fn<WardCommandDispatch>(() => command.promise);
+      const view = render(form(dispatch));
+      fill();
+      fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+      await act(async () => command.resolve({ commandId: "own-add", status: "accepted" }));
+      // A scoped snapshot arrives without the standalone record (only an unrelated one).
+      view.rerender(form(dispatch, [other]));
+      expect(screen.queryByTestId("ward-add-patient-saved-outside-view")).toBeNull();
+      act(() => vi.advanceTimersByTime(3000));
+      expect(router.push.mock.calls.length).toBe(0);
+      expect(screen.getByTestId("ward-add-patient-saved-outside-view").textContent).toContain(
+        `${own.givenName} ${own.familyName} added, ${own.umrn}`,
+      );
+      expect(screen.getByTestId("ward-add-patient-submit").getAttribute("aria-disabled")).not.toBeNull();
+      expect((screen.getByLabelText(/Record number|UMRN/i) as HTMLInputElement).value).toBe("");
+      expect(dispatch.mock.calls.length).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("escalation feedback", () => {

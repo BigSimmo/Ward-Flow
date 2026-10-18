@@ -240,6 +240,9 @@ const MATCH_LABEL: Record<MatchKind, string> = {
   near: "Similar spelling",
 };
 
+/** How long an accepted shared save waits for its snapshot to bring the new record. */
+const SHARED_SNAPSHOT_WAIT_MS = 3000;
+
 export function AddPatientForm() {
   const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
   const now = useWardFlowClock();
@@ -283,6 +286,11 @@ export function AddPatientForm() {
   const priorSubmissionRef = useRef<{
     patients: typeof patients;
     umrn: string;
+    /** Typed identity, echoed when an accepted shared save stays outside this desk's view. */
+    givenName: string;
+    familyName: string;
+    /** The command went to the shared workspace (it settled asynchronously). */
+    shared?: boolean;
     generation: number;
     intent: "profile" | "refer";
     intake: {
@@ -294,6 +302,7 @@ export function AddPatientForm() {
     };
   } | null>(null);
   const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
+  const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
   if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
     setAcceptedSubmission(null);
     setLastRejection("The workspace changed. Review the record before trying again.");
@@ -364,6 +373,11 @@ export function AddPatientForm() {
         undo: { durationMs: 8000, onUndo: () => restoreSnapshot(snap) },
       });
     }
+    clearForm();
+  };
+
+  function clearForm() {
+    setSavedOutsideView(null);
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
     setIndigenousStatus("not-stated");
@@ -385,7 +399,7 @@ export function AddPatientForm() {
     submitIntentRef.current = "profile";
     setSubmitIntent("profile");
     setShowResetConfirm(false);
-  };
+  }
 
   const answered = answeredDraft(draft);
   const outstanding = unansweredFieldNames(draft);
@@ -457,6 +471,29 @@ export function AddPatientForm() {
     router.push(patientHref(added.id));
   }, [acceptedSubmission, patients, worldGeneration, router, toast]);
 
+  useEffect(() => {
+    const prior = acceptedSubmission;
+    if (!prior?.shared || priorSubmissionRef.current !== prior || prior.generation !== worldGeneration)
+      return undefined;
+    const priorIds = new Set(prior.patients.map((patient) => patient.id));
+    const umrn = prior.umrn.toLowerCase();
+    if (patients.some((patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn))
+      return undefined;
+    // A scoped desk never receives a standalone record it cannot see (no stay, referral or grant),
+    // so its snapshot never brings the record. After a short wait for the snapshot, finish on the
+    // accepted outcome: echo only what was typed and stay here (Grok Bot for the owner, 18 Oct
+    // 2026 15:58 AWST; no access is widened).
+    const timer = window.setTimeout(() => {
+      if (priorSubmissionRef.current !== prior) return;
+      const saved = `${prior.givenName} ${prior.familyName} added, ${prior.umrn}`;
+      const note = "Saved. The record is outside this desk's view, so it does not open here.";
+      clearForm();
+      setSavedOutsideView(`${saved}. ${note}`);
+      toast?.push({ tone: "success", title: saved, body: note });
+    }, SHARED_SNAPSHOT_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [acceptedSubmission, patients, worldGeneration, toast]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting || priorSubmissionRef.current?.generation === worldGeneration) return;
@@ -466,9 +503,12 @@ export function AddPatientForm() {
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    const submission = {
+    setSavedOutsideView(null);
+    const submission: NonNullable<typeof priorSubmissionRef.current> = {
       patients,
       umrn: answered.umrn,
+      givenName: answered.givenName,
+      familyName: answered.familyName,
       generation: worldGeneration,
       intent: submitIntentRef.current,
       intake: { facility, healthService, triageUrgency, legalStatus, presentingComplaint },
@@ -496,8 +536,10 @@ export function AddPatientForm() {
         if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) return refuse();
         setAcceptedSubmission(submission);
       };
-      if (completion && "then" in completion) void completion.then(settle, refuse);
-      else settle(completion);
+      if (completion && "then" in completion) {
+        submission.shared = true;
+        void completion.then(settle, refuse);
+      } else settle(completion);
     } catch {
       refuse();
     }
@@ -1048,6 +1090,11 @@ export function AddPatientForm() {
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
+                {savedOutsideView ? (
+                  <p data-testid="ward-add-patient-saved-outside-view" role="status">
+                    {savedOutsideView}
+                  </p>
+                ) : null}
                 {lastRejection ? (
                   <p className={styles.rejection} data-testid="ward-add-patient-rejection" role="alert">
                     <StatusGlyph tone="danger" size={9} />
