@@ -160,6 +160,7 @@ describe("the capacity network table spells zero one way per row", () => {
   it("keeps all three count columns routed through the shared count spelling", () => {
     const source =
       readFileSync("src/components/ward-management/capacity/capacity-screen.tsx", "utf8") +
+      readFileSync("src/components/ward-management/capacity/capacity-network-rows.tsx", "utf8") +
       readFileSync("src/components/ward-management/capacity/capacity-derivations.ts", "utf8");
     const stripped = source
       .replace(/\/\*[\s\S]*?\*\//gu, (block) => block.replace(/[^\n]/gu, " "))
