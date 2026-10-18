@@ -259,11 +259,10 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
 
   // Carer, PSP and MHAS apply to completed moves of involuntary patients (PR #159), so this card
   // reads recent arrivals, transfers and discharges, not the open moves in the table.
-  const tellSubjects = recentTellSubjects(
-    { movements, admissions, patients, referrals, units, supportNotifications },
-    now,
-    false,
-  ).filter((subject) => subject.missing.length > 0 || subject.key === tell?.key);
+  const tellInput = { movements, admissions, patients, referrals, units, supportNotifications };
+  const tellSubjects = recentTellSubjects(tellInput, now, false).filter(
+    (subject) => subject.missing.length > 0 || subject.key === tell?.key,
+  );
   const partyCount = (party: SupportNotificationParty) =>
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
   const tellNext = (party: SupportNotificationParty) => {
