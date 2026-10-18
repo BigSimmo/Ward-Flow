@@ -67,6 +67,7 @@ import { renderReferralMatchTiers } from "./referral-match-tiers";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
 const NO_RELEASES: readonly BedRelease[] = [];
@@ -248,25 +249,14 @@ export function ReferralMatchView({
     const { disabledReason, source } = turnaroundForUnit(unitId);
     if (disabledReason || !source) return;
     setTurnaroundRejectionStart(rejections.length);
-    dispatch(
-      linkedMovement
-        ? {
-            type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
-            role: "coordinator",
-            now,
-            movementId: linkedMovement.id,
-            unitId,
-            ...{ source },
-          }
-        : {
-            type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
-            role: "coordinator",
-            now,
-            referralId: referral.id,
-            unitId,
-            ...{ source },
-          },
-    );
+    // Two literal event types through wardRaise, not one dispatch over a ternary: the override-surface
+    // guard pins every event type at its construction site (tests/ward-override-surfaces.test.ts).
+    const raise = wardRaise(dispatch, "coordinator", now);
+    if (linkedMovement) {
+      raise("FLAG_MOVEMENT_TURNAROUND_PRIORITY", { movementId: linkedMovement.id, unitId, source });
+    } else {
+      raise("FLAG_REFERRAL_TURNAROUND_PRIORITY", { referralId: referral.id, unitId, source });
+    }
   };
   const tier2Candidates = candidates.filter(
     (c) =>

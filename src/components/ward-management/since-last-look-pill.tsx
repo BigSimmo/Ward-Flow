@@ -2,7 +2,7 @@
 
 import { useContext, useMemo, useRef, useState } from "react";
 import { Button, Sheet } from "@/components/wf";
-import { formatInstant } from "./ward-clock";
+import { formatInstantWithDay } from "./ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
 import { SharedAccessContext } from "./shell/ward-shared-access-context";
 import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./coordinator/since-last-look-panel";
@@ -39,6 +39,7 @@ function ScopedReview({
   changes: ChangesSinceLastLook;
   markSeen: () => void;
 }) {
+  const now = useWardFlowClock();
   const [review, setReview] = useState<ChangesSinceLastLook | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const count = sinceLastLookCount(changes);
@@ -62,13 +63,13 @@ function ScopedReview({
           markSeen();
         }}
       >
-        {count} {count === 1 ? "update" : "updates"} since {formatInstant(changes.since)}
+        {count} {count === 1 ? "update" : "updates"} since {formatInstantWithDay(changes.since, now)}
       </Button>
       <Sheet
         open={open}
         onClose={() => setReview(null)}
         title="Since you last looked"
-        description={`Updates since ${formatInstant(review?.since ?? changes.since)} · 15-minute window`}
+        description={`Updates since ${formatInstantWithDay(review?.since ?? changes.since, now)} · 15-minute window`}
         returnFocusRef={trigger}
       >
         <SinceLastLookSheetBody changes={open ? review : undefined} />

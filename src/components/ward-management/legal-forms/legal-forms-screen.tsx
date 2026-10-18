@@ -88,6 +88,7 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
+import { wardRaise } from "../ward-flow-raise";
 import { WardFormTimes } from "../tools/ward-form-times";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -1068,10 +1069,13 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            const completion = dispatch({
-              type: "RECORD_LEGAL_FORM_WRITTEN",
-              role: routeRole,
+            // Raised by name (tests/ward-flow-raise.test.ts); the completion still drives the draft's
+            // keep-or-clear decision below.
+            const completion = wardRaise(
+              dispatch,
+              routeRole,
               now,
+            )("RECORD_LEGAL_FORM_WRITTEN", {
               movementId,
               formCode,
               writtenAt,

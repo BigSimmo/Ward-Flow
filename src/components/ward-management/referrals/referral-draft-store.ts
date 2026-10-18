@@ -12,7 +12,7 @@ import {
 /** One memory copy and one explicitly opted-in synthetic session copy, with a single autosave owner. */
 let keptStorageKey: string | undefined;
 let recoverySaved = true;
-export const referralRecoverySaved = () => recoverySaved;
+const referralRecoverySaved = () => recoverySaved;
 /** The reminder lasts until charts are attached again or the recovered draft is cleared. */
 export function draftNeedsChartReattachment(draft: unknown, charts: readonly unknown[]): boolean {
   return (
@@ -29,7 +29,7 @@ let keptAtMs: number | null = null;
 // A sign-out also invalidates callbacks owned by a drawer that is still unmounting.
 let sessionVersion = 0;
 
-export function referralDraftSessionVersion(): number {
+function referralDraftSessionVersion(): number {
   return sessionVersion;
 }
 

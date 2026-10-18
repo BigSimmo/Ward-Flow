@@ -62,6 +62,20 @@ function RegisteredPatientSeeder() {
   );
 }
 
+/** sessionStorage keys outside the D-67 synthetic-draft exception (session marker and scoped drafts). */
+function storageOutsideD67(): string[] {
+  return Array.from({ length: window.sessionStorage.length }, (_, i) => window.sessionStorage.key(i) ?? "").filter(
+    (key) => key !== "wf-draft-session:v1" && !key.startsWith("wf-draft:v1:"),
+  );
+}
+
+function localStorageText(): string {
+  return Array.from({ length: window.localStorage.length }, (_, i) => {
+    const key = window.localStorage.key(i) ?? "";
+    return `${key}=${window.localStorage.getItem(key) ?? ""}`;
+  }).join("\n");
+}
+
 describe("Task 2 — Referral drawer patient sex retention, dirty guards, and section tab stops", () => {
   it("retains sex (35F) when adding a new patient in WardReferralDrawer and selecting a patient:<id> record", () => {
     render(
@@ -142,12 +156,17 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
 
     expect(saveDraftBtn).not.toHaveAttribute("aria-disabled");
     expect(fireBeforeUnload()).toBe(true);
-    expect(window.sessionStorage.length).toBe(0);
+    // D-67 (Josh, 17 Oct 2026) narrows D-18 for this synthetic drawer: typed drafts may live only in
+    // the session-scoped `wf-draft:v1:` entries (plus the session marker, which holds no form text).
+    // Anything else in sessionStorage, or the story anywhere in localStorage, is still a leak.
+    expect(storageOutsideD67()).toEqual([]);
+    expect(localStorageText()).not.toContain("Confidential synthetic clinical story");
 
     // Clicking Save draft keeps the draft in tab memory; beforeunload stays active while kept draft is in memory
     fireEvent.click(saveDraftBtn);
     expect(fireBeforeUnload()).toBe(true);
-    expect(window.sessionStorage.length).toBe(0);
+    expect(storageOutsideD67()).toEqual([]);
+    expect(localStorageText()).not.toContain("Confidential synthetic clinical story");
   });
 
   it("removes tabIndex={0} from non-interactive sections in WardAnswerView and guards unsaved capacity edits on beforeunload", () => {

@@ -492,6 +492,27 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     })),
   ],
   [1, movementEvent("RAISE_PULL_NOW", ["accepted_awaiting_bed"])],
+  // CLD turnaround priority (handover, 17 Oct 2026): a coordinator prefers a unit whose CLD-ready
+  // admission or confirmed departure will free a bed. The reducer derives the source itself.
+  [
+    1,
+    movementEvent("FLAG_MOVEMENT_TURNAROUND_PRIORITY", undefined, (state, random) => ({
+      unitId: pick(random, state.units)?.id,
+    })),
+  ],
+  [
+    1,
+    (state, random) => {
+      const referral = pick(random, state.referrals);
+      return referral
+        ? {
+            type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+            referralId: referral.id,
+            unitId: addressedUnit(state, random, referral),
+          }
+        : null;
+    },
+  ],
   // People in beds: leaving, placement, leave beds, absences and the ED trip.
   [
     4,

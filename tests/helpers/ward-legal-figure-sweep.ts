@@ -997,6 +997,15 @@ export function candidateEvents(
       );
     case "CLEAR_MOVEMENT_URGENT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
+    // CLD turnaround priority (handover, 17 Oct 2026). The reducer derives the source itself, so the
+    // candidate omits it (the default selection) and crosses each waiting movement, or each open
+    // referral, with every unit; the unit's own CLD-ready or departure state decides acceptance.
+    case "FLAG_MOVEMENT_TURNAROUND_PRIORITY":
+      return pairs().map(({ movementId, unitId }) => ({ type, role, now, movementId, unitId }));
+    case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitId })),
+      );
     case "CLEAR_MOVEMENT_BLOCKER":
       // One candidate per movement; the whole payload is a movement id. The reducer writes one
       // fixed sentinel, so there is no caller-supplied value to cross against.
@@ -1344,6 +1353,8 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "CLEAR_MOVEMENT_BLOCKER",
   "FLAG_MOVEMENT_URGENT",
   "CLEAR_MOVEMENT_URGENT_FLAG",
+  // CLD turnaround priority (handover, 17 Oct 2026): carries `movementId` and acts on that movement.
+  "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
   // Task 5 (2026-09-04). Both carry `movementId` and act on one named movement, same as
   // RELEASE_PULL/CANCEL_TRANSPORT above — and, like those two, STEP_BACK_STAGE is excluded from
   // the round-robin sweep (see that `continue` and its comment) and exercised in the dedicated

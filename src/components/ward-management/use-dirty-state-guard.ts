@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 
 import {
-  clearSessionDrafts,
   clearLegacySessionDrafts,
   draftSessionVersion,
   readSessionDraft,
@@ -213,11 +212,6 @@ function syncNavigationConfirm(): void {
 }
 
 installHistoryTracking();
-
-/** Explicit session termination/reset. Invalidates pending synthetic-form writes too. */
-export function clearWardFlowDraftCaches(): void {
-  clearSessionDrafts();
-}
 
 /** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {

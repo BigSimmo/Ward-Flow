@@ -65,6 +65,9 @@ const WRITTEN_ELSEWHERE: Record<string, string> = {
   // T12 (item 9): the front door's own accountability record for a Non-binary placement decided
   // at acceptance time, not at intake — RECEIVE_REFERRAL has no unit to place anyone at yet.
   genderPlacements: "ACCEPT_REFERRAL, when a coordinator accepts a Non-binary ward referral",
+  // CLD turnaround priority (handover, 17 Oct 2026): a coordinator flags it on a referral that already
+  // exists and has a destination in view, so it cannot come from the front door.
+  turnaroundPriority: "FLAG_REFERRAL_TURNAROUND_PRIORITY, raised by a coordinator after the referral exists",
   // Ward-to-ward transfer (ef1807cda1, 1b1c5bb2ba): RECEIVE_REFERRAL does write it, but only for a
   // psychiatric_ward source (`event.source === "psychiatric_ward" ? event.originUnitId : undefined`),
   // as the model's own comment specifies, so the plain `field: event.field` form above cannot see it.

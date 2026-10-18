@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/wf/button";
+import { Button } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { type BedRelease } from "@/components/ward-management/ward-model";
