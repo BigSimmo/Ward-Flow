@@ -1300,7 +1300,11 @@ export type CapacityRefreshRequest = {
   urgent?: boolean;
 };
 
+/** Human-recorded turnaround preference only; reserves no bed and books no transport. */
+export type TurnaroundPriority = { unitId: string; flaggedAt: Instant; source: "cld" | "departure" };
+
 export type Movement = {
+  turnaroundPriority?: TurnaroundPriority;
   id: MovementId;
   /**
    * The patient this movement is for. Links directly to a Person in state.patients.
@@ -2791,6 +2795,7 @@ export type ReferralCorrection = {
 };
 
 export type Referral = {
+  turnaroundPriority?: TurnaroundPriority;
   /** Confirmed drawer submission; typed text and chart bytes stay in memory under D-18. */
   intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
   id: string;

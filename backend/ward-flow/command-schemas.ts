@@ -57,6 +57,18 @@ const ids = z.array(id).max(MAX_ITEMS);
 const record = z.record(z.string(), z.unknown());
 
 const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
+  FLAG_MOVEMENT_TURNAROUND_PRIORITY: z.looseObject({
+    movementId: id,
+    unitId: id,
+    now: instant,
+    source: z.optional(z.enum(["cld", "departure"])),
+  }),
+  FLAG_REFERRAL_TURNAROUND_PRIORITY: z.looseObject({
+    referralId: id,
+    unitId: id,
+    now: instant,
+    source: z.optional(z.enum(["cld", "departure"])),
+  }),
   RECORD_ARRIVED_IN_DEPARTMENT: z.looseObject({ referralId: id }),
   RECORD_MEDICAL_CLEARANCE: z.looseObject({ referralId: id, cleared: z.boolean() }),
   REQUEST_CAPACITY_REFRESH: z.looseObject({ unitId: id }),

@@ -252,3 +252,9 @@ describe("re-anchoring moves every instant and nothing else", () => {
     expect(copy.movements[0]).not.toBe(state.movements[0]);
   });
 });
+
+it("reanchors turnaround preference provenance without changing its source or unit", () => {
+  expect(
+    shiftInstants({ turnaroundPriority: { unitId: "rph-adult-secure", flaggedAt: NOW_ANCHOR, source: "cld" } }, 45),
+  ).toEqual({ turnaroundPriority: { unitId: "rph-adult-secure", flaggedAt: NOW_ANCHOR + 45, source: "cld" } });
+});

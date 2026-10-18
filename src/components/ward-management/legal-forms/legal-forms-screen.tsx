@@ -1,5 +1,7 @@
 "use client";
 
+import { useWardRaise } from "../ward-flow-raise";
+
 import { useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
@@ -140,7 +142,12 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: string } = {}) {
+export function LegalFormsScreen(props: { initialMovementId?: string } = {}) {
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
+  return <LegalFormsWorkspace key={worldGeneration} {...props} />;
+}
+
+function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string }) {
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -161,8 +168,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
   // who acted (the coordinator here) rather than a borrowed "ED".
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
-  const { run: runStep } = useUndoableStep({
+  const { run: runStep, offer: offerStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -272,8 +280,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
 
   const openRecord = (movementId?: string) => {
-    // The generic button starts with no patient, so an earlier shortcut never carries over.
-    setRecordDraft((current) => ({ ...current, movement: movementId ?? "" }));
+    // An explicit subject wins; the generic entry resumes its unsent synthetic draft.
+    if (movementId) setRecordDraft((current) => ({ ...current, movement: movementId }));
     setRecordOpen(true);
   };
 
@@ -1063,22 +1071,29 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            runStep(
-              {
-                type: "RECORD_LEGAL_FORM_WRITTEN",
-                role: routeRole,
-                now,
-                movementId,
-                formCode,
-                writtenAt,
-              },
-              {
-                success: `Form ${formCode} recorded`,
-                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-                undone: "Form record undone.",
-              },
-            );
-            return true;
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", {
+              movementId,
+              formCode,
+              writtenAt,
+            });
+            const accepted = (outcome: Awaited<typeof completion>) => {
+              offerStep(
+                {
+                  success: `Form ${formCode} recorded`,
+                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+                  undone: "Form record undone.",
+                },
+                { completion: outcome },
+              );
+              return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
+            };
+            const unconfirmed = () =>
+              accepted({
+                commandId: "",
+                status: "failed",
+                message: "Save is not confirmed. Review the board before trying again.",
+              });
+            return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
         <ExtendSheet

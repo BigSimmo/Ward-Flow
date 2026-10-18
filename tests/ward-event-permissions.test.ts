@@ -273,6 +273,8 @@ describe("who may raise which event", () => {
      * `false` and NOTHING else — no role, no reason, no timestamp — so neither role can introduce
      * a false attribution, because the record makes none. That absence is a known limit, recorded
      * on the events themselves. Asserted directly in `tests/ward-urgent-flag.test.ts`. */
+    FLAG_MOVEMENT_TURNAROUND_PRIORITY: ["coordinator"],
+    FLAG_REFERRAL_TURNAROUND_PRIORITY: ["coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
     CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
     RECORD_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],

@@ -151,6 +151,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
 
   // 2.7 Urgency and gender flags
   CHANGE_URGENCY: { category: "patient", plainWording: "Clinical urgency priority changed" },
+  FLAG_MOVEMENT_TURNAROUND_PRIORITY: { category: "patient", plainWording: "Movement turnaround preference recorded" },
+  FLAG_REFERRAL_TURNAROUND_PRIORITY: { category: "patient", plainWording: "Referral turnaround preference recorded" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },

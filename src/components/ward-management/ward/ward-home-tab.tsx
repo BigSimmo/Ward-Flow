@@ -37,6 +37,7 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedDouble, LayoutGrid, List, ListChecks } from "lucide-react";
 import {
+  Button,
   buttonClass,
   Card,
   CardHead,
@@ -767,6 +768,7 @@ export function WardHomeTab({
 
   // Ward flow, Admissions: accepted arrivals first, then people due back from leave.
   type FlowRow = {
+    placement?: boolean;
     key: string;
     title: string;
     when?: string;
@@ -802,6 +804,7 @@ export function WardHomeTab({
         (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label),
       tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: canPull ? "Pull a bed" : "Open",
+      placement: canPull,
       primary: index === 0,
       blocked,
       run: canPull
@@ -1145,20 +1148,34 @@ export function WardHomeTab({
           ) : null}
         </span>
         {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
-        <button
-          type="button"
-          className={buttonClass({ variant: row.primary ? "pri" : "sec", size: "sm" })}
-          aria-disabled={row.blocked ? "true" : undefined}
-          title={row.blocked}
-          onClick={row.blocked ? ignoreUnavailableActivation : row.run}
-        >
-          {row.action}
-          <SrOnly>
-            {" "}
-            {row.title}
-            {row.blocked ? `. ${row.blocked}` : ""}
-          </SrOnly>
-        </button>
+        {row.placement ? (
+          <Button
+            variant="pri"
+            size="md"
+            data-placement-action
+            disabledReason={row.blocked}
+            reasonDisplay="tooltip"
+            onClick={row.run}
+          >
+            {row.action}
+            <SrOnly> {row.title}</SrOnly>
+          </Button>
+        ) : (
+          <button
+            type="button"
+            className={buttonClass({ variant: row.primary ? "pri" : "sec", size: "sm" })}
+            aria-disabled={row.blocked ? "true" : undefined}
+            title={row.blocked}
+            onClick={row.blocked ? ignoreUnavailableActivation : row.run}
+          >
+            {row.action}
+            <SrOnly>
+              {" "}
+              {row.title}
+              {row.blocked ? `. ${row.blocked}` : ""}
+            </SrOnly>
+          </button>
+        )}
       </li>
     );
   }
@@ -1376,14 +1393,15 @@ export function WardHomeTab({
                         ) : null}
 
                         <div className={styles.awaitingActions}>
-                          <button
+                          <Button
+                            variant="sec"
+                            size="md"
+                            data-placement-action
+                            disabledReason={blocked}
+                            reasonDisplay="tooltip"
                             type="button"
                             data-testid={`ward-decline-toggle-${movement.id}`}
-                            aria-disabled={blocked ? "true" : undefined}
-                            aria-describedby={blocked ? `ward-decline-unavailable-${movement.id}` : undefined}
-                            title={blocked ?? undefined}
                             aria-expanded={declineOpen}
-                            className={buttonClass({ variant: "sec", size: "sm" })}
                             onClick={
                               blocked
                                 ? ignoreUnavailableActivation
@@ -1393,14 +1411,15 @@ export function WardHomeTab({
                             }
                           >
                             Decline
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="pri"
+                            size="md"
+                            data-placement-action
+                            disabledReason={blocked}
+                            reasonDisplay="tooltip"
                             type="button"
                             data-testid={`ward-accept-${movement.id}`}
-                            aria-disabled={blocked ? "true" : undefined}
-                            aria-describedby={blocked ? `ward-accept-unavailable-${movement.id}` : undefined}
-                            title={blocked ?? undefined}
-                            className={buttonClass({ variant: "pri", size: "sm" })}
                             onClick={
                               blocked
                                 ? ignoreUnavailableActivation
@@ -1415,7 +1434,7 @@ export function WardHomeTab({
                             }
                           >
                             Accept in principle
-                          </button>
+                          </Button>
                         </div>
 
                         {blocked ? (
@@ -1468,24 +1487,23 @@ export function WardHomeTab({
                                 </label>
                               ))}
                             </fieldset>
-                            <button
-                              type="submit"
-                              aria-disabled={!canSubmitDecline(declineReason) || undefined}
-                              aria-describedby={
-                                !canSubmitDecline(declineReason)
-                                  ? `ward-decline-submit-reason-${movement.id}`
-                                  : undefined
+                            <Button
+                              variant="sec"
+                              size="md"
+                              data-placement-action
+                              disabledReason={
+                                !canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined
                               }
-                              title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
+                              reasonDisplay="tooltip"
+                              type="submit"
                               onClick={(event) => {
                                 if (!canSubmitDecline(declineReason)) {
                                   event.preventDefault();
                                 }
                               }}
-                              className={buttonClass({ variant: "sec", size: "sm" })}
                             >
                               Confirm decline
-                            </button>
+                            </Button>
                             {!canSubmitDecline(declineReason) ? (
                               <span id={`ward-decline-submit-reason-${movement.id}`} className="sr-only">
                                 {DECLINE_SUBMIT_UNAVAILABLE_REASON}

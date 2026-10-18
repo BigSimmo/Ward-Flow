@@ -6,7 +6,8 @@ import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-clie
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
-import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
+import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
@@ -646,7 +647,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
 export function WardFlowProvider({ children, initialNow, initialDayZero }: WardFlowProviderProps) {
   const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
   useEffect(() => {
-    clearWardFlowDraftCaches();
+    clearLegacySessionDrafts();
   }, []);
   /**
    * `null` until the mount effect below runs. While null, the world is the deterministic anchor
@@ -845,6 +846,7 @@ function WardFlowWorld({
       }
       const before = commandsRef.current.world;
       const next = wardFlowReducer(before, event);
+      if (before.worldGeneration !== next.worldGeneration) clearReferralDraftSession();
       commandsRef.current.world = next;
       dispatchContainer(event);
       broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
@@ -864,6 +866,9 @@ function WardFlowWorld({
   useLayoutEffect(() => {
     syncWorldGlobals(state);
   }, [state]);
+  useLayoutEffect(() => {
+    if (container.sessionAdopted) setDraftScenarioScope(`${state.scenario}/${state.worldGeneration}`);
+  }, [state.scenario, state.worldGeneration, container.sessionAdopted]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -1211,6 +1216,7 @@ function WardFlowWorld({
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
+      clearReferralDraftSession();
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",

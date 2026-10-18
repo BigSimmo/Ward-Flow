@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -98,6 +98,37 @@ function explicitIdentity(id: string) {
 }
 
 describe("the patient-now screen", () => {
+  it("opens and dismisses the on-demand arrival and document dialogs", async () => {
+    renderScreen({ movementId: "WF-004" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
+    fireEvent.click(screen.getByText("Arrival plan & transport documents"));
+    const arrivalAction = screen.getByTestId("ward-patient-update-arrival-btn");
+    arrivalAction.focus();
+    fireEvent.click(arrivalAction);
+    const arrivalDialog = await screen.findByRole("dialog", { name: "Update Arrival Time & Transport" });
+    // The shared modal contract enters the first control after the lazy chunk mounts.
+    await waitFor(() => expect(within(arrivalDialog).getByRole("button", { name: "Close dialog" })).toHaveFocus());
+    expect(within(arrivalDialog).getByRole("button", { name: "Save Arrival Plan" })).toBeInTheDocument();
+    fireEvent.click(within(arrivalDialog).getByRole("button", { name: "Close dialog" }));
+    expect(screen.queryByRole("dialog", { name: "Update Arrival Time & Transport" })).not.toBeInTheDocument();
+    await waitFor(() => expect(arrivalAction).toHaveFocus());
+
+    const documentAction = screen.getByTestId("ward-patient-upload-forms-btn");
+    documentAction.focus();
+    fireEvent.click(documentAction);
+    const documentDialog = await screen.findByRole("dialog", { name: "Record document details" });
+    await waitFor(() => expect(within(documentDialog).getByRole("button", { name: "Close dialog" })).toHaveFocus());
+    expect(within(documentDialog).getByRole("button", { name: "Record document details" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    fireEvent.click(within(documentDialog).getByRole("button", { name: "Close dialog" }));
+    expect(screen.queryByRole("dialog", { name: "Record document details" })).not.toBeInTheDocument();
+    await waitFor(() => expect(documentAction).toHaveFocus());
+  });
+
   it("keeps the status verdict and the gate that blocks together when switching records", () => {
     const { unmount } = renderScreen({ movementId: "WF-009" });
     expect(screen.getByTestId("ward-person-screen")).toHaveAttribute("data-patient-mode", "find");
