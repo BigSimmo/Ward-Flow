@@ -26,18 +26,19 @@ export function buzzKeys(requests: readonly BuzzKeySource[]): string[] {
 }
 
 /** Freeze legacy keys before retention changes their occurrence numbers. Both request producers
- * share the same creation sequence; the newest retained request keeps it advancing past the cap. */
+ * share a creation sequence within the world generation; it advances past the retention cap. */
 export function appendRefreshRequest(
   requests: readonly CapacityRefreshRequest[],
   request: Omit<CapacityRefreshRequest, "id">,
+  worldGeneration: number,
 ): CapacityRefreshRequest[] {
   const keys = buzzKeys(requests);
   const sequence = requests.reduce((maximum, entry) => {
-    const match = /^buzz:(\d+)$/.exec(entry.id ?? "");
+    const match = /^buzz:(?:\d+:)?(\d+)$/.exec(entry.id ?? "");
     return match ? Math.max(maximum, Number(match[1])) : maximum;
   }, 0);
   return [
     ...requests.map((entry, index) => (entry.id ? entry : { ...entry, id: keys[index] })),
-    { ...request, id: `buzz:${sequence + 1}` },
+    { ...request, id: `buzz:${worldGeneration}:${sequence + 1}` },
   ].slice(-500);
 }

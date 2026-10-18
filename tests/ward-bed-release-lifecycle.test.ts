@@ -888,7 +888,7 @@ describe("ward bed release lifecycle", () => {
     expect(next.rejections).toHaveLength(0);
     expect(next.refreshRequests).toHaveLength(1);
     expect(next.refreshRequests[0]).toEqual({
-      id: "buzz:1",
+      id: "buzz:0:1",
       unitId: "rph-adult-secure",
       at: NOW,
       byRole: "coordinator",

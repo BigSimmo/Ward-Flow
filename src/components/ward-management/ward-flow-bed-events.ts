@@ -625,11 +625,15 @@ export function reduceBedEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: appendRefreshRequest(state.refreshRequests, {
-          unitId: unit.id,
-          at: event.now,
-          byRole: event.role,
-        }),
+        refreshRequests: appendRefreshRequest(
+          state.refreshRequests,
+          {
+            unitId: unit.id,
+            at: event.now,
+            byRole: event.role,
+          },
+          state.worldGeneration,
+        ),
       };
     }
 

@@ -657,8 +657,9 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         referrals.push(referral);
   }
 
-  // Apply after grant expansion as well: community snapshots never carry typed criterion text.
-  if (access.role === "community") {
+  // Apply after grant expansion as well: community and count-only executive snapshots never
+  // carry typed criterion text. Both keep the same criterion count and tick times.
+  if (access.role === "community" || access.role === "executive") {
     admissions = admissions.map((admission) =>
       admission.dischargeCriteria
         ? { ...admission, dischargeCriteria: communityDischargeCriteria(admission.dischargeCriteria) }

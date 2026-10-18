@@ -354,7 +354,7 @@ export function nextDischargeCriteria(
   };
 }
 
-/** Community desks receive numbered typed-criterion placeholders, including on shared snapshots. */
+/** Numbered typed-criterion placeholders for community and count-only executive snapshots. */
 export function communityDischargeCriteria(
   record: DischargeCriteriaRecord | null | undefined,
 ): DischargeCriteriaRecord | null {

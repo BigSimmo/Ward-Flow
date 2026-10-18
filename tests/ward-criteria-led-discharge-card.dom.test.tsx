@@ -204,6 +204,22 @@ describe("criteria save confirmation (WF-026)", () => {
       expect(screen.getByRole("button", { name: "Save criteria" })).toBeEnabled();
     },
   );
+  it.each(["refused", "failed", "cancelled"] as const)(
+    "reports a %s save after edits without discarding the newer draft",
+    async (status) => {
+      const { finish, promise } = pending();
+      fireEvent.change(screen.getByTestId("ward-drawer-criteria-typed-1"), {
+        target: { value: "Newer synthetic draft" },
+      });
+      await act(async () => {
+        finish({ commandId: "criteria", status, message: "Earlier save was not confirmed" });
+        await promise;
+      });
+      expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Newer synthetic draft");
+      expect(screen.getByRole("alert")).toHaveTextContent("Earlier save was not confirmed");
+    },
+  );
+
   it("closes only after confirmation of the submitted draft", async () => {
     const { finish, promise, onChange } = pending();
     expect(onChange).toHaveBeenCalledOnce();

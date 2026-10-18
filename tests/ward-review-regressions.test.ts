@@ -9,6 +9,8 @@ import { STATEWIDE_COORDINATOR } from "@/components/ward-management/ward-role-ac
 import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+
 const NOW = 10_000;
 
 describe("retained buzz acknowledgement identity (WF-001)", () => {
@@ -36,6 +38,54 @@ describe("retained buzz acknowledgement identity (WF-001)", () => {
     expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
     const acknowledgedSurvivor = new Set([before[1]]);
     expect(after.filter((key) => acknowledgedSurvivor.has(key))).toEqual([before[1]]);
+  });
+
+  it.each(["RESET_SCENARIO", "SET_SCENARIO"] as const)(
+    "does not transfer an acknowledgement into a replacement world (%s)",
+    (type) => {
+      let state = seedWardFlowStateAt(0);
+      const command = {
+        type: "SEND_WARD_BUZZ",
+        role: "coordinator",
+        now: NOW,
+        unitId: state.units[0]!.id,
+        message: WARD_BUZZ_MESSAGES[0],
+      } as const;
+      state = wardFlowReducer(state, command);
+      const acknowledged = buzzKeys(state.refreshRequests)[0];
+      state = wardFlowReducer(
+        state,
+        type === "RESET_SCENARIO"
+          ? { type, role: "demo", now: NOW + 1 }
+          : { type, role: "demo", now: NOW + 1, scenario: "standard" },
+      );
+      expect(state.worldGeneration).toBe(1);
+      state = wardFlowReducer(state, { ...command, now: NOW + 2 });
+      expect(state.refreshRequests).toHaveLength(1);
+      expect(buzzKeys(state.refreshRequests)).not.toContain(acknowledged);
+    },
+  );
+
+  it("retains IDs from the first repair while advancing the new generation-aware sequence", () => {
+    let state = seedWardFlowStateAt(0);
+    const unitId = state.units[0]!.id;
+    state = { ...state, refreshRequests: [{ id: "buzz:8", unitId, at: NOW - 1, byRole: "coordinator" }] };
+    state = wardFlowReducer(state, { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: NOW, unitId });
+    expect(buzzKeys(state.refreshRequests)).toEqual(["buzz:8", "buzz:0:9"]);
+  });
+
+  it("rejects duplicate persisted identities while allowing legacy requests without an ID", () => {
+    const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0)));
+    const entry = { unitId: state.units[0].id, at: NOW, byRole: "coordinator" };
+    state.refreshRequests = [entry, { ...entry }];
+    expect(isValidSharedWardFlowState(state)).toBe(true);
+    state.refreshRequests = [
+      { ...entry, id: "buzz:0:1" },
+      { ...entry, id: "buzz:0:1" },
+    ];
+    expect(isValidSharedWardFlowState(state)).toBe(false);
+    state.refreshRequests[1].id = "buzz:0:2";
+    expect(isValidSharedWardFlowState(state)).toBe(true);
   });
 
   it("freezes legacy duplicate identities before either request producer trims them", () => {
@@ -70,9 +120,19 @@ describe("community criteria at the serialized snapshot boundary (WF-025)", () =
         id: "REF-CRITERIA-REVIEW",
         patientId: admission.patientId!,
         destinations: [
-          { destination: { kind: "community_team" as const, teamName: team.name }, state: "accepted" as const },
+          {
+            destination: {
+              kind: "community_team" as const,
+              teamName: grant ? COMMUNITY_TEAM_PAGES[1]!.name : team.name,
+            },
+            state: "accepted" as const,
+          },
         ],
       };
+      if (grant) {
+        const patient = state.patients.find((entry) => entry.id === admission.patientId)!;
+        patient.catchmentCommunityTeam = COMMUNITY_TEAM_PAGES[1]!.name;
+      }
       state.referrals.push(referral);
       admission.referralId = referral.id;
       admission.dischargeCriteria = {
@@ -89,6 +149,14 @@ describe("community criteria at the serialized snapshot boundary (WF-025)", () =
         ...(grant ? { grants: [{ patientId: admission.patientId!, until: NOW + 10 }] } : {}),
       };
       expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+      if (grant) {
+        const withoutGrant = scopeWardFlowState(
+          state,
+          { role: "community", scope: { kind: "team", teamName: team.name } },
+          { now: NOW, places: options.places },
+        ).state;
+        expect(withoutGrant.admissions.some((entry) => entry.id === admission.id)).toBe(false);
+      }
       const community = scopeWardFlowState(
         state,
         { role: "community", scope: { kind: "team", teamName: team.name } },
@@ -109,6 +177,7 @@ describe("community criteria at the serialized snapshot boundary (WF-025)", () =
             world,
             { role: "community", scope: { kind: "team", teamName: team.name } },
             new Date("2026-10-18T00:00:00Z"),
+            grant ? [{ patientId: admission.patientId!, until: new Date("2026-10-18T00:10:00Z") }] : [],
           ),
         ),
       ).not.toContain("Synthetic private criterion");
@@ -133,4 +202,33 @@ describe("community criteria at the serialized snapshot boundary (WF-025)", () =
       expect(admission.dischargeCriteria.items[1]!.criterion).toBe("Synthetic private criterion alpha");
     },
   );
+});
+
+it("keeps typed criteria out of both statewide and service executive count-only snapshots", () => {
+  const state = seedWardFlowStateAt(0);
+  const admission = state.admissions.find((entry) => entry.patientId !== null)!;
+  admission.dischargeCriteria = {
+    setAt: 1,
+    items: [
+      { criterion: "Accommodation confirmed", metAt: 2 },
+      { criterion: "Synthetic private executive criterion", metAt: null, patientSpecific: true },
+    ],
+  };
+  const service = unitHealthService(state.units.find((unit) => unit.id === admission.unitId)!)!;
+  for (const scope of [{ kind: "statewide" }, { kind: "service", service }] as const) {
+    const scoped = scopeWardFlowState(
+      state,
+      { role: "executive", scope },
+      { now: NOW, places: wardPlaceLookup(state.units) },
+    ).state;
+    expect(scoped.admissions.some((entry) => entry.id === admission.id)).toBe(true);
+    expect(JSON.stringify(scoped)).not.toContain("Synthetic private executive criterion");
+    expect(scoped.admissions.find((entry) => entry.id === admission.id)!.dischargeCriteria).toEqual({
+      setAt: 1,
+      items: [
+        { criterion: "Accommodation confirmed", metAt: 2 },
+        { criterion: "Patient specific criterion 1", metAt: null, patientSpecific: true },
+      ],
+    });
+  }
 });

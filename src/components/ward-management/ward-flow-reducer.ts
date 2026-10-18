@@ -2630,13 +2630,17 @@ export function reduceClinicalEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: appendRefreshRequest(state.refreshRequests, {
-          unitId: unit.id,
-          at: event.now,
-          byRole: event.role,
-          message: event.message,
-          urgent: event.urgent,
-        }),
+        refreshRequests: appendRefreshRequest(
+          state.refreshRequests,
+          {
+            unitId: unit.id,
+            at: event.now,
+            byRole: event.role,
+            message: event.message,
+            urgent: event.urgent,
+          },
+          state.worldGeneration,
+        ),
       };
     }
 
