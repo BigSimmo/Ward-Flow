@@ -75,16 +75,8 @@ export {
   unitCapacity,
   edMedicalTripBedRetention,
 } from "./ward-derivations-transport";
-export type {
-  TransportNeedState,
-  OrphanedTransport,
-  TransportLeg,
-  BedRetentionBasis,
-  BedRetentionDecision,
-} from "./ward-derivations-transport";
+export type { TransportLeg, BedRetentionBasis } from "./ward-derivations-transport";
 export {
-  isMoreRestrictiveThanRequired,
-  MORE_RESTRICTIVE_NOTE,
   restrictionNotice,
   eligibilityWarning,
   INFORMATIONAL_GATES,
@@ -93,19 +85,9 @@ export {
   blockingGate,
   eligibleCandidatesAmong,
 } from "./ward-derivations-shortlist";
-export type {
-  RestrictionNotice,
-  EligibilityWarning,
-  ShortlistAvailability,
-  ShortlistCandidate,
-} from "./ward-derivations-shortlist";
-export {
-  movementTimeline,
-  changeAudit,
-  MINIMUM_EFFECTIVENESS_SAMPLE,
-  effectivenessNumbers,
-} from "./ward-derivations-records";
-export type { ChangeAuditEntry, EffectivenessMeasure } from "./ward-derivations-records";
+export type { ShortlistCandidate } from "./ward-derivations-shortlist";
+export { changeAudit, MINIMUM_EFFECTIVENESS_SAMPLE, effectivenessNumbers } from "./ward-derivations-records";
+export type { ChangeAuditEntry } from "./ward-derivations-records";
 export { stageCopy };
 
 /** Same reason `stageCopy` exists: `BedReleaseState`'s own values (`BED_RELEASE_STATES` in

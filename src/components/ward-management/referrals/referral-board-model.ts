@@ -96,7 +96,7 @@ export function refusalLines(referral: Referral): string[] {
  * for that wording — never respelled here, which is exactly what keeps a cancelled destination
  * from ever being read as this service's own refusal.
  */
-export function cancelledLines(referral: Referral): string[] {
+function cancelledLines(referral: Referral): string[] {
   return cancelledAddressings(referral).map(
     (addressing) => `${referralDestinationLabel(addressing.destination)}: ${referralAddressingStateLabel(addressing)}`,
   );

@@ -56,7 +56,7 @@ import type { Dispatch, SetStateAction } from "react";
  * time later; on a busy night that gap is not small. "In department" is measured from triage and
  * must never be worded as arrival.
  */
-export function referralClockLines(referral: Referral, now: Instant): { department: string; referral: string } {
+function referralClockLines(referral: Referral, now: Instant): { department: string; referral: string } {
   const { sinceReferral, sinceReferralRunning, inDepartment } = referralClocks(referral, now);
   return {
     // `undefined` means not in the department yet — NEVER 0. "0m in department" reads as "just

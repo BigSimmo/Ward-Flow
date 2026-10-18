@@ -122,7 +122,7 @@ export function isPendingNavigation(href: string, current: string): boolean {
 }
 
 /** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
-export const NEW_REFERRAL_ACTION: WardPrimaryAction = {
+const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
   label: "New referral",
   menu: WARD_NEW_REFERRAL_MENU,

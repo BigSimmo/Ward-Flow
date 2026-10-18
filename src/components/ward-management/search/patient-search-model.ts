@@ -102,7 +102,7 @@ export function matchesTier(result: PatientSearchResult, tier: string): boolean 
   return `Tier ${urgency}` === tier;
 }
 
-export function matchesPatient(item: unknown, patientId: string): boolean {
+function matchesPatient(item: unknown, patientId: string): boolean {
   if (typeof item === "object" && item !== null) {
     return Reflect.get(item, "patientId") === patientId;
   }

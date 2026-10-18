@@ -14,7 +14,7 @@ import styles from "./movements.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LEG_STATE_LABEL, LEG_STATE_LEVEL, transportRouteLabels } from "./movements-screen-helpers";
 
-export function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[]; name: string }) {
+function TransportRow({ leg, units, name }: { leg: TransportLegRow; units: Unit[]; name: string }) {
   const movement = leg.movement;
   const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
 
@@ -35,7 +35,7 @@ export function TransportRow({ leg, units, name }: { leg: TransportLegRow; units
   );
 }
 
-export function UnacceptedTransportRow({ movement, units, name }: { movement: Movement; units: Unit[]; name: string }) {
+function UnacceptedTransportRow({ movement, units, name }: { movement: Movement; units: Unit[]; name: string }) {
   const transport = movement.transport;
   const cancelled = transport?.cancelledAt !== undefined;
   const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
@@ -65,7 +65,7 @@ export function UnacceptedTransportRow({ movement, units, name }: { movement: Mo
   );
 }
 
-export function NoTransportRecordRow({ movement, units, name }: { movement: Movement; units: Unit[]; name: string }) {
+function NoTransportRecordRow({ movement, units, name }: { movement: Movement; units: Unit[]; name: string }) {
   const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
   return (
     <WardRecordRow
@@ -84,7 +84,7 @@ export function NoTransportRecordRow({ movement, units, name }: { movement: Move
   );
 }
 
-export function ShapeMovementList({
+function ShapeMovementList({
   movements,
   now,
   referrals = [],

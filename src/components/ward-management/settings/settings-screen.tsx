@@ -133,13 +133,7 @@ import {
 import { SettingsTargetsColumn } from "./settings-targets-column";
 
 // Moved to `settings-screen-model.ts`; re-exported so existing importers keep working.
-export {
-  copySettingsDiagnostics,
-  maskDiagnosticMovement,
-  maskDiagnosticPatient,
-  type DiagnosticMovementInput,
-  type DiagnosticPatientInput,
-} from "./settings-screen-model";
+export { copySettingsDiagnostics, maskDiagnosticMovement, maskDiagnosticPatient } from "./settings-screen-model";
 
 /**
  * 🔴 **SETTINGS — AND THE ONE RULE THAT DECIDES WHAT IS ON IT: A CONTROL THAT WRITES STATE NOTHING
