@@ -48,6 +48,8 @@ export function WardDischargeCriteriaCard({
 }) {
   const [editing, setEditing] = useState(false);
   const draftRevision = useRef(0);
+  // Counts editor openings and cancels only, so a failure from an earlier session never reaches a reopened editor.
+  const editorSession = useRef(0);
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -67,6 +69,7 @@ export function WardDischargeCriteriaCard({
 
   const openEditor = () => {
     draftRevision.current += 1;
+    editorSession.current += 1;
     setSaveMessage(null);
     setChosen(items.map((item) => item.criterion).filter(isDischargeCriterion));
     setTyped(items.filter(isPatientSpecificItem).map((item) => item.criterion));
@@ -246,6 +249,7 @@ export function WardDischargeCriteriaCard({
                 onClick={() => {
                   if (savingRef.current) return;
                   const revision = draftRevision.current;
+                  const session = editorSession.current;
                   savingRef.current = true;
                   setSaving(true);
                   setSaveMessage(null);
@@ -257,6 +261,7 @@ export function WardDischargeCriteriaCard({
                       draftRevision.current += 1;
                       setEditing(false);
                     } else {
+                      if (editorSession.current !== session) return;
                       setSaveMessage(
                         result?.message ??
                           "Criteria were not confirmed saved. Your draft is still here. Review the board before trying again.",
@@ -284,6 +289,7 @@ export function WardDischargeCriteriaCard({
                 variant="ghost"
                 onClick={() => {
                   draftRevision.current += 1;
+                  editorSession.current += 1;
                   setEditing(false);
                 }}
               >
