@@ -92,9 +92,9 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["legalFormReceiptCorrections", history({ by: text, reason: text })],
   ["genderChanges", history({ by: text, to: text })],
   ["supersededExaminations", history({ outcome: text })],
-  ...["destinations", "corrections", "genderPlacements", "urgentFlagHistory", "uploadedForms"].map(
-    (key) => [key, records] as const,
-  ),
+  // Make Room and eligibility read `unitIds`; the tick is only ever stored as `true`.
+  ["genderPlacements", history({ by: text, unitIds: strings, reason: text, wardChecked: z.literal(true) })],
+  ...["destinations", "corrections", "urgentFlagHistory", "uploadedForms"].map((key) => [key, records] as const),
   ["legalForm", legalFormRule],
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
@@ -422,7 +422,11 @@ const leaveBed = z.looseObject({
   absentWithoutLeave: z.optional(absence),
 });
 
-const refreshRequest = z.looseObject({ unitId: text, at: finite, byRole: text });
+const refreshRequest = z.looseObject({ id: z.optional(text), unitId: text, at: finite, byRole: text });
+const distinctRefreshRequestIds = (rows: readonly { id?: string }[]) => {
+  const ids = rows.flatMap((row) => (row.id === undefined ? [] : [row.id]));
+  return new Set(ids).size === ids.length;
+};
 
 const auditEvent = z
   .looseObject({
@@ -591,7 +595,7 @@ const storedState = z.looseObject({
   rejections: empty,
   bedReleases: z.array(bedRelease).check(z.refine(distinctIds)),
   leaveBeds: z.array(leaveBed).check(z.refine(distinctIds)),
-  refreshRequests: z.array(refreshRequest),
+  refreshRequests: z.array(refreshRequest).check(z.refine(distinctRefreshRequestIds)),
   referrals: z.array(referral).check(z.refine(distinctIds)),
   patients: z.array(patient).check(z.refine(distinctIds)),
   admissions: z.array(admission).check(z.refine(distinctIds)),

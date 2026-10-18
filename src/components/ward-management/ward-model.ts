@@ -1293,6 +1293,8 @@ export const ED_OUTCOMES = ["for_discharge", "for_community_follow_up"] as const
 export type EdOutcome = (typeof ED_OUTCOMES)[number];
 
 export type CapacityRefreshRequest = {
+  /** Creation identity, retained through trimming and serialization; absent on legacy saves. */
+  id?: string;
   unitId: string;
   at: Instant;
   byRole: string;

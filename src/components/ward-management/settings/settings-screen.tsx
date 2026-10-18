@@ -375,7 +375,16 @@ export function SettingsScreen() {
     eventLog = [],
     readAuditEvents,
     patients,
-  } = useWardFlowSelect("movements", "rejections", "configuration", "eventLog", "readAuditEvents", "patients");
+    shared,
+  } = useWardFlowSelect(
+    "movements",
+    "rejections",
+    "configuration",
+    "eventLog",
+    "readAuditEvents",
+    "patients",
+    "shared",
+  );
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const thresholds = publishedThresholds(movements, now, configuration);
@@ -1392,7 +1401,11 @@ export function SettingsScreen() {
       ) : null}
       <WardPrototypeFooter
         testId="ward-settings-governance"
-        note="Synthetic records · Not approved for clinical use · Changes remembered for this browser only"
+        note={
+          shared?.enabled
+            ? "Synthetic records · Not approved for clinical use · Coordination rules are saved to the shared workspace. Appearance preferences apply to this browser."
+            : "Synthetic records · Not approved for clinical use · Coordination rules stay in this device's demo workspace. Appearance preferences apply to this browser."
+        }
       />
     </>
   );

@@ -242,7 +242,7 @@ describe("working-role changes", () => {
       const accepted = await client.dispatchConfirmed(event);
       expect(accepted.status).toBe("accepted");
       expect(accepted.isCurrent?.()).toBe(true);
-      await expect(client.dispatchConfirmed(event)).resolves.toMatchObject({ status: "cancelled" });
+      await expect(client.dispatchConfirmed(event)).resolves.toMatchObject({ status: "refused" });
       expect(accepted.isCurrent?.()).toBe(false);
       expect(commands).toBe(2);
       expect(role).toBeNull();
@@ -444,7 +444,7 @@ describe("refresh and role recovery completion", () => {
       },
     });
     await client.refresh();
-    await expect(client.dispatchConfirmed(event)).resolves.toMatchObject({ status: "cancelled" });
+    await expect(client.dispatchConfirmed(event)).resolves.toMatchObject({ status: "refused" });
     await vi.waitFor(() => expect(latest?.choices).toEqual(choices));
     expect(commands).toBe(1);
     expect(reads).toBe(2);
@@ -536,4 +536,65 @@ it("cancels an old Undo queued behind a reset before any POST can affect the rep
   ]);
   expect(posts[1]).not.toHaveProperty("reply");
   client.dispose();
+});
+
+describe("ancillary role gates while a save is in flight (WF-027)", () => {
+  it.each(["no-role", "choose-role", "stored-role-ended"])(
+    "preserves uncertainty for %s and cancels unsent work without replay",
+    async (gate) => {
+      const reply = deferred<Response>();
+      let commandPosts = 0;
+      const workingAsSet = vi.fn();
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: () => {},
+        // A stored role must be a UUID, or the client drops it before the role-ended branch runs.
+        ...(gate === "stored-role-ended"
+          ? { workingAs: { get: () => "550e8400-e29b-41d4-a716-446655440000", set: workingAsSet } }
+          : {}),
+        fetch: async (url) => {
+          if (String(url).endsWith("/commands")) {
+            commandPosts++;
+            return reply.promise;
+          }
+          if (String(url).endsWith("/push-key"))
+            return Response.json(
+              { code: gate === "choose-role" ? "choose-role" : "no-role", choices: [] },
+              { status: gate === "choose-role" ? 409 : 403 },
+            );
+          return Response.json({ snapshot: snapshot() });
+        },
+      });
+      try {
+        await client.refresh();
+        const first = client.dispatch(event);
+        await vi.waitFor(() => expect(commandPosts).toBe(1));
+        const queued = client.dispatch(event);
+        await client.pushKey().catch(() => {});
+        if (gate === "stored-role-ended") expect(workingAsSet).toHaveBeenCalledWith(null);
+        const outcome = await first;
+        expect(outcome).toMatchObject({ status: "failed", message: expect.stringMatching(/may have been applied/) });
+        await expect(queued).resolves.toMatchObject({ status: "cancelled" });
+        reply.resolve(Response.json({ snapshot: snapshot(2) }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await expect(first).resolves.toEqual(outcome);
+        expect(commandPosts).toBe(1);
+      } finally {
+        client.dispose();
+      }
+    },
+  );
+
+  it.each([403, 409])("keeps the command's own definitive role denial refused (%s)", async (status) => {
+    const { client } = setup(
+      Promise.resolve(Response.json({ code: status === 403 ? "no-role" : "choose-role", choices: [] }, { status })),
+    );
+    try {
+      await client.refresh();
+      await expect(client.dispatch(event)).resolves.toMatchObject({ status: "refused" });
+    } finally {
+      client.dispose();
+    }
+  });
 });

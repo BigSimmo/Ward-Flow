@@ -261,8 +261,19 @@ test("the sign-in check reads which accounts hold a role from the shared workspa
   assert.deepEqual(await roleHolders(), [nurse]);
 });
 
-test("a database adapter may supply its own createWorkspaceStore without loading postgres.mjs", async () => {
-  const config = readConfig(environment("postgres", "supabase"));
+test("an inherited database reader never replaces the built-in reader", () => {
+  const env = environment("postgres", "supabase");
+  delete env.WARD_POSTGRES_DATABASE_URL;
+  const inherited = Object.create({ postgres: () => null });
+  assert.throws(() => readConfig(env, { database: inherited }), /Invalid portable PostgreSQL configuration/);
+});
+
+test("a pool-free adapter supplies its configuration and store without a PostgreSQL URL or module", async () => {
+  const env = environment("postgres", "supabase");
+  delete env.WARD_POSTGRES_DATABASE_URL;
+  assert.throws(() => readConfig(env), /Invalid portable PostgreSQL configuration/);
+  const config = readConfig(env, { database: { postgres: () => null } });
+  assert.equal(config.postgres, null);
   let customStoreCalled = false;
   const customStore = {
     viewer: bootstrapViewer,

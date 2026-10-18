@@ -1599,7 +1599,11 @@ test.describe("@mockup Referral board — what survives onto paper", () => {
     // separate reason.
     // Option A (9 Oct 2026) shows the queue as a table on desktop again, so at this width the
     // table row's own button is the live one.
-    const rowButton = page.getByTestId(`ward-referral-board-select-${id}`);
+    // Next can retain a hidden route tree during navigation. Read this page's active main,
+    // then its queued table, so an off-screen copy cannot make the patient locator ambiguous.
+    const main = page.getByRole("main");
+    const table = main.getByTestId("ward-referral-board-queued-table");
+    const rowButton = table.getByTestId(`ward-referral-board-select-${id}`);
     await expect(rowButton).toBeVisible();
     // Option A names the row by the patient (D-39: a person, never an internal id), and that name
     // is the row button's own text.
@@ -1613,7 +1617,6 @@ test.describe("@mockup Referral board — what survives onto paper", () => {
      * its text reaches the page. Scoped to the table so the card's copy of the same name cannot
      * satisfy it — the two halves broke independently and must be provable independently.
      */
-    const table = page.getByTestId("ward-referral-board-queued-table");
     await expect(
       table.getByText(rowName, { exact: true }).first(),
       `the patient named on ${id}'s row is not on the printed sheet — the row's select button is hiding its own content`,

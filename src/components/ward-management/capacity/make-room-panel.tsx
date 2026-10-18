@@ -1,5 +1,8 @@
 "use client";
 
+import type { HealthService } from "../ward-model";
+import { unitHealthService } from "../ward-service-scope";
+
 import { ArrowRight, BedDouble, Check, Clock, Info } from "lucide-react";
 import { useMemo } from "react";
 
@@ -201,7 +204,7 @@ function PlanFooter({ chain }: { chain: MakeRoomChain }) {
  * could be freed by moving patients already marked for step down, as plan cards (option B, Josh
  * 17 Oct 2026). It only suggests: starting a plan is not wired yet.
  */
-export function MakeRoomPanel({ now }: { now: Instant }) {
+export function MakeRoomPanel({ now, service = null }: { now: Instant; service?: HealthService | null }) {
   const { admissions, units, movements, patients, referrals, bedReleases } = useWardFlowSelect(
     "admissions",
     "bedReleases",
@@ -223,8 +226,8 @@ export function MakeRoomPanel({ now }: { now: Instant }) {
         referrals,
         bedReleases,
         now,
-      }),
-    [preview, movements, patients, referrals, bedReleases, now],
+      }).filter((chain) => service === null || unitHealthService(chain.targetUnit) === service),
+    [preview, movements, patients, referrals, bedReleases, now, service],
   );
 
   return (
@@ -240,7 +243,7 @@ export function MakeRoomPanel({ now }: { now: Instant }) {
         </p>
         <p className={styles.previewNote}>Preview data: some wards are shown full so plans appear.</p>
         {chains.length === 0 ? (
-          <p className={styles.empty}>No waiting referral needs room made right now.</p>
+          <p className={styles.empty}>No eligible make-room plans available.</p>
         ) : (
           <ul className={styles.plans}>
             {chains.map((chain) => {

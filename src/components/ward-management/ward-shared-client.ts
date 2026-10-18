@@ -265,8 +265,17 @@ export class SharedWorkspaceClient {
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
       return new Error("Access denied");
     };
+    const settleForRoleGate = () => {
+      if (this.pending && body === this.pending)
+        this.settle(
+          this.pending.commandId,
+          "refused",
+          "Your working role ended. Review the board before trying again.",
+        );
+      this.cancelForRoleChange();
+    };
     const gate = (update: Partial<SharedView>) => {
-      this.cancelAll("Your working role changed. Review the board before trying again.");
+      settleForRoleGate();
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
       this.publish({ snapshot: null, eventLog: [], error: null, ...update });
@@ -283,7 +292,7 @@ export class SharedWorkspaceClient {
       if (body) {
         // Commands queued or awaiting retry were made under the ended role, so they go too. The desk
         // is cleared, so nothing more can be queued, and read again in full before any change.
-        this.cancelAll("Your working role changed. Review the board before trying again.");
+        settleForRoleGate();
         this.roleEpoch += 1;
         this.viewGeneration += 1;
         this.publish({ snapshot: null, eventLog: [] });

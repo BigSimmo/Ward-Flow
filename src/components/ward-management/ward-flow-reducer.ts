@@ -1,3 +1,4 @@
+import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
 import {
   movementHasOpenTurnaroundRequest,
@@ -2689,8 +2690,8 @@ export function reduceClinicalEvent(
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
         ...state,
-        refreshRequests: [
-          ...state.refreshRequests,
+        refreshRequests: appendRefreshRequest(
+          state.refreshRequests,
           {
             unitId: unit.id,
             at: event.now,
@@ -2698,7 +2699,8 @@ export function reduceClinicalEvent(
             message: event.message,
             urgent: event.urgent,
           },
-        ].slice(-500),
+          state.worldGeneration,
+        ),
       };
     }
 

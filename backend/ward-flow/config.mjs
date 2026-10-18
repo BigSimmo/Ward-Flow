@@ -24,7 +24,7 @@ const PLACEHOLDER_IDS = new Set([
   "00000000-0000-4000-8000-000000000001",
 ]);
 
-export function readConfig(env = process.env) {
+export function readConfig(env = process.env, dependencies = {}) {
   const databaseProvider = env.WARD_DATABASE_PROVIDER || DEFAULT_DATABASE_PROVIDER;
   const authProvider = env.WARD_AUTH_PROVIDER || DEFAULT_AUTH_PROVIDER;
   if (!Object.hasOwn(DATABASE_PROVIDERS, databaseProvider) || !Object.hasOwn(AUTH_PROVIDERS, authProvider))
@@ -55,7 +55,15 @@ export function readConfig(env = process.env) {
     throw new Error("Invalid coordinator configuration");
   let postgres = null;
   if (shared) {
-    postgres = DATABASE_PROVIDERS[databaseProvider](env);
+    // Custom stores can inject their own configuration reader alongside their runtime adapter.
+    // Normal startup always uses the built-in reader and its full URL validation.
+    // Own properties only: an inherited key must never stand in for a built-in reader.
+    const injected = dependencies.database;
+    const readDatabase =
+      injected && Object.hasOwn(injected, databaseProvider)
+        ? injected[databaseProvider]
+        : DATABASE_PROVIDERS[databaseProvider];
+    postgres = readDatabase(env);
     if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
       throw new Error("Invalid workspace configuration");
   }

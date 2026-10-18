@@ -1,5 +1,7 @@
 "use client";
 
+import type { WardCommandDispatch } from "../ward-shared-client";
+
 import React, { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
@@ -75,7 +77,7 @@ interface WardBedDossierDrawerProps {
   /** Top 25 item 9 (D-60): set when the criteria led discharge flag is on. */
   criteriaEligibility?: CriteriaEligibility;
   /** Records the stay's discharge criteria (`SET_DISCHARGE_CRITERIA`). Absent when the role cannot. */
-  onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => void;
+  onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
 }
 
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
