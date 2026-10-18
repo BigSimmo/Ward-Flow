@@ -213,3 +213,162 @@ describe("referral recovery projection validation", () => {
     expect(window.sessionStorage.getItem(key)).toBeNull();
   });
 });
+
+import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  referralRecoverySaved,
+  referralDraftSessionVersion,
+} from "@/components/ward-management/referrals/referral-draft-cache";
+
+describe("single referral draft session ownership", () => {
+  beforeEach(() => {
+    clearReferralDraftSession();
+    window.sessionStorage.clear();
+  });
+
+  it("moves a generic draft to its named key without leaving a second recoverable copy after discard", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    keepReferralDraft(draft, undefined, genericKey);
+    expect(readKeptReferralDraft(namedKey)).toEqual(draft);
+    keepReferralDraft({ ...draft, doctorNote: "Synthetic updated draft" }, undefined, namedKey);
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readSessionDraft(namedKey)).not.toBeNull();
+    discardReferralDraft(); // Both accepted Send and Discard use this same cleanup.
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(readKeptReferralDraft(genericKey)).toBeNull();
+  });
+
+  it("settles the prior owner when restoring an already-persisted named copy", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    keepReferralDraft(draft, undefined, genericKey);
+    const recovered = { ...draft, doctorNote: "Synthetic recovered update" };
+    writeSessionDraft(namedKey, JSON.stringify(recovered), draftSessionVersion());
+    expect(readKeptReferralDraft(namedKey)).toEqual(recovered);
+    expect(readSessionDraft(genericKey)).toBeNull();
+    discardReferralDraft();
+    expect(readSessionDraft(namedKey)).toBeNull();
+  });
+
+  it("retains the named memory draft when its first session write is unavailable", () => {
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    try {
+      keepReferralDraft(draft, undefined, namedKey);
+      expect(referralRecoverySaved()).toBe(false);
+      expect(readKeptReferralDraft(namedKey)).toEqual(draft);
+      expect(readSessionDraft(namedKey)).toBeNull();
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it("retains the last recoverable copy on migration failure and clears it on discard", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    keepReferralDraft(draft, undefined, genericKey);
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    const edited = { ...draft, doctorNote: "Synthetic unsaved update" };
+    try {
+      expect(keepReferralDraft(edited, undefined, namedKey)).toBe(true);
+      expect(referralRecoverySaved()).toBe(false);
+      expect(readKeptReferralDraft()).toEqual(edited);
+      expect(readSessionDraft(genericKey)).not.toBeNull();
+      expect(readSessionDraft(namedKey)).toBeNull();
+    } finally {
+      setItem.mockRestore();
+    }
+    discardReferralDraft();
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readKeptReferralDraft(genericKey)).toBeNull();
+  });
+
+  it("retires the previous key after a failed migration later succeeds", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    keepReferralDraft(draft, undefined, genericKey);
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    try {
+      keepReferralDraft(draft, undefined, namedKey);
+    } finally {
+      setItem.mockRestore();
+    }
+    keepReferralDraft(draft, undefined, namedKey);
+    expect(referralRecoverySaved()).toBe(true);
+    expect(readSessionDraft(genericKey)).toBeNull();
+    discardReferralDraft();
+    expect(readSessionDraft(namedKey)).toBeNull();
+  });
+  it("resets both draft owners and refuses the outgoing session after a failed transfer", () => {
+    const genericKey = sessionDraftKey("demo/0", "referral", "new");
+    const namedKey = sessionDraftKey("demo/0", "referral", "PT-023");
+    const owner = referralDraftSessionVersion();
+    const draft = completeDraft();
+    keepReferralDraft(draft, owner, genericKey);
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    try {
+      keepReferralDraft(draft, owner, namedKey);
+    } finally {
+      setItem.mockRestore();
+    }
+    clearReferralDraftSession(); // Account termination and scenario replacement share this boundary.
+    expect(readKeptReferralDraft()).toBeNull();
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(keepReferralDraft(draft, owner, genericKey)).toBe(false);
+    const nextKey = sessionDraftKey("demo/1", "referral", "PT-023");
+    keepReferralDraft(draft, undefined, nextKey);
+    expect(readSessionDraft(nextKey)).not.toBeNull();
+    discardReferralDraft();
+    expect(readSessionDraft(nextKey)).toBeNull();
+  });
+  it("clears a matching preexisting generic alias after the named draft is restored and discarded", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    writeSessionDraft(genericKey, JSON.stringify(draft), draftSessionVersion());
+    writeSessionDraft(namedKey, JSON.stringify(draft), draftSessionVersion());
+    readKeptReferralDraft(namedKey); // A refresh starts with no in-memory previous owner.
+    discardReferralDraft();
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readKeptReferralDraft(genericKey)).toBeNull();
+  });
+
+  it.each(["different patient", "different scenario"])(
+    "retains a generic draft for a %s during named cleanup",
+    (difference) => {
+      const genericKey = sessionDraftKey(
+        difference === "different scenario" ? "other-demo" : "demo",
+        "referral",
+        "new",
+      );
+      const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+      const named = completeDraft();
+      const generic = {
+        ...named,
+        activePatientKey: difference === "different patient" ? "patient:PT-024" : named.activePatientKey,
+      };
+      writeSessionDraft(genericKey, JSON.stringify(generic), draftSessionVersion());
+      writeSessionDraft(namedKey, JSON.stringify(named), draftSessionVersion());
+      readKeptReferralDraft(namedKey);
+      discardReferralDraft();
+      expect(readSessionDraft(namedKey)).toBeNull();
+      expect(JSON.parse(readSessionDraft(genericKey)!)).toEqual(generic);
+    },
+  );
+});

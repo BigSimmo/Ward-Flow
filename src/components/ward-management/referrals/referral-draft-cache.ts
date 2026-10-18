@@ -21,6 +21,13 @@ export function referralDraftSessionVersion(): number {
   return referralDraftMemory.sessionVersion;
 }
 
+/** One recoverable copy follows the memory draft, including when a generic sheet gains a subject key. */
+function adoptRecoveryStorageKey(storageKey: string): void {
+  const previousKey = referralDraftMemory.recoveryStorageKey;
+  if (previousKey && previousKey !== storageKey) removeSessionDraft(previousKey);
+  referralDraftMemory.recoveryStorageKey = storageKey;
+}
+
 export function keepReferralDraft<T>(
   draft: T,
   ownerVersion = referralDraftMemory.sessionVersion,
@@ -43,6 +50,8 @@ export function keepReferralDraft<T>(
       JSON.stringify(projection),
       draftSessionVersion(),
     );
+    // A failed write keeps the last recoverable copy owned, so retry or Discard can settle it.
+    if (referralDraftMemory.recoverySaved) adoptRecoveryStorageKey(storageKey);
   }
   referralDraftMemory.kept = draft;
   referralDraftMemory.keptAtMs = Date.now();
@@ -67,6 +76,7 @@ export function readKeptReferralDraft<T>(storageKey?: string): T | null {
     }
     referralDraftMemory.kept = value;
     referralDraftMemory.keptStorageKey = storageKey;
+    adoptRecoveryStorageKey(storageKey);
     referralDraftMemory.keptAtMs = Date.now();
     return value as T;
   } catch {
@@ -79,10 +89,36 @@ export function readKeptReferralDraftAt(): number | null {
   return referralDraftMemory.kept === null ? null : referralDraftMemory.keptAtMs;
 }
 
+/** Retire only this person's old generic alias, when the user sends or discards the named draft. */
+function clearMatchingGenericAlias(): void {
+  const storageKey = referralDraftMemory.keptStorageKey ?? referralDraftMemory.recoveryStorageKey;
+  const current = referralDraftMemory.kept as { activePatientKey?: unknown } | null;
+  if (!storageKey || typeof current?.activePatientKey !== "string") return;
+  const genericKey = storageKey.slice(0, storageKey.lastIndexOf(":") + 1) + "new";
+  if (genericKey === storageKey) return;
+  const raw = readSessionDraft(genericKey);
+  if (raw === null) return;
+  try {
+    const alias: unknown = JSON.parse(raw);
+    if (isRecoverableReferralDraft(alias) && alias.activePatientKey === current.activePatientKey)
+      removeSessionDraft(genericKey);
+  } catch {
+    // An unowned malformed alias cannot establish that it belongs to this person's draft.
+  }
+}
+
 /** A null owner never discards: a sheet that did not write the kept draft must not clear it. */
 export function discardReferralDraft(ownerVersion: number | null = referralDraftMemory.sessionVersion): boolean {
   if (ownerVersion === null || ownerVersion !== referralDraftMemory.sessionVersion) return false;
-  if (referralDraftMemory.keptStorageKey) removeSessionDraft(referralDraftMemory.keptStorageKey);
+  clearMatchingGenericAlias();
+  if (referralDraftMemory.recoveryStorageKey) removeSessionDraft(referralDraftMemory.recoveryStorageKey);
+  if (
+    referralDraftMemory.keptStorageKey &&
+    referralDraftMemory.keptStorageKey !== referralDraftMemory.recoveryStorageKey
+  )
+    removeSessionDraft(referralDraftMemory.keptStorageKey);
+  referralDraftMemory.keptStorageKey = undefined;
+  referralDraftMemory.recoveryStorageKey = undefined;
   referralDraftMemory.kept = null;
   referralDraftMemory.keptAtMs = null;
   return true;
