@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { selectedScripts, validateSelectedScripts } from "../scripts/verify-pr-local.mjs";
-import { arbitrate, deriveCiCoverage } from "../scripts/gate-arbiter.mjs";
 describe("actual Ward local verification plan", () => {
   it("checks maintained links, current architecture and inventory for every acceptance scope", () => {
     for (const file of ["README.md", "AGENTS.md", "src/app/page.tsx", "backend/ward-flow/backend.test.mjs"])
@@ -25,23 +24,5 @@ describe("actual Ward local verification plan", () => {
   it("selects browser coverage in the default and extended plans without a second ladder", () => {
     const scope = { entries: [{ file: "src/app/page.tsx", status: "M" }] };
     expect(selectedScripts(scope)).toEqual(selectedScripts(scope, true));
-  });
-  it("does not infer equivalent hosted CI from the Ward workflow or consult provider/yield evidence", () => {
-    const consultation = vi.fn();
-    const overrides = {
-      get ciVerdict() {
-        consultation();
-        return { proven: false };
-      },
-      get ledger() {
-        consultation();
-        return { observations: {}, ci: {} };
-      },
-    };
-    const result = arbitrate({ projectRoot: process.cwd(), gate: "test", overrides });
-    expect(result.action).toBe("run");
-    expect(result.reason).toMatch(/equivalence unproven/);
-    expect(consultation).not.toHaveBeenCalled();
-    expect(deriveCiCoverage(process.cwd(), "test").covered).toBe(false);
   });
 });

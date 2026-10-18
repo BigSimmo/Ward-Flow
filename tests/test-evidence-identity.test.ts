@@ -8,7 +8,6 @@ import {
   testEnvironmentIdentity,
 } from "../scripts/test-evidence-identity.mjs";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
-import { consultGateReceipt } from "../scripts/gate-receipts.mjs";
 const roots: string[] = [];
 afterEach(() => roots.splice(0).forEach((root) => removePathSync(root, { recursive: true })));
 describe("test outcome input identity", () => {
@@ -45,14 +44,5 @@ describe("test outcome input identity", () => {
     expect(installedToolchainIdentity(root)).not.toBe(initial);
     expect(fullGateInputIdentity(options)).not.toBe(before);
     expect(() => fullGateInputIdentity({ ...options, dependencyIdentity: null })).toThrow(/unavailable/);
-  });
-  it("never treats install metadata or ambient environment as trustworthy narrow receipt input", () => {
-    const decision = consultGateReceipt({
-      projectRoot: process.cwd(),
-      gate: "vitest",
-      env: { GATE_DEPENDENCY_IDENTITY: "claimed-immutable" },
-    });
-    expect(decision.reuse).toBe(false);
-    expect(decision.reason).toMatch(/dependency byte identity unavailable/);
   });
 });

@@ -13,7 +13,7 @@
  * dirs), not every file — the index maps modules by theme, so per-file coverage
  * would be pure noise.
  *
- * Run: `npm run docs:check-index`. Blocking — runs in `verify:cheap:internal` and in
+ * Run: `npm run docs:check-index`. Blocking — runs in `verify:cheap` and in
  * CI (`.github/workflows/ward-flow.yml`). Only maintained Ward sections establish
  * coverage; historical path mentions never satisfy the current map. Exit 1 on gaps.
  */

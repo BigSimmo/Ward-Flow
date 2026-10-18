@@ -117,7 +117,6 @@ export const isUnitTestFile = isOfflineUnitTestFile;
  */
 export const TOOLING_TESTS = [
   "tests/ci-cache-safety.test.ts",
-  "tests/dependency-drift-check.test.ts",
   "tests/guard-push.test.ts",
   "tests/playwright-exit-code-contract.test.ts",
   "tests/pre-commit-checks.test.ts",
@@ -129,10 +128,7 @@ export const TOOLING_TESTS = [
   "tests/ward-expected-reds-summary.test.ts",
   "tests/ward-full-gate-recheck.test.ts",
   "tests/ward-gate-build-flag.test.ts",
-  "tests/ward-mutation-harness-reachable.test.ts",
-  "tests/ward-mutation-tooling.test.ts",
   "tests/ward-organisation-core.test.ts",
-  "tests/ward-run-slot.test.ts",
   "tests/ward-run-ward-tests-skips.test.ts",
   "tests/ward-source-control-chars-gate.test.ts",
 ];

@@ -654,6 +654,167 @@
       "after": 0,
       "reason": "Retired describe.skip suite deleted on 16 Oct 2026 together with the unreferenced ward-chrome-header.tsx and ward-chrome-header.module.css components. The live WardCommandBar replaced WardChromeHeader across all screens and is covered by its own active test suites.",
       "approvedOn": "2026-10-16"
+    },
+    {
+      "path": "tests/clean-worktree.test.ts",
+      "before": 20,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/clean-worktree.mjs and scripts/worktree-inventory.mjs (worktree reports), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/dependency-drift-check.test.ts",
+      "before": 17,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/check-dependency-drift.mjs (an import-closure report nothing ran), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/dependency-report.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/dependency-report.mjs (a digest for a dependency cron that no longer exists; the dependency audit workflow runs npm audit directly), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/final-merge-audit.test.ts",
+      "before": 10,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/final-merge-audit.mjs (final-merge audit), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/flake-ledger.test.ts",
+      "before": 9,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/flake-ledger.mjs and scripts/classify-playwright-failures.mjs (flake ledger), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/gate-arbiter.test.ts",
+      "before": 42,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/gate-arbiter.mjs (advisory gate arbiter), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/gate-receipts.test.ts",
+      "before": 34,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/gate-receipts.mjs (local gate receipts that let a repeated run skip), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/merge-loss-audit.test.ts",
+      "before": 29,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/audit-merge-loss.mjs (merge-loss audit), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/public-startup-boundary.test.ts",
+      "before": 7,
+      "after": 4,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/check-base-freshness.mjs (advisory stale-base tripwire); the three freshness cases went, the four sign-out and pre-commit ownership cases stay, was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/test-evidence-identity.test.ts",
+      "before": 3,
+      "after": 2,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/gate-receipts.mjs; only the receipt case went, the two identity cases for the kept unit gate stay, was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/vitest-result-reuse.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, the receipt-reuse rule vitestRunIsMemoisable in scripts/run-vitest.mjs, removed with gate receipts, was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-drawing-rules.test.ts",
+      "before": 15,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/check-drawing-rules.mjs (a checker for historical HTML drawings that nothing ran on a real drawing), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-mutation-harness-reachable.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/mutation-run.mjs (mutation runs), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-mutation-tooling.test.ts",
+      "before": 10,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/mutate.mjs (mutation runs), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-ready-check-remote-boundary.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/ready-check.mjs (legacy READY compatibility helper), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-ready-fail-fast.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/ready-check.mjs (legacy READY compatibility helper), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-run-slot.test.ts",
+      "before": 11,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/run-slot.mjs (PC run slots), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-select-fold-gate.test.ts",
+      "before": 10,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/select-fold-gate.mjs and ready-check.mjs (fold-gate selection), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-selector-default-base.test.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/select-fold-gate.mjs and select-journeys.mjs (fold-gate and journey selectors), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-test-batch.test.ts",
+      "before": 22,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/ward-flow/test-batch.mjs (receipt-backed test batches), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-verification-plan.test.ts",
+      "before": 4,
+      "after": 3,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/gate-arbiter.mjs; only the arbiter case went, the three verify-pr-local plan cases stay, was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/worktree-cleanup.test.ts",
+      "before": 26,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/worktree-cleanup.mjs (orphan worktree cleanup), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/worktree-inventory.test.ts",
+      "before": 14,
+      "after": 0,
+      "reason": "Tooling clean-up (item 21, 18 October 2026): the subject of these cases, scripts/worktree-inventory.mjs (worktree inventory), was retired because no CI job, git hook, kept script or rule document's safeguard depended on it. No product behaviour or safety gate lost coverage.",
+      "approvedOn": "2026-10-18"
     }
   ]
 }

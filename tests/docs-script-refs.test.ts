@@ -33,7 +33,6 @@ describe("instruction continuation coverage", () => {
     const text = readFileSync("PROJECT-INSTRUCTIONS-CONTINUATION.md", "utf8");
     const pkg = parsePackageScripts(readFileSync("package.json", "utf8"));
     const refs = extractScriptRefs(stripHistoricalSections(text));
-    expect(refs).toContain("sync:pr-branches");
     expect(findStaleRefs(refs, pkg)).toEqual([]);
   });
 });

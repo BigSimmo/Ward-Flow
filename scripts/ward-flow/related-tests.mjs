@@ -28,9 +28,8 @@ const base = args.includes("--base") ? args[args.indexOf("--base") + 1] : LINE;
 const dryRun = args.includes("--dry-run");
 // --head <ref>: judge a committed range instead of this worktree (for checking the selection).
 const head = args.includes("--head") ? args[args.indexOf("--head") + 1] : null;
-// --root <dir>: select and run in an exported tree (ready-check's merged tree) instead of this
-// checkout. Changed files still come from git here; vitest runs directly in that folder, with 2
-// workers, because the caller already holds a run slot.
+// --root <dir>: select and run in another tree (CI passes `.`) instead of this checkout. Changed
+// files still come from git here; vitest runs directly in that folder, with 2 workers.
 const rootArg = args.includes("--root") ? args[args.indexOf("--root") + 1] : null;
 const gitRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const root = rootArg ? path.resolve(rootArg) : gitRoot;
@@ -180,7 +179,7 @@ console.log("related-tests: also run your type check: node scripts/ward-flow/gat
 process.exit(rootArg ? onlyExpectedReds() : (result.status ?? 1));
 
 /**
- * In --root mode (ready-check's merged tree), a red that is on the expected-reds manifest is the
+ * In --root mode, a red that is on the expected-reds manifest is the
  * baseline: require the same failure count and assertion/message signatures in the selected set.
  * Recovery, replacement failures, collection loss and abnormal exits fail. Anything else,
  * or a missing report, fails.

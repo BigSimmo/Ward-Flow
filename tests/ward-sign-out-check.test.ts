@@ -107,6 +107,23 @@ describe("ward sign-out-check", () => {
     expect(result.stdout).toContain("no clash for 1 file(s)");
   });
 
+  it("falls back to main when the legacy line branch is absent, as in a fresh clone", () => {
+    git("branch", "-m", "codex/task-ward-flow-live-state-20260831", "main");
+    const result = run("file.ts");
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("no clash for 1 file(s)");
+    writeFileSync(signOut, claim("file.ts"));
+    expect(run("file.ts").status).toBe(1);
+  });
+
+  it("fails closed when no line exists to compare branches against", () => {
+    git("branch", "-m", "codex/task-ward-flow-live-state-20260831", "fixture/base");
+    const result = run("file.ts");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("no line to compare task branches against");
+    expect(result.stdout).not.toContain("no clash");
+  });
+
   it("blocks active claims and permits an explicit release", () => {
     writeFileSync(signOut, claim("file.ts"));
     expect(run("file.ts").status).toBe(1);
