@@ -1,7 +1,7 @@
 "use client";
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { type Dispatch, type ReactNode } from "react";
+import { useState, type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -29,6 +29,7 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatUmrn } from "@/components/ward-management/ward-patients";
+import { unitHasLockedBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   candidateAccepts,
   COMMUNITY_DECLINE_REASON_LABELS,
@@ -49,7 +50,7 @@ import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./ref
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
-import { StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import {
   GATE_LABELS,
   DECLINE_REASON_UNCHOSEN,
@@ -63,6 +64,16 @@ import { BandGroup, MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
 import { renderReferralMatchTiers } from "./referral-match-tiers";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import {
+  movementHasOpenTurnaroundRequest,
+  referralHasOpenTurnaroundRequest,
+  turnaroundEligibilityAllows,
+  unitTurnaroundSource,
+} from "@/components/ward-management/ward-turnaround-priority";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
 const NO_RELEASES: readonly BedRelease[] = [];
@@ -120,8 +131,25 @@ export function ReferralMatchView({
   admissions = NO_ADMISSIONS,
   bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
-  // Every hook this view has is called inside `useReferralMatchState`, above every early return below.
+  // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases", "referrals");
+  const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
+  const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
+  const turnaroundRejection =
+    turnaroundRejectionStart !== null && rejections.length > turnaroundRejectionStart
+      ? rejections
+          .slice(turnaroundRejectionStart)
+          .findLast(
+            (rejection) =>
+              (rejection.attempted === "FLAG_MOVEMENT_TURNAROUND_PRIORITY" ||
+                rejection.attempted === "FLAG_REFERRAL_TURNAROUND_PRIORITY") &&
+              (rejection.movementId === referral.id ||
+                turnaroundState?.movements.some(
+                  (movement) => movement.referralId === referral.id && movement.id === rejection.movementId,
+                )),
+          )
+      : undefined;
   const {
     bandGroupsOpenByDefault,
     declineReason,
@@ -194,10 +222,86 @@ export function ReferralMatchView({
     groupedUnitCount > 0 && notRecordedIndex >= 0 && bandGroupCounts[notRecordedIndex].units === groupedUnitCount;
 
   const tier1Candidates = candidates.filter(candidateAccepts);
+  const linkedMovements = turnaroundState?.movements.filter((movement) => movement.referralId === referral.id) ?? [];
+  const linkedMovement =
+    linkedMovements.find((movement) => !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId) ??
+    linkedMovements[0];
+  const turnaroundForUnit = (unitId: string) => {
+    if (!turnaroundState) return { disabledReason: "Live referral and movement records are unavailable." };
+    if (
+      linkedMovements.filter(
+        (movement) => !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId,
+      ).length > 1
+    )
+      return { disabledReason: "Multiple linked movements require coordinator review." };
+    if (
+      linkedMovement &&
+      (linkedMovement.closure || linkedMovement.stage === "arrived" || linkedMovement.acceptedUnitId)
+    )
+      return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
+    const targetUnit = units.find((unit) => unit.id === unitId);
+    const openRequest = linkedMovement
+      ? movementHasOpenTurnaroundRequest(turnaroundState, linkedMovement, unitId)
+      : referralHasOpenTurnaroundRequest(referral, unitId);
+    if (!openRequest)
+      return { disabledReason: "Turnaround preference requires an open request for this receiving unit." };
+    if (linkedMovement) {
+      if (targetUnit) {
+        const movementVerdict = eligibility(linkedMovement, targetUnit, now);
+        if (!turnaroundEligibilityAllows(movementVerdict, targetUnit)) {
+          const blockedGate = movementVerdict.gates.find(
+            (gate) =>
+              !gate.pass &&
+              gate.gate !== "allocatable_bed" &&
+              gate.gate !== "capacity_freshness" &&
+              !(gate.gate === "security" && unitHasLockedBeds(targetUnit)),
+          );
+          return {
+            disabledReason:
+              blockedGate?.detail ?? "The receiving unit's clinical and legal gates must allow this movement.",
+          };
+        }
+      } else {
+        return { disabledReason: "The receiving unit is unavailable." };
+      }
+    }
+    const source = unitTurnaroundSource(turnaroundState, unitId, now, cldEnabled);
+    if (!source)
+      return { disabledReason: "No current CLD-ready admission or unblocked confirmed departure on this unit." };
+    const preference = linkedMovement?.turnaroundPriority ?? (linkedMovement ? undefined : referral.turnaroundPriority);
+    if (preference?.unitId === unitId && preference.source === source)
+      return {
+        disabledReason: "Turnaround preference already recorded for this unit.",
+        recordedSource: source,
+        source,
+      };
+    return { source };
+  };
+  const raise = wardRaise(dispatch, "coordinator", now);
+  const handleFlagTurnaround = (unitId: string) => {
+    const { disabledReason, source } = turnaroundForUnit(unitId);
+    if (disabledReason || !source) return;
+    setTurnaroundRejectionStart(rejections.length);
+    if (linkedMovement) {
+      raise("FLAG_MOVEMENT_TURNAROUND_PRIORITY", { movementId: linkedMovement.id, unitId, source });
+    } else {
+      raise("FLAG_REFERRAL_TURNAROUND_PRIORITY", { referralId: referral.id, unitId, source });
+    }
+  };
   const tier2Candidates = candidates.filter(
     (c) =>
       !candidateAccepts(c) &&
-      c.verdict.gates.every((g) => (g.gate === "allocatable_bed" || g.gate === "capacity_freshness" ? true : g.pass)),
+      c.verdict.gates.every(
+        (g) =>
+          g.pass ||
+          g.gate === "allocatable_bed" ||
+          g.gate === "capacity_freshness" ||
+          // A clearing locked bed permits staging only. Immediate placement still fails the original verdict.
+          (g.gate === "security" &&
+            unitHasLockedBeds(c.unit) &&
+            turnaroundState &&
+            unitTurnaroundSource(turnaroundState, c.unit.id, now, cldEnabled) !== null),
+      ),
   );
   const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
 
@@ -555,14 +659,16 @@ export function ReferralMatchView({
     communityAddressing && communityAddressing.state === "queued" && communityAddressing.withdrawnAt === undefined ? (
       <>
         <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
-          <button
+          <Button
+            variant="pri"
+            size="md"
+            data-placement-action
             type="button"
-            className={styles.acceptButton}
             data-testid="ward-referral-match-accept-community_team"
             onClick={handleCommunityAccept}
           >
             Accept referral
-          </button>
+          </Button>
         </div>
         <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
           <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
@@ -589,19 +695,18 @@ export function ReferralMatchView({
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="sec"
+            size="md"
+            data-placement-action="decline"
+            disabledReason={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
+            reasonDisplay="tooltip"
             type="button"
-            className={styles.declineButton}
             data-testid="ward-referral-match-decline-community_team"
-            aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
-            aria-describedby={
-              communityDeclineReason === undefined ? "ward-referral-match-decline-blocked-community_team" : undefined
-            }
-            title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
             onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
           >
             Decline referral
-          </button>
+          </Button>
           {communityDeclineReason === undefined ? (
             <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
               {DECLINE_REASON_UNCHOSEN_COMMUNITY}
@@ -620,9 +725,11 @@ export function ReferralMatchView({
           data-testid="ward-referral-match-accept-controls-emergency_department"
         >
           {!edAcceptConfirmOpen ? (
-            <button
+            <Button
+              variant="pri"
+              size="md"
+              data-placement-action
               type="button"
-              className={styles.acceptPresentationBtn}
               data-testid="ward-referral-match-accept-emergency_department"
               onClick={() => setEdAcceptConfirmOpen(true)}
             >
@@ -640,17 +747,19 @@ export function ReferralMatchView({
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <span>Accept presentation</span>
-            </button>
+            </Button>
           ) : (
-            <div className={styles.confirmGroup}>
-              <button
+            <div className={styles.confirmActionRow}>
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
                 type="button"
-                className={styles.confirmAcceptBtn}
                 data-testid="ward-referral-match-confirm-accept-emergency_department"
                 onClick={handleEdAccept}
               >
                 Confirm acceptance
-              </button>
+              </Button>
               <button
                 type="button"
                 className={styles.cancelBtn}
@@ -688,15 +797,14 @@ export function ReferralMatchView({
                 </option>
               ))}
             </select>
-            <button
+            <Button
+              variant="sec"
+              size="md"
+              data-placement-action="decline"
+              disabledReason={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+              reasonDisplay="tooltip"
               type="button"
-              className={styles.declineButton}
               data-testid="ward-referral-match-decline-emergency_department"
-              aria-disabled={edDeclineReason === undefined ? "true" : undefined}
-              aria-describedby={
-                edDeclineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
-              }
-              title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
               onClick={
                 edDeclineReason === undefined
                   ? ignoreUnavailableActivation
@@ -704,7 +812,7 @@ export function ReferralMatchView({
               }
             >
               Decline referral
-            </button>
+            </Button>
           </div>
           {edDeclineReason === undefined ? (
             <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
@@ -730,21 +838,25 @@ export function ReferralMatchView({
     );
     const pick = candidates.find((c) => c.unit.id === phonePick) ?? tier1Candidates[0] ?? candidates[0];
     const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
+    const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
     const FIT_CAP = 3;
     const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
     const fitsHidden = tier1Candidates.length - fitsShown.length;
 
     const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
       const failed = c.verdict.gates.find((gate) => !gate.pass);
-      // Tier 2 holds both a full ward and one whose bed count is not current: name which.
+      // Capacity-pending candidates can lack any bed, a locked bed, or a current count: name the constraint.
       const noBed = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
+      const noLockedBed = c.verdict.gates.some((gate) => gate.gate === "security" && !gate.pass);
       const label =
         kind === "yes"
           ? "Fits"
           : kind === "nobed"
             ? noBed
               ? "No bed now"
-              : "Count not current"
+              : noLockedBed
+                ? "No locked bed free now"
+                : "Count not current"
             : failed
               ? GATE_LABELS[failed.gate]
               : "Review";
@@ -822,6 +934,11 @@ export function ReferralMatchView({
           </p>
         ) : null}
 
+        {turnaroundRejection ? (
+          <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
+            Turnaround preference not recorded: {turnaroundRejection.reason}
+          </p>
+        ) : null}
         {phoneDeclining ? (
           <>
             <p className={ph.ch}>Why decline?</p>
@@ -860,6 +977,23 @@ export function ReferralMatchView({
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
             {group("Needs review", tier3Candidates, "review")}
+            {pick && pickTurnaround ? (
+              <div className={styles.unitActionStatusWrap}>
+                <Button
+                  variant="sec"
+                  size="md"
+                  disabledReason={pickTurnaround.disabledReason}
+                  onClick={() => handleFlagTurnaround(pick.unit.id)}
+                >
+                  Flag Turnaround Priority
+                </Button>
+                <p className={ph.matchHint}>
+                  {pickTurnaround.recordedSource
+                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                    : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
+                </p>
+              </div>
+            ) : null}
             {pick && !pickPlain ? (
               <ul className={`${styles.bandRows} ${ph.pickForm}`}>
                 <MatchRow
@@ -902,14 +1036,15 @@ export function ReferralMatchView({
               <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
                 Back
               </button>
-              <button
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action="decline"
+                disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+                reasonDisplay="tooltip"
                 type="button"
-                className={ph.pri}
                 data-tone="danger"
                 data-testid="ward-referral-match-decline"
-                aria-disabled={declineReason === undefined ? "true" : undefined}
-                aria-describedby="ward-referral-match-decline-blocked"
-                title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
                 onClick={
                   declineReason === undefined
                     ? ignoreUnavailableActivation
@@ -920,19 +1055,27 @@ export function ReferralMatchView({
                 }
               >
                 <span className={ph.ell}>Decline referral</span>
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
-                Decline
-              </button>
-              <button
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action
                 type="button"
-                className={ph.pri}
+                onClick={() => setPhoneDeclining(true)}
+              >
+                Decline
+              </Button>
+              <Button
+                variant="pri"
+                size="md"
+                data-placement-action
+                disabledReason={pick === undefined ? "No unit to accept at in this network." : undefined}
+                reasonDisplay="tooltip"
+                type="button"
                 data-testid="ward-referral-match-phone-accept"
-                aria-disabled={pick === undefined ? "true" : undefined}
-                title={pick === undefined ? "No unit to accept at in this network." : undefined}
                 onClick={
                   pick === undefined
                     ? ignoreUnavailableActivation
@@ -942,7 +1085,7 @@ export function ReferralMatchView({
                 }
               >
                 <span className={ph.ell}>{pick ? `Accept at ${pick.unit.name}` : "Accept"}</span>
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -1123,6 +1266,11 @@ export function ReferralMatchView({
       ) : null}
 
       {/* TIER ACCORDION GROUP — cohesive container with zero white space between closed tabs */}
+      {turnaroundRejection ? (
+        <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
+          Turnaround preference not recorded: {turnaroundRejection.reason}
+        </p>
+      ) : null}
       {renderReferralMatchTiers({
         tier1Candidates,
         tier2Candidates,
@@ -1138,6 +1286,8 @@ export function ReferralMatchView({
         handleAccept,
         admissions,
         bedReleases,
+        turnaroundForUnit,
+        handleFlagTurnaround,
       })}
 
       <section className={styles.geographySection}>
@@ -1208,17 +1358,18 @@ export function ReferralMatchView({
             </option>
           ))}
         </select>
-        <button
+        <Button
+          variant="sec"
+          size="md"
+          data-placement-action="decline"
+          disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+          reasonDisplay="tooltip"
           type="button"
-          className={styles.declineButton}
           data-testid="ward-referral-match-decline"
-          aria-disabled={declineReason === undefined ? "true" : undefined}
-          aria-describedby={declineReason === undefined ? "ward-referral-match-decline-blocked" : undefined}
-          title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
           onClick={declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("psychiatric_ward")}
         >
           Decline referral
-        </button>
+        </Button>
         {declineReason === undefined ? (
           <span id="ward-referral-match-decline-blocked" className="sr-only">
             {DECLINE_REASON_UNCHOSEN}

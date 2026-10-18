@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
+
+import {
+  clearWardFlowDraftCaches,
+  draftSessionVersion,
+  readSessionDraft,
+  writeSessionDraft,
+  removeSessionDraft,
+} from "./ward-session-drafts";
 
 export interface DirtyStateGuardOptions {
+  /** Explicit opt-in for an approved synthetic form; use sessionDraftKey. */
+  storageKey?: string;
   key?: string;
   isDirty: boolean;
   /** Memory-only draft revision; a change cancels a pending confirmed history close. */
   value?: string;
-  /** Retained for call-site compatibility. Typed drafts are never restored from browser storage. */
-  onRestore?: (cachedValue: string) => void;
+  /** Restore only the matching explicitly opted-in synthetic form. */
+  onRestore?: (cachedValue: string) => void | boolean;
   /** Browsers show their own beforeunload wording. */
   confirmMessage?: string;
   /**
@@ -203,24 +213,24 @@ function syncNavigationConfirm(): void {
 
 installHistoryTracking();
 
-/** Removes legacy typed drafts without reading their contents. */
-export function clearWardFlowDraftCaches(): void {
-  if (typeof window === "undefined") return;
-  try {
-    const storage = window.sessionStorage;
-    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
-    for (const storedKey of keys) {
-      if (storedKey?.startsWith("wf-draft:")) storage.removeItem(storedKey);
-    }
-  } catch {
-    // Browser storage may be disabled.
-  }
-}
-
-/** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
+/** Navigation protection for every form; D-67 recovery requires an explicitly opted-in storage key. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
-  const { key, isDirty, value, confirmMessage, skipAnchor } = normalized;
+  const { key, storageKey, isDirty, value, onRestore, confirmMessage, skipAnchor } = normalized;
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(true);
+  // Bind ownership when this form opts in (or gets a genuinely new account/session key).
+  // A generation change alone must never re-authorise an old mounted form's callbacks.
+  const [draftOwner, setDraftOwner] = useState(() => ({ key: storageKey, version: draftSessionVersion() }));
+  if (draftOwner.key !== storageKey) setDraftOwner({ key: storageKey, version: draftSessionVersion() });
+  const ownerVersion = draftOwner.version;
+  const restoredKey = useRef<string | null>(null);
+  const clearedValue = useRef<string | undefined>(undefined);
+  const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoreRef = useRef(onRestore);
+  useEffect(() => {
+    restoreRef.current = onRestore;
+  }, [onRestore]);
   const navigationGuardRef = useRef<NavigationGuardEntry | null>(null);
 
   const approveNextHistoryNavigation = useCallback(() => {
@@ -228,17 +238,38 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   }, []);
 
   useEffect(() => {
-    clearWardFlowDraftCaches();
+    clearWardFlowDraftCaches({ legacyOnly: true });
   }, [key]);
 
-  const clearDraft = useCallback(() => {
-    if (!key) return;
-    try {
-      window.sessionStorage.removeItem(`wf-draft:${key}`);
-    } catch {
-      // Browser storage may be disabled.
+  useEffect(() => {
+    if (!storageKey || restoredKey.current === storageKey) return;
+    restoredKey.current = storageKey;
+    const cached = readSessionDraft(storageKey);
+    if (cached !== null && restoreRef.current) {
+      const restored = restoreRef.current(cached);
+      setDraftRestored(restored !== false);
+      if (restored === false) removeSessionDraft(storageKey);
     }
-  }, [key]);
+  }, [storageKey]);
+
+  const clearDraft = useCallback(() => {
+    if (pendingSave.current !== null) clearTimeout(pendingSave.current);
+    clearedValue.current = value;
+    setDraftRestored(false);
+    if (storageKey) removeSessionDraft(storageKey);
+    if (key) removeSessionDraft(`wf-draft:${key}`);
+  }, [key, storageKey, value]);
+
+  useEffect(() => {
+    if (!storageKey || !isDirty || value === undefined || value === clearedValue.current) return;
+    pendingSave.current = setTimeout(() => {
+      setDraftSaved(writeSessionDraft(storageKey, value, ownerVersion));
+      pendingSave.current = null;
+    }, 500);
+    return () => {
+      if (pendingSave.current !== null) clearTimeout(pendingSave.current);
+    };
+  }, [storageKey, value, isDirty, ownerVersion]);
 
   useEffect(() => {
     // Every mounted guard registers itself, so a clean guard (the referral drawer over a half-filled page)
@@ -334,5 +365,5 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
     };
   }, [isDirty, confirmMessage, skipAnchor]);
 
-  return { clearDraft, approveNextHistoryNavigation };
+  return { clearDraft, draftRestored, draftSaved, approveNextHistoryNavigation };
 }

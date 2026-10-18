@@ -138,6 +138,7 @@ import {
   useOptionalToast,
 } from "@/components/wf";
 import styles from "./ward.module.css";
+import { SinceLastLookPill } from "../since-last-look-pill";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -2683,6 +2684,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }
             aside={
               <>
+                <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
                 <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
                 <button
                   ref={confirmTriggerRef}

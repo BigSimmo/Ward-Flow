@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Button } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
 import type {
   Unit,
@@ -304,13 +305,15 @@ export function WardArrivalsCorridor({
                 <div className={styles.corridorActions}>
                   {canPull ? (
                     <div>
-                      <button
+                      <Button
+                        variant="pri"
+                        size="md"
+                        data-placement-action
+                        disabledReason={blocked}
+                        reasonDisplay="tooltip"
                         type="button"
                         data-testid={`ward-pull-${movement.id}`}
-                        aria-disabled={blocked ? "true" : undefined}
-                        aria-describedby={blocked ? `ward-pull-unavailable-${movement.id}` : undefined}
-                        title={blocked ?? undefined}
-                        className={`${styles.btnCorridorPull} ${styles.fullWidth}`}
+                        className={styles.fullWidth}
                         onClick={
                           blocked
                             ? ignoreUnavailableActivation
@@ -325,7 +328,7 @@ export function WardArrivalsCorridor({
                         }
                       >
                         Pull a bed
-                      </button>
+                      </Button>
                       {blocked ? (
                         <span id={`ward-pull-unavailable-${movement.id}`} className="sr-only">
                           {blocked}

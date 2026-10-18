@@ -1,5 +1,32 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Handover review follow-up — 18 October 2026
+
+Phone and desktop referral review both expose the eligible turnaround preference, with the same
+receiving-unit and open-request checks. The handler raises each event by name. Canonical disabled
+controls expose their actual reason through accessible descriptions; their tooltip portals hide
+when printing. Ward/ED update snapshots acknowledge only explicit review, survive navigation and
+remain isolated by account, scenario and world generation. Header and sheet times include the day
+when necessary, and the trigger itself has a minimum 48px target.
+
+## Handover improvements — 17 October 2026
+
+- `referrals/referral-match-tiers.tsx` renders the turnaround preference control; its parent
+  derives live CLD/departure eligibility and dispatches the referral or movement event. A clearing
+  locked bed may appear under capacity pending without enabling immediate placement. The queue's
+  badges recheck the recorded source, including before a waiting referral has a movement.
+- `since-last-look-pill.tsx` and its CSS module mount independent Ward/ED 15-minute review sheets
+  in `ward/ward-screen.tsx` and `ed/ed-overview.tsx`. The shared last-look model keeps coordinator
+  semantics while scoped snapshots capture fixed status fingerprints, including each ward's own
+  referral addressing. Reviewing captures the displayed rows before clearing that scope's count.
+- The live referral intake is `referrals/ward-referral-drawer.tsx` with
+  `use-ward-referral-drawer-state.ts` and `referral-draft-store.ts`. D-67 restores bounded synthetic
+  session drafts and explicitly asks for attachment reattachment after refresh. The legal form
+  sheet preserves failed/pending submissions, and successful command completion clears its draft. Persisted referral values are checked against the complete form shape before reuse;
+  malformed entries are removed rather than reopening a broken form. Cleanup stays separate from
+  these deferred form modules. Session identity works without `crypto.randomUUID`, and a legal
+  save from an ended session releases its own busy state without clearing a newer draft.
+
 ## Approved overdue design — 11 October 2026
 
 Home's shared `PriorityQueue` uses an inset rounded coral marker, a subtle theme-aware
