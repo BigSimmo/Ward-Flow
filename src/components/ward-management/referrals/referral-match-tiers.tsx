@@ -311,9 +311,13 @@ export function renderReferralMatchTiers({
                             return (
                               <div
                                 key={g.gate}
-                                className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
+                                className={
+                                  g.info
+                                    ? styles.gatePill
+                                    : `${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`
+                                }
                               >
-                                {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                                {g.info ? "i" : isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
                               </div>
                             );
                           })}
@@ -427,7 +431,7 @@ export function renderReferralMatchTiers({
                         aria-controls={`gate-grid-${gateKey}`}
                       >
                         <span>
-                          ✕ {failedGates.length} of {c.verdict.gates.length} criteria failed
+                          ✕ {failedGates.length} of {checkedGates(c.verdict.gates).length} criteria failed
                         </span>
                         <span className={styles.gateToggleHint}>
                           {isGatesExpanded ? "Hide criteria" : "Show criteria"}
@@ -438,9 +442,13 @@ export function renderReferralMatchTiers({
                           {c.verdict.gates.map((g) => (
                             <div
                               key={g.gate}
-                              className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
+                              className={
+                                g.info
+                                  ? styles.gatePill
+                                  : `${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`
+                              }
                             >
-                              {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                              {g.info ? "i" : g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
                             </div>
                           ))}
                         </div>

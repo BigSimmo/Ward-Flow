@@ -897,7 +897,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(wf017Gates).toHaveCount(11);
     for (const gate of await wf017Gates.all()) {
       const pass = await gate.getAttribute("data-pass");
-      await expect(gate).toContainText(pass === "true" ? "Met" : "Not met");
+      const mark = await gate.getAttribute("data-mark");
+      await expect(gate).toContainText(mark === "info" ? "For information" : pass === "true" ? "Met" : "Not met");
     }
 
     // Nothing is allocated until a human refers — before any candidate selection or click. The
@@ -922,7 +923,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(wf009Gates).toHaveCount(11);
     for (const gate of await wf009Gates.all()) {
       const pass = await gate.getAttribute("data-pass");
-      await expect(gate).toContainText(pass === "true" ? "Met" : "Not met");
+      const mark = await gate.getAttribute("data-mark");
+      await expect(gate).toContainText(mark === "info" ? "For information" : pass === "true" ? "Met" : "Not met");
     }
 
     // A failing gate never renders the success icon. Note the selector: lucide-react emits
