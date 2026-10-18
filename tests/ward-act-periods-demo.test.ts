@@ -8,6 +8,8 @@ import {
   addPeriod,
   orderByActPeriodShare,
 } from "@/components/ward-management/legal-forms/act-periods-demo";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -122,6 +124,20 @@ describe("Act period countdown for a young person", () => {
     expect(actPeriodCountdownText(reading, NOW)).toMatch(/^Under-18 period would end \(age not recorded/);
   });
 
+  it("uses the age band recorded from the form when there is no date of birth", () => {
+    const under18 = {
+      ...withForm("6A", NOW - 60, "Adult"),
+      legalForm: { code: "6A", ageBand: "under_18" },
+    } as Movement;
+    expect(actPeriodReading(under18, DAY_ZERO)!.band).toBe("under18");
+    expect(actPeriodReading(under18, DAY_ZERO)!.endsAt).toBe(NOW - 60 + 14 * 24 * 60);
+    const adult = { ...withForm("6A", NOW - 60, "Youth"), legalForm: { code: "6A", ageBand: "adult" } } as Movement;
+    expect(actPeriodReading(adult, DAY_ZERO)!.band).toBe("adult");
+    expect(actPeriodReading(adult, DAY_ZERO)!.endsAt).toBe(NOW - 60 + 21 * 24 * 60);
+    // A date of birth outranks the recorded band.
+    expect(actPeriodReading(adult, DAY_ZERO, "2010-01-01")!.band).toBe("under18");
+  });
+
   it("keeps the adult period for Adult and Older adult movements with no date of birth", () => {
     for (const cohort of ["Adult", "Older adult"] as const) {
       const reading = actPeriodReading(withForm("6A", NOW - 60, cohort), DAY_ZERO)!;
@@ -144,5 +160,33 @@ describe("Act period countdown for a young person", () => {
       "WF-902",
       "WF-901",
     ]);
+  });
+});
+
+describe("age band recorded with the written time", () => {
+  function movementWithForm(code: string): { before: WardFlowState; movementId: `WF-${string}` } {
+    const seeded = seedWardFlowState();
+    const source = seeded.movements.find((movement) => !movement.closure)!;
+    const movementId: `WF-${string}` = `WF-BAND-${code}`;
+    const before: WardFlowState = {
+      ...seeded,
+      movements: [
+        ...seeded.movements,
+        { ...source, id: movementId, legalForm: { code }, legalClock: undefined, closure: undefined },
+      ],
+    };
+    return { before, movementId };
+  }
+
+  it("saves the band, keeps it on a same-form time edit and refuses an unknown band", () => {
+    const { before, movementId } = movementWithForm("6A");
+    const base = { type: "RECORD_LEGAL_FORM_WRITTEN", role: "ed", now: NOW, movementId, formCode: "6A" } as const;
+    const saved = wardFlowReducer(before, { ...base, writtenAt: NOW - 30, ageBand: "under_18" });
+    expect(saved.rejections).toEqual([]);
+    expect(saved.movements.find((m) => m.id === movementId)!.legalForm?.ageBand).toBe("under_18");
+    const edited = wardFlowReducer(saved, { ...base, writtenAt: NOW - 20 });
+    expect(edited.movements.find((m) => m.id === movementId)!.legalForm?.ageBand).toBe("under_18");
+    const refused = wardFlowReducer(before, { ...base, writtenAt: NOW - 30, ageBand: "child" as never });
+    expect(refused.rejections.length).toBeGreaterThan(0);
   });
 });

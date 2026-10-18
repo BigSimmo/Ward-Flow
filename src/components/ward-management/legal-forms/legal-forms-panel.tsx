@@ -218,8 +218,14 @@ export function SummaryPanel({
   );
 }
 
-type WrittenDraft = { date: string; time: string; region: LegalClockRegion; ageBand: LegalClockAgeBand };
-const BLANK_WRITTEN: WrittenDraft = { date: "", time: "", region: "metro", ageBand: "adult" };
+// "not_recorded" until someone picks a band: a default of Adult would record the longer period unasked.
+type WrittenDraft = {
+  date: string;
+  time: string;
+  region: LegalClockRegion;
+  ageBand: LegalClockAgeBand | "not_recorded";
+};
+const BLANK_WRITTEN: WrittenDraft = { date: "", time: "", region: "metro", ageBand: "not_recorded" };
 
 export type FocusTab = "now" | "form" | "history";
 
@@ -268,7 +274,7 @@ export function FocusPanel({
   /** Set by "Add time" or "Mark received" in the strip, so the panel focuses that control. */
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
-  onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand }) => void;
+  onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand?: LegalClockAgeBand }) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
   onMarkReceived: () => void;
@@ -289,7 +295,11 @@ export function FocusPanel({
   const reading = actPeriodReading(movement, dayZero, dateOfBirth);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
-  const recordedDraft = (): WrittenDraft => ({ ...BLANK_WRITTEN, region: legalForm?.region ?? BLANK_WRITTEN.region });
+  const recordedDraft = (): WrittenDraft => ({
+    ...BLANK_WRITTEN,
+    region: legalForm?.region ?? BLANK_WRITTEN.region,
+    ageBand: legalForm?.ageBand ?? BLANK_WRITTEN.ageBand,
+  });
   const [draft, setDraft] = useState<WrittenDraft>(recordedDraft);
   const [changing, setChanging] = useState(false);
   const dateRef = useRef<HTMLInputElement | null>(null);
@@ -313,7 +323,11 @@ export function FocusPanel({
   const submitWritten = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (recordUnavailable || typedWrittenAt === undefined) return;
-    onSaveWritten({ writtenAt: typedWrittenAt, region: draft.region, ageBand: draft.ageBand });
+    onSaveWritten({
+      writtenAt: typedWrittenAt,
+      region: draft.region,
+      ageBand: draft.ageBand === "not_recorded" ? undefined : draft.ageBand,
+    });
     setChanging(false);
   };
 
@@ -492,6 +506,7 @@ export function FocusPanel({
                   value={draft.ageBand}
                   onChange={(ageBand) => setDraft((current) => ({ ...current, ageBand }))}
                   items={[
+                    { id: "not_recorded", label: "Not recorded" },
                     { id: "adult", label: "Adult" },
                     { id: "under_18", label: "Under 18" },
                   ]}

@@ -146,7 +146,8 @@ export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): 
  *
  * - `adult` / `under18`: from the linked patient's date of birth, as their age when the period
  *   started. This is the only source of an exact age.
- * - With no date of birth, an Adult or Older adult movement is `adult` (both cohorts are 25 and
+ * - With no date of birth, the age band recorded from the form (`legalForm.ageBand`) decides.
+ * - With neither, an Adult or Older adult movement is `adult` (both cohorts are 25 and
  *   over). A Youth movement is `unknown`: the Youth cohort runs to 24, so the person may or may not
  *   be under 18. `unknown` counts down to the shorter, under-18 period, so a young person's clock
  *   never shows more time than the Act allows, and the screen says the age was not recorded.
@@ -154,12 +155,14 @@ export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): 
 type ActPeriodBand = "adult" | "under18" | "unknown";
 
 function actPeriodBandFor(
-  movement: Pick<Movement, "cohort">,
+  movement: Pick<Movement, "cohort" | "legalForm">,
   start: Instant,
   dayZero: Date,
   dateOfBirth: string | undefined,
 ): ActPeriodBand {
   if (dateOfBirth) return patientAgeYears({ dateOfBirth }, calendarDateOf(start, dayZero)) < 18 ? "under18" : "adult";
+  if (movement.legalForm?.ageBand === "under_18") return "under18";
+  if (movement.legalForm?.ageBand === "adult") return "adult";
   return movement.cohort === "Adult" || movement.cohort === "Older adult" ? "adult" : "unknown";
 }
 
