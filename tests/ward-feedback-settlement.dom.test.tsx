@@ -489,13 +489,23 @@ describe("clipboard feedback", () => {
           calls()
         ),
       );
-      fireEvent.click(
+      const button =
         kind === "legal"
           ? screen.getByRole("button", { name: /Copy for handover/ })
-          : screen.getByRole("button", { name: /^Call Mock service/ }),
-      );
+          : screen.getByRole("button", { name: /^Call Mock service/ });
+      // Browsers move focus to a selected textarea; jsdom does not, so model it.
+      const select = vi.spyOn(HTMLTextAreaElement.prototype, "select").mockImplementation(function (
+        this: HTMLTextAreaElement,
+      ) {
+        this.focus();
+      });
+      button.focus();
+      fireEvent.click(button);
       await act(async () => {});
       expect(execCommand).toHaveBeenCalledWith("copy");
+      // The fallback's temporary textarea hands focus back to the control.
+      expect(document.activeElement).toBe(button);
+      select.mockRestore();
       expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(true);
     } finally {
       Reflect.deleteProperty(document, "execCommand");

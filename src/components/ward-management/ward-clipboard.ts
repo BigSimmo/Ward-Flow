@@ -12,6 +12,8 @@ export async function copyTextToClipboard(value: string): Promise<void> {
       // Fall through to the legacy selection path.
     }
   }
+  // Selecting the textarea moves focus; put it back so keyboard and screen reader users stay put.
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const textArea = document.createElement("textarea");
   textArea.value = value;
   textArea.setAttribute("readonly", "");
@@ -25,5 +27,6 @@ export async function copyTextToClipboard(value: string): Promise<void> {
     if (!copied) throw new Error("copy command rejected");
   } finally {
     document.body.removeChild(textArea);
+    returnFocus?.focus({ preventScroll: true });
   }
 }
