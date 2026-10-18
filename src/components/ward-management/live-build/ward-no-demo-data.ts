@@ -11,25 +11,42 @@
  * sign-in gate hides it. `tests/ward-no-demo-data.test.ts` checks every name the app imports from
  * those modules is here, with the same types.
  */
-import type * as AdmissionsSeed from "@/components/ward-management/ward-admissions-seed";
-import type * as DemoPlannedMoves from "@/components/ward-management/ward-demo-planned-moves";
-import type * as Movements from "@/components/ward-management/ward-movements";
-import type * as PatientsSeed from "@/components/ward-management/ward-patients-seed";
-import type * as RulingsDemo from "@/components/ward-management/ward-rulings-demo";
+import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { BedRelease, LeaveBed, Movement, Referral } from "@/components/ward-management/ward-model";
+import type { Patient } from "@/components/ward-management/ward-patients";
 
-export const wardMovements: typeof Movements.wardMovements = [];
-export const generatedMovementPatients: typeof Movements.generatedMovementPatients = [];
-export const bedReleases: typeof Movements.bedReleases = [];
-export const leaveBeds: typeof Movements.leaveBeds = [];
-export const referrals: typeof Movements.referrals = [];
+// Typed from the record types, not the demo modules, so nothing here reads a fixture
+// (`tests/ward-flow-single-source.test.ts`).
+export const wardMovements: Movement[] = [];
+export const generatedMovementPatients: Patient[] = [];
+export const bedReleases: BedRelease[] = [];
+export const leaveBeds: LeaveBed[] = [];
+export const referrals: Referral[] = [];
 
-export const WARD_ADMISSIONS_ANCHOR: typeof AdmissionsSeed.WARD_ADMISSIONS_ANCHOR = 10 * 60 + 42;
-export const wardAdmissions: typeof AdmissionsSeed.wardAdmissions = [];
-export const wardPlannedAdmissions: typeof AdmissionsSeed.wardPlannedAdmissions = [];
-export const generatedOccupantPatients: typeof AdmissionsSeed.generatedOccupantPatients = [];
+export const WARD_ADMISSIONS_ANCHOR: Instant = 10 * 60 + 42;
+export const wardAdmissions: Admission[] = [];
+export const wardPlannedAdmissions: PlannedAdmission[] = [];
+export const generatedOccupantPatients: Patient[] = [];
 
-export const combineWardPatients: typeof PatientsSeed.combineWardPatients = (...groups) => groups.flat();
+export function combineWardPatients(...generatedGroups: readonly (readonly Patient[])[]): Patient[] {
+  return generatedGroups.flat();
+}
 
-export const applyRulingsDemoOverlay: typeof RulingsDemo.applyRulingsDemoOverlay = (seed) => seed;
+export function applyRulingsDemoOverlay<
+  T extends {
+    movements: Movement[];
+    referrals: Referral[];
+    admissions: Admission[];
+    patients: Patient[];
+    leaveBeds: LeaveBed[];
+  },
+>(state: T, now: Instant): T {
+  void now;
+  return state;
+}
 
-export const withDemoPlannedMoveTimes: typeof DemoPlannedMoves.withDemoPlannedMoveTimes = (movements) => [...movements];
+export function withDemoPlannedMoveTimes(movements: readonly Movement[], anchor: Instant): Movement[] {
+  void anchor;
+  return [...movements];
+}

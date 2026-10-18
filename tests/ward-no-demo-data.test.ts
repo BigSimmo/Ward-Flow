@@ -1,9 +1,13 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import loadNextConfig, { LIVE_BUILD_DEMO_DATA } from "../next.config";
 import * as standIn from "@/components/ward-management/live-build/ward-no-demo-data";
-import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
+import * as AdmissionsSeed from "@/components/ward-management/ward-admissions-seed";
+import * as DemoPlannedMoves from "@/components/ward-management/ward-demo-planned-moves";
+import * as Movements from "@/components/ward-management/ward-movements";
+import * as PatientsSeed from "@/components/ward-management/ward-patients-seed";
+import * as RulingsDemo from "@/components/ward-management/ward-rulings-demo";
 
 const DEMO_MODULES = [
   "ward-movements",
@@ -52,7 +56,22 @@ describe("a live shared build carries no demo records", () => {
       expect(LIVE_BUILD_DEMO_DATA.test(specifier), `${file} imports ${specifier}`).toBe(true);
       for (const name of names) expect(standIn, `${file} imports ${name}`).toHaveProperty(name);
     }
-    expect(standIn.WARD_ADMISSIONS_ANCHOR).toBe(WARD_ADMISSIONS_ANCHOR);
+    expect(standIn.WARD_ADMISSIONS_ANCHOR).toBe(AdmissionsSeed.WARD_ADMISSIONS_ANCHOR);
+  });
+
+  it("gives every stand-in the same type as the demo export it replaces", () => {
+    expectTypeOf(standIn.wardMovements).toEqualTypeOf(Movements.wardMovements);
+    expectTypeOf(standIn.generatedMovementPatients).toEqualTypeOf(Movements.generatedMovementPatients);
+    expectTypeOf(standIn.bedReleases).toEqualTypeOf(Movements.bedReleases);
+    expectTypeOf(standIn.leaveBeds).toEqualTypeOf(Movements.leaveBeds);
+    expectTypeOf(standIn.referrals).toEqualTypeOf(Movements.referrals);
+    expectTypeOf(standIn.WARD_ADMISSIONS_ANCHOR).toEqualTypeOf(AdmissionsSeed.WARD_ADMISSIONS_ANCHOR);
+    expectTypeOf(standIn.wardAdmissions).toEqualTypeOf(AdmissionsSeed.wardAdmissions);
+    expectTypeOf(standIn.wardPlannedAdmissions).toEqualTypeOf(AdmissionsSeed.wardPlannedAdmissions);
+    expectTypeOf(standIn.generatedOccupantPatients).toEqualTypeOf(AdmissionsSeed.generatedOccupantPatients);
+    expectTypeOf(standIn.combineWardPatients).toEqualTypeOf(PatientsSeed.combineWardPatients);
+    expectTypeOf(standIn.applyRulingsDemoOverlay).toEqualTypeOf(RulingsDemo.applyRulingsDemoOverlay);
+    expectTypeOf(standIn.withDemoPlannedMoveTimes).toEqualTypeOf(DemoPlannedMoves.withDemoPlannedMoveTimes);
   });
 
   it("swaps the modules in only when the build is a live shared one", async () => {
