@@ -8,7 +8,7 @@ a legal expiry. The CLD unit and DOM suites cover direct requests, closed referr
 gates, phone actions and production/device flag policy. The scoped last-look DOM suite also checks
 unreviewed navigation, account/scenario boundaries and cross-midnight labels. `ward-session-draft-edge-cases.test.ts` and its DOM companion reproduce missing UUID support,
 metadata-storage failure, bounded fallback expiry, and pending legal-save session/ticket isolation.
-Draft recovery suites reject malformed enum and optional-field projections before real drawer restore.
+Draft recovery suites reject malformed enum and optional-field projections before real drawer restore. They also cover recovery-key handoff, failed writes, cross-subject/scope preservation, current-memory precedence and matching historical-alias cleanup without deriving patient identity.
 `ward-legal-save-failure.dom.test.tsx` verifies that a rejected command shows the existing warning, retains the unsent form, restores editing and offers no Undo. The patient dialog suite checks focus both on deferred mount and after closing.
 
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.

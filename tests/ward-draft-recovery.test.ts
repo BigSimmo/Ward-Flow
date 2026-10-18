@@ -448,4 +448,22 @@ describe("single referral draft session ownership", () => {
     expect(JSON.parse(readSessionDraft(namedKey)!).doctorNote === newer.doctorNote).toBe(true);
     expect(readSessionDraft(genericKey)).toBeNull();
   });
+  it("clears opaque historical aliases only for the matching scoped subject", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const otherPatientKey = sessionDraftKey("demo", "referral", "PT-024");
+    const otherScenarioKey = sessionDraftKey("other-demo", "referral", "PT-023");
+    const draft = { ...completeDraft(), activePatientKey: "WF-001" };
+    const other = { ...draft, activePatientKey: "WF-002" };
+    for (const key of [genericKey, namedKey, otherScenarioKey])
+      writeSessionDraft(key, JSON.stringify(draft), draftSessionVersion());
+    writeSessionDraft(otherPatientKey, JSON.stringify(other), draftSessionVersion());
+    readKeptReferralDraft(genericKey);
+    discardReferralDraft();
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(readKeptReferralDraft(namedKey)).toBeNull();
+    expect(JSON.parse(readSessionDraft(otherPatientKey)!)).toEqual(other);
+    expect(JSON.parse(readSessionDraft(otherScenarioKey)!)).toEqual(draft);
+  });
 });

@@ -114,21 +114,19 @@ export function readKeptReferralDraftAt(): number | null {
   return referralDraftMemory.kept === null ? null : referralDraftMemory.keptAtMs;
 }
 
-/** Clear one historical alias on Send/Discard, without searching other people's recovery keys. */
+/** Retire this subject's historical copies on Send/Discard, without inferring a patient ID. */
 function clearMatchingRecoveryAlias(): void {
   const storageKey = referralDraftMemory.keptStorageKey ?? referralDraftMemory.recoveryStorageKey;
-  const current = referralDraftMemory.kept as { activePatientKey?: unknown } | null;
-  if (!storageKey || typeof current?.activePatientKey !== "string") return;
+  if (!storageKey || typeof window === "undefined") return;
   const scope = recoveryScope(storageKey);
-  let aliasSubject = "new";
-  if (storageKey === scope + "new") {
-    // Recovery keys use patientId; only patient:<id> reveals that ID without the live record.
-    // Opaque movement IDs cannot identify their historical named alias here.
-    if (!current.activePatientKey.startsWith("patient:")) return;
-    aliasSubject = encodeURIComponent(current.activePatientKey.slice("patient:".length));
-    if (!aliasSubject) return;
+  try {
+    // Snapshot keys before deleting. Read values only inside this account/session/scenario/form.
+    const keys = Array.from({ length: window.sessionStorage.length }, (_, index) => window.sessionStorage.key(index));
+    for (const key of keys)
+      if (key?.startsWith(scope)) removeMatchingRecoveryCopy(key, storageKey, referralDraftMemory.kept);
+  } catch {
+    // Blocked storage cannot be cleaned here; the session owner and memory cleanup still apply.
   }
-  removeMatchingRecoveryCopy(scope + aliasSubject, storageKey, current);
 }
 
 /** A null owner never discards: a sheet that did not write the kept draft must not clear it. */
