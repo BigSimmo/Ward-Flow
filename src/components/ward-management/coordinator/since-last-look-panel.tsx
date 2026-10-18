@@ -119,14 +119,12 @@ export function useSinceLastLook(
 ) {
   const scopeKey = options?.scopeKey;
   const windowMinutes = options?.windowMinutes ?? 15;
+  const storageKey = scopeKey ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}` : LAST_LOOK_STORAGE_KEY;
   const scoped = useMemo(() => (scopeKey ? scopeLastLookWorld(world, scopeKey) : world), [world, scopeKey]);
   const thresholds = useDueSoonThresholds();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
-  const storageKey = scopeKey
-    ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
-    : LAST_LOOK_STORAGE_KEY;
   const current = useMemo(
     () => takeLastLookSnapshot({ ...scoped, worldGeneration: generation, userId }, now, thresholds, scopeKey),
     [scoped, now, thresholds, generation, userId, scopeKey],
@@ -147,7 +145,6 @@ export function useSinceLastLook(
     const timer = pendingLeaveSaves.get(storageKey);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
-    if (scopeKey) return;
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture.
       const snapshot = latest.current;
