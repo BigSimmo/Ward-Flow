@@ -132,6 +132,7 @@ export function RuleRow({
   usedBy,
   preview = false,
   previewTag = preview,
+  unavailableReason,
 }: {
   setting: string;
   title: string;
@@ -156,6 +157,7 @@ export function RuleRow({
   preview?: boolean;
   /** Off when the card head already carries the Preview tag. */
   previewTag?: boolean;
+  unavailableReason?: string;
 }) {
   const changed = !preview && value !== saved;
   return (
@@ -195,7 +197,11 @@ export function RuleRow({
         <Stepper
           className={styles.ruleStepper}
           value={value}
-          onChange={onChange}
+          onChange={(next) => {
+            if (!unavailableReason) onChange(next);
+          }}
+          unavailable={!!unavailableReason}
+          note={unavailableReason}
           min={range.min}
           max={max ?? range.max}
           step={range.step}

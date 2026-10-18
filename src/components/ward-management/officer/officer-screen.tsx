@@ -1,5 +1,6 @@
 "use client";
 
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
@@ -384,6 +385,58 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * Send to officer are Preview: `BOOK_TRANSPORT` is the sending team's event, and no event sends a
  * forms pack yet.
  */
+/** Keep command lifetime and pending state inside the event-handling hook. */
+function useTransportCommandFeedback() {
+  const [toastMessage, setToastMessage] = useState<{
+    message: string;
+    undoMovementId?: string;
+    warning?: boolean;
+    isCurrent?: () => boolean;
+    canUndo?: () => boolean;
+  } | null>(null);
+  const pendingSteps = useRef(new Set<string>());
+  // A shared command can finish after several renders. Its own outcome is authoritative.
+  const reportOutcome = useCallback(
+    async (
+      movementId: string,
+      record: () => ReturnType<WardCommandDispatch>,
+      success: string,
+      action: string,
+      offerUndo = true,
+    ): Promise<boolean> => {
+      if (pendingSteps.current.has(movementId)) return false;
+      pendingSteps.current.add(movementId);
+      setToastMessage({ message: `${action} pending confirmation.`, warning: true });
+      try {
+        const outcome = await record();
+        if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
+          setToastMessage({
+            message: success,
+            isCurrent: outcome.isCurrent,
+            canUndo: outcome.canUndo,
+            ...(offerUndo ? { undoMovementId: movementId } : {}),
+          });
+          return true;
+        }
+        setToastMessage({
+          message: outcome?.message ?? `${action} was not confirmed. Review the board before trying again.`,
+          warning: true,
+        });
+      } catch {
+        setToastMessage({
+          message: `${action} was not confirmed. Review the board before trying again.`,
+          warning: true,
+        });
+      } finally {
+        pendingSteps.current.delete(movementId);
+      }
+      return false;
+    },
+    [],
+  );
+  return { toastMessage, setToastMessage, reportOutcome };
+}
+
 export function OfficerScreen() {
   const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
     "movements",
@@ -530,19 +583,7 @@ export function OfficerScreen() {
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
 
   const [formModalJob, setFormModalJob] = useState<Movement | null>(null);
-  const [toastMessage, setToastMessage] = useState<
-    | { message: string }
-    | {
-        success: string;
-        refused: string;
-        priorRejections: number;
-        /** v10 pass 3: the journey whose transport step the toast's Undo takes back. */
-        undoMovementId?: string;
-        /** An Undo's own outcome: a refusal then gives the engine's reason. */
-        withReason?: boolean;
-      }
-    | null
-  >(null);
+  const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
@@ -682,107 +723,63 @@ export function OfficerScreen() {
       "undoMovementId" in toastMessage && toastMessage.undoMovementId ? UNDO_TOAST_MS : 3500,
     );
     return () => clearTimeout(timer);
-  }, [toastMessage]);
+  }, [toastMessage, setToastMessage]);
 
   const showToast = (msg: string) => {
     setToastMessage({ message: msg });
   };
 
-  /*
-   * `dispatch` never says whether the reducer accepted or refused, so the four transport buttons
-   * used to announce success unconditionally ("Transport accepted for WF-…") even when the event
-   * was refused (live walkthrough, 25 Sept 2026). Same pattern as the ward screen's `checkToken`:
-   * note the refusal count before dispatching, then compare on the next render. The toast carries
-   * both sentences and the count, and the render picks the true one.
-   */
-  // Called straight after `dispatch` in the same handler, so `rejections` here is still the
-  // pre-dispatch list. Each action calls `dispatch({ type: "..." })` itself, with a literal type,
-  // so the override-surface guard can read every transport event.
-  const reportOutcome = (success: string, action: string, who: string, undoMovementId?: string) => {
-    // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    setToastMessage({
-      success,
-      refused: `${action} for ${who} was refused. See History, Refused.`,
-      priorRejections: rejections.length,
-      ...(undoMovementId ? { undoMovementId } : {}),
-    });
-  };
-  // v10 pass 3: Undo takes back the step just recorded (UNDO_TRANSPORT_STEP, within the engine's window).
-  const undoTransportStep = (movementId: string) => {
-    const prior = rejections.length;
-    raise("UNDO_TRANSPORT_STEP", { movementId });
-    setToastMessage({
-      success: "Undone. Back as it was.",
-      refused: "Undo was refused:",
-      priorRejections: prior,
-      withReason: true,
-    });
-  };
-  const toastText =
-    toastMessage === null
-      ? null
-      : "message" in toastMessage
-        ? toastMessage.message
-        : rejections.length > toastMessage.priorRejections
-          ? toastMessage.withReason
-            ? `${toastMessage.refused} ${rejections[rejections.length - 1]?.reason ?? ""}.`
-            : toastMessage.refused
-          : toastMessage.success;
-  const toastUndoFor =
-    toastMessage !== null &&
-    "undoMovementId" in toastMessage &&
-    toastMessage.undoMovementId !== undefined &&
-    rejections.length === toastMessage.priorRejections
-      ? toastMessage.undoMovementId
-      : undefined;
-
-  const runAccepted = (movement: Movement) => {
-    raise("TRANSPORT_ACCEPTED", { movementId: movement.id });
+  const undoTransportStep = (movementId: string) =>
     reportOutcome(
+      movementId,
+      () => raise("UNDO_TRANSPORT_STEP", { movementId }),
+      "Undone. Back as it was.",
+      "Undo",
+      false,
+    );
+  const toastText = toastMessage?.isCurrent?.() === false ? undefined : toastMessage?.message;
+  const toastUndoFor = toastText && toastMessage?.canUndo?.() !== false ? toastMessage?.undoMovementId : undefined;
+
+  const runAccepted = (movement: Movement) =>
+    reportOutcome(
+      movement.id,
+      () => raise("TRANSPORT_ACCEPTED", { movementId: movement.id }),
       `Transport accepted for ${officerPatientName(movement)}.`,
       "Transport acceptance",
-      officerPatientName(movement),
-      movement.id,
     );
-  };
-  const runEnRoute = (movement: Movement) => {
-    raise("TRANSPORT_EN_ROUTE", { movementId: movement.id });
+  const runEnRoute = (movement: Movement) =>
     reportOutcome(
+      movement.id,
+      () => raise("TRANSPORT_EN_ROUTE", { movementId: movement.id }),
       `Transport en route for ${officerPatientName(movement)}.`,
       "En route",
-      officerPatientName(movement),
-      movement.id,
     );
-  };
-  // Audit A4-11 / S-2: Collected with no Form 4A or no fit to travel warns and records a reason.
+  // Collected with no Form 4A or no fit to travel records a coded reason after confirmation.
   const runCollected = (movement: Movement) => {
     if (collectionGaps(movement).length > 0) {
       setCollectCheckId(movement.id);
       return;
     }
-    recordCollected(movement);
+    void recordCollected(movement);
   };
-  const recordCollected = (movement: Movement, exception?: TransportExceptionInput) => {
-    raise("PATIENT_COLLECTED", {
-      movementId: movement.id,
-      ...(exception ? { exception } : {}),
-    });
+  const recordCollected = (movement: Movement, exception?: TransportExceptionInput) =>
     reportOutcome(
+      movement.id,
+      () =>
+        raise("PATIENT_COLLECTED", {
+          movementId: movement.id,
+          ...(exception ? { exception } : {}),
+        }),
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
-      officerPatientName(movement),
-      movement.id,
     );
-  };
-  const runDelivered = (movement: Movement) => {
-    raise("PATIENT_ARRIVED", { movementId: movement.id });
+  const runDelivered = (movement: Movement) =>
     reportOutcome(
+      movement.id,
+      () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
       `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
       "Delivery",
-      officerPatientName(movement),
-      movement.id,
     );
-  };
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
   const nextStep = (movement: Movement) => {
@@ -2270,16 +2267,17 @@ export function OfficerScreen() {
           action="Collected"
           gaps={collectionGaps(collectCheck)}
           onClose={() => setCollectCheckId(null)}
-          onConfirm={(reason) => {
-            setCollectCheckId(null);
-            recordCollected(collectCheck, { gaps: collectionGaps(collectCheck), reason });
+          onConfirm={async (reason) => {
+            const accepted = await recordCollected(collectCheck, { gaps: collectionGaps(collectCheck), reason });
+            if (accepted) setCollectCheckId(null);
+            return accepted;
           }}
           testId="ward-officer-collect-check"
         />
       ) : null}
       {toastText ? (
         <div className={styles.toast}>
-          <StatusLine tone="success" title={toastText} />
+          <StatusLine tone={toastMessage?.warning ? "warning" : "success"} title={toastText} />
           {toastUndoFor ? (
             <button
               type="button"

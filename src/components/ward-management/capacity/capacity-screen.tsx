@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
@@ -9,9 +11,10 @@ import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management
 import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
+import type { DischargeOpenHandle, DischargeRecord } from "../ward-discharge-records";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
+  Button,
   FilterChip,
   Hero,
   HeroStat,
@@ -115,6 +118,7 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 };
 
 export function CapacityScreen() {
+  const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
     useWardFlowSelect(
@@ -536,7 +540,7 @@ export function CapacityScreen() {
     <aside className={styles.secondary} aria-label="Network summary and ward detail">
       {selectedRow ? (
         <CapacityWardSidebar
-          key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
+          key={`${worldGeneration}:${recordActorKey}:${selectedRow.unit.id}`}
           row={selectedRow}
           now={now}
           onBack={clearWard}
@@ -1331,6 +1335,8 @@ function NetworkRow({
   onSelect: () => void;
 }) {
   const { refreshRequests } = useWardFlowSelect("refreshRequests");
+  const requestDisabledReason =
+    useEffectiveWardAccess().role === "coordinator" ? undefined : "Only the coordinator can request ward updates.";
   // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
   // A request stays outstanding until the ward next confirms its capacity. Timestamps are whole minutes, so a
   // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
@@ -1682,20 +1688,30 @@ function NetworkRow({
         `refreshRequests` and touches nothing else — it records that somebody asked.
       */}
       <td>
-        <button
-          type="button"
-          className={styles.refreshButton}
-          data-testid={`ward-capacity-refresh-${row.unit.id}`}
-          // Once a request is on record the button says so and stops dispatching another one.
-          disabled={asked}
-          title={asked ? "An update has already been requested from this ward." : undefined}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestRefresh();
-          }}
-        >
-          {asked ? "Update requested" : "Request update"}
-        </button>
+        {requestDisabledReason ? (
+          <Button
+            className={styles.refreshButton}
+            data-testid={`ward-capacity-refresh-${row.unit.id}`}
+            disabledReason={requestDisabledReason}
+          >
+            Request update
+          </Button>
+        ) : (
+          <button
+            type="button"
+            className={styles.refreshButton}
+            data-testid={`ward-capacity-refresh-${row.unit.id}`}
+            // Once a request is on record the button says so and stops dispatching another one.
+            disabled={asked}
+            title={asked ? "An update has already been requested from this ward." : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestRefresh();
+            }}
+          >
+            {asked ? "Update requested" : "Request update"}
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1862,8 +1878,6 @@ function NetworkServiceGroupRows({
   );
 }
 
-const CAPACITY_RECORD_ACTOR: WardRecordActor = { role: "coordinator" };
-
 function CapacityTabs({
   id,
   label,
@@ -1920,6 +1934,9 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
       "openDischargeRecord",
       "readDischargeRecord",
     );
+  const recordActors = useWardRecordActors();
+  const recordActor =
+    recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -1932,8 +1949,8 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
     heading.current?.focus();
   }, []);
   const site = siteByCode(row.unit.siteCode);
-  const records = readDischargeRecords(CAPACITY_RECORD_ACTOR, row.unit.id);
-  const detail = opened ? readDischargeRecord(CAPACITY_RECORD_ACTOR, opened.admissionId, opened.handle) : null;
+  const records = readDischargeRecords(recordActor, row.unit.id);
+  const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
   const request = refreshRequests
     .filter((entry) => entry.unitId === row.unit.id && entry.at >= row.unit.allocatable.confirmedAt)
@@ -1946,7 +1963,7 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
     });
   }
   function openRecord(record: DischargeRecord) {
-    const handle = openDischargeRecord(CAPACITY_RECORD_ACTOR, record.admissionId);
+    const handle = openDischargeRecord(recordActor, record.admissionId);
     setOpened({ admissionId: record.admissionId, handle });
   }
   return (
@@ -2076,15 +2093,24 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
                 {isConfirmationFresh(row.unit, now) ? "Within" : "Past"} this ward’s{" "}
                 {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold.
               </p>
-              <button
-                type="button"
-                className={styles.refreshButton}
-                onClick={() =>
-                  dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
-                }
-              >
-                Request ward update
-              </button>
+              {recordActor.role === "coordinator" ? (
+                <button
+                  type="button"
+                  className={styles.refreshButton}
+                  onClick={() =>
+                    dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
+                  }
+                >
+                  Request ward update
+                </button>
+              ) : (
+                <Button
+                  className={styles.refreshButton}
+                  disabledReason="Only the coordinator can request ward updates."
+                >
+                  Request ward update
+                </Button>
+              )}
               {request ? <p role="status">Update requested {formatInstantWithDay(request.at, now)}.</p> : null}
             </section>
           </>

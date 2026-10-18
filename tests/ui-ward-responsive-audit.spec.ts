@@ -205,6 +205,11 @@ test.describe("@mockup Ward responsive containment", () => {
       const geometry: { viewport: number; document: number }[] = [];
       for (const width of [320, 390, 768]) {
         await page.setViewportSize({ width, height: 844 });
+        // These widths use ServicePhone. Network idle can precede its hydration swap;
+        // wait for the actual tree before enumerating its scrollable table regions.
+        if (route === "/statistics/service/East%20Metro") {
+          await expect(page.getByTestId("ward-statistics-service-phone")).toBeVisible();
+        }
         await expect
           .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
           .toBeLessThanOrEqual(1);

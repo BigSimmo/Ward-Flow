@@ -138,6 +138,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
   const [declineNudge, setDeclineNudge] = useState(false);
+  const declinePendingRef = useRef(false);
+  const [declinePending, setDeclinePending] = useState(false);
   const [capacityDraft, setCapacityDraft] = useState<{ unitId: string; revision: number; value: string }>();
   const capacityRevision = unit?.allocatable.revision ?? 0;
   const capacityValue =
@@ -294,6 +296,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const activeMovement = incoming[activeAnswerIndex];
 
   function toggleDecline(movementId: string) {
+    if (declinePendingRef.current) return;
     startTransition(() => {
       setDeclineOpenFor((current) => (current === movementId ? undefined : movementId));
       setDeclineReason(undefined);
@@ -303,35 +306,41 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
-    if (!canSubmitDecline(declineReason)) return;
-    raise("DECLINE", {
-      movementId,
-      unitId: currentUnit.id,
-      actingUnitId: currentUnit.id,
-      reason: declineReason,
-    });
-    setDeclineOpenFor(undefined);
-    setDeclineReason(undefined);
-    // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
-    triggerToast("Referral declined.");
+    void confirmDecline(movementId);
   }
 
-  /** Phone: the decline sheet's footer confirms without a form submit. */
-  function confirmDecline(movementId: string) {
+  /** Desktop and phone keep the reason until this particular command is accepted. */
+  async function confirmDecline(movementId: string) {
+    if (declinePendingRef.current) return;
     if (!canSubmitDecline(declineReason)) {
       setDeclineNudge(true);
       return;
     }
     setDeclineNudge(false);
-    raise("DECLINE", {
-      movementId,
-      unitId: currentUnit.id,
-      actingUnitId: currentUnit.id,
-      reason: declineReason,
-    });
-    setDeclineOpenFor(undefined);
-    setDeclineReason(undefined);
-    triggerToast("Referral declined.");
+    declinePendingRef.current = true;
+    setDeclinePending(true);
+    try {
+      const outcome = await raise("DECLINE", {
+        movementId,
+        unitId: currentUnit.id,
+        actingUnitId: currentUnit.id,
+        reason: declineReason,
+      });
+      if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
+        setDeclineOpenFor(undefined);
+        setDeclineReason(undefined);
+        triggerToast("Referral declined.");
+      } else {
+        triggerToast(
+          outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
+        );
+      }
+    } catch {
+      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.");
+    } finally {
+      declinePendingRef.current = false;
+      setDeclinePending(false);
+    }
   }
 
   function handleAccept(movementId: string) {
@@ -1091,13 +1100,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             height="tall"
                             secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
                             primary={{
-                              label: "Confirm decline",
+                              label: declinePending ? "Confirming decline…" : "Confirm decline",
+                              disabledReason: declinePending ? "Waiting for confirmation" : undefined,
                               onAction: () => confirmDecline(activeMovement.id),
                             }}
                             data-testid={`ward-decline-sheet-${activeMovement.id}`}
                           >
                             <div className={styles.phoneSheetScope}>
-                              <fieldset className={styles.phoneDeclineFieldset}>
+                              <fieldset className={styles.phoneDeclineFieldset} disabled={declinePending}>
                                 <legend className={styles.phoneSheetLabel}>Decline reason</legend>
                                 {declineNudge && !canSubmitDecline(declineReason) ? (
                                   <p className={styles.phoneSheetNudge} role="alert">
@@ -1221,7 +1231,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           onSubmit={(event) => submitDecline(event, activeMovement.id)}
                           data-testid={`ward-decline-form-${activeMovement.id}`}
                         >
-                          <fieldset className={styles.declineFieldset}>
+                          <fieldset className={styles.declineFieldset} disabled={declinePending}>
                             <legend className={styles.declineLegend}>Decline reason for this patient</legend>
                             {DECLINE_REASONS.map((reason) => (
                               <label key={reason} className={styles.declineOption}>
@@ -1238,8 +1248,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           </fieldset>
                           <button
                             type="submit"
-                            aria-disabled={!canSubmitDecline(declineReason) ? "true" : undefined}
-                            onClick={!canSubmitDecline(declineReason) ? ignoreUnavailableActivation : undefined}
+                            aria-disabled={declinePending || !canSubmitDecline(declineReason) ? "true" : undefined}
+                            onClick={
+                              declinePending || !canSubmitDecline(declineReason)
+                                ? ignoreUnavailableActivation
+                                : undefined
+                            }
                             aria-describedby={
                               !canSubmitDecline(declineReason)
                                 ? `ward-decline-submit-reason-${activeMovement.id}`
@@ -1248,7 +1262,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
                             className={`${styles.btn} ${styles.btnDanger}`}
                           >
-                            Confirm decline
+                            {declinePending ? "Confirming decline…" : "Confirm decline"}
                           </button>
                           {!canSubmitDecline(declineReason) ? (
                             <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">

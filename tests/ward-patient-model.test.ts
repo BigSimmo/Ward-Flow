@@ -32,6 +32,13 @@ const NOW = 10 * 60 + 42;
  */
 const DECISIONS = new Map<string, string>([
   [
+    "JOURNEY-AUDIT-2026-10-18",
+    "The 18 October journey audit remediation request covers restoring a newly registered patient " +
+      "to its authorised source desk. registrationScope is bounded access metadata derived from " +
+      "existing place scope, not a new clinical fact or free text; its bridge ends at encounter linkage. " +
+      "Implementation and boundaries: docs/ward-flow/code-map/engine.md, Journey integrity.",
+  ],
+  [
     "PD-1",
     "Owner, 2026-08-30: explicit permission to hold a name or record number for patients, and to " +
       "search by either the UMRN or the name, age and date of birth.",
@@ -103,6 +110,7 @@ const GENDER_RULING_FIELDS = new Map<string, string>([["gender", "OWNER-2026-09-
 /** `communityTreatmentOrder`, the one field D-38 adds, kept apart for the same provenance reason. */
 const CTO_RULING_FIELDS = new Map<string, string>([["communityTreatmentOrder", "D-38"]]);
 /** `addedAt`, the record fact the v10 pass 2 brief adds, kept apart for the same provenance reason. */
+const REGISTRATION_ACCESS_FIELDS = new Map<string, string>([["registrationScope", "JOURNEY-AUDIT-2026-10-18"]]);
 const ADDED_AT_FIELDS = new Map<string, string>([["addedAt", "V10-2026-10-10-ADDED-AT"]]);
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */
@@ -147,6 +155,7 @@ function aPatient(): Required<Patient> {
     interpreterLanguage: "English — no interpreter required",
     communityTreatmentOrder: { form: "5A", recordedAt: 0, recordedBy: "Community team" },
     addedAt: 0,
+    registrationScope: { kind: "ed", placeId: "rph" },
   };
 }
 
@@ -168,6 +177,7 @@ describe("Patient identity is a ruling, not a drift", () => {
       "interpreterLanguage",
       "legalStatus",
       "preferredName",
+      "registrationScope",
       "sex",
       "suburb",
       "umrn",
@@ -226,7 +236,8 @@ describe("Patient identity is a ruling, not a drift", () => {
         !PLACEMENT_FIELDS.has(field) &&
         !GENDER_RULING_FIELDS.has(field) &&
         !CTO_RULING_FIELDS.has(field) &&
-        !ADDED_AT_FIELDS.has(field),
+        !ADDED_AT_FIELDS.has(field) &&
+        !REGISTRATION_ACCESS_FIELDS.has(field),
     );
     expect(
       unaccounted,
@@ -263,6 +274,15 @@ describe("Patient identity is a ruling, not a drift", () => {
       expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
       expect([...PATIENT_FIELDS], `${field} is authorised by the v10 brief but not declared`).toContain(field);
     }
+  });
+
+  it("accounts for exactly the bounded source-access metadata required by the journey correction", () => {
+    expect(REGISTRATION_ACCESS_FIELDS.size).toBe(1);
+    for (const [field, decision] of REGISTRATION_ACCESS_FIELDS) {
+      expect(DECISIONS.has(decision)).toBe(true);
+      expect([...PATIENT_FIELDS]).toContain(field);
+    }
+    expect(Object.keys(aPatient().registrationScope).sort()).toEqual(["kind", "placeId"]);
   });
 
   it("keeps the unruled stems denied OVER the allowlist, so nothing widens by implication", () => {

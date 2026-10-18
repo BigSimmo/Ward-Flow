@@ -1,3 +1,4 @@
+import { registrationIsInScope } from "./ward-patient-registration";
 import { communityDischargeCriteria } from "./ward-discharge-criteria";
 /**
  * **THE SCOPED WORKSPACE — what one role at one place is given to look at (role access plan,
@@ -893,6 +894,16 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   for (const admission of admissions) if (admission.patientId) patientIds.add(admission.patientId);
   for (const referral of referrals) if (referral.patientId) patientIds.add(referral.patientId);
 
+  // Registration only bridges the unlinked intake. Once linked, the normal encounter and
+  // hand-off rules own access; a historical source desk must not bypass their expiry.
+  const linkedPatientIds = new Set<string>();
+  for (const record of [...workspace.movements, ...workspace.admissions, ...workspace.referrals])
+    if (record.patientId) linkedPatientIds.add(record.patientId);
+  for (const patient of workspace.patients)
+    if (!linkedPatientIds.has(patient.id) && registrationIsInScope(patient.registrationScope, access, places)) {
+      patientIds.add(patient.id);
+      ownPatientIds.add(patient.id);
+    }
   let patients = workspace.patients.filter((patient) => patientIds.has(patient.id));
   if (officer) patients = patients.map(officerPatient);
   if (anonymise) patients = workspace.patients.filter((patient) => patientIds.has(patient.id)).map(anonymousPatient);

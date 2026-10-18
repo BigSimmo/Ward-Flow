@@ -1,5 +1,27 @@
 # Engine: reducer, events, state and persistence
 
+## Journey integrity — 18 October 2026
+
+`RECEIVE_REFERRAL` carries an optional opaque `submissionId` through shared validation and the
+reducer into its referral record. Drawer completion uses that identity and the explicit command
+outcome, rather than intake object identity. Definitive acceptance retires the owned recovery
+draft even when the resulting record is outside the returned scope.
+
+`ward-patient-registration.ts` validates a bounded source-place association for an unlinked
+registered patient. The shared write boundary checks that place against the authenticated desk;
+normal encounter/handoff scope replaces the bridge once the patient is linked. Executive,
+administrative and transport roles gain no patient identity through this bridge.
+`ward-patient-registration-reducer.ts` holds the registration mutation separately so scope and
+matching types do not depend on the reducer or bed-release model.
+
+`SET_CONFIGURATION.baseConfiguration` enables a three-way atomic merge: untouched fields retain
+newer values, conflicting changed fields refuse the operation, and the composed configuration
+must still validate. Legacy commands retain their existing contract. Discharge opens add an
+opaque `requestNamespace` to numeric request IDs and audit receipts, retaining legacy replay,
+actor, admission and world-generation safeguards. Local HTTP previews can allocate namespaces
+without `crypto.randomUUID`. Shared schemas, storage validation and focused journey/domain tests
+cover these additive fields. No database migration or live provider verification is implied.
+
 ## Synthetic form recovery — 17 October 2026
 
 `ward-session-drafts.ts` owns D-67's opt-in, versioned session draft envelopes, account and
@@ -42,7 +64,8 @@ through `ward-shared-client.ts` (polling, pending commands, conflict and retry s
 adopts committed server snapshots without reading/writing demo browser storage; only local view
 drafts remain browser-owned. `ward-shared-state-validation.ts` adds an explicit shared repatriation
 schema without changing the browser persistence fence. Existing reducer workflow roles describe
-the action's operational perspective; the authenticated shared role is coordinator.
+the action's operational perspective; the authenticated shared role and place scope bound which
+records and operations the account may access.
 
 `backend/ward-flow/engine.ts` bundles the domain engine for the shared backend. `postgres.mjs`
 executes versioned shared commands, receipts and audit in one transaction. The provider, its

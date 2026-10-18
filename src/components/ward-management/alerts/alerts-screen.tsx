@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -166,6 +167,8 @@ export function AlertsScreen() {
 
 function AlertsWorkspace() {
   usePrintableDisclosures();
+  const access = useEffectiveWardAccess();
+  const actionDisabledReason = access.role === "coordinator" ? undefined : "Only the coordinator can change alerts.";
 
   const state = useWardFlowSelect(
     "movements",
@@ -571,6 +574,7 @@ function AlertsWorkspace() {
   // Acting on the open alert keeps it open, so the panel never jumps to the next one mid-task.
   const detailHandlers: AlertDetailHandlers = {
     onTake: (item) => {
+      if (actionDisabledReason) return;
       setChosenId(item.id);
       // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
       if (currentInboxOwner(inboxOwnership[item.id], item.since)?.by === COORDINATOR) return;
@@ -582,6 +586,7 @@ function AlertsWorkspace() {
       dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: clockNow, inboxItemId: item.id });
     },
     onAcknowledge: (item) => {
+      if (actionDisabledReason) return;
       setChosenId(item.id);
       track({
         type: "ACKNOWLEDGE_INBOX_ITEM",
@@ -591,6 +596,7 @@ function AlertsWorkspace() {
       dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
     },
     onSnooze: (item, until, reason) => {
+      if (actionDisabledReason) return;
       // Say "snoozed" only for a snooze the reducer accepts: the same cap it enforces.
       if (!isSnoozeReason(reason) || !snoozeAllowed(until, clockNow, inboxItemIsActNow(item.id))) return;
       setChosenId(item.id);
@@ -602,6 +608,7 @@ function AlertsWorkspace() {
       dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id, until, reason });
     },
     onReturn: (item) => {
+      if (actionDisabledReason) return;
       track({
         type: "UNSNOOZE_INBOX_ITEM",
         ok: `"${item.title}" is back on the queue.`,
@@ -610,6 +617,7 @@ function AlertsWorkspace() {
       dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
     },
     onRelease: (item, reason: ReleasePullReason) => {
+      if (actionDisabledReason) return;
       if (!item.movementId) return;
       track({
         type: "RELEASE_PULL",
@@ -619,6 +627,7 @@ function AlertsWorkspace() {
       dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
     },
     onEscalate: (item) => {
+      if (actionDisabledReason) return;
       setChosenId(item.id);
       const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
       if (item.movementId && escalationAppliesTo(item, movement, units, now)) {
@@ -1159,6 +1168,7 @@ function AlertsWorkspace() {
       snoozedUntil={selected.snooze}
       configuration={configuration}
       handlers={detailHandlers}
+      actionDisabledReason={actionDisabledReason}
       releaseRef={releaseRef}
     />
   ) : null;

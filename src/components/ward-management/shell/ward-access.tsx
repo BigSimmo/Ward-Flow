@@ -79,6 +79,20 @@ import { DowntimePackBoundary } from "../reports/downtime-pack-context";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
+/** Record operations declare the current desk, never borrow a coordinator identity. */
+export function useWardRecordActors(): readonly WardRecordActor[] {
+  const access = useEffectiveWardAccess();
+  return useMemo(() => {
+    if (access.role === "coordinator") return [{ role: "coordinator" }];
+    if (access.role === "ward" && access.scope.kind === "ward")
+      return [...new Set(access.scope.unitIds)].map((actingUnitId) => ({ role: "ward" as const, actingUnitId }));
+    if (access.role === "community" && access.scope.kind === "team")
+      return [{ role: "community", actingTeamId: communityTeamSlug(access.scope.teamName) }];
+    if (access.role === "ed" || access.role === "officer") return [{ role: access.role }];
+    return [{ role: "demo" }];
+  }, [access]);
+}
+
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
@@ -236,7 +250,11 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     // A coordinator's preview is read only: nothing it does lands in the shared workspace (review on
     // PR #330), so a previewed ward never appears to have acted.
     const dispatch: WardFlowContextValue["dispatch"] = previewing
-      ? () => announceToWardShell("Preview only. Nothing was changed.")
+      ? () => {
+          const message = "Preview only. Nothing was changed.";
+          announceToWardShell(message);
+          return { commandId: "", status: "refused", message };
+        }
       : breakGlassPatientIds.size === 0
         ? context.dispatch
         : (event) => {
@@ -255,8 +273,9 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
               names(fields.referralId, glassReferralIds) ||
               inboxNamesGlass(fields.inboxItemId);
             if (touchesGlass) {
-              announceToWardShell("Read only. This record was opened outside your care.");
-              return;
+              const message = "Read only. This record was opened outside your care.";
+              announceToWardShell(message);
+              return { commandId: "", status: "refused", message };
             }
             return context.dispatch(event);
           };

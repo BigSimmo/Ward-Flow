@@ -57,6 +57,25 @@ const ids = z.array(id).max(MAX_ITEMS);
 const record = z.record(z.string(), z.unknown());
 
 const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
+  OPEN_DISCHARGE_RECORD: z.looseObject({
+    requestId: count,
+    requestNamespace: z
+      .string()
+      .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      .optional(),
+  }),
+  RECEIVE_REFERRAL: z.looseObject({
+    submissionId: z
+      .string()
+      .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      .optional(),
+  }),
+  ADD_PATIENT: z.looseObject({
+    registrationScope: z
+      .strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: id })
+      .optional(),
+  }),
+  SET_CONFIGURATION: z.looseObject({ payload: record, baseConfiguration: record.optional() }),
   FLAG_MOVEMENT_TURNAROUND_PRIORITY: z.looseObject({
     movementId: id,
     unitId: id,

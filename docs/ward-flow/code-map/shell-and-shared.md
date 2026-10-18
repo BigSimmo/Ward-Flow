@@ -1,5 +1,14 @@
 # Routes, shell, navigation and shared UI
 
+## Scoped command completion — 18 October 2026
+
+`shell/ward-access.tsx` returns explicit command outcomes for blocked preview/break-glass writes
+and preserves permitted provider outcomes. `useWardRecordActors` binds record reads and opens to
+the current permitted ward/team/coordinator actor rather than a borrowed coordinator identity.
+The sign-in sibling remains a directly addressable role-preview demonstration; real shared sign-in
+is handled by the shared access gate. The Settings digest reference is available only where the
+mockup route is enabled, with an explanation in production.
+
 ## Placement touch targets — 17 October 2026
 
 `wf/button.module.css` gives canonical medium Buttons marked `data-placement-action` a scoped
