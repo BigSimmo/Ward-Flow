@@ -2700,5 +2700,3 @@ export function ShortlistPanel({
     </div>
   );
 }
-
-}
