@@ -14,28 +14,25 @@ import {
 } from "react";
 
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import {
   BED_STATE_DETAILS,
   BED_STATE_LABELS,
   bedStates,
   type BedStateCounts,
 } from "@/components/ward-management/ward-bed-states";
-import { eligibility, wardAddressing } from "@/components/ward-management/ward-eligibility";
+import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import {
   candidateReason,
-  eligibleCandidatesAmong,
   elapsedLabel,
   isOpen,
   movementHealthService,
   queueStageSummaries,
   stageCopy,
-  transportStatusLabel,
   unitCapacity,
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatElapsed, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import type {
   BedRelease,
@@ -52,9 +49,7 @@ import {
   groupCandidatesByTravelBand,
   matchReason,
   referralCandidates,
-  referralClocks,
   referralQueueOrder,
-  REFERRAL_CLOCK_TERMS,
   TRAVEL_BAND_GROUP_EMPTY_SENTENCE,
   travelBandGroupCounts,
   travelBandGroupCountsSentence,
@@ -62,7 +57,6 @@ import {
   type ReferralCandidate,
   type TravelBandGroup,
   type TravelBandGroupCounts,
-  referralPersonFacts,
 } from "@/components/ward-management/ward-referrals";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { PLACEMENT_REASON_GROUPS, placementReason } from "@/components/ward-management/ward-placement-reasons";
@@ -95,6 +89,18 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 
 import styles from "./ward-management-network.module.css";
+import {
+  candidatesFor,
+  capabilityLabel,
+  originServiceFit,
+  settingFit,
+  transportTone,
+  type Connector,
+} from "./ward-management-network-model";
+import { NetworkQueueColumn, ReferralPlacementSummary } from "./ward-management-network-parts";
+
+// Moved to `ward-management-network-model.ts`; re-exported so existing importers keep working.
+export { originServiceFit };
 import thirdEdition from "./ward-management-network-third-edition.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -159,87 +165,6 @@ const columnServices: { left: readonly HealthService[]; right: readonly HealthSe
 export const BAND_ARRANGEMENT_LIMITATION_NOTICE =
   "Synthetic travel bands for this person's recorded home region; not a map. Exact home location and measured " +
   "hospital travel times are not recorded.";
-
-type Connector = { id: string; path: string; kind: "demand" | "route" };
-type Candidate = { unit: Unit; rank: number; etaLabel: string; verdict: ReturnType<typeof eligibility> };
-
-function capabilityLabel(unit: Unit) {
-  const cohortLabel = unit.cohort === "Older adult" ? "Older" : unit.cohort;
-  return `${designationSummary(unit)} · ${cohortLabel}`;
-}
-
-function candidatesFor(patient: Movement, units: Unit[], now: Instant): Candidate[] {
-  // Only the movement's actual recorded destination may show a real transport state — the
-  // other two candidates are computed shortlist entries the movement was never referred to,
-  // and must not inherit a transport job that belongs to a different unit (Task 6 Important 3).
-  /*
-   * ACCEPTED-ONLY, not `destinationUnit`. This id decides which candidate is allowed to display
-   * the movement's REAL transport state; every other candidate shows "Not yet booked". Because
-   * `destinationUnit` is `acceptedUnitId ?? referredUnitIds[0]`, a movement with an outstanding
-   * referral and no acceptance handed its transport job to the FIRST WARD ASKED — a ward with no
-   * claim on it at all, displayed beside that ward's name as though the vehicle were coming there.
-   *
-   * The rule cannot lose anything by narrowing: a transport job only exists on a movement at stage
-   * `pulled` or beyond, and `PULL_PATIENT` requires an `acceptedUnitId`. So a movement with a
-   * transport job ALWAYS has an accepted unit, and the fallback could only ever fire on a movement
-   * whose transport was `undefined` — where it labelled the wrong ward "Not yet requested" rather
-   * than leaving it as a plain candidate.
-   */
-  const recordedDestinationId = patient.acceptedUnitId;
-  return eligibleCandidatesAmong(patient, units, now, 3).map((candidate, index) => ({
-    unit: candidate.unit,
-    verdict: candidate.verdict,
-    rank: index + 1,
-    etaLabel: candidate.unit.id === recordedDestinationId ? transportStatusLabel(patient.transport) : "Not yet booked",
-  }));
-}
-
-/**
- * Compares the candidate unit's health service against the *origin ED's* health service —
- * this is NOT catchment. Catchment is where the patient lives, not where they presented, and
- * `Movement` has no catchment field (see the doc comment on `movementHealthService` and the
- * glossary's Catchment entry). Naming this `catchmentFit` previously collapsed exactly the
- * distinction Accepted ADR 3 exists to keep separate.
- *
- * The two labels are the fact this function computes and nothing more. They were "Best" and
- * "Escalation" until Phase 8 Task 6. "Best" was the defect: on screen it read as the system's
- * opinion about which bed this person should have, when all that was compared was two health
- * service names — the doc comment above already said so at length, and the label did not.
- * Phase 8 puts honest travel bands on this same screen, which would have made the superlative
- * look as though it had been checked too.
- *
- * THIS FUNCTION sorts, ranks and hides nothing: it answers one yes/no comparison about one
- * candidate and returns a label for it. That is a claim about this function alone, and it is
- * deliberately not a claim about the file. `candidatesFor` above orders the shortlist and cuts it
- * to three (`eligibleCandidatesAmong` sorts it twice), and the compare table renders a positional
- * rank beside each column heading. Those predate Phase 8, are a deliberate three-of-many
- * shortlist on this screen rather than a truncation bug, and are out of scope here — the point is
- * only that the LABEL must not stack a ranking claim of its own on top of them, which is exactly
- * what "Best" did. Neither label may ever carry a comparative word
- * (`tests/ward-management.test.ts` pins that, the same guard `tests/ward-travel-bands.test.ts`
- * holds over the band labels). The tones are unchanged — a colour is not a claim in the way a
- * word is.
- */
-export function originServiceFit(patient: Movement, unit: Unit) {
-  const unitService = siteByCode(unit.siteCode)?.service;
-  if (unitService && unitService === movementHealthService(patient)) {
-    return { label: "Same health service", tone: "good" as const };
-  }
-  return { label: "Different health service", tone: "warning" as const };
-}
-
-function settingFit(patient: Movement, unit: Unit, now: Instant) {
-  const verdict = eligibility(patient, unit, now);
-  const cohortOk = verdict.gates.find((gate) => gate.gate === "cohort")?.pass ?? false;
-  const securityOk = verdict.gates.find((gate) => gate.gate === "security")?.pass ?? false;
-  if (cohortOk && securityOk) return { label: "Exact match", tone: "good" as const };
-  if (cohortOk || securityOk) return { label: "Partial match", tone: "warning" as const };
-  return { label: "Not eligible", tone: "danger" as const };
-}
-
-function transportTone(etaLabel: string) {
-  return /requested|awaiting|not yet/i.test(etaLabel) ? "warning" : "good";
-}
 
 function bedStateValue(
   key: BedStateKey,
@@ -457,89 +382,6 @@ function NetworkBandGroup({
         </div>
       )}
     </section>
-  );
-}
-
-/**
- * Task 7 (spec D8-5). What the aside says while a referral is the diagram's subject: who is being
- * placed, and where the answers are.
- *
- * It deliberately carries NO tally and NO banner. "N of M units accept this referral right now"
- * and "no unit of this age band exists in this network" are the coordinator's match view's own
- * sentences, and the second must always be met before the first — repeating either here would be
- * a second surface answering one question, in wording that could drift from the original. The
- * verdicts themselves are on the unit nodes, where the beds are, from the one function the match
- * view uses.
- *
- * The referral's five facts and its wait, and nothing else: no band (that is step two), no
- * kilometre, no free text, no comparative word about any bed.
- */
-/**
- * THE TWO CLOCKS A REFERRAL CARRIES, worded so a stopped one cannot read as a running one.
- *
- * This replaces `referralWaitLabel`, which was `formatElapsed(minutesUntil(now, raisedAt))` — a
- * clock with no stop condition. It counted from the referral forever, including long after the
- * person was triaged and sitting in a department.
- *
- * ⚠️ MEASURED ON THE SEED, AND THE MEASUREMENT CORRECTED MY OWN CLAIM. Four hours into the
- * demonstration `RF-003` reads "4h 55m waiting" against a true referral wait of 25 MINUTES — nearly
- * twelvefold. I was about to report that as visible here. IT IS NOT: `RF-003` is `accepted`, and
- * `referralQueueOrder` filters to `queued`, so this screen never shows it. Every referral this
- * queue DOES show was triaged before the referral was raised, so the old label was right for all
- * of them.
- *
- * So on this surface the defect is LATENT rather than live — the wrong function was wired in, and
- * the fixture happens to contain no queued referral that exposes it. It becomes visible the moment
- * a queued referral is triaged during a demonstration; `RF-001` is queued and not yet in a
- * department, so triaging it does exactly that.
- *
- * ⚠️ AN INFLATED WAIT IS WHY THIS SURVIVES ANYWHERE: a wrong clock looks wrong, a wrong length of
- * stay looks plausible. The fixture's own longest wait is hours, so a doubled figure reads as a
- * busy night rather than as a bug.
- *
- * Wording comes from `REFERRAL_CLOCK_TERMS`, never from here — the same rule as `urgencyTierLabel`
- * below, because a second spelling of one field is this project's most expensive defect class.
- *
- * ⚠️ NEVER SAY "ARRIVED". The field is `triagedAt`. A patient arrives, waits, and is triaged some
- * time later; on a busy night that gap is not small. "In department" is measured from triage and
- * must never be worded as arrival.
- */
-function referralClockLines(referral: Referral, now: Instant): { department: string; referral: string } {
-  const { sinceReferral, sinceReferralRunning, inDepartment } = referralClocks(referral, now);
-  return {
-    // `undefined` means not in the department yet — NEVER 0. "0m in department" reads as "just
-    // got there", the exact opposite of the truth.
-    department:
-      inDepartment === undefined
-        ? REFERRAL_CLOCK_TERMS.notInDepartment
-        : `${formatElapsed(inDepartment)} ${REFERRAL_CLOCK_TERMS.inDepartment}`,
-    referral: `${formatElapsed(sinceReferral)} ${
-      sinceReferralRunning ? REFERRAL_CLOCK_TERMS.sinceReferral : REFERRAL_CLOCK_TERMS.sinceReferralStopped
-    }`,
-  };
-}
-
-function ReferralPlacementSummary({ referral, who, now }: { referral: Referral; who: string; now: Instant }) {
-  return (
-    <>
-      <header className={styles.panelHeader}>
-        <h2>
-          <ListChecks aria-hidden="true" /> Referral placement · {who}
-        </h2>
-      </header>
-      <p className={styles.patientLine} data-tier={referral.urgency} data-testid="ward-network-placement-tier">
-        {urgencyTierLabel(referral.urgency)}
-      </p>
-      <p className={styles.patientSubLine} data-testid="ward-network-placement-facts">
-        {referralPersonFacts(referral).join(" · ")}
-      </p>
-      {/* Both clocks, side by side. The owner's decision (P9-D2): the GAP between them is the
-          signal — a long time in department with a short time since referral says the delay is
-          upstream of mental health, and the reverse says it is ours. One number cannot say either. */}
-      <p className={styles.patientSubLine} data-testid="ward-network-placement-clocks">
-        {referralClockLines(referral, now).department} &middot; {referralClockLines(referral, now).referral}
-      </p>
-    </>
   );
 }
 
@@ -1112,126 +954,21 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
       </section>
 
       <div className={styles.networkGrid}>
-        <div className={styles.queueColumn}>
-          <section className={styles.queuePanel} aria-label="Waiting">
-            <header className={styles.panelHeader}>
-              <h2>Waiting</h2>
-              {/*
-                ⚠️ `openMovements`, NEVER the filtered length. This figure is read as "how much
-                demand is there", and a filter that could shrink it would let a coordinator who has
-                not noticed the filter take a fraction of the waiting list for the whole of it —
-                with the rows beneath it agreeing, so nothing on the screen could contradict it.
-
-                ⚠️ AND THE NAME IS `open-total`, NOT `queue-count`, FOR A REASON THAT COSTS TWO RED
-                TESTS TO REDISCOVER. The rows below are `ward-network-queue-<id>`, and the suites
-                count them with `getAllByTestId(/^ward-network-queue-/)`. Any testid starting
-                `ward-network-queue-` therefore joins that count as a phantom row: the first draft
-                of this element was `ward-network-queue-count`, and the row totals silently became
-                44 and 16 instead of 43 and 14. Do not name anything in this panel with that prefix
-                unless it is a row.
-              */}
-              <span className={styles.count} data-testid="ward-network-open-total">
-                {openMovements}
-              </span>
-            </header>
-            {stageFilter ? (
-              <p className={styles.queueFilterNotice} data-testid="ward-network-filter-notice">
-                <span>
-                  Showing {visibleQueue.length} of {openMovements} &mdash; {stageCopy[stageFilter].label}
-                </span>
-                <button type="button" className={styles.queueFilterClear} onClick={() => setStageFilter(null)}>
-                  Show the whole queue
-                </button>
-              </p>
-            ) : null}
-            <div className={styles.queueList} role="region" aria-label="Waiting list" tabIndex={0}>
-              {visibleQueue.map((candidate) => (
-                <button
-                  type="button"
-                  key={candidate.id}
-                  onClick={() => {
-                    setSelectedPatientId(candidate.id);
-                    setSelectedReferralId(null);
-                    setSelectedUnitId(null);
-                  }}
-                  aria-pressed={selectedReferral === null && candidate.id === patient.id}
-                  data-testid={`ward-network-queue-${candidate.id}`}
-                  className={styles.queueRow}
-                >
-                  <span className={styles.queueTop}>
-                    <strong>
-                      {isPhone
-                        ? resolveSubjectPatient(candidate, umrnLookup).umrn
-                        : patientIdentityLine(resolveSubjectPatient(candidate, umrnLookup))}
-                    </strong>
-                    <span className={styles.elapsed}>{elapsedLabel(candidate, now)}</span>
-                  </span>
-                  <span className={styles.queueMeta}>
-                    <span
-                      className={styles.tier}
-                      data-tier={candidate.urgency}
-                      data-label={urgencyTierLabel(candidate.urgency)}
-                    >
-                      {candidate.urgency}
-                    </span>
-                    {candidate.cohort} · {candidate.security} ward
-                  </span>
-                  <span className={styles.queueMeta}>
-                    {movementHealthService(candidate) ?? "Origin service not identified"} · {candidate.legalStatus}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/*
-           * Task 7. The second subject the diagram can answer for. It sits beside the movement queue
-           * rather than replacing it — a coordinator places both, and neither list is a shortlist of
-           * the other. Selecting a referral here makes it the diagram's subject; selecting it again
-           * hands the diagram back to the movement above, so every control does something.
-           */}
-          <section className={styles.queuePanel} aria-label="Referral queue">
-            <header className={styles.panelHeader}>
-              <h2>Referral queue</h2>
-              <span className={styles.count}>{referralQueue.length}</span>
-            </header>
-            <div className={styles.queueList} role="region" aria-label="Referral queue list" tabIndex={0}>
-              {referralQueue.map((referral) => (
-                <button
-                  type="button"
-                  key={referral.id}
-                  onClick={() => {
-                    setSelectedReferralId((current) => (current === referral.id ? null : referral.id));
-                    setSelectedUnitId(null);
-                  }}
-                  aria-pressed={selectedReferral?.id === referral.id}
-                  data-testid={`ward-network-referral-${referral.id}`}
-                  className={styles.queueRow}
-                >
-                  <span className={styles.queueTop}>
-                    <strong>
-                      {isPhone
-                        ? resolveSubjectPatient(referral, umrnLookup).umrn
-                        : patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
-                    </strong>
-                    {/* The referral clock only: a queue row is about how long this has waited for a
-                        decision, and the department clock is on the detail panel where there is room
-                        for the comparison. It carries its own term, so a stopped clock reads as
-                        "referral to triage" rather than as a wait still being served. */}
-                    <span className={styles.elapsed}>{referralClockLines(referral, now).referral}</span>
-                  </span>
-                  {/* `urgencyTierLabel`, never a bare digit: the referral board already spells a
-                   *  referral's tier this way on every row, and a second spelling of one field is
-                   *  this project's most expensive defect class. */}
-                  <span className={styles.queueMeta} data-tier={referral.urgency}>
-                    {urgencyTierLabel(referral.urgency)}
-                  </span>
-                  <span className={styles.queueMeta}>{referralPersonFacts(referral).join(" · ")}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
+        <NetworkQueueColumn
+          openMovements={openMovements}
+          stageFilter={stageFilter}
+          setStageFilter={setStageFilter}
+          visibleQueue={visibleQueue}
+          setSelectedPatientId={setSelectedPatientId}
+          setSelectedReferralId={setSelectedReferralId}
+          setSelectedUnitId={setSelectedUnitId}
+          selectedReferral={selectedReferral}
+          patient={patient}
+          isPhone={isPhone}
+          umrnLookup={umrnLookup}
+          now={now}
+          referralQueue={referralQueue}
+        />
 
         <section className={styles.canvasPanel} aria-label="Operational constellation">
           <header className={styles.panelHeader}>
