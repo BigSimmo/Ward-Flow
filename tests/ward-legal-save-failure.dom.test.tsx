@@ -38,7 +38,11 @@ it("warns on a rejected legal-save completion while keeping the editable draft a
   );
   expect(await screen.findByText("Save is not confirmed. Review the board before trying again.")).toBeVisible();
   expect(sheet).toBeVisible();
-  expect(within(sheet).getByLabelText("Time on form")).toHaveValue("10:00");
+  const time = within(sheet).getByLabelText("Time on form");
+  expect(time).toHaveValue("10:00");
+  expect(time).not.toBeDisabled();
+  fireEvent.change(time, { target: { value: "10:01" } });
+  expect(time).toHaveValue("10:01");
   expect(save).not.toHaveAttribute("aria-disabled", "true");
   expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });
