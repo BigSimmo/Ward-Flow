@@ -342,6 +342,8 @@ describe("owner pins carried over from the retired full-page form", () => {
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
+    // No draft entry before the debounce. The session marker (wf-draft-session:v1) is not a draft.
+    expect(setItem.mock.calls.some(([key]) => String(key).startsWith("wf-draft:v1:"))).toBe(false);
     setItem.mockRestore();
   });
 

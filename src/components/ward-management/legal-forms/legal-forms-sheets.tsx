@@ -304,8 +304,11 @@ export function RecordFormSheet({
               const submission = ++submissionVersion.current;
               setSaving(true);
               const finish = (accepted: boolean) => {
-                if (owner !== draftSessionVersion() || submission !== submissionVersion.current) return;
+                // A newer submission owns the saving state. A session reset while this one was pending
+                // still releases the controls; it only stops the old draft being cleared or closed.
+                if (submission !== submissionVersion.current) return;
                 setSaving(false);
+                if (owner !== draftSessionVersion()) return;
                 if (accepted) {
                   clearDraft();
                   setTimeOnForm("");

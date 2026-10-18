@@ -8,12 +8,16 @@ let generation = 0;
 let account = "synthetic-demo";
 let activeScenarioScope: string | null = null;
 let fallbackSession = "memory-only";
+// The fallback session keeps one start time. A fresh Date.now() on every call made a draft saved
+// in the fallback (no window, blocked storage, or no crypto.randomUUID on plain-HTTP LAN testing)
+// look newer than its session, so the next read discarded it.
+let fallbackStartedAt = Date.now();
 
 export const draftSessionVersion = () => generation;
 
 function sessionDetails(): { id: string; startedAt: number } {
   const fresh = () => ({ id: crypto.randomUUID(), startedAt: Date.now() });
-  if (typeof window === "undefined") return { id: fallbackSession, startedAt: Date.now() };
+  if (typeof window === "undefined") return { id: fallbackSession, startedAt: fallbackStartedAt };
   try {
     const existing = window.sessionStorage.getItem(SESSION_KEY);
     if (existing) {
@@ -36,7 +40,7 @@ function sessionDetails(): { id: string; startedAt: number } {
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
     return next;
   } catch {
-    return { id: fallbackSession, startedAt: Date.now() };
+    return { id: fallbackSession, startedAt: fallbackStartedAt };
   }
 }
 
@@ -48,6 +52,7 @@ export function clearSessionDrafts(): void {
   generation += 1;
   activeScenarioScope = null;
   fallbackSession = `memory-only-${generation}`;
+  fallbackStartedAt = Date.now();
   if (typeof window === "undefined") return;
   try {
     const storage = window.sessionStorage;

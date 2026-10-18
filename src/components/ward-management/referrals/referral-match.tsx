@@ -64,9 +64,9 @@ import { BandGroup, MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
 import { renderReferralMatchTiers } from "./referral-match-tiers";
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { cldFeatureEnabled, unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
@@ -128,7 +128,10 @@ export function ReferralMatchView({
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases");
-  const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
+  // CLD sourcing needs the device-resolved flag AND the server-resolved one the reducer validates
+  // against: a device override (Settings or ?flags=) cannot reach the reducer, so on its own it must
+  // not offer a CLD preference the reducer would refuse.
+  const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge") && cldFeatureEnabled();
   const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
   const turnaroundRejection =
     turnaroundRejectionStart !== null && rejections.length > turnaroundRejectionStart
@@ -233,6 +236,19 @@ export function ReferralMatchView({
       (linkedMovement.closure || linkedMovement.stage === "arrived" || linkedMovement.acceptedUnitId)
     )
       return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
+    // Referral-only path: mirror the reducer's existing open-request check so a ward whose request
+    // has closed is never offered a flag the reducer will refuse. (The movement path is unchanged.)
+    if (
+      !linkedMovement &&
+      !referral.destinations.some(
+        (arm) =>
+          arm.state === "queued" &&
+          arm.withdrawnAt === undefined &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
+      )
+    )
+      return { disabledReason: "An open ward request must match the receiving unit's clinical and legal gates." };
     const source = unitTurnaroundSource(turnaroundState, unitId, now, cldEnabled);
     if (!source)
       return { disabledReason: "No current CLD-ready admission or unblocked confirmed departure on this unit." };

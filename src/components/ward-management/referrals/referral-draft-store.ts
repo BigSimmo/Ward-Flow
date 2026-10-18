@@ -120,7 +120,12 @@ export function readKeptReferralDraft<T>(storageKey?: string): T | null {
       !isRecord(record.communityNeeds) ||
       !isRecord(record.edNeeds) ||
       typeof record.highAcuity !== "boolean" ||
-      typeof record.catchmentConfirmed !== "boolean"
+      typeof record.catchmentConfirmed !== "boolean" ||
+      // Enum and optional fields are read without a fallback (DESTINATIONS[destType], unidentified.trim()),
+      // so a damaged entry is removed rather than crashing the drawer on every reopen.
+      !["community", "ed", "ward"].includes(record.destType as string) ||
+      !["patient", "referral", "documentation", "placement"].includes(record.activeSection as string) ||
+      (record.unidentified !== undefined && record.unidentified !== null && typeof record.unidentified !== "string")
     ) {
       removeSessionDraft(storageKey);
       return null;

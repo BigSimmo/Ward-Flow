@@ -31,7 +31,8 @@ export function unitHasCldReadyDeparture(state: CldState, unitId: string, now: I
         "all_met",
   );
 }
-function cldFeatureEnabled(): boolean {
+/** The server-resolved CLD flag the reducer validates against; device overrides cannot reach it. */
+export function cldFeatureEnabled(): boolean {
   return resolveWardFeatureFlags({ environment: wardEnvironment(), server: serverWardFeatureFlags(), device: {} }).some(
     (flag) => flag.name === "top25-criteria-led-discharge" && flag.on,
   );
