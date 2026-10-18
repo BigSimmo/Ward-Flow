@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
-import { setDraftAccount } from "./ward-session-drafts";
-import { clearReferralDraftSession } from "./referrals/referral-draft-store";
+import { resetDraftSession, setDraftAccount } from "./ward-session-drafts";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
@@ -128,7 +127,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
     let connectedActorId: string | null = null;
     const disconnect = (forgetDrafts = true) => {
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
-      if (forgetDrafts) clearReferralDraftSession();
+      if (forgetDrafts) resetDraftSession();
       connectedActorId = null;
       if (timer) clearInterval(timer);
       timer = undefined;
@@ -322,7 +321,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           setView({ ...emptyView, status: "ready" });
         } else if (auth.userId) await connect();
         else {
-          clearReferralDraftSession();
+          resetDraftSession();
           setView({ ...emptyView, status: "ready" });
           if (confirmation)
             setForm((old) => ({ ...old, open: true, message: "Email link processed. Sign in to continue." }));

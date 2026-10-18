@@ -64,6 +64,20 @@ export function clearSessionDrafts(): void {
   }
 }
 
+const resetListeners = new Set<() => void>();
+/**
+ * A lazily loaded draft owner registers its memory reset here, so the always-loaded shell can end a
+ * draft session without bundling that owner. An owner that never loaded holds no memory to reset.
+ */
+export function onDraftSessionReset(listener: () => void): void {
+  resetListeners.add(listener);
+}
+/** Sign-out, account change or world replacement: stored drafts and every loaded memory copy. */
+export function resetDraftSession(): void {
+  clearSessionDrafts();
+  for (const listener of resetListeners) listener();
+}
+
 export function setDraftAccount(next: string): void {
   // Start the bounded local recovery window when the account is connected, not on its first keystroke.
   sessionDetails();

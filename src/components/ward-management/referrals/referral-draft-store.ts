@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  clearSessionDrafts,
+  onDraftSessionReset,
+  resetDraftSession,
   draftSessionVersion,
   readSessionDraft,
   removeSessionDraft,
@@ -35,12 +36,7 @@ function referralDraftSessionVersion(): number {
 
 /** A new signed-in person must never inherit the previous person's draft or sender. */
 export function clearReferralDraftSession(): void {
-  sessionVersion += 1;
-  clearSessionDrafts();
-  keptStorageKey = undefined;
-  kept = null;
-  keptAtMs = null;
-  lastReferrer = null;
+  resetDraftSession();
 }
 
 export function keepReferralDraft<T>(draft: T, ownerVersion = sessionVersion, storageKey?: string): boolean {
@@ -376,3 +372,13 @@ export function useReferralDraftAutosave<T>({
 
   return { keptAt, nowMs, stop, keepNow, sessionSaved };
 }
+
+// Registered last: the shell resets this memory through ward-session-drafts without importing this
+// module, which keeps the referral drawer's draft code out of every route's eager bundle.
+onDraftSessionReset(() => {
+  sessionVersion += 1;
+  keptStorageKey = undefined;
+  kept = null;
+  keptAtMs = null;
+  lastReferrer = null;
+});
