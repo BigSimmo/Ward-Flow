@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  memo,
   startTransition,
   useCallback,
   useDeferredValue,
@@ -45,7 +44,6 @@ import {
   StatusGlyph,
   TextInput,
   buttonClass,
-  cx,
   useIsPhone,
   durMinutes,
 } from "@/components/wf";
@@ -79,6 +77,16 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { HubPlaceRow } from "./hub-place-row";
+import {
+  KIND_WORD_LONG,
+  barWidth,
+  capacityLine,
+  matchesHighlight,
+  occupancyShare,
+  type HubHighlight,
+  type Order,
+} from "./hub-screen-helpers";
 
 /**
  * PLACES (v6) — one place to reach every ward, emergency department and community team.
@@ -92,207 +100,6 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  * (Drive from, Nearest, From Peel) and its 24-hour ready-beds chart have no data in this app and
  * are left out rather than drawn as dead controls.
  */
-
-type Order = "service" | "ready";
-
-/** What a hero chip or Ready beds only is highlighting. */
-type HubHighlight = "none" | "ready" | "pulled" | "closed" | "stale";
-
-function matchesHighlight(entry: HubEntry, highlight: HubHighlight): boolean {
-  switch (highlight) {
-    case "ready":
-      return (entry.ready ?? 0) > 0;
-    case "pulled":
-      return (entry.pulled ?? 0) > 0;
-    case "closed":
-      return (entry.closed ?? 0) > 0;
-    case "stale":
-      return entry.stale === true;
-    default:
-      return true;
-  }
-}
-
-/**
- * ⚠️ **READY AND NOT-YET-CLEARED ARE TWO NUMBERS.** Owner ruling, 2026-09-05: a bed can be free
- * per the feed and still be being made ready, and the reducer refuses `PULL_PATIENT` into one.
- * The qualifier sits BESIDE Ready and is never subtracted from it. Never collapse these into one
- * figure, and never show only the larger.
- */
-function capacityLine(entry: HubEntry): string {
-  if (entry.ready === undefined) return "Bed numbers not reported";
-  const ready = `${entry.ready} ready`;
-  if (entry.pendingPreparation === undefined || entry.pendingPreparation === 0) return ready;
-  return `${ready} · ${entry.pendingPreparation} still being made ready`;
-}
-
-/**
- * A segment's share of the bar, as a CSS width. ⚠️ A zero-bed network returns 0%, not NaN%, which a
- * browser silently discards and leaves a bar that looks deliberately empty.
- */
-function barWidth(part: number, total: number): string {
-  if (total <= 0) return "0%";
-  return `${Math.max(0, Math.min(100, (part / total) * 100))}%`;
-}
-
-/**
- * Occupancy of a group of wards, one decimal place. Undefined for a group with no beds. Occupied or
- * Pulled, the one occupancy count every page and the rail print (`ward-occupancy.ts`, device audit
- * 11 Oct 2026); it used to count the Occupied box alone, so Places read 79.6% against the rail's 85%.
- */
-function occupancyShare({
-  occupied,
-  pulled,
-  beds,
-}: {
-  occupied: number;
-  pulled: number;
-  beds: number;
-}): string | undefined {
-  if (beds <= 0) return undefined;
-  return `${(((occupied + pulled) / beds) * 100).toFixed(1)}%`;
-}
-
-const KIND_WORD_LONG: Record<HubKind, string> = {
-  ward: "Ward",
-  ed: "Emergency department",
-  community: "Community team",
-};
-
-const HubPlaceRow = memo(function HubPlaceRow({
-  entry,
-  active,
-  dimmed,
-  pinned,
-  isPhone,
-  now,
-  edWaiting,
-  edLongestWaitMinutes,
-  onSelect,
-}: {
-  entry: HubEntry;
-  active: boolean;
-  dimmed: boolean;
-  pinned: boolean;
-  isPhone: boolean;
-  now: number;
-  edWaiting: number;
-  edLongestWaitMinutes: number;
-  onSelect: (id: string) => void;
-}) {
-  const wardFigures =
-    entry.kind === "ward" && entry.ready !== undefined
-      ? {
-          ready: entry.ready,
-          pulled: entry.pulled ?? 0,
-          closed: entry.closed ?? 0,
-          occupied: entry.occupied ?? 0,
-          pendingPreparation: entry.pendingPreparation,
-        }
-      : undefined;
-  return (
-    <li
-      className={cx(styles.resultRow, active && styles.resultRowActive)}
-      data-dim={dimmed ? "true" : undefined}
-      data-hub-row={entry.id}
-    >
-      <button
-        type="button"
-        className={styles.resultMain}
-        aria-current={active ? "true" : undefined}
-        onClick={() => onSelect(entry.id)}
-      >
-        <span className={styles.resultText}>
-          <span className={styles.resultName}>
-            {entry.name}
-            {/* Phone (v10): a pinned place carries a filled star by its name; pinning is in its sheet. */}
-            {isPhone && pinned ? (
-              <>
-                <Star className={styles.phonePinMark} size={14} aria-hidden="true" />
-                <SrOnly>, pinned</SrOnly>
-              </>
-            ) : null}
-          </span>
-          <span className={styles.resultSub}>
-            {(entry.kind === "ward" ? [entry.site, entry.cohort, entry.security] : [entry.site, entry.service])
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        </span>
-        <span className={styles.resultBeds}>
-          {wardFigures === undefined ? null : (
-            <>
-              <BedStrip bar counts={wardFigures} wardName={entry.name} />
-              <span
-                className={styles.resultFigures}
-                title={`${wardFigures.ready} ready, ${wardFigures.pulled} pulled, ${wardFigures.closed} closed, of ${entry.beds ?? 0} beds`}
-              >
-                <span aria-hidden="true">
-                  {wardFigures.ready}/{wardFigures.pulled}/{wardFigures.closed} of {entry.beds ?? 0}
-                </span>
-                <SrOnly>
-                  {wardFigures.ready} ready, {wardFigures.pulled} pulled, {wardFigures.closed} closed, of{" "}
-                  {entry.beds ?? 0} beds
-                </SrOnly>
-              </span>
-              {entry.pendingPreparation === undefined || entry.pendingPreparation === 0 ? null : (
-                <span className={styles.resultPrep}>{entry.pendingPreparation} being made ready</span>
-              )}
-            </>
-          )}
-        </span>
-        <span className={styles.resultConfirmed}>
-          {entry.kind === "ed" ? (
-            edWaiting > 0 ? (
-              <>
-                {durMinutes(edLongestWaitMinutes)} <span className={styles.resultAgo}>longest</span>
-              </>
-            ) : null
-          ) : entry.kind !== "ward" || entry.confirmedAt === undefined ? null : entry.stale === true ? (
-            <>
-              {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
-              <StatusGlyph tone="warning" size={8} />
-              {durMinutes(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
-            </>
-          ) : (
-            <>
-              {durMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
-            </>
-          )}
-        </span>
-        <span className={styles.resultReady}>
-          {entry.kind === "ed" ? (
-            <>
-              <span className={styles.resultReadyNum}>{edWaiting}</span>
-              <span className={styles.resultReadyWord}>waiting</span>
-            </>
-          ) : entry.kind !== "ward" ? null : entry.ready === undefined ? (
-            <span className={styles.resultReadyWord}>Not reported</span>
-          ) : (
-            <>
-              <span className={styles.resultReadyNum}>{entry.ready}</span>
-              {/* Phone review F-24: "0 to check" read as a count of checks; the stale flag beside it
-                  already says the count needs checking. */}
-              <span className={styles.resultReadyWord}>ready</span>
-            </>
-          )}
-        </span>
-      </button>
-      {/* ⚠️ A sibling of the row button, not a child: a button inside a button is invalid HTML. */}
-      {isPhone ? null : (
-        <button
-          type="button"
-          className={cx(styles.pinButton, pinned && styles.pinButtonOn)}
-          aria-pressed={pinned}
-          aria-label={`${pinned ? "Unpin" : "Pin"} ${entry.name}`}
-          onClick={() => toggleHubPin(entry.id)}
-        >
-          <Star className={styles.pinIcon} size={15} aria-hidden="true" />
-        </button>
-      )}
-    </li>
-  );
-});
 
 export function HubScreen() {
   usePrintableDisclosures();
