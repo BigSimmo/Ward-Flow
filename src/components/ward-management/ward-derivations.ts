@@ -1274,7 +1274,7 @@ export type InboxItem = {
 export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
   plannedAdmissions?: readonly PlannedAdmission[];
   /**
-   * Top 25 item 12 (flag `top25-stuck-handover`): when set, a "Transport awaiting departure" row
+   * Top 25 item 12: when set, a "Transport awaiting departure" row
    * whose transport was accepted at least this many minutes ago is named a stuck handover for the
    * sending team. Callers pass the configured transport booked target
    * (`configuration.transportBookedTargetMinutes`), never a separate figure. Left out, the row is
@@ -2330,7 +2330,7 @@ export interface NextWardsAfterRefusal {
 }
 
 /**
- * Next best ward after a refusal (Top 25 item 3, flag `top25-next-ward`). Once a ward has declined
+ * Next best ward after a refusal (Top 25 item 3). Once a ward has declined
  * and none has accepted, this suggests the wards nobody has asked yet that pass every eligibility
  * gate, ranked by `deriveTopCompatibleWards`. A ward that declined or still holds a live request
  * is never suggested. It only suggests: the coordinator still chooses and refers with

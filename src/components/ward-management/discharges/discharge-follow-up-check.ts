@@ -3,7 +3,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 
 /**
- * SEVEN DAY FOLLOW UP CHECK (Top 25 item 11, `top25-follow-up-7day`). Every discharge shows whether
+ * SEVEN DAY FOLLOW UP CHECK (Top 25 item 11). Every discharge shows whether
  * follow up within the window is arranged, and a person on an active community treatment order gets
  * extra items. It warns and never blocks: nothing here is read by the engine.
  *

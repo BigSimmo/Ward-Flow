@@ -5,7 +5,7 @@
  * the grouped list, worst first. Tapping a bed in the strip or the list walks the ward one bed at a
  * time in bed order, with Reviewed, next bed as the main button and Back to list to return.
  *
- * Phone only and behind the top25-walk-round flag. Reviewed marks and the changed this round marks
+ * Phone only. Reviewed marks and the changed this round marks
  * live in this screen's memory only: nothing is saved, and a reload starts a fresh round. The round
  * is held by the ward page (`useWalkRound`), so turning the phone and back keeps it. Edits go
  * through the bed's existing panel, so every change uses the same events and checks as before.

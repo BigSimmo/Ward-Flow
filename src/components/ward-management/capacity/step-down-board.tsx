@@ -10,7 +10,6 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -18,7 +17,7 @@ import { deriveStepDownBoard } from "@/components/ward-management/ward-step-down
 import styles from "./step-down-board.module.css";
 
 /**
- * Top 25 item 8 (`top25-step-down-board`) and item 16 (`top25-step-down-swap`): each step-down
+ * Top 25 item 8 and item 16: each step-down
  * candidate with the wards that pass the main eligibility gates and have a Ready bed now, plus
  * incoming movements that fit `fromUnit` with a bed actually free there. Owner ruling (17 Oct 2026,
  * 10:13 PM AWST): no combined swap, each leg is referred on its own; a movement needing a gender
@@ -37,7 +36,6 @@ export function StepDownBoard({ now }: { now: Instant }) {
       "setFocusMovementId",
     );
   const patientOf = usePatientOf();
-  const stepDownSwapEnabled = useWardFeatureFlag("top25-step-down-swap");
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
   const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});
   // Rows whose incoming matches are all shown, not only the first three.
@@ -139,7 +137,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                       ))}
                     </ul>
                   )}
-                  {stepDownSwapEnabled && primaryStepDownWard ? (
+                  {primaryStepDownWard ? (
                     <div className={styles.swapSection} data-testid="step-down-swap-candidates">
                       {row.swapCandidates.length > 0 ? (
                         <>

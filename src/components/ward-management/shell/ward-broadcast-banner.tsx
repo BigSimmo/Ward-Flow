@@ -38,7 +38,6 @@ import { useActNowNotificationPreference } from "@/components/ward-management/sh
 import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -211,13 +210,12 @@ function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
   const top = entries[0];
   useActNowNotice(top, desk.id);
   // Top 25 item 25: the desks EVENT_ROLE lets extend or stand down an alert can do it from here.
-  const extendOn = useWardFeatureFlag("top25-broadcast-extend");
   const gate = useRoleGate();
   const actingRole = useRouteRole();
 
   if (!top) return null;
   const more = entries.length - 1;
-  const manageable = extendOn && broadcastKind(top.alert) !== "pull_now";
+  const manageable = broadcastKind(top.alert) !== "pull_now";
   const alertId = top.alert.id;
   const lifecycle = manageable
     ? {

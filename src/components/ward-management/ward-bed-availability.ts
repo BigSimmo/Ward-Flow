@@ -152,7 +152,7 @@ export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): 
 }
 
 /**
- * Pre-match a bed while it is being made ready (Top 25 item 15, flag `top25-prematch-cleaning`).
+ * Pre-match a bed while it is being made ready (Top 25 item 15).
  * A bed being made ready stays offered and counted (`SET_BED_PREPARATION`), so a patient can be
  * matched to its ward while it is cleaned; only the pull waits. This says whether the ward a
  * patient is matched or offered to has a bed being made ready, and whether the patient's placement

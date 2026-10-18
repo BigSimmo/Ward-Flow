@@ -401,13 +401,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   // Phone (v10): This shift and Ward flow sit behind a chip and open as bottom sheets.
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
-  // Top 25 item 5: the bed drawer asks for the discharge barrier of a stay due out soon.
-  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
   const barrierGate = useRoleGate()("SET_DISCHARGE_BARRIER");
   const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const criteriaGate = useRoleGate()("SET_DISCHARGE_CRITERIA");
   // Top 25 item 1: confirming a discharge offers its pharmacy, transport and cleaning notices.
-  const dischargeNoticesOn = useWardFeatureFlag("top25-discharge-notices");
   const [noticesForRelease, setNoticesForRelease] = useState<string | null>(null);
   const isPhone = useIsPhone();
   const [phonePanel, setPhonePanel] = useState<"shift" | "flow" | null>(null);
@@ -2208,7 +2205,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       releaseId,
       actingUnitId: unitId,
     });
-    if (dischargeNoticesOn) setNoticesForRelease(releaseId);
+    setNoticesForRelease(releaseId);
   }
 
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
@@ -2935,7 +2932,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {(() => {
           // Top 25 item 1: shown only once the confirm was accepted, named by bed, never by person.
           const release =
-            dischargeNoticesOn && noticesForRelease !== null
+            noticesForRelease !== null
               ? bedReleases.find((candidate) => candidate.id === noticesForRelease && candidate.state === "confirmed")
               : undefined;
           if (!release) return null;
@@ -3520,7 +3517,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   fullReferralHref={fullWardReferralHref(selectedBedItem?.patientInfo?.patient?.id)}
                   roleLockNote={wardRoleLockNote}
                   onSetBarrier={
-                    dischargePrepOn && barrierGate.allowed
+                    barrierGate.allowed
                       ? (admissionId, barrier) => {
                           dispatch({
                             type: "SET_DISCHARGE_BARRIER",

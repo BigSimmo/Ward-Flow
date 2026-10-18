@@ -1,4 +1,4 @@
-// Top 25 item 11 (`top25-follow-up-7day`): every discharge shows whether follow up within the
+// Top 25 item 11: every discharge shows whether follow up within the
 // window is arranged, with extra items on an active community treatment order. Warns, never blocks.
 
 import { describe, expect, it } from "vitest";

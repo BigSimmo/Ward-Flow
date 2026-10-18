@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { inboxItemsForRole, inboxOwnerRoles } from "@/components/ward-management/ward-act-now-items";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 
-// Top 25 item 6 (flag top25-needs-you-roles): Needs you holds the signed in role's own task rows.
+// Top 25 item 6: Needs you holds the signed in role's own task rows.
 function item(id: string, owner: string): InboxItem {
   return { id, owner, title: id, detail: "", tone: "warning", movementId: `WF-${id}` } as unknown as InboxItem;
 }

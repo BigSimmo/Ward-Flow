@@ -1,4 +1,4 @@
-// Top 25 item 13 (`top25-ed-wait-ladder`): one set of ED long wait steps, built from the shared
+// Top 25 item 13: one set of ED long wait steps, built from the shared
 // thresholds the ED screens already use. No 12 hour step and no 22 hour edge.
 
 import { describe, expect, it } from "vitest";

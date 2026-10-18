@@ -10,10 +10,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WARD_FEATURE_FLAGS_STORAGE_KEY,
-  setWardFeatureFlagOnDevice,
-} from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -32,10 +28,6 @@ function Grab() {
 
 afterEach(() => {
   cleanup();
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-edd-drift", null);
-  });
-  window.localStorage.removeItem(WARD_FEATURE_FLAGS_STORAGE_KEY);
   window.history.replaceState(null, "", "/");
   flow = undefined;
 });
@@ -51,10 +43,7 @@ describe("eddMovedBadge", () => {
 
 const UNIT_ID = seedWardFlowStateAt(0).units[0].id;
 
-function setUp(flagOn: boolean) {
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-edd-drift", flagOn);
-  });
+function setUp() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Grab />
@@ -86,7 +75,7 @@ function setUp(flagOn: boolean) {
 
 describe("the moved date badge on the ward screen", () => {
   it("shows on the bed tile and beside the date in the bed drawer", async () => {
-    const admissionId = setUp(true);
+    const admissionId = setUp();
     const card = (await screen.findAllByTestId(/^ward-bed-card-/)).find(
       (element) => element.getAttribute("data-admission-id") === admissionId,
     )!;
@@ -96,11 +85,5 @@ describe("the moved date badge on the ward screen", () => {
     expect(document.querySelector('[role="dialog"][aria-labelledby="drawer-bed-title"]')).toHaveTextContent(
       "Date moved 3 times",
     );
-  });
-
-  it("shows nothing when the flag is off", async () => {
-    setUp(false);
-    await screen.findAllByTestId(/^ward-bed-card-/);
-    expect(screen.queryAllByTestId("ward-bed-edd-moved")).toHaveLength(0);
   });
 });

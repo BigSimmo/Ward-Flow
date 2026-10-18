@@ -50,7 +50,6 @@ import {
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
@@ -779,7 +778,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
   // The quick look is the Alerts list for the bed coordinator, so it words a stuck handover as the
   // Alerts screen does (same rows, tones and counts either way).
-  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const tasksItems = useMemo(() => {
     if (!wardTasksAreActionableForRole(shellRole)) return [];
     return taskItems(
@@ -794,7 +792,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         supportNotifications,
         plannedAdmissions,
         leaveBeds,
-        stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
+        stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
       },
       now,
     );
@@ -811,7 +809,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     configuration,
     inboxSnoozes,
     leaveBeds,
-    stuckHandoverOn,
   ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveItems = useMemo(

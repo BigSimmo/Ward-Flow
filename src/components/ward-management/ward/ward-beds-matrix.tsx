@@ -10,7 +10,6 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { cx, type WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 
 /**
@@ -238,8 +237,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const isPulled = bed.status === "incoming" || bed.isPulled === true;
   const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
-  const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
-  const eddMoved = eddDriftOn && bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
+  const eddMoved = bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
   const criteriaLed = bed.patientAlias && !isReady && !isPulled ? (bed.criteriaLedChip ?? null) : null;
 
   // Color tint band class based on stay duration

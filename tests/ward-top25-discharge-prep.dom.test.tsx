@@ -10,10 +10,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WARD_FEATURE_FLAGS_STORAGE_KEY,
-  setWardFeatureFlagOnDevice,
-} from "@/components/ward-management/shell/ward-feature-flag-store";
 import { daysInBed } from "@/components/ward-management/ward-admissions";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { deriveAfternoonDischarges } from "@/components/ward-management/ward-derivations";
@@ -34,10 +30,6 @@ function Grab() {
 
 afterEach(() => {
   cleanup();
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-discharge-prep", null);
-  });
-  window.localStorage.removeItem(WARD_FEATURE_FLAGS_STORAGE_KEY);
   window.history.replaceState(null, "", "/");
   flow = undefined;
 });
@@ -54,10 +46,7 @@ describe("discharge prep window", () => {
   });
 });
 
-function setUp(flagOn: boolean) {
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-discharge-prep", flagOn);
-  });
+function setUp() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Grab />
@@ -89,7 +78,7 @@ function setUp(flagOn: boolean) {
 
 describe("discharge prep on the ward screen", () => {
   it("shows the stay due out with its barrier and sets the barrier from the bed drawer", () => {
-    const admissionId = setUp(true);
+    const admissionId = setUp();
     const dueButtons = () =>
       screen.queryAllByRole("button").filter((button) => /^Open bed Bed \d+ due out /.test(button.textContent ?? ""));
     const labels = dueButtons().map((button) => button.textContent);
@@ -107,11 +96,5 @@ describe("discharge prep on the ward screen", () => {
     expect(screen.getByTestId("ward-drawer-discharge-prep")).toHaveTextContent(/Due out within 24 hours/);
     fireEvent.change(select!, { target: { value: "NDIS" } });
     expect(flow!.admissions.find((admission) => admission.id === admissionId)?.dischargeBarrier).toBe("NDIS");
-  });
-
-  it("adds nothing when the flag is off", () => {
-    setUp(false);
-    expect(screen.queryAllByText(/^Bed \d+ due out /)).toHaveLength(0);
-    expect(screen.queryByTestId("ward-drawer-barrier-select")).toBeNull();
   });
 });

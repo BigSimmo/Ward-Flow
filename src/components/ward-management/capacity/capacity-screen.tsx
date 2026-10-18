@@ -130,8 +130,6 @@ export function CapacityScreen() {
   const { now, paused, togglePause } = usePageLive();
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  // Top 25 item 8: desktop only, so the phone design is unchanged.
-  const stepDownBoardOn = useWardFeatureFlag("top25-step-down-board");
   const makeRoomOn = useWardFeatureFlag("make-room-chains");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -1035,7 +1033,8 @@ export function CapacityScreen() {
               {isPhone ? null : <PlannedAdmissionsPanel key={worldGeneration} now={now} />}
             </div>
           </div>
-          {stepDownBoardOn && !isPhone ? <StepDownBoard now={now} /> : null}
+          {/* Top 25 item 8: desktop only, so the phone design is unchanged. */}
+          {!isPhone ? <StepDownBoard now={now} /> : null}
           {makeRoomOn && !isPhone ? <MakeRoomPanel now={now} service={service} /> : null}
         </div>
         {isPhone ? (

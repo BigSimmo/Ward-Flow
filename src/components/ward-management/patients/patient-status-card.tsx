@@ -130,12 +130,6 @@ export interface PatientStatusContext {
    */
   acceptedReferral?: { unitName: string; boardHref: string };
   /**
-   * Top 25 item 24 (flag `top25-awol-tracker`): the absent without leave card also says how long
-   * the person has been away and, past `awolBedHoldWarning`, asks for a review of the held bed.
-   * The steps stay the local policy list (`absenceStepsFor`). A warning only, nothing is released.
-   */
-  awolTracker?: boolean;
-  /**
    * D-65 (flag `awol-bed-hold-review`, paused): with the tracker on, whether it also asks for a review
    * of the held bed past `awolBedHoldWarning`. Off, the tracker shows the time away only.
    */
@@ -695,9 +689,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       verdict: voluntary ? "Not back from leave" : "Absent without leave",
       meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
       meterWord: "steps done",
-      meta: ctx.awolTracker
-        ? awolTrackerMeta(absence.since, now, ctx.stayUnitName, ctx.awolHoldReview)
-        : `Since ${clock(absence.since)}, owner nurse in charge`,
+      meta: awolTrackerMeta(absence.since, now, ctx.stayUnitName, ctx.awolHoldReview),
       cells: [],
       rows,
     };

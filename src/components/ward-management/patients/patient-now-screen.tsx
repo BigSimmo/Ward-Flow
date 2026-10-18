@@ -259,8 +259,6 @@ export function PatientNowScreen({
       "rejections",
     );
   const now = useWardFlowClock();
-  // Top 25 item 24: time away and the held bed review warning on the absent without leave card.
-  const awolTracker = useWardFeatureFlag("top25-awol-tracker");
   // D-65: the held bed review warning is paused behind its own flag until the hold time is reviewed.
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
@@ -848,7 +846,6 @@ export function PatientNowScreen({
 
   const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
   const statusContext: PatientStatusContext = {
-    awolTracker,
     awolHoldReview,
     movement: liveMovement,
     admission: resolved.liveAdmission,

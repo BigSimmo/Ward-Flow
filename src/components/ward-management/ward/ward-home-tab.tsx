@@ -5,7 +5,6 @@ import {
   releaseBand,
   stalePreparingReleases,
 } from "@/components/ward-management/ward-bed-availability";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
@@ -301,9 +300,6 @@ export function WardHomeTab({
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
   const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions");
-  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
-  const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
-  const walkRoundOn = useWardFeatureFlag("top25-walk-round");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -1057,39 +1053,35 @@ export function WardHomeTab({
   }
   // Top 25 item 5: each stay due out within the discharge prep window, with its barrier, so the
   // barrier is recorded before the day. Named by bed, like every discharge row on this list.
-  if (dischargePrepOn) {
-    const dueSoon = deriveAfternoonDischarges(
-      admissions.filter((admission) => admission.unitId === unit.id && admission.state === "occupied"),
-      now,
-    );
-    for (const admission of dueSoon) {
-      const bed = bedByAdmission(admission.id);
-      if (!bed || admission.expectedDischargeAt === null) continue;
-      laterToday.push({
-        key: `prep-${admission.id}`,
-        title: `${bed.bedLabel} due out ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
-        detail: admission.dischargeBarrier
-          ? `Discharge barrier: ${admission.dischargeBarrier}`
-          : "No discharge barrier recorded",
-        tone: admission.dischargeBarrier ? "warning" : "neutral",
-        action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
-      });
-    }
+  const dueSoon = deriveAfternoonDischarges(
+    admissions.filter((admission) => admission.unitId === unit.id && admission.state === "occupied"),
+    now,
+  );
+  for (const admission of dueSoon) {
+    const bed = bedByAdmission(admission.id);
+    if (!bed || admission.expectedDischargeAt === null) continue;
+    laterToday.push({
+      key: `prep-${admission.id}`,
+      title: `${bed.bedLabel} due out ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
+      detail: admission.dischargeBarrier
+        ? `Discharge barrier: ${admission.dischargeBarrier}`
+        : "No discharge barrier recorded",
+      tone: admission.dischargeBarrier ? "warning" : "neutral",
+      action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
+    });
   }
   // Top 25 item 4: a bed still being made ready past the set time asks the ward to confirm it is
   // ready. The row only opens the bed; Ready in the bed panel is what offers it again.
-  if (cleaningReminderOn) {
-    for (const { release, minutes } of stalePreparingReleases(unit.id, bedReleases, now)) {
-      const bed = (bedsList ?? []).find((item) => item.preparingReleaseId === release.id);
-      if (!bed) continue;
-      laterToday.push({
-        key: `preparing-${release.id}`,
-        title: `${bed.bedLabel} still being made ready`,
-        detail: `For ${durMinutes(minutes)}. Is it ready now?`,
-        tone: "warning",
-        action: { label: "Check bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
-      });
-    }
+  for (const { release, minutes } of stalePreparingReleases(unit.id, bedReleases, now)) {
+    const bed = (bedsList ?? []).find((item) => item.preparingReleaseId === release.id);
+    if (!bed) continue;
+    laterToday.push({
+      key: `preparing-${release.id}`,
+      title: `${bed.bedLabel} still being made ready`,
+      detail: `For ${durMinutes(minutes)}. Is it ready now?`,
+      tone: "warning",
+      action: { label: "Check bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
+    });
   }
   for (const [id, label, hint, at] of [
     ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],
@@ -1922,18 +1914,14 @@ export function WardHomeTab({
           {bedRows.length === 0 ? (
             <p className={styles.v6Empty}>No beds are recorded for {unit.name}.</p>
           ) : isPhone ? (
-            walkRoundOn ? (
-              <WardWalkRound
-                beds={walkBeds}
-                round={walkRound}
-                setRound={setWalkRound}
-                registerTrigger={registerBedTrigger}
-                onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
-                renderList={(mark, walkFrom) => phoneGroupList(mark, walkFrom)}
-              />
-            ) : (
-              phoneGroupList()
-            )
+            <WardWalkRound
+              beds={walkBeds}
+              round={walkRound}
+              setRound={setWalkRound}
+              registerTrigger={registerBedTrigger}
+              onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
+              renderList={(mark, walkFrom) => phoneGroupList(mark, walkFrom)}
+            />
           ) : boardView === "board" ? (
             <ul className={styles.bedTiles} aria-label={`Beds at ${unit.name}`}>
               {shownBeds.map((row) => (

@@ -10,10 +10,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WARD_FEATURE_FLAGS_STORAGE_KEY,
-  setWardFeatureFlagOnDevice,
-} from "@/components/ward-management/shell/ward-feature-flag-store";
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -33,10 +29,6 @@ function Grab() {
 
 afterEach(() => {
   cleanup();
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-cleaning-reminder", null);
-  });
-  window.localStorage.removeItem(WARD_FEATURE_FLAGS_STORAGE_KEY);
   window.history.replaceState(null, "", "/");
   flow = undefined;
 });
@@ -56,10 +48,7 @@ describe("stale preparing beds", () => {
   });
 });
 
-function setUp(flagOn: boolean) {
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-cleaning-reminder", flagOn);
-  });
+function setUp() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Grab />
@@ -88,7 +77,7 @@ const reminderButtons = () =>
 
 describe("cleaning reminder on the ward screen", () => {
   it("asks the ward to confirm the bed and opens it only on Ready", () => {
-    setUp(true);
+    setUp();
     const buttons = reminderButtons();
     expect(buttons.length).toBeGreaterThan(0);
     fireEvent.click(buttons[0]);
@@ -97,10 +86,5 @@ describe("cleaning reminder on the ward screen", () => {
     const before = stillPreparing();
     fireEvent.click(screen.getByRole("button", { name: "Ready" }));
     expect(stillPreparing()).toBe(before - 1);
-  });
-
-  it("adds nothing when the flag is off", () => {
-    setUp(false);
-    expect(reminderButtons()).toHaveLength(0);
   });
 });
