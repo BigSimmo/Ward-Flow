@@ -17,6 +17,7 @@
  */
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { HealthService } from "@/components/ward-management/ward-model";
+import { recordIdFromAddress } from "@/components/ward-management/shell/ward-record-address";
 
 /** Every role the access table knows. `admin` grants access and sees no patients. */
 export type WardAccessRole = WardChromeRole | "admin";
@@ -348,9 +349,12 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
       return second === undefined ? { screen: "referrals" } : undefined;
     case "people":
       if (second === "new") return { screen: "patient-new" };
-      return second === undefined ? undefined : { screen: "patient", patientId: second };
+      // D-39 links carry an address code; the page and its access check work on the record id.
+      return second === undefined ? undefined : { screen: "patient", patientId: recordIdFromAddress(second) };
     case "movements":
-      return second === undefined ? { screen: "movements" } : { screen: "movements", movementId: second };
+      return second === undefined
+        ? { screen: "movements" }
+        : { screen: "movements", movementId: recordIdFromAddress(second) };
     case "reports":
       if (second === "chronology") return { screen: "chronology" };
       if (second === "downtime") return { screen: "downtime" };

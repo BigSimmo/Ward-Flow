@@ -15,6 +15,8 @@ const sqlFiles = [
   "007-prototype-only",
   "008-role-access",
   "009-access-cover-requests",
+  "010-workspace-records",
+  "011-record-access-and-sign-out",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -192,13 +194,17 @@ function fixture(version = LATEST_MIGRATION) {
     for (const table of ["commands", "audit"])
       foreign(table, ["workspace_id", "data_mode"], "workspaces", ["id", "data_mode"]);
   }
+  const guarded = new Map();
+  for (const sql of sqlFiles.slice(0, version))
+    for (const match of sql.matchAll(/CREATE TRIGGER (\w+) BEFORE [\s\S]*? ON ward_flow\.(\w+)/g))
+      guarded.set(match[1], match[2]);
   for (const fn of catalog.functions)
     catalog.triggers.push({
       name: fn.name,
-      table_name: fn.name === "protect_audit" ? "audit" : "workspaces",
+      table_name: guarded.get(fn.name),
       function_name: fn.name,
       function_schema: "ward_flow",
-      type: fn.name === "protect_audit" ? 58 : 19,
+      type: fn.name === "protect_workspace_mode" ? 19 : 58,
       enabled: "O",
       arguments: 0,
       columns: "",
@@ -650,6 +656,41 @@ test("from migration 9 cover, requests for access and alerts by role are exact; 
     },
     (c) => {
       c.policies = c.policies.filter((p) => p.table_name !== "access_requests");
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("from migration 11 the record access log, its guards and sign-outs are exact; before it they are refused", async () => {
+  await assert.rejects(
+    verifyPostgresNamespace(pool(fixture(11), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
+    /Unrecognised or unsafe/,
+  );
+  await assert.rejects(verifyPostgresNamespace(pool(fixture(10), ALL_VERSIONS)), /Unrecognised or unsafe/);
+  for (const alter of [
+    (c) => {
+      c.triggers = c.triggers.filter((t) => t.name !== "protect_record_access");
+    },
+    (c) => {
+      c.triggers = c.triggers.filter((t) => t.name !== "protect_break_glass");
+    },
+    (c) => {
+      c.triggers.find((t) => t.name === "protect_break_glass").type = 19;
+    },
+    (c) => {
+      c.functions.find((f) => f.name === "protect_record_access").body = "BEGIN RETURN NULL; END";
+    },
+    (c) => {
+      c.constraints = c.constraints.filter((k) => !k.definition.includes("surface"));
+    },
+    (c) => {
+      c.objects = c.objects.filter((o) => o.name !== "record_access_patient");
+    },
+    (c) => {
+      c.policies = c.policies.filter((p) => p.table_name !== "session_sign_outs");
     },
   ]) {
     const catalog = fixture();

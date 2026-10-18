@@ -45,7 +45,9 @@ schema without changing the browser persistence fence. Existing reducer workflow
 the action's operational perspective; the authenticated shared role is coordinator.
 
 `backend/ward-flow/engine.ts` bundles the domain engine for the shared backend. `postgres.mjs`
-executes versioned shared commands, receipts and audit in one transaction. The provider, its
+executes versioned shared commands, receipts and audit in one transaction. From migration 10,
+`records.mjs` splits the workspace into one row per referral, bed, movement and other record, so a
+save writes only what it changed and clashes only with another change to the same record. The provider, its
 adapters and how to change it are recorded in [DATABASE.md](../DATABASE.md), and set-up is in
 [the Supabase guide](../../../backend/ward-flow/SETUP-SUPABASE.md). Shared mode defaults off.
 Source and local tests do not establish hosted identity, database or deployment readiness.
