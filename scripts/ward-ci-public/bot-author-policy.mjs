@@ -93,26 +93,48 @@ async function githubJson(url, token) {
   return response.json();
 }
 
+// GitHub caps PR commit listings at 250 and commit file listings at 3000 (300 per page). Either cap
+// being reached, or a count mismatch with the PR, fails closed rather than skipping data.
+export const MAX_PR_COMMITS = 250;
+export const MAX_COMMIT_FILES = 3000;
+
+export async function collectCommitFiles({ repository, sha, token, api = "https://api.github.com" }) {
+  const files = [];
+  for (let page = 1; ; page += 1) {
+    const detail = await githubJson(`${api}/repos/${repository}/commits/${sha}?per_page=100&page=${page}`, token);
+    const batch = detail.files ?? [];
+    files.push(...batch.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)));
+    if (batch.length < 100) break;
+    if (page * 100 >= MAX_COMMIT_FILES) throw new Error(`file list may be truncated at ${MAX_COMMIT_FILES}`);
+  }
+  return files;
+}
+
 export async function collectPullRequestCommits({ repository, prNumber, token, api = "https://api.github.com" }) {
-  const commits = [];
+  const pr = await githubJson(`${api}/repos/${repository}/pulls/${prNumber}`, token);
+  const listed = [];
   for (let page = 1; ; page += 1) {
     const batch = await githubJson(
       `${api}/repos/${repository}/pulls/${prNumber}/commits?per_page=100&page=${page}`,
       token,
     );
-    for (const item of batch) {
-      const author = { login: item.author?.login ?? "", email: item.commit?.author?.email ?? "" };
-      if (!isBotAuthor(author)) continue;
-      let files;
-      try {
-        const detail = await githubJson(`${api}/repos/${repository}/commits/${item.sha}`, token);
-        files = (detail.files ?? []).flatMap((file) => [file.filename, file.previous_filename].filter(Boolean));
-      } catch (error) {
-        console.warn(`Unable to read files of bot commit ${item.sha}: ${error.message}`);
-      }
-      commits.push({ sha: item.sha, author, files });
-    }
+    listed.push(...batch);
     if (batch.length < 100) break;
+  }
+  if (listed.length >= MAX_PR_COMMITS || listed.length !== pr.commits) {
+    throw new Error(`PR commit list is incomplete (${listed.length} of ${pr.commits})`);
+  }
+  const commits = [];
+  for (const item of listed) {
+    const author = { login: item.author?.login ?? "", email: item.commit?.author?.email ?? "" };
+    if (!isBotAuthor(author)) continue;
+    let files;
+    try {
+      files = await collectCommitFiles({ repository, sha: item.sha, token, api });
+    } catch (error) {
+      console.warn(`Unable to read files of bot commit ${item.sha}: ${error.message}`);
+    }
+    commits.push({ sha: item.sha, author, files });
   }
   return commits;
 }

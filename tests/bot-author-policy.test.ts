@@ -48,3 +48,36 @@ describe("bot-author PR policy", () => {
     expect(botSensitiveCommitViolations([{ sha: "e".repeat(40), author: bot }])[0]).toMatch(/failing closed/);
   });
 });
+
+describe("bot-author PR policy: truncated listings", () => {
+  const json = (body: unknown) => ({ ok: true, status: 200, statusText: "OK", json: async () => body });
+
+  it("fails closed when the PR commit list is shorter than the PR's commit count", async () => {
+    const { collectPullRequestCommits } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (url: string) =>
+      json(url.includes("/commits?") ? [{ sha: "a", author: { login: "x" }, commit: {} }] : { commits: 2 })) as never;
+    try {
+      await expect(collectPullRequestCommits({ repository: "o/r", prNumber: "1", token: "t" })).rejects.toThrow(
+        /incomplete/,
+      );
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it("reads every page of a bot commit's files", async () => {
+    const { collectCommitFiles } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const original = globalThis.fetch;
+    const page = (n: number, count: number) => Array.from({ length: count }, (_, i) => ({ filename: `f${n}-${i}` }));
+    globalThis.fetch = (async (url: string) =>
+      json({ files: url.endsWith("&page=1") ? page(1, 100) : [{ filename: "supabase/x.sql" }] })) as never;
+    try {
+      const files = await collectCommitFiles({ repository: "o/r", sha: "a", token: "t" });
+      expect(files).toHaveLength(101);
+      expect(files).toContain("supabase/x.sql");
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});
