@@ -3,6 +3,7 @@
 import { useWardRaise } from "../ward-flow-raise";
 
 import { useState } from "react";
+import { useLegalFormsCopy } from "./use-legal-forms-copy";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
@@ -191,7 +192,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   });
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -270,13 +271,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
     setTell({ party, key: first?.key ?? null });
   };
 
-  const copyText = (key: string, text: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text).catch(() => undefined);
-    }
-    setCopied(key);
-    window.setTimeout(() => setCopied((current) => (current === key ? null : current)), 2000);
-  };
   const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
 
   const openRecord = (movementId?: string) => {
@@ -660,6 +654,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
+        {copyNotice ? <p role="status">{copyNotice}</p> : null}
         <h1 className={styles.srOnly}>Legal forms</h1>
         <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">

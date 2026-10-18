@@ -17,7 +17,16 @@ import {
   Scale,
   Truck,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordOverview } from "./patient-record-overview";
@@ -47,6 +56,7 @@ import {
   ARRIVAL_MODE_LABELS,
 } from "@/components/ward-management/ward-model";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
+import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   activeCommunityTreatmentOrder,
@@ -60,14 +70,42 @@ import {
 import { PersonScreen } from "./person-screen";
 import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
-// These dialogs have no initial-page content. Load them only after their action is opened.
+// The arrival-time dialog has no initial-page content. Load it only after its action is opened.
+// (Document details load through the cancellable UploadFormsModal below.)
 const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
-const UploadFormsModal = dynamic(() => import("../referrals/upload-forms-modal").then((m) => m.UploadFormsModal));
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
 const loadTransitOperations = () => import("./patient-transit-operations");
 const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
-preloadWhenIdle(loadTransitOperations);
+// Document details have no closed-state work. Keep their code off the first load, with the same
+// idle preload as Transit operations and a cancellable, focus-managed dialog while loading.
+const loadUploadForms = () => import("../referrals/upload-forms-modal");
+const UploadFormsCloseContext = createContext<(() => void) | null>(null);
+function UploadFormsPending({ failed = false }: { failed?: boolean }) {
+  const onClose = useContext(UploadFormsCloseContext);
+  if (!onClose) return null;
+  return (
+    <Dialog open onClose={onClose} title="Record document details">
+      <p role={failed ? "alert" : "status"}>
+        {failed
+          ? "Document details could not load. Close this dialog and reload the page before trying again."
+          : "Loading document details…"}
+      </p>
+    </Dialog>
+  );
+}
+function UploadFormsUnavailable() {
+  return <UploadFormsPending failed />;
+}
+const UploadFormsModal = dynamic<UploadFormsModalProps>(
+  () =>
+    loadUploadForms().then(
+      (module) => module.UploadFormsModal,
+      () => UploadFormsUnavailable,
+    ),
+  { loading: () => <UploadFormsPending /> },
+);
+preloadWhenIdle(loadTransitOperations, loadUploadForms);
 import { useUndoableStep } from "../use-undoable-step";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
@@ -111,6 +149,7 @@ import {
   Button,
   Card,
   CardHead,
+  Dialog,
   JourneyStrip,
   LiveChip,
   type JourneyStage,
@@ -2442,11 +2481,9 @@ export function PatientNowScreen({
         />
       )}
       {targetMovement && showUploadFormsModal && (
-        <UploadFormsModal
-          isOpen={showUploadFormsModal}
-          onClose={() => setShowUploadFormsModal(false)}
-          movement={targetMovement}
-        />
+        <UploadFormsCloseContext.Provider value={() => setShowUploadFormsModal(false)}>
+          <UploadFormsModal isOpen onClose={() => setShowUploadFormsModal(false)} movement={targetMovement} />
+        </UploadFormsCloseContext.Provider>
       )}
       {liveMovement ? (
         <>

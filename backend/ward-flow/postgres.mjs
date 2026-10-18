@@ -68,11 +68,42 @@ export function createWorkspaceStore(
    * HTTP layer always passes it, so every reply carries only that desk's part of the workspace.
    * Without one (the store's own tests and the push sweep) the whole workspace is used.
    */
+  // A cache lifetime marker, never an access grant. Exclude clinical revision and clock time;
+  // include the absolute expiry of every active opening so closing one changes this desk's key.
+  const accessContext = (at, view) => {
+    if (!view?.actorId || !view.access) return {};
+    const scope = view.access.scope;
+    const access = {
+      role: view.access.role,
+      scope: Array.isArray(scope.unitIds) ? { ...scope, unitIds: [...scope.unitIds].sort() } : scope,
+    };
+    const grants = (view.grants ?? [])
+      .filter((grant) => new Date(grant.until).getTime() > at.getTime())
+      .map((grant) => [grant.patientId, new Date(grant.until).toISOString()])
+      .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+    return {
+      accessContext: createHash("sha256")
+        .update(
+          JSON.stringify(
+            canonical({
+              version: 1,
+              workspaceId,
+              actorId: view.actorId,
+              membershipId: view.membershipId ?? null,
+              access,
+              grants,
+            }),
+          ),
+        )
+        .digest("hex"),
+    };
+  };
   const snapshot = (row, at, view) => ({
     dataMode: row.data_mode,
     // Whether the demonstration controls work here, so the screens can say when they do not.
     demoControls: demoEvents,
     revision: Number(row.revision),
+    ...accessContext(at, view),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
   });

@@ -21,6 +21,7 @@ import { takeHandedOffPatientQuery } from "@/components/ward-management/search/p
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
   duplicateCandidates,
@@ -63,6 +64,7 @@ import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -240,7 +242,7 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 };
 
 export function AddPatientForm() {
-  const { patients, rejections } = useWardFlowSelect("patients", "rejections");
+  const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const router = useRouter();
@@ -281,8 +283,33 @@ export function AddPatientForm() {
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   const priorSubmissionRef = useRef<{
     patients: typeof patients;
-    rejectionCount: number;
+    umrn: string;
+    /** Typed identity, echoed when an accepted shared save stays outside this desk's view. */
+    givenName: string;
+    familyName: string;
+    /** The command went to the shared workspace (it settled asynchronously). */
+    shared?: boolean;
+    /** The form as submitted; edits made while waiting are kept when the save finishes. */
+    form: ReturnType<typeof formSnapshot>;
+    generation: number;
+    intent: "profile" | "refer";
+    intake: {
+      facility: string;
+      healthService: string;
+      triageUrgency: TriageLevel;
+      legalStatus: StatutoryLegalStatus;
+      presentingComplaint: string;
+    };
   } | null>(null);
+  const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
+  const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
+  /** An accepted shared save finished without its record; a late snapshot can still open it. */
+  const lateSubmissionRef = useRef<typeof priorSubmissionRef.current>(null);
+  if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
+    setAcceptedSubmission(null);
+    setLastRejection("The workspace changed. Review the record before trying again.");
+    setIsSubmitting(false);
+  }
   const submitIntentRef = useRef<"profile" | "refer">("profile");
   const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
@@ -348,6 +375,24 @@ export function AddPatientForm() {
         undo: { durationMs: 8000, onUndo: () => restoreSnapshot(snap) },
       });
     }
+    clearForm();
+  };
+
+  function finishSubmission() {
+    setAttemptedSubmit(false);
+    setLastRejection(undefined);
+    setD4Notice(null);
+    setIsSubmitting(false);
+    priorSubmissionRef.current = null;
+    setAcceptedSubmission(null);
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
+    setShowResetConfirm(false);
+  }
+
+  function clearForm() {
+    setSavedOutsideView(null);
+    lateSubmissionRef.current = null;
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
     setIndigenousStatus("not-stated");
@@ -360,15 +405,8 @@ export function AddPatientForm() {
     setPresentingComplaint("assessment");
     setClinicalNotes("");
     setAssignedSearch(null);
-    setAttemptedSubmit(false);
-    setLastRejection(undefined);
-    setD4Notice(null);
-    setIsSubmitting(false);
-    priorSubmissionRef.current = null;
-    submitIntentRef.current = "profile";
-    setSubmitIntent("profile");
-    setShowResetConfirm(false);
-  };
+    finishSubmission();
+  }
 
   const answered = answeredDraft(draft);
   const outstanding = unansweredFieldNames(draft);
@@ -401,34 +439,45 @@ export function AddPatientForm() {
   const recentRecords = useMemo(() => patients.slice(-RECENT_RECORDS_SHOWN).reverse(), [patients]);
   const addedToday = patients.filter((patient) => patientAddedOnDayOf(patient, now)).length;
 
+  /** The new record from an accepted save, once a snapshot brings it. */
+  const findAdded = (prior: NonNullable<typeof priorSubmissionRef.current>) => {
+    const priorIds = new Set(prior.patients.map((patient) => patient.id));
+    const umrn = prior.umrn.toLowerCase();
+    return patients.find((patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn);
+  };
+
   useEffect(() => {
-    const prior = priorSubmissionRef.current;
-    if (!prior) return;
-    if (patients.length <= prior.patients.length) {
-      if (rejections.length > prior.rejectionCount && rejections[0]?.attempted === "ADD_PATIENT") {
-        setLastRejection("Patient could not be added. Check the identity details and existing records.");
-        priorSubmissionRef.current = null;
-        setIsSubmitting(false);
-      }
+    const late = lateSubmissionRef.current;
+    const prior = late ?? acceptedSubmission;
+    if (!prior || (!late && priorSubmissionRef.current !== prior)) return;
+    if (prior.generation !== worldGeneration) {
+      lateSubmissionRef.current = null;
       return;
     }
-    const priorIds = new Set(prior.patients.map((patient) => patient.id));
-    const added = patients.filter((patient) => !priorIds.has(patient.id));
-    if (added.length === 0) {
-      setIsSubmitting(false);
-      throw new Error("AddPatientForm: patients grew but no new id was found against the prior snapshot.");
-    }
+    const added = findAdded(prior);
+    // A shared command can settle before its snapshot arrives. Only its own accepted identity counts.
+    if (!added) return;
     priorSubmissionRef.current = null;
-    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
-    toast?.push({
-      tone: "success",
-      title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
-    });
-    if (submitIntentRef.current === "refer") {
+    lateSubmissionRef.current = null;
+    if (late && isDirty) {
+      // The save already finished and the form holds new typing: say where the record is, stay here.
+      setSavedOutsideView(`${added.givenName} ${added.familyName} added, ${added.umrn}. It is now in Recent records.`);
+      return;
+    }
+    setSavedOutsideView(null);
+    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change. A late
+    // record already had its "added" toast when the wait ended, so it only says it is opening.
+    toast?.push(
+      late
+        ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
+        : { tone: "success", title: `${added.givenName} ${added.familyName} added, ${added.umrn}` },
+    );
+    if (prior.intent === "refer") {
       submitIntentRef.current = "profile";
       const params = new URLSearchParams();
       params.set("new", "1");
-      params.set("patientId", encodeRecordAddress(added[0].id));
+      params.set("patientId", encodeRecordAddress(added.id));
+      const { facility, healthService, triageUrgency, legalStatus, presentingComplaint } = prior.intake;
       const siteCode = FACILITY_TO_SITE_CODE[facility];
       if (siteCode) {
         params.set("site", siteCode);
@@ -443,31 +492,98 @@ export function AddPatientForm() {
       router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
       return;
     }
-    router.push(patientHref(added[0].id));
-  }, [patients, rejections, router, toast, facility, healthService, triageUrgency, legalStatus, presentingComplaint]);
+    router.push(patientHref(added.id));
+    // findAdded reads `patients`, which is listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptedSubmission, patients, worldGeneration, router, toast, isDirty]);
+
+  // Latest values for the outside-view timer, which must not restart on every snapshot.
+  const latestRef = useRef({ patients, form: formSnapshot() });
+  useEffect(() => {
+    latestRef.current = { patients, form: formSnapshot() };
+  });
+
+  useEffect(() => {
+    const prior = acceptedSubmission;
+    if (!prior?.shared || priorSubmissionRef.current !== prior || prior.generation !== worldGeneration)
+      return undefined;
+    // A scoped desk never receives a standalone record it cannot see (no stay, referral or grant),
+    // so its snapshot never brings the record. After one short wait per accepted save, finish on
+    // the accepted outcome: echo only what was typed and stay here (Grok Bot for the owner, 18 Oct
+    // 2026 15:58 AWST; no access is widened). A record that arrives later still opens.
+    const timer = window.setTimeout(() => {
+      if (priorSubmissionRef.current !== prior) return;
+      const priorIds = new Set(prior.patients.map((patient) => patient.id));
+      const umrn = prior.umrn.toLowerCase();
+      const arrived = latestRef.current.patients.some(
+        (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn,
+      );
+      if (arrived) return;
+      const saved = `${prior.givenName} ${prior.familyName} added, ${prior.umrn}`;
+      const note = "Saved. The record is outside this desk's view, so it does not open here.";
+      // Clear only the submitted draft; anything typed during the wait is kept.
+      if (JSON.stringify(latestRef.current.form) === JSON.stringify(prior.form)) clearForm();
+      else finishSubmission();
+      lateSubmissionRef.current = prior;
+      setSavedOutsideView(`${saved}. ${note}`);
+      toast?.push({ tone: "success", title: saved, body: note });
+    }, SHARED_REFRESH_MS);
+    return () => window.clearTimeout(timer);
+    // clearForm and finishSubmission only set state; the timer starts once per accepted save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptedSubmission, worldGeneration, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || priorSubmissionRef.current?.generation === worldGeneration) return;
     if (!answered) {
       setAttemptedSubmit(true);
       return;
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    priorSubmissionRef.current = {
+    setSavedOutsideView(null);
+    lateSubmissionRef.current = null;
+    const submission: NonNullable<typeof priorSubmissionRef.current> = {
       patients,
-      rejectionCount: rejections.length,
-    };
-    const suburbTrimmed = suburb.trim();
-    raise("ADD_PATIENT", {
       umrn: answered.umrn,
       givenName: answered.givenName,
       familyName: answered.familyName,
-      dateOfBirth: answered.dateOfBirth,
-      ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
-      ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
-    });
+      generation: worldGeneration,
+      intent: submitIntentRef.current,
+      intake: { facility, healthService, triageUrgency, legalStatus, presentingComplaint },
+      form: formSnapshot(),
+    };
+    priorSubmissionRef.current = submission;
+    setAcceptedSubmission(null);
+    const suburbTrimmed = suburb.trim();
+    const refuse = () => {
+      if (priorSubmissionRef.current !== submission) return;
+      priorSubmissionRef.current = null;
+      setLastRejection("Patient could not be added. Check the identity details and existing records.");
+      setIsSubmitting(false);
+    };
+    try {
+      const completion = raise("ADD_PATIENT", {
+        umrn: answered.umrn,
+        givenName: answered.givenName,
+        familyName: answered.familyName,
+        dateOfBirth: answered.dateOfBirth,
+        ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
+        ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
+      });
+      const settle = (outcome: WardCommandOutcome | void) => {
+        if (priorSubmissionRef.current !== submission) return;
+        if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) return refuse();
+        setAcceptedSubmission(submission);
+      };
+      if (completion && "then" in completion) {
+        submission.shared = true;
+        void completion.then(settle, refuse);
+      } else settle(completion);
+    } catch {
+      refuse();
+    }
   }
 
   /**
@@ -1015,6 +1131,11 @@ export function AddPatientForm() {
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
+                {savedOutsideView ? (
+                  <p data-testid="ward-add-patient-saved-outside-view" role="status">
+                    {savedOutsideView}
+                  </p>
+                ) : null}
                 {lastRejection ? (
                   <p className={styles.rejection} data-testid="ward-add-patient-rejection" role="alert">
                     <StatusGlyph tone="danger" size={9} />

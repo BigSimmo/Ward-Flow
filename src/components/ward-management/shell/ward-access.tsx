@@ -23,6 +23,8 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
+  countsOnlyBedRelease,
+  countsOnlyLeaveBed,
   scopeBroadcastAlerts,
   scopeWorkspace,
   smallNumberParts,
@@ -73,6 +75,7 @@ import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
 import { SharedAccessContext } from "./ward-shared-access-context";
 import styles from "./ward-access.module.css";
+import { DowntimePackBoundary } from "../reports/downtime-pack-context";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
@@ -255,7 +258,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
               announceToWardShell("Read only. This record was opened outside your care.");
               return;
             }
-            context.dispatch(event);
+            return context.dispatch(event);
           };
     // The record readers close over the whole workspace, so they are narrowed to the desk's own stays
     // too (review on PR #330). Audit and governance records stay the coordinator's.
@@ -329,8 +332,16 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
             ? context.rejections.filter(rejectionInScope())
             : [],
         eventLog: wholeNetwork ? context.eventLog : coordinator ? (context.eventLog ?? []).filter(scope.logEntry) : [],
-        bedReleases: byUnit(context.bedReleases),
-        leaveBeds: byUnit(context.leaveBeds),
+        bedReleases: byUnit(context.bedReleases).map((release) =>
+          access.role === "executive" ? countsOnlyBedRelease(release) : release,
+        ),
+        leaveBeds: byUnit(context.leaveBeds).map((bed) =>
+          access.role === "executive" ? countsOnlyLeaveBed(bed) : bed,
+        ),
+        inboxAcknowledgements: access.role === "executive" ? {} : context.inboxAcknowledgements,
+        inboxCompletions: access.role === "executive" ? {} : context.inboxCompletions,
+        inboxOwnership: access.role === "executive" ? {} : context.inboxOwnership,
+        inboxSnoozes: access.role === "executive" ? {} : context.inboxSnoozes,
         refreshRequests: wholeNetwork ? context.refreshRequests : coordinator ? byUnit(context.refreshRequests) : [],
         // Bed calls name the wards they ask, so a desk sees only calls to its own wards. A directive
         // with no named wards is for everyone. Undo records hold whole before and after records, and
@@ -357,11 +368,18 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     };
   }, [context, access, activeGrants, now, previewing]);
   const steadyScoped = useSteadyLists(value.scoped);
+  const packIdentity = JSON.stringify([
+    access,
+    previewOf,
+    activeGrants.map((grant) => [grant.id, grant.patientId, grant.until]),
+  ]);
 
   return (
     <UnscopedWardFlowContext.Provider value={context}>
       <WardFlowOverride value={steadyScoped}>
-        <BreakGlassContext.Provider value={value.glass}>{children}</BreakGlassContext.Provider>
+        <BreakGlassContext.Provider value={value.glass}>
+          <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+        </BreakGlassContext.Provider>
       </WardFlowOverride>
     </UnscopedWardFlowContext.Provider>
   );

@@ -95,6 +95,33 @@ describe("downtimePack", () => {
     forgetDowntimePack();
     expect(lastDowntimePack()).toBeNull();
   });
+
+  it("withholds another access context's pack synchronously, including before generation refresh", () => {
+    vi.stubGlobal("window", {});
+    const owner = { active: true };
+    const narrower = { active: true };
+    const { pack } = packFor();
+    rememberDowntimePack(pack, 4, owner);
+    expect(lastDowntimePack(owner, 4)).toBe(pack);
+    expect(lastDowntimePack(narrower, 4)).toBeNull();
+    expect(lastDowntimePack(owner, 5)).toBeNull();
+    owner.active = false;
+    expect(lastDowntimePack(owner, 4)).toBeNull();
+    rememberDowntimePack(pack, 4, owner);
+    expect(lastDowntimePack(owner, 4)).toBeNull();
+  });
+
+  it("forgets only the exiting context, preserving a new context's fresh snapshot", () => {
+    vi.stubGlobal("window", {});
+    const previous = { active: true };
+    const current = { active: true };
+    const { pack } = packFor();
+    rememberDowntimePack(pack, 1, current);
+    forgetDowntimePack(previous);
+    expect(lastDowntimePack(current, 1)).toBe(pack);
+    forgetDowntimePack(current);
+    expect(lastDowntimePack(current, 1)).toBeNull();
+  });
 });
 
 describe("downtime pack dates (device audit 11 Oct 2026)", () => {

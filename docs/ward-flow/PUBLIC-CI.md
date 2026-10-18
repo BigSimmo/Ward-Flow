@@ -10,17 +10,17 @@ The checks run as parallel jobs, so a typical PR finishes in about four minutes 
 job it replaced took about seventeen). No test is dropped: each job runs everything in its part, and a
 PR skips a job only when its changes cannot affect it (see [Scope by change](#scope-by-change)).
 
-| Job                                | Runners | What it runs                                                                                                                                                                                                                                  | Typical time |
-| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `Ward Flow main reuse check`       | 1       | On `main` pushes (`reuse` job): checks via `scripts/ward-ci-public/main-reuse.mjs` whether the exact tree already passed unit shards, browser journeys, coverage, and build on its merged PR head.                                            | seconds      |
-| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types.                                      | 1 to 2 min   |
-| `Ward Flow secret scan`            | 1       | Full-history `gitleaks` scan (`secret-scan` job) using a pinned, checksum-verified binary and `.gitleaksignore`.                                                                                                                              | under 1 min  |
-| `Ward Flow unit shard 1` to `8`    | 8       | The reconciled offline unit population, split into eight disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/8`). Together they run every file once.                                                                                           | 2 to 3 min   |
-| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                                                             | about 3 min  |
-| `Ward Flow release gate`           | 1       | The four core bed-flow journeys (`npm run test:e2e:release-gate`) on desktop Chromium (1440px) and phone WebKit (390x844), with an axe WCAG 2.1 AA scan at each key step. Not part of `Ward Flow required` (see the release gate note below). | about 5 min  |
-| `Ward Flow production build`       | 1       | Full production Next.js webpack build (`build` job, Node `24.19.0` matching Railway) without `WARD_GATE_BUILD`, verifying full build and type checks.                                                                                         | 2 to 3 min   |
-| `Ward Flow coverage`               | 1       | Merges the eight unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                                                         | about 1 min  |
-| `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                                                          | seconds      |
+| Job                                | Runners | What it runs                                                                                                                                                                                                                               | Typical time |
+| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `Ward Flow main reuse check`       | 1       | On `main` pushes (`reuse` job): checks via `scripts/ward-ci-public/main-reuse.mjs` whether the exact tree already passed unit shards, browser journeys, coverage, and build on its merged PR head.                                         | seconds      |
+| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types.                                   | 1 to 2 min   |
+| `Ward Flow secret scan`            | 1       | Full-history `gitleaks` scan (`secret-scan` job) using a pinned, checksum-verified binary and `.gitleaksignore`.                                                                                                                           | under 1 min  |
+| `Ward Flow unit shard 1` to `8`    | 8       | The reconciled offline unit population, split into eight disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/8`). Together they run every file once.                                                                                        | 2 to 3 min   |
+| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                                                          | about 3 min  |
+| `Ward Flow release gate`           | 1       | The four core bed-flow journeys (`npm run test:e2e:release-gate`) on desktop Chromium (1440px) and phone WebKit (390x844), with an axe WCAG 2.1 AA scan at each key step. Required by `Ward Flow required`, including the main reuse case. | about 5 min  |
+| `Ward Flow production build`       | 1       | Full production Next.js webpack build (`build` job, Node `24.19.0` matching Railway) without `WARD_GATE_BUILD`, verifying full build and type checks.                                                                                      | 2 to 3 min   |
+| `Ward Flow coverage`               | 1       | Merges the eight unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                                                      | about 1 min  |
+| `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                                                       | seconds      |
 
 Details that keep the split sound:
 
@@ -71,8 +71,8 @@ Details that keep the split sound:
   installs Chromium and WebKit, builds with `WARD_GATE_BUILD=1`, skips its steps when the plan's
   `browser` output is false, and restores Next's build cache without saving it. It does not depend
   on the reuse job, so it runs on every `main` commit too, and a red gate holds that commit's
-  Railway deploy. `Ward Flow required` does not include it, so it blocks a merge only once the
-  ruleset lists `Ward Flow release gate` as a required check.
+  Railway deploy. `Ward Flow required` requires the release gate to succeed in both its normal
+  and verified-main-reuse paths, so a failed release gate also fails the required merge check.
 - **Contracts.** `scripts/ward-ci-public/check-contracts.mjs` fails if the required job stops needing
   any of the three, if a shard or group matrix does not match its count, or if the browser builds skip
   their type check without the static job's route-type check.

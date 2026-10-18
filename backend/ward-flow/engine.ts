@@ -453,9 +453,33 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     throw error;
   }
   if (rawNext.rejections.length > world.state.rejections.length) {
-    return { world, outcome: "denied" as const, changes: {}, reason: "The workflow rules did not permit this action." };
+    // Referral suitability is deliberately decided per ward. Commit the permitted subset only
+    // when this command's fresh audit records both outcomes; an earlier partial is no authority.
+    const partialReferral =
+      event.type === "REFER_TO_UNITS" &&
+      rawNext.auditEvents
+        .slice(world.state.auditEvents.length)
+        .some(
+          (audit) =>
+            (audit.category === "referral" || audit.category === "override") &&
+            audit.action === "REFER_TO_UNITS" &&
+            audit.outcome === "partial" &&
+            audit.sequence > world.state.auditSequence &&
+            audit.subject.kind === "movement" &&
+            audit.subject.movementId === event.movementId &&
+            audit.details.targets.some((target) => target.outcome === "accepted") &&
+            audit.details.targets.some((target) => target.outcome === "denied"),
+        );
+    if (!partialReferral)
+      return {
+        world,
+        outcome: "denied" as const,
+        changes: {},
+        reason: "The workflow rules did not permit this action.",
+      };
   }
-  const next = serialise(rawNext);
+  // Refusal messages are transient (D-18). A partial referral's coded denied targets remain in audit.
+  const next = serialise({ ...rawNext, rejections: [] });
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
   const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);

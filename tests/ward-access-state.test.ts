@@ -8,6 +8,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import type { Referral } from "../src/components/ward-management/ward-model";
 import { INBOX_CATEGORIES } from "../src/components/ward-management/ward-inbox-reducer";
 import { syntheticGovernanceAuditEvents } from "../src/components/ward-management/ward-governance-seed";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "../src/components/ward-management/ward-role-access";
@@ -16,6 +17,20 @@ import { mixSexOf } from "../src/components/ward-management/ward-eligibility";
 import { unitHealthService } from "../src/components/ward-management/ward-service-scope";
 import { WARD_SCENARIOS } from "../src/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { scopeWorld, seedWorld, worldNow } from "../backend/ward-flow/engine";
+import { bedStates } from "../src/components/ward-management/ward-bed-states";
+import {
+  declinesByReason,
+  blockedDischargesByReason,
+} from "../src/components/ward-management/statistics/statistics-derivations";
+import {
+  COMMUNITY_TEAM_PAGES,
+  communityHubLists,
+  communityMembershipResolution,
+} from "../src/components/ward-management/community/community-derivations";
+import { communityFigures } from "../src/components/ward-management/statistics/statistics-community-figures";
+import { OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { reportWeek, weeklyOperationsReport } from "../src/components/ward-management/reports/weekly-report";
 
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
@@ -61,6 +76,207 @@ function peopleIds(from: WardFlowState): Set<string> {
 }
 
 describe("the saved workspace scoped to a desk", () => {
+  it("sends executives valid count records without narrative through the actual shared response projection", () => {
+    const at = new Date("2026-10-18T10:00:00Z");
+    const world = seedWorld(at);
+    const marker = "PRIVATE-CODE-702";
+    const movement = world.state.movements[0];
+    movement.owner = marker;
+    movement.blocker = marker;
+    movement.reassessmentNote = marker;
+    movement.reassessmentHistory = [{ at: NOW_ANCHOR, by: "ed", note: marker }];
+    movement.statusChanges.push({
+      at: NOW_ANCHOR,
+      from: movement.legalStatus,
+      to: movement.legalStatus,
+      by: marker,
+      reason: "recorded_by_treating_team",
+    });
+    movement.urgencyChanges.push({
+      at: NOW_ANCHOR,
+      from: movement.urgency,
+      to: movement.urgency,
+      by: marker,
+      reason: "reassessed",
+    });
+    movement.stageChanges.push({ at: NOW_ANCHOR, to: movement.stage, by: marker, reason: marker });
+    movement.unwinds.push({ at: NOW_ANCHOR, kind: "stage_corrected", by: marker, reason: marker });
+    movement.overrides.push({
+      at: NOW_ANCHOR,
+      by: marker,
+      reason: OVERRIDE_REASONS[0],
+      unitIds: [world.state.units[0].id],
+    });
+    movement.uploadedForms = [
+      { id: "FORM-PROJECTION", formName: marker, fileName: marker, uploadedAt: NOW_ANCHOR, uploadedBy: "ed" },
+    ];
+    movement.legalMismatch = {
+      at: NOW_ANCHOR,
+      unitId: world.state.units[0].id,
+      kind: "voluntary_on_locked_ward",
+      overridden: true,
+      overrideReason: marker,
+    };
+    movement.escalation = { at: NOW_ANCHOR, triedUnitIds: [world.state.units[0].id], contact: marker };
+    movement.arrivalDetails = {
+      mode: "ambulance",
+      modeOfArrival: marker,
+      trackingNumber: marker,
+      estimatedArrivalAt: NOW_ANCHOR,
+      recordedAt: NOW_ANCHOR,
+      recordedBy: "ed",
+    };
+    for (const change of movement.statusChanges) change.by = marker;
+    for (const change of movement.urgencyChanges) change.by = marker;
+    for (const change of movement.stageChanges) {
+      change.by = marker;
+      change.reason = marker;
+    }
+    for (const unwind of movement.unwinds) {
+      unwind.by = marker;
+      unwind.reason = marker;
+    }
+    for (const override of movement.overrides) {
+      override.by = marker;
+      override.secondSignOff = { role: "ward", name: marker };
+    }
+    const closed = world.state.movements.find((row) => row.closure)!;
+    expect(closed).toBeDefined();
+    closed.closure!.reason = marker;
+    const transported = world.state.movements.find((row) => row.transport)!;
+    expect(transported).toBeDefined();
+    Object.assign(transported.transport!, {
+      cadNumber: marker,
+      formRequired: marker,
+      stopReason: marker,
+      stoppedWhereabouts: marker,
+      diversion: { at: NOW_ANCHOR, by: "officer", place: marker, reason: marker },
+    });
+    const admission = world.state.admissions[0];
+    admission.dischargeCriteria = {
+      setAt: NOW_ANCHOR,
+      items: [{ criterion: marker, patientSpecific: true, metAt: null }],
+    };
+    admission.followUp = { state: "arranged", recordedAt: NOW_ANCHOR, recordedBy: marker };
+    const referral: Referral = {
+      ...world.state.referrals[0],
+      reassessmentNote: marker,
+      reassessmentNoteLater: marker,
+      reassessmentHistoryLater: [{ at: NOW_ANCHOR, by: "ed", note: marker }],
+    };
+    world.state.referrals[0] = referral;
+    referral.history = marker;
+    referral.corrections = [{ at: NOW_ANCHOR, by: "ed", note: marker }];
+    referral.sendingTeamName = marker;
+    referral.suburb = { kind: "named", name: marker };
+    referral.localBedSought = { at: NOW_ANCHOR, by: marker };
+    for (const line of referral.destinations) {
+      line.decidedBy = marker;
+      line.withdrawalRecordedBy = marker;
+      line.reassessmentNote = marker;
+      line.reassessmentHistory = [{ at: NOW_ANCHOR, by: "ed", note: marker }];
+    }
+    for (const release of world.state.bedReleases) {
+      release.blockedBy = marker;
+      release.confirmedBy = marker;
+    }
+    for (const leave of world.state.leaveBeds) leave.confirmedBy = marker;
+    for (const alert of world.state.broadcastAlerts) {
+      alert.title = marker;
+      alert.message = marker;
+      alert.dispatchedByName = marker;
+    }
+    expect(validOnTheWire(world.state)).toBe(true);
+    const response = scopeWorld(world, { role: "executive", scope: { kind: "statewide" } }, at);
+    expect(validOnTheWire(response.state)).toBe(true);
+    expect(JSON.stringify(response).includes(marker)).toBe(false);
+    expect(response.state.movements).toHaveLength(world.state.movements.length);
+    expect(response.state.admissions).toHaveLength(world.state.admissions.length);
+    expect(response.state.referrals).toHaveLength(world.state.referrals.length);
+    expect(declinesByReason(response.state.movements)).toEqual(declinesByReason(world.state.movements));
+    expect(blockedDischargesByReason(response.state.admissions)).toEqual(
+      blockedDischargesByReason(world.state.admissions),
+    );
+    const now = worldNow(world, at);
+    const week = reportWeek(-1, now, new Date(world.dayZero));
+    const weeklyCounts = (state: WardFlowState) => {
+      const report = weeklyOperationsReport(
+        { ...state, now, edAccessTargetMinutes: state.configuration.edAccessTargetMinutes },
+        week,
+      );
+      return {
+        ...report,
+        edWaits: {
+          ...report.edWaits,
+          rows: report.edWaits.rows.map((row) => ({
+            id: row.movement.id,
+            waitedMinutes: row.waitedMinutes,
+            stillWaiting: row.stillWaiting,
+          })),
+        },
+      };
+    };
+    expect(weeklyCounts(response.state)).toEqual(weeklyCounts(world.state));
+    for (const unit of world.state.units) {
+      expect(bedStates(unit, response.state.admissions, response.state.bedReleases, response.state.leaveBeds)).toEqual(
+        bedStates(unit, world.state.admissions, world.state.bedReleases, world.state.leaveBeds),
+      );
+    }
+    expect(scopeWorld(world, STATEWIDE_COORDINATOR, at)).toBe(world);
+    expect(world.state.movements[0].blocker).toBe(marker);
+  });
+
+  it("keeps service executive counts inside its service while removing patient specific criteria", () => {
+    const at = new Date("2026-10-18T10:00:00Z");
+    const world = seedWorld(at);
+    const service = unitHealthService(world.state.units[0])!;
+    const own = new Set(world.state.units.filter((unit) => unitHealthService(unit) === service).map((unit) => unit.id));
+    for (const admission of world.state.admissions)
+      admission.dischargeCriteria = {
+        setAt: NOW_ANCHOR,
+        items: [{ criterion: "PRIVATE-CODE-703", patientSpecific: true, metAt: null }],
+      };
+    const response = scopeWorld(world, { role: "executive", scope: { kind: "service", service } }, at);
+    expect(response.state.admissions.length).toBeGreaterThan(0);
+    expect(response.state.admissions.length).toBeLessThan(world.state.admissions.length);
+    expect(response.state.admissions.every((admission) => own.has(admission.unitId))).toBe(true);
+    expect(validOnTheWire(response.state)).toBe(true);
+    expect(JSON.stringify(response).includes("PRIVATE-CODE-703")).toBe(false);
+  });
+
+  it("preserves nonempty community team aggregates using only registered destination names", () => {
+    const at = new Date("2026-10-18T10:00:00Z");
+    const world = seedWorld(at);
+    const team = COMMUNITY_TEAM_PAGES[0];
+    const admission = world.state.admissions.find((row) => row.state === "occupied")!;
+    const referral: Referral = {
+      ...world.state.referrals[0],
+      id: "projection-team-referral",
+      patientId: admission.patientId ?? undefined,
+      destinations: [
+        { destination: { kind: "community_team", teamName: team.name }, state: "queued" },
+        { destination: { kind: "community_team", teamName: "PRIVATE-CODE-TEAM" }, state: "queued" },
+      ],
+    };
+    world.state.referrals.push(referral);
+    admission.referralId = referral.id;
+    const before = communityHubLists(world.state.admissions, team, world.state.referrals);
+    expect(before.currentlyAdmitted.length).toBeGreaterThan(0);
+    expect(validOnTheWire(world.state)).toBe(true);
+    const projected = scopeWorld(world, { role: "executive", scope: { kind: "statewide" } }, at).state;
+    const after = communityHubLists(projected.admissions, team, projected.referrals);
+    const ids = (lists: ReturnType<typeof communityHubLists>) =>
+      Object.fromEntries(Object.entries(lists).map(([key, rows]) => [key, rows.map((row) => row.id)]));
+    expect(ids(after)).toEqual(ids(before));
+    expect(
+      communityFigures(after, communityMembershipResolution(projected.admissions, team, projected.referrals)),
+    ).toEqual(
+      communityFigures(before, communityMembershipResolution(world.state.admissions, team, world.state.referrals)),
+    );
+    expect(validOnTheWire(projected)).toBe(true);
+    expect(JSON.stringify(projected).includes("PRIVATE-CODE-TEAM")).toBe(false);
+  });
+
   it("sends the statewide coordinator the state itself", () => {
     expect(scopeWardFlowState(state, STATEWIDE_COORDINATOR, options).state).toBe(state);
   });

@@ -43,6 +43,18 @@ covers dependency maintenance for synthetic local development; it does not appro
   accepts external glob patterns. Re-run `npm view braces version`, `npm explain braces` and
   `npm audit --json`; install a supported patch and verify the lint contracts when available.
 
+## Local remediation review — 18 October 2026
+
+The full-audit remediation branch was based on verified main
+`aa3a78b9ecfd1132a7ff48867bac5f1d366dbccc`. A fresh public npm registry query still reports
+braces 3.0.3 as the latest version. The unchanged lockfile audit reports the same five high-severity
+development entries arising from SEC-003. Its suggested forced downgrade of the Next ESLint
+configuration is not a supported fix for this application's toolchain.
+
+No supported upstream patch is available in that evidence. SEC-003 remains open; this review does
+not resolve or suppress it. The literal-root mitigation and the 22 October review above remain in
+force. Local source, tests and lint results are reported separately from the upstream advisory.
+
 ## Current toolchain — 17 October 2026, after PR #335
 
 Current main selects Next 16.4.2, React and React DOM 19.3.0, ESLint 10.12.0,

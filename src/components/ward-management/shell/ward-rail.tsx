@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
@@ -292,6 +292,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
   const [activePersona, setActivePersona] = useState<string>("chen");
+  const [focusedPersona, setFocusedPersona] = useState<string>("chen");
   const [openOverlay, setOpenOverlay] = useState<"alerts" | "appearance" | "persona" | null>(null);
 
   useEffect(() => {
@@ -319,6 +320,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const alertsOpen = openOverlay === "alerts";
   const userCardRef = useRef<HTMLDivElement>(null);
   const personaTriggerRef = useRef<HTMLButtonElement>(null);
+  const personaListRef = useRef<HTMLDivElement>(null);
+  const personaListId = useId();
   const appearanceTriggerRef = useRef<HTMLButtonElement>(null);
   const alertsTriggerRef = useRef<HTMLButtonElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
@@ -344,6 +347,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (roleSwitcherOpen) personaListRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
+  }, [roleSwitcherOpen]);
 
   // Every figure below comes from the derivation; nothing is typed here.
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
@@ -974,7 +981,20 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           </Link>
         </div>
 
-        <div ref={userCardRef} className={styles.userCardWrap}>
+        <div
+          ref={userCardRef}
+          className={styles.userCardWrap}
+          onBlur={(event) => {
+            // Close only when focus moves to a known element outside (keyboard Tab). Safari and macOS
+            // Firefox do not focus a pressed button, so a click inside blurs with no relatedTarget;
+            // closing then would unmount "Go to a desk…" before its click and make the trigger
+            // reopen the popover. Outside presses are closed by the document mousedown handler.
+            const next = event.relatedTarget as Node | null;
+            if (next && !event.currentTarget.contains(next)) {
+              setOpenOverlay((current) => (current === "persona" ? null : current));
+            }
+          }}
+        >
           <button
             type="button"
             ref={personaTriggerRef}
@@ -985,10 +1005,12 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 onOpenOperatorModal();
                 return;
               }
+              setFocusedPersona(activePersona);
               setOpenOverlay((prev) => (prev === "persona" ? null : "persona"));
             }}
             aria-expanded={roleSwitcherOpen}
             aria-haspopup="listbox"
+            aria-controls={personaListId}
             aria-label={`${currentPersona.name}, ${currentPersona.role}. Switch persona.`}
             title={`${currentPersona.name} · ${currentPersona.role}`}
           >
@@ -1024,7 +1046,31 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               </button>
             ) : null}
             <p className={styles.roleSwitcherHead}>Switch persona</p>
-            <div role="listbox" aria-label="Switch clinical persona" className={styles.roleSwitcherList}>
+            <div
+              ref={personaListRef}
+              id={personaListId}
+              role="listbox"
+              tabIndex={-1}
+              aria-label="Switch clinical persona"
+              className={styles.roleSwitcherList}
+              onKeyDown={(event) => {
+                const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]'));
+                const index = options.indexOf(event.target as HTMLButtonElement);
+                const next =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? options.length - 1
+                      : event.key === "ArrowDown"
+                        ? (index + 1) % options.length
+                        : event.key === "ArrowUp"
+                          ? (index - 1 + options.length) % options.length
+                          : null;
+                if (next === null) return;
+                event.preventDefault();
+                options[next]?.focus();
+              }}
+            >
               {CLINICAL_PERSONAS.map((p) => {
                 const selected = p.id === activePersona;
                 return (
@@ -1033,10 +1079,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                     type="button"
                     role="option"
                     aria-selected={selected}
+                    tabIndex={roleSwitcherOpen && focusedPersona === p.id ? 0 : -1}
+                    onFocus={() => setFocusedPersona(p.id)}
                     className={styles.roleOption}
                     onClick={() => {
                       setActivePersona(p.id);
                       setOpenOverlay(null);
+                      personaTriggerRef.current?.focus();
                       announceToWardShell(`Switched persona to ${p.name}, ${p.role}.`);
                     }}
                   >

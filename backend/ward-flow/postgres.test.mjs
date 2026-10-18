@@ -893,6 +893,134 @@ test("real PostgreSQL: the Supabase runtime grants pass the runtime role check",
 });
 
 test(
+  "real PostgreSQL: snapshot access context follows effective access and active grant expiry",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 2 });
+    let at = new Date("2026-10-07T10:00:00Z");
+    const workspaceId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+    const [lead, otherLead, nurse] = Array.from({ length: 3 }, () => randomUUID());
+    const later = new Date("2027-01-01T00:00:00Z");
+    try {
+      await migrate(pool);
+      const leadView = await store.viewer(lead, { bootstrap: true });
+      const full = await store.read(lead, leadView);
+      assert.match(full.accessContext, /^[a-f0-9]{64}$/);
+      assert.equal((await store.read(lead, leadView)).accessContext, full.accessContext);
+      const otherView = await store.viewer(otherLead, { bootstrap: true });
+      assert.notEqual((await store.read(otherLead, otherView)).accessContext, full.accessContext);
+      const otherStore = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => new Date(at) });
+      assert.notEqual(
+        (await otherStore.read(lead, await otherStore.viewer(lead, { bootstrap: true }))).accessContext,
+        full.accessContext,
+      );
+      const stay = full.payload.state.admissions.find((row) => row.patientId !== null && row.leftAt === null);
+      const ward = { kind: "ward", unitIds: [stay.unitId] };
+      const membership = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: later,
+      });
+      assert.equal(membership.status, 200);
+      const nurseView = await store.viewer(nurse);
+      const scoped = await store.read(nurse, nurseView);
+      assert.match(scoped.accessContext, /^[a-f0-9]{64}$/);
+      assert.notEqual(scoped.accessContext, full.accessContext);
+      at = new Date(at.getTime() + 60_000);
+      const clockOnly = await store.read(nurse, nurseView);
+      assert.equal(clockOnly.revision, scoped.revision);
+      assert.equal(
+        clockOnly.accessContext,
+        scoped.accessContext,
+        "ordinary clock changes retain a frozen report's context",
+      );
+
+      const unit = scoped.payload.state.units.find((row) => row.id === stay.unitId);
+      const commandId = randomUUID();
+      const event = {
+        type: "CONFIRM_CAPACITY",
+        role: "ward",
+        actingUnitId: stay.unitId,
+        unitId: stay.unitId,
+        expectedRevision: unit.allocatable.revision ?? 0,
+        value: unit.allocatable.value,
+      };
+      const saved = await store.command(nurse, commandId, scoped.revision, event, { view: nurseView });
+      assert.equal(saved.status, 200);
+      assert.equal(saved.body.snapshot.revision, scoped.revision + 1);
+      assert.equal(
+        saved.body.snapshot.accessContext,
+        scoped.accessContext,
+        "clinical revision is independent of access context",
+      );
+
+      const outsiders = full.payload.state.patients.filter(
+        (row) => !scoped.payload.state.patients.some((own) => own.id === row.id),
+      );
+      assert.ok(outsiders.length >= 2);
+      const opened = await store.breakGlass(nurseView, outsiders[0].id, "handover");
+      assert.equal(opened.status, 200);
+      assert.equal(opened.body.snapshot.revision, saved.body.snapshot.revision);
+      assert.notEqual(opened.body.snapshot.accessContext, scoped.accessContext);
+      const granted = await store.read(nurse, nurseView);
+      assert.equal(granted.accessContext, opened.body.snapshot.accessContext);
+      // The same patient's absolute expiry matters too: canonical(Date) alone would turn both into {}.
+      await pool.query(
+        "UPDATE ward_flow.break_glass SET until=until + interval '1 second' WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3",
+        [workspaceId, nurse, outsiders[0].id],
+      );
+      const extended = await store.read(nurse, nurseView);
+      assert.notEqual(extended.accessContext, granted.accessContext);
+      assert.equal(extended.revision, granted.revision);
+      at = new Date(at.getTime() + 2_000);
+      const secondOpening = await store.breakGlass(nurseView, outsiders[1].id, "handover");
+      assert.equal(secondOpening.status, 200);
+      // Opening appends to the view's grants; the SQL viewer reads them newest-first. Order is immaterial.
+      const union = await store.read(nurse, nurseView);
+      assert.equal(union.accessContext, secondOpening.body.snapshot.accessContext);
+      assert.notEqual(union.accessContext, extended.accessContext);
+      const replay = await store.command(nurse, commandId, scoped.revision, event, { view: nurseView });
+      assert.equal(replay.body.replayed, true);
+      assert.equal(
+        replay.body.snapshot.accessContext,
+        union.accessContext,
+        "receipt replay carries the latest access context",
+      );
+
+      at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
+      const expired = await store.read(nurse, nurseView);
+      assert.equal(expired.revision, union.revision);
+      assert.equal(expired.accessContext, scoped.accessContext);
+      assert.notEqual(expired.accessContext, union.accessContext);
+      const expiredReplay = await store.command(nurse, commandId, scoped.revision, event, { view: nurseView });
+      assert.equal(expiredReplay.body.snapshot.accessContext, expired.accessContext);
+      const secondMembership = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: later,
+      });
+      assert.equal(secondMembership.status, 200);
+      const secondDesk = await store.viewer(nurse, { workingAs: secondMembership.body.membership.id });
+      assert.notEqual((await store.read(nurse, secondDesk)).accessContext, expired.accessContext);
+      const extraUnit = full.payload.state.units.find((row) => row.id !== stay.unitId).id;
+      await pool.query("UPDATE ward_flow.memberships SET scope=$2 WHERE id=$1", [
+        membership.body.membership.id,
+        { kind: "ward", unitIds: [stay.unitId, extraUnit] },
+      ]);
+      const widened = await store.read(nurse, nurseView);
+      assert.notEqual(widened.accessContext, expired.accessContext);
+      assert.equal(widened.revision, expired.revision);
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test(
   "real PostgreSQL: roles come from memberships, every reply is scoped, and access changes are audited",
   { skip: !url },
   async () => {

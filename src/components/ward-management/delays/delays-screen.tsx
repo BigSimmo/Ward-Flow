@@ -169,14 +169,28 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const isOutsideService = (movement: Movement): boolean =>
     service !== null && !movementBelongsToService(movement, service, units);
 
-  const escalate = (movement: Movement) => {
-    raise("RECORD_ESCALATION", {
-      movementId: movement.id,
-      triedUnitIds: movement.declines.map((decline) => decline.unitId),
-      // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.
-      contact: ESCALATION_CONTACT,
-    });
-    showNotice(`Escalated to ${ESCALATION_CONTACT}.`);
+  const escalationPendingRef = useRef(new Set<string>());
+  const escalate = async (movement: Movement) => {
+    if (escalationPendingRef.current.has(movement.id)) return;
+    escalationPendingRef.current.add(movement.id);
+    showNotice("Recording escalation…");
+    try {
+      const outcome = await raise("RECORD_ESCALATION", {
+        movementId: movement.id,
+        triedUnitIds: movement.declines.map((decline) => decline.unitId),
+        // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.
+        contact: ESCALATION_CONTACT,
+      });
+      showNotice(
+        outcome?.status === "accepted" && outcome.isCurrent?.() !== false
+          ? `Escalated to ${ESCALATION_CONTACT}.`
+          : "Escalation not confirmed. Review the movement before trying again.",
+      );
+    } catch {
+      showNotice("Escalation not confirmed. Review the movement before trying again.");
+    } finally {
+      escalationPendingRef.current.delete(movement.id);
+    }
   };
 
   const banner = (

@@ -34,13 +34,13 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
 import {
   downtimePack,
-  downtimePackIsStale,
   lastDowntimePack,
   rememberDowntimePack,
   subscribeDowntimePack,
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
+import { useDowntimePackAccess } from "./downtime-pack-context";
 import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
@@ -153,9 +153,11 @@ export function DowntimePackScreen() {
   const patientOf = usePatientOf();
   const isPhone = useIsPhone();
   const role = useRouteRole();
-  const canSnapshot = role === "coordinator";
+  const { owner, ready, unavailable } = useDowntimePackAccess();
+  const canSnapshot = role === "coordinator" && ready;
 
   const take = useCallback((): void => {
+    if (!ready) return;
     const pack = downtimePack({
       units,
       admissions,
@@ -168,19 +170,20 @@ export function DowntimePackScreen() {
         return `${person.displayName} · ${person.umrn}`;
       },
     });
-    rememberDowntimePack(pack, worldGeneration);
-  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration]);
+    rememberDowntimePack(pack, worldGeneration, owner);
+  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready]);
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
-  const pack = useSyncExternalStore(subscribeDowntimePack, lastDowntimePack, () => null);
+  const readPack = useCallback(() => lastDowntimePack(owner, worldGeneration), [owner, worldGeneration]);
+  const pack = useSyncExternalStore(subscribeDowntimePack, readPack, () => null);
   // Take a pack whenever there is none: on first opening, and after a restored session has dropped
   // the one taken from the seed (the provider forgets it and notifies, whether or not the tree is
   // re-keyed). A reset or scenario switch (a new world generation) retakes it too, even while open.
   // A later world change alone never retakes: the pack is frozen until "New snapshot".
   useEffect(() => {
-    if (pack === null || downtimePackIsStale(worldGeneration)) take();
-  }, [pack, worldGeneration, take]);
+    if (lastDowntimePack(owner, worldGeneration) === null) take();
+  }, [pack, owner, worldGeneration, take]);
 
   const [taking, setTaking] = useState(false);
   // The totals of the pack a New snapshot replaced, for the delta twins. Held by this screen only:
@@ -191,11 +194,11 @@ export function DowntimePackScreen() {
     () => () => {
       if (takingTimer.current !== null) window.clearTimeout(takingTimer.current);
     },
-    [],
+    [owner, worldGeneration, ready],
   );
   const newSnapshot = () => {
     if (!canSnapshot || taking) return;
-    const current = lastDowntimePack();
+    const current = lastDowntimePack(owner, worldGeneration);
     if (current) setBefore(packTotals(current));
     setTaking(true);
     takingTimer.current = window.setTimeout(() => {
@@ -207,26 +210,45 @@ export function DowntimePackScreen() {
 
   const [section, setSection] = useState<Section>("beds");
   const [sheet, setSheet] = useState<SheetRow | null>(null);
+  const [previousBoundary, setPreviousBoundary] = useState({ owner, worldGeneration });
+  if (previousBoundary.owner !== owner || previousBoundary.worldGeneration !== worldGeneration) {
+    setPreviousBoundary({ owner, worldGeneration });
+    setTaking(false);
+    setBefore(null);
+    setSheet(null);
+  }
+  if (!ready && taking) setTaking(false);
 
   const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : reportMoment(instant, dayZero));
 
   if (pack === null) {
     return (
       <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v10">
-        <main id="main-content" className={styles.main} aria-busy="true">
-          <Hero level={1} eyebrow="Downtime pack · synthetic data" title="Downtime pack" titleMeta="Taking snapshot" />
-          <Card aria-labelledby="downtime-preparing-title" className={styles.packLoading}>
-            <CardHead id="downtime-preparing-title" icon={FileText} title="Preparing the downtime pack" />
-            <p role="status" className={styles.cardNote}>
-              Taking a snapshot of beds, the ED queue, pending moves and legal forms.
+        <main id="main-content" className={styles.main} aria-busy={unavailable ? undefined : true}>
+          <Hero
+            level={1}
+            eyebrow="Downtime pack · synthetic data"
+            title="Downtime pack"
+            titleMeta={unavailable ? "Snapshot unavailable" : "Taking snapshot"}
+          />
+          {unavailable ? (
+            <p className={styles.cardNote} role="status">
+              {unavailable}
             </p>
-            <div className={styles.packLoadingRows} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-          </Card>
+          ) : (
+            <Card aria-labelledby="downtime-preparing-title" className={styles.packLoading}>
+              <CardHead id="downtime-preparing-title" icon={FileText} title="Preparing the downtime pack" />
+              <p role="status" className={styles.cardNote}>
+                Taking a snapshot of beds, the ED queue, pending moves and legal forms.
+              </p>
+              <div className={styles.packLoadingRows} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </Card>
+          )}
         </main>
       </div>
     );
@@ -267,18 +289,33 @@ export function DowntimePackScreen() {
       </Button>
       {canSnapshot ? null : (
         <span id="downtime-snapshot-reason" className={styles.reasonOnHero}>
-          Coordinator only
+          {role === "coordinator" ? "Waiting for current workspace" : "Coordinator only"}
         </span>
       )}
     </span>
   );
+  const printPack = () => {
+    if (ready && lastDowntimePack(owner, worldGeneration) === pack) window.print();
+  };
   const printButton = (
-    <Button variant="light" icon={Printer} onClick={() => window.print()} data-testid="ward-downtime-print">
+    <Button
+      variant="light"
+      icon={Printer}
+      onClick={printPack}
+      aria-disabled={!ready || undefined}
+      data-testid="ward-downtime-print"
+    >
       Print
     </Button>
   );
   const printButtonOnHero = (
-    <Button variant="onHero" icon={Printer} onClick={() => window.print()} data-testid="ward-downtime-print">
+    <Button
+      variant="onHero"
+      icon={Printer}
+      onClick={printPack}
+      aria-disabled={!ready || undefined}
+      data-testid="ward-downtime-print"
+    >
       Print
     </Button>
   );

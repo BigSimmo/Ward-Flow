@@ -11,6 +11,8 @@ export type SharedSnapshot = {
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
   /** False when the server refuses the demonstration controls (clock, reset and scenario). */
   demoControls?: boolean;
+  /** Opaque server access lifetime for retained reports; absent on older servers. Never a grant. */
+  accessContext?: string;
 };
 /**
  * `choose-role`: the account holds more than one role and must say which to work as.
@@ -186,6 +188,8 @@ export class SharedWorkspaceClient {
       !Number.isSafeInteger(snapshot.revision) ||
       snapshot.revision < 1 ||
       !Number.isFinite(snapshot.now) ||
+      (snapshot.accessContext !== undefined &&
+        (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
       snapshot.payload?.version !== 1 ||
       !isValidSharedWardFlowState(snapshot.payload.state) ||
       !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||

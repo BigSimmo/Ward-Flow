@@ -22,6 +22,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardConfiguration } from "./ward-configuration";
 import { WardFlowContext, type useWardFlow, type WardFlowContextValue } from "./ward-flow-provider";
+import type { WardCommandOutcome } from "./ward-shared-client";
 import type {
   AuditCategory,
   AuditEvent,
@@ -849,6 +850,8 @@ function GovernanceSession({
   const [selection, setSelection] = useState<AuditEvent | null>(null);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
+    command: number;
+    status: "pending" | WardCommandOutcome["status"];
     eventId: string;
     generation: number;
     count: number;
@@ -860,6 +863,8 @@ function GovernanceSession({
   const [endorseVerdict, setEndorseVerdict] = useState<"" | AuditReview["decision"]>("");
   const [endorseRole, setEndorseRole] = useState<string>("");
   const [endorseNotes, setEndorseNotes] = useState<string>("");
+  const endorseSessionRef = useRef(0);
+  const reviewCommandRef = useRef(0);
   const [announcement, setAnnouncement] = useState<string>("");
   const [chip, setChip] = useState<ReviewChip | null>(null);
   const [phoneSheet, setPhoneSheet] = useState(false);
@@ -930,10 +935,13 @@ function GovernanceSession({
       ]
     : undefined;
   const confirmed =
+    pending?.status === "accepted" &&
     reviewAttempt?.outcome === "accepted" &&
     savedReview?.decision === pending?.decision &&
     savedReview?.at === pending?.at;
-  const reviewPending = pending !== null && reviewAttempt === undefined;
+  const reviewSettled =
+    pending !== null && pending.status !== "pending" && (pending.status !== "accepted" || reviewAttempt !== undefined);
+  const reviewPending = pending !== null && !reviewSettled;
   const canReview = allowed && selected !== null && selected.category !== "review" && !reviewPending;
 
   // Undo (pass 2 engine): once a review is confirmed, a toast offers Undo for a few seconds.
@@ -1013,6 +1021,7 @@ function GovernanceSession({
   };
 
   const choose = (event: AuditEvent | null) => {
+    reviewCommandRef.current += 1;
     setSelection(event);
     setPending(null);
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
@@ -1021,7 +1030,7 @@ function GovernanceSession({
   // Audit settings-4: once the phone review is settled, the sheet loads the next event still
   // waiting, or closes when none is left. A refused review stays put. Adjusted while rendering
   // (React's pattern for state that follows other state), so no effect sets state.
-  if (phoneAdvance && reviewAttempt !== undefined) {
+  if (phoneAdvance && reviewSettled) {
     setPhoneAdvance(false);
     const nextWaiting = toReview.find(
       (event) => reviewState(event) === "unreviewed" && !(selected && event.id === selected.id),
@@ -1032,7 +1041,7 @@ function GovernanceSession({
     setAnnouncement(
       confirmed && pending
         ? `${reviewLabels[pending.decision]} recorded.`
-        : "Review not recorded. The record may have changed; select it again.",
+        : "Review not confirmed. The record may have changed; select it again.",
     );
   }
 
@@ -1061,10 +1070,18 @@ function GovernanceSession({
     choose(list[next] ?? null);
   }
 
-  function recordReview(decision: AuditReview["decision"]): boolean {
+  function recordReview(
+    decision: AuditReview["decision"],
+    onSettled?: (accepted: boolean) => void,
+    /** Runs just before dispatch, so a pending notice never follows a synchronous outcome. */
+    onStart?: () => void,
+  ): boolean {
     if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return false;
+    const command = ++reviewCommandRef.current;
     const count = history.length;
     setPending({
+      command,
+      status: "pending",
       eventId: selected.id,
       generation: selected.generation,
       count,
@@ -1072,19 +1089,37 @@ function GovernanceSession({
       at: now,
       decision,
     });
-    api.dispatch({
-      type: "REVIEW_AUDIT_EVENT",
-      role: "coordinator",
-      now,
-      eventId: selected.id,
-      expectedGeneration: selected.generation,
-      expectedReviewCount: count,
-      decision,
-    });
+    const record = () =>
+      api.dispatch({
+        type: "REVIEW_AUDIT_EVENT",
+        role: "coordinator",
+        now,
+        eventId: selected.id,
+        expectedGeneration: selected.generation,
+        expectedReviewCount: count,
+        decision,
+      });
+    const settle = (outcome: WardCommandOutcome | void) => {
+      if (reviewCommandRef.current !== command) return;
+      const status = outcome?.isCurrent?.() === false ? "cancelled" : (outcome?.status ?? "failed");
+      setPending((current) => (current?.command === command ? { ...current, status } : current));
+      onSettled?.(status === "accepted");
+    };
+    const fail = () => settle(undefined);
+    try {
+      onStart?.();
+      const completion = record();
+      if (completion && "then" in completion) void completion.then(settle, fail);
+      else settle(completion);
+    } catch {
+      fail();
+      return false;
+    }
     return true;
   }
 
   function closeEndorse() {
+    endorseSessionRef.current += 1;
     setEndorseOpen(false);
     setEndorseVerdict("");
     setEndorseRole("");
@@ -1198,8 +1233,8 @@ function GovernanceSession({
         pending
           ? confirmed
             ? `${reviewLabels[pending.decision]} recorded.`
-            : reviewAttempt
-              ? "Review not recorded. The record may have changed; select it again."
+            : reviewSettled
+              ? "Review not confirmed. The record may have changed; select it again."
               : "Recording review…"
           : ""
       }
@@ -2165,9 +2200,23 @@ function GovernanceSession({
               reasonDisplay="tooltip"
               onClick={() => {
                 if (endorseVerdict === "" || endorseRole === "") return;
-                recordReview(endorseVerdict);
-                setAnnouncement("Review recorded.");
-                closeEndorse();
+                const session = endorseSessionRef.current;
+                const notConfirmed = "Review not confirmed. Review the event before trying again.";
+                let started = false;
+                const sent = recordReview(
+                  endorseVerdict,
+                  (accepted) => {
+                    if (endorseSessionRef.current !== session) return;
+                    setAnnouncement(accepted ? "Review recorded." : notConfirmed);
+                    if (accepted) closeEndorse();
+                  },
+                  () => {
+                    started = true;
+                    setAnnouncement("Recording review…");
+                  },
+                );
+                // Refused before dispatch (stale selection or no workspace): say so, never "Recording".
+                if (!sent && !started) setAnnouncement(notConfirmed);
               }}
             >
               Record finding

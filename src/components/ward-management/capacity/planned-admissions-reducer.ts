@@ -457,8 +457,8 @@ export function reducePlannedAdmissionEvent(
       };
       const updatedUnit: Unit = {
         ...unit,
-        empty: { ...unit.empty, value: unit.empty.value - 1, confirmedAt: event.now },
-        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
+        empty: { ...unit.empty, value: unit.empty.value - 1 },
+        allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
         allocatableLocked: bedKind === "locked" ? Math.max(0, unit.allocatableLocked - 1) : unit.allocatableLocked,
         sexMix: adjustSexMix(unit.sexMix, mixSexOf(view.gender, planned.sex), 1),
       };

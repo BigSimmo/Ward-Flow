@@ -4,6 +4,7 @@ import { ChevronRight, Phone, PhoneCall } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useOptionalToast } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 
 import type { CallRow } from "./patient-call-list";
@@ -103,9 +104,17 @@ function CallButton({ row }: { row: CallRow }) {
       type="button"
       className={styles.call}
       aria-label={`Call ${row.name}, ${number}`}
-      onClick={() => {
-        void navigator.clipboard?.writeText(number).catch(() => undefined);
-        toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+      onClick={async () => {
+        try {
+          await copyTextToClipboard(number);
+          toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+        } catch {
+          toast?.push({
+            tone: "warning",
+            title: "Could not copy number",
+            body: "Check clipboard access and try again.",
+          });
+        }
       }}
     >
       <PhoneCall size={20} aria-hidden="true" />

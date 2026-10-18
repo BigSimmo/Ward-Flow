@@ -1,9 +1,9 @@
 {
-  "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB, and lowered the same day after the rail and search left a phone's first load. Lower a budget when a route shrinks. Raise one only with a reason in the PR.",
+  "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB, and lowered the same day after the rail and search left a phone's first load. Lower a budget when a route shrinks. Raise one only with a reason in the PR. 18 October 2026 (PR #404, owner approval via Grok Bot 17:06 AWST): Home 560 to 563, Referrals 577 to 580 and ED 532 to 535 KB. The stricter executive count-only field lists and the downtime-pack context add about 2-2.5 KB gzipped to the shell every route loads, and main was already at these budgets.",
   "budgets": {
-    "/mockups/ward-flow": 560,
-    "/mockups/ward-flow/referrals": 577,
-    "/mockups/ward-flow/ed": 532,
+    "/mockups/ward-flow": 563,
+    "/mockups/ward-flow/referrals": 580,
+    "/mockups/ward-flow/ed": 535,
     "/mockups/ward-flow/ward/rph-adult-secure": 587,
     "/mockups/ward-flow/movements/WF-001": 623
   }
