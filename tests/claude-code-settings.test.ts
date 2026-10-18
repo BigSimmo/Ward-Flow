@@ -79,7 +79,9 @@ describeConfiguredClaude("claude code permissions", () => {
     // production-readiness scripts were still here; those went with PsychSift on 25
     // September 2026, leaving 5 (test:live, verify:release, eval:rag:offline,
     // sync:pr-branches, sync:pr-branches:apply) — the floor is lowered to match, not removed.
-    expect(providerScripts.length).toBeGreaterThan(3);
+    // The PR branch sync commands were retired on 18 October 2026, leaving test:live and
+    // verify:release.
+    expect(providerScripts.length).toBeGreaterThan(1);
   });
 
   it.each(providerScripts)("npm run %s is not reachable through an allow rule", (script) => {
