@@ -8,7 +8,7 @@ import {
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
-import { assembleWorld, conflicts, markerKind, planSave, splitWorld } from "./records.mjs";
+import { assembleWorld, conflicts, markerKind, planSave } from "./records.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** Desks with a phone turned on, read a page at a time when new alerts are queued. */
@@ -299,7 +299,7 @@ export function createWorkspaceStore(
       return;
     }
     if (JSON.stringify(world).length > MAX_WORLD_BYTES) throw new Error("Workspace too large");
-    const plan = planSave(row.stored, world, revision);
+    const plan = planSave(row.stored, world, revision, row.core);
     await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
       workspaceId,
       revision,
@@ -338,13 +338,13 @@ export function createWorkspaceStore(
     if (!row) {
       const seed = engine.seedWorld(at);
       const records = (await schemaVersion()) >= RECORDS_MIGRATION;
-      const split = records ? splitWorld(seed) : null;
+      const split = records ? planSave([], seed, 1) : null;
       const created = await client.query(
         "INSERT INTO ward_flow.workspaces(id, revision, payload) VALUES ($1, 1, $2) ON CONFLICT DO NOTHING RETURNING id",
         [workspaceId, split ? split.core : seed],
       );
       if (created.rowCount) {
-        if (split) await writeRecords(client, planSave([], seed, 1), at);
+        if (split) await writeRecords(client, split, at);
         await audit(client, view, actorId, {
           action: "INITIALISE_WORKSPACE",
           outcome: "accepted",

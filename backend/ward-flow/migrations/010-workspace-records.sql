@@ -5,7 +5,8 @@
 -- The layout rule is the one in records.mjs (records.test.mjs checks the two agree):
 --   a list of objects that each have a unique text id: one row per entry, keyed by that id (item);
 --   any other list: one row per position (index); a map: one row per key (entry).
--- The workspace row keeps the small fields and {"$records": "<kind>"} in place of each list or map.
+-- The workspace row keeps the small fields and {"$records": "<kind>"} in place of each list or map,
+-- plus "$revisions": the revision at which each small field last changed.
 -- Existing workspaces are moved across here, in migrate()'s single transaction: if any row cannot
 -- be written, nothing changes. infra/rollback-010-workspace-records.sql puts them back.
 CREATE TABLE ward_flow.workspace_records (
@@ -52,6 +53,10 @@ BEGIN
       END IF;
       next_payload := jsonb_set(next_payload, ARRAY['state', field.key], jsonb_build_object('$records', field_kind));
     END LOOP;
+    -- Every small field left on the workspace row counts as changed at the current revision.
+    next_payload := next_payload || jsonb_build_object('$revisions', (
+      SELECT coalesce(jsonb_object_agg(f.key, w.revision), '{}'::jsonb) FROM jsonb_each(next_payload->'state') AS f
+      WHERE jsonb_typeof(f.value) <> 'object' OR NOT (f.value ? '$records')));
     UPDATE ward_flow.workspaces SET payload = next_payload WHERE id = w.id;
   END LOOP;
 END $$;
