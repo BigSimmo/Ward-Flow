@@ -240,15 +240,15 @@ describe("single referral draft session ownership", () => {
     expect(readKeptReferralDraft(genericKey)).toBeNull();
   });
 
-  it("settles the prior owner when restoring an already-persisted named copy", () => {
+  it("keeps the current memory owner when a same-subject named copy already exists", () => {
     const genericKey = sessionDraftKey("demo", "referral", "new");
     const namedKey = sessionDraftKey("demo", "referral", "PT-023");
     const draft = completeDraft();
     keepReferralDraft(draft, undefined, genericKey);
     const recovered = { ...draft, doctorNote: "Synthetic recovered update" };
     writeSessionDraft(namedKey, JSON.stringify(recovered), draftSessionVersion());
-    expect(readKeptReferralDraft(namedKey)).toEqual(recovered);
-    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readKeptReferralDraft(namedKey)).toEqual(draft);
+    expect(readSessionDraft(genericKey)).not.toBeNull();
     discardReferralDraft();
     expect(readSessionDraft(namedKey)).toBeNull();
   });
@@ -371,4 +371,81 @@ describe("single referral draft session ownership", () => {
       expect(JSON.parse(readSessionDraft(genericKey)!)).toEqual(generic);
     },
   );
+  it("clears a matching preexisting named alias after restoring and discarding the generic draft", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    writeSessionDraft(genericKey, JSON.stringify(draft), draftSessionVersion());
+    writeSessionDraft(namedKey, JSON.stringify(draft), draftSessionVersion());
+    readKeptReferralDraft(genericKey);
+    discardReferralDraft();
+    expect(readSessionDraft(genericKey)).toBeNull();
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(readKeptReferralDraft(namedKey)).toBeNull();
+  });
+
+  it.each(["read", "write"])(
+    "preserves another person's generic copy when a named owner switches by %s",
+    (operation) => {
+      const genericKey = sessionDraftKey("demo", "referral", "new");
+      const namedKey = sessionDraftKey("demo", "referral", "PT-024");
+      const first = completeDraft();
+      const second = { ...first, activePatientKey: "patient:PT-024" };
+      keepReferralDraft(first, undefined, genericKey);
+      if (operation === "read") {
+        writeSessionDraft(namedKey, JSON.stringify(second), draftSessionVersion());
+        expect(readKeptReferralDraft(namedKey)).toEqual(second);
+      } else keepReferralDraft(second, undefined, namedKey);
+      expect(readSessionDraft(genericKey)).not.toBeNull();
+      discardReferralDraft();
+      expect(readSessionDraft(namedKey)).toBeNull();
+      expect(readKeptReferralDraft(genericKey)).toEqual({ ...first, needsChartReattachment: false });
+    },
+  );
+
+  it("preserves a prior recovery owner in another scenario even when the patient matches", () => {
+    const genericKey = sessionDraftKey("other-demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const draft = completeDraft();
+    keepReferralDraft(draft, undefined, genericKey);
+    keepReferralDraft(draft, undefined, namedKey);
+    expect(readSessionDraft(genericKey)).not.toBeNull();
+    discardReferralDraft();
+    expect(readSessionDraft(namedKey)).toBeNull();
+    expect(readSessionDraft(genericKey)).not.toBeNull();
+  });
+
+  it.each(["same generic key", "named key"])(
+    "preserves another person's persisted copy after a failed %s write and discard",
+    (destination) => {
+      const genericKey = sessionDraftKey("demo", "referral", "new");
+      const targetKey = destination === "same generic key" ? genericKey : sessionDraftKey("demo", "referral", "PT-024");
+      const first = completeDraft();
+      const second = { ...first, activePatientKey: "patient:PT-024" };
+      keepReferralDraft(first, undefined, genericKey);
+      const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("Storage unavailable");
+      });
+      try {
+        keepReferralDraft(second, undefined, targetKey);
+      } finally {
+        setItem.mockRestore();
+      }
+      discardReferralDraft();
+      expect(readKeptReferralDraft(genericKey)).toEqual({ ...first, needsChartReattachment: false });
+    },
+  );
+
+  it("does not overwrite newer generic memory edits with an older named alias", () => {
+    const genericKey = sessionDraftKey("demo", "referral", "new");
+    const namedKey = sessionDraftKey("demo", "referral", "PT-023");
+    const older = { ...completeDraft(), doctorNote: "Synthetic older draft" };
+    const newer = { ...older, doctorNote: "Synthetic current edit" };
+    writeSessionDraft(namedKey, JSON.stringify(older), draftSessionVersion());
+    keepReferralDraft(newer, undefined, genericKey);
+    expect(readKeptReferralDraft(namedKey)).toEqual(newer);
+    keepReferralDraft(newer, undefined, namedKey); // The next normal autosave reconciles the key.
+    expect(JSON.parse(readSessionDraft(namedKey)!).doctorNote === newer.doctorNote).toBe(true);
+    expect(readSessionDraft(genericKey)).toBeNull();
+  });
 });
