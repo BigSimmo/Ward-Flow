@@ -291,6 +291,8 @@ export function AddPatientForm() {
     familyName: string;
     /** The command went to the shared workspace (it settled asynchronously). */
     shared?: boolean;
+    /** The form as submitted; edits made while waiting are kept when the save finishes. */
+    form: ReturnType<typeof formSnapshot>;
     generation: number;
     intent: "profile" | "refer";
     intake: {
@@ -303,6 +305,8 @@ export function AddPatientForm() {
   } | null>(null);
   const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
   const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
+  /** An accepted shared save finished without its record; a late snapshot can still open it. */
+  const lateSubmissionRef = useRef<typeof priorSubmissionRef.current>(null);
   if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
     setAcceptedSubmission(null);
     setLastRejection("The workspace changed. Review the record before trying again.");
@@ -376,8 +380,21 @@ export function AddPatientForm() {
     clearForm();
   };
 
+  function finishSubmission() {
+    setAttemptedSubmit(false);
+    setLastRejection(undefined);
+    setD4Notice(null);
+    setIsSubmitting(false);
+    priorSubmissionRef.current = null;
+    setAcceptedSubmission(null);
+    submitIntentRef.current = "profile";
+    setSubmitIntent("profile");
+    setShowResetConfirm(false);
+  }
+
   function clearForm() {
     setSavedOutsideView(null);
+    lateSubmissionRef.current = null;
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
     setIndigenousStatus("not-stated");
@@ -390,15 +407,7 @@ export function AddPatientForm() {
     setPresentingComplaint("assessment");
     setClinicalNotes("");
     setAssignedSearch(null);
-    setAttemptedSubmit(false);
-    setLastRejection(undefined);
-    setD4Notice(null);
-    setIsSubmitting(false);
-    priorSubmissionRef.current = null;
-    setAcceptedSubmission(null);
-    submitIntentRef.current = "profile";
-    setSubmitIntent("profile");
-    setShowResetConfirm(false);
+    finishSubmission();
   }
 
   const answered = answeredDraft(draft);
@@ -432,17 +441,32 @@ export function AddPatientForm() {
   const recentRecords = useMemo(() => patients.slice(-RECENT_RECORDS_SHOWN).reverse(), [patients]);
   const addedToday = patients.filter((patient) => patientAddedOnDayOf(patient, now)).length;
 
-  useEffect(() => {
-    const prior = acceptedSubmission;
-    if (!prior || priorSubmissionRef.current !== prior) return;
-    if (prior.generation !== worldGeneration) return;
+  /** The new record from an accepted save, once a snapshot brings it. */
+  const findAdded = (prior: NonNullable<typeof priorSubmissionRef.current>) => {
     const priorIds = new Set(prior.patients.map((patient) => patient.id));
-    const added = patients.find(
-      (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === prior.umrn.toLowerCase(),
-    );
+    const umrn = prior.umrn.toLowerCase();
+    return patients.find((patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn);
+  };
+
+  useEffect(() => {
+    const late = lateSubmissionRef.current;
+    const prior = late ?? acceptedSubmission;
+    if (!prior || (!late && priorSubmissionRef.current !== prior)) return;
+    if (prior.generation !== worldGeneration) {
+      lateSubmissionRef.current = null;
+      return;
+    }
+    const added = findAdded(prior);
     // A shared command can settle before its snapshot arrives. Only its own accepted identity counts.
     if (!added) return;
     priorSubmissionRef.current = null;
+    lateSubmissionRef.current = null;
+    if (late && isDirty) {
+      // The save already finished and the form holds new typing: say where the record is, stay here.
+      setSavedOutsideView(`${added.givenName} ${added.familyName} added, ${added.umrn}. It is now in Recent records.`);
+      return;
+    }
+    setSavedOutsideView(null);
     // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
     toast?.push({
       tone: "success",
@@ -469,30 +493,45 @@ export function AddPatientForm() {
       return;
     }
     router.push(patientHref(added.id));
-  }, [acceptedSubmission, patients, worldGeneration, router, toast]);
+    // findAdded reads `patients`, which is listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptedSubmission, patients, worldGeneration, router, toast, isDirty]);
+
+  // Latest values for the outside-view timer, which must not restart on every snapshot.
+  const latestRef = useRef({ patients, form: formSnapshot() });
+  useEffect(() => {
+    latestRef.current = { patients, form: formSnapshot() };
+  });
 
   useEffect(() => {
     const prior = acceptedSubmission;
     if (!prior?.shared || priorSubmissionRef.current !== prior || prior.generation !== worldGeneration)
       return undefined;
-    const priorIds = new Set(prior.patients.map((patient) => patient.id));
-    const umrn = prior.umrn.toLowerCase();
-    if (patients.some((patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn))
-      return undefined;
     // A scoped desk never receives a standalone record it cannot see (no stay, referral or grant),
-    // so its snapshot never brings the record. After a short wait for the snapshot, finish on the
-    // accepted outcome: echo only what was typed and stay here (Grok Bot for the owner, 18 Oct
-    // 2026 15:58 AWST; no access is widened).
+    // so its snapshot never brings the record. After one short wait per accepted save, finish on
+    // the accepted outcome: echo only what was typed and stay here (Grok Bot for the owner, 18 Oct
+    // 2026 15:58 AWST; no access is widened). A record that arrives later still opens.
     const timer = window.setTimeout(() => {
       if (priorSubmissionRef.current !== prior) return;
+      const priorIds = new Set(prior.patients.map((patient) => patient.id));
+      const umrn = prior.umrn.toLowerCase();
+      const arrived = latestRef.current.patients.some(
+        (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn,
+      );
+      if (arrived) return;
       const saved = `${prior.givenName} ${prior.familyName} added, ${prior.umrn}`;
       const note = "Saved. The record is outside this desk's view, so it does not open here.";
-      clearForm();
+      // Clear only the submitted draft; anything typed during the wait is kept.
+      if (JSON.stringify(latestRef.current.form) === JSON.stringify(prior.form)) clearForm();
+      else finishSubmission();
+      lateSubmissionRef.current = prior;
       setSavedOutsideView(`${saved}. ${note}`);
       toast?.push({ tone: "success", title: saved, body: note });
     }, SHARED_SNAPSHOT_WAIT_MS);
     return () => window.clearTimeout(timer);
-  }, [acceptedSubmission, patients, worldGeneration, toast]);
+    // clearForm and finishSubmission only set state; the timer starts once per accepted save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptedSubmission, worldGeneration, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -504,6 +543,7 @@ export function AddPatientForm() {
     setIsSubmitting(true);
     setLastRejection(undefined);
     setSavedOutsideView(null);
+    lateSubmissionRef.current = null;
     const submission: NonNullable<typeof priorSubmissionRef.current> = {
       patients,
       umrn: answered.umrn,
@@ -512,6 +552,7 @@ export function AddPatientForm() {
       generation: worldGeneration,
       intent: submitIntentRef.current,
       intake: { facility, healthService, triageUrgency, legalStatus, presentingComplaint },
+      form: formSnapshot(),
     };
     priorSubmissionRef.current = submission;
     setAcceptedSubmission(null);

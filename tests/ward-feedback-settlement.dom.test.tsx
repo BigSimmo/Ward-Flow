@@ -165,6 +165,54 @@ describe("patient registration command settlement", () => {
       vi.useRealTimers();
     }
   });
+
+  it("waits once per accepted shared save, keeps typing done during the wait, and opens a record that arrives late", async () => {
+    vi.useFakeTimers();
+    try {
+      const command = deferred<WardCommandOutcome>();
+      const dispatch = vi.fn<WardCommandDispatch>(() => command.promise);
+      const view = render(form(dispatch));
+      fill();
+      fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+      await act(async () => command.resolve({ commandId: "own-add", status: "accepted" }));
+      act(() => vi.advanceTimersByTime(2000));
+      // Unrelated snapshots inside the wait do not restart it.
+      view.rerender(form(dispatch, [other]));
+      view.rerender(form(dispatch, [other, { ...other, id: "PT-A902", umrn: "UM990092" }]));
+      // Typing during the wait is kept when the save finishes.
+      fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Next" } });
+      act(() => vi.advanceTimersByTime(1000));
+      expect(screen.getByTestId("ward-add-patient-saved-outside-view").textContent).toContain(own.umrn);
+      expect((screen.getByLabelText("Given name") as HTMLInputElement).value).toBe("Next");
+      expect(router.push.mock.calls.length).toBe(0);
+      // The record arrives late: the form holds new typing, so it is announced, not opened.
+      view.rerender(form(dispatch, [other, own]));
+      expect(router.push.mock.calls.length).toBe(0);
+      expect(screen.getByTestId("ward-add-patient-saved-outside-view").textContent).toContain("now in Recent records");
+      expect((screen.getByLabelText("Given name") as HTMLInputElement).value).toBe("Next");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens an accepted shared save's record when a slow snapshot brings it after the wait", async () => {
+    vi.useFakeTimers();
+    try {
+      const command = deferred<WardCommandOutcome>();
+      const dispatch = vi.fn<WardCommandDispatch>(() => command.promise);
+      const view = render(form(dispatch));
+      fill();
+      fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+      await act(async () => command.resolve({ commandId: "own-add", status: "accepted" }));
+      act(() => vi.advanceTimersByTime(3000));
+      expect(router.push.mock.calls.length).toBe(0);
+      view.rerender(form(dispatch, [own]));
+      expect(router.push.mock.calls.length).toBe(1);
+      expect(router.push.mock.calls[0]?.[0] === patientHref(own.id)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("escalation feedback", () => {
