@@ -22,7 +22,10 @@ when necessary, and the trigger itself has a minimum 48px target.
 - The live referral intake is `referrals/ward-referral-drawer.tsx` with
   `use-ward-referral-drawer-state.ts` and `referral-draft-store.ts`. D-67 restores bounded synthetic
   session drafts and explicitly asks for attachment reattachment after refresh. The legal form
-  sheet preserves failed/pending submissions, and successful command completion clears its draft.
+  sheet preserves failed/pending submissions, and successful command completion clears its draft. Persisted referral values are checked against the complete form shape before reuse;
+  malformed entries are removed rather than reopening a broken form. Cleanup stays separate from
+  these deferred form modules. Session identity works without `crypto.randomUUID`, and a legal
+  save from an ended session releases its own busy state without clearing a newer draft.
 
 ## Approved overdue design — 11 October 2026
 

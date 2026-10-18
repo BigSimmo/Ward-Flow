@@ -105,3 +105,111 @@ it("fences old-world writes on an observed incoming scenario replacement", () =>
   const nextKey = sessionDraftKey("standard/1", "referral", "new");
   expect(writeSessionDraft(nextKey, "synthetic next world", owner)).toBe(true);
 });
+
+import { clearReferralDraftSession } from "@/components/ward-management/referrals/referral-draft-store";
+
+const completeDraft = () => ({
+  activePatientKey: "patient:PT-023",
+  destType: "ward",
+  activeSection: "patient",
+  ageBand: "Adult",
+  selectedUnitIds: [],
+  selectedRecipient: "",
+  documentation: {
+    medical: "",
+    expectedAt: "",
+    contactName: "",
+    contactPhone: "",
+    triage: "",
+    additional: "",
+    charts: [],
+  },
+  contact: { name: "", email: "", phone: "", role: "", location: "" },
+  catchmentSuburb: "",
+  catchmentTeam: "",
+  catchmentService: "",
+  catchmentConfirmed: false,
+  homeRegion: "",
+  sourceKind: "ed",
+  originSiteCode: "",
+  sendingTeam: "",
+  referralSex: "Not recorded",
+  referralGender: "",
+  highAcuity: false,
+  arrivalEta: "",
+  legalStatus: "",
+  urgency: "",
+  security: "Open",
+  provisionalDiag: "",
+  doctorNote: "",
+  clinicalSummary: "",
+  transport: "",
+  transitNote: "",
+  riskFlags: {},
+  clearanceChecks: {},
+  communityNeeds: {},
+  edNeeds: {},
+});
+
+describe("referral recovery projection validation", () => {
+  beforeEach(() => {
+    clearReferralDraftSession();
+    window.sessionStorage.clear();
+  });
+  it("accepts a complete incomplete-form projection with optional typed answers", () => {
+    const key = sessionDraftKey("demo", "referral", "new");
+    const draft = {
+      ...completeDraft(),
+      unidentified: null,
+      atsCategory: 3,
+      notOnWard: { unitId: "synthetic-unit", reason: "Recently discharged from this ward" },
+      communityNeeds: { firstContact: "72 hours", homeVisit: false },
+      edNeeds: { comingBy: "Ambulance", medicalReviewFirst: true, expectedArrival: "12:30" },
+      clearanceChecks: { ecg: "to_follow" },
+    };
+    writeSessionDraft(key, JSON.stringify(draft), draftSessionVersion());
+    expect(readKeptReferralDraft(key)).toEqual(draft);
+  });
+  it.each([
+    { destType: "unknown" },
+    { activeSection: "unknown" },
+    { ageBand: "unknown" },
+    { sourceKind: "unknown" },
+    { homeRegion: "unknown" },
+    { referralSex: "unknown" },
+    { referralGender: "unknown" },
+    { catchmentService: "unknown" },
+    { unidentified: 42 },
+    { unidentified: {} },
+    { atsCategory: "3" },
+    { atsCategory: 6 },
+    { notOnWard: { unitId: 1, reason: "Recently discharged from this ward" } },
+    { notOnWard: { unitId: "synthetic-unit", reason: "unknown" } },
+    { documentation: { medical: "", charts: [] } },
+    { contact: { name: "" } },
+    { communityNeeds: { firstContact: "unknown" } },
+    { communityNeeds: { homeVisit: "yes" } },
+    { edNeeds: { comingBy: "unknown" } },
+    { edNeeds: { expectedArrival: [] } },
+    { clearanceChecks: { ecg: "unknown" } },
+    { clearanceChecks: { unknown: "done" } },
+    { riskFlags: { suicide: "yes" } },
+    { selectedUnitIds: [null] },
+    { needsChartReattachment: "yes" },
+  ])("rejects and removes malformed field projection %#", (changes) => {
+    const key = sessionDraftKey("demo", "referral", "new");
+    writeSessionDraft(key, JSON.stringify({ ...completeDraft(), ...changes }), draftSessionVersion());
+    expect(readKeptReferralDraft(key)).toBeNull();
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    expect(readKeptReferralDraft(key)).toBeNull();
+  });
+  it("removes malformed JSON instead of repeatedly attempting to restore it", () => {
+    const key = sessionDraftKey("demo", "referral", "new");
+    writeSessionDraft(key, "{", draftSessionVersion());
+    expect(readKeptReferralDraft(key)).toBeNull();
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    window.sessionStorage.setItem(key, "{");
+    expect(readSessionDraft(key)).toBeNull();
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+  });
+});

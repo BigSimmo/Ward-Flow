@@ -4,7 +4,7 @@ import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { setDraftAccount } from "./ward-session-drafts";
-import { clearReferralDraftSession } from "./referrals/referral-draft-store";
+import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;

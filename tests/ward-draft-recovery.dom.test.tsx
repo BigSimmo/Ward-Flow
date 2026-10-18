@@ -7,6 +7,7 @@ import {
   draftSessionVersion,
   readSessionDraft,
   sessionDraftKey,
+  setDraftAccount,
   writeSessionDraft,
 } from "@/components/ward-management/ward-session-drafts";
 
@@ -43,6 +44,42 @@ describe("opted-in synthetic form recovery", () => {
     writeSessionDraft(key, "synthetic draft", draftSessionVersion());
     renderHook(() => useDirtyStateGuard({ key: "other", isDirty: true, value: "memory only" }));
     expect(readSessionDraft(key)).toBe("synthetic draft");
+  });
+  it("binds a delayed storage opt-in after account adoption and restores on remount", () => {
+    setDraftAccount("synthetic-before-adoption");
+    const first = renderHook(
+      ({ key }: { key?: string }) =>
+        useDirtyStateGuard({ storageKey: key, isDirty: true, value: "Synthetic adopted draft" }),
+      { initialProps: { key: undefined } as { key?: string } },
+    );
+    setDraftAccount("synthetic-account-a");
+    const key = sessionDraftKey("demo", "legal", "new");
+    first.rerender({ key });
+    act(() => vi.advanceTimersByTime(500));
+    expect(readSessionDraft(key)).toBe("Synthetic adopted draft");
+    first.unmount();
+    const onRestore = vi.fn();
+    renderHook(() => useDirtyStateGuard({ storageKey: key, isDirty: false, onRestore }));
+    expect(onRestore).toHaveBeenCalledWith("Synthetic adopted draft");
+  });
+  it("fences outgoing account callbacks while allowing a new account form to save", () => {
+    setDraftAccount("synthetic-account-a");
+    const oldKey = sessionDraftKey("demo", "legal", "new");
+    const old = renderHook(({ value }) => useDirtyStateGuard({ storageKey: oldKey, isDirty: true, value }), {
+      initialProps: { value: "Synthetic outgoing draft" },
+    });
+    setDraftAccount("synthetic-account-b");
+    old.rerender({ value: "Synthetic stale edit after account change" });
+    const newKey = sessionDraftKey("demo", "legal", "new");
+    renderHook(() => useDirtyStateGuard({ storageKey: newKey, isDirty: true, value: "Synthetic new account draft" }));
+    act(() => vi.advanceTimersByTime(500));
+    expect(window.sessionStorage.getItem(oldKey)).toBeNull();
+    expect(readSessionDraft(newKey)).toBe("Synthetic new account draft");
+    setDraftAccount("synthetic-account-a");
+    old.rerender({ value: "Synthetic stale edit after returning to the old account" });
+    act(() => vi.advanceTimersByTime(500));
+    expect(window.sessionStorage.getItem(oldKey)).toBeNull();
+    old.unmount();
   });
   it("does not resurrect drafts when a session terminates before debounce", () => {
     const key = sessionDraftKey("demo", "legal", "new");
@@ -118,6 +155,34 @@ describe("synthetic form integration", () => {
     expect(readSessionDraft(key)).toBeNull();
     expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
   });
+  it.each([{ destType: "unknown" }, { unidentified: 42 }, { contact: { name: "" } }])(
+    "discards a malformed persisted form without a reopen crash or false restore notice %#",
+    (changes) => {
+      const draw = () =>
+        render(
+          <WardFlowProvider initialNow={NOW_ANCHOR}>
+            <WardReferralDrawer initialPatientId="PT-023" onClose={() => {}} />
+          </WardFlowProvider>,
+        );
+      const first = draw();
+      fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+      fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Synthetic pending draft" } });
+      act(() => vi.advanceTimersByTime(500));
+      const key = sessionDraftKey("standard/0", "referral", "PT-023");
+      const envelope = JSON.parse(window.sessionStorage.getItem(key)!);
+      envelope.value = JSON.stringify({ ...JSON.parse(envelope.value), ...changes });
+      first.unmount();
+      discardReferralDraft();
+      window.sessionStorage.setItem(key, JSON.stringify(envelope));
+      const next = draw();
+      expect(screen.getByRole("complementary", { name: "Referrals" })).toBeInTheDocument();
+      expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
+      expect(window.sessionStorage.getItem(key)).toBeNull();
+      next.unmount();
+      draw();
+      expect(screen.getByRole("complementary", { name: "Referrals" })).toBeInTheDocument();
+    },
+  );
   it("retains the attachment warning across a recovered autosave and a second refresh", () => {
     const draw = () =>
       render(

@@ -5,7 +5,15 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  discardReferralDraft,
+  clearReferralDraftSession,
+} from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  readSessionDraft,
+  sessionDraftKey,
+  SESSION_DRAFT_MAX_AGE_MS,
+} from "@/components/ward-management/ward-session-drafts";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -111,7 +119,7 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
     expect(screen.queryByText("fsh-adult-secure")).not.toBeInTheDocument();
   });
 
-  it("blocks beforeunload when WardReferralDrawer has unsaved or kept in-memory edits, uses aria-disabled on Save draft, and never persists clinical story to sessionStorage", () => {
+  it("blocks beforeunload when WardReferralDrawer has unsaved or kept in-memory edits, uses aria-disabled on Save draft, and bounds the approved synthetic session projection", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardReferralDrawer onClose={vi.fn()} />
@@ -142,12 +150,25 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
 
     expect(saveDraftBtn).not.toHaveAttribute("aria-disabled");
     expect(fireBeforeUnload()).toBe(true);
-    expect(window.sessionStorage.length).toBe(0);
+    expect(readSessionDraft(sessionDraftKey("standard/0", "referral", "new"))).toBeNull();
 
-    // Clicking Save draft keeps the draft in tab memory; beforeunload stays active while kept draft is in memory
+    // D-67 opts this synthetic form into bounded session recovery; dirty navigation still warns.
     fireEvent.click(saveDraftBtn);
     expect(fireBeforeUnload()).toBe(true);
-    expect(window.sessionStorage.length).toBe(0);
+    const key = sessionDraftKey("standard/0", "referral", "new");
+    const raw = readSessionDraft(key);
+    expect(raw).not.toBeNull();
+    expect(JSON.parse(raw!).clinicalSummary === "Confidential synthetic clinical story").toBe(true);
+    expect(JSON.parse(raw!).documentation.charts).toEqual([]);
+    const envelope = JSON.parse(window.sessionStorage.getItem(key)!);
+    expect(envelope.version).toBe(1);
+    expect(envelope.expiresAt - envelope.savedAt).toBeGreaterThan(0);
+    expect(envelope.expiresAt - envelope.savedAt).toBeLessThanOrEqual(SESSION_DRAFT_MAX_AGE_MS);
+    expect(
+      Object.values(window.localStorage).some((value) => value.includes("Confidential synthetic clinical story")),
+    ).toBe(false);
+    clearReferralDraftSession();
+    expect(window.sessionStorage.getItem(key)).toBeNull();
   });
 
   it("removes tabIndex={0} from non-interactive sections in WardAnswerView and guards unsaved capacity edits on beforeunload", () => {

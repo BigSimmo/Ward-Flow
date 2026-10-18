@@ -5,7 +5,10 @@
 `ward-session-drafts.ts` owns D-67's opt-in, versioned session draft envelopes, account and
 scenario boundaries, bounded lifetime and cleanup fences. `use-dirty-state-guard.ts` offers
 500ms persistence only when a form supplies a storage key; other guards retain navigation
-protection. The referral draft store remains its form's single autosave owner and omits chart
+protection. `referrals/referral-draft-lifecycle.ts` owns the one memory/session cleanup object;
+provider/auth cleanup imports only that small module. `referral-draft-cache.ts` validates restored
+projections through `referral-draft-validation.ts`, while `referral-draft-hooks.ts` owns recovery
+and autosave. The existing `referral-draft-store.ts` entry point retains current caller APIs. The referral draft store remains its form's single autosave owner and omits chart
 bytes from recovery. Provider world adoption, reset and local auth cleanup invalidate outgoing
 writes without removing the general typed-event state privacy lock. Legal form saves clear a
 draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,

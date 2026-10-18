@@ -3,8 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 
 import {
-  clearSessionDrafts,
-  clearLegacySessionDrafts,
+  clearWardFlowDraftCaches,
   draftSessionVersion,
   readSessionDraft,
   writeSessionDraft,
@@ -214,18 +213,17 @@ function syncNavigationConfirm(): void {
 
 installHistoryTracking();
 
-/** Explicit session termination/reset. Invalidates pending synthetic-form writes too. */
-export function clearWardFlowDraftCaches(): void {
-  clearSessionDrafts();
-}
-
-/** D18: typed text stays in memory. Warn on unload, client navigation, and purge caches from older versions. */
+/** Navigation protection for every form; D-67 recovery requires an explicitly opted-in storage key. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
   const { key, storageKey, isDirty, value, onRestore, confirmMessage, skipAnchor } = normalized;
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftSaved, setDraftSaved] = useState(true);
-  const [ownerVersion] = useState(draftSessionVersion);
+  // Bind ownership when this form opts in (or gets a genuinely new account/session key).
+  // A generation change alone must never re-authorise an old mounted form's callbacks.
+  const [draftOwner, setDraftOwner] = useState(() => ({ key: storageKey, version: draftSessionVersion() }));
+  if (draftOwner.key !== storageKey) setDraftOwner({ key: storageKey, version: draftSessionVersion() });
+  const ownerVersion = draftOwner.version;
   const restoredKey = useRef<string | null>(null);
   const clearedValue = useRef<string | undefined>(undefined);
   const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -240,7 +238,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   }, []);
 
   useEffect(() => {
-    clearLegacySessionDrafts();
+    clearWardFlowDraftCaches({ legacyOnly: true });
   }, [key]);
 
   useEffect(() => {

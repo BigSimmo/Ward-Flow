@@ -1,5 +1,7 @@
 "use client";
 
+import { useWardRaise } from "../ward-flow-raise";
+
 import { useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
@@ -166,6 +168,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
   // who acted (the coordinator here) rather than a borrowed "ED".
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
   const { run: runStep, offer: offerStep } = useUndoableStep({
     dispatch,
@@ -1068,10 +1071,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            const completion = dispatch({
-              type: "RECORD_LEGAL_FORM_WRITTEN",
-              role: routeRole,
-              now,
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", {
               movementId,
               formCode,
               writtenAt,

@@ -6,7 +6,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-clie
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
-import { clearReferralDraftSession } from "./referrals/referral-draft-store";
+import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";

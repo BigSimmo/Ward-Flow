@@ -74,12 +74,26 @@ test.describe("native history and handover print @mockup", () => {
         .evaluate((input) => (input as HTMLInputElement).value === "Synthetic clinician"),
     ).toBe(true);
     expect(
-      await page.evaluate(() =>
-        [sessionStorage, localStorage].some((storage) =>
-          Object.values(storage).some((value) => value.includes("Synthetic clinician")),
-        ),
-      ),
+      await page.evaluate(() => Object.values(localStorage).some((value) => value.includes("Synthetic clinician"))),
     ).toBe(false);
+    const recovery = await page.evaluate(() => {
+      const entries = Object.entries(sessionStorage).filter(
+        ([key, raw]) => key.startsWith("wf-draft:v1:") && raw.includes("Synthetic clinician"),
+      );
+      if (entries.length !== 1) return false;
+      const [key, raw] = entries[0]!;
+      const envelope = JSON.parse(raw);
+      const projection = JSON.parse(envelope.value);
+      return (
+        key.split(":").length === 7 &&
+        envelope.version === 1 &&
+        envelope.expiresAt > Date.now() &&
+        envelope.expiresAt - envelope.savedAt <= 12 * 60 * 60_000 &&
+        projection.doctorNote === "Synthetic clinician" &&
+        projection.documentation.charts.length === 0
+      );
+    });
+    expect(recovery).toBe(true);
     expect(prompts).toBe(0);
   });
 

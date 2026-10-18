@@ -156,6 +156,7 @@ export function readSessionDraft(key: string): string | null {
     }
     return entry.value;
   } catch {
+    removeSessionDraft(key);
     return null;
   }
 }
@@ -194,4 +195,10 @@ export function removeSessionDraft(key: string): void {
   } catch {
     /* Browser storage may be disabled. */
   }
+}
+
+/** Clear approved recovery on termination, or only legacy caches on a guarded form's mount. */
+export function clearWardFlowDraftCaches({ legacyOnly = false }: { legacyOnly?: boolean } = {}): void {
+  if (legacyOnly) clearLegacySessionDrafts();
+  else clearSessionDrafts();
 }
