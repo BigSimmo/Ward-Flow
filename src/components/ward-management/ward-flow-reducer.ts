@@ -2424,7 +2424,9 @@ export function reduceClinicalEvent(
       const source =
         event.source === "departure"
           ? unitTurnaroundSource(state, event.unitId, event.now, false)
-          : unitTurnaroundSource(state, event.unitId, event.now);
+          : event.source === "cld"
+            ? unitTurnaroundSource(state, event.unitId, event.now, true)
+            : unitTurnaroundSource(state, event.unitId, event.now);
       if (!source || (event.source !== undefined && event.source !== source))
         return reject(state, event, "No current CLD-ready admission or unblocked confirmed departure on this unit.");
       const preference = { unitId: event.unitId, flaggedAt: event.now, source };
@@ -2435,6 +2437,18 @@ export function reduceClinicalEvent(
           return reject(state, event, "Turnaround preference requires a waiting, unplaced movement.");
         if (!turnaroundEligibilityAllows(eligibility(movement, unit, event.now), unit))
           return reject(state, event, "The receiving unit's clinical and legal gates must allow this movement.");
+        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        if (
+          !referral ||
+          !referral.destinations.some(
+            (arm) =>
+              arm.state === "queued" &&
+              arm.withdrawnAt === undefined &&
+              arm.destination.kind === "psychiatric_ward" &&
+              (arm.destination.unitId === undefined || arm.destination.unitId === unit.id),
+          )
+        )
+          return reject(state, event, "Turnaround preference requires an open request for this receiving unit.");
         if (movement.turnaroundPriority?.unitId === event.unitId && movement.turnaroundPriority.source === source)
           return reject(state, event, "Turnaround preference already recorded for this unit.");
         return replaceMovement(state, movement.id, { ...movement, turnaroundPriority: preference });
