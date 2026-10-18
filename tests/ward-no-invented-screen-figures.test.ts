@@ -145,7 +145,7 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
   {
     id: "typing-pause",
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
-    file: /^referrals\/referral-draft-store\.ts$/,
+    file: /^referrals\/referral-draft-cache\.ts$/,
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
   },
   {
@@ -298,6 +298,17 @@ describe("no invented figures on a Ward Flow screen", () => {
       'const bands = ["Under 4 hours", "12 to 24 hours"];',
     ].join("\n");
     expect(offencesIn("clean.tsx", clean)).toEqual([]);
+  });
+
+  it("excludes only the relocated technical autosave timer, not clinical constants or shown claims", () => {
+    const file = "referrals/referral-draft-cache.ts";
+    const timer = "export const REFERRAL_DRAFT_AUTOSAVE_MS = 500;";
+    expect(offencesIn(file, timer)).toEqual([]);
+    expect(offencesIn("referrals/referral-draft-store.ts", timer).map((hit) => hit.rule)).toEqual(["time constant"]);
+    expect(offencesIn(file, "const CLINICAL_WAIT_MINUTES = 480;").map((hit) => hit.rule)).toEqual(["time constant"]);
+    expect(offencesIn(file, 'export const claim = "Target within 24 hours";').map((hit) => hit.rule)).toEqual([
+      "hour window",
+    ]);
   });
 
   it("keeps the to-do list honest: no breach entries, and it never grows", () => {
