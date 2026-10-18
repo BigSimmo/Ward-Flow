@@ -26,6 +26,9 @@ function fixture() {
   );
   state.bedReleases = [];
   const movement = state.movements.find((m) => !m.closure && m.stage !== "arrived" && !m.acceptedUnitId)!;
+  // A direct movement's requested wards are its live addressing source.
+  delete movement.referralId;
+  movement.referredUnitIds = [admission.unitId];
   const referral = state.referrals.find(
     (r) => r.destinations.some((d) => d.state === "queued") && !state.movements.some((m) => m.referralId === r.id),
   )!;
@@ -101,6 +104,41 @@ describe("CLD turnaround preference", () => {
           ];
     if (reason === "incompatible referral") unit.authorised = false;
     refused(f.state, wardFlowReducer(f.state, flag(f, "referral")));
+  });
+  it("requires a direct movement to request the selected unit", () => {
+    const f = fixture();
+    f.movement.referredUnitIds = [];
+    refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
+    f.movement.referredUnitIds = [f.unitId];
+    expect(wardFlowReducer(f.state, flag(f, "movement")).rejections).toEqual([]);
+  });
+  it.each(["declined", "accepted", "withdrawn", "other unit", "missing referral"])(
+    "refuses a linked movement with %s addressing",
+    (kind) => {
+      const f = fixture();
+      f.movement.referralId = f.referral.id;
+      const arm = f.referral.destinations[0]!;
+      if (kind === "withdrawn") arm.withdrawnAt = now;
+      else if (kind === "other unit" && arm.destination.kind === "psychiatric_ward") arm.destination.unitId = "other";
+      else if (kind === "missing referral") f.movement.referralId = "missing";
+      else arm.state = kind as "declined" | "accepted";
+      refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
+    },
+  );
+  it("honours a device-enabled CLD source when the environment default is off", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "development");
+    vi.stubEnv("NEXT_PUBLIC_WARD_FLAGS", "top25-criteria-led-discharge=off");
+    try {
+      const f = fixture();
+      expect(unitTurnaroundSource(f.state, f.unitId, now)).toBe(null);
+      const next = wardFlowReducer(f.state, flag(f, "movement", { source: "cld" }));
+      expect(next.rejections).toEqual([]);
+      expect(next.movements.find((m) => m.id === f.movement.id)!.turnaroundPriority?.source).toBe("cld");
+      f.admission.dischargeCriteria!.items[0]!.metAt = null;
+      refused(f.state, wardFlowReducer(f.state, flag(f, "movement", { source: "cld" })));
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
   it("uses only current, occupied, legally eligible all-met criteria", () => {
     const f = fixture();

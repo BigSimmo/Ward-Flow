@@ -1,5 +1,9 @@
 import { referralState } from "./ward-referrals";
-import { turnaroundEligibilityAllows, unitTurnaroundSource } from "./ward-turnaround-priority";
+import {
+  movementHasOpenTurnaroundRequest,
+  turnaroundEligibilityAllows,
+  unitTurnaroundSource,
+} from "./ward-turnaround-priority";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
@@ -2437,17 +2441,7 @@ export function reduceClinicalEvent(
           return reject(state, event, "Turnaround preference requires a waiting, unplaced movement.");
         if (!turnaroundEligibilityAllows(eligibility(movement, unit, event.now), unit))
           return reject(state, event, "The receiving unit's clinical and legal gates must allow this movement.");
-        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
-        if (
-          !referral ||
-          !referral.destinations.some(
-            (arm) =>
-              arm.state === "queued" &&
-              arm.withdrawnAt === undefined &&
-              arm.destination.kind === "psychiatric_ward" &&
-              (arm.destination.unitId === undefined || arm.destination.unitId === unit.id),
-          )
-        )
+        if (!movementHasOpenTurnaroundRequest(state, movement, unit.id))
           return reject(state, event, "Turnaround preference requires an open request for this receiving unit.");
         if (movement.turnaroundPriority?.unitId === event.unitId && movement.turnaroundPriority.source === source)
           return reject(state, event, "Turnaround preference already recorded for this unit.");

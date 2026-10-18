@@ -1,6 +1,6 @@
 import type { Instant } from "./ward-clock";
 import type { WardFlowState } from "./ward-flow-reducer";
-import type { TurnaroundPriority, Unit } from "./ward-model";
+import type { Movement, TurnaroundPriority, Unit } from "./ward-model";
 import type { EligibilityVerdict } from "./ward-eligibility";
 import { unitHasLockedBeds } from "./ward-bed-designation";
 import { admissionCriteriaEligibility } from "./ward-discharge-records";
@@ -18,6 +18,26 @@ export function turnaroundEligibilityAllows(verdict: EligibilityVerdict, unit: U
       gate.gate === "allocatable_bed" ||
       gate.gate === "capacity_freshness" ||
       (gate.gate === "security" && unitHasLockedBeds(unit)),
+  );
+}
+
+/** A staging preference must belong to a live request, including legacy direct movements. */
+export function movementHasOpenTurnaroundRequest(
+  state: Pick<WardFlowState, "referrals">,
+  movement: Movement,
+  unitId: string,
+): boolean {
+  if (!movement.referralId) return movement.referredUnitIds.includes(unitId);
+  return state.referrals.some(
+    (referral) =>
+      referral.id === movement.referralId &&
+      referral.destinations.some(
+        (arm) =>
+          arm.state === "queued" &&
+          arm.withdrawnAt === undefined &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
+      ),
   );
 }
 
