@@ -64,7 +64,10 @@ function fixture() {
   return { state, referral, movement, unitId: unit.id, admission: state.admissions[0]! };
 }
 
-function renderFixture(f: ReturnType<typeof fixture>, options: { queue?: boolean; reject?: boolean } = {}) {
+function renderFixture(
+  f: ReturnType<typeof fixture>,
+  options: { queue?: boolean; reject?: boolean; phone?: boolean } = {},
+) {
   const events = vi.fn<(event: WardFlowEvent) => void>();
   function Harness() {
     const context = useWardFlow();
@@ -116,6 +119,7 @@ function renderFixture(f: ReturnType<typeof fixture>, options: { queue?: boolean
             rejections={state.rejections}
             admissions={state.admissions}
             bedReleases={state.bedReleases}
+            phone={options.phone ? <span>Phone referral details</span> : undefined}
           />
         )}
       </WardFlowOverride>
@@ -158,6 +162,38 @@ describe("human turnaround preference control", () => {
     expect(events).toHaveBeenCalledTimes(1);
   });
 
+  it("offers the same explicit turnaround preference on the phone sheet", () => {
+    const f = fixture();
+    const events = renderFixture(f, { phone: true });
+    expect(screen.getByTestId("ward-referral-match-panel")).toHaveAttribute("data-phone", "true");
+    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    expect(button).not.toHaveAttribute("aria-disabled", "true");
+    expect(events).not.toHaveBeenCalled();
+    fireEvent.click(button);
+    expect(events).toHaveBeenCalledExactlyOnceWith({
+      type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+      role: "coordinator",
+      now,
+      referralId: f.referral.id,
+      unitId: f.unitId,
+      source: "cld",
+    });
+    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).toHaveAccessibleDescription(
+      "Turnaround preference already recorded for this unit.",
+    );
+    expect(screen.getByText(/Turnaround preference recorded for Criteria-Led Discharge/)).toBeVisible();
+  });
+
+  it("shows turnaround refusals on the phone sheet without claiming success", () => {
+    const f = fixture();
+    renderFixture(f, { phone: true, reject: true });
+    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    expect(screen.getByTestId("ward-turnaround-rejection")).toHaveTextContent(
+      "Synthetic readiness changed; review the unit.",
+    );
+    expect(screen.queryByText(/Turnaround preference recorded/)).not.toBeInTheDocument();
+  });
+
   it("uses the linked waiting movement and never dispatches a referral fallback", () => {
     const f = fixture();
     f.movement.referralId = f.referral.id;
@@ -173,6 +209,34 @@ describe("human turnaround preference control", () => {
         source: "cld",
       },
     ]);
+  });
+
+  it.each([false, true])("preserves linked movement clinical gates (phone=%s)", (phone) => {
+    const f = fixture();
+    f.movement.referralId = f.referral.id;
+    // The intake says Adult; the linked movement's recorded cohort still controls receiving gates.
+    f.movement.cohort = "Youth";
+    const events = renderFixture(f, { phone });
+    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/cohort|adult|youth/i);
+    fireEvent.click(button);
+    expect(events).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("requires an open request for the receiving unit (phone=%s)", (phone) => {
+    const f = fixture();
+    f.movement.referralId = f.referral.id;
+    const arm = f.referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
+    Object.assign(arm, { withdrawnAt: now });
+    const events = renderFixture(f, { phone });
+    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    expect(button).toHaveAccessibleDescription(
+      "Turnaround preference requires an open request for this receiving unit.",
+    );
+    fireEvent.click(button);
+    expect(events).not.toHaveBeenCalled();
   });
 
   it("allows a confirmed, unblocked occupied-bed departure with CLD disabled", () => {

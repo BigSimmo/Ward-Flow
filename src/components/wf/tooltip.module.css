@@ -28,3 +28,10 @@
     border: 1px solid CanvasText;
   }
 }
+
+/* Tooltip content portals outside the ward shell. It is transient screen help, not paper content. */
+@media print {
+  .tip {
+    display: none !important;
+  }
+}

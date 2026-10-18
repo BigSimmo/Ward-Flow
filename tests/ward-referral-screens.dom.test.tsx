@@ -694,7 +694,7 @@ describe("ReferralBoard", () => {
         (button as HTMLButtonElement).disabled,
         "native disabled removes the tab stop, so the stated reason below can never be reached",
       ).toBe(false);
-      expect(button.getAttribute("title") ?? "", "the control is unavailable and does not say why").not.toBe("");
+      expect(button).toHaveAccessibleDescription(/Choose the reason/);
 
       const select = screen.getByTestId(`ward-referral-match-override-reason-${unitId}`) as HTMLSelectElement;
       // ⚠️ STARTS UNCHOSEN. A pre-selected first option would file a clinical justification nobody
@@ -867,7 +867,7 @@ describe("ReferralBoard", () => {
     // Not native `disabled` — that removes the tab stop, so a ward moving by keyboard would never
     // reach the control and never hear why it is unavailable.
     expect((button as HTMLButtonElement).disabled).toBe(false);
-    expect(button.getAttribute("title") ?? "", "the control is unavailable and does not say why").not.toBe("");
+    expect(button).toHaveAccessibleDescription(/Choose the reason/);
 
     // ⚠️ AND THE ACTIVATION ITSELF IS REFUSED, NOT ONLY THE BUTTON DISCOURAGED. `aria-disabled`
     // deliberately keeps the control focusable, so it CAN still be activated — the record must not

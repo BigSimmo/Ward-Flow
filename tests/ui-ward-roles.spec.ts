@@ -1475,7 +1475,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     const pullButton = wardScreen.getByTestId("ward-pull-WF-003");
     await expect(pullButton).toBeVisible();
     await expect(pullButton).not.toHaveAttribute("aria-disabled");
-    await expect(pullButton).not.toHaveAttribute("title");
+    await expect(pullButton).not.toHaveAttribute("aria-describedby");
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
     // The capacity form opens from "Confirm numbers". It is not on the Decisions queue.
@@ -1499,7 +1499,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // happened"). It must carry BOTH aria-disabled and a stated reason naming this ward. ---
     await openAllArrivals(page);
     await expect(pullButton).toHaveAttribute("aria-disabled", "true");
-    await expect(pullButton).toHaveAttribute("title", /No allocatable bed remains at Dabakarn/);
+    await expect(pullButton).toHaveAccessibleDescription(/No allocatable bed remains at Dabakarn/);
 
     // --- Step 5: click through to the coordinator — the role switcher's real <Link>, never a
     // goto. Coordinator is never ambiguous (spec §9: "Statewide — no ward or department"). ---

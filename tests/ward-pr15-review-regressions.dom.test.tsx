@@ -361,7 +361,7 @@ describe("PR15 discharge and referral provenance", () => {
       expect(button).toHaveAttribute("aria-disabled", "true");
       const reason = document.getElementById(button.getAttribute("aria-describedby")!)!;
       expect(reason.textContent).toContain("unavailable");
-      expect(button).toHaveAttribute("title");
+      expect(button).toHaveAccessibleDescription(/unavailable/);
       fireEvent.click(button);
     }
     expect(dispatch).not.toHaveBeenCalled();

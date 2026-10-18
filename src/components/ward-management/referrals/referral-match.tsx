@@ -66,8 +66,13 @@ import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-n
 import { renderReferralMatchTiers } from "./referral-match-tiers";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { turnaroundEligibilityAllows, unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
+import {
+  movementHasOpenTurnaroundRequest,
+  turnaroundEligibilityAllows,
+  unitTurnaroundSource,
+} from "@/components/ward-management/ward-turnaround-priority";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
 const NO_RELEASES: readonly BedRelease[] = [];
@@ -127,7 +132,7 @@ export function ReferralMatchView({
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
-  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases");
+  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases", "referrals");
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
   const turnaroundRejection =
@@ -235,22 +240,23 @@ export function ReferralMatchView({
       return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
     const targetUnit = units.find((unit) => unit.id === unitId);
     if (linkedMovement) {
-      const openRequest = referral.destinations.some(
-        (arm) =>
-          arm.state === "queued" &&
-          arm.withdrawnAt === undefined &&
-          arm.destination.kind === "psychiatric_ward" &&
-          (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
-      );
+      const openRequest = movementHasOpenTurnaroundRequest(turnaroundState, linkedMovement, unitId);
       if (!openRequest)
         return { disabledReason: "Turnaround preference requires an open request for this receiving unit." };
       if (targetUnit) {
         const movementVerdict = eligibility(linkedMovement, targetUnit, now);
         if (!turnaroundEligibilityAllows(movementVerdict, targetUnit)) {
           const blockedGate = movementVerdict.gates.find(
-            (gate) => !gate.pass && gate.gate !== "allocatable_bed" && gate.gate !== "capacity_freshness" && !(gate.gate === "security" && unitHasLockedBeds(targetUnit)),
+            (gate) =>
+              !gate.pass &&
+              gate.gate !== "allocatable_bed" &&
+              gate.gate !== "capacity_freshness" &&
+              !(gate.gate === "security" && unitHasLockedBeds(targetUnit)),
           );
-          return { disabledReason: blockedGate?.detail ?? "The receiving unit's clinical and legal gates must allow this movement." };
+          return {
+            disabledReason:
+              blockedGate?.detail ?? "The receiving unit's clinical and legal gates must allow this movement.",
+          };
         }
       } else {
         return { disabledReason: "The receiving unit is unavailable." };
@@ -268,29 +274,16 @@ export function ReferralMatchView({
       };
     return { source };
   };
+  const raise = wardRaise(dispatch, "coordinator", now);
   const handleFlagTurnaround = (unitId: string) => {
     const { disabledReason, source } = turnaroundForUnit(unitId);
     if (disabledReason || !source) return;
     setTurnaroundRejectionStart(rejections.length);
-    dispatch(
-      linkedMovement
-        ? {
-            type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
-            role: "coordinator",
-            now,
-            movementId: linkedMovement.id,
-            unitId,
-            ...{ source },
-          }
-        : {
-            type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
-            role: "coordinator",
-            now,
-            referralId: referral.id,
-            unitId,
-            ...{ source },
-          },
-    );
+    if (linkedMovement) {
+      raise("FLAG_MOVEMENT_TURNAROUND_PRIORITY", { movementId: linkedMovement.id, unitId, source });
+    } else {
+      raise("FLAG_REFERRAL_TURNAROUND_PRIORITY", { referralId: referral.id, unitId, source });
+    }
   };
   const tier2Candidates = candidates.filter(
     (c) =>
@@ -842,6 +835,7 @@ export function ReferralMatchView({
     );
     const pick = candidates.find((c) => c.unit.id === phonePick) ?? tier1Candidates[0] ?? candidates[0];
     const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
+    const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
     const FIT_CAP = 3;
     const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
     const fitsHidden = tier1Candidates.length - fitsShown.length;
@@ -934,6 +928,11 @@ export function ReferralMatchView({
           </p>
         ) : null}
 
+        {turnaroundRejection ? (
+          <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
+            Turnaround preference not recorded: {turnaroundRejection.reason}
+          </p>
+        ) : null}
         {phoneDeclining ? (
           <>
             <p className={ph.ch}>Why decline?</p>
@@ -972,6 +971,23 @@ export function ReferralMatchView({
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
             {group("Needs review", tier3Candidates, "review")}
+            {pick && pickTurnaround ? (
+              <div className={styles.unitActionStatusWrap}>
+                <Button
+                  variant="sec"
+                  size="md"
+                  disabledReason={pickTurnaround.disabledReason}
+                  onClick={() => handleFlagTurnaround(pick.unit.id)}
+                >
+                  Flag Turnaround Priority
+                </Button>
+                <p className={ph.matchHint}>
+                  {pickTurnaround.recordedSource
+                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                    : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
+                </p>
+              </div>
+            ) : null}
             {pick && !pickPlain ? (
               <ul className={`${styles.bandRows} ${ph.pickForm}`}>
                 <MatchRow
