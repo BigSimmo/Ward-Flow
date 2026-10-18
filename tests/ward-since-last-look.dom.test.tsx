@@ -8,6 +8,7 @@ import {
   parseLastLookSnapshot,
   takeLastLookSnapshot,
   scopeLastLookWorld,
+  type LastLookWorld,
 } from "@/components/ward-management/coordinator/since-last-look";
 import { useSinceLastLook } from "@/components/ward-management/coordinator/since-last-look-panel";
 import {
@@ -20,6 +21,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
+
+function scopedStorageKey(scopeKey: string, userId: string, scenario: string, generation: number) {
+  return `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(scenario)}:${generation}`;
+}
 
 function renderCommand() {
   return render(
@@ -164,7 +169,10 @@ describe("scoped Ward and ED last-look sheets", () => {
         DEFAULT_DUE_SOON_THRESHOLDS,
         scopeKey,
       );
-      window.sessionStorage.setItem(`${LAST_LOOK_STORAGE_KEY}:${scopeKey}`, JSON.stringify(picture));
+      window.sessionStorage.setItem(
+        scopedStorageKey(scopeKey, "local-demo", state.scenario, 0),
+        JSON.stringify(picture),
+      );
     }
     render(
       <WardFlowProvider initialNow={NOW}>
@@ -209,5 +217,123 @@ describe("scoped Ward and ED last-look sheets", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId(`since-last-look-ed:${state.movements[0]!.originEdId}`)).toBeInTheDocument();
+  });
+});
+
+describe("scoped review persistence", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  function scopedWorld(at: number): LastLookWorld {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0]!,
+      acceptedUnitId: state.units[0]!.id,
+      openedAt: at,
+      acceptedAt: undefined,
+      referredAt: undefined,
+      leftDepartmentAt: undefined,
+      closure: undefined,
+      transport: undefined,
+      stageChanges: [],
+      referralAnswerHistory: [],
+      withdrawnReferrals: [],
+    };
+    return { ...state, worldGeneration: 0, movements: [movement], referrals: [], bedReleases: [] };
+  }
+
+  function Probe({ world }: { world: LastLookWorld }) {
+    const scopeKey = `ward:${world.units[0]!.id}`;
+    const { changes, markSeen } = useSinceLastLook(world, NOW, { scopeKey });
+    return <button onClick={markSeen}>{changes.updates?.length ?? 0} unread</button>;
+  }
+
+  function fixture(world: LastLookWorld, account = "account-one") {
+    return (
+      <SharedAccessContext.Provider value={{ actorId: account, api: {} as SharedAccessApi }}>
+        <Probe world={world} />
+      </SharedAccessContext.Provider>
+    );
+  }
+
+  it("keeps an initial recent update unread across pagehide and an actual remount until reviewed", async () => {
+    const world = scopedWorld(NOW - 5);
+    const key = scopedStorageKey(`ward:${world.units[0]!.id}`, "account-one", world.scenario, 0);
+    const first = render(fixture(world));
+    expect(screen.getByRole("button")).toHaveTextContent("1 unread");
+    fireEvent(window, new Event("pagehide"));
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    first.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    const second = render(fixture(world));
+    expect(screen.getByRole("button")).toHaveTextContent("1 unread");
+    fireEvent.click(screen.getByRole("button"));
+    expect(screen.getByRole("button")).toHaveTextContent("0 unread");
+    const reviewed = window.sessionStorage.getItem(key);
+    second.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(key)).toBe(reviewed);
+    render(fixture(world));
+    expect(screen.getByRole("button")).toHaveTextContent("0 unread");
+  });
+
+  it("preserves a reviewed baseline when a later update survives leaving and remounting", async () => {
+    const world = scopedWorld(NOW - 60);
+    const key = scopedStorageKey(`ward:${world.units[0]!.id}`, "account-one", world.scenario, 0);
+    const view = render(fixture(world));
+    expect(screen.getByRole("button")).toHaveTextContent("0 unread");
+    fireEvent.click(screen.getByRole("button"));
+    const reviewed = window.sessionStorage.getItem(key);
+    const changed = {
+      ...world,
+      movements: [
+        {
+          ...world.movements[0]!,
+          stage: "arrived" as const,
+          closure: { at: NOW, outcome: "arrived" as const, reason: "" },
+        },
+      ],
+    };
+    view.rerender(fixture(changed));
+    expect(screen.getByRole("button")).toHaveTextContent("1 unread");
+    fireEvent(window, new Event("pagehide"));
+    view.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(key)).toBe(reviewed);
+    render(fixture(changed));
+    expect(screen.getByRole("button")).toHaveTextContent("1 unread");
+  });
+
+  it("isolates reviewed baselines by account, scenario and generation and recovers each on return", () => {
+    const world = scopedWorld(NOW - 5);
+    const view = render(fixture(world));
+    fireEvent.click(screen.getByRole("button"));
+    for (const [other, account] of [
+      [world, "account-two"],
+      [{ ...world, scenario: "other-scenario" }, "account-one"],
+      [{ ...world, worldGeneration: 1 }, "account-one"],
+    ] as const) {
+      view.rerender(fixture(other, account));
+      expect(screen.getByRole("button")).toHaveTextContent("1 unread");
+      fireEvent.click(screen.getByRole("button"));
+      view.rerender(fixture(world));
+      expect(screen.getByRole("button")).toHaveTextContent("0 unread");
+      view.rerender(fixture(other, account));
+      expect(screen.getByRole("button")).toHaveTextContent("0 unread");
+    }
+    expect(Object.keys(window.sessionStorage).filter((key) => key.startsWith(LAST_LOOK_STORAGE_KEY))).toHaveLength(4);
+  });
+
+  it("names yesterday in both the header and review description when its window crosses midnight", () => {
+    render(
+      <WardFlowProvider initialNow={1445}>
+        <ScopedFixture />
+      </WardFlowProvider>,
+    );
+    const state = seedWardFlowState();
+    const trigger = within(screen.getByTestId(`since-last-look-ward:${state.units[0]!.id}`)).getByRole("button");
+    expect(trigger).toHaveTextContent("since 23:50 yesterday");
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription("Updates since 23:50 yesterday · 15-minute window");
   });
 });

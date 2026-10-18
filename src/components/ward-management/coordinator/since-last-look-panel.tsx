@@ -140,7 +140,8 @@ export function useSinceLastLook(
   const stored = useSyncExternalStore(subscribe, read, serverLastLook);
   const previous = useMemo(() => parseLastLookSnapshot(stored), [stored]);
 
-  // Saved on the way out (route change, reload, tab close), never on arrival. The unmount save
+  // Coordinator pictures are saved on the way out; scoped Ward/ED pictures only on explicit review.
+  // Navigating away must preserve their unread updates. The coordinator unmount save
   // waits one task and a remount cancels it: React's development double-mount unmounts and
   // remounts at once, and saving there would overwrite the picture before it was compared.
   useEffect(() => {
