@@ -110,10 +110,7 @@ describe("design audit: parsed Ward font inventory", () => {
   });
 
   it("keeps a relative alias unresolved beside a finite definition", () => {
-    const result = scan(
-      ".label { font-size: var(--size); }",
-      ":root { --size: 12px; --size: .6875em; }",
-    );
+    const result = scan(".label { font-size: var(--size); }", ":root { --size: 12px; --size: .6875em; }");
     expect(result.findings).toEqual([]);
     expect(result.unresolved).toHaveLength(1);
   });
