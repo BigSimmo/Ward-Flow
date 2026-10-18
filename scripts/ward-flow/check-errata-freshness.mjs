@@ -198,7 +198,8 @@ const CLAIMS = [
     claim: "TWO fields named arrivedAt, absent in two different ways (| null vs | undefined)",
     check: () => {
       const adm = read("src/components/ward-management/ward-admissions.ts");
-      const mod = read("src/components/ward-management/ward-model.ts");
+      // `TransportJob` moved into `ward-model-movement-parts.ts` unchanged (line cap, 18 Oct 2026).
+      const mod = read("src/components/ward-management/ward-model-movement-parts.ts");
       const nullable = !!adm && /arrivedAt:\s*Instant \| null/.test(adm);
       const optional = !!mod && /arrivedAt\?:\s*Instant/.test(mod);
       return {

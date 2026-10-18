@@ -41,6 +41,9 @@ const REDUCER_PATH = fileURLToPath(new URL("../src/components/ward-management/wa
 // 16 Oct 2026 the referral, placement, transport and bed cases did too.
 const SLICE_PATHS = [
   "ward-flow-record-events.ts",
+  // 18 Oct 2026: the stay and legal RECORD_* cases moved out of ward-flow-record-events.ts unchanged.
+  "ward-flow-record-stay-events.ts",
+  "ward-flow-record-legal-events.ts",
   "ward-flow-referral-send-events.ts",
   "ward-flow-referral-answer-events.ts",
   "ward-flow-placement-events.ts",

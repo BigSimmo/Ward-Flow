@@ -35,6 +35,10 @@ const DEFINITION_FILES = new Set([
   REDUCER,
   // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the reducer into these two files.
   `${WARD_ROOT}/ward-flow-record-events.ts`,
+  // 18 Oct 2026: its stay and legal cases moved out unchanged, and EVENT_ROLE left ward-flow-events.ts.
+  `${WARD_ROOT}/ward-flow-record-stay-events.ts`,
+  `${WARD_ROOT}/ward-flow-record-legal-events.ts`,
+  `${WARD_ROOT}/ward-flow-event-roles.ts`,
   `${WARD_ROOT}/ward-flow-undo-events.ts`,
   // 16 Oct 2026: the referral, placement, transport and bed cases moved out the same way.
   `${WARD_ROOT}/ward-flow-referral-send-events.ts`,

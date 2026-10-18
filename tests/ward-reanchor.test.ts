@@ -24,6 +24,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 const MODEL_FILES = [
   "src/components/ward-management/ward-model.ts",
+  // 18 Oct 2026: parts of the model moved into sibling files unchanged (line cap); they declare instants too.
+  "src/components/ward-management/ward-model-vocabulary.ts",
+  "src/components/ward-management/ward-model-movement-parts.ts",
+  "src/components/ward-management/ward-model-leave.ts",
+  "src/components/ward-management/ward-model-referral-parts.ts",
+  "src/components/ward-management/ward-model-notices.ts",
   "src/components/ward-management/ward-admissions.ts",
   "src/components/ward-management/ward-care-journey.ts",
   "src/components/ward-management/ward-audit.ts",

@@ -113,6 +113,9 @@ const REDUCER_SOURCE_PATH = path.join(process.cwd(), "src/components/ward-manage
 // 16 Oct 2026: so did the referral, placement, transport and bed cases.
 const REDUCER_SLICE_PATHS = [
   "ward-flow-record-events.ts",
+  // 18 Oct 2026: the stay and legal RECORD_* cases moved out of ward-flow-record-events.ts unchanged.
+  "ward-flow-record-stay-events.ts",
+  "ward-flow-record-legal-events.ts",
   "ward-flow-undo-events.ts",
   "ward-flow-referral-send-events.ts",
   "ward-flow-referral-answer-events.ts",
