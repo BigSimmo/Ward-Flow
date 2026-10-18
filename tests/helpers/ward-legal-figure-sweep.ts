@@ -1,3 +1,5 @@
+import { buildTurnaroundFixture } from "./ward-turnaround-fixture";
+import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 /**
  * The dueAt provenance sweep behind `tests/ward-legal-figure-guard.test.ts`, moved here unchanged
  * so the sweep can run in several test files at once (`ward-legal-figure-guard-sweep-*.test.ts`).
@@ -236,6 +238,16 @@ export function candidateEvents(
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
+    case "FLAG_MOVEMENT_TURNAROUND_PRIORITY":
+      return state.units
+        .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
+        .flatMap((unit) => movementIds.map((movementId) => ({ type, role, now, movementId, unitId: unit.id })));
+    case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
+      return state.units
+        .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
+        .flatMap((unit) =>
+          state.referrals.map((referral) => ({ type, role, now, referralId: referral.id, unitId: unit.id })),
+        );
     case "RECORD_ADMISSION_CARE":
       return state.admissions
         .filter((a) => a.patientId !== null && a.state === "occupied")
@@ -1343,6 +1355,7 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "RECORD_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_BLOCKER",
   "FLAG_MOVEMENT_URGENT",
+  "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
   "CLEAR_MOVEMENT_URGENT_FLAG",
   // Task 5 (2026-09-04). Both carry `movementId` and act on one named movement, same as
   // RELEASE_PULL/CANCEL_TRANSPORT above — and, like those two, STEP_BACK_STAGE is excluded from
@@ -1859,6 +1872,35 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
   // satisfies the "Non-vacuity 3" check below rather than sidestepping it.
   for (const code of codes) {
     const accepted = coverage.get(code)!;
+
+    // Staging needs a waiting request AND a different occupied patient's confirmed departure.
+    // The cyclic traversal cannot reliably keep both windows live; construct them via real
+    // commands and check each branch against every form, with and without an entered expiry.
+    const turnaround = buildTurnaroundFixture(code, supplyDueAt ? suppliedDueAt(NOW_ANCHOR + 900_000) : undefined);
+    for (const event of [
+      {
+        type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        movementId: turnaround.movementId,
+        unitId: turnaround.unitId,
+        source: "departure",
+      },
+      {
+        type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        referralId: turnaround.referralId,
+        unitId: turnaround.unitId,
+        source: "departure",
+      },
+    ] as const) {
+      const next = wardFlowReducer(turnaround.state, event);
+      expect(next.rejections).toEqual([]);
+      expect(next).not.toBe(turnaround.state);
+      accepted.add(event.type);
+      offenders.push(...offendingFormsIn(next, `${event.type}(${code})`));
+    }
 
     // RECORD_SUPPORT_NOTIFICATION needs an involuntary completed arrival (or discharge). The
     // round-robin often mutates those seed subjects before this event's turn, so exercise it

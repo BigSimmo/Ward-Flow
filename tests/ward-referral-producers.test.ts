@@ -57,6 +57,7 @@ const WRITTEN_ELSEWHERE: Record<string, string> = {
   raisedAt: "set to the event's own now",
   // Phase 8 D8-6, recorded later by a coordinator if it happened at all — never at intake.
   localBedSought: "RECORD_LOCAL_BED_SOUGHT, after the referral exists",
+  turnaroundPriority: "FLAG_REFERRAL_TURNAROUND_PRIORITY, after receiving gates and clearing-bed readiness pass",
   medicalClearance: "RECORD_MEDICAL_CLEARANCE, after the referral exists",
   // RB7, build plan item 27 (2026-09-17): a correction is added AFTER the referral exists — the
   // whole point of `corrections` is that it is append-only and separate from the original
