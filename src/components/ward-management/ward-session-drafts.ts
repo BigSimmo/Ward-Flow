@@ -8,12 +8,28 @@ let generation = 0;
 let account = "synthetic-demo";
 let activeScenarioScope: string | null = null;
 let fallbackSession = "memory-only";
+let fallbackStartedAt: number | null = null;
+
+function fallbackDetails(): { id: string; startedAt: number } {
+  fallbackStartedAt ??= Date.now();
+  return { id: fallbackSession, startedAt: fallbackStartedAt };
+}
+
+function sessionId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  // getRandomValues is also available on HTTP origins where randomUUID is absent.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 export const draftSessionVersion = () => generation;
 
 function sessionDetails(): { id: string; startedAt: number } {
-  const fresh = () => ({ id: crypto.randomUUID(), startedAt: Date.now() });
-  if (typeof window === "undefined") return { id: fallbackSession, startedAt: Date.now() };
+  const fresh = () => ({ id: sessionId(), startedAt: Date.now() });
+  if (typeof window === "undefined") return fallbackDetails();
   try {
     const existing = window.sessionStorage.getItem(SESSION_KEY);
     if (existing) {
@@ -36,7 +52,7 @@ function sessionDetails(): { id: string; startedAt: number } {
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
     return next;
   } catch {
-    return { id: fallbackSession, startedAt: Date.now() };
+    return fallbackDetails();
   }
 }
 
@@ -48,6 +64,7 @@ export function clearSessionDrafts(): void {
   generation += 1;
   activeScenarioScope = null;
   fallbackSession = `memory-only-${generation}`;
+  fallbackStartedAt = Date.now();
   if (typeof window === "undefined") return;
   try {
     const storage = window.sessionStorage;
@@ -148,6 +165,8 @@ export function writeSessionDraft(key: string, value: string, owner: number): bo
   const session = sessionDetails();
   if (
     owner !== generation ||
+    session.startedAt > Date.now() ||
+    Date.now() - session.startedAt >= SESSION_DRAFT_MAX_AGE_MS ||
     (activeScenarioScope !== null && key.split(":")[4] !== encodeURIComponent(activeScenarioScope)) ||
     value.length > SESSION_DRAFT_MAX_CHARS ||
     !key.startsWith(PREFIX + [account, session.id].map(encodeURIComponent).join(":") + ":")

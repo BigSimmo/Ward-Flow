@@ -304,8 +304,11 @@ export function RecordFormSheet({
               const submission = ++submissionVersion.current;
               setSaving(true);
               const finish = (accepted: boolean) => {
-                if (owner !== draftSessionVersion() || submission !== submissionVersion.current) return;
+                if (submission !== submissionVersion.current) return;
+                // Release this request's spinner even if its session has ended. The owner fence
+                // still prevents an old acceptance from clearing or closing a newer draft.
                 setSaving(false);
+                if (owner !== draftSessionVersion()) return;
                 if (accepted) {
                   clearDraft();
                   setTimeOnForm("");
