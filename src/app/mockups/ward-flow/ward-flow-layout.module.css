@@ -215,8 +215,10 @@
   pointer-events: none;
 }
 
+/* display: none, not visibility: hidden. The note is in flow, so hidden-but-present space pushes a
+   page's Hero below the band threshold and the header never takes the band (journeys, 18 Oct 2026). */
 :global(html[data-wf-bar-ready]) .loadingNote {
-  visibility: hidden;
+  display: none;
 }
 
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
