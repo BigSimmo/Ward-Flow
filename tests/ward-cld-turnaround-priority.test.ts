@@ -125,8 +125,8 @@ describe("CLD turnaround preference", () => {
       refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
     },
   );
-  it("honours a device-enabled CLD source when the environment default is off", () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "development");
+  it.each(["development", "demo"])("honours device-enabled CLD in %s when the server default is off", (environment) => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", environment);
     vi.stubEnv("NEXT_PUBLIC_WARD_FLAGS", "top25-criteria-led-discharge=off");
     try {
       const f = fixture();
@@ -136,6 +136,31 @@ describe("CLD turnaround preference", () => {
       expect(next.movements.find((m) => m.id === f.movement.id)!.turnaroundPriority?.source).toBe("cld");
       f.admission.dischargeCriteria!.items[0]!.metAt = null;
       refused(f.state, wardFlowReducer(f.state, flag(f, "movement", { source: "cld" })));
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+  it.each(["movement", "referral"] as const)("refuses caller-enabled %s CLD when production disables it", (kind) => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "production");
+    vi.stubEnv("NEXT_PUBLIC_WARD_FLAGS", "top25-criteria-led-discharge=off");
+    try {
+      const f = fixture();
+      expect(unitTurnaroundSource(f.state, f.unitId, now, true)).toBe(null);
+      expect(liveTurnaroundPreference(f.state, { unitId: f.unitId, flaggedAt: now, source: "cld" }, now, true)).toBe(
+        null,
+      );
+      refused(f.state, wardFlowReducer(f.state, flag(f, kind, { source: "cld" })));
+      f.state.bedReleases = [
+        {
+          ...seedWardFlowState().bedReleases[0]!,
+          unitId: f.unitId,
+          admissionId: f.admission.id,
+          state: "confirmed",
+          blocker: null,
+        },
+      ];
+      const next = wardFlowReducer(f.state, flag(f, kind, { source: "departure" }));
+      expect(next.rejections).toEqual([]);
     } finally {
       vi.unstubAllEnvs();
     }

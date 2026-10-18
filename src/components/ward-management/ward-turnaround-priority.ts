@@ -51,10 +51,12 @@ export function unitHasCldReadyDeparture(state: CldState, unitId: string, now: I
         "all_met",
   );
 }
-function cldFeatureEnabled(): boolean {
-  return resolveWardFeatureFlags({ environment: wardEnvironment(), server: serverWardFeatureFlags(), device: {} }).some(
-    (flag) => flag.name === "top25-criteria-led-discharge" && flag.on,
-  );
+function cldFeatureEnabled(deviceOverride?: boolean): boolean {
+  return resolveWardFeatureFlags({
+    environment: wardEnvironment(),
+    server: serverWardFeatureFlags(),
+    device: deviceOverride === undefined ? {} : { "top25-criteria-led-discharge": deviceOverride },
+  }).some((flag) => flag.name === "top25-criteria-led-discharge" && flag.on);
 }
 /** A confirmed, unblocked departure is distinct from CLD. Expected dates do not establish readiness. */
 export function unitTurnaroundSource(
@@ -63,7 +65,7 @@ export function unitTurnaroundSource(
   now: Instant,
   cldEnabled = cldFeatureEnabled(),
 ): TurnaroundPriority["source"] | null {
-  if (cldEnabled && unitHasCldReadyDeparture(state, unitId, now)) return "cld";
+  if (cldEnabled && cldFeatureEnabled(cldEnabled) && unitHasCldReadyDeparture(state, unitId, now)) return "cld";
   return state.bedReleases.some(
     (release) =>
       release.unitId === unitId &&
@@ -86,6 +88,8 @@ export function liveTurnaroundPreference(
 ): TurnaroundPriority | null {
   if (!preference) return null;
   if (preference.source === "cld")
-    return cldEnabled && unitHasCldReadyDeparture(state, preference.unitId, now) ? preference : null;
+    return cldEnabled && cldFeatureEnabled(cldEnabled) && unitHasCldReadyDeparture(state, preference.unitId, now)
+      ? preference
+      : null;
   return unitTurnaroundSource(state, preference.unitId, now, false) === "departure" ? preference : null;
 }
