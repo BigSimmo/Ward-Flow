@@ -50,6 +50,9 @@ export function WardDischargeCriteriaCard({
   const draftRevision = useRef(0);
   // Counts editor openings and cancels only, so a failure from an earlier session never reaches a reopened editor.
   const editorSession = useRef(0);
+  const editorOpen = useRef(false);
+  // A save that fails after its editor was cancelled is reported on the card, outside any editor.
+  const [closedSaveMessage, setClosedSaveMessage] = useState<string | null>(null);
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -70,7 +73,9 @@ export function WardDischargeCriteriaCard({
   const openEditor = () => {
     draftRevision.current += 1;
     editorSession.current += 1;
+    editorOpen.current = true;
     setSaveMessage(null);
+    setClosedSaveMessage(null);
     setChosen(items.map((item) => item.criterion).filter(isDischargeCriterion));
     setTyped(items.filter(isPatientSpecificItem).map((item) => item.criterion));
     setAttested(false);
@@ -259,9 +264,18 @@ export function WardDischargeCriteriaCard({
                     if (result?.status === "accepted" && result.isCurrent?.() !== false) {
                       if (draftRevision.current !== revision) return;
                       draftRevision.current += 1;
+                      editorOpen.current = false;
                       setEditing(false);
                     } else {
-                      if (editorSession.current !== session) return;
+                      if (editorSession.current !== session) {
+                        // Never inside a reopened editor: that draft is not the one that failed.
+                        if (!editorOpen.current)
+                          setClosedSaveMessage(
+                            result?.message ??
+                              "Criteria were not confirmed saved. Review the board before setting them again.",
+                          );
+                        return;
+                      }
                       setSaveMessage(
                         result?.message ??
                           "Criteria were not confirmed saved. Your draft is still here. Review the board before trying again.",
@@ -290,6 +304,7 @@ export function WardDischargeCriteriaCard({
                 onClick={() => {
                   draftRevision.current += 1;
                   editorSession.current += 1;
+                  editorOpen.current = false;
                   setEditing(false);
                 }}
               >
@@ -313,6 +328,12 @@ export function WardDischargeCriteriaCard({
               </p>
             ) : null}
           </fieldset>
+        ) : null}
+
+        {!editing && closedSaveMessage ? (
+          <p className={styles.note} role="alert" data-testid="ward-drawer-criteria-save-notice">
+            {closedSaveMessage}
+          </p>
         ) : null}
 
         {!editing && onChange ? (

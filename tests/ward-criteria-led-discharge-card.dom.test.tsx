@@ -258,6 +258,23 @@ describe("criteria save confirmation (WF-026)", () => {
       expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("");
     },
   );
+  it.each(["refused", "failed", "cancelled"] as const)(
+    "still reports a %s save on the card after its editor was cancelled",
+    async (status) => {
+      const { finish, promise } = pending();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await act(async () => {
+        finish({ commandId: "criteria", status, message: "Cancelled editor save was not confirmed" });
+        await promise;
+      });
+      expect(screen.queryByTestId("ward-drawer-criteria-typed-1")).not.toBeInTheDocument();
+      expect(screen.getByTestId("ward-drawer-criteria-save-notice")).toHaveTextContent(
+        "Cancelled editor save was not confirmed",
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    },
+  );
   it("keeps the draft and exposes a save error when the callback rejects", async () => {
     render(
       <WardDischargeCriteriaCard
