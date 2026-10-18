@@ -125,6 +125,10 @@ export function WardBarServiceSelector({
   allWaitingCount: number;
   waiting: ReturnType<typeof waitingInEds>;
 }) {
+  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
+  // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
+  // several KB to the phone download (script-budget.json).
+  "use no memo";
   return (
     <div className={styles.scopeBadgeContainer}>
       <button
@@ -259,6 +263,8 @@ export function WardBarDrawerTriggers({
   onAlertsScreen: boolean;
   tasksActiveCount: number;
 }) {
+  // Opted out of the React Compiler, like the component above.
+  "use no memo";
   return (
     <div className={styles.drawerTriggers}>
       <button
@@ -351,6 +357,8 @@ export function WardBarPrimaryAction({
   openReferral: (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => void;
   roleCategory: ReferralSheetCategory;
 }) {
+  // Opted out of the React Compiler, like the component above.
+  "use no memo";
   return (
     <>
       {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}

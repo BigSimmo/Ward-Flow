@@ -90,6 +90,10 @@ export type PatientNowSummaryProps = {
 };
 
 export function PatientNowSummary(props: PatientNowSummaryProps) {
+  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
+  // inside PatientNowScreen, which the compiler skips. Memoising it changed nothing visible but added
+  // several KB to the phone download (script-budget.json).
+  "use no memo";
   const {
     awaySince,
     copied,

@@ -117,6 +117,10 @@ export function WardScreenTopBar({
   fullWardReferralHref,
   bedsList,
 }: WardScreenTopBarProps) {
+  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
+  // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
+  // several KB to the phone download (script-budget.json).
+  "use no memo";
   return (
     <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
       <h2 className={styles.srOnlyHeading}>This ward</h2>

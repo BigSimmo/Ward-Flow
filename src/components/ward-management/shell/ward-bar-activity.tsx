@@ -84,6 +84,10 @@ export function WardBarActivityBody({
   commandActivity: CommandActivity;
   closePopover: (id: WardBarPopoverId, announce?: boolean) => void;
 }) {
+  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
+  // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
+  // several KB to the phone download (script-budget.json).
+  "use no memo";
   return (
     <>
       {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on

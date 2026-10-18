@@ -47,6 +47,10 @@ export function WardScreenCapacityModal({
   capacityValue,
   capacityConfirmationForm,
 }: WardScreenCapacityModalProps) {
+  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
+  // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
+  // several KB to the phone download (script-budget.json).
+  "use no memo";
   return confirmNumbersOpen ? (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
@@ -235,6 +239,8 @@ export function WardScreenBedDrawer({
   criteriaGate,
   raiseAsRouteRole,
 }: WardScreenBedDrawerProps) {
+  // Opted out of the React Compiler, like the component above.
+  "use no memo";
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
