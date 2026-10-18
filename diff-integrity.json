@@ -1102,6 +1102,62 @@
       "after": 0,
       "reason": "Repository clean-up item 20 (owner request, 18 October 2026): retired a test that reads app source or stylesheet text and pins wording, class names, CSS values, token names or file layout, so it breaks on harmless edits without exercising app behaviour. It imports no app module, so no coverage is lost. Clinical, legal, safety, privacy, security, persistence and accessibility guards were kept.",
       "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-awol-tracker-status.test.ts",
+      "before": 4,
+      "after": 3,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-legal-radar-dossier.dom.test.tsx",
+      "before": 4,
+      "after": 3,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-top25-broadcast-extend.dom.test.tsx",
+      "before": 5,
+      "after": 4,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-top25-cleaning-reminder.dom.test.tsx",
+      "before": 3,
+      "after": 2,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-top25-discharge-notices.dom.test.tsx",
+      "before": 3,
+      "after": 2,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-top25-discharge-prep.dom.test.tsx",
+      "before": 3,
+      "after": 2,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-top25-edd-drift.dom.test.tsx",
+      "before": 3,
+      "after": 2,
+      "reason": "Feature flag clean-up (item 18, 18 October 2026): the removed case only proved that an always-on top25 feature flag could switch the feature off. The flag and its off path were deleted, so the case has no subject; every assertion about the feature's behaviour stays.",
+      "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "docs/ward-flow/handover/templates/template-visual.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Docs archive clean-up (item 22, 18 October 2026): the superseded mockup engineering handover folder, including this template test, moved to Git history at main commit 0a469c6 (see docs/ARCHIVE.md). It exercised a handover template, not app behaviour.",
+      "approvedOn": "2026-10-18"
     }
   ]
 }
