@@ -13,6 +13,7 @@ import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
+import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
@@ -29,6 +30,8 @@ const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m
 export type WardSharedAccessApi = SharedAccessApi & Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess">;
 
 export type WardSharedConnection = SharedView & {
+  /** Reports may freeze a new snapshot only after this exact server state has been adopted. */
+  reportSnapshotReady?: boolean;
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
@@ -305,45 +308,68 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     setShowLiveInfo(true);
   }, []);
   const dataMode = useMemo<WardDataMode>(() => ({ detail, openHospitalRecords: openLiveInfo }), [detail, openLiveInfo]);
+  const packAccessContext =
+    typeof connection.snapshot?.accessContext === "string" && /^[a-f0-9]{64}$/u.test(connection.snapshot.accessContext)
+      ? connection.snapshot.accessContext
+      : null;
+  const packIdentity = JSON.stringify([
+    connection.enabled,
+    connection.signedIn,
+    actorId,
+    connection.workingAs ?? null,
+    accessKey,
+    connection.snapshot?.payload.startedAt ?? null,
+    packAccessContext,
+  ]);
+  const packUnavailable =
+    connection.enabled && connection.signedIn && connection.snapshot && packAccessContext === null
+      ? "Your current access must be confirmed before a downtime snapshot can be taken. Reconnect and try again."
+      : null;
   return (
-    <PhonePushAccessContext.Provider value={pushAccess}>
-      <StepUpReauthContext.Provider value={connected && reauthenticate ? reauthenticate : null}>
-        <SharedAccessContext.Provider value={sharedAccess}>
-          <DataModeSlotContext.Provider value={setSlot}>
-            <DataModeContext.Provider value={dataMode}>
-              {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-              {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
-              {showLiveInfo && (
-                <section className={styles.notice} aria-label="Hospital records unavailable">
-                  <h1>Hospital records are not connected</h1>
-                  <p>
-                    Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode
-                    uses invented records, including when it connects to a shared database.
-                  </p>
-                  <p>
-                    Hospital approval, a separate clinical database and the data connection must be configured before
-                    that mode can open. Selecting this option does not connect or relabel any data.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLiveInfo(false);
-                    }}
-                  >
-                    Return to prototype
-                  </button>
-                </section>
-              )}
-              <div hidden={showLiveInfo} inert={showLiveInfo}>
-                <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                  {children}
-                </WardSharedWorkspaceContent>
-              </div>
-            </DataModeContext.Provider>
-          </DataModeSlotContext.Provider>
-        </SharedAccessContext.Provider>
-      </StepUpReauthContext.Provider>
-    </PhonePushAccessContext.Provider>
+    <DowntimePackBoundary
+      identity={packIdentity}
+      ready={connection.reportSnapshotReady !== false}
+      unavailable={packUnavailable}
+    >
+      <PhonePushAccessContext.Provider value={pushAccess}>
+        <StepUpReauthContext.Provider value={connected && reauthenticate ? reauthenticate : null}>
+          <SharedAccessContext.Provider value={sharedAccess}>
+            <DataModeSlotContext.Provider value={setSlot}>
+              <DataModeContext.Provider value={dataMode}>
+                {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
+                {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
+                {showLiveInfo && (
+                  <section className={styles.notice} aria-label="Hospital records unavailable">
+                    <h1>Hospital records are not connected</h1>
+                    <p>
+                      Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode
+                      uses invented records, including when it connects to a shared database.
+                    </p>
+                    <p>
+                      Hospital approval, a separate clinical database and the data connection must be configured before
+                      that mode can open. Selecting this option does not connect or relabel any data.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLiveInfo(false);
+                      }}
+                    >
+                      Return to prototype
+                    </button>
+                  </section>
+                )}
+                <div hidden={showLiveInfo} inert={showLiveInfo}>
+                  <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
+                    {children}
+                  </WardSharedWorkspaceContent>
+                </div>
+              </DataModeContext.Provider>
+            </DataModeSlotContext.Provider>
+          </SharedAccessContext.Provider>
+        </StepUpReauthContext.Provider>
+      </PhonePushAccessContext.Provider>
+    </DowntimePackBoundary>
   );
 }
 

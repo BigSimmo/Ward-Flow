@@ -18,6 +18,9 @@ import {
 } from "../src/components/ward-management/shell/ward-access-store";
 import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
 import { breakGlassRefusal, scopeWorld, seedWorld } from "../backend/ward-flow/engine";
+import { DowntimePackScreen } from "../src/components/ward-management/reports/downtime-pack-screen";
+import { forgetDowntimePack, lastDowntimePack } from "../src/components/ward-management/reports/downtime-pack";
+import { ToastProvider } from "../src/components/wf";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -65,6 +68,7 @@ function connection(): WardSharedConnection {
     eventLog: [],
     receivedAt: Date.now(),
     snapshot: {
+      accessContext: "a".repeat(64),
       dataMode: "prototype",
       revision: 1,
       now: 642,
@@ -82,11 +86,129 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
 });
 afterEach(() => {
+  forgetDowntimePack();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
 describe("shared provider boundary", () => {
+  it("keeps the frozen report through ordinary same-account clinical snapshot adoption", () => {
+    const tree = () => (
+      <ToastProvider>
+        <WardFlowProvider>
+          <DowntimePackScreen />
+        </WardFlowProvider>
+      </ToastProvider>
+    );
+    const { rerender } = render(tree());
+    const frozen = lastDowntimePack();
+    expect(frozen).not.toBeNull();
+    const snapshot = fake.connection!.snapshot!;
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: {
+        ...snapshot,
+        revision: snapshot.revision + 1,
+        payload: {
+          ...snapshot.payload,
+          state: {
+            ...snapshot.payload.state,
+            configuration: { ...snapshot.payload.state.configuration, pullHoldMinutes: 60 },
+          },
+        },
+      },
+    };
+    rerender(tree());
+    expect(lastDowntimePack()).toBe(frozen);
+  });
+
+  it("takes a new account's same-revision report only after its narrower payload is adopted", () => {
+    const tree = () => (
+      <ToastProvider>
+        <WardFlowProvider>
+          <DowntimePackScreen />
+        </WardFlowProvider>
+      </ToastProvider>
+    );
+    const { rerender } = render(tree());
+    const broad = lastDowntimePack()!;
+    expect(broad.edQueue.length).toBeGreaterThan(0);
+    const snapshot = fake.connection!.snapshot!;
+    const access = { role: "ward", scope: { kind: "ward", unitIds: [snapshot.payload.state.units[0].id] } } as const;
+    const own = scopeWorld(snapshot.payload, access, new Date(snapshot.payload.startedAt));
+    const expected = own.state.movements
+      .filter(
+        (movement) =>
+          movement.closure === undefined &&
+          movement.stage !== "moving" &&
+          movement.stage !== "arrived" &&
+          movement.leftDepartmentAt === undefined,
+      )
+      .map((movement) => movement.id)
+      .sort();
+    expect(expected.length).toBeLessThan(broad.edQueue.length);
+    fake.connection = {
+      ...fake.connection!,
+      actorId: "ACCOUNT-NEW",
+      access,
+      snapshot: { ...snapshot, payload: own },
+    };
+    rerender(tree());
+    expect(lastDowntimePack()).not.toBe(broad);
+    expect(
+      lastDowntimePack()!
+        .edQueue.map((line) => line.movementId)
+        .sort(),
+    ).toEqual(expected);
+  });
+
+  it("drops a broader frozen report when the same account's authoritative access context narrows", () => {
+    const tree = () => (
+      <ToastProvider>
+        <WardFlowProvider>
+          <DowntimePackScreen />
+        </WardFlowProvider>
+      </ToastProvider>
+    );
+    const { rerender } = render(tree());
+    const broad = lastDowntimePack()!;
+    expect(broad.edQueue.length).toBeGreaterThan(0);
+    const snapshot = fake.connection!.snapshot!;
+    const own = scopeWorld(
+      snapshot.payload,
+      {
+        role: "ward",
+        scope: { kind: "ward", unitIds: [snapshot.payload.state.units[0].id] },
+      },
+      new Date(snapshot.payload.startedAt),
+    );
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: { ...snapshot, payload: own, accessContext: "b".repeat(64) },
+    };
+    rerender(tree());
+    const current = lastDowntimePack()!;
+    expect(current).not.toBe(broad);
+    expect(current.edQueue.length).toBeLessThan(broad.edQueue.length);
+    expect(
+      current.edQueue.every((line) => own.state.movements.some((movement) => movement.id === line.movementId)),
+    ).toBe(true);
+  });
+
+  it("withholds a shared report and print until the server confirms an access context", () => {
+    fake.connection = { ...fake.connection!, snapshot: { ...fake.connection!.snapshot!, accessContext: undefined } };
+    render(
+      <ToastProvider>
+        <WardFlowProvider>
+          <DowntimePackScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    expect(lastDowntimePack()).toBeNull();
+    expect(screen.queryByTestId("ward-downtime-print")).toBeNull();
+    expect(screen.getByText(/current access must be confirmed/u)).toBeInTheDocument();
+  });
+
   it("adopts opened and closed break-glass records at the same clinical revision without remounting drafts", () => {
     const at = new Date("2026-10-16T00:00:00Z");
     const world = seedWorld(at);

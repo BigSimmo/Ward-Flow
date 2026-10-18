@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
 import {
   Button,
@@ -184,6 +184,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  const copyAttemptRef = useRef(0);
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -262,12 +264,21 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     setTell({ party, key: first?.key ?? null });
   };
 
-  const copyText = (key: string, text: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text).catch(() => undefined);
+  const copyText = async (key: string, text: string) => {
+    const attempt = ++copyAttemptRef.current;
+    setCopied(null);
+    setCopyNotice(null);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      if (copyAttemptRef.current !== attempt) return;
+      setCopied(key);
+      window.setTimeout(() => {
+        if (copyAttemptRef.current === attempt) setCopied(null);
+      }, 2000);
+    } catch {
+      if (copyAttemptRef.current === attempt) setCopyNotice("Could not copy. Check clipboard access and try again.");
     }
-    setCopied(key);
-    window.setTimeout(() => setCopied((current) => (current === key ? null : current)), 2000);
   };
   const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
 
@@ -650,6 +661,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
+        {copyNotice ? <p role="status">{copyNotice}</p> : null}
         <h1 className={styles.srOnly}>Legal forms</h1>
         <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">

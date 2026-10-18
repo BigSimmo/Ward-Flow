@@ -1,0 +1,18 @@
+# Full audit remediation requirements
+
+Source: user-requested Full Deep assessment and subsequent request to implement a detailed parallel plan. Audited revision `2c37e5ae`; implementation base is verified main `aa3a78b9`. This is local engineering for a synthetic prototype; no clinical, hosted or deployment readiness claim.
+
+| Finding | Required observable outcome                                                                                                                        | Primary source                                                                 |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| F01     | Planned arrival changes counts without manufacturing a new ward confirmation.                                                                      | `capacity/planned-admissions-reducer.ts`; explicit-confirmation owner contract |
+| F02     | Registration success/refusal belongs to its own settled command and submitted person; unrelated state never navigates.                             | `patients/add-patient.tsx`; command outcome contract                           |
+| F03     | Action and copy completion feedback follows actual acceptance/resolution; refusals preserve drafts and retry.                                      | Delays, governance, legal and patient controls                                 |
+| F04     | Offered listbox/tab composites support keyboard focus, activation, dismissal and correct accessible relationships.                                 | Ward rail and discharge detail panes                                           |
+| F05     | Install a supported advisory fix if available; otherwise keep the development-only vulnerability explicitly open with tested mitigation.           | `docs/dependency-security-exceptions.md`                                       |
+| F06     | Counts-only executive payload excludes typed narrative and patient-specific clinical criteria while preserving valid aggregate data.               | Owner D-59 and actual scoped response                                          |
+| F07     | Retained reports cannot outlive account/session/effective access; intentional freezing survives ordinary navigation.                               | Report context/cache and access boundary                                       |
+| F08     | Shared deliberately partial referral persists permitted destinations and auditable refusals; all-denied/stale/unauthorised requests cannot commit. | Reducer partial contract and shared engine/store                               |
+| F09     | Release-gate documentation reflects the actual required workflow, without weakening it.                                                            | `PUBLIC-CI.md` and maintained workflow                                         |
+| F10     | Weekly test fixtures are independent of the real calendar, nonvacuously test red/nonred rows and retain legitimate empty-week coverage.            | Existing upstream day-zero pin plus boundary tests                             |
+
+Preserve current appearance, synthetic-only privacy/storage fences, existing runtime validators and effective authorization. Use minimal changes and meaningful regressions; no lower budgets/floors, test removals or unsupported parser/toolchain downgrades. The implementation plan owns exact paths, interfaces and verification. Unobserved provider controls, native assistive technology, cross-engine behaviour and representative workload remain evidence gaps rather than fabricated code defects.

@@ -21,6 +21,7 @@
  * Pure and browser free: the backend applies the same function to every reply (plan PR 2).
  */
 import { directiveDesks } from "@/components/ward-management/alerts/global-alert-view";
+import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -28,7 +29,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditSubject } from "@/components/ward-management/ward-audit";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
-import type { Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import {
   edInScope,
@@ -39,6 +40,8 @@ import {
 } from "@/components/ward-management/ward-role-access";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
+/** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
+const COUNT_TEAM_NAMES: ReadonlySet<string> = new Set(communityTeamOptions());
 const MINUTES_PER_HOUR = 60;
 const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 
@@ -156,14 +159,6 @@ function lineIsCurrent(referral: Referral, addressing: Addressing, now: Instant,
   return addressing.state === "queued" || now - (addressing.decidedAt ?? referral.raisedAt) <= window;
 }
 
-/** A movement without the working diagnosis, for roles that never need it (review on PR #330). */
-function withoutDiagnosis(movement: Movement): Movement {
-  if (movement.tentativeDiagnosis === undefined) return movement;
-  const rest: Movement = { ...movement };
-  delete rest.tentativeDiagnosis;
-  return rest;
-}
-
 const ENGINE_BLOCKERS: ReadonlySet<string> = new Set(Object.values(STAGE_TRANSITION_BLOCKERS));
 
 /** What a collection reads beyond the always present fields, copied only when recorded. */
@@ -228,13 +223,239 @@ function collectionMovement(movement: Movement): Movement {
   return trimmed as Movement;
 }
 
-/** A referral with only what a count needs: no typed history, corrections, diagnosis or intake. */
+/** Copy only reviewed count fields. New fields, including nested narrative, are withheld by default. */
+function countFields<T extends object, K extends keyof T>(record: T, keys: readonly K[]): Pick<T, K> {
+  const result = {} as Pick<T, K>;
+  for (const key of keys) if (Object.hasOwn(record, key)) result[key] = record[key];
+  return result;
+}
+
+/** Operational codes, joins and times only; author names and clinical narrative are not count inputs. */
+function countsOnlyMovement(movement: Movement): Movement {
+  return {
+    ...countFields(movement, [
+      "id",
+      "patientId",
+      "originEdId",
+      "openedAt",
+      "referralId",
+      "flaggedUrgent",
+      "urgency",
+      "atsCategory",
+      "cohort",
+      "security",
+      "sex",
+      "homeRegion",
+      "gender",
+      "specialling",
+      "highAcuity",
+      "legalStatus",
+      "stage",
+      "referredUnitIds",
+      "acceptedUnitId",
+      "heldBedNumber",
+      "referredAt",
+      "referralDecisionOpenedAt",
+      "acceptedAt",
+      "edOutcome",
+      "leftDepartmentAt",
+      "formedAt",
+      "legalFormReceivedAt",
+      "arrivalMode",
+      "pullExpiresAt",
+      "plannedMoveAt",
+      "admissionId",
+      "sourceAdmissionId",
+      "arrivalLateNotifiedAt",
+      "examRevoked",
+    ]),
+    owner: "",
+    blocker: "",
+    statusChanges: movement.statusChanges.map((change) => ({
+      ...countFields(change, ["at", "from", "to", "reason"]),
+      by: "",
+    })),
+    urgencyChanges: movement.urgencyChanges.map((change) => ({
+      ...countFields(change, ["at", "from", "to", "reason"]),
+      by: "",
+    })),
+    overrides: movement.overrides.map((override) => ({
+      ...countFields(override, ["at", "reason", "unitIds", "numConsulted", "gate"]),
+      by: "",
+    })),
+    declines: movement.declines.map((decline) => countFields(decline, ["unitId", "at", "reason"])),
+    withdrawnReferrals: movement.withdrawnReferrals.map((withdrawal) =>
+      countFields(withdrawal, ["unitId", "at", "reason", "detail"]),
+    ),
+    stageChanges: movement.stageChanges.map((change) => ({ ...countFields(change, ["at", "from", "to"]), by: "" })),
+    unwinds: movement.unwinds.map((unwind) => ({
+      ...countFields(unwind, ["at", "kind", "transportId", "unitId"]),
+      by: "",
+      reason: "",
+    })),
+    ...(movement.referralAnswerHistory && {
+      referralAnswerHistory: movement.referralAnswerHistory.map((answer) =>
+        countFields(answer, ["unitId", "at", "answer"]),
+      ),
+    }),
+    ...(movement.closure && { closure: { at: movement.closure.at, outcome: movement.closure.outcome, reason: "" } }),
+    ...(movement.transport && {
+      transport: countFields(movement.transport, [
+        "id",
+        "provider",
+        "escortRequired",
+        "transportLegalStatus",
+        "estimatedAt",
+        "acceptedAt",
+        "enRouteAt",
+        "collectedAt",
+        "arrivedAt",
+        "cancelledAt",
+        "stoppedAt",
+        "needed",
+      ]),
+    }),
+    ...(movement.legalForm && {
+      legalForm: {
+        ...countFields(movement.legalForm, ["code", "kind", "region", "dueAt"]),
+        ...(movement.legalForm.continuedBy && {
+          continuedBy: countFields(movement.legalForm.continuedBy, [
+            "code",
+            "startedAt",
+            "recordedAt",
+            "by",
+            "continuedFormDueAt",
+          ]),
+        }),
+      },
+    }),
+    ...(movement.medicalClearance && { medicalClearance: countFields(movement.medicalClearance, ["cleared", "at"]) }),
+    ...(movement.medicalDeterioration && {
+      medicalDeterioration: countFields(movement.medicalDeterioration, ["at", "by", "resumedAt"]),
+    }),
+    ...(movement.examination && { examination: countFields(movement.examination, ["at", "outcome"]) }),
+  };
+}
+
+/** A referral with only count inputs, including an explicit projection of each destination line. */
 function countsOnlyReferral(referral: Referral): Referral {
-  const rest: Referral = { ...referral, history: "" };
-  delete rest.intake;
-  delete rest.corrections;
-  delete rest.tentativeDiagnosis;
-  return rest;
+  return {
+    ...countFields(referral, [
+      "id",
+      "patientId",
+      "ageBand",
+      "homeRegion",
+      "source",
+      "originUnitId",
+      "raisedAt",
+      "urgency",
+      "atsCategory",
+      "originSiteCode",
+      "transportNeeded",
+      "triagedAt",
+      "inDepartmentAt",
+    ]),
+    history: "",
+    suburb: { kind: "unknown", reason: "not_known" },
+    destinations: referral.destinations.map((line) => ({
+      ...countFields(line, [
+        "state",
+        "waitlistedAt",
+        "referredAt",
+        "decidedAt",
+        "declineReason",
+        "acceptOverrideReason",
+        "acceptedUnitId",
+        "withdrawnAt",
+        "withdrawalReason",
+        "heldBedNumber",
+      ]),
+      destination:
+        line.destination.kind === "community_team"
+          ? {
+              kind: "community_team",
+              teamName: COUNT_TEAM_NAMES.has(line.destination.teamName) ? line.destination.teamName : "",
+            }
+          : line.destination.kind === "emergency_department"
+            ? countFields(line.destination, ["kind", "edId", "purpose"])
+            : countFields(line.destination, [
+                "kind",
+                "unitId",
+                "sex",
+                "gender",
+                "secureBedNeeded",
+                "involuntaryBedNeeded",
+                "highAcuityNursingNeeded",
+              ]),
+    })),
+    ...(referral.medicalClearance && { medicalClearance: countFields(referral.medicalClearance, ["cleared", "at"]) }),
+  };
+}
+
+function countsOnlyAdmission(admission: Admission): Admission {
+  return {
+    ...countFields(admission, [
+      "id",
+      "unitId",
+      "patientId",
+      "referralId",
+      "movementId",
+      "specialling",
+      "highAcuity",
+      "sex",
+      "gender",
+      "homeRegion",
+      "bedKind",
+      "bedNumber",
+      "state",
+      "pulledAt",
+      "arrivedAt",
+      "awayAtEmergencyDepartmentSince",
+      "expectedDischargeAt",
+      "dischargeDateMoves",
+      "dischargeDateSetAt",
+      "dischargeDateSetBy",
+      "dischargeConfirmedAt",
+      "dischargeConfirmedBy",
+      "blockReason",
+      "leavingDestination",
+      "leftAt",
+      "dischargeBarrier",
+      "stepDownCandidate",
+    ]),
+    tentativeDiagnosis: null,
+    followUp: admission.followUp
+      ? { state: admission.followUp.state, recordedAt: admission.followUp.recordedAt, recordedBy: "" }
+      : null,
+  };
+}
+
+/** Capacity selectors need release/leave facts, never the names recorded alongside them. */
+export function countsOnlyBedRelease(release: BedRelease): BedRelease {
+  return {
+    ...countFields(release, [
+      "id",
+      "unitId",
+      "admissionId",
+      "state",
+      "expectedAt",
+      "waitingOn",
+      "blocker",
+      "preparing",
+      "preparationNote",
+      "confirmedAt",
+      "lastClearedBlockReason",
+    ]),
+    blockedBy: null,
+    confirmedBy: "",
+  };
+}
+
+export function countsOnlyLeaveBed(leave: LeaveBed): LeaveBed {
+  return {
+    ...countFields(leave, ["id", "unitId", "admissionId", "expectedReturn", "confirmedAt", "kind", "openWarningAt"]),
+    confirmedBy: "",
+  };
 }
 
 /**
@@ -347,7 +568,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   options: ScopeOptions,
 ): ScopedWorkspace<T> {
   const { now, places } = options;
-  const grantIds = activeGrantIds(options.grants, now);
+  const grantIds = activeGrantIds(access.role === "executive" ? undefined : options.grants, now);
   if (accessIsWholeNetwork(access))
     return { ...workspace, breakGlassPatientIds: NO_GRANTS, datesOnlyAdmissionIds: NO_GRANTS };
 
@@ -411,10 +632,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         anonymise = true;
         // Counts only: no typed narrative or working diagnosis reaches an executive (review on PR #330).
         referrals = referrals.map(countsOnlyReferral);
-        movements = movements.map(withoutDiagnosis);
-        admissions = admissions.map((admission) =>
-          admission.tentativeDiagnosis === null ? admission : { ...admission, tentativeDiagnosis: null },
-        );
+        movements = movements.map(countsOnlyMovement);
+        admissions = admissions.map(countsOnlyAdmission);
       }
       break;
     }
@@ -665,7 +884,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   if (officer) patients = patients.map(officerPatient);
   if (anonymise) patients = workspace.patients.filter((patient) => patientIds.has(patient.id)).map(anonymousPatient);
 
-  const notices = workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  const notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
 
   const visibleOnlyByGrant = new Set<string>();
   for (const id of grantIds) if (!ownPatientIds.has(id)) visibleOnlyByGrant.add(id);
@@ -694,6 +913,7 @@ export function scopeBroadcastAlerts(
   units: readonly Unit[],
   places: PlaceLookup,
 ): BroadcastAlert[] {
+  if (access.role === "executive") return [];
   const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
   const deskIn = (id: string) => unitIn(id) || edInScope(access.scope, id, places);
   return alerts.flatMap((alert) => {

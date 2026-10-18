@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { DischargeCareJourney } from "./discharge-care-journey";
 import Link from "next/link";
 import { ChevronRight, ClipboardList } from "lucide-react";
@@ -31,33 +32,68 @@ import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
 /* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
 
+const DETAIL_TABS = [
+  ["milestones", "Milestones"],
+  ["barriers", "Barriers"],
+  ["transport", "Transport"],
+  ["dossier", "Dossier"],
+] as const;
+
+function tabPanelProps(
+  prefix: string,
+  tab: DischargeWorkspaceState["drawerTab"],
+  active: DischargeWorkspaceState["drawerTab"],
+) {
+  return {
+    role: "tabpanel",
+    id: `${prefix}-panel-${tab}`,
+    "aria-labelledby": `${prefix}-tab-${tab}`,
+    tabIndex: 0,
+    hidden: active !== tab,
+  } as const;
+}
+
 /** The detail panel's tabs: milestones, barriers, transport and dossier. */
 function DischargeDetailTabs({
+  idPrefix,
   hasBlocker,
   drawerTab,
   setDrawerTab,
 }: {
+  idPrefix: string;
   hasBlocker: boolean;
   drawerTab: DischargeWorkspaceState["drawerTab"];
   setDrawerTab: DischargeWorkspaceState["setDrawerTab"];
 }) {
   return (
     <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
-      {(
-        [
-          ["milestones", "Milestones"],
-          ["barriers", "Barriers"],
-          ["transport", "Transport"],
-          ["dossier", "Dossier"],
-        ] as const
-      ).map(([id, label]) => (
+      {DETAIL_TABS.map(([id, label], index) => (
         <button
           key={id}
           type="button"
           role="tab"
+          id={`${idPrefix}-tab-${id}`}
+          aria-controls={`${idPrefix}-panel-${id}`}
           aria-selected={drawerTab === id}
+          tabIndex={drawerTab === id ? 0 : -1}
           className={`${pageStyles.drawerTab} ${drawerTab === id ? pageStyles.drawerTabActive : ""}`}
           onClick={() => setDrawerTab(id)}
+          onKeyDown={(event) => {
+            const next =
+              event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? DETAIL_TABS.length - 1
+                  : event.key === "ArrowRight"
+                    ? (index + 1) % DETAIL_TABS.length
+                    : event.key === "ArrowLeft"
+                      ? (index - 1 + DETAIL_TABS.length) % DETAIL_TABS.length
+                      : null;
+            if (next === null) return;
+            event.preventDefault();
+            setDrawerTab(DETAIL_TABS[next][0]);
+            event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+          }}
         >
           {label}
           {id === "barriers" && hasBlocker ? <span className={pageStyles.tabBadgeAlert}>!</span> : null}
@@ -75,6 +111,7 @@ export function DischargeRecordDetail({
   s: DischargeWorkspaceState;
   activeRecord: DischargeRecord;
 }) {
+  const tabIdPrefix = useId();
   const {
     dayZero,
     dispatch,
@@ -91,7 +128,12 @@ export function DischargeRecordDetail({
     detailBadgeLabel,
   } = s;
   const tabList = (hasBlocker: boolean) => (
-    <DischargeDetailTabs hasBlocker={hasBlocker} drawerTab={drawerTab} setDrawerTab={setDrawerTab} />
+    <DischargeDetailTabs
+      idPrefix={tabIdPrefix}
+      hasBlocker={hasBlocker}
+      drawerTab={drawerTab}
+      setDrawerTab={setDrawerTab}
+    />
   );
   return (
     <>
@@ -124,7 +166,10 @@ export function DischargeRecordDetail({
 
       {tabList(Boolean(activeRecord.blockReason))}
 
-      <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+      <div
+        {...tabPanelProps(tabIdPrefix, "milestones", drawerTab)}
+        className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
+      >
         <RecordedDischargeMilestones
           title={isPhone ? "Milestones" : undefined}
           milestones={[
@@ -164,7 +209,10 @@ export function DischargeRecordDetail({
         </dl>
       </div>
 
-      <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+      <div
+        {...tabPanelProps(tabIdPrefix, "barriers", drawerTab)}
+        className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
+      >
         {activeRecord.blockReason ? (
           <div className={pageStyles.barrierBox}>
             <div className={pageStyles.barrierText}>
@@ -193,7 +241,10 @@ export function DischargeRecordDetail({
         )}
       </div>
 
-      <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+      <div
+        {...tabPanelProps(tabIdPrefix, "transport", drawerTab)}
+        className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
+      >
         <dl className={pageStyles.factList}>
           <dt>Booking reference</dt>
           <dd>Not recorded</dd>
@@ -214,7 +265,10 @@ export function DischargeRecordDetail({
         </div>
       </div>
 
-      <div className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+      <div
+        {...tabPanelProps(tabIdPrefix, "dossier", drawerTab)}
+        className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
+      >
         <dl className={pageStyles.factList}>
           <dt>Expected discharge</dt>
           <dd>
@@ -338,6 +392,7 @@ export function DischargeReleaseDetail({
   s: DischargeWorkspaceState;
   detailRelease: BedRelease;
 }) {
+  const tabIdPrefix = useId();
   const {
     dayZero,
     now,
@@ -360,8 +415,15 @@ export function DischargeReleaseDetail({
     releasePaneClass,
   } = s;
   const tabList = (hasBlocker: boolean) => (
-    <DischargeDetailTabs hasBlocker={hasBlocker} drawerTab={drawerTab} setDrawerTab={setDrawerTab} />
+    <DischargeDetailTabs
+      idPrefix={tabIdPrefix}
+      hasBlocker={hasBlocker}
+      drawerTab={drawerTab}
+      setDrawerTab={setDrawerTab}
+    />
   );
+  const releasePanelProps = (tab: DischargeWorkspaceState["drawerTab"]) =>
+    isPhone ? {} : tabPanelProps(tabIdPrefix, tab, drawerTab);
   return (
     <>
       {isPhone ? (
@@ -498,7 +560,7 @@ export function DischargeReleaseDetail({
 
       {isPhone ? null : tabList(Boolean(detailRelease.blocker))}
 
-      <div className={releasePaneClass("milestones")}>
+      <div {...releasePanelProps("milestones")} className={releasePaneClass("milestones")}>
         <RecordedDischargeMilestones
           title={isPhone ? "Milestones" : undefined}
           milestones={[
@@ -558,7 +620,7 @@ export function DischargeReleaseDetail({
         />
       </div>
 
-      <div className={releasePaneClass("barriers")}>
+      <div {...releasePanelProps("barriers")} className={releasePaneClass("barriers")}>
         {detailRelease.blocker ? (
           <div className={pageStyles.barrierBox}>
             <div className={pageStyles.barrierText}>
@@ -596,7 +658,7 @@ export function DischargeReleaseDetail({
           {phoneReleaseMore ? "Hide transport and dossier" : "Show transport and dossier"}
         </button>
       ) : null}
-      <div className={releasePaneClass("transport")}>
+      <div {...releasePanelProps("transport")} className={releasePaneClass("transport")}>
         <dl className={pageStyles.factList}>
           <dt>Booking reference</dt>
           <dd>Not recorded</dd>
@@ -613,7 +675,7 @@ export function DischargeReleaseDetail({
         </div>
       </div>
 
-      <div className={releasePaneClass("dossier")}>
+      <div {...releasePanelProps("dossier")} className={releasePaneClass("dossier")}>
         <dl className={pageStyles.factList}>
           <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
           <dd>

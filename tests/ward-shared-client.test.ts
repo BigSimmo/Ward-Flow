@@ -18,6 +18,84 @@ const snapshot = (revision: number): SharedSnapshot => ({
 });
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
 
+describe("shared snapshot access context", () => {
+  it.each([undefined, "a".repeat(64)])(
+    "preserves the optional server context without breaking older snapshots: %s",
+    async (accessContext) => {
+      let view: SharedView | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: (next) => {
+          view = next;
+        },
+        fetch: async () =>
+          Response.json({ snapshot: { ...snapshot(1), ...(accessContext === undefined ? {} : { accessContext }) } }),
+      });
+      await client.refresh();
+      expect(view?.status).toBe("ready");
+      expect(view?.snapshot?.accessContext).toBe(accessContext);
+      client.dispose();
+    },
+  );
+
+  it.each([null, "", "a".repeat(63), "a".repeat(65), "A".repeat(64), "g".repeat(64), 42, {}])(
+    "refuses malformed server access context %#",
+    async (accessContext) => {
+      let view: SharedView | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: (next) => {
+          view = next;
+        },
+        fetch: async () => Response.json({ snapshot: { ...snapshot(1), accessContext } }),
+      });
+      await client.refresh();
+      expect(view?.status).toBe("unavailable");
+      expect(view?.snapshot).toBeNull();
+      client.dispose();
+    },
+  );
+
+  it("keeps context on clock-only polls and replaces it on equal-revision snapshots and command replies", async () => {
+    let view: SharedView | undefined;
+    let reads = 0;
+    const first = "a".repeat(64);
+    const changed = "b".repeat(64);
+    const committed = "c".repeat(64);
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      commandId: () => "11111111-1111-4111-8111-111111111111",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, init) => {
+        if (init?.body)
+          return Response.json({ outcome: "accepted", snapshot: { ...snapshot(2), accessContext: committed } });
+        reads++;
+        if (reads === 2) return Response.json({ notModified: true, revision: 1, now: 643 });
+        return Response.json({ snapshot: { ...snapshot(1), accessContext: reads === 1 ? first : changed } });
+      },
+    });
+    await client.refresh();
+    const payload = view!.snapshot!.payload;
+    expect(view?.snapshot?.accessContext).toBe(first);
+    await client.refresh();
+    expect(view?.snapshot?.accessContext).toBe(first);
+    expect(view?.snapshot?.now).toBe(643);
+    await client.refresh();
+    expect(view?.snapshot?.revision).toBe(1);
+    expect(view?.snapshot?.accessContext).toBe(changed);
+    expect(view?.snapshot?.payload).toBe(payload);
+    await expect(client.dispatch(event)).resolves.toMatchObject({ status: "accepted" });
+    expect(view?.snapshot?.accessContext).toBe(committed);
+    expect(view?.snapshot?.revision).toBe(2);
+    client.dispose();
+  });
+});
+
 describe("shared view response ordering", () => {
   it("does not report an old opening as successful when its union read is interrupted by a desk change", async () => {
     let view: SharedView | undefined;

@@ -683,6 +683,45 @@ describe("AddPatientForm — ADD_PATIENT never creates a referral", () => {
 
 describe("AddPatientForm safety regressions", () => {
   beforeEach(() => router.push.mockClear());
+  it("recovers from repeated refusals when an older unrelated rejection exists", async () => {
+    function Harness() {
+      const flow = useWardFlow();
+      return (
+        <>
+          <button
+            onClick={() =>
+              flow.dispatch({
+                type: "REQUEST_CAPACITY_REFRESH",
+                role: "officer",
+                now: flow.now,
+                unitId: "synthetic-unknown",
+              })
+            }
+          >
+            Seed unrelated refusal
+          </button>
+          <AddPatientForm />
+        </>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Harness />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Seed unrelated refusal" }));
+    fillDraft();
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM100002" } });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+      await waitFor(() =>
+        expect(screen.getByTestId("ward-add-patient-submit").getAttribute("aria-disabled")).toBeNull(),
+      );
+      expect(screen.queryByTestId("ward-add-patient-rejection") !== null).toBe(true);
+    }
+    expect(router.push.mock.calls.length).toBe(0);
+  });
+
   it("recovers from a rejected duplicate and can submit a corrected identity", async () => {
     renderForm();
     const before = Number(screen.getByTestId("patient-count").textContent);

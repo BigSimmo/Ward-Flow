@@ -22,6 +22,8 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reduce
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
   bookingPersonShown,
+  countsOnlyBedRelease,
+  countsOnlyLeaveBed,
   scopeBroadcastAlerts,
   scopeWorkspace,
   seenThroughBreakGlass,
@@ -58,12 +60,14 @@ const keep =
 const inboxRows =
   <K extends "inboxAcknowledgements" | "inboxCompletions" | "inboxOwnership" | "inboxSnoozes">(key: K) =>
   (context: Context): WardFlowState[K] =>
-    Object.fromEntries(
-      Object.entries(context.state[key]).filter(([rowId]) => {
-        const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => rowId.startsWith(idPrefix));
-        return category !== undefined && context.inboxSubjectIds.has(rowId.slice(category.idPrefix.length));
-      }),
-    ) as WardFlowState[K];
+    context.access.role === "executive"
+      ? ({} as WardFlowState[K])
+      : (Object.fromEntries(
+          Object.entries(context.state[key]).filter(([rowId]) => {
+            const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => rowId.startsWith(idPrefix));
+            return category !== undefined && context.inboxSubjectIds.has(rowId.slice(category.idPrefix.length));
+          }),
+        ) as WardFlowState[K]);
 
 /** Is an audit entry about something the desk sees. Configuration and unresolved entries are not. */
 function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
@@ -183,8 +187,14 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     ),
   // A bed release or leave bed is one person's stay, so it goes where the stay goes, and never with
   // a stay sent as ward and dates only.
-  bedReleases: (context) => context.state.bedReleases.filter((release) => wholeStay(context, release.admissionId)),
-  leaveBeds: (context) => context.state.leaveBeds.filter((bed) => wholeStay(context, bed.admissionId)),
+  bedReleases: (context) =>
+    context.state.bedReleases
+      .filter((release) => wholeStay(context, release.admissionId))
+      .map((release) => (context.access.role === "executive" ? countsOnlyBedRelease(release) : release)),
+  leaveBeds: (context) =>
+    context.state.leaveBeds
+      .filter((bed) => wholeStay(context, bed.admissionId))
+      .map((bed) => (context.access.role === "executive" ? countsOnlyLeaveBed(bed) : bed)),
   inboxAcknowledgements: inboxRows("inboxAcknowledgements"),
   inboxCompletions: inboxRows("inboxCompletions"),
   inboxOwnership: inboxRows("inboxOwnership"),
@@ -270,12 +280,14 @@ export function scopeWardFlowState(
     admissionIds,
     inboxSubjectIds,
   };
-  const auditEvents = state.auditEvents.filter((event) =>
-    coordinator
-      ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
-      : event.category === "record-access" &&
-        event.subject.kind === "admission" &&
-        admissionIds.has(event.subject.admissionId),
+  const auditEvents = state.auditEvents.filter(
+    (event) =>
+      access.role !== "executive" &&
+      (coordinator
+        ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
+        : event.category === "record-access" &&
+          event.subject.kind === "admission" &&
+          admissionIds.has(event.subject.admissionId)),
   );
   const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;

@@ -6,7 +6,17 @@ import {
   type SharedView,
 } from "../src/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
-import { applyCommand, seedWorld, validCommand, worldNow, type SharedWorld } from "../backend/ward-flow/engine";
+import {
+  applyCommand,
+  seedWorld,
+  validCommand,
+  validWorld,
+  worldNow,
+  PERSISTED_AUDIT_EVENTS,
+  type SharedWorld,
+} from "../backend/ward-flow/engine";
+import { wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import { COHORTS } from "../src/components/ward-management/ward-model";
 const sharedHttpModulePath = "../backend/ward-flow/shared-http.mjs";
 const { createSharedHandler } = (await import(sharedHttpModulePath)) as {
   createSharedHandler: (
@@ -38,9 +48,9 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
-function createMemoryStore(clock = () => FIXED_CLOCK) {
+function createMemoryStore(clock = () => FIXED_CLOCK, initialWorld = seedWorld(clock())) {
   let revision = 1;
-  let payload: SharedWorld = seedWorld(clock());
+  let payload: SharedWorld = initialWorld;
   const receipts = new Map<
     string,
     { fingerprint: string; status: number; result: { outcome: string; commandRevision: number; error?: string } }
@@ -161,6 +171,154 @@ function createInProcessFetch(store = createMemoryStore()) {
 
   return { store, handler, fetch: inProcessFetch };
 }
+
+const REFERRAL_TARGETS = ["rph-adult-secure", "fsh-adult-secure"];
+
+/** Same valid suitability fixture as ward-audit.test: mismatch one or both ward cohorts. */
+function referralWorld(outcome: "accepted" | "partial" | "denied") {
+  const world = seedWorld(FIXED_CLOCK);
+  const movement = world.state.movements.find((row) => row.id === "WF-009")!;
+  movement.gender = "Male";
+  const differentCohort = COHORTS.find((cohort) => cohort !== movement.cohort)!;
+  if (outcome !== "accepted")
+    world.state.units.find((unit) => unit.id === REFERRAL_TARGETS[1])!.cohort = differentCohort;
+  if (outcome === "denied") world.state.units.find((unit) => unit.id === REFERRAL_TARGETS[0])!.cohort = differentCohort;
+  expect(validWorld(world)).toBe(true);
+  return world;
+}
+
+function referralCommand(): Extract<WardFlowEvent, { type: "REFER_TO_UNITS" }> {
+  return {
+    type: "REFER_TO_UNITS",
+    role: "coordinator",
+    now: 0, // The server supplies its own clock.
+    movementId: "WF-009",
+    unitIds: REFERRAL_TARGETS,
+  };
+}
+
+describe("shared referral suitability decisions", () => {
+  it.each(["accepted", "partial", "denied"] as const)("preserves the reducer's %s target decision", (outcome) => {
+    const world = referralWorld(outcome);
+    const event = referralCommand();
+    expect(validCommand(event)).toBe(true);
+    const local = wardFlowReducer(world.state, { ...event, now: worldNow(world, FIXED_CLOCK) });
+    expect(local.auditEvents.at(-1)?.outcome).toBe(outcome);
+    const result = applyCommand(world, event, FIXED_CLOCK);
+    expect(result.outcome).toBe(outcome === "denied" ? "denied" : "accepted");
+    if (result.outcome === "denied") {
+      expect(outcome).toBe("denied");
+      expect(result.world).toBe(world);
+      expect(result.changes).toEqual({});
+      return;
+    }
+    expect(validWorld(result.world)).toBe(true);
+    expect(result.world.state.movements).toEqual(local.movements);
+    // D-18 keeps transient refusal prose out of shared storage; coded target denials survive in audit.
+    expect(local.rejections).toHaveLength(outcome === "partial" ? 1 : 0);
+    expect(result.world.state.rejections).toEqual([]);
+    expect(result.world.state.auditEvents).toEqual(local.auditEvents);
+    expect(result.changes.domainAudit).toEqual(local.auditEvents);
+    const audit = result.world.state.auditEvents.at(-1)!;
+    expect(audit).toMatchObject({
+      action: "REFER_TO_UNITS",
+      outcome,
+      details: {
+        targets: [
+          { unitId: REFERRAL_TARGETS[0], outcome: "accepted" },
+          { unitId: REFERRAL_TARGETS[1], outcome: outcome === "partial" ? "denied" : "accepted" },
+        ],
+      },
+    });
+    expect(result.world.state.movements.find((row) => row.id === event.movementId)!.referredUnitIds).toEqual(
+      outcome === "partial" ? [REFERRAL_TARGETS[0]] : REFERRAL_TARGETS,
+    );
+  });
+
+  it("does not reuse a previous partial decision to admit a later refused or malformed command", () => {
+    const partial = applyCommand(referralWorld("partial"), referralCommand(), FIXED_CLOCK);
+    expect(partial.outcome).toBe("accepted");
+    const event = { ...referralCommand(), unitIds: [REFERRAL_TARGETS[1]] };
+    const denied = applyCommand(partial.world, event, FIXED_CLOCK);
+    expect(denied.outcome).toBe("denied");
+    expect(denied.world).toBe(partial.world);
+    expect(applyCommand(partial.world, { ...event, unitIds: ["unknown-ward"] }, FIXED_CLOCK).outcome).toBe("denied");
+    expect(() => applyCommand(partial.world, { ...event, role: "ward" }, FIXED_CLOCK)).toThrow("invalid-command");
+    expect(applyCommand(partial.world, { ...event, unitIds: "invalid" }, FIXED_CLOCK).outcome).toBe("denied");
+    expect(() => applyCommand(partial.world, { ...event, unitIds: 42 }, FIXED_CLOCK)).toThrow("invalid-command");
+  });
+
+  it("captures only this command's partial decision when the saved audit copy is already bounded", () => {
+    const world = referralWorld("partial");
+    const template = wardFlowReducer(world.state, {
+      ...referralCommand(),
+      now: worldNow(world, FIXED_CLOCK),
+    }).auditEvents.at(-1)!;
+    world.state.auditEvents = Array.from({ length: PERSISTED_AUDIT_EVENTS }, (_, index) => ({
+      ...JSON.parse(JSON.stringify(template)),
+      id: `audit-fixture-${index}`,
+      sequence: index + 1,
+    }));
+    world.state.auditSequence = PERSISTED_AUDIT_EVENTS;
+    expect(validWorld(world)).toBe(true);
+    const result = applyCommand(world, referralCommand(), FIXED_CLOCK);
+    expect(result.outcome).toBe("accepted");
+    if (result.outcome !== "accepted") throw new Error("Partial referral was refused");
+    expect(result.changes.domainAudit).toHaveLength(1);
+    expect(result.changes.domainAudit[0]).toMatchObject({ outcome: "partial", sequence: PERSISTED_AUDIT_EVENTS + 1 });
+    expect(result.world.state.auditEvents).toHaveLength(PERSISTED_AUDIT_EVENTS);
+    expect(validWorld(result.world)).toBe(true);
+    const denied = applyCommand(result.world, { ...referralCommand(), unitIds: [REFERRAL_TARGETS[1]] }, FIXED_CLOCK);
+    expect(denied.outcome).toBe("denied");
+    expect(denied.world).toBe(result.world);
+  });
+
+  it("commits the allowed subset once through mocked HTTP and preserves replay, revision and refusal guards", async () => {
+    const store = createMemoryStore(() => FIXED_CLOCK, referralWorld("partial"));
+    const { fetch: request } = createInProcessFetch(store);
+    const event = referralCommand();
+    const commandId = randomUUID();
+    const post = (id: string, revision: number, command = event, token = "token-coordinator-a") =>
+      request("https://ward-flow.example.test/v1/workspace/commands", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classification: "synthetic",
+          dataMode: "prototype",
+          commandId: id,
+          expectedRevision: revision,
+          event: command,
+        }),
+      });
+    const response = await post(commandId, 1);
+    expect(response.status).toBe(200);
+    const accepted = await response.json();
+    expect(accepted.outcome).toBe("accepted");
+    expect(accepted.snapshot.revision).toBe(2);
+    expect(
+      accepted.snapshot.payload.state.movements.find((row: { id: string }) => row.id === event.movementId)
+        .referredUnitIds,
+    ).toEqual([REFERRAL_TARGETS[0]]);
+    expect(accepted.snapshot.payload.state.auditEvents.at(-1).outcome).toBe("partial");
+    const replay = await post(commandId, 1);
+    expect(replay.status).toBe(200);
+    const replayed = await replay.json();
+    expect(replayed.replayed).toBe(true);
+    expect(replayed.snapshot).toEqual(accepted.snapshot);
+    expect(await store.audit()).toHaveLength(1);
+    const stale = await post(randomUUID(), 1);
+    expect(stale.status).toBe(409);
+    expect((await stale.json()).snapshot.revision).toBe(2);
+    const denied = await post(randomUUID(), 2, { ...event, unitIds: [REFERRAL_TARGETS[1]] });
+    expect(denied.status).toBe(422);
+    expect((await denied.json()).snapshot).toEqual(accepted.snapshot);
+    const reusedId = await post(commandId, 2);
+    expect(reusedId.status).toBe(422);
+    const unauthorised = await post(randomUUID(), 2, event, "token-non-coordinator");
+    expect(unauthorised.status).toBe(403);
+    expect((await store.read()).revision).toBe(2);
+  });
+});
 
 describe("Frontend-to-backend shared workspace contract", () => {
   it("hydrates the initial shared workspace snapshot via GET /v1/workspace", async () => {

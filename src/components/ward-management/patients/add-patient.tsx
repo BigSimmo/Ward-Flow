@@ -21,6 +21,7 @@ import { takeHandedOffPatientQuery } from "@/components/ward-management/search/p
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
   duplicateCandidates,
@@ -240,7 +241,7 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 };
 
 export function AddPatientForm() {
-  const { patients, rejections } = useWardFlowSelect("patients", "rejections");
+  const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const router = useRouter();
@@ -281,8 +282,23 @@ export function AddPatientForm() {
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   const priorSubmissionRef = useRef<{
     patients: typeof patients;
-    rejectionCount: number;
+    umrn: string;
+    generation: number;
+    intent: "profile" | "refer";
+    intake: {
+      facility: string;
+      healthService: string;
+      triageUrgency: TriageLevel;
+      legalStatus: StatutoryLegalStatus;
+      presentingComplaint: string;
+    };
   } | null>(null);
+  const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
+  if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
+    setAcceptedSubmission(null);
+    setLastRejection("The workspace changed. Review the record before trying again.");
+    setIsSubmitting(false);
+  }
   const submitIntentRef = useRef<"profile" | "refer">("profile");
   const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
@@ -365,6 +381,7 @@ export function AddPatientForm() {
     setD4Notice(null);
     setIsSubmitting(false);
     priorSubmissionRef.current = null;
+    setAcceptedSubmission(null);
     submitIntentRef.current = "profile";
     setSubmitIntent("profile");
     setShowResetConfirm(false);
@@ -402,33 +419,27 @@ export function AddPatientForm() {
   const addedToday = patients.filter((patient) => patientAddedOnDayOf(patient, now)).length;
 
   useEffect(() => {
-    const prior = priorSubmissionRef.current;
-    if (!prior) return;
-    if (patients.length <= prior.patients.length) {
-      if (rejections.length > prior.rejectionCount && rejections[0]?.attempted === "ADD_PATIENT") {
-        setLastRejection("Patient could not be added. Check the identity details and existing records.");
-        priorSubmissionRef.current = null;
-        setIsSubmitting(false);
-      }
-      return;
-    }
+    const prior = acceptedSubmission;
+    if (!prior || priorSubmissionRef.current !== prior) return;
+    if (prior.generation !== worldGeneration) return;
     const priorIds = new Set(prior.patients.map((patient) => patient.id));
-    const added = patients.filter((patient) => !priorIds.has(patient.id));
-    if (added.length === 0) {
-      setIsSubmitting(false);
-      throw new Error("AddPatientForm: patients grew but no new id was found against the prior snapshot.");
-    }
+    const added = patients.find(
+      (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === prior.umrn.toLowerCase(),
+    );
+    // A shared command can settle before its snapshot arrives. Only its own accepted identity counts.
+    if (!added) return;
     priorSubmissionRef.current = null;
     // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
     toast?.push({
       tone: "success",
-      title: `${added[0].givenName} ${added[0].familyName} added, ${added[0].umrn}`,
+      title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
     });
-    if (submitIntentRef.current === "refer") {
+    if (prior.intent === "refer") {
       submitIntentRef.current = "profile";
       const params = new URLSearchParams();
       params.set("new", "1");
-      params.set("patientId", encodeRecordAddress(added[0].id));
+      params.set("patientId", encodeRecordAddress(added.id));
+      const { facility, healthService, triageUrgency, legalStatus, presentingComplaint } = prior.intake;
       const siteCode = FACILITY_TO_SITE_CODE[facility];
       if (siteCode) {
         params.set("site", siteCode);
@@ -443,31 +454,53 @@ export function AddPatientForm() {
       router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
       return;
     }
-    router.push(patientHref(added[0].id));
-  }, [patients, rejections, router, toast, facility, healthService, triageUrgency, legalStatus, presentingComplaint]);
+    router.push(patientHref(added.id));
+  }, [acceptedSubmission, patients, worldGeneration, router, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || priorSubmissionRef.current?.generation === worldGeneration) return;
     if (!answered) {
       setAttemptedSubmit(true);
       return;
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    priorSubmissionRef.current = {
+    const submission = {
       patients,
-      rejectionCount: rejections.length,
-    };
-    const suburbTrimmed = suburb.trim();
-    raise("ADD_PATIENT", {
       umrn: answered.umrn,
-      givenName: answered.givenName,
-      familyName: answered.familyName,
-      dateOfBirth: answered.dateOfBirth,
-      ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
-      ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
-    });
+      generation: worldGeneration,
+      intent: submitIntentRef.current,
+      intake: { facility, healthService, triageUrgency, legalStatus, presentingComplaint },
+    };
+    priorSubmissionRef.current = submission;
+    setAcceptedSubmission(null);
+    const suburbTrimmed = suburb.trim();
+    const refuse = () => {
+      if (priorSubmissionRef.current !== submission) return;
+      priorSubmissionRef.current = null;
+      setLastRejection("Patient could not be added. Check the identity details and existing records.");
+      setIsSubmitting(false);
+    };
+    try {
+      const completion = raise("ADD_PATIENT", {
+        umrn: answered.umrn,
+        givenName: answered.givenName,
+        familyName: answered.familyName,
+        dateOfBirth: answered.dateOfBirth,
+        ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
+        ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
+      });
+      const settle = (outcome: WardCommandOutcome | void) => {
+        if (priorSubmissionRef.current !== submission) return;
+        if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) return refuse();
+        setAcceptedSubmission(submission);
+      };
+      if (completion && "then" in completion) void completion.then(settle, refuse);
+      else settle(completion);
+    } catch {
+      refuse();
+    }
   }
 
   /**

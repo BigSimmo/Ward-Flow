@@ -103,9 +103,18 @@ function CallButton({ row }: { row: CallRow }) {
       type="button"
       className={styles.call}
       aria-label={`Call ${row.name}, ${number}`}
-      onClick={() => {
-        void navigator.clipboard?.writeText(number).catch(() => undefined);
-        toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+      onClick={async () => {
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+          await navigator.clipboard.writeText(number);
+          toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
+        } catch {
+          toast?.push({
+            tone: "warning",
+            title: "Could not copy number",
+            body: "Check clipboard access and try again.",
+          });
+        }
       }}
     >
       <PhoneCall size={20} aria-hidden="true" />

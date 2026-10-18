@@ -185,16 +185,25 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
 let lastPack: DowntimePack | null = null;
 /** The world generation the pack was taken in. A reset or scenario switch makes any pack stale. */
 let packGeneration: number | null = null;
+/** An opaque, in-memory session/access boundary. Revoked owners cannot write late snapshots. */
+export type DowntimePackOwner = { active: boolean; ready?: boolean };
+let packOwner: DowntimePackOwner | null = null;
 const listeners = new Set<() => void>();
 
 function notify(): void {
   for (const listener of listeners) listener();
 }
 
-export function rememberDowntimePack(pack: DowntimePack, worldGeneration: number | null = null): void {
+export function rememberDowntimePack(
+  pack: DowntimePack,
+  worldGeneration: number | null = null,
+  owner: DowntimePackOwner | null = null,
+): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
+  if (owner?.active === false || owner?.ready === false) return;
   lastPack = pack;
   packGeneration = worldGeneration;
+  packOwner = owner;
   notify();
 }
 
@@ -203,7 +212,10 @@ export function downtimePackIsStale(worldGeneration: number): boolean {
   return lastPack !== null && packGeneration !== null && packGeneration !== worldGeneration;
 }
 
-export function lastDowntimePack(): DowntimePack | null {
+export function lastDowntimePack(owner?: DowntimePackOwner | null, worldGeneration?: number): DowntimePack | null {
+  if (packOwner?.active === false || owner?.active === false) return null;
+  if (owner !== undefined && owner !== packOwner) return null;
+  if (worldGeneration !== undefined && downtimePackIsStale(worldGeneration)) return null;
   return lastPack;
 }
 
@@ -219,8 +231,11 @@ export function subscribeDowntimePack(listener: () => void): () => void {
  * Forget the remembered pack and tell any open screen, which then takes a fresh one. Called when a
  * saved session is restored (the seed's pack no longer describes the world) and by tests.
  */
-export function forgetDowntimePack(): void {
+export function forgetDowntimePack(owner?: DowntimePackOwner | null): void {
+  // An exiting boundary must not erase a fresh snapshot already taken by its replacement.
+  if (owner !== undefined && owner !== packOwner) return;
   lastPack = null;
   packGeneration = null;
+  packOwner = null;
   notify();
 }

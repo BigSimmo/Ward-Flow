@@ -57,10 +57,10 @@ afterEach(() => {
  */
 const PINNED_DAY_ZERO = demoDayZero(new Date("2026-10-17T12:00:00+08:00")).getTime();
 
-function renderInProvider(node: ReactNode) {
+function renderInProvider(node: ReactNode, initialDayZero = PINNED_DAY_ZERO) {
   return render(
     <ToastProvider>
-      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={PINNED_DAY_ZERO}>
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={initialDayZero}>
         {node}
       </WardFlowProvider>
     </ToastProvider>,
@@ -84,6 +84,37 @@ describe("Weekly ED waits (stats-9)", () => {
       if (days && Number(days[1]) >= 2) expect(red, row.textContent ?? "").not.toBeNull();
       else expect(red, row.textContent ?? "").toBeNull();
     }
+  });
+
+  it("exercises both red and nonred waits in a deliberate Monday reporting calendar", () => {
+    asPhone();
+    const monday = demoDayZero(new Date("2026-10-12T12:00:00+08:00")).getTime();
+    renderInProvider(<WeeklyReportScreen />, monday);
+    const rows = within(screen.getByRole("list", { name: /^ED waits over/u })).getAllByRole("listitem");
+    let redCount = 0;
+    let nonredCount = 0;
+    for (const row of rows) {
+      const days = /(\d+)d \d+h/u.exec(row.textContent ?? "");
+      const red = row.querySelector('svg[class*="danger"]');
+      if (days && Number(days[1]) >= 2) {
+        expect(red).not.toBeNull();
+        redCount += 1;
+      } else {
+        expect(red).toBeNull();
+        nonredCount += 1;
+      }
+    }
+    expect(redCount).toBeGreaterThan(0);
+    expect(nonredCount).toBeGreaterThan(0);
+  });
+
+  it("shows an honest empty previous week when the Sunday calendar predates the seeded waits", () => {
+    asPhone();
+    const sunday = demoDayZero(new Date("2026-10-18T12:00:00+08:00")).getTime();
+    renderInProvider(<WeeklyReportScreen />, sunday);
+    expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent(/^0$/u);
+    expect(screen.getByText(/^Nobody waited over/u)).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /^ED waits over/u })).not.toBeInTheDocument();
   });
 });
 

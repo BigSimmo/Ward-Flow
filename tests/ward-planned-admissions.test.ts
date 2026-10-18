@@ -271,8 +271,29 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
     const unitAfter = arrived.units.find((unit) => unit.id === UNIT)!;
     expect(unitAfter.empty.value).toBe(unitBefore.empty.value - 1);
     expect(unitAfter.allocatable.value).toBe(unitBefore.allocatable.value - 1);
+    // Recording an arrival changes counts, not the age or provenance of either observation.
+    expect(unitBefore.empty.confirmedAt).not.toBe(unitBefore.allocatable.confirmedAt);
+    expect(unitAfter.empty).toEqual({ ...unitBefore.empty, value: unitBefore.empty.value - 1 });
+    expect(unitAfter.allocatable).toEqual({
+      ...unitBefore.allocatable,
+      value: unitBefore.allocatable.value - 1,
+      revision: (unitBefore.allocatable.revision ?? 0) + 1,
+    });
     expect(unitAfter.sexMix.Male).toBe(unitBefore.sexMix.Male + 1);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(arrived)))).toBe(true);
+
+    const confirmed = apply(arrived, {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      actingUnitId: UNIT,
+      unitId: UNIT,
+      now: NOW + 31,
+      expectedRevision: unitAfter.allocatable.revision ?? 0,
+      value: unitAfter.allocatable.value,
+    });
+    expect(confirmed.rejections).toEqual([]);
+    expect(confirmed.units.find((unit) => unit.id === UNIT)!.allocatable.confirmedAt).toBe(NOW + 31);
+    expect(confirmed.units.find((unit) => unit.id === UNIT)!.empty).toEqual(unitAfter.empty);
 
     const twice = apply(arrived, {
       type: "CONVERT_PLANNED_ADMISSION",

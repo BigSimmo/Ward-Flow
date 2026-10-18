@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { useEffect, type ReactNode } from "react";
+import { StrictMode, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -22,6 +22,7 @@ import {
   type DowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
+import { DowntimePackBoundary, useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { ToastProvider } from "@/components/wf";
@@ -29,17 +30,34 @@ import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sh
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardSharedAccess, type WardSharedConnection } from "@/components/ward-management/ward-shared-access";
+import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
+import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 // The ward layout wraps every route in the shared wf ToastProvider; the screens rely on it.
-const inProvider = (node: ReactNode) =>
+function InitialPack({ pack, generation = null }: { pack: DowntimePack; generation?: number | null }) {
+  const owner = useDowntimePackOwner();
+  useLayoutEffect(() => rememberDowntimePack(pack, generation, owner), [pack, generation, owner]);
+  return null;
+}
+
+const inProvider = (node: ReactNode, remembered?: { pack: DowntimePack; generation?: number }) =>
   render(
     <ToastProvider>
-      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        {remembered && <InitialPack {...remembered} />}
+        {node}
+      </WardFlowProvider>
     </ToastProvider>,
   );
 
 afterEach(() => {
+  cleanup();
   forgetDowntimePack();
+  resetWardAccessStoreForTests();
+  setWardFeatureFlagOnDevice("role-access", null);
   route.pathname = "/mockups/ward-flow/statistics/weekly";
 });
 
@@ -63,6 +81,188 @@ const OLD_PACK: DowntimePack = {
 };
 
 describe("read-only report screens", () => {
+  it("invalidates through the real shared session boundary on account, membership and sign-out changes", () => {
+    const state = seedWardFlowState();
+    const base: WardSharedConnection = {
+      enabled: true,
+      signedIn: true,
+      status: "ready",
+      error: null,
+      receivedAt: 0,
+      actorId: "ACCOUNT-A",
+      workingAs: "MEMBERSHIP-A",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      snapshot: {
+        dataMode: "prototype",
+        revision: 1,
+        now: NOW_ANCHOR,
+        accessContext: "a".repeat(64),
+        payload: { version: 1, state, dayZero: "2026-10-18T00:00:00Z", startedAt: "2026-10-18T10:00:00Z" },
+      },
+      dispatch: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      retry: vi.fn(),
+      pushApi: { pushKey: vi.fn(), pushStatus: vi.fn(), pushSubscribe: vi.fn(), pushUnsubscribe: vi.fn() },
+    };
+    let update!: (patch: Partial<WardSharedConnection>) => void;
+    function Harness() {
+      const [connection, setConnection] = useState(base);
+      useLayoutEffect(() => {
+        update = (patch) => setConnection((old) => ({ ...old, ...patch }));
+      }, []);
+      return (
+        <WardSharedAccess connection={connection}>
+          <DowntimePackScreen />
+        </WardSharedAccess>
+      );
+    }
+    inProvider(<Harness />);
+    const first = lastDowntimePack();
+    expect(first).not.toBeNull();
+    act(() => update({ actorId: "ACCOUNT-B" }));
+    const second = lastDowntimePack();
+    expect(second).not.toBe(first);
+    expect(second).not.toBeNull();
+    act(() => update({ workingAs: "MEMBERSHIP-B" }));
+    const third = lastDowntimePack();
+    expect(third).not.toBe(second);
+    expect(third).not.toBeNull();
+    act(() => update({ signedIn: false, snapshot: null }));
+    expect(lastDowntimePack()).toBeNull();
+    expect(screen.queryByTestId("ward-downtime-print")).toBeNull();
+    act(() => update({ signedIn: true, snapshot: base.snapshot }));
+    expect(lastDowntimePack()).not.toBe(third);
+    expect(lastDowntimePack()).not.toBeNull();
+  });
+
+  it("retakes from the real narrowed desk and clears print rows from outside its scope", () => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
+    const state = seedWardFlowState();
+    const siteCode = state.units[0].siteCode;
+    inProvider(
+      <WardAccessScope>
+        <DowntimePackScreen />
+      </WardAccessScope>,
+    );
+    const first = lastDowntimePack()!;
+    act(() => setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode } }));
+    const narrowed = lastDowntimePack()!;
+    expect(narrowed).not.toBe(first);
+    expect(narrowed.edQueue.length).toBeLessThan(first.edQueue.length);
+    expect(screen.queryAllByTestId("ward-downtime-ed")).toHaveLength(1);
+    expect(screen.getByTestId("ward-downtime-ed").textContent).not.toContain(
+      first.edQueue.find((line) => !narrowed.edQueue.some((kept) => kept.movementId === line.movementId))!.person,
+    );
+  });
+
+  it("takes a usable pack when strict effects remount the access boundary", () => {
+    inProvider(
+      <StrictMode>
+        <DowntimePackBoundary identity="strict">
+          <DowntimePackScreen />
+        </DowntimePackBoundary>
+      </StrictMode>,
+    );
+    expect(lastDowntimePack()).not.toBeNull();
+    expect(screen.queryByText("Taking snapshot")).toBeNull();
+  });
+  it("preserves a frozen pack across navigation but replaces it after an offscreen access transition", () => {
+    let change!: (identity: string) => void;
+    let navigate!: (visible: boolean) => void;
+    function Harness() {
+      const [identity, setIdentity] = useState("account-A:statewide");
+      const [visible, setVisible] = useState(true);
+      useLayoutEffect(() => {
+        change = setIdentity;
+        navigate = setVisible;
+      }, []);
+      return <DowntimePackBoundary identity={identity}>{visible ? <DowntimePackScreen /> : null}</DowntimePackBoundary>;
+    }
+    inProvider(<Harness />);
+    const first = lastDowntimePack();
+    expect(first).not.toBeNull();
+    act(() => navigate(false));
+    act(() => navigate(true));
+    expect(lastDowntimePack()).toBe(first);
+    act(() => navigate(false));
+    act(() => change("account-A:service"));
+    expect(lastDowntimePack()).toBeNull();
+    act(() => change("account-A:statewide"));
+    act(() => navigate(true));
+    expect(lastDowntimePack()).not.toBe(first);
+    expect(lastDowntimePack()).not.toBeNull();
+  });
+
+  it("drops snapshot timers from the previous access context before print", () => {
+    vi.useFakeTimers();
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    let change!: (identity: string) => void;
+    function Harness() {
+      const [identity, setIdentity] = useState("account-A");
+      useLayoutEffect(() => {
+        change = setIdentity;
+      }, []);
+      return (
+        <DowntimePackBoundary identity={identity}>
+          <DowntimePackScreen />
+        </DowntimePackBoundary>
+      );
+    }
+    try {
+      inProvider(<Harness />);
+      fireEvent.click(screen.getByTestId("ward-downtime-refresh"));
+      act(() => change("account-B"));
+      const current = lastDowntimePack();
+      act(() => vi.advanceTimersByTime(500));
+      expect(lastDowntimePack()).toBe(current);
+      expect(screen.queryByText("Taking snapshot")).toBeNull();
+      fireEvent.click(screen.getByTestId("ward-downtime-print"));
+      expect(print).toHaveBeenCalledTimes(1);
+    } finally {
+      print.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it("closes a phone patient detail sheet when access changes", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    let change!: (identity: string) => void;
+    function Harness() {
+      const [identity, setIdentity] = useState("scope-A");
+      useLayoutEffect(() => {
+        change = setIdentity;
+      }, []);
+      return (
+        <DowntimePackBoundary identity={identity}>
+          <DowntimePackScreen />
+        </DowntimePackBoundary>
+      );
+    }
+    try {
+      inProvider(<Harness />);
+      fireEvent.click(screen.getByRole("radio", { name: /^ED/u }));
+      const person = lastDowntimePack()!.edQueue[0].person;
+      const row = screen.getAllByRole("button").find((button) => button.textContent?.includes(person))!;
+      expect(row).toBeDefined();
+      fireEvent.click(row);
+      expect(screen.getByRole("dialog", { name: person })).toBeTruthy();
+      act(() => change("scope-B"));
+      expect(screen.queryByRole("dialog")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("opens a chronology for the patient named in the link, labelled synthetic", () => {
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     const page = screen.getByTestId("ward-patient-chronology");
@@ -232,13 +432,11 @@ describe("read-only report screens", () => {
   });
 
   it("keeps a pack from this world, but not one from another world generation", () => {
-    rememberDowntimePack(OLD_PACK);
-    const { unmount } = inProvider(<DowntimePackScreen />);
+    const { unmount } = inProvider(<DowntimePackScreen />, { pack: OLD_PACK });
     expect(lastDowntimePack()).toBe(OLD_PACK);
     unmount();
 
-    rememberDowntimePack(OLD_PACK, -1);
-    inProvider(<DowntimePackScreen />);
+    inProvider(<DowntimePackScreen />, { pack: OLD_PACK, generation: -1 });
     expect(lastDowntimePack()).not.toBe(OLD_PACK);
   });
 
@@ -296,7 +494,7 @@ describe("read-only report screens", () => {
   });
 
   it("states how many ready beds are still being made ready", () => {
-    rememberDowntimePack({
+    const remembered: DowntimePack = {
       ...OLD_PACK,
       wards: [
         {
@@ -308,8 +506,8 @@ describe("read-only report screens", () => {
           pendingPreparation: 1,
         },
       ],
-    });
-    inProvider(<DowntimePackScreen />);
+    };
+    inProvider(<DowntimePackScreen />, { pack: remembered });
     const table = within(screen.getByTestId("ward-downtime-beds"));
     const head = table.getAllByRole("columnheader").map((cell) => cell.textContent);
     expect(head).toEqual(

@@ -1221,14 +1221,15 @@ function WardFlowWorld({
     [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
+  const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
   const sharedConnection = useMemo(
     () =>
       shared.enabled && container.sharedRevision === undefined
-        ? { ...shared, snapshot: null }
+        ? { ...shared, snapshot: null, reportSnapshotReady }
         : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
-          ? { ...shared, status: "saving" as const }
-          : shared,
-    [shared, container.sharedRevision],
+          ? { ...shared, status: "saving" as const, reportSnapshotReady }
+          : { ...shared, reportSnapshotReady },
+    [shared, container.sharedRevision, reportSnapshotReady],
   );
 
   // The readers and the two record actions close over `state`, so they are rebuilt when it changes,
