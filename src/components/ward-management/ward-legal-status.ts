@@ -21,10 +21,12 @@ export type LegalStatusClass = "voluntary" | "referred" | "detained" | "cto" | "
 export function classifyLegalStatus(status: LegalStatus | string | undefined): LegalStatusClass {
   const text = status?.trim() ?? "";
   if (text === "") return "not_recorded";
+  // Involuntary text is read first, so "Involuntary inpatient (community treatment order revoked)"
+  // stays detained and keeps the discharge guard.
+  if (/^involuntary\b/i.test(text) || /^detained awaiting examination$/i.test(text)) return "detained";
   if (/community treatment order/i.test(text)) return "cto";
   if (/^voluntary\b/i.test(text)) return "voluntary";
   if (/^referred for psychiatric examination\b/i.test(text)) return "referred";
-  if (/^involuntary\b/i.test(text) || /^detained awaiting examination$/i.test(text)) return "detained";
   return "unrecognised";
 }
 

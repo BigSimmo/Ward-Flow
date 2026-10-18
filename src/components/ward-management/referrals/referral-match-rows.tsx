@@ -175,7 +175,7 @@ export function MatchRow({
           {candidate.verdict.gates.map((gate) => (
             <div
               key={gate.gate}
-              className={gate.pass ? styles.criteriaPass : styles.criteriaFail}
+              className={gateMark(gate) === "info" ? undefined : gate.pass ? styles.criteriaPass : styles.criteriaFail}
               role="listitem"
               data-testid={`ward-referral-match-criteria-item-${unit.id}-${gate.gate}`}
               data-mark={gateMark(gate)}

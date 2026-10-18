@@ -38,6 +38,7 @@ const FREE_TEXT: ReadonlyArray<[string | undefined, LegalStatusClass]> = [
   ["Detained awaiting examination", "detained"],
   ["Involuntary inpatient", "detained"],
   ["Involuntary, Form 6A", "detained"],
+  ["Involuntary inpatient (community treatment order revoked)", "detained"],
   ["Community treatment order, Form 5A", "cto"],
   ["On a community treatment order", "cto"],
   ["Informal", "unrecognised"],

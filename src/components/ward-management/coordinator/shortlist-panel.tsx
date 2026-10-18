@@ -2246,7 +2246,15 @@ export function ShortlistPanel({
                         <CircleAlert aria-hidden="true" className={styles.shortlistGateIconBad} />
                       )}
                       <span className={styles.shortlistGateLabel}>{GATE_LABELS[gate.gate]}</span>
-                      <strong className={gate.pass ? styles.shortlistGateVerdictOk : styles.shortlistGateVerdictBad}>
+                      <strong
+                        className={
+                          gateMark(gate) === "info"
+                            ? undefined
+                            : gate.pass
+                              ? styles.shortlistGateVerdictOk
+                              : styles.shortlistGateVerdictBad
+                        }
+                      >
                         {gateMark(gate) === "info" ? "For information" : gate.pass ? "Met" : "Not met"}
                       </strong>
                       <span className={styles.shortlistGateDetail}>{gate.detail}</span>
