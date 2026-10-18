@@ -15,10 +15,13 @@
  * - Any other list keeps one row per position (`index`). Lists like this only ever grow at the end,
  *   so two desks adding to one at once land in different rows.
  * - A map (a plain object) keeps one row per key (`entry`).
- * - Anything else (numbers, text) stays on the workspace row.
+ * - Anything else (numbers, text) stays on the workspace row, and `$revisions` on that row records
+ *   the workspace revision at which each of those last changed, so a clash check can see a reset
+ *   or a clock change someone else made.
  */
 
 const MARKER = "$records";
+const REVISIONS = "$revisions";
 
 /** @typedef {"item" | "index" | "entry"} RecordKind */
 /** @typedef {{ collection: string, recordId: string, kind: RecordKind, ordinal: number, body: unknown }} Part */
@@ -72,13 +75,18 @@ export function splitWorld(world) {
   return { core: { ...world, state }, parts };
 }
 
+/** The small fields kept on the workspace row (not markers). */
+const scalarFields = (core) => Object.keys(core.state).filter((key) => !markerKind(core.state[key]));
+
 /**
  * Builds the world from its workspace row and its stored rows. A state field still holding its own
  * list or map (written before migration 10, or by hand) is used as it is, and any rows for it are
  * ignored; the next save moves it into rows.
  * @param {StoredRow[]} rows
  */
-export function assembleWorld(core, rows) {
+export function assembleWorld(stored, rows) {
+  const core = { ...stored };
+  delete core[REVISIONS];
   const byCollection = new Map();
   for (const row of rows) {
     const list = byCollection.get(row.collection);
@@ -154,11 +162,23 @@ function keepOrdinals(list, current) {
 /**
  * What a save must write, given the rows stored now and the world after the change: the rows to
  * add or rewrite (each with the revision its content last changed at) and the keys to remove.
- * A row whose content is unchanged keeps its revision, even when its position moved.
+ * A row whose content is unchanged keeps its revision, even when its position moved, and so does
+ * each small field on the workspace row (`storedCore`, the row as saved now; none for a new one).
  * @param {StoredRow[]} stored
  */
-export function planSave(stored, world, revision) {
-  const { core, parts } = splitWorld(world);
+export function planSave(stored, world, revision, storedCore = null) {
+  const split = splitWorld(world);
+  const { parts } = split;
+  const before = storedCore?.[REVISIONS] ?? {};
+  const core = {
+    ...split.core,
+    [REVISIONS]: Object.fromEntries(
+      scalarFields(split.core).map((field) => [
+        field,
+        storedCore && same(storedCore.state?.[field], split.core.state[field]) ? (before[field] ?? revision) : revision,
+      ]),
+    ),
+  };
   const current = new Map(stored.map((row) => [partKey(row.collection, row.record_id), row]));
   /** @type {Map<string, Part[]>} */
   const lists = new Map();
@@ -195,7 +215,9 @@ function namedValues(value, found = new Set()) {
  * a record it changes or names since then. `before` and `after` are the world now and with the
  * command applied (`after` is `before` when the command was refused). Rows kept by position
  * (`index`) are never named. A field still kept whole has no revision of its own, so any change to
- * it since `expectedRevision` counts.
+ * it since `expectedRevision` counts. The small fields count too: a reset (`worldGeneration`) since
+ * then always clashes, and so does changing one someone else changed since (the clock), except the
+ * id counters (`...Sequence`), which every new record moves on.
  * @param {{ stored: StoredRow[], core: any, before: any, after: any, event: unknown, expectedRevision: number, priorRevision: number }} options
  */
 export function conflicts({ stored, core, before, after, event, expectedRevision, priorRevision }) {
@@ -211,6 +233,15 @@ export function conflicts({ stored, core, before, after, event, expectedRevision
     if ((!next || !same(next.body, part.body)) && revisionOf(part) > expectedRevision) return true;
   }
   for (const [key, part] of now) if (!was.has(key) && revisionOf(part) > expectedRevision) return true;
+  const scalarRevision = (field) => Number(core[REVISIONS]?.[field] ?? priorRevision);
+  if (scalarRevision("worldGeneration") > expectedRevision) return true;
+  for (const field of scalarFields(core))
+    if (
+      !field.endsWith("Sequence") &&
+      !same(before.state[field], after.state[field]) &&
+      scalarRevision(field) > expectedRevision
+    )
+      return true;
   const named = namedValues(event);
   for (const part of was.values())
     if (part.kind !== "index" && named.has(part.recordId) && revisionOf(part) > expectedRevision) return true;

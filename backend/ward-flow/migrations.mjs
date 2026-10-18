@@ -59,7 +59,7 @@ export const MIGRATIONS = Object.freeze([
   {
     version: 10,
     file: "010-workspace-records.sql",
-    sha256: "fde6544232eb2294aea9477a4ddf2f5ad7c9b9d2f7cafdb13e0cfa557a19ce07",
+    sha256: "067f6093dd1c1fa609f99b361c9c18c5bfce46f01b01f75f9fbbf9b3218d9d9b",
   },
   {
     version: 11,

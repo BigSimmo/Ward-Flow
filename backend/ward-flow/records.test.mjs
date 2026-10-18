@@ -127,9 +127,10 @@ test("dropping the oldest entry or adding at the end rewrites no other row", () 
 test("a save against an older revision clashes only with someone else's change to the same record", async () => {
   const engine = await import("./dist/engine.mjs");
   const base = engine.seedWorld(at);
-  const rows = stored([], planSave([], base, 1));
+  const initial = planSave([], base, 1);
+  const rows = stored([], initial);
   const first = engine.applyCommand(base, urgency("WF-001", 2), at);
-  const plan = planSave(rows, first.world, 2);
+  const plan = planSave(rows, first.world, 2, initial.core);
   const now = stored(rows, plan);
   const check = (event) => {
     const applied = engine.applyCommand(first.world, event, at);
@@ -175,6 +176,56 @@ test("a save against an older revision clashes only with someone else's change t
     }),
     true,
   );
+});
+
+test("a reset or a clock change someone else made since clashes; new records from two desks do not", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const base = engine.seedWorld(at);
+  const first = planSave([], base, 1);
+  const rows1 = stored([], first);
+  /** Another desk's change at revision 2, then a check of `event` sent against revision 1. */
+  const after = (other, event) => {
+    const changed = engine.applyCommand(base, other, at);
+    assert.equal(changed.outcome, "accepted", other.type);
+    const plan = planSave(rows1, changed.world, 2, first.core);
+    const applied = engine.applyCommand(changed.world, event, at);
+    return conflicts({
+      stored: stored(rows1, plan),
+      core: plan.core,
+      before: changed.world,
+      after: applied.outcome === "accepted" ? applied.world : changed.world,
+      event,
+      expectedRevision: 1,
+      priorRevision: 2,
+    });
+  };
+  const reset = { type: "RESET_SCENARIO", role: "demo", now: 600 };
+  const clock = { type: "ADVANCE_CLOCK", role: "demo", now: 600, minutes: 30 };
+  // A command from before a reset never lands in the new world, even on a record it recreated.
+  assert.equal(after(reset, urgency("WF-002", 1)), true);
+  // A reset sent before someone moved the clock would silently undo the clock change.
+  assert.equal(after(clock, reset), true);
+  // An unrelated change after a clock change still goes through.
+  assert.equal(after(clock, urgency("WF-002", 1)), false);
+  // The id counters move on with every new record, so they never clash on their own.
+  const fresh = { ...base, state: { ...base.state, referralSequence: base.state.referralSequence + 1 } };
+  const plan = planSave(rows1, fresh, 2, first.core);
+  assert.equal(plan.core.$revisions.referralSequence, 2);
+  assert.equal(plan.core.$revisions.worldGeneration, 1);
+  assert.equal(
+    conflicts({
+      stored: stored(rows1, plan),
+      core: plan.core,
+      before: fresh,
+      after: { ...fresh, state: { ...fresh.state, referralSequence: fresh.state.referralSequence + 1 } },
+      event: { type: "NOTHING" },
+      expectedRevision: 1,
+      priorRevision: 2,
+    }),
+    false,
+  );
+  // The field revisions never reach the world.
+  assert.deepEqual(assembleWorld(plan.core, stored(rows1, plan)), fresh);
 });
 
 test(
