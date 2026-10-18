@@ -985,7 +985,12 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           ref={userCardRef}
           className={styles.userCardWrap}
           onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            // Close only when focus moves to a known element outside (keyboard Tab). Safari and macOS
+            // Firefox do not focus a pressed button, so a click inside blurs with no relatedTarget;
+            // closing then would unmount "Go to a desk…" before its click and make the trigger
+            // reopen the popover. Outside presses are closed by the document mousedown handler.
+            const next = event.relatedTarget as Node | null;
+            if (next && !event.currentTarget.contains(next)) {
               setOpenOverlay((current) => (current === "persona" ? null : current));
             }
           }}

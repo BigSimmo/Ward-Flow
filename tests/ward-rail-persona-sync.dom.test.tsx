@@ -113,4 +113,20 @@ describe("rail persona keyboard navigation", () => {
     expect(screen.getByRole("link", { name: "Policy 2026.3" })).toHaveFocus();
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
+
+  it("keeps the popover open when a press inside blurs without a focus target (Safari, macOS Firefox)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(trigger());
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    const selected = screen.getAllByRole("option").find((option) => option.getAttribute("aria-selected") === "true")!;
+    // WebKit does not focus a pressed <button>: focus leaves the option with relatedTarget null.
+    fireEvent.blur(selected, { relatedTarget: null });
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByText("Go to a desk…"));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });
