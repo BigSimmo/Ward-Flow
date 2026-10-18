@@ -286,6 +286,22 @@ describe("human turnaround preference control", () => {
     );
   });
 
+  it("names a security-only phone capacity constraint without claiming the count is stale", () => {
+    const f = fixture();
+    const unit = f.state.units[0]!;
+    unit.allocatable.value = 1;
+    unit.empty.value = 1;
+    const arm = f.referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
+    arm.destination.secureBedNeeded = true;
+    renderFixture(f, { phone: true });
+    const candidate = screen.getByTestId(`ward-referral-match-phone-cand-${f.unitId}`);
+    expect(candidate).toHaveAttribute("data-kind", "nobed");
+    expect(within(candidate).getByText("No locked bed free now")).toBeVisible();
+    expect(within(candidate).queryByText("Count not current")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).not.toHaveAttribute("aria-disabled");
+  });
+
   it("allows a confirmed, unblocked occupied-bed departure with CLD disabled", () => {
     flag.cld = false;
     const f = fixture();

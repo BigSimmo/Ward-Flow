@@ -845,15 +845,18 @@ export function ReferralMatchView({
 
     const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
       const failed = c.verdict.gates.find((gate) => !gate.pass);
-      // Tier 2 holds both a full ward and one whose bed count is not current: name which.
+      // Capacity-pending candidates can lack any bed, a locked bed, or a current count: name the constraint.
       const noBed = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
+      const noLockedBed = c.verdict.gates.some((gate) => gate.gate === "security" && !gate.pass);
       const label =
         kind === "yes"
           ? "Fits"
           : kind === "nobed"
             ? noBed
               ? "No bed now"
-              : "Count not current"
+              : noLockedBed
+                ? "No locked bed free now"
+                : "Count not current"
             : failed
               ? GATE_LABELS[failed.gate]
               : "Review";
