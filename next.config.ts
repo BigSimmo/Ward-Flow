@@ -25,6 +25,10 @@ async function withOptionalBundleAnalyzer(config: NextConfig): Promise<NextConfi
   return bundleAnalyzer({ enabled: true })(config);
 }
 
+/** The demo data modules a live shared build replaces (`webpack` below). */
+export const LIVE_BUILD_DEMO_DATA =
+  /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves)$/;
+
 const nextConfig: NextConfig = {
   distDir: requestedDistDir || ".next",
   // WARD_GATE_BUILD=1 (Ward Flow fold gate and CI browser jobs only): skip the build's own type
@@ -74,12 +78,21 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
-  webpack(config) {
+  webpack(config, { webpack }) {
     // Avoid a Next/webpack WasmHash worker crash observed on Node 24 during local production builds.
     config.output = {
       ...config.output,
       hashFunction: "sha256",
     };
+    // A live shared build carries no demo records: the server owns the board, so phones skip
+    // downloading the synthetic night (review item 3.5). See live-build/ward-no-demo-data.ts.
+    if (process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true")
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          LIVE_BUILD_DEMO_DATA,
+          path.join(projectRoot, "src/components/ward-management/live-build/ward-no-demo-data.ts"),
+        ),
+      );
     return config;
   },
   async headers() {
