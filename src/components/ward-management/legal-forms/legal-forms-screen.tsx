@@ -511,6 +511,15 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
     ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
     : undefined;
 
+  const formTimesCard = (
+    <Card aria-label="Check a form time" className={styles.formTimesCard}>
+      <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
+      <CardBody>
+        <WardFormTimes />
+      </CardBody>
+    </Card>
+  );
+
   const taskStrip = (
     <div className={styles.strip}>
       <Card aria-label="Forms in force">
@@ -640,13 +649,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               );
             })}
           </ul>
-        </CardBody>
-      </Card>
-      {/* Form times (Tools review, 15 Oct 2026): typed times only, rule D5. Also in Tools. */}
-      <Card aria-label="Check a form time" className={styles.formTimesCard}>
-        <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
-        <CardBody>
-          <WardFormTimes />
         </CardBody>
       </Card>
     </div>
@@ -793,6 +795,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
             </Card>
             <PhoneSheet open={phoneTasks} onClose={() => setPhoneTasks(false)} title="Record and tell" height="tall">
               {taskStrip}
+              {formTimesCard}
             </PhoneSheet>
             <PhoneSheet
               open={selected !== null}
@@ -1029,6 +1032,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                     onSelect={select}
                   />
                 )}
+                {formTimesCard}
               </div>
               {isTabletPortrait && selected ? (
                 // Tablet portrait (v10): the form opens as a drawer over the list.

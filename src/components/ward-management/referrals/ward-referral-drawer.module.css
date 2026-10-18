@@ -2191,13 +2191,11 @@ details.refCard > summary {
 .railCard[data-layout="pair"] small {
   display: block;
   min-width: 0;
-  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  /* v10: one line. A long note such as "Check before sending" truncates (full words in its
-     title) rather than wrapping the pair onto a second line. */
-  white-space: nowrap;
+  line-height: var(--wf-lh-12);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .railHead {

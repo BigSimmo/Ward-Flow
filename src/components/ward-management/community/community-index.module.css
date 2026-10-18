@@ -5,6 +5,7 @@
 .screen {
   min-width: 0;
   background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
 }
 
 .main {

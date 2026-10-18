@@ -8,6 +8,7 @@
   --ward-subtle: var(--wf-hl);
   display: block;
   min-width: 0;
+  --wf-page-canvas: var(--wf-canvas);
   background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font-family: var(--wf-font);
@@ -1442,14 +1443,14 @@
 
   .phoneWardSub {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
     min-width: 0;
-    overflow: hidden;
     color: var(--wf-ink-3);
     font-size: var(--wf-fs-12);
     line-height: var(--wf-lh-12);
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .phoneWardReady {

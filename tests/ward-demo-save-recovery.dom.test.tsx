@@ -10,6 +10,7 @@ import {
 } from "@/components/ward-management/ward-flow-demo-storage";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -50,6 +51,7 @@ it("shows the retained successful save label alongside the storage warning after
   }
   render(
     <WardFlowProvider>
+      <WardRecoveryNotice />
       <Reset />
     </WardFlowProvider>,
   );

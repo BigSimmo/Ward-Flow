@@ -320,3 +320,11 @@
     box-shadow: none !important;
   }
 }
+
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .island {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

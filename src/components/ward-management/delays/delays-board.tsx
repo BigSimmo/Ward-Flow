@@ -1975,7 +1975,7 @@ export function DelaysBoard({
                     <col className={styles.colT} />
                     <col className={styles.colB} />
                     <col className={styles.colL} />
-                    <col />
+                    <col className={styles.colU} />
                   </colgroup>
                   <thead role="rowgroup">
                     <tr role="row">

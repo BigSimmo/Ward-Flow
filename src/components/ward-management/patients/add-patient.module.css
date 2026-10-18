@@ -9,6 +9,7 @@
   min-height: 100%;
   color: var(--wf-ink-1);
   background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 

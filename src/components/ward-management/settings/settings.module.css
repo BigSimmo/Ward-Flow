@@ -4,6 +4,7 @@
  */
 
 .screen {
+  --wf-page-canvas: var(--wf-canvas);
   min-width: 0;
   min-height: 100%;
   display: flex;

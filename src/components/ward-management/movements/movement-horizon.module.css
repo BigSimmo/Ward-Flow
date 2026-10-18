@@ -518,18 +518,17 @@
   flex-direction: column;
   justify-content: center;
   gap: 2px;
-  padding: 0 var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
   box-sizing: border-box;
   border-right: 1px solid var(--wf-line);
   background: var(--wf-surface);
 }
 
 .ganttLaneName {
-  overflow: hidden;
   color: var(--wf-ink-1);
   font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: var(--wf-lh-13);
+  overflow-wrap: anywhere;
 }
 
 .ganttSvcTag {

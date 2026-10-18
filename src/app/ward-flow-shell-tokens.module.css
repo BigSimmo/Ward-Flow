@@ -421,6 +421,70 @@
   --scrim: rgba(0, 0, 0, 0.6);
 }
 
+/* Bridge the legacy shell roles only while glare is active. Dark theme rules on
+ * each composed carrier otherwise override the root's light glare palette. */
+@media screen and (forced-colors: none) {
+  :global(:root[data-mode="glare"]) .wardShellTokens.wardShellTokens {
+    color-scheme: light;
+    --ground-hi: var(--wf-canvas);
+    --ground: var(--wf-canvas);
+    --ground-2: var(--wf-canvas);
+    --surface: var(--wf-surface);
+    --surface-2: var(--wf-surface-2);
+    --sunk: var(--wf-track);
+    --ink: var(--wf-ink-1);
+    --ink-soft: var(--wf-ink-2);
+    --muted: var(--wf-ink-3);
+    --line: var(--wf-line);
+    --line-strong: var(--wf-line-3);
+    --accent: var(--wf-accent);
+    --accent-ink: var(--wf-accent-ink);
+    --accent-press: var(--wf-accent-press);
+    --accent-soft: var(--wf-accent-tint);
+    --on-accent: var(--wf-on-accent);
+    --stripe: var(--wf-accent);
+    --gilt: var(--wf-warning-ink);
+    --gilt-soft: var(--wf-hold-tint);
+    --good: var(--wf-success-ink);
+    --good-soft: var(--wf-fit-tint);
+    --warn: var(--wf-warning-ink);
+    --warn-soft: var(--wf-hold-tint);
+    --danger: var(--wf-danger-ink);
+    --danger-ink: var(--wf-danger-ink);
+    --danger-soft: var(--wf-act-tint);
+    --svc-east: var(--wf-svc-east);
+    --svc-east-bg: color-mix(in srgb, var(--svc-east) 8%, var(--wf-surface));
+    --svc-east-border: var(--svc-east);
+    --svc-east-ink: var(--svc-east);
+    --svc-north: var(--wf-svc-north);
+    --svc-north-bg: color-mix(in srgb, var(--svc-north) 8%, var(--wf-surface));
+    --svc-north-border: var(--svc-north);
+    --svc-north-ink: var(--svc-north);
+    --svc-south: var(--wf-svc-south);
+    --svc-south-bg: color-mix(in srgb, var(--svc-south) 8%, var(--wf-surface));
+    --svc-south-border: var(--svc-south);
+    --svc-south-ink: var(--svc-south);
+    --svc-wachs: var(--wf-svc-wachs);
+    --svc-wachs-bg: color-mix(in srgb, var(--svc-wachs) 8%, var(--wf-surface));
+    --svc-wachs-border: var(--svc-wachs);
+    --svc-wachs-ink: var(--svc-wachs);
+    --svc-cahs: var(--wf-svc-cahs);
+    --svc-cahs-bg: color-mix(in srgb, var(--svc-cahs) 8%, var(--wf-surface));
+    --svc-cahs-border: var(--svc-cahs);
+    --svc-cahs-ink: var(--svc-cahs);
+    --svc-statewide: var(--wf-svc-statewide);
+    --svc-statewide-bg: color-mix(in srgb, var(--svc-statewide) 8%, var(--wf-surface));
+    --svc-statewide-border: var(--svc-statewide);
+    --svc-statewide-ink: var(--svc-statewide);
+    --svc-private: var(--wf-svc-private);
+    --svc-private-bg: color-mix(in srgb, var(--svc-private) 8%, var(--wf-surface));
+    --svc-private-border: var(--svc-private);
+    --svc-private-ink: var(--svc-private);
+    --hl: transparent;
+    --focus: var(--wf-focus-ring);
+  }
+}
+
 /*
  * Forced colours: every boundary a CanvasText border on Canvas, no shadow (standard §7.5). Mirrors
  * `../components/ward-management/ward-tokens.module.css`'s own forced-colors block — same
