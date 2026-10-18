@@ -79,6 +79,14 @@ anyone remembering to update docs:
 
 When a decision retires something, add its term to `retired-terms.json` in the same pull request.
 
+## Agent rule files and references
+
+- A rule has one home. [`AGENTS.md`](../AGENTS.md) keeps the hard safeguards; topic rules live in [`agents/`](agents/) and the files it links. `CLAUDE.md`, `GEMINI.md` and nested adapters defer to it (`@AGENTS.md`) and never copy process rules.
+- Update owned docs when evidence shows drift, and route other owners' files to them. A changed file does not prove an agent loaded it, so verify loaded instructions in a fresh session.
+- For Next.js, read the installed docs that `AGENTS.md` names. For other libraries, use [Context7](agents/context7.md). Keep source code, credentials and patient details out of queries.
+- Apply a skill only when it is installed and relevant, and read it first. A historical skill name grants nothing. Ward tasks live in the [task ledger](ward-flow-task-ledger.md).
+- For a codebase appraisal export, stage it outside the repository, include `EXPORT_MANIFEST.md`, exclude secrets, dependencies, build output and local state, and check the archive opens.
+
 ## Archival & historical fencing standard
 
 When retiring or superseding a document (or preserving inherited PsychSift material):
@@ -86,7 +94,7 @@ When retiring or superseding a document (or preserving inherited PsychSift mater
 1. Place a top-of-file `> **SUPERSEDED ...**` or `> **Historical ...**` callout banner naming the current live replacement.
 2. Wrap historical body sections that reference retired `npm run` scripts or removed PsychSift paths in paired HTML comments (`docs-script-refs:historical-start` and `docs-script-refs:historical-end`, each on its own comment line).
    Paired markers exclude historical command and path references from `docs:check-scripts` and `docs:check-links`; a prose banner alone does not exclude text.
-3. Move dated Ward Flow records under [`ward-flow/archive/`](ward-flow/archive/) (indexed in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)).
+3. Remove dated Ward Flow records from the live tree once nothing cites them, with the owner's approval, and list them in [`ARCHIVE.md`](ARCHIVE.md) with the Git tag or commit that keeps them. Earlier moves are in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md).
 
 Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
 `canonicalSources` for reviewed canonical references and this index for navigation. Add metadata

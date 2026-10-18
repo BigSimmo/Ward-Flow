@@ -1,6 +1,6 @@
 # Testing and verification
 
-Current Ward Flow commands, receipt limits, browser cadence and CI topology below were checked
+Current Ward Flow commands, browser cadence and CI topology below were checked
 against the dedicated repository source on 16 October 2026. Older diagnostic and performance
 material is retained as historical context; it does not select a gate. Follow
 [AGENTS.md](../AGENTS.md) and [HOW-WE-WORK.md](ward-flow/HOW-WE-WORK.md) for authority and gate rules.
@@ -149,32 +149,26 @@ it is limited to the documented, exact GitHub connector-gap operation in
 
 ## Commands
 
-| Command                                   | Purpose                                                                                     |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `npx vitest run <path/to/test.ts>`        | Direct focused development check.                                                           |
-| `npm run test:focused -- --files <paths>` | Related-file selection; unsafe or empty mappings fail closed to the full unit command.      |
-| `npm run test`                            | Complete default offline unit population.                                                   |
-| `npm run test:ci-workflows`               | Selected offline cache, runner, lock parity, backend-CI and audit-CI contracts.             |
-| `npm run test:live`                       | Explicit provider suite; needs separate authority and `ALLOW_PROVIDER_TESTS=true`.          |
-| `npm run test:e2e:pr`                     | Production Chromium CSRF spec, excluding mockups/quarantine.                                |
-| `npm run test:e2e:ward-journeys`          | Synthetic Ward Chromium journeys.                                                           |
-| `npm run test:e2e:release-gate`           | Dedicated desktop Chromium and phone WebKit release journeys/axe checks.                    |
-| `npm run test:e2e:advisory`               | Mockup/quarantined selections; an advisory result is not a required-gate verdict.           |
-| `npm run verify:cheap`                    | Broad offline local static, lint, typecheck and unit gate.                                  |
-| `npm run verify:pr-local`                 | Risk-routed local readiness; inspect `-- --dry-run` against the actual changed set.         |
-| `npm run verify:ui`                       | Lock parity plus the production Chromium selection, not the complete Ward journey suite.    |
-| `npm run check:coverage-inventory`        | Verify the declared executable-file population against produced LCOV.                       |
-| `npm run docs:maintain:check`             | Read-only document, index, organisation and reference-pack integrity aggregate.             |
-| `npm run receipts`                        | Inspect the local receipt store; store contents alone do not establish valid reuse.         |
-| `npm run receipts:clear`                  | Clear local receipts. Current wrappers execute without verified dependency identity anyway. |
+| Command                                   | Purpose                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `npx vitest run <path/to/test.ts>`        | Direct focused development check.                                                        |
+| `npm run test:focused -- --files <paths>` | Related-file selection; unsafe or empty mappings fail closed to the full unit command.   |
+| `npm run test`                            | Complete default offline unit population.                                                |
+| `npm run test:ci-workflows`               | Selected offline cache, runner, lock parity, backend-CI and audit-CI contracts.          |
+| `npm run test:live`                       | Explicit provider suite; needs separate authority and `ALLOW_PROVIDER_TESTS=true`.       |
+| `npm run test:e2e:pr`                     | Production Chromium CSRF spec, excluding mockups/quarantine.                             |
+| `npm run test:e2e:ward-journeys`          | Synthetic Ward Chromium journeys.                                                        |
+| `npm run test:e2e:release-gate`           | Dedicated desktop Chromium and phone WebKit release journeys/axe checks.                 |
+| `npm run test:e2e:advisory`               | Mockup/quarantined selections; an advisory result is not a required-gate verdict.        |
+| `npm run verify:cheap`                    | Broad offline local static, lint, typecheck and unit gate.                               |
+| `npm run verify:pr-local`                 | Risk-routed local readiness; inspect `-- --dry-run` against the actual changed set.      |
+| `npm run verify:ui`                       | Lock parity plus the production Chromium selection, not the complete Ward journey suite. |
+| `npm run check:coverage-inventory`        | Verify the declared executable-file population against produced LCOV.                    |
+| `npm run docs:maintain:check`             | Read-only document, index, organisation and reference-pack integrity aggregate.          |
 
-`scripts/gate-receipts.mjs` supports reuse only with a verified dependency byte identity as well as
-matching content, arguments and environment. The current `run-heavy.mjs` and `run-vitest.mjs`
-wrappers do not supply that identity: receipt consultation returns **dependency byte identity
-unavailable**, and the gate executes. Unchanged source alone does not cause automatic reuse. Failures are never reusable;
-CI and artefact-producing builds/coverage do not reuse local receipts. Report a reused receipt only
-when the runner actually prints reuse, with its recorded time and scope. `GATE_RECEIPTS=refresh`
-forces execution where receipt reuse is otherwise available.
+Local gates always execute: the receipt store and gate arbiter were retired on 18 October 2026, so
+`run-heavy.mjs` and `run-vitest.mjs` never skip a run on an earlier result. Report reused evidence only
+when you reuse an exact earlier run of the same inputs, with its time and scope.
 
 Set `FAST_CHECK_SEED` to reproduce a property-test run. Local and ordinary CI runs default to `424242`; scheduled CI may derive a bounded seed from the run ID.
 
@@ -348,7 +342,7 @@ output must not be committed.
 
 ### When the budget runs
 
-Keyed off `perf_changed` (`scripts/ci-change-scope.mjs`), which is deliberately narrower than the
+Historically keyed off `perf_changed` in the retired `scripts/ci-change-scope.mjs`, which is deliberately narrower than the
 `ui_changed || build_changed` union it replaced — that union put every dependabot lockfile bump and
 every `worker/**` ingestion change through a ~7 minute isolated production build plus ten Lighthouse
 runs. In scope: `src/**`, `data/**`, `public/**`, `next.config.ts`, `postcss.config.mjs`,

@@ -30,6 +30,16 @@ Items 22 and 23 of the 18 October review, approved by the owner.
 - dated one-off audits, briefs, proposals and reconciliations at the top of `docs/ward-flow/` and in `docs/ward-flow/design/`, and two dated design-system notes
 - `docs/ward-flow-safety-checklist.md` (retired by Prototype Operating Mode on 3 October 2026)
 
+Superseded agent rule and process files, removed when `AGENTS.md` became one short safety file:
+
+- `PROJECT-INSTRUCTIONS-CONTINUATION.md` (a retired stub) and `WARD-MOCKUPS-BRIEF.md` (superseded mockup brief)
+- `docs/ward-flow/three-chat-working-agreement.md` and `docs/ward-flow/who-is-who.md` (the old three-chat and folder-role model)
+- `docs/ward-flow/testing-fast-feedback.md` (it described the retired `test-batch.mjs` runner)
+
+The shortcuts and document rules that lived only in `AGENTS.md` moved to
+[`agents/shortcuts.md`](agents/shortcuts.md) and [`DOCS-SYSTEM.md`](DOCS-SYSTEM.md).
+`docs/ward-flow/RULES.md` stays, because a CI check regenerates it from the lessons.
+
 ## Kept on purpose
 
 Owner rulings and decision records (including `docs/archive/` rulings, `docs/ward-flow/archive/dated-notes/`

@@ -80,15 +80,14 @@ Vitest positional arguments filter test filenames; they do not select importers 
 `test:related` follows imports from changed sources and reports its fan-out cap and fallback scope.
 A related-test pass is focused evidence, not a substitute for the selected readiness gate.
 
-**Fold checks (selected for the changed files, by the steward):**
+**Integration checks (selected for the changed files):**
 
 ```bash
-node scripts/ward-flow/select-fold-gate.mjs --head <batch>  # origin/main by default; STATIC, FOCUSED or FULL
+npm run verify:pr-local -- --base <task-base> --dry-run  # preview; omit --dry-run to run
 ```
 
-Read the selector's result on the exact integration candidate before acceptance. Existing chats must
-refresh it too; an older chat instruction does not force a full suite or reserve stewardship for
-one chat. When FULL is selected, use the saved findings, resume and bounded recheck procedure in
+Read the plan for the exact integration candidate before acceptance. When it selects the full Ward
+suite, use the saved findings, resume and bounded recheck procedure in
 [`full-gate-recheck.md`](full-gate-recheck.md).
 
 Screens live under `/mockups/ward-flow/...` on the URL `npm run ensure` prints. Never assume a port.

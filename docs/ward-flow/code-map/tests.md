@@ -134,10 +134,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   focused iteration). It does not itself pick "changed files plus up to three importers" — that
   selection is the caller's job (see `npm run test:focused`, `scripts/test-focused.mjs`, which is
   documented in the sibling scripts-and-tooling map). What this wrapper adds over calling Vitest
-  directly: a gate-receipt cache keyed on the exact argument list (so an identical prior pass can
-  short-circuit a re-run — this is exactly why `check-ward-expected-reds.mjs` deliberately bypasses
-  it), a gate-arbiter consultation, a cross-worktree "heavy run" lock, and reporter-argument
-  validation. A coverage/watch/update/UI run is never treated as memoisable.
+  directly: a cross-worktree "heavy run" lock and reporter-argument validation. Its gate-receipt
+  cache and gate-arbiter consultation were retired on 18 October 2026, so every run executes.
 
 ## Which tests to run for a change in X
 

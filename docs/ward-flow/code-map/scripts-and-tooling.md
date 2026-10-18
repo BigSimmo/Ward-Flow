@@ -1,5 +1,12 @@
 # Scripts, generators, hooks and tooling
 
+> **Retired 18 October 2026:** the receipt store and gate arbiter (`gate-receipts.mjs`, `gate-arbiter.mjs`),
+> the fold-gate and READY tooling (`ready-check.mjs`, `select-fold-gate.mjs`, `select-journeys.mjs`,
+> `test-batch.mjs`, `run-slot.mjs`, `review-server.mjs`), mutation runs (`mutate.mjs`, `mutation-run.mjs`),
+> `ci-change-scope.mjs`, `playwright-pr-shards.mjs`, `check-ward-citations.mjs`, the PR branch-sync,
+> merge-audit, flake-ledger, base-freshness and worktree-report scripts, and their npm commands.
+> Entries below that describe them are history. Ward CI selection is `scripts/ward-ci-public/plan.mjs`.
+
 Current doc-link checks: `npm run docs:check-links` checks every tracked Markdown file with
 `--file`, so paired historical sections are excluded. Run `node scripts/ward-flow/check-doc-links.mjs`
 with no `--file` to check the Ward tree including history.
@@ -272,9 +279,6 @@ browser-stabilisation helpers from the adversarial audit — not part of the fol
 | `check:ward-text-size`            | `node scripts/ward-flow/check-text-size-floor.mjs`                             | Sub-12px CSS-use ratchet (owner ruling D-3).                                                                                                                                                  |
 | `check:ward-source-control-chars` | `node scripts/ward-flow/check-source-control-chars.mjs`                        | No stray C0 control bytes in `src/`, `tests/`, `docs/ward-flow/`.                                                                                                                             |
 | `check:ward-errata-freshness`     | `node scripts/ward-flow/check-errata-freshness.mjs`                            | Re-measures every claim in the 2026-09-10 errata sheet.                                                                                                                                       |
-| `check:ward-citations`            | `node scripts/check-ward-citations.mjs`                                        | Every git-object SHA and path cited in Ward Flow docs resolves.                                                                                                                               |
-| `mutate`                          | `node scripts/ward-flow/mutation-run.mjs`                                      | CLI mutation-testing harness.                                                                                                                                                                 |
-| `mutate:self-test`                | `node scripts/ward-flow/mutation-run.mjs --self-test`                          | Proves the harness itself can detect a mutant.                                                                                                                                                |
 | `test:e2e:ward-journeys`          | `node scripts/run-playwright.mjs --project=chromium-mockups ui-ward-`          | The 13 `tests/ui-ward-*.spec.ts` browser journeys, advisory `chromium-mockups` project only — never the production browser lane.                                                              |
 | `check:ward-legal-language`       | `node scripts/ward-flow/check-ward-legal-language.mjs`                         | No wording asserting legal authority the app lacks.                                                                                                                                           |
 | `ward:reference:build`            | runs `build-reference-registry.mjs` then `-distances.mjs` then `-teams.mjs`    | Regenerates the three reference-pack-derived TypeScript files.                                                                                                                                |
@@ -605,9 +609,8 @@ generator `--check`s only when their own source changed.
    - Any of the other targeted gates whose surface you touched:
      `npm run check:ward-reference`, `npm run check:ward-legal-language`,
      `npm run check:ward-text-size`, `npm run check:ward-source-control-chars`,
-     `npm run check:ward-errata-freshness`, `npm run check:ward-citations`,
+     `npm run check:ward-errata-freshness`,
      `npm run ward:governance:check`, `node scripts/check-ward-data.mjs` (data-file edits),
-     `node scripts/ward-flow/check-drawing-rules.mjs <drawing.html>` (drawing edits),
      `npm run ward:test:sync:check` (design/test alignment).
 4. **Integrate**, following repository [`AGENTS.md`](../../../AGENTS.md) and [`HOW-WE-WORK.md`](../HOW-WE-WORK.md):
    verify the remote is `BigSimmo/Ward-Flow`, run the selected checks for the candidate tree, and
