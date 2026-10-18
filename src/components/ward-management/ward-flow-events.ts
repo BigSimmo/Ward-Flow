@@ -2100,7 +2100,8 @@ export type WardFlowEvent =
       formCode: string;
       writtenAt: Instant;
       region?: "metro" | "country";
-      ageBand?: "adult" | "under_18";
+      /** `null` clears a recorded band ("Not recorded"); omitted keeps it on a same-form time edit. */
+      ageBand?: "adult" | "under_18" | null;
       /** Optional expiry typed from the paper; no statutory maximum is computed. */
       paperExpiresAt?: Instant;
     }

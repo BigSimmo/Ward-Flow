@@ -274,7 +274,7 @@ export function FocusPanel({
   /** Set by "Add time" or "Mark received" in the strip, so the panel focuses that control. */
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
-  onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand?: LegalClockAgeBand }) => void;
+  onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand | null }) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
   onMarkReceived: () => void;
@@ -326,7 +326,7 @@ export function FocusPanel({
     onSaveWritten({
       writtenAt: typedWrittenAt,
       region: draft.region,
-      ageBand: draft.ageBand === "not_recorded" ? undefined : draft.ageBand,
+      ageBand: draft.ageBand === "not_recorded" ? null : draft.ageBand,
     });
     setChanging(false);
   };

@@ -186,6 +186,10 @@ describe("age band recorded with the written time", () => {
     expect(saved.movements.find((m) => m.id === movementId)!.legalForm?.ageBand).toBe("under_18");
     const edited = wardFlowReducer(saved, { ...base, writtenAt: NOW - 20 });
     expect(edited.movements.find((m) => m.id === movementId)!.legalForm?.ageBand).toBe("under_18");
+    // Choosing "Not recorded" clears it, so a mistaken Adult can be taken back to the shorter period.
+    const cleared = wardFlowReducer(edited, { ...base, writtenAt: NOW - 20, ageBand: null });
+    expect(cleared.rejections).toEqual([]);
+    expect(cleared.movements.find((m) => m.id === movementId)!.legalForm?.ageBand).toBeUndefined();
     const refused = wardFlowReducer(before, { ...base, writtenAt: NOW - 30, ageBand: "child" as never });
     expect(refused.rejections.length).toBeGreaterThan(0);
   });

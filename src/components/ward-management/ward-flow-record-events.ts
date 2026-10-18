@@ -1808,7 +1808,7 @@ export function reduceRecordedFactEvent(
       }
       if (
         (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        (event.ageBand !== undefined && !["adult", "under_18"].includes(event.ageBand)) ||
+        (event.ageBand != null && !["adult", "under_18"].includes(event.ageBand)) ||
         !Number.isFinite(event.writtenAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -1856,7 +1856,7 @@ export function reduceRecordedFactEvent(
               : {}),
           ...(event.ageBand
             ? { ageBand: event.ageBand }
-            : sameFormTimeEdit && movement.legalForm?.ageBand
+            : event.ageBand === undefined && sameFormTimeEdit && movement.legalForm?.ageBand
               ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
