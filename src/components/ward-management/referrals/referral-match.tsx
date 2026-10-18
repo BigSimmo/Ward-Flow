@@ -66,11 +66,7 @@ import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-n
 import { renderReferralMatchTiers } from "./referral-match-tiers";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import {
-  turnaroundEligibilityAllows,
-  unitTurnaroundSource,
-} from "@/components/ward-management/ward-turnaround-priority";
-import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
 const NO_ADMISSIONS: readonly Admission[] = [];
@@ -237,36 +233,6 @@ export function ReferralMatchView({
       (linkedMovement.closure || linkedMovement.stage === "arrived" || linkedMovement.acceptedUnitId)
     )
       return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
-    const targetUnit = units.find((unit) => unit.id === unitId);
-    if (linkedMovement) {
-      const openRequest = referral.destinations.some(
-        (arm) =>
-          arm.state === "queued" &&
-          arm.withdrawnAt === undefined &&
-          arm.destination.kind === "psychiatric_ward" &&
-          (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
-      );
-      if (!openRequest)
-        return { disabledReason: "Turnaround preference requires an open request for this receiving unit." };
-      if (targetUnit) {
-        const movementVerdict = eligibility(linkedMovement, targetUnit, now);
-        if (!turnaroundEligibilityAllows(movementVerdict, targetUnit)) {
-          const blockedGate = movementVerdict.gates.find(
-            (gate) =>
-              !gate.pass &&
-              gate.gate !== "allocatable_bed" &&
-              gate.gate !== "capacity_freshness" &&
-              !(gate.gate === "security" && unitHasLockedBeds(targetUnit)),
-          );
-          return {
-            disabledReason:
-              blockedGate?.detail ?? "The receiving unit's clinical and legal gates must allow this movement.",
-          };
-        }
-      } else {
-        return { disabledReason: "The receiving unit is unavailable." };
-      }
-    }
     const source = unitTurnaroundSource(turnaroundState, unitId, now, cldEnabled);
     if (!source)
       return { disabledReason: "No current CLD-ready admission or unblocked confirmed departure on this unit." };
