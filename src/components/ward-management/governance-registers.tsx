@@ -1070,7 +1070,12 @@ function GovernanceSession({
     choose(list[next] ?? null);
   }
 
-  function recordReview(decision: AuditReview["decision"], onSettled?: (accepted: boolean) => void): boolean {
+  function recordReview(
+    decision: AuditReview["decision"],
+    onSettled?: (accepted: boolean) => void,
+    /** Runs just before dispatch, so a pending notice never follows a synchronous outcome. */
+    onStart?: () => void,
+  ): boolean {
     if (!api || !canReview || !selected || selected.generation !== api.worldGeneration) return false;
     const command = ++reviewCommandRef.current;
     const count = history.length;
@@ -1102,6 +1107,7 @@ function GovernanceSession({
     };
     const fail = () => settle(undefined);
     try {
+      onStart?.();
       const completion = record();
       if (completion && "then" in completion) void completion.then(settle, fail);
       else settle(completion);
@@ -2195,14 +2201,22 @@ function GovernanceSession({
               onClick={() => {
                 if (endorseVerdict === "" || endorseRole === "") return;
                 const session = endorseSessionRef.current;
-                setAnnouncement("Recording review…");
-                recordReview(endorseVerdict, (accepted) => {
-                  if (endorseSessionRef.current !== session) return;
-                  setAnnouncement(
-                    accepted ? "Review recorded." : "Review not confirmed. Review the event before trying again.",
-                  );
-                  if (accepted) closeEndorse();
-                });
+                const notConfirmed = "Review not confirmed. Review the event before trying again.";
+                let started = false;
+                const sent = recordReview(
+                  endorseVerdict,
+                  (accepted) => {
+                    if (endorseSessionRef.current !== session) return;
+                    setAnnouncement(accepted ? "Review recorded." : notConfirmed);
+                    if (accepted) closeEndorse();
+                  },
+                  () => {
+                    started = true;
+                    setAnnouncement("Recording review…");
+                  },
+                );
+                // Refused before dispatch (stale selection or no workspace): say so, never "Recording".
+                if (!sent && !started) setAnnouncement(notConfirmed);
               }}
             >
               Record finding

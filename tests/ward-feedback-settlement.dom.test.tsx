@@ -289,6 +289,35 @@ describe("endorsement feedback", () => {
     expect(screen.queryAllByTestId("toast").length).toBe(0);
     expect(within(detail).getByRole("status").textContent?.includes("not confirmed")).toBe(true);
   });
+  it("says not confirmed, never Recording, when the sheet's review is refused before dispatch", () => {
+    const dispatch = vi.fn<WardCommandDispatch>();
+    function StaleHarness() {
+      const flow = useWardFlow();
+      return (
+        <GovernanceWorkbench
+          movements={flow.movements}
+          units={flow.units}
+          now={NOW_ANCHOR}
+          api={{ ...flow, worldGeneration: flow.worldGeneration + 1, dispatch }}
+        />
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StaleHarness />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(document.querySelector<HTMLButtonElement>("[data-audit-row]")!);
+    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
+    fireEvent.change(screen.getByLabelText("Decision"), { target: { value: "reviewed" } });
+    const role = screen.getByLabelText("Reviewing role") as HTMLSelectElement;
+    fireEvent.change(role, { target: { value: role.options[1]!.value } });
+    fireEvent.click(screen.getByRole("button", { name: "Record finding" }));
+    expect(dispatch).not.toHaveBeenCalled();
+    const announced = document.body.textContent ?? "";
+    expect(announced.includes("Recording review")).toBe(false);
+    expect(announced.includes("Review not confirmed")).toBe(true);
+  });
   it("keeps a reopened draft when an earlier endorsement completes", async () => {
     const command = deferred<WardCommandOutcome>();
     render(
@@ -442,4 +471,43 @@ describe("clipboard feedback", () => {
       expect(screen.queryByText(/Could not copy/) !== null).toBe(true);
     },
   );
+  it.each(["legal", "call"] as const)("falls back to the legacy copy path in %s controls", async (kind) => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
+    try {
+      render(
+        kind === "legal" ? (
+          <WardFlowProvider initialNow={NOW_ANCHOR}>
+            <LegalFormsScreen />
+          </WardFlowProvider>
+        ) : (
+          calls()
+        ),
+      );
+      fireEvent.click(
+        kind === "legal"
+          ? screen.getByRole("button", { name: /Copy for handover/ })
+          : screen.getByRole("button", { name: /^Call Mock service/ }),
+      );
+      await act(async () => {});
+      expect(execCommand).toHaveBeenCalledWith("copy");
+      expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(true);
+    } finally {
+      Reflect.deleteProperty(document, "execCommand");
+    }
+  });
+  it("raises a legal-forms copy failure as a toast, which stays visible above the sheet and drawer", async () => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <LegalFormsScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Copy for handover/ }));
+    await act(async () => {});
+    expect(screen.getAllByTestId("toast").some((toast) => toast.textContent?.includes("Could not copy"))).toBe(true);
+  });
 });
