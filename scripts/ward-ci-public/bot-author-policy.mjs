@@ -7,7 +7,8 @@
 // could auto-merge with no human review. Dependabot only edits dependency manifests, lockfiles and
 // action pins, none of which match, so its PRs are unaffected. Human commits are never judged here.
 //
-// CI usage (pull_request only): GITHUB_TOKEN, GITHUB_REPOSITORY and WARD_PR_NUMBER are read from
+// CI usage: .github/workflows/bot-author-policy.yml runs MAIN's copy of this script under
+// pull_request_target (never PR code). GITHUB_TOKEN, GITHUB_REPOSITORY and WARD_PR_NUMBER are read from
 // the environment. Missing or unreadable commit data fails closed.
 import process from "node:process";
 import { pathToFileURL } from "node:url";

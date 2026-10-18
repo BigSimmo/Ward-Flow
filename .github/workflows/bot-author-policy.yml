@@ -1,0 +1,39 @@
+name: Ward Flow bot-author policy
+
+# Fails a pull request when a bot-authored commit touches supabase/**, backend/**/infra/*.sql or a
+# clinical path (scripts/ward-ci-public/bot-author-policy.mjs). pull_request_target runs in the
+# base repository's context, so this workflow must NEVER check out or execute pull-request code:
+# it checks out only the base commit (main's copy of the script) and reads PR metadata, commit
+# authors and changed files through the GitHub API. No secrets beyond GITHUB_TOKEN are used.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ward-bot-author-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  bot-author-policy:
+    name: Ward Flow bot-author policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # Base commit only (trusted code), never the PR head or merge ref.
+      - name: Check out the base revision's policy script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/ward-ci-public/bot-author-policy.mjs
+          sparse-checkout-cone-mode: false
+      - name: Check bot-authored commits on protected paths
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/ward-ci-public/bot-author-policy.mjs
