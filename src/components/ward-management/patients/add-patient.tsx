@@ -465,11 +465,13 @@ export function AddPatientForm() {
       return;
     }
     setSavedOutsideView(null);
-    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change.
-    toast?.push({
-      tone: "success",
-      title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
-    });
+    // shell-24 (13 Oct 2026): say the save worked. The toast outlives the page change. A late
+    // record already had its "added" toast when the wait ended, so it only says it is opening.
+    toast?.push(
+      late
+        ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
+        : { tone: "success", title: `${added.givenName} ${added.familyName} added, ${added.umrn}` },
+    );
     if (prior.intent === "refer") {
       submitIntentRef.current = "profile";
       const params = new URLSearchParams();

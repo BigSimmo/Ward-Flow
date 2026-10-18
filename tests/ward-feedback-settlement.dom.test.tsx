@@ -200,15 +200,19 @@ describe("patient registration command settlement", () => {
     try {
       const command = deferred<WardCommandOutcome>();
       const dispatch = vi.fn<WardCommandDispatch>(() => command.promise);
-      const view = render(form(dispatch));
+      const view = render(<ToastProvider>{form(dispatch)}</ToastProvider>);
       fill();
       fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
       await act(async () => command.resolve({ commandId: "own-add", status: "accepted" }));
       act(() => vi.advanceTimersByTime(3000));
       expect(router.push.mock.calls.length).toBe(0);
-      view.rerender(form(dispatch, [own]));
+      view.rerender(<ToastProvider>{form(dispatch, [own])}</ToastProvider>);
       expect(router.push.mock.calls.length).toBe(1);
       expect(router.push.mock.calls[0]?.[0] === patientHref(own.id)).toBe(true);
+      // One "added" toast for one save; the late arrival only says the record is available.
+      const toasts = screen.getAllByTestId("toast").map((toast) => toast.textContent ?? "");
+      expect(toasts.filter((text) => text.includes(" added, ")).length).toBe(1);
+      expect(toasts.some((text) => text.includes("record now available"))).toBe(true);
     } finally {
       vi.useRealTimers();
     }
