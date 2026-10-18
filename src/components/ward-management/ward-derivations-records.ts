@@ -10,37 +10,10 @@ import {
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type Movement, type StepBackReason, stepBackReasonLabels } from "@/components/ward-management/ward-model";
 
-/** A real, per-movement audit trail built from actual fields — never generic flavour text. */
-export function movementTimeline(movement: Movement) {
-  const events: Array<{ at: Instant; label: string }> = [{ at: movement.openedAt, label: "Movement opened" }];
-  for (const change of movement.statusChanges) {
-    events.push({ at: change.at, label: `Legal status changed: ${change.from} → ${change.to} (${change.by})` });
-  }
-  for (const decline of movement.declines) {
-    events.push({ at: decline.at, label: `Declined by referral: ${decline.reason.replace(/_/g, " ")}` });
-  }
-  if (movement.transport?.acceptedAt !== undefined) {
-    events.push({ at: movement.transport.acceptedAt, label: `Transport accepted by ${movement.transport.provider}` });
-  }
-  if (movement.transport?.enRouteAt !== undefined) {
-    events.push({ at: movement.transport.enRouteAt, label: "Transport en route" });
-  }
-  if (movement.transport?.collectedAt !== undefined) {
-    events.push({ at: movement.transport.collectedAt, label: "Patient collected" });
-  }
-  if (movement.transport?.arrivedAt !== undefined) {
-    events.push({ at: movement.transport.arrivedAt, label: "Arrived at destination" });
-  }
-  if (movement.closure) {
-    events.push({ at: movement.closure.at, label: movement.closure.reason });
-  }
-  return events.sort((a, b) => a.at - b.at);
-}
-
 /**
  * Task 9 (spec item 7): the governance board's audit of changes — every urgency change, legal
  * status change, pull release and transport cancellation across ALL movements, not one patient's
- * own timeline (`movementTimeline` above stays scoped to a single movement; this is the
+ * own timeline (`movementTimeline` in `ward-derivations.ts` stays scoped to a single movement; this is the
  * statewide counterpart). Newest first, so the most recent decision is the one a reviewer sees
  * without scrolling.
  *

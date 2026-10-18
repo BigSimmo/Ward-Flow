@@ -50,6 +50,7 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
@@ -89,6 +90,62 @@ export type { ShortlistCandidate } from "./ward-derivations-shortlist";
 export { changeAudit, MINIMUM_EFFECTIVENESS_SAMPLE, effectivenessNumbers } from "./ward-derivations-records";
 export type { ChangeAuditEntry } from "./ward-derivations-records";
 export { stageCopy };
+
+/**
+ * Whole-branch review Important 5: the security gate passes a Secure ward for an Open movement
+ * on purpose — a locked ward can physically hold an open-status patient, so it is not a
+ * *failure*. But it is also not a neutral match: placing a voluntary or open-status patient on
+ * a locked ward is a real clinical decision, and the gate row reads "Met" with the affirmative
+ * detail "Secure ward meets an open requirement", which hides that decision behind a tick.
+ *
+ * `ward-eligibility.ts` is a protected surface, so the gate's pass/fail semantics are deliberately
+ * untouched. This is the separate, surfaced fact the shortlist and the diagram render alongside
+ * the passing gate so a coordinator sees it before confirming.
+ *
+ * ⚠️ `!unitHasOpenBeds(unit)` — WHOLLY locked, not merely "has some locked beds" — deliberately,
+ * since the 2026-09-04 locked/open split added mixed wards. `MORE_RESTRICTIVE_NOTE` below says "a
+ * locked ward"; a mixed ward with open beds free is not one, and this function does not know which
+ * specific bed a mixed-ward placement would land on. Flagging every mixed ward here would call a
+ * ward "locked" that is mostly open — the exact ward-level/bed-level conflation the owner's
+ * locked/open ruling warns against — so a mixed ward raises no notice from this function; only a
+ * wholly locked one does, matching what `unit.security === "Secure"` meant before this split.
+ * (Plan author's — the implementer who ran Tasks 3 and 4 — reasoning, 2026-09-04. Not an owner
+ * ruling.)
+ */
+export function isMoreRestrictiveThanRequired(movement: Movement, unit: Unit): boolean {
+  return movement.security === "Open" && !unitHasOpenBeds(unit);
+}
+
+/** The wording used wherever `isMoreRestrictiveThanRequired` is surfaced, so it reads identically
+ * on the shortlist row, the gate note, the suggestion badge and the diagram node. */
+export const MORE_RESTRICTIVE_NOTE = "More restrictive than required — a locked ward for an open-status movement";
+
+/** A real, per-movement audit trail built from actual fields — never generic flavour text. */
+export function movementTimeline(movement: Movement) {
+  const events: Array<{ at: Instant; label: string }> = [{ at: movement.openedAt, label: "Movement opened" }];
+  for (const change of movement.statusChanges) {
+    events.push({ at: change.at, label: `Legal status changed: ${change.from} → ${change.to} (${change.by})` });
+  }
+  for (const decline of movement.declines) {
+    events.push({ at: decline.at, label: `Declined by referral: ${decline.reason.replace(/_/g, " ")}` });
+  }
+  if (movement.transport?.acceptedAt !== undefined) {
+    events.push({ at: movement.transport.acceptedAt, label: `Transport accepted by ${movement.transport.provider}` });
+  }
+  if (movement.transport?.enRouteAt !== undefined) {
+    events.push({ at: movement.transport.enRouteAt, label: "Transport en route" });
+  }
+  if (movement.transport?.collectedAt !== undefined) {
+    events.push({ at: movement.transport.collectedAt, label: "Patient collected" });
+  }
+  if (movement.transport?.arrivedAt !== undefined) {
+    events.push({ at: movement.transport.arrivedAt, label: "Arrived at destination" });
+  }
+  if (movement.closure) {
+    events.push({ at: movement.closure.at, label: movement.closure.reason });
+  }
+  return events.sort((a, b) => a.at - b.at);
+}
 
 /** Same reason `stageCopy` exists: `BedReleaseState`'s own values (`BED_RELEASE_STATES` in
  *  ward-model.ts) are raw lowercase lifecycle identifiers, never sentence-case display text.
