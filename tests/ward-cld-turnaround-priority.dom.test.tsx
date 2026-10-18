@@ -6,6 +6,7 @@ import { ReferralMatchView } from "@/components/ward-management/referrals/referr
 import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import type { Referral } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -42,7 +43,7 @@ function fixture() {
   const base = state.referrals.find(
     (r) => r.destinations.some((d) => d.state === "queued") && !state.movements.some((m) => m.referralId === r.id),
   )!;
-  const referral = {
+  const referral: Referral = {
     ...base,
     ageBand: "Adult" as const,
     destinations: [
@@ -237,6 +238,52 @@ describe("human turnaround preference control", () => {
     );
     fireEvent.click(button);
     expect(events).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { phone: false, closed: "declined" },
+    { phone: true, closed: "declined" },
+    { phone: false, closed: "withdrawn" },
+    { phone: true, closed: "withdrawn" },
+  ] as const)("referral-only staging refuses a $closed ward arm (phone=$phone)", ({ phone, closed }) => {
+    const f = fixture();
+    const wardArm = f.referral.destinations[0]!;
+    if (closed === "declined") wardArm.state = "declined";
+    else wardArm.withdrawnAt = now;
+    f.referral.destinations.push({
+      destination: { kind: "emergency_department", edId: "rph-ed", purpose: "medical_assessment" },
+      state: "queued",
+    });
+    const events = renderFixture(f, { phone });
+    const button = screen.queryByRole("button", { name: "Flag Turnaround Priority" });
+    if (closed === "declined") {
+      // A decided ward arm leaves only the ED presentation review, which has no bed-staging action.
+      expect(button).not.toBeInTheDocument();
+    } else {
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(
+        "Turnaround preference requires an open request for this receiving unit.",
+      );
+      fireEvent.click(button!);
+    }
+    expect(events).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("keeps generic queued ward requests eligible for staging (phone=%s)", (phone) => {
+    const f = fixture();
+    expect(f.referral.destinations[0]!.destination).not.toHaveProperty("unitId");
+    const events = renderFixture(f, { phone });
+    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    expect(events).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
+        referralId: f.referral.id,
+        unitId: f.unitId,
+      }),
+    );
+    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).toHaveAccessibleDescription(
+      "Turnaround preference already recorded for this unit.",
+    );
   });
 
   it("allows a confirmed, unblocked occupied-bed departure with CLD disabled", () => {

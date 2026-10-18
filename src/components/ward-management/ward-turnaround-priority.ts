@@ -1,6 +1,6 @@
 import type { Instant } from "./ward-clock";
 import type { WardFlowState } from "./ward-flow-reducer";
-import type { Movement, TurnaroundPriority, Unit } from "./ward-model";
+import type { Movement, Referral, TurnaroundPriority, Unit } from "./ward-model";
 import type { EligibilityVerdict } from "./ward-eligibility";
 import { unitHasLockedBeds } from "./ward-bed-designation";
 import { admissionCriteriaEligibility } from "./ward-discharge-records";
@@ -21,6 +21,17 @@ export function turnaroundEligibilityAllows(verdict: EligibilityVerdict, unit: U
   );
 }
 
+/** A ward request may address one receiving unit or any suitable unit in the network. */
+export function referralHasOpenTurnaroundRequest(referral: Referral, unitId: string): boolean {
+  return referral.destinations.some(
+    (arm) =>
+      arm.state === "queued" &&
+      arm.withdrawnAt === undefined &&
+      arm.destination.kind === "psychiatric_ward" &&
+      (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
+  );
+}
+
 /** A staging preference must belong to a live request, including legacy direct movements. */
 export function movementHasOpenTurnaroundRequest(
   state: Pick<WardFlowState, "referrals">,
@@ -29,15 +40,7 @@ export function movementHasOpenTurnaroundRequest(
 ): boolean {
   if (!movement.referralId) return movement.referredUnitIds.includes(unitId);
   return state.referrals.some(
-    (referral) =>
-      referral.id === movement.referralId &&
-      referral.destinations.some(
-        (arm) =>
-          arm.state === "queued" &&
-          arm.withdrawnAt === undefined &&
-          arm.destination.kind === "psychiatric_ward" &&
-          (arm.destination.unitId === undefined || arm.destination.unitId === unitId),
-      ),
+    (referral) => referral.id === movement.referralId && referralHasOpenTurnaroundRequest(referral, unitId),
   );
 }
 

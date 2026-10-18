@@ -68,6 +68,7 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   movementHasOpenTurnaroundRequest,
+  referralHasOpenTurnaroundRequest,
   turnaroundEligibilityAllows,
   unitTurnaroundSource,
 } from "@/components/ward-management/ward-turnaround-priority";
@@ -239,10 +240,12 @@ export function ReferralMatchView({
     )
       return { disabledReason: "Turnaround preference requires a waiting, unplaced movement." };
     const targetUnit = units.find((unit) => unit.id === unitId);
+    const openRequest = linkedMovement
+      ? movementHasOpenTurnaroundRequest(turnaroundState, linkedMovement, unitId)
+      : referralHasOpenTurnaroundRequest(referral, unitId);
+    if (!openRequest)
+      return { disabledReason: "Turnaround preference requires an open request for this receiving unit." };
     if (linkedMovement) {
-      const openRequest = movementHasOpenTurnaroundRequest(turnaroundState, linkedMovement, unitId);
-      if (!openRequest)
-        return { disabledReason: "Turnaround preference requires an open request for this receiving unit." };
       if (targetUnit) {
         const movementVerdict = eligibility(linkedMovement, targetUnit, now);
         if (!turnaroundEligibilityAllows(movementVerdict, targetUnit)) {

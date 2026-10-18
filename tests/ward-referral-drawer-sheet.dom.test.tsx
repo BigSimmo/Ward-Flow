@@ -337,12 +337,20 @@ describe("owner pins carried over from the retired full-page form", () => {
   });
 
   it("does not save opted-in typed history before the debounce", () => {
+    vi.useFakeTimers();
     const setItem = vi.spyOn(Storage.prototype, "setItem");
-    renderDrawer();
-    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
-    fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
-    expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
-    setItem.mockRestore();
+    try {
+      renderDrawer();
+      fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+      fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
+      act(() => vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS - 1));
+      const draftKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("wf-draft:v1:"));
+      expect(draftKeys).toEqual([]);
+      expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
+    } finally {
+      setItem.mockRestore();
+      vi.useRealTimers();
+    }
   });
 
   it("caps the wards chosen and says choose up to the cap", () => {
