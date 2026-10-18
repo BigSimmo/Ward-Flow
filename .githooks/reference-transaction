@@ -1,4 +1,0 @@
-#!/bin/sh
-# Retired: The legacy Ward Flow integration line (codex/task-ward-flow-live-state-20260831)
-# was retired with the transition to the standalone BigSimmo/Ward-Flow repository.
-exit 0

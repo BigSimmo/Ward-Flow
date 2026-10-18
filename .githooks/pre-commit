@@ -212,11 +212,12 @@ fi
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-# core.hooksPath is an absolute path to the primary checkout, so this hook also
-# runs from linked worktrees whose branch predates the sync tooling and therefore
-# does not contain scripts/update-docs-inventory.mjs. Those commits aborted with
-# MODULE_NOT_FOUND before the author could do anything about it. Fail open for
-# that one task instead.
+# scripts/install-git-hooks.mjs sets the relative core.hooksPath `.githooks`, which
+# each linked worktree resolves against its own checkout. A worktree can still run
+# this hook without scripts/update-docs-inventory.mjs (an older branch, or a machine
+# whose core.hooksPath was set to an absolute path in another checkout). Those
+# commits aborted with MODULE_NOT_FOUND before the author could do anything about
+# it. Fail open for that one task instead.
 if [ "$sync_inventory" = "1" ] && [ ! -f scripts/update-docs-inventory.mjs ]; then
   if git cat-file -e "HEAD:scripts/update-docs-inventory.mjs" 2>/dev/null; then
     echo "[pre-commit] scripts/update-docs-inventory.mjs was removed or renamed by the pending commit; refusing to skip inventory synchronization." >&2
