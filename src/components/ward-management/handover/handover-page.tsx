@@ -2,19 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type Dispatch,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  Check,
-  CheckCircle2,
   ChevronDown,
   ClipboardCopy,
   Clock,
@@ -27,34 +16,18 @@ import {
   Timer as TimerIcon,
 } from "lucide-react";
 
-import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import {
-  formatInstantWithDay,
-  formatSheetMoment,
-  type Instant,
-  isClockBreached,
-} from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
-import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { Patient } from "@/components/ward-management/ward-patients";
-import { HEALTH_SERVICES, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
-import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { referralForMovement } from "@/components/ward-management/ward-derivations";
 import {
   Button,
   Card,
@@ -73,7 +46,6 @@ import {
   PortraitRail,
   Segmented,
   Select,
-  SrOnly,
   StatusGlyph,
   TabPanel,
   Tabs,
@@ -131,146 +103,25 @@ import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-shee
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
 
-import { type HandoverScope, NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
+import { NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
+import { HandoverHistory, HandoverScopeControl, StatusCheckIcon } from "./handover-page-parts";
+import {
+  allRecordsScopeLabel,
+  handoverScopeLabel,
+  movementInHandoverScope,
+  recordHandoverSignOff,
+  resolveAdmissionPatient,
+} from "./handover-scope-rules";
+
+export {
+  handoverScopeLabel,
+  movementInHandoverScope,
+  movementIsUrgent,
+  resolveMovementPatient,
+  urgentMovementsOutsideScope,
+} from "./handover-scope-rules";
 
 export { type HandoverScope, handoverScopeValue, parseHandoverScope } from "./handover-scope";
-
-function allRecordsScopeLabel(access: WardAccess): string {
-  return accessIsWholeNetwork(access) ? "Whole network" : "All records you can access";
-}
-
-/** THE SCOPE'S NAME */
-export function handoverScopeLabel(
-  scope: HandoverScope,
-  units: Unit[],
-  allRecordsLabel = "Whole network",
-): string | undefined {
-  switch (scope.kind) {
-    case "network":
-      return allRecordsLabel;
-    case "service":
-      return scope.id;
-    case "ward":
-      return units.find((unit) => unit.id === scope.id)?.name;
-    case "ed":
-      return edById(scope.id)?.name;
-    case "team": {
-      const team = communityTeamById(scope.id);
-      return team === null ? undefined : team.name;
-    }
-  }
-}
-
-function movementTouchesUnit(movement: Movement, unitId: string): boolean {
-  return movement.acceptedUnitId === unitId || movement.referredUnitIds.includes(unitId);
-}
-
-/** WHETHER AN OPEN MOVEMENT BELONGS TO THIS SCOPE */
-export function movementInHandoverScope(
-  movement: Movement,
-  scope: HandoverScope,
-  units: Unit[],
-  referrals: Referral[],
-): boolean {
-  switch (scope.kind) {
-    case "network":
-      return true;
-    case "ed":
-      return movement.originEdId === scope.id;
-    case "ward":
-      return movementTouchesUnit(movement, scope.id);
-    case "service":
-      return movementBelongsToService(movement, scope.id, units);
-    case "team": {
-      const team = communityTeamById(scope.id);
-      if (team === null) return false;
-      const referral = referralForMovement(movement, referrals);
-      if (referral === undefined) return false;
-      return referral.destinations.some(
-        (addressed) => addressed.destination.kind === "community_team" && addressed.destination.teamName === team.name,
-      );
-    }
-  }
-}
-
-/**
- * Shift handover sign-off. The engine stores role and time only. This helper dispatches first
- * and returns a record only when that call is allowed and does not throw — never a claim that
- * the sheet was signed before the reducer accepted it, and never a claim that anyone was notified.
- */
-function recordHandoverSignOff(
-  dispatch: Dispatch<WardFlowEvent>,
-  now: Instant,
-  role: WardFlowRole = "coordinator",
-): { role: WardFlowRole; at: Instant } | null {
-  if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
-  try {
-    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now });
-  } catch {
-    return null;
-  }
-  return { role, at: now };
-}
-
-/** URGENT, FOR THE PURPOSE OF THE "OUTSIDE THIS FILTER" FOOTER */
-export function movementIsUrgent(movement: Movement, now: Instant): boolean {
-  if (movement.flaggedUrgent) return true;
-  const dueAt = movement.legalForm?.dueAt;
-  return dueAt !== undefined && isClockBreached(dueAt, now);
-}
-
-/** THE WHOLE OF CONDITION 3, AS ONE FUNCTION */
-export function urgentMovementsOutsideScope(
-  openMovements: Movement[],
-  scope: HandoverScope,
-  units: Unit[],
-  referrals: Referral[],
-  now: Instant,
-): Movement[] {
-  return openMovements.filter(
-    (movement) => !movementInHandoverScope(movement, scope, units, referrals) && movementIsUrgent(movement, now),
-  );
-}
-
-/**
- * The patient a handover row names, read only from the model's own links.
- *
- * A typed-in table of 35 names and record numbers keyed by movement id used to win over the
- * record here. None of its rows matched: 16 put another patient's name on the movement and the
- * rest invented a person the model does not hold (25 September 2026 audit, A1). A movement linked
- * to nobody now says so, in the resolver's own words.
- */
-export function resolveMovementPatient(
-  movement: Movement,
-  patients: Patient[],
-  referrals: Referral[],
-): { name: string; umrn: string; patientId?: string } {
-  const info = resolveSubjectPatient(movement, { patients, referrals });
-  return {
-    name: info.formalName,
-    umrn: info.umrn,
-    patientId: info.patient?.id,
-  };
-}
-
-/**
- * The same resolver as `resolveMovementPatient` above, for a row keyed by an admission (a bed
- * release) rather than a movement — same A1 discipline: read only from the model's own link
- * (`Admission.patientId`/`referralId`), never a typed name table. Added for the Stranded Delayed
- * Egress table, which until 25 September 2026 named six patients nobody in this model holds, each
- * under a real seeded UMRN that belongs to someone else entirely (audit finding, same date).
- */
-function resolveAdmissionPatient(
-  admission: Admission | undefined,
-  patients: Patient[],
-  referrals: Referral[],
-): { name: string; umrn: string } {
-  const info = resolveSubjectPatient(admission, { patients, referrals });
-  return {
-    name: info.formalName,
-    umrn: info.umrn,
-  };
-}
 
 /* ================================================================== the page */
 
@@ -1526,128 +1377,5 @@ export function HandoverPage() {
         note="Synthetic data · Not approved for clinical use · Printed copies carry the time they were taken"
       />
     </main>
-  );
-}
-
-function StatusCheckIcon(signed: boolean) {
-  return signed ? CheckCircle2 : Check;
-}
-
-/** History: past items only. Sign-offs come from the engine; the rest is this session only. */
-function HandoverHistory({
-  signOffs,
-  meetings,
-  takenAt,
-  now,
-}: {
-  signOffs: readonly { at: Instant; by: WardFlowRole }[];
-  meetings: { at: Instant; minutes: number }[];
-  takenAt: Instant | null;
-  now: Instant;
-}) {
-  const unsigned = HANDOVER_SHIFTS.filter((shift) => {
-    return handoverAt(shift.id, now) <= now && handoverSignedAt(signOffs, shift.id, now) === null;
-  });
-  return (
-    <Card as="section" aria-label="Handover history" data-testid="ward-handover-history">
-      <ul className={styles.history}>
-        {[...signOffs].reverse().map((record) => (
-          <li key={`sign-${record.at}-${record.by}`}>
-            <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
-            <StatusGlyph tone="success" size={9} />
-            <span>Handover signed off as {record.by === "coordinator" ? "flow coordinator" : record.by}</span>
-          </li>
-        ))}
-        {takenAt !== null ? (
-          <li>
-            <span className={styles.mono}>{formatInstantWithDay(takenAt, now)}</span>
-            <StatusGlyph tone="success" size={9} />
-            <span>Printed copy taken, this session only</span>
-          </li>
-        ) : null}
-        {meetings.map((meeting) => (
-          <li key={`meet-${meeting.at}-${meeting.minutes}`}>
-            <span className={styles.mono}>{formatInstantWithDay(meeting.at, now)}</span>
-            <StatusGlyph tone="success" size={9} />
-            <span>Bed flow meeting, {meeting.minutes} min, this session only</span>
-          </li>
-        ))}
-        {unsigned.map((shift) => (
-          <li key={`unsigned-${shift.id}`}>
-            <span className={styles.mono}>{formatInstantWithDay(handoverAt(shift.id, now), now)}</span>
-            <StatusGlyph tone="neutral" size={9} />
-            <span>No sign-off recorded for the {shift.label.toLowerCase()} handover</span>
-          </li>
-        ))}
-        {signOffs.length === 0 && takenAt === null && meetings.length === 0 && unsigned.length === 0 ? (
-          <li>
-            <span />
-            <StatusGlyph tone="neutral" size={9} />
-            <span>Nothing has happened yet on this shift</span>
-          </li>
-        ) : null}
-      </ul>
-    </Card>
-  );
-}
-
-/** THE ONE CONTROL — `<select aria-label="Filter the sheet">` */
-function HandoverScopeControl({
-  value,
-  onChange,
-  units,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  units: Unit[];
-}) {
-  const access = useEffectiveWardAccess();
-  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
-  const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
-  const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
-  const scopeId = useId();
-
-  return (
-    <label htmlFor={scopeId} className={styles.barSelect} data-print-hide>
-      <SrOnly>Filter the sheet</SrOnly>
-      <Select
-        id={scopeId}
-        aria-label="Filter the sheet"
-        data-testid="ward-handover-scope-select"
-        boxClassName={styles.barSelect}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value={NETWORK_SCOPE_VALUE}>{allRecordsScopeLabel(access)}</option>
-        <optgroup label="Service">
-          {HEALTH_SERVICES.map((service) => (
-            <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
-              {service}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Ward">
-          {sortedUnits.map((unit) => (
-            <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
-              {unit.name}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Emergency department">
-          {sortedEds.map((ed) => (
-            <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
-              {ed.name}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Community team">
-          {sortedTeams.map((team) => (
-            <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
-              {team.name}
-            </option>
-          ))}
-        </optgroup>
-      </Select>
-    </label>
   );
 }
