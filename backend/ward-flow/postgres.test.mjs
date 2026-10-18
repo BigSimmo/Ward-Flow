@@ -1691,18 +1691,39 @@ test(
       assert.equal(recorded.unitId, unitId);
       assert.equal(recorded.byRole, "coordinator");
 
-      // Opening a record is logged once a minute per account, record and screen; only the
-      // statewide coordinator reads the log. A sign-out ends that sign-in at once, not when its
-      // token expires, and another sign-in of the same account carries on.
-      const patientId = initial.payload.state.patients[0].id;
+      // Opening a record is logged once a minute per account, record and screen, only for a
+      // record this desk can see, and at most 60 a minute per account; only the statewide
+      // coordinator reads the log. A sign-out ends that sign-in at once, not when its token
+      // expires, and another sign-in of the same account carries on.
+      const [patientId, otherPatientId] = initial.payload.state.patients.map((patient) => patient.id);
       const opened = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
       assert.equal(opened.status, 200);
       assert.deepEqual(await opened.json(), { logged: true });
-      await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
+      const repeated = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
+      assert.deepEqual(await repeated.json(), { logged: false });
       assert.equal(
-        (await request(`${first}/record-access`, credential, { patientId: "Jane Citizen", surface: "patient" })).status,
+        (await request(`${first}/record-access`, credential, { patientId: "not a record id", surface: "patient" }))
+          .status,
         400,
       );
+      assert.equal(
+        (await request(`${first}/record-access`, credential, { patientId: "PT-SYN-NOT-HERE", surface: "patient" }))
+          .status,
+        404,
+      );
+      // An account that has already logged its minute's worth logs nothing more until it passes.
+      await pools[0].query(
+        "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT workspace_id, actor_id, actor_role, actor_scope, 'PT-SYN-' || n, surface, viewed_at FROM ward_flow.record_access, generate_series(1, 59) AS n WHERE actor_id = $1",
+        [actor],
+      );
+      const capped = await request(`${first}/record-access`, credential, {
+        patientId: otherPatientId,
+        surface: "patient",
+      });
+      assert.deepEqual(await capped.json(), { logged: false });
+      await pools[0].query("ALTER TABLE ward_flow.record_access DISABLE TRIGGER protect_record_access");
+      await pools[0].query("DELETE FROM ward_flow.record_access WHERE patient_id LIKE 'PT-SYN-%'");
+      await pools[0].query("ALTER TABLE ward_flow.record_access ENABLE TRIGGER protect_record_access");
       const views = await (await request(`${first}/record-access?patient=${patientId}`, credential)).json();
       assert.equal(views.views.length, 1);
       assert.equal(views.views[0].actor_role, "coordinator");
