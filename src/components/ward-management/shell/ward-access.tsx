@@ -258,7 +258,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
               announceToWardShell("Read only. This record was opened outside your care.");
               return;
             }
-            context.dispatch(event);
+            return context.dispatch(event);
           };
     // The record readers close over the whole workspace, so they are narrowed to the desk's own stays
     // too (review on PR #330). Audit and governance records stay the coordinator's.
