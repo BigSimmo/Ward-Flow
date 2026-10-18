@@ -1,5 +1,12 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Patient dialog loading — 18 October 2026
+
+`patients/patient-now-screen.tsx` loads the arrival-plan and document-detail dialogs through
+Next dynamic imports and mounts them only while open. The initial patient view retains its
+existing content, and both dialogs preserve their close and focus-return behaviour. The patient
+screen DOM suite opens and closes the asynchronously loaded dialogs.
+
 ## Current remediation seams — 8 October 2026
 
 The original map below preserves historical counts and locations. Current local changes

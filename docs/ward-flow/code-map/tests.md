@@ -1,5 +1,13 @@
 # Tests
 
+## Handover contract follow-up — 18 October 2026
+
+`helpers/ward-turnaround-fixture.ts` builds accepted movement and referral staging commands for
+the engine generator and legal-figure sweeps. The latter check that these preferences never invent
+a legal expiry. The CLD unit and DOM suites cover direct requests, closed referral arms, receiving
+gates, phone actions and production/device flag policy. The scoped last-look DOM suite also checks
+unreviewed navigation, account/scenario boundaries and cross-midnight labels.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026

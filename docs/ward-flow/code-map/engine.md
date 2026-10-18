@@ -11,6 +11,15 @@ writes without removing the general typed-event state privacy lock. Legal form s
 draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,
 `tests/ward-draft-recovery.dom.test.tsx` and existing guard, drawer, auth and provider privacy suites.
 
+## Turnaround validation follow-up — 18 October 2026
+
+`movementHasOpenTurnaroundRequest` checks the selected receiving ward against its live referral arm,
+or the explicit requested-unit list for an older movement without a linked referral. Both the
+reducer and referral controls use the same rule. CLD source hints follow the existing feature-flag
+policy: device choices may apply in development/demo, while production keeps server authority.
+The shared command generator, legal-figure sweeps, history inventory and referral-producer contract
+exercise both turnaround events.
+
 ## Turnaround preferences — 17 October 2026
 
 `ward-turnaround-priority.ts` derives eligible CLD readiness from occupied admissions, the

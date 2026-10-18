@@ -1,5 +1,14 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Handover review follow-up — 18 October 2026
+
+Phone and desktop referral review both expose the eligible turnaround preference, with the same
+receiving-unit and open-request checks. The handler raises each event by name. Canonical disabled
+controls expose their actual reason through accessible descriptions; their tooltip portals hide
+when printing. Ward/ED update snapshots acknowledge only explicit review, survive navigation and
+remain isolated by account, scenario and world generation. Header and sheet times include the day
+when necessary, and the trigger itself has a minimum 48px target.
+
 ## Handover improvements — 17 October 2026
 
 - `referrals/referral-match-tiers.tsx` renders the turnaround preference control; its parent
