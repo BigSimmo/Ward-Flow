@@ -4,7 +4,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Cohort, Movement } from "@/components/ward-management/ward-model";
 
 /**
  * ACT PERIODS — SYNTHETIC DEMO ONLY, NOT LEGALLY CHECKED.
@@ -140,9 +140,28 @@ export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): 
   return start + Math.round((end.getTime() - begin.getTime()) / 60_000);
 }
 
+/**
+ * Which of a form's periods a countdown runs to. Only the Adult and Older adult cohorts are counted
+ * on the adult period. A Youth movement may be a person under 18, and the record holds no exact
+ * age, so it counts down to the under-18 period wherever a source gives one: the shorter period, so
+ * a young person's clock never shows more time than the Act allows.
+ */
+type ActPeriodBand = "adult" | "under18";
+
+function actPeriodBandFor(cohort: Cohort | undefined): ActPeriodBand {
+  return cohort === "Adult" || cohort === "Older adult" ? "adult" : "under18";
+}
+
+/** The period length for that band: the under-18 period when the source gives one, else the adult. */
+function actPeriodLength(period: ActPeriod, band: ActPeriodBand): PeriodLength {
+  return band === "under18" && period.under18 !== undefined ? period.under18 : period.adult;
+}
+
 export type ActPeriodReading = {
   period: ActPeriod;
-  /** When the adult period would end, or undefined when no written time is recorded to count from. */
+  /** Which period `endsAt` counts to (`actPeriodBandFor`). */
+  band: ActPeriodBand;
+  /** When that period would end, or undefined when no written time is recorded to count from. */
   endsAt?: Instant;
   /** One plain sentence for the screen. Always carries the demo label. */
   text: string;
@@ -152,8 +171,9 @@ export type ActPeriodReading = {
  * What the Act period would give for this movement's current form. Counts from `formedAt`, the
  * time a person typed from the form, and from nothing else: no written time, no countdown.
  *
- * The engine records no age band for a form, so the countdown always uses the ADULT period, and
- * the sentence names the under-18 period beside it wherever a source gives a different one.
+ * The countdown follows the movement's cohort (`actPeriodBandFor`): a Youth movement counts to the
+ * under-18 period where a source gives a different one, every other cohort to the adult period. The
+ * sentence names both periods wherever they differ.
  */
 export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodReading | undefined {
   const code = movement.legalForm?.code;
@@ -161,8 +181,10 @@ export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodRe
   const period = actPeriodFor(code);
   if (!period) return undefined;
   const text = actPeriodSentence(period);
-  const endsAt = movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, period.adult, dayZero);
-  return { period, endsAt, text };
+  const band = actPeriodBandFor(movement.cohort);
+  const endsAt =
+    movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, actPeriodLength(period, band), dayZero);
+  return { period, band, endsAt, text };
 }
 
 /**
@@ -183,7 +205,12 @@ export function actPeriodSentence(period: ActPeriod): string {
 /** The countdown half of the sentence: when the period would end, or why there is no countdown. */
 export function actPeriodCountdownText(reading: ActPeriodReading, now: Instant): string {
   if (reading.endsAt === undefined) return "No written time recorded on the form, so there is nothing to count from.";
-  const ending = reading.period.under18 === undefined ? "Period would end" : "Adult period would end";
+  const ending =
+    reading.period.under18 === undefined
+      ? "Period would end"
+      : reading.band === "under18"
+        ? "Under-18 period would end (Youth cohort, may be under 18)"
+        : "Adult period would end";
   const remaining = reading.endsAt - now;
   return remaining < 0
     ? `${ending} ${formatInstantWithDay(reading.endsAt, now)}, ${splitDuration(-remaining)} ago.`
@@ -211,7 +238,8 @@ function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): nu
   const code = movement.legalForm?.code;
   const period = code === undefined ? undefined : actPeriodFor(code);
   if (!period) return undefined;
-  const span = addPeriod(movement.openedAt, period.adult, dayZero) - movement.openedAt;
+  const length = actPeriodLength(period, actPeriodBandFor(movement.cohort));
+  const span = addPeriod(movement.openedAt, length, dayZero) - movement.openedAt;
   return span > 0 ? (now - movement.openedAt) / span : undefined;
 }
 

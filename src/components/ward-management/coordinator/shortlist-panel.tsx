@@ -1,7 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
@@ -58,7 +58,13 @@ import {
   needsNoRecordedReason,
   restrictionNotice,
 } from "@/components/ward-management/ward-derivations";
-import { eligibility, type EligibilityGate, type GateResult } from "@/components/ward-management/ward-eligibility";
+import {
+  checkedGates,
+  eligibility,
+  gateMark,
+  type EligibilityGate,
+  type GateResult,
+} from "@/components/ward-management/ward-eligibility";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   ARRIVAL_MODE_LABELS,
@@ -505,8 +511,10 @@ export function ShortlistPanel({
     () => (activeVerdict ? [...activeVerdict.gates].sort((a, b) => Number(a.pass) - Number(b.pass)) : []),
     [activeVerdict],
   );
-  const metCount = useMemo(() => sortedGates.filter((g) => g.pass).length, [sortedGates]);
-  const notMetCount = sortedGates.length - metCount;
+  // Information-only gates (acuity, specialling) are listed but never counted as checks met.
+  const checkedCount = useMemo(() => checkedGates(sortedGates).length, [sortedGates]);
+  const metCount = useMemo(() => checkedGates(sortedGates).filter((g) => g.pass).length, [sortedGates]);
+  const notMetCount = checkedCount - metCount;
   const [gateFilter, setGateFilter] = useState<"all" | "open">("all");
   const eligibilityDetailsRef = useRef<HTMLDetailsElement>(null);
 
@@ -1507,7 +1515,7 @@ export function ShortlistPanel({
                 }
               }}
             >
-              <Frac done={metCount} total={sortedGates.length} label="checks clear" />
+              <Frac done={metCount} total={checkedCount} label="checks clear" />
               {notMetCount > 0 ? <span className={shortlistStyles.checksClearWarn}>· {notMetCount} open</span> : null}
             </button>
             <div className={shortlistStyles.gateFilterGroup} role="group" aria-label="Filter eligibility checks">
@@ -2226,17 +2234,20 @@ export function ShortlistPanel({
                       key={gate.gate}
                       data-testid={`ward-gate-${gate.gate}`}
                       data-pass={String(gate.pass)}
+                      data-mark={gateMark(gate)}
                       hidden={gateFilter === "open" && gate.pass ? true : undefined}
                       className={styles.shortlistGateRow}
                     >
-                      {gate.pass ? (
+                      {gateMark(gate) === "info" ? (
+                        <Info aria-hidden="true" />
+                      ) : gate.pass ? (
                         <CheckCircle2 aria-hidden="true" className={styles.shortlistGateIconOk} />
                       ) : (
                         <CircleAlert aria-hidden="true" className={styles.shortlistGateIconBad} />
                       )}
                       <span className={styles.shortlistGateLabel}>{GATE_LABELS[gate.gate]}</span>
                       <strong className={gate.pass ? styles.shortlistGateVerdictOk : styles.shortlistGateVerdictBad}>
-                        {gate.pass ? "Met" : "Not met"}
+                        {gateMark(gate) === "info" ? "For information" : gate.pass ? "Met" : "Not met"}
                       </strong>
                       <span className={styles.shortlistGateDetail}>{gate.detail}</span>
                     </li>
@@ -2244,7 +2255,7 @@ export function ShortlistPanel({
                 </ol>
                 {gateFilter === "open" && notMetCount === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-shortlist-all-gates-clear">
-                    All {sortedGates.length} eligibility checks are met.
+                    All {checkedCount} eligibility checks are met.
                   </p>
                 ) : null}
               </>

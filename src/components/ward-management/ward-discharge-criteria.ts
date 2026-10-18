@@ -9,6 +9,7 @@
  * typed text stops browser saving like any typed-text event (`eventCarriesTypedTextPayload`). They
  * lapse after `CLINICAL_VALUES.dischargeCriteriaValidity` and then need a fresh review.
  */
+import { classifyLegalStatus } from "@/components/ward-management/ward-legal-status";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
@@ -234,28 +235,24 @@ export type DischargeCriteriaChange = {
 };
 
 /**
- * Whether criteria led discharge may be used. Involuntary uses the same wide reading as the
- * reducer's discharge guard (`patientRecordIsInvoluntary`): a patient record starting
- * "Involuntary" or detained awaiting examination, or a stay whose movement is not Voluntary. A
- * patient counts as voluntary only when that is recorded. Anything else, including no recorded
- * status or a community treatment order, is not recorded, so excluding a patient is the failure.
+ * Whether criteria led discharge may be used, reading both records through `classifyLegalStatus`.
+ * Involuntary: a patient record that is detained, involuntary or on a referral for examination, or a
+ * stay whose movement is not Voluntary. A patient counts as voluntary only when that is recorded.
+ * Anything else, including no recorded status or unknown text, is not recorded, so excluding a
+ * patient is the failure.
  */
 export function criteriaEligibility(
   patientLegalStatus: string | undefined,
   movementLegalStatus: string | undefined,
   ctoInForce = false,
 ): CriteriaEligibility {
-  const patientStatus = patientLegalStatus?.trim();
-  if (ctoInForce || (patientStatus !== undefined && /community treatment order/i.test(patientStatus))) return "cto";
-  const recordInvoluntary =
-    patientStatus !== undefined &&
-    (/^involuntary\b/i.test(patientStatus) || patientStatus === "Detained awaiting examination");
-  if (recordInvoluntary || (movementLegalStatus !== undefined && movementLegalStatus !== "Voluntary")) {
-    return "involuntary";
-  }
-  if (movementLegalStatus === "Voluntary" || (patientStatus !== undefined && /^voluntary\b/i.test(patientStatus))) {
-    return "voluntary";
-  }
+  const record = classifyLegalStatus(patientLegalStatus);
+  if (ctoInForce || record === "cto") return "cto";
+  // A referral for examination is not voluntary, so it excludes criteria led discharge as involuntary.
+  const recordInvoluntary = record === "detained" || record === "referred";
+  const movement = classifyLegalStatus(movementLegalStatus);
+  if (recordInvoluntary || (movement !== "not_recorded" && movement !== "voluntary")) return "involuntary";
+  if (movement === "voluntary" || record === "voluntary") return "voluntary";
   return "not_recorded";
 }
 

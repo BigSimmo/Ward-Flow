@@ -70,8 +70,27 @@ export const ELIGIBILITY_GATES = [
 /** One gate's name. Derived from `ELIGIBILITY_GATES` so the two can never disagree. */
 export type EligibilityGate = (typeof ELIGIBILITY_GATES)[number];
 
-export type GateResult = { gate: EligibilityGate; pass: boolean; detail: string };
+/**
+ * `info` marks a gate that checks nothing and only records a staffing fact for the coordinator
+ * (acuity and specialling). It always passes so it never stops a placement, and screens must show
+ * it as information, never as a check that was met (review 18 Oct 2026, item 3). The real staffing
+ * check is `PULL_PATIENT`'s, which can see the admissions.
+ */
+export type GateResult = { gate: EligibilityGate; pass: boolean; detail: string; info?: true };
 export type EligibilityVerdict = { eligible: boolean; gates: GateResult[] };
+
+/** How a screen marks one gate: met, not met, or information only (`GateResult.info`). */
+export type GateMark = "met" | "not_met" | "info";
+
+export function gateMark(gate: GateResult): GateMark {
+  if (gate.info) return "info";
+  return gate.pass ? "met" : "not_met";
+}
+
+/** The gates that actually check something. "N of M met" counts these and only these. */
+export function checkedGates(gates: readonly GateResult[]): GateResult[] {
+  return gates.filter((gate) => !gate.info);
+}
 
 /**
  * The ward addressings of a referral, narrowed so their bed criteria are reachable.
@@ -168,6 +187,132 @@ function readyBedsNow(unit: Unit): number {
   return boundedBedAvailability(unit).available;
 }
 
+/*
+ * THE GATES BOTH PATHS SHARE (review 18 Oct 2026, item 2). `eligibility()` (a movement being
+ * accepted onto a ward) and `referralEligibility()` (a referral being placed now) restated these
+ * rules by hand, and they drifted twice: the forensic gate was missing from one path, and the
+ * sex-mix gate counted free beds differently. Each shared rule is now built once, here, and both
+ * paths call the same builder. `tests/ward-eligibility-paths-agree.test.ts` checks that both paths
+ * give the same answer on every shared gate for every seeded unit.
+ *
+ * The two DELIBERATE differences stay in each path and are the only gates the agreement test
+ * leaves out: `allocatable_bed` and `security` ask "could this ward accept in principle" on the
+ * movement path and "is there a bed to place into right now" on the referral path. See each gate's
+ * own comment for why the movement path is allowed to be lenient.
+ */
+
+/** Whether a ward is authorised for an involuntary admission, when the person needs one. */
+function authorisationGate(gate: "authorisation" | "legal_status", needed: boolean, unit: Unit): GateResult {
+  return {
+    gate,
+    pass: !needed || unit.authorised,
+    detail: needed
+      ? unit.authorised
+        ? `${unit.name} is marked able to take involuntary admissions (demo capability)`
+        : `${unit.name} is not set up for involuntary admissions (demo capability)`
+      : "No authorised destination required",
+  };
+}
+
+/** Whether the ward's cohort matches the person's age band. */
+function cohortGate(gate: "cohort" | "age", cohort: Movement["cohort"], unit: Unit, noun: string): GateResult {
+  const matches = unit.cohort === cohort;
+  return {
+    gate,
+    pass: matches,
+    detail: `${unit.cohort} unit ${matches ? "matches" : "does not match"} ${article(cohort)} ${cohort.toLowerCase()} ${noun}`,
+  };
+}
+
+/** D7: a forensic bed is never offered as a destination, whichever door the request came through. */
+function forensicGate(unit: Unit): GateResult {
+  return {
+    gate: "forensic",
+    pass: !unit.forensic,
+    detail: unit.forensic
+      ? `${unit.name} is a forensic ward and is never offered as a destination`
+      : `${unit.name} is not a forensic ward`,
+  };
+}
+
+/**
+ * The bay-mix gate: someone of the same sex is already on the ward, or more than one bed is ready
+ * so no one is placed alone. Fix 2 (26 September 2026): both paths read `readyBedsNow`, never raw
+ * `allocatable`, because a ward with three allocatable and one empty bed has one free bed.
+ */
+function sexMixGate(gender: ReferralGender | undefined, sex: RecordedSex, unit: Unit): GateResult {
+  const mixSex = mixSexOf(gender, sex);
+  const sameSexOccupants = mixSex === undefined ? 0 : (unit.sexMix[mixSex] ?? 0);
+  return {
+    gate: "sex_mix",
+    pass: sameSexOccupants > 0 || readyBedsNow(unit) > 1,
+    detail:
+      (mixSex !== undefined && sameSexOccupants > 0
+        ? `${sameSexOccupants} ${mixSex.toLowerCase()} occupants already`
+        : "No same-sex occupants; needs more than one free bed") + mixSexFlag(gender, sex),
+  };
+}
+
+/** Whether the ward confirmed its capacity recently enough to trust. */
+function freshnessGate(unit: Unit, now: Instant): GateResult {
+  const fresh = capacityIsFresh(unit, now);
+  const age = now - unit.allocatable.confirmedAt;
+  return {
+    gate: "capacity_freshness",
+    pass: fresh,
+    detail: fresh ? `Confirmed ${age} min ago` : `Last confirmed ${age} min ago — stale`,
+  };
+}
+
+/**
+ * **Owner ruling, 2026-09-10: acuity is a STAFFING fact, never a ranking.** It does not order one
+ * patient ahead of another and does not score anybody. `unit.highAcuityCapacity` is the AUTHORED
+ * total and is never decremented, and neither path is given the admissions, so this cannot say how
+ * many places are left: `remainingHighAcuityCapacity(unit, admissions)` knows that and
+ * `PULL_PATIENT` asks it. **Two checks that can disagree is worse than one honest sentence.**
+ *
+ * Information only (`info`), so no screen shows it as a check that was met. A ward with no
+ * high-acuity places is described as not staffed for them, never as "capacity reached", which read
+ * as "full right now" (review 18 Oct 2026, item 3).
+ */
+function acuityGate(requested: boolean, unit: Unit, noun: string): GateResult {
+  const places = unit.highAcuityCapacity;
+  return {
+    gate: "acuity",
+    pass: true,
+    info: true,
+    detail: !requested
+      ? `No high-acuity nursing requested ${noun === "referral" ? "on this referral" : "for this movement"}`
+      : places > 0
+        ? `High-acuity nursing requested; ward is staffed for ${places} high-acuity ${places === 1 ? "place" : "places"}. Whether one can take this patient is checked when the bed is pulled.`
+        : "High-acuity nursing requested; ward is not staffed for high-acuity places. Information only: additional shift staffing required upon admission.",
+  };
+}
+
+/**
+ * Specialling (one-to-one nursing), the same kind of staffing fact as acuity, and information only
+ * for the same reason. `unit.speciallingCapacity` is the authored total, never decremented, so this
+ * says what is staffed and where current use is decided, never how many slots are free (see
+ * `tests/ward-specialling-detail-claims-no-headroom.test.ts`). A referral records no specialling
+ * need, so the referral path says so.
+ */
+function speciallingGate(requested: boolean | undefined, unit: Unit): GateResult {
+  const places = unit.speciallingCapacity;
+  return {
+    gate: "specialling",
+    pass: true,
+    info: true,
+    detail:
+      requested === undefined
+        ? "Specialling need is not recorded on a referral"
+        : !requested
+          ? "No specialling required"
+          : places > 0
+            ? `Staffed for ${places} one-to-one — current use is checked at placement`
+            : "Specialling (one-to-one nursing) requested; ward is not staffed for one-to-one nursing. Information only: additional shift staffing required upon admission.",
+  };
+}
+
 /**
  * The movement facts `eligibility()` reads, and nothing else. Every `Movement` is one; a stay that
  * is not on a movement (a step-down candidate, `ward-step-down.ts`) builds one from its admission so
@@ -184,36 +329,11 @@ export type EligibilitySubject = Pick<
 export function eligibility(movement: EligibilitySubject, unit: Unit, now: Instant): EligibilityVerdict {
   const authorisationNeeded = requiresAuthorisedDestination(movement.legalStatus);
   const declined = movement.declines.some((decline) => decline.unitId === unit.id);
-  const fresh = capacityIsFresh(unit, now);
-  // Owner rulings 2026-09-25: the bay-mix count follows gender. A non-binary patient, or one with
-  // no gender identity recorded, is checked against recorded sex and flagged for the coordinator.
-  const mixSex = mixSexOf(movement.gender, movement.sex);
-  const sameSexOccupants = mixSex === undefined ? 0 : (unit.sexMix[mixSex] ?? 0);
-  const mixFlag = mixSexFlag(movement.gender, movement.sex);
   const genderDesignation = genderDesignationResult(movement.gender, unit, movement.genderPlacements);
-  // The free-bed measure the `sex_mix` gate below reads, the same `readyBedsNow` the referral path
-  // reads. Only `sex_mix` reads it: `allocatable_bed` on this path still passes on raw
-  // `allocatable`, deliberately (see the `security` gate's comment).
-  const availableNow = readyBedsNow(unit);
 
   const gates: GateResult[] = [
-    {
-      gate: "authorisation",
-      pass: !authorisationNeeded || unit.authorised,
-      detail: authorisationNeeded
-        ? unit.authorised
-          ? "Marked able to receive an involuntary admission (demo)"
-          : `${unit.name} is not set up for involuntary admissions (demo capability)`
-        : "Voluntary admission needs no authorisation",
-    },
-    {
-      gate: "cohort",
-      pass: unit.cohort === movement.cohort,
-      detail:
-        unit.cohort === movement.cohort
-          ? `${unit.cohort} unit matches ${article(movement.cohort)} ${movement.cohort.toLowerCase()} movement`
-          : `${unit.cohort} unit does not match ${article(movement.cohort)} ${movement.cohort.toLowerCase()} movement`,
-    },
+    authorisationGate("authorisation", authorisationNeeded, unit),
+    cohortGate("cohort", movement.cohort, unit, "movement"),
     {
       gate: "security",
       /*
@@ -269,112 +389,16 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
       pass: genderDesignation.pass,
       detail: genderDesignation.detail,
     },
-    {
-      // D7, mirrored from `referralEligibility` below: a forensic bed is never offered as a
-      // destination, unconditionally, regardless of which door the request came through. This
-      // gate was previously absent from this function even though `unit.forensic` is the same
-      // property on the same `Unit` both paths receive — nothing about a movement withholds this
-      // fact, so there was no reason it could not be checked here too. Its absence let the
-      // network's forensic bed (`brm-adult-secure`) show `eligible: true` on the movement path
-      // for 18 of the 35 seeded Adult movements, while the referral path refused that same bed
-      // outright for the same unit at the same instant.
-      //
-      // Placed immediately after `sex_designation`, mirroring `referralEligibility`'s order:
-      // both gates test a fixed property of the BED itself, decided before the gates below that
-      // test whether this particular movement's needs (security, sex mix, specialling) fit this
-      // particular bed right now. Detail wording is identical to the referral gate's — this is
-      // not a variant, it is the same rule read by both screens.
-      gate: "forensic",
-      pass: !unit.forensic,
-      detail: unit.forensic
-        ? `${unit.name} is a forensic ward and is never offered as a destination`
-        : `${unit.name} is not a forensic ward`,
-    },
-    {
-      // Fix 2 (26 September 2026): `availableNow`, not `unit.allocatable.value` alone, so the
-      // movement path asks the referral path's question. A ward that confirmed 3 allocatable beds
-      // and then took two arrivals has `allocatable: 3, empty: 1`; reading `allocatable` passed
-      // this gate with one free bed, the lone-patient case the gate exists to prevent.
-      gate: "sex_mix",
-      pass: sameSexOccupants > 0 || availableNow > 1,
-      detail:
-        (mixSex !== undefined && sameSexOccupants > 0
-          ? `${sameSexOccupants} ${mixSex.toLowerCase()} occupants already`
-          : "No same-sex occupants; needs more than one free bed") + mixFlag,
-    },
-    {
-      /*
-       * **Owner ruling, 2026-09-10: build acuity as drawn — a STAFFING-CAPACITY check, never a
-       * ranking.** It does not order one patient ahead of another and it does not score anybody.
-       * It asks one question: is this ward staffed for a high-acuity place at all.
-       *
-       * ⚠️ **AND IT DELIBERATELY DOES NOT SAY HOW MANY ARE LEFT, THOUGH THE DRAWING DOES.**
-       * `command-third-edition.html` prints "N of M high-acuity places in use" beside this gate,
-       * and reproducing that here would re-commit the closed specialling defect one file below:
-       * `unit.highAcuityCapacity` is the AUTHORED total and is never decremented, `eligibility()`
-       * is given no admissions, so any subtraction written here would claim headroom that may not
-       * exist — the direction that sends a patient to a ward which must then refuse them.
-       * `remainingHighAcuityCapacity(unit, admissions)` knows the answer and `PULL_PATIENT` asks
-       * it. **Two checks that can disagree is worse than one honest sentence.**
-       */
-      gate: "acuity",
-      pass: true,
-      detail: !movement.highAcuity
-        ? "No high-acuity nursing requested for this movement"
-        : unit.highAcuityCapacity > 0
-          ? `High-acuity nursing requested; ward is staffed for ${unit.highAcuityCapacity} high-acuity ${unit.highAcuityCapacity === 1 ? "place" : "places"}. Whether one can take this patient is checked when the bed is pulled.`
-          : "High-acuity nursing requested; ward high-acuity capacity currently reached — additional shift staffing required upon admission",
-    },
-    {
-      gate: "specialling",
-      pass: true,
-      /*
-       * ⚠️ **THIS SAID "N specialling slots available" AND IT COULD NOT KNOW THAT.**
-       * `unit.speciallingCapacity` is the ward's AUTHORED total — how many one-to-one patients it
-       * is staffed to hold at once — and it is never decremented; `remainingSpeciallingCapacity`
-       * derives what is LEFT, from the beds. A ward authored for 2 with both in use therefore
-       * passed this gate and told a coordinator two slots were available, and `PULL_PATIENT` then
-       * refused the placement outright (see that refusal's own comment: the gate "could say whether
-       * a ward had ANY capacity and never whether it had any LEFT").
-       *
-       * **The screen invited the placement the engine rejects** — the same direction
-       * `capacity-screen.tsx` names and deliberately avoids one file away, where `speciallingFree`
-       * prints words rather than a fabricated number because the invented value "would claim
-       * headroom that does not exist, which is the direction that sends a patient to a ward that
-       * must refuse them".
-       *
-       * ⚠️ **THE FIX IS THE SENTENCE, NOT THE SIGNATURE.** `eligibility()` takes no
-       * admissions list, which is exactly why it could not know — and widening it to make the old
-       * wording true would move a real clinical check into a screen helper while the reducer still
-       * holds the one that actually refuses. **Two checks that can disagree is worse than one honest
-       * sentence.** So this says what the function can see: the staffed total, and where the free
-       * count is decided.
-       *
-       * ⚠️ **AND THE GUARD LOOKED WHERE THE DEFECT WAS NOT.**
-       * `ward-screen-eligibility-warning.dom.test.tsx` pinned the ZERO case, where "0 slots
-       * available" is harmless because the gate fails anyway. Nothing pinned an authored ward with
-       * every slot in use. `tests/ward-specialling-detail-claims-no-headroom.test.ts` now does, and
-       * pins the absence of an availability claim rather than one exact phrase — a reword that
-       * re-introduces the promise has to defeat the word, not just differ from the string.
-       */
-      detail: !movement.specialling
-        ? "No specialling required"
-        : unit.speciallingCapacity > 0
-          ? `Staffed for ${unit.speciallingCapacity} one-to-one — current use is checked at placement`
-          : "Specialling (one-to-one nursing) requested; ward specialling capacity currently reached — additional shift staffing required upon admission",
-    },
+    forensicGate(unit),
+    sexMixGate(movement.gender, movement.sex, unit),
+    acuityGate(movement.highAcuity, unit, "movement"),
+    speciallingGate(movement.specialling, unit),
     {
       gate: "prior_decline",
       pass: !declined,
       detail: declined ? "Already declined this movement" : "No prior decline",
     },
-    {
-      gate: "capacity_freshness",
-      pass: fresh,
-      detail: fresh
-        ? `Confirmed ${now - unit.allocatable.confirmedAt} min ago`
-        : `Last confirmed ${now - unit.allocatable.confirmedAt} min ago — stale`,
-    },
+    freshnessGate(unit, now),
     {
       /*
        * ⚠️ **THE LENIENT FIGURE, AND WHAT MAKES THAT SAFE IS NOT IN THIS FILE.** This passes on
@@ -608,63 +632,21 @@ export function referralEligibility(
   unit: Unit,
   now: Instant,
 ): EligibilityVerdict {
-  const fresh = capacityIsFresh(unit, now);
-  // Owner ruling 2026-09-25, as in `eligibility()` above.
-  const mixSex = mixSexOf(ward.gender, ward.sex);
-  const sameSexOccupants = mixSex === undefined ? 0 : (unit.sexMix[mixSex] ?? 0);
-  const mixFlag = mixSexFlag(ward.gender, ward.sex);
   const genderDesignation = genderDesignationResult(ward.gender, unit, referral.genderPlacements);
-  // S2-9: Unlike `eligibility()` above — which checks ward capability (`unitHasLockedBeds(unit)`)
-  // so `ACCEPT_IN_PRINCIPLE` can waitlist a Secure movement until a new `PULL_PATIENT` checks
-  // `lockedBedsFree(unit)` (requiring a valid override when no locked bed is free) — referral matching
-  // (`referralEligibility`) evaluates whether a suitable bed is immediately available now and therefore
-  // requires both `unitHasLockedBeds(unit)` and `lockedBedsFree(unit) > 0` when `ward.secureBedNeeded`
-  // is true. Both paths share `bedKindGateDetail` so the coordinator sees the exact locked-bed counts
-  // on either surface.
+  // S2-9: unlike `eligibility()` above, which checks ward capability (`unitHasLockedBeds(unit)`) so
+  // `ACCEPT_IN_PRINCIPLE` can waitlist a Secure movement until `PULL_PATIENT` checks
+  // `lockedBedsFree(unit)`, referral matching asks whether a suitable bed is free now, so it needs
+  // both. Both paths share `bedKindGateDetail` so the coordinator sees the same locked-bed counts.
   const securityMet = !ward.secureBedNeeded || (unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0);
-  // See the `legal_status` gate's own comment below for why this is an accepts-rule, never an
-  // equality: a referral that does not need an involuntary bed is accepted by ANY bed, including
-  // an authorised one — `unit.authorised` is a capability a bed has, not a value to match against.
-  const legalStatusMet = !ward.involuntaryBedNeeded || unit.authorised;
-  // Spec D15 / plan Global Constraints: the bed the coordinator can actually place someone in
-  // right now is `availableNow`, never `unit.allocatable.value` alone. The two are documented to
-  // agree "in practice" on `Unit.allocatable`, but that is not enforced — `CONFIRM_CAPACITY` can
-  // raise `allocatable.value` back above `empty.value` after arrivals have already consumed the
-  // physically empty beds, and `PATIENT_ARRIVED` decrements `empty.value` while leaving
-  // `allocatable.value` untouched. Computed by `readyBedsNow` from the unit's own two figures — never via
-  // `capacityBreakdown` (`ward-bed-availability.ts`), which takes `BedRelease[]` and would couple
-  // referral matching to the bed-release model no ward clinician has validated (see
-  // this function's own doc comment above and the D15 contract test in
-  // `ward-referral-matching.test.ts`).
+  // Spec D15: the bed a coordinator can place someone in right now is `readyBedsNow`, never
+  // `unit.allocatable.value` alone. `CONFIRM_CAPACITY` can raise allocatable above empty after
+  // arrivals used the empty beds, so the two figures are not enforced to agree (see the D15 contract
+  // test in `ward-referral-matching.test.ts`).
   const availableNow = readyBedsNow(unit);
 
   const gates: GateResult[] = [
-    {
-      gate: "age",
-      pass: unit.cohort === referral.ageBand,
-      detail:
-        unit.cohort === referral.ageBand
-          ? `${unit.cohort} unit matches ${article(referral.ageBand)} ${referral.ageBand.toLowerCase()} referral`
-          : `${unit.cohort} unit does not match ${article(referral.ageBand)} ${referral.ageBand.toLowerCase()} referral`,
-    },
-    {
-      // D3 rule 2 / D5's fourth field: a referral that does NOT need an involuntary bed is
-      // accepted by ANY bed; a referral that DOES need one is accepted only by a bed that can
-      // hold someone involuntarily (`unit.authorised`). Written as an accepts-rule, never an
-      // equality, for the same reason as `gender_designation` below — `unit.authorised ===
-      // ward.involuntaryBedNeeded` would refuse an involuntary-bed referral from an
-      // authorised unit whenever the referral itself happened not to need one, which is backwards:
-      // an authorised unit's extra capability never disqualifies it. The detail describes the bed
-      // or the requirement, never the person: it is not a legal determination about who was
-      // referred, only whether this bed can hold someone involuntarily if the request calls for it.
-      gate: "legal_status",
-      pass: legalStatusMet,
-      detail: ward.involuntaryBedNeeded
-        ? legalStatusMet
-          ? `${unit.name} is marked able to take involuntary admissions (demo capability)`
-          : `${unit.name} is not set up for involuntary admissions (demo capability)`
-        : "No authorised destination required",
-    },
+    cohortGate("age", referral.ageBand, unit, "referral"),
+    authorisationGate("legal_status", ward.involuntaryBedNeeded, unit),
     {
       // 🔴 RENAMED FROM `sex_designation`, T10 (item 8): see `eligibility()`'s own gate of this
       // name above and `genderDesignationResult`'s doc comment below for the full rule.
@@ -672,89 +654,16 @@ export function referralEligibility(
       pass: genderDesignation.pass,
       detail: genderDesignation.detail,
     },
-    {
-      // D7: a forensic bed is described so the board can be honest about the network, and is
-      // never offered — the gate fails for every referral, unconditionally, with a detail that
-      // says so plainly rather than implying the person was assessed and found unsuitable.
-      //
-      // Task 8 finding C: this detail used to end "…is never offered through Phase 7 front-door
-      // matching". "Phase 7" and "front-door matching" are this project's own build vocabulary
-      // and mean nothing to a ward coordinator, who is the one reading it. A gate detail may say
-      // only what is true of the BED, in words the reader already has.
-      //
-      // "as a destination", not "for a referral": this file's own `legal_status` gate already
-      // uses "destination" for a bed being placed into, and the word "referral" here would put
-      // the sentence's object back on the request — which the guard in
-      // `tests/ward-referral-matching.test.ts` ("the forensic gate's detail names the bed and
-      // never judges the person") refuses, correctly. That guard was left exactly as it was.
-      gate: "forensic",
-      pass: !unit.forensic,
-      detail: unit.forensic
-        ? `${unit.name} is a forensic ward and is never offered as a destination`
-        : `${unit.name} is not a forensic ward`,
-    },
+    forensicGate(unit),
     {
       gate: "security",
       pass: securityMet,
       detail: bedKindGateDetail(ward.secureBedNeeded, unit),
     },
-    {
-      // `availableNow`, not `unit.allocatable.value` alone — the same C2 correction fix round B
-      // made to `allocatable_bed`, applied here where it was left behind (fix round C, F3 /
-      // review finding I4). This gate's own detail already SAYS "needs more than one free bed",
-      // and a free bed is `availableNow`: a ward that confirmed 3 allocatable beds and then took
-      // two arrivals has `allocatable: 3, empty: 1`, so reading `allocatable` alone passed this
-      // gate on a ward with exactly one free bed — placing a lone woman on a ward with no other
-      // free bed, the precise outcome this gate exists to prevent, while the capacity board read
-      // `availableNow` and correctly said 1. No new rule: this makes the code do what its own
-      // user-visible sentence already promised.
-      gate: "sex_mix",
-      pass: sameSexOccupants > 0 || availableNow > 1,
-      detail:
-        (mixSex !== undefined && sameSexOccupants > 0
-          ? `${sameSexOccupants} ${mixSex.toLowerCase()} occupants already`
-          : "No same-sex occupants; needs more than one free bed") + mixFlag,
-    },
-    {
-      // A referral carries no specialling-need fact — unlike `Movement.specialling`, Task 1
-      // fixed the referral's permitted-field list at three facts about the person and none of
-      // them expresses this. Kept as its own gate (rather than dropped) so a coordinator reading
-      // every gate on the referral's match view learns what the system does and does not know
-      // about a referral, the same reason every gate is listed rather than only the failing ones.
-      // The detail must describe the RECORD, never assert a fact about the person: "No
-      // specialling required" would tell a coordinator something was checked and found absent,
-      // when nothing was checked — nobody entered this fact and the record does not hold it. If a
-      // future referral field ever carries this need, only this gate changes.
-      gate: "specialling",
-      pass: true,
-      detail: "Specialling need is not recorded on a referral",
-    },
-    {
-      /*
-       * ⚠️ **THE SPECIALLING GATE DIRECTLY ABOVE CANNOT ANSWER AND SAYS SO. THIS ONE CAN.**
-       * That comment ends "if a future referral field ever carries this need, only this gate
-       * changes" — and for ACUITY the owner created exactly that field on 2026-09-10: the
-       * REFERRING CLINICIAN marks high-acuity need at referral. So this gate makes a real check on
-       * the referral path where its neighbour can only describe the absence of a record.
-       *
-       * **They are not inconsistent and neither should be made to match the other.** One reports
-       * that nothing was recorded; this one reports what was.
-       */
-      gate: "acuity",
-      pass: true,
-      detail: !ward.highAcuityNursingNeeded
-        ? "No high-acuity nursing requested on this referral"
-        : unit.highAcuityCapacity > 0
-          ? `High-acuity nursing requested; ward is staffed for ${unit.highAcuityCapacity} high-acuity ${unit.highAcuityCapacity === 1 ? "place" : "places"}. Whether one can take this patient is checked when the bed is pulled.`
-          : "High-acuity nursing requested; ward high-acuity capacity currently reached — additional shift staffing required upon admission",
-    },
-    {
-      gate: "capacity_freshness",
-      pass: fresh,
-      detail: fresh
-        ? `Confirmed ${now - unit.allocatable.confirmedAt} min ago`
-        : `Last confirmed ${now - unit.allocatable.confirmedAt} min ago — stale`,
-    },
+    sexMixGate(ward.gender, ward.sex, unit),
+    speciallingGate(undefined, unit),
+    acuityGate(ward.highAcuityNursingNeeded, unit, "referral"),
+    freshnessGate(unit, now),
     {
       // `availableNow`, not `unit.allocatable.value` alone — see the comment on `availableNow`'s
       // declaration above. The detail names both source figures so a coordinator (or a future

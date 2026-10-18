@@ -6,6 +6,7 @@ import {
   actPeriodReading,
   actPeriodsDemo,
   addPeriod,
+  orderByActPeriodShare,
 } from "@/components/ward-management/legal-forms/act-periods-demo";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -20,8 +21,8 @@ const DAY_ZERO = new Date("2026-09-01T00:00:00+08:00");
 const template = wardMovements.find((movement) => movement.id === "WF-001");
 if (!template) throw new Error("WF-001 is not in the fixture any more");
 
-function withForm(code: string, formedAt?: number): Movement {
-  return { ...template, legalForm: { code }, formedAt } as Movement;
+function withForm(code: string, formedAt?: number, cohort: Movement["cohort"] = "Adult"): Movement {
+  return { ...template, legalForm: { code }, formedAt, cohort } as Movement;
 }
 
 describe("Act period table (synthetic demo)", () => {
@@ -83,5 +84,42 @@ describe("Act period reading for a movement", () => {
     const movement = withForm("3A", NOW);
     actPeriodReading(movement, DAY_ZERO);
     expect(movement.legalForm?.dueAt).toBeUndefined();
+  });
+});
+
+describe("Act period countdown for a young person", () => {
+  it("counts a Youth movement down to the shorter under-18 period on Forms 6A, 6B and 6C", () => {
+    const start = NOW - 60;
+    for (const code of ["6A", "6B"]) {
+      const reading = actPeriodReading(withForm(code, start, "Youth"), DAY_ZERO)!;
+      expect(reading.band, code).toBe("under18");
+      expect(reading.endsAt, code).toBe(start + 14 * 24 * 60);
+      expect(actPeriodCountdownText(reading, NOW), code).toMatch(/^Under-18 period would end/);
+    }
+    const sixC = actPeriodReading(withForm("6C", start, "Youth"), DAY_ZERO)!;
+    expect(sixC.endsAt).toBe(start + 28 * 24 * 60);
+  });
+
+  it("keeps the adult period for Adult and Older adult movements", () => {
+    for (const cohort of ["Adult", "Older adult"] as const) {
+      const reading = actPeriodReading(withForm("6A", NOW - 60, cohort), DAY_ZERO)!;
+      expect(reading.band, cohort).toBe("adult");
+      expect(reading.endsAt, cohort).toBe(NOW - 60 + 21 * 24 * 60);
+    }
+  });
+
+  it("uses the adult period for a Youth movement where no source gives an under-18 one", () => {
+    const reading = actPeriodReading(withForm("3A", NOW - 60, "Youth"), DAY_ZERO)!;
+    expect(reading.endsAt).toBe(NOW - 60 + 24 * 60);
+    expect(actPeriodCountdownText(reading, NOW)).toMatch(/^Period would end/);
+  });
+
+  it("orders a Youth 6A ahead of an adult 6A opened at the same time", () => {
+    const adult = { ...withForm("6A", undefined, "Adult"), id: "WF-901", openedAt: NOW - 10 * 24 * 60 } as Movement;
+    const youth = { ...withForm("6A", undefined, "Youth"), id: "WF-902", openedAt: NOW - 10 * 24 * 60 } as Movement;
+    expect(orderByActPeriodShare([adult, youth], NOW, DAY_ZERO).map((movement) => movement.id)).toEqual([
+      "WF-902",
+      "WF-901",
+    ]);
   });
 });

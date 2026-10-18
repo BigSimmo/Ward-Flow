@@ -1,3 +1,4 @@
+import { legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
 import {
@@ -1453,8 +1454,7 @@ function protectedRefusal(
  * Refusing a discharge that needs a revocation first is the conservative failure.
  */
 export function patientRecordIsInvoluntary(legalStatus: string | undefined): boolean {
-  if (legalStatus === undefined) return false;
-  return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
+  return legalStatusIsDetained(legalStatus);
 }
 
 /**

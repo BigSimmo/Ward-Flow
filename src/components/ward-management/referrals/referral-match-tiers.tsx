@@ -9,6 +9,7 @@ import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management
 import { type ReferralCandidate } from "@/components/ward-management/ward-referrals";
 import styles from "./referrals.module.css";
 import { GATE_LABELS } from "./referral-match-model";
+import { checkedGates } from "@/components/ward-management/ward-eligibility";
 
 /*
  * The match view's three tiers (available beds, capacity pending, ineligible units), moved
@@ -102,8 +103,9 @@ export function renderReferralMatchTiers({
               </div>
             ) : (
               tier1Candidates.map((c) => {
-                const passedGates = c.verdict.gates.filter((g) => g.pass);
-                const totalGates = c.verdict.gates.length;
+                // Information-only gates (acuity, specialling) are shown but never counted as met.
+                const passedGates = checkedGates(c.verdict.gates).filter((g) => g.pass);
+                const totalGates = checkedGates(c.verdict.gates).length;
                 const gateKey = `alt2-t1-${c.unit.id}`;
                 const isGatesExpanded = expandedUnitGates.has(gateKey);
                 const freeBeds = c.unit.allocatable.value;
@@ -181,8 +183,11 @@ export function renderReferralMatchTiers({
                       {isGatesExpanded ? (
                         <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
                           {c.verdict.gates.map((g) => (
-                            <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
-                              ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                            <div
+                              key={g.gate}
+                              className={g.info ? styles.gatePill : `${styles.gatePill} ${styles.gatePillPassed}`}
+                            >
+                              {g.info ? "i" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
                             </div>
                           ))}
                         </div>
