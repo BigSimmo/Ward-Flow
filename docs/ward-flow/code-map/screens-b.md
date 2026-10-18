@@ -18,7 +18,7 @@ Unspecified intervention/forecasting contracts are not invented. Ward allocation
 open the actual movement-specific placement review rather than an unwired Allocate button.
 Bed map preparation markers remain visible when observed offered counts disagree;
 arrival discrepancies are explicitly recorded and do not manufacture surge beds.
-See [the current receipt](../reports/remediation-2026-10-08.md).
+See the current receipt (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 Covers every file under `src/components/ward-management/` in these folders: `alerts/`, `board/`,
 `capacity/`, `delays/` (no `backup/` subfolder exists there — see "Not checked"), `discharges/`,

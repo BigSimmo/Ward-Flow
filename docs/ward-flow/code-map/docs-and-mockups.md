@@ -3,6 +3,8 @@
 > **Historical inventory — classifications measured 25 September 2026.** Counts, document descriptions and CURRENT labels below describe that snapshot. They do not establish current authority. For current work, use the [product entry point](../README.md), [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md), [task/receipt workflow](../../task-receipts.md) and each document's current banner. STATUS and UNIVERSAL-MOCKUP-SPECIFICATION are now historical; generated owner rulings include decisions.md as well as owner source files. Preserve the inventory below as evidence.
 >
 > **Docs trims, 15 October 2026:** three passes removed most dated plans, reports, handovers, registers and audit output listed below. `../ARCHIVE-NOTE.md` lists what went and how to restore it.
+>
+> **Archive move, 18 October 2026:** a fourth pass removed `handover/` (one file kept), `handovers/`, `reports/`, `audit-artefacts/`, `sdd-rescued/`, most of `build-contracts-2026-09-12/`, uncited plans, and the dated audits, briefs and proposals at the top of this folder. [`../../ARCHIVE.md`](../../ARCHIVE.md) lists them and how to restore them.
 
 This part covers `docs/ward-flow/` (measured at 1,284 files: 65 top-level files, 27 history/tooling
 subfolders, and `mockups/` at 135 files) and `docs/ward-flow-task-ledger.md` (7,867 lines). Tip

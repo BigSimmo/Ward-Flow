@@ -1,8 +1,8 @@
 # Ward Flow issue list — 8 October 2026
 
-Every bug and issue found in the core-engine review and the four follow-up area reviews, ranked. Synthetic data only. Five P1 items are fixed, each with a regression test in `tests/ward-review-2026-10-08-fixes.test.ts`; S2-12 is fixed with A2-2. Details, scenarios and evidence for each ID are in [`audit-2026-10-08-core-engine-review.md`](audit-2026-10-08-core-engine-review.md).
+Every bug and issue found in the core-engine review and the four follow-up area reviews, ranked. Synthetic data only. Five P1 items are fixed, each with a regression test in `tests/ward-review-2026-10-08-fixes.test.ts`; S2-12 is fixed with A2-2. Details, scenarios and evidence for each ID are in `audit-2026-10-08-core-engine-review.md` (archived; see [ARCHIVE.md](../ARCHIVE.md)).
 
-> **Re-triaged on 13 October 2026** by complexity and risk, with the items fixed in PRs #256 and #257 marked: see [`audit-2026-10-13-issue-triage.md`](audit-2026-10-13-issue-triage.md). The list below is the 8 October record.
+> **Re-triaged on 13 October 2026** by complexity and risk, with the items fixed in PRs #256 and #257 marked: see `audit-2026-10-13-issue-triage.md` (archived; see [ARCHIVE.md](../ARCHIVE.md)). The list below is the 8 October record.
 
 **88 issues:** P1 13, P2 28, P3 31, P4 16. S2-12 is merged into A2-2.
 

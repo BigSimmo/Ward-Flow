@@ -66,7 +66,7 @@ follow-up opens the existing scoped `DischargeCareJourney`; referral-only review
 clinician and contact-outcome recording remain incomplete. Fake EHR editors and digital
 signature claims are removed. Search service, collected transport and actual bed-hold
 labels use recorded source facts. Follow-up preview/profile consistency is included in
-the [remediation receipt](../reports/remediation-2026-10-08.md).
+the remediation receipt (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 PR #130's current Home uses controlled Exceptions/Declines/New events hero panels,
 the shared `useSinceLastLook` hook, and the existing eligibility projection for fitting
@@ -84,7 +84,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
