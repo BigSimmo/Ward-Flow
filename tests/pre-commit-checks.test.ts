@@ -488,7 +488,7 @@ describe("the hook script end to end", () => {
   });
 });
 
-describe.skipIf(!HAS_WARD_FLOW_HISTORY)("admission-only merge with no HEAD-to-index changes", () => {
+describe("admission-only merge with no HEAD-to-index changes", () => {
   const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
   const mainStart = source.indexOf("async function main() {");
   const mainEnd = source.indexOf("\nif (process.argv[1]", mainStart);
@@ -594,7 +594,8 @@ describe.skipIf(!HAS_WARD_FLOW_HISTORY)("admission-only merge with no HEAD-to-in
     return { code: await main(), errors: errors.join("\n"), admissions };
   }
 
-  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async () => {
+  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const missing = await run({ logPresent: false });
     expect(missing.code).toBe(1);
     expect(missing.errors).toContain("shared sign-out log unavailable");
@@ -621,17 +622,20 @@ describe.skipIf(!HAS_WARD_FLOW_HISTORY)("admission-only merge with no HEAD-to-in
     expect(refusedSkip.admissions).toBe(0);
   });
 
-  it("keeps truly empty non-merge and identical incoming merge admissions empty", async () => {
+  it("keeps truly empty non-merge and identical incoming merge admissions empty", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     expect(await run({ merging: false, logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
     expect(await run({ incoming: "", logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
   });
 
-  it("does not admit a current-side-only path from the index-to-incoming diff", async () => {
+  it("does not admit a current-side-only path from the index-to-incoming diff", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const result = await run({ incoming: "", currentOnly: "docs/ward-flow/current.md", logPresent: false });
     expect(result).toMatchObject({ code: 0, admissions: 0 });
   });
 
-  it("keeps ownership admission mandatory when merge bases are ambiguous", async () => {
+  it("keeps ownership admission mandatory when merge bases are ambiguous", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const result = await run({ mergeBases: `${"b".repeat(40)}\n${"c".repeat(40)}`, logPresent: false });
     expect(result).toMatchObject({ code: 1, admissions: 1 });
     expect(result.errors).toContain("shared sign-out log unavailable");
