@@ -26,6 +26,7 @@ import {
 } from "./ward-undo";
 import { type Admission, bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { sameLinkedPatient } from "./ward-flow-bed-events";
 
 /**
  * UNDO_* events: take back a recent step exactly, using the records kept in `ward-undo.ts`.
@@ -196,11 +197,10 @@ export function reduceUndoEvent(
         const current = state.admissions.find((candidate) => candidate.id === admission.id);
         if (current && sameRecord(current, admission)) continue;
         if (
-          admission.patientId !== null &&
           undone.admissions.some(
             (other) =>
               other.id !== admission.id &&
-              other.patientId === admission.patientId &&
+              sameLinkedPatient(other, admission) &&
               bedIsOccupied(other) &&
               // A recorded transfer may keep the source occupied while the destination is
               // pulled. Undoing its arrival must be able to restore that legitimate hold.
