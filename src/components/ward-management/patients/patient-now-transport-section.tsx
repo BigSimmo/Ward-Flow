@@ -431,7 +431,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               size="sm"
               data-testid="ward-patient-confirm-transport-btn"
               {...gate("BOOK_TRANSPORT").buttonProps}
-              disabled={transportPending}
+              disabled={transportPending || gate("BOOK_TRANSPORT").buttonProps.disabled}
             >
               Save transport booking
             </Button>
