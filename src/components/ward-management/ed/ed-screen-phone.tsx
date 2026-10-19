@@ -39,7 +39,9 @@ export function renderEdBoardPhoneRow(
 ): ReactNode {
   const { movement, minutesInDepartment, medicalClearance, patientInfo, acceptedUnit, referredTo, nextAction } = row;
   const { accessTarget, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
-  const phoneOverTarget = minutesInDepartment > accessTarget;
+  // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
+  // 2026) is red "once the longest wait reaches the ED access target".
+  const phoneOverTarget = minutesInDepartment >= accessTarget;
   const phoneWaitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
   const phoneNextLabel =
     movement.edOutcome !== undefined && !movement.leftDepartmentAt
@@ -88,7 +90,7 @@ export function renderEdBoardPhoneRow(
         value={
           <>
             {phoneWaitTone ? <StatusGlyph tone={phoneWaitTone} size={8} /> : null} {splitDuration(minutesInDepartment)}
-            {phoneOverTarget ? <span className="sr-only"> · over the access target</span> : null}
+            {phoneOverTarget ? <span className="sr-only"> · at or over the access target</span> : null}
           </>
         }
         time={isPhone ? phoneNextLabel : undefined}
