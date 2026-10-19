@@ -175,6 +175,20 @@ describe("planned arrival preserves checked authority and allocation gates", () 
         } as WardFlowEvent);
         expect(lawfulDeparture.rejections).toEqual([]);
         expect(lawfulDeparture.admissions.find((a) => a.id === stay.id)?.state).toBe("departed");
+        // The ward's own leaving command reads the same booking status, and the same revocation
+        // clears it (owner, 19 Oct 2026: the booking blocks community discharge until revoked).
+        const wardLeaving: WardFlowEvent = {
+          type: "RECORD_LEAVING",
+          role: "ward",
+          now: NOW + 32,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+          leavingDestination: "discharged-to-the-community",
+        };
+        expect(wardFlowReducer(reload, wardLeaving).rejections.at(-1)?.reason).toMatch(/involuntary/i);
+        const wardDeparture = wardFlowReducer(revoked, wardLeaving);
+        expect(wardDeparture.rejections).toEqual([]);
+        expect(wardDeparture.admissions.find((a) => a.id === stay.id)?.state).toBe("departed");
       }
       const invalid = structuredClone(reload);
       invalid.admissions.at(-1)!.plannedLegalStatus = "Invented" as never;
