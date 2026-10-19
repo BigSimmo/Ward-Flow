@@ -43,6 +43,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     highAcuity: false,
     referralId: "REF-1",
     movementId: null,
+    plannedLegalStatus: "Voluntary",
     patientId: null,
     sex: "Female",
     // R7 (2026-09-25): the admission's own gender copy, so the built fixture carries every field.
@@ -541,6 +542,8 @@ describe("Admission privacy — structural", () => {
     // WIDENED ON PURPOSE, 2026-09-21 - owner ruling: join to live movement for community cancel scope.
     // Not a person-fact; no AUTHORISED_PERSON_FACTS entry.
     "movementId",
+    // Workflow audit fix: checked planned-arrival authority must survive conversion and scoped reads.
+    "plannedLegalStatus",
     // WIDENED ON PURPOSE, 2026-09-11 — ruling D-14 (`docs/ward-flow/owner-decisions-2026-09-1x.md`),
     // the SIXTH widening of this list. A pointer to the existing patient record, id only, never a
     // copy — see `Admission.patientId`'s own doc comment. Added in the same change as
@@ -608,6 +611,7 @@ describe("Admission privacy — structural", () => {
 
   it("gives a fully-populated Admission exactly the permitted field set", () => {
     const canonical: Required<Admission> = {
+      plannedLegalStatus: "Voluntary",
       // Populated, not null — this fixture's whole job is to carry EVERY field at a real value, so
       // a null here would leave the new field indistinguishable from an absent one.
       awayAtEmergencyDepartmentSince: 9 * 60,

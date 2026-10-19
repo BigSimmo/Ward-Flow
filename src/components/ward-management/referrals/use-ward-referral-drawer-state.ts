@@ -1,3 +1,6 @@
+import { referralDraftSessionVersion } from "./referral-draft-cache";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import { useReferralSubmissionGuard } from "./referral-draft-hooks";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -272,7 +275,7 @@ export function useWardReferralDrawerState({
   const [sentAt, setSentAt] = useState<Instant | null>(null);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState<Partial<Record<DrawerSection | "contact", boolean>>>({});
-  const submissionRef = useRef<{ intake: ReferralIntakeDetails; rejectionCount: number } | null>(null);
+  const submissionRef = useReferralSubmissionGuard<ReferralIntakeDetails>();
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [inboxUnitId, setInboxUnitId] = useState<string | null>(null);
   // v10 phone: the four steps are a list, and the chosen step opens as a tall sheet over it.
@@ -896,7 +899,7 @@ export function useWardReferralDrawerState({
   }
   function confirmAndSend(event: React.FormEvent) {
     event.preventDefault();
-    if (sendPending || sentReferralId || !sendGate.allowed) return;
+    if (submissionRef.current || sendPending || sentReferralId || !sendGate.allowed) return;
     const validation =
       patientError() ??
       referralError() ??
@@ -947,10 +950,10 @@ export function useWardReferralDrawerState({
       setFlowError("Check the patient, urgency and selected recipients.");
       return;
     }
-    submissionRef.current = { intake, rejectionCount: rejections.length };
+    submissionRef.current = intake;
     setSendPending(true);
     setFlowError(null);
-    dispatch({
+    const completion = dispatch({
       type: "RECEIVE_REFERRAL",
       role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
       now,
@@ -970,24 +973,22 @@ export function useWardReferralDrawerState({
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
     });
+    const finish = (outcome: WardCommandOutcome | void) => {
+      if (submissionRef.current !== intake) return;
+      submissionRef.current = null;
+      setSendPending(false);
+      if (draftOwnerVersion !== referralDraftSessionVersion() || (outcome?.isCurrent && !outcome.isCurrent())) return;
+      if (outcome?.status === "accepted" && outcome.createdReferralId) {
+        stopDraftAutosave();
+        discardReferralDraft(draftDiscardOwner);
+        rememberReferrerContact(intake.referrer, draftOwnerVersion);
+        setSentReferralId(outcome.createdReferralId);
+        setSentAt(now);
+        announceToWardShell("Referral sent to the selected locations.");
+      } else setFlowError(outcome?.message ?? "Referral save is not confirmed. Review the board before trying again.");
+    };
+    void Promise.resolve(completion).then(finish, () => finish(undefined));
   }
-  useEffect(() => {
-    const submitted = submissionRef.current;
-    if (!sendPending || !submitted) return;
-    const created = referrals.find((referral) => referral.intake === submitted.intake);
-    if (created) {
-      stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
-      rememberReferrerContact(submitted.intake.referrer, draftOwnerVersion);
-      setSentReferralId(created.id);
-      setSentAt(now);
-      setSendPending(false);
-      announceToWardShell("Referral sent to the selected locations.");
-    } else if (rejections.length > submitted.rejectionCount) {
-      setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
-      setSendPending(false);
-    }
-  }, [sendPending, referrals, rejections, now, stopDraftAutosave, draftDiscardOwner, draftOwnerVersion]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords
@@ -1022,7 +1023,6 @@ export function useWardReferralDrawerState({
   const unidentifiedHistory = unidentifiedName
     ? `${unidentifiedName}${clinicalSummary ? `\n${clinicalSummary}` : ""}`
     : clinicalSummary;
-  // The sender's own submission, read back from the created referral.
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
 
   const destination = DESTINATIONS[destType];

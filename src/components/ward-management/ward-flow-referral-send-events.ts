@@ -126,6 +126,9 @@ export function reduceReferralSendEvent(
        * department declined, and a referral cannot fund two live journeys (checked below).
        */
       let raisedFrom: Referral | undefined;
+      let continuedAcceptance: Referral["destinations"][number] | undefined;
+      if (event.acceptedUnitId !== undefined && event.referralId === undefined)
+        return reject(state, event, "Starting an accepted placement requires its referral");
       if (event.referralId !== undefined) {
         raisedFrom = findReferral(state, event.referralId);
         if (!raisedFrom) {
@@ -136,10 +139,41 @@ export function reduceReferralSendEvent(
           );
         }
         const referral = raisedFrom;
-        const addressing = referral.destinations.find(
-          (candidate) =>
-            candidate.destination.kind === "emergency_department" && candidate.destination.edId === event.edId,
-        );
+        const directContinuation = event.acceptedUnitId !== undefined;
+        if (directContinuation) {
+          if (
+            (event.role !== "ward" && event.role !== "coordinator") ||
+            (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
+            referral.source !== "ed_medical" ||
+            department.siteCode !== referral.originSiteCode ||
+            !findUnit(state, event.acceptedUnitId!)
+          )
+            return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
+          continuedAcceptance = referral.destinations.find(
+            (candidate) =>
+              candidate.destination.kind === "psychiatric_ward" &&
+              (candidate.acceptedUnitId ?? candidate.destination.unitId) === event.acceptedUnitId &&
+              candidate.state === "accepted" &&
+              candidate.withdrawnAt === undefined,
+          );
+          if (!continuedAcceptance) return reject(state, event, "This referral has no current acceptance at that ward");
+          const destination = continuedAcceptance.destination;
+          if (
+            destination.kind !== "psychiatric_ward" ||
+            event.draft.cohort !== referral.ageBand ||
+            event.draft.sex !== destination.sex ||
+            event.draft.gender !== destination.gender ||
+            event.draft.security !== (destination.secureBedNeeded ? "Secure" : "Open") ||
+            event.draft.highAcuity !== (destination.highAcuityNursingNeeded === true)
+          )
+            return reject(state, event, "Start placement must retain the accepted referral's recorded needs");
+        }
+        const addressing =
+          continuedAcceptance ??
+          referral.destinations.find(
+            (candidate) =>
+              candidate.destination.kind === "emergency_department" && candidate.destination.edId === event.edId,
+          );
         if (!addressing) {
           return reject(
             state,
@@ -266,15 +300,27 @@ export function reduceReferralSendEvent(
         statusChanges: [],
         urgencyChanges: [],
         overrides: [],
-        stage: "placement_requested",
-        owner: department.name,
-        referredUnitIds: [],
+        stage: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested",
+        owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department.name,
+        referredUnitIds: continuedAcceptance ? [event.acceptedUnitId!] : [],
+        ...(continuedAcceptance
+          ? {
+              acceptedUnitId: event.acceptedUnitId,
+              acceptedAt: continuedAcceptance.decidedAt ?? event.now,
+              genderPlacements: raisedFrom?.genderPlacements,
+              ...(continuedAcceptance.heldBedNumber === undefined
+                ? {}
+                : { heldBedNumber: continuedAcceptance.heldBedNumber }),
+            }
+          : {}),
         declines: [],
-        blocker: "Awaiting coordinator referral",
+        blocker: continuedAcceptance ? "Awaiting bed pull" : "Awaiting coordinator referral",
         withdrawnReferrals: [],
         unwinds: [],
         // The creation moment is the first entry, with no `from`.
-        stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
+        stageChanges: [
+          { at: event.now, to: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested", by: event.role },
+        ],
         // `formedAt` is deliberately unset: when a patient was formed in the community is a fact
         // only a clinician holds, and no rule may invent it. The fixture keeps its authored values.
       };

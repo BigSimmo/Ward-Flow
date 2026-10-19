@@ -464,6 +464,8 @@ export type UnwindRecord = {
  * fact" would break those callers for no gain. Two sources that AGREE, with something that
  * actually checks they agree, is the honest design; two sources with nobody checking is how this
  * project got a live-drift incident. `tests/ward-movement-stage-changes.test.ts` is that check.
+ * A stage restored after a correction is the exception: its entry records the restoration time
+ * and reason while the original physical `transport.collectedAt` remains unchanged.
  *
  * ⚠️ **AN EMPTY ARRAY HAS TWO DIFFERENT CAUSES, DECIDABLE FROM `movement.stage` ALONE.** A
  * movement still at `placement_requested` with no entries has made no transitions yet — the
@@ -478,6 +480,8 @@ export type UnwindRecord = {
  * a gap to be invented shut.
  */
 export type StageChange = {
+  /** Time the recorded stage changed. A restoration after correction does not replace the
+   * original physical transport timestamp; its reason identifies the restoration. */
   at: Instant;
   from?: MovementStage;
   to: MovementStage;

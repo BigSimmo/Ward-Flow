@@ -398,6 +398,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "movementId"
   | "teamId"
   | "unitId"
+  // Explicit accepted-referral continuation resolves this id against the live accepted ward.
+  | "acceptedUnitId"
   | "admissionId"
   | "referralId"
   | "releaseId"

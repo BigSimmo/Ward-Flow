@@ -1,6 +1,7 @@
 // The RECORD_* events about a person's stay on the ward: leaving, trips to an emergency department,
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
+import { plannedAdmissionLegalStatus } from "./ward-discharge-records";
 import { isLeavingDestination } from "./ward-admissions";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
@@ -133,7 +134,8 @@ export function reduceRecordedStayEvent(
       const linkedPatient = admission.patientId ? state.patients.find((p) => p.id === admission.patientId) : undefined;
       if (
         patientRecordIsInvoluntary(linkedPatient?.legalStatus) ||
-        (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
+        ((linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission)) !== undefined &&
+          (linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission)) !== "Voluntary")
       ) {
         if (
           event.leavingDestination === "discharged-to-the-community" ||
@@ -241,7 +243,20 @@ export function reduceRecordedStayEvent(
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
         );
       }
-      return replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+      const updated = replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+      return {
+        ...updated,
+        bedReleases: updated.bedReleases.map((release) =>
+          release.admissionId === admission.id && release.state !== "discharged"
+            ? {
+                ...release,
+                blocker: event.blocker,
+                blockedBy: recordedByLabel(event.role, findUnit(state, admission.unitId)?.name ?? admission.unitId),
+                confirmedAt: event.now,
+              }
+            : release,
+        ),
+      };
     }
 
     case "RECORD_LEAVE_BED": {

@@ -1,3 +1,4 @@
+import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
@@ -488,6 +489,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   return {
     world: { ...world, state: saved },
     outcome: "accepted" as const,
+    completion: commandMetadata(world.state, next),
     changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
     reason: null,
   };

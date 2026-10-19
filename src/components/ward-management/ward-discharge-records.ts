@@ -72,12 +72,29 @@ export function validRecordActor(actor: unknown): actor is WardRecordActor {
   return keys.join() === "role" && ["coordinator", "ed", "officer", "community", "demo"].includes(String(actor.role));
 }
 
+/** Earlier saves retain the authoritative status on the converted booking rather than the stay. */
+export function plannedAdmissionLegalStatus(
+  state: Partial<Pick<WardFlowState, "plannedAdmissions">>,
+  admission: Admission,
+): Admission["plannedLegalStatus"] {
+  return (
+    admission.plannedLegalStatus ??
+    state.plannedAdmissions?.find((booking) => booking.state === "arrived" && booking.admissionId === admission.id)
+      ?.legalStatus
+  );
+}
+
 /** A previous stay must never decide this admission's discharge or transport state. */
-export function dischargeMovement(state: Pick<WardFlowState, "movements">, admission: Admission): Movement | undefined {
+export function dischargeMovement(
+  state: Pick<WardFlowState, "movements"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
+  admission: Admission,
+): Movement | undefined {
+  const plannedStatus = plannedAdmissionLegalStatus(state, admission);
   return (
     state.movements.find((movement) => movement.admissionId === admission.id) ??
     state.movements.find(
       (movement) =>
+        plannedStatus === undefined &&
         admission.patientId !== null &&
         movement.patientId === admission.patientId &&
         movement.admissionId === undefined &&
@@ -88,14 +105,14 @@ export function dischargeMovement(state: Pick<WardFlowState, "movements">, admis
 
 /** The single legal-status lookup used by the ward card, the command reducer and the Discharges list. */
 export function admissionCriteriaEligibility(
-  state: Pick<WardFlowState, "movements" | "patients">,
+  state: Pick<WardFlowState, "movements" | "patients"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
   admission: Admission,
 ): CriteriaEligibility {
   const movement = dischargeMovement(state, admission);
   const patient = uniqueRecord(state.patients, admission.patientId);
   return criteriaEligibility(
     patient?.legalStatus,
-    movement?.legalStatus,
+    movement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission),
     activeCommunityTreatmentOrder(patient) !== undefined,
   );
 }

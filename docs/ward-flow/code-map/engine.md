@@ -931,3 +931,14 @@ smaller domain-rule files (`ward-eligibility.ts`, `ward-referrals.ts`, `ward-leg
 are out of scope for this document and are covered elsewhere in the code map.
 
 Shared data-mode update, 8 October 2026: the PostgreSQL migration runner now applies version 2, recording immutable workspace provenance and matching command/audit modes. `ward-shared-client.ts` rejects snapshots without prototype provenance; `ward-shared-access.tsx` and its CSS module show the persistent mode and an unavailable-live explanation without changing the connection or discarding drafts. A separately commissioned live adapter remains required; the current server and setup reject live configuration.
+
+## Workflow recovery guards (October 2026)
+
+Recent workflow corrections keep command completion and domain changes separate:
+
+- Step Undo checks restored patient and numbered-bed claims against intervening stays and holds before applying its saved changes. It preserves a recorded transfer's occupied source and pulled destination pair.
+- Planned arrivals retain their booking's legal status, including older converted bookings joined by admission id. Scoped ward replies carry that status with the admission. New allocations refuse a closed ward; bookings needing gender review use the existing reviewed-referral path.
+- `RAISE_REFERRAL` can explicitly continue an accepted direct ED-to-ward referral when it names `acceptedUnitId` and the accepting `actingUnitId`. It verifies the real source ED, acceptance and recorded needs, then creates an `accepted_awaiting_bed` movement. Acceptance itself still creates no movement or bed; the ordinary pull and transport checks follow.
+- A corrected transport stage can resume without replacing the original physical collection time. The stage history labels the restoration.
+- Shared replies correlate created referral ids and opaque Undo step sequences to the command. Scoped replies do not expose Undo snapshots. Ward feedback waits for the command outcome; a failed or refused save must not report success.
+- Replacing a stay blocker keeps an existing live release consistent. Exhausted push claims become failed after their retry lease expires, including an interrupted final attempt.

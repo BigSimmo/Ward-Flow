@@ -1,3 +1,4 @@
+import type { WardCommandMetadata } from "./ward-command-metadata";
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -64,7 +65,7 @@ export type SharedAccessRequest = {
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
 /** In-memory completion for one command. A failed save may have reached the server. */
-export type WardCommandOutcome = {
+export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
@@ -104,8 +105,16 @@ export class SharedWorkspaceClient {
     status: WardCommandOutcome["status"],
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
+    metadata?: WardCommandMetadata,
   ) {
-    this.completions.get(commandId)?.({ commandId, status, message, undoRecords });
+    this.completions.get(commandId)?.({
+      commandId,
+      status,
+      message,
+      undoRecords,
+      createdReferralId: metadata?.createdReferralId,
+      undoStep: metadata?.undoStep,
+    });
     this.completions.delete(commandId);
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
@@ -498,6 +507,7 @@ export class SharedWorkspaceClient {
               response.ok ? "accepted" : "refused",
               response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
               response.ok ? value.snapshot.payload.state.undoRecords : undefined,
+              response.ok ? value : undefined,
             );
             // Keep the definitive command result, but read the newly granted view rather than
             // replacing it with the command's earlier scope. Retry retains the same command ID.
@@ -556,6 +566,7 @@ export class SharedWorkspaceClient {
             response.ok ? "accepted" : "refused",
             response.ok ? undefined : typeof value.error === "string" ? value.error : "The action was not applied.",
             response.ok ? value.snapshot.payload.state.undoRecords : undefined,
+            response.ok ? value : undefined,
           );
           this.publish({
             status: "unavailable",
@@ -583,7 +594,7 @@ export class SharedWorkspaceClient {
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
           this.worldEpoch++;
-        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords);
+        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value);
         this.publish({ status: "ready", error: null });
       }
     } catch {

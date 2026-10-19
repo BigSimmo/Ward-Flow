@@ -29,6 +29,7 @@ import {
   COHORTS,
   RECORDED_SEXES,
   REFERRAL_GENDERS,
+  genderReviewNeeded,
   type Cohort,
   type LegalStatus,
   type Movement,
@@ -62,8 +63,8 @@ const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained
  * The booking seen as the movement `eligibility()` reads, so a conversion is checked by the same
  * gates as a pulled bed: gender designation first (no override path), then every suitability gate.
  * `gender` is the booking's own (the record's for a linked patient, picked for initials only), so a
- * single-sex ward takes a matching booking (Josh, 9 October 2026). With none recorded, an
- * undesignated ward takes the person and a single-sex ward refuses, as for a referral. `sex` is
+ * single-sex ward takes a matching booking (Josh, 9 October 2026). With none recorded,
+ * conversion requires the coordinator review available through the referral journey. `sex` is
  * never read in its place. `cohort` is the age group the booking was made for, so an adult booked
  * onto an older adult ward is refused.
  */
@@ -386,6 +387,7 @@ export function reducePlannedAdmissionEvent(
       if (scope) return reject(state, event, scope);
       const unit = state.units.find((candidate) => candidate.id === planned.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${planned.unitId}`);
+      if (unit.isClosed) return reject(state, event, `${unit.name} is closed to new admissions`);
       // A linked patient already in a bed, or still on an open movement, arrives through that
       // record, never through a second, parallel one.
       if (planned.patientId !== null && holdsABed(state, planned.patientId))
@@ -419,6 +421,12 @@ export function reducePlannedAdmissionEvent(
       const ineligible = placementRefusal(view, unit, event.now);
       if (ineligible)
         return reject(state, event, ineligible.replace(`for movement ${view.id}`, "for this planned admission"));
+      if (genderReviewNeeded(view.gender, view.sex))
+        return reject(
+          state,
+          event,
+          "This planned arrival needs a coordinator gender placement review. Use the referral journey to record the review before allocating a bed.",
+        );
       const bedKind: "locked" | "open" =
         view.security === "Secure" ? "locked" : openBedsFree(unit) > 0 ? "open" : "locked";
       const sequence = state.admissionSequence + 1;
@@ -429,6 +437,7 @@ export function reducePlannedAdmissionEvent(
         highAcuity: false,
         referralId: null,
         movementId: null,
+        plannedLegalStatus: planned.legalStatus,
         patientId: planned.patientId,
         sex: planned.sex,
         // The gender the ward gates just read, so the ward's counts and the departure follow it too.

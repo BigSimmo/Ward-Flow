@@ -482,6 +482,12 @@ export function createWorkspaceStore(
         const world = stored.payload;
         return { world, red: new Map(engine.actNowAlerts(world, at).map((alert) => [alert.id, alert])) };
       };
+      // A crash after the final claim has no send result to terminalise it. Only expired
+      // leases may be retired; an in-flight final attempt still owns its result.
+      await pool.query(
+        "UPDATE ward_flow.push_deliveries d SET status='failed' FROM ward_flow.push_subscriptions s WHERE d.subscription_id=s.id AND s.workspace_id=$1 AND d.status='pending' AND d.attempts >= $2 AND d.last_attempt_at <= $3",
+        [workspaceId, MAX_DELIVERY_ATTEMPTS, new Date(at.getTime() - retryAfterMs)],
+      );
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       // A bootstrap coordinator's device while it is still named; from 9 also a device held by a
       // role that is still active and still in use, as the viewer counts it.
@@ -1507,6 +1513,7 @@ export function createWorkspaceStore(
         let outcome = "stale";
         let status = 409;
         let changes = {};
+        let completion = {};
         let reason = row.core
           ? "Someone else changed this record first. Review the latest board before trying again."
           : "The workspace changed. Review the latest board before trying again.";
@@ -1547,6 +1554,7 @@ export function createWorkspaceStore(
             });
           if (!stale) {
             ({ outcome, changes, reason } = applied);
+            completion = applied.completion ?? {};
             status = outcome === "accepted" ? 200 : 422;
           }
           if (!stale && outcome === "accepted") {
@@ -1572,6 +1580,7 @@ export function createWorkspaceStore(
         const result = {
           outcome,
           commandRevision: Number(row.revision),
+          ...(outcome === "accepted" ? completion : {}),
           ...(reason ? { error: reason } : {}),
           ...(code ? { code } : {}),
         };
