@@ -43,6 +43,7 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { ShiftConfirmationsCard } from "./shift-confirmations-card";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import {
   bedKindGaps,
@@ -280,6 +281,7 @@ export function CapacityScreen() {
     () => (service === null ? networkRows : networkRows.filter((row) => unitHealthService(row.unit) === service)),
     [service, networkRows],
   );
+  const scopedUnits = useMemo(() => scopedNetworkRows.map((row) => row.unit), [scopedNetworkRows]);
   /**
    * The scoped mirrors of `totalLockedReady`/`totalOpenReady`/`netTotals.beds` above — §2 "Ready now
    * is scoped, with the network figure in words." Each is summed straight from `scopedNetworkRows`,
@@ -541,6 +543,7 @@ export function CapacityScreen() {
             <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
           </div>
           <BedsForecastPanel forecast={forecast} />
+          {isPhone ? null : <ShiftConfirmationsCard units={scopedUnits} now={now} />}
           <CapacityTabs
             id="capacity-network"
             label="Network details"
@@ -976,6 +979,7 @@ export function CapacityScreen() {
               freeingWards={freeingWards}
             />
           ) : null}
+          {isPhone && phoneTab === "overview" ? <ShiftConfirmationsCard units={scopedUnits} now={now} /> : null}
 
           <div className={styles.capacityGrid}>
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>

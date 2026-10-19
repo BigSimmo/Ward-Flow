@@ -125,6 +125,15 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
+  "shift-confirmations": {
+    label: "Confirmed this shift",
+    description:
+      "On Capacity, how many wards have confirmed their bed numbers since the shift began, and which have not.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;
