@@ -34,6 +34,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -883,6 +884,8 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   // The screen element only exists while the flag is on, so watch it again once it appears.
   const onView = useOnView(root, enabled);
   useScreenWakeLock(enabled && onView);
+  // DA-07 (design audit): with no connection the TV stops claiming it updates on its own.
+  const online = useOnlineStatus();
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
@@ -993,7 +996,8 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} · updates on its own
+            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} ·{" "}
+            {online ? "updates on its own" : "offline, not updating"}
           </p>
         </div>
         <div className={styles.actions}>
