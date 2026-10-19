@@ -11,6 +11,9 @@
  * - Legal Forms (`SELECTABLE_LEGAL_FORMS` from `ward-legal-forms.ts`) - code, official title via `legalFormName`
  * - Core Views/Tools (`CORE_SEARCH_VIEWS`) - navigation routes and tool pages
  * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? 0, units)`) - task summary, title, keyword "task"
+ * - Queued referrals still awaiting an answer - the patient's name and UMRN, referral id, origin and region
+ * - Near spellings of a name that found nobody (`nearPatients`), each shown with UMRN and date of birth
+ * - Beds ("Graylands bed 4") and wards with a ready bed ("free beds"), from `search-places.ts`
  *
  * STANDARD §8.6 ENFORCEMENT:
  * - Unranked candidate discipline: within a group, a prefix or word-start match is listed before a
@@ -31,11 +34,19 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
-import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  findPatients,
+  foldPatientSearchText,
+  nearPatients,
+  patientDisplayName,
+  type Patient,
+} from "@/components/ward-management/ward-patients";
+import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { movementHref, teamHref, unitHref } from "../shell/ward-facade";
+import { isReadyBedQuery, searchBeds, type BedSearchResult } from "./search-places";
 
 export type CoreSearchView = {
   key: string;
@@ -92,7 +103,7 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     key: "on-call",
     title: "On-call",
     href: "/ward-flow/on-call",
-    keywords: ["on-call", "roster", "specialist", "doctors"],
+    keywords: ["on-call", "on call", "oncall", "roster", "specialist", "doctors", "registrar", "consultant"],
     description: "Contacts — no roster in this prototype",
   },
   {
@@ -188,9 +199,12 @@ function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
 
   const candidateUnits = units ?? [];
   const isWardKeyword = needle === "ward" || needle === "wards";
+  // "free beds": every ward with a recorded ready bed, in the network's own order (search-places.ts).
+  const readyOnly = isReadyBedQuery(needle);
 
   return candidateUnits
     .filter((unit) => {
+      if (readyOnly) return (unitReadyBedCount(unit) ?? 0) > 0;
       if (isWardKeyword) return true;
       const site = siteByCode(unit.siteCode);
       const siteName = site?.name ?? "";
@@ -366,7 +380,19 @@ export type SearchIntent = "person" | "identifier" | "place" | "form" | "view" |
 
 export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Tasks" | "All";
 
-const SEARCH_GROUP_ORDER = ["people", "movements", "wards", "eds", "teams", "forms", "views", "tasks"] as const;
+const SEARCH_GROUP_ORDER = [
+  "people",
+  "similar",
+  "movements",
+  "referrals",
+  "beds",
+  "wards",
+  "eds",
+  "teams",
+  "forms",
+  "views",
+  "tasks",
+] as const;
 
 export type SearchGroupKey = (typeof SEARCH_GROUP_ORDER)[number];
 
@@ -453,11 +479,11 @@ export function searchGroupOrder(intent: SearchIntent, query: string): readonly 
 function leadingGroups(intent: SearchIntent, query: string): readonly SearchGroupKey[] {
   switch (intent) {
     case "person":
-      return ["people"];
+      return ["people", "similar"];
     case "identifier":
       return /^\s*wf-/i.test(query) ? ["movements", "people"] : ["people", "movements"];
     case "place":
-      return ["wards", "eds", "teams"];
+      return ["beds", "wards", "eds", "teams"];
     case "form":
       return ["forms"];
     case "view":
@@ -488,6 +514,62 @@ function movementDisplayNames(
     names[movement.id] = `${resolved.displayName} ${resolved.umrn}`;
   }
   return names;
+}
+
+export type ReferralSearchResult = {
+  referral: Referral;
+  /** "Family, Given" through the resolver, or its honest not-recorded wording. */
+  formalName: string;
+  umrn: string;
+};
+
+/**
+ * Queued referrals still waiting on an answer, found by the patient's name or UMRN as well as the
+ * referral's own id, origin and region. The same "queued and awaiting an answer" rule
+ * `searchPatients` keeps, so a referral the referrer withdrew or a ward accepted is never offered:
+ * an accepted one has a movement, and is found as that movement.
+ *
+ * Until 19 October 2026 the header search left referrals out because a referral had no page of its
+ * own. `referralBoardHref` now opens one referral on the board, so each row has a real destination.
+ */
+function searchReferrals(
+  query: string,
+  referrals: readonly Referral[],
+  lookup: { patients: readonly Patient[]; movements: readonly Movement[]; referrals: readonly Referral[] },
+): ReferralSearchResult[] {
+  const needle = foldPatientSearchText(query);
+  if (needle.length < 2) return [];
+  return referrals.flatMap((referral) => {
+    if (referralState(referral) !== "queued" || !referral.destinations.some(isAwaitingAnswer)) return [];
+    const info = resolveSubjectPatient(referral, lookup);
+    const words = foldPatientSearchText(
+      [info.displayName, info.formalName, info.umrn, referral.id, referral.originSiteCode, referral.homeRegion].join(
+        " ",
+      ),
+    );
+    return words.includes(needle) ? [{ referral, formalName: info.formalName, umrn: info.umrn }] : [];
+  });
+}
+
+/**
+ * "Did you mean…?" for a name that found nobody. Every word of the query must be a prefix of, or
+ * one keystroke from, one of the person's names, so "Jon Smth" offers Jon Smith and not every Jon.
+ * A near spelling is never chosen for anyone: the caller lists each with UMRN and date of birth so
+ * the right person is confirmed by a human, because a near miss is the classic wrong-patient error.
+ */
+function similarPeople(patients: readonly Patient[], query: string): Patient[] {
+  const words = query
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length >= 2);
+  if (words.length === 0) return [];
+  let candidates: Set<Patient> | undefined;
+  for (const word of words) {
+    const matches = new Set<Patient>([...nearPatients(patients, [word]), ...findPatients(patients, word)]);
+    candidates = candidates ? new Set([...candidates].filter((patient) => matches.has(patient))) : matches;
+    if (candidates.size === 0) return [];
+  }
+  return [...(candidates ?? [])];
 }
 
 /** 0 = prefix or word-start, 1 = buried in a word, 2 = no text hit (kept in the original order). */
@@ -532,7 +614,13 @@ export type SmartSearchInput = {
 
 export type SmartSearchResults = {
   people: Patient[];
+  /** Near spellings, only when the name found nobody. Never merged into `people`. */
+  similarPeople: Patient[];
   movements: Movement[];
+  referrals: ReferralSearchResult[];
+  beds: BedSearchResult[];
+  /** True when `wards` answers "free beds": only wards with a recorded ready bed. */
+  readyBedsOnly: boolean;
   wards: WardSearchResult[];
   emergencyDepartments: EdSearchResult[];
   communityTeams: CommunityTeamSearchResult[];
@@ -617,7 +705,11 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   if (trimmed.length === 0) {
     return {
       people: [],
+      similarPeople: [],
       movements: [],
+      referrals: [],
+      beds: [],
+      readyBedsOnly: false,
       wards: [],
       emergencyDepartments: [],
       communityTeams: [],
@@ -659,6 +751,18 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
+  const referrals = rankAndLimit(
+    searchReferrals(trimmed, input.referrals ?? [], {
+      patients: input.patients,
+      movements: input.movements,
+      referrals: input.referrals ?? [],
+    }),
+    trimmed,
+    (result) => [result.formalName, result.umrn, result.referral.id],
+    limit,
+  );
+  const readyBedsOnly = isReadyBedQuery(typed);
+  const beds = searchBeds(typed, input.units).slice(0, limit);
   const wards = rankAndLimit(
     searchWards(typed, input.units),
     typed,
@@ -710,9 +814,27 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       )
     : [];
 
+  // Near spellings only for a name-shaped query that found nobody and nothing else of the person's.
+  const similar =
+    intent === "person" &&
+    !readyBedsOnly &&
+    people.length === 0 &&
+    movements.length === 0 &&
+    referrals.length === 0 &&
+    trimmed.length >= 3
+      ? rankAndLimit(
+          similarPeople(input.patients, trimmed),
+          trimmed,
+          (patient) => [patient.familyName, patient.givenName],
+          limit,
+        )
+      : [];
   const totalCount =
     people.length +
+    similar.length +
     movements.length +
+    referrals.length +
+    beds.length +
     wards.length +
     emergencyDepartments.length +
     communityTeams.length +
@@ -722,7 +844,11 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   return {
     people,
+    similarPeople: similar,
     movements,
+    referrals,
+    beds,
+    readyBedsOnly,
     wards,
     emergencyDepartments,
     communityTeams,

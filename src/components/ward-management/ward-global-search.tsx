@@ -31,6 +31,9 @@ import {
   searchWardFlow,
 } from "@/components/ward-management/search/ward-smart-search";
 import { GlobalSearchPreview } from "@/components/ward-management/search/global-search-preview";
+import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { answerQuestion } from "@/components/ward-management/search/search-answers";
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, useIsPhone } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
@@ -90,14 +93,14 @@ export { SearchResultIcon } from "./ward-global-search-icon";
  * first and unconditionally, so a movement that has closed or arrived can never appear here, the
  * same rule the patient-search console and every other Ward Flow board already keep.
  *
- * ⚠️ QUEUED REFERRALS ARE DELIBERATELY NOT A THIRD RESULT KIND HERE. `searchPatients` in
- * `ward-derivations.ts` also returns referral hits, and this control could call it — but a
- * referral has no page of its own (`/ward-flow/referrals` is a board, not a per-record
- * route), so a referral row here would have nowhere honest to send a click. The brief for this
- * control requires every result to carry its record to a real destination; a kind with no
- * destination is not a smaller version of that requirement, it is a different one this file does
- * not attempt. The existing `/ward-flow/search` console remains the place a referral is
- * found.
+ * QUEUED REFERRALS ARE A RESULT KIND (search review, 19 October 2026). Until then they were left
+ * out because a referral had no page of its own; `referralBoardHref` now opens one referral on the
+ * board, so each referral row carries its record to a real destination. Only queued referrals still
+ * awaiting an answer are listed, the same rule `searchPatients` keeps.
+ *
+ * COMMON QUESTIONS ("over 24 hours", "no bed yet", "Form 1A") are answered from the Patients page's
+ * census while the palette is open (`search/search-answers.ts`), and the preview takes each
+ * person's "where now" and next step from the same census, so the two screens never disagree.
  *
  * NAVIGATION: every real link is a `next/link` `<Link>`, so a plain click, a middle click and a
  * ctrl/cmd-click all behave exactly as a browser link should — nothing here intercepts those.
@@ -185,13 +188,16 @@ const PATIENT_SEARCH_HREF = "/ward-flow/search";
  * more than six of one thing without leaving the page. Places folds wards, EDs and teams together,
  * the same three groups the engine leads with for a place query.
  */
-type KindFilter = "all" | "people" | "movements" | "places" | "forms" | "views" | "tasks";
+type KindFilter = "all" | "answers" | "people" | "movements" | "referrals" | "places" | "forms" | "views" | "tasks";
 
 const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly string[] }[] = [
   { key: "all", label: "All", groups: [] },
-  { key: "people", label: "People", groups: ["people"] },
+  // A common question ("over 24 hours") answered from the Patients page's census (search-answers.ts).
+  { key: "answers", label: "Answers", groups: ["answers"] },
+  { key: "people", label: "People", groups: ["people", "similar"] },
   { key: "movements", label: "Movements", groups: ["movements"] },
-  { key: "places", label: "Places", groups: ["wards", "eds", "teams"] },
+  { key: "referrals", label: "Referrals", groups: ["referrals"] },
+  { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams"] },
   { key: "forms", label: "Forms", groups: ["forms"] },
   { key: "views", label: "Views", groups: ["views"] },
   { key: "tasks", label: "Tasks", groups: ["tasks"] },
@@ -364,10 +370,41 @@ export function WardGlobalSearch({
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
 
+  /*
+   * The Patients page's census, built only while the palette is open: it answers the common
+   * questions ("over 24 hours") and gives the preview each person's "where now" and next step, so
+   * the header and the Patients page cannot disagree. Outside a provider (tests) there is none, and
+   * search simply has no answers and no "where now" line.
+   */
+  const admissions = wardFlow?.admissions;
+  const configuration = wardFlow?.configuration;
+  const censusDayZero = wardFlow?.dayZero;
+  const census = useMemo(
+    () =>
+      !open || !admissions || !censusDayZero || now === undefined
+        ? null
+        : buildCensus({
+            movements,
+            referrals: [...(referrals ?? [])],
+            units,
+            patients: [...patients],
+            admissions,
+            plannedAdmissions,
+            now,
+            thresholds: dueSoonThresholdsOf(configuration),
+            dayZero: censusDayZero,
+          }),
+    [open, admissions, censusDayZero, now, movements, referrals, units, patients, plannedAdmissions, configuration],
+  );
+  const answer = useMemo(
+    () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census)),
+    [trimmed, refusal, census],
+  );
+
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
   const allGroups = useMemo(
-    () => (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup)),
-    [smartResults, refusal, trimmed, units, lookup],
+    () => (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer)),
+    [smartResults, refusal, trimmed, units, lookup, answer],
   );
 
   const kindCounts = useMemo(() => {
@@ -802,10 +839,11 @@ export function WardGlobalSearch({
             ) : options.length === 0 ? (
               <div className={styles.empty} data-testid="ward-global-search-empty">
                 <Search className={styles.emptyIcon} aria-hidden="true" />
-                <span className={styles.emptyTitle}>No matches found</span>
+                <span className={styles.emptyTitle}>{answer ? answer.question.heading : "No matches found"}</span>
                 <p className={styles.emptyDescription}>
-                  No matches for “{trimmed}”. This does not say whether the person or movement exists, only that this
-                  search did not find one.
+                  {answer
+                    ? "Nobody on the Patients page matches this right now."
+                    : `No matches for “${trimmed}”. This does not say whether the person or movement exists, only that this search did not find one.`}
                 </p>
               </div>
             ) : (
@@ -905,7 +943,7 @@ export function WardGlobalSearch({
                                     <span className={styles.umrn}>{item.umrn}</span>
                                     {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
                                   </>
-                                ) : item.readyBeds !== undefined ? (
+                                ) : item.readyBeds !== undefined && !item.meta ? (
                                   <span>
                                     {item.siteName} · {item.readyBeds} ready
                                   </span>
@@ -1103,6 +1141,7 @@ export function WardGlobalSearch({
                 units={units}
                 now={now}
                 dayZero={wardFlow?.dayZero}
+                census={census}
                 onOpen={onPreviewOpen}
               />
             </div>

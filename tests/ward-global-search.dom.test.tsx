@@ -53,6 +53,9 @@ import {
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -675,5 +678,76 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.focus(input);
     fireEvent.mouseDown(screen.getByTestId("ward-global-search-scrim"));
     expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+  });
+});
+
+/*
+ * Search review, 19 October 2026: inside the provider the palette answers common questions from the
+ * Patients page's census, lists queued referrals, and its preview says where a person is now.
+ * Fixtures are read from the same seeded world the provider starts with.
+ */
+describe("WardGlobalSearch inside the provider (search review)", () => {
+  const seeded = seedWardFlowState();
+
+  function ProvidedSearch() {
+    const flow = useWardFlow();
+    return (
+      <WardGlobalSearch
+        movements={flow.movements}
+        patients={flow.patients}
+        referrals={flow.referrals}
+        units={flow.units}
+        plannedAdmissions={flow.plannedAdmissions}
+        now={flow.now}
+        onNavigate={vi.fn()}
+      />
+    );
+  }
+
+  function renderProvided(query: string) {
+    clearGlobalSearchRecents();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ProvidedSearch />
+      </WardFlowProvider>,
+    );
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: query } });
+  }
+
+  it("answers 'over 24 hours' with the people waiting that long, ahead of every other group", () => {
+    renderProvided("over 24 hours");
+    const heading = screen.getByTestId("ward-global-search-group-answers");
+    expect(heading).toHaveTextContent("Waiting over 24 hours");
+    expect(screen.getAllByTestId(/^ward-global-search-group-/)[0]).toBe(heading);
+    expect(screen.getByTestId("ward-global-search-kind-answers")).toBeEnabled();
+  });
+
+  it("lists a queued referral by its patient's name, opening that referral on the board", () => {
+    const queued = seeded.referrals.find(
+      (referral) =>
+        referralState(referral) === "queued" &&
+        referral.destinations.some(isAwaitingAnswer) &&
+        resolveSubjectPatient(referral, seeded).patient !== undefined,
+    );
+    if (!queued) throw new Error("fixture drifted: no queued referral with a named patient");
+    renderProvided(resolveSubjectPatient(queued, seeded).patient!.familyName);
+    expect(screen.getByTestId(`ward-global-search-result-referral-${queued.id}`)).toHaveAttribute(
+      "href",
+      referralBoardHref(queued.id),
+    );
+  });
+
+  it("previews a patient on a ward with where they are now and a link to the ward", () => {
+    const stay = seeded.admissions.find((admission) => admission.state === "occupied" && admission.patientId !== null);
+    const patient = stay ? seeded.patients.find((candidate) => candidate.id === stay.patientId) : undefined;
+    if (!stay || !patient) throw new Error("fixture drifted: no occupied bed with a linked patient");
+    renderProvided(patient.umrn);
+    fireEvent.mouseEnter(screen.getByTestId(`ward-global-search-result-person-${patient.id}`));
+    expect(screen.getByTestId("ward-global-search-preview-where")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-global-search-preview-open-ward").getAttribute("href")).toContain(
+      `/ward-flow/ward/${encodeURIComponent(stay.unitId)}`,
+    );
   });
 });
