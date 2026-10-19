@@ -14,7 +14,7 @@ import { edById, edShortName } from "../ward-sites";
 import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-network-figures.module.css";
 
-const root = "/mockups/ward-flow";
+const root = "/ward-flow";
 
 /**
  * Tools, All figures: the whole-network figures in three groups (beds, flow, waits), always counted

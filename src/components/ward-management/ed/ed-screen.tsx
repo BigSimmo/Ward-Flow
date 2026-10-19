@@ -206,7 +206,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           <WardNotFoundBody
             title="Emergency department not found"
             testId="ward-ed-unresolved"
-            list={{ href: "/mockups/ward-flow/ed", label: "All emergency departments" }}
+            list={{ href: "/ward-flow/ed", label: "All emergency departments" }}
           >
             No emergency department matches this link. It never falls back to a different department.
           </WardNotFoundBody>
@@ -442,12 +442,12 @@ export function EdScreen({ edId }: EdScreenProps) {
           <EdElsewhereLinks
             links={[
               {
-                href: "/mockups/ward-flow/capacity",
+                href: "/ward-flow/capacity",
                 title: "Statewide capacity",
                 sub: "Every unit's beds, on the Capacity page",
               },
               {
-                href: "/mockups/ward-flow/governance",
+                href: "/ward-flow/governance",
                 title: "Seen in the last 24 hours",
                 sub: "This department's recorded events, in the Governance audit",
               },

@@ -75,7 +75,7 @@ describe("Summary, Map view", () => {
     const rank = screen.getByTestId("ward-statistics-map-rank");
     const links = within(rank).getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/statistics\/ward\//);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ward\//);
 
     const { sites } = figuresAtAnchor();
     const values = sites.filter((site) => site.wards.length > 0).map((site) => lensValue(site, "beds"));
@@ -90,7 +90,7 @@ describe("Summary, Map view", () => {
     expect(within(rank).getByRole("heading", { name: "Most waiting in ED" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/statistics\/ed\//);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
   });
 
   it("choosing a site on the map lists its wards and ED as links, and closes again", () => {
@@ -105,7 +105,7 @@ describe("Summary, Map view", () => {
       .getAllByRole("link")
       .map((link) => link.getAttribute("href"));
     expect(hrefs.some((href) => href?.includes("/statistics/ward/"))).toBe(true);
-    expect(hrefs).toContain("/mockups/ward-flow/statistics/ed/rph-ed");
+    expect(hrefs).toContain("/ward-flow/statistics/ed/rph-ed");
     fireEvent.click(within(card).getByRole("button", { name: /^Close/ }));
     expect(screen.queryByTestId("ward-statistics-map-site")).toBeNull();
   });

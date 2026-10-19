@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { generateMetadata } from "@/app/mockups/ward-flow/ward/[unitId]/page";
+import { generateMetadata } from "@/app/ward-flow/ward/[unitId]/page";
 import { allUnits } from "@/components/ward-management/ward-sites";
 
 /**

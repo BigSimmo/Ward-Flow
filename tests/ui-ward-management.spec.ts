@@ -3,7 +3,7 @@ import { expect, test, type Page } from "playwright/test";
 import { WARD_WORKSPACE_MODES } from "@/components/ward-management/ward-management-modes";
 import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
-const PATH = "/mockups/ward-flow";
+const PATH = "/ward-flow";
 
 async function gotoWardFlow(page: Page) {
   await page.goto(PATH, { waitUntil: "domcontentloaded" });
@@ -27,7 +27,7 @@ async function expectNoPageOverflow(page: Page) {
  * `document.documentElement` can never report an overflow on the coordinator route — `.screen`
  * sets `overflow: hidden` — so `expectNoPageOverflow` alone cannot catch a track inside the
  * region grid running wider than its box (Task 3 review Important 1). Only meaningful on
- * /mockups/ward-flow itself, where the region grid testid exists.
+ * /ward-flow itself, where the region grid testid exists.
  */
 async function expectNoRegionGridOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
@@ -44,7 +44,7 @@ test.describe("@mockup Ward Flow command view", () => {
 
   // "supports role-aware queue review and human-confirmed destination choice" and "collapses
   // the queue, opens the action inbox, and reaches the patient workspace" asserted against
-  // WardManagementConsole, which Task 3 stopped rendering at /mockups/ward-flow. That component is
+  // WardManagementConsole, which Task 3 stopped rendering at /ward-flow. That component is
   // unreferenced and Task 9 deletes it; the equivalent coverage on the coordinator screen has no
   // home yet. See the fixme placeholders in tests/ui-ward-coordinator.spec.ts.
   //
@@ -289,7 +289,7 @@ test.describe("@mockup Ward Flow command view", () => {
 
   test("routes a selected movement across the network diagram and explains the shortlist", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
-    await page.goto("/mockups/ward-flow/network", { waitUntil: "domcontentloaded" });
+    await page.goto("/ward-flow/network", { waitUntil: "domcontentloaded" });
 
     // Match gotoCoordinator: SSR already shows the tabs, but the first click can be lost
     // while the shell hydrates and moves the data-mode bar into the header.
@@ -528,7 +528,7 @@ test.describe("@mockup Ward Flow command view", () => {
   // the "no brand link" count cannot pass on an empty page.
   test("uses the lean bar on phone, with Menu first and no brand link", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 820 });
-    await page.goto("/mockups/ward-flow/queue", { waitUntil: "domcontentloaded" });
+    await page.goto("/ward-flow/queue", { waitUntil: "domcontentloaded" });
 
     const menu = page.getByTestId("ward-bar-phone-menu");
     await expect(menu).toBeVisible({ timeout: 15_000 });

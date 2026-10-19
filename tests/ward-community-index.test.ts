@@ -73,7 +73,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
 }));
 
@@ -84,7 +84,7 @@ import { FOLLOW_UP_STATES } from "@/components/ward-management/ward-admissions";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const ROUTE_PREFIX = "/mockups/ward-flow";
+const ROUTE_PREFIX = "/ward-flow";
 
 /** The route the index links into, as one string, so a change to it fails in one place. */
 const TEAM_ROUTE_PREFIX = `${ROUTE_PREFIX}/community`;

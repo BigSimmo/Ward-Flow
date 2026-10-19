@@ -37,7 +37,7 @@ import { describe, expect, it } from "vitest";
  * is added and a stub promoted back to a real screen stops being covered on the same day.
  */
 
-const ROUTES_ROOT = join(process.cwd(), "src/app/mockups/ward-flow");
+const ROUTES_ROOT = join(process.cwd(), "src/app/ward-flow");
 const COMPONENTS_ROOT = join(process.cwd(), "src/components/ward-management");
 
 /** Every static ward route whose page is nothing but a redirect. */
@@ -58,7 +58,7 @@ function redirectStubRoutes(): string[] {
       }
     }
   };
-  walk(ROUTES_ROOT, "/mockups/ward-flow");
+  walk(ROUTES_ROOT, "/ward-flow");
   return stubs.sort();
 }
 
@@ -101,7 +101,7 @@ function everyWardSourceFile(): string[] {
 /**
  * 🔴 **HREF CONSTANTS ARE RESOLVED, AND THE FIRST VERSION OF THIS DID NOT DO IT.**
  *
- * Matching only literal `href="/mockups/ward-flow/..."` found NINE links across the whole estate —
+ * Matching only literal `href="/ward-flow/..."` found NINE links across the whole estate —
  * and the floor below said that could not be right, which is the only reason I looked. Most ward
  * links are written `href={STATISTICS_OVERVIEW_HREF}`, so a stale link written through a constant
  * — the normal way it would be written here — was invisible to the guard. It would have passed
@@ -112,7 +112,7 @@ function hrefConstants(): Map<string, string> {
   for (const path of everyWardSourceFile()) {
     const source = stripComments(readFileSync(path, "utf8"));
     for (const match of source.matchAll(
-      /export const ([A-Z0-9_]+)(?::\s*[^=]+)?\s*=\s*["'`](\/mockups\/ward-flow[^"'`]*)["'`]/gu,
+      /export const ([A-Z0-9_]+)(?::\s*[^=]+)?\s*=\s*["'`](\/ward-flow[^"'`]*)["'`]/gu,
     )) {
       constants.set(match[1], match[2]);
     }
@@ -129,7 +129,7 @@ function wardLinks(): { file: string; href: string }[] {
     const file = path.split(/[\\/]/u).pop() ?? path;
     const source = stripComments(readFileSync(path, "utf8"));
 
-    for (const match of source.matchAll(/href=\{?["'`](\/mockups\/ward-flow[^"'`{}]*)["'`]/gu)) {
+    for (const match of source.matchAll(/href=\{?["'`](\/ward-flow[^"'`{}]*)["'`]/gu)) {
       found.push({ file, href: match[1] });
     }
     for (const match of source.matchAll(/href=\{([A-Z0-9_]+)\}/gu)) {
@@ -148,14 +148,14 @@ describe("no ward screen links at a retired route kept only as a redirect", () =
      * guard exists to find. The second is the reason the first cannot be fixed by deleting the arm:
      * a commented-out link must still not count as a link.
      */
-    const withUrl = 'const links = [["WA Health", "https://www.health.wa.gov.au/x"], href="/mockups/ward-flow/queue"];';
+    const withUrl = 'const links = [["WA Health", "https://www.health.wa.gov.au/x"], href="/ward-flow/queue"];';
     expect(
       stripComments(withUrl),
       "a URL is being read as a line comment again, so everything after it on that line — including " +
         "an href — is deleted before this guard sees it",
-    ).toContain("/mockups/ward-flow/queue");
+    ).toContain("/ward-flow/queue");
 
-    const commented = '// href="/mockups/ward-flow/queue"';
+    const commented = '// href="/ward-flow/queue"';
     expect(
       stripComments(commented).trim(),
       "a real line comment survived stripping, so a commented-out link would be reported as a live one",

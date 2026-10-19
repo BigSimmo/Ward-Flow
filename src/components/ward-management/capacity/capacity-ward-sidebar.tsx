@@ -7,8 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
+import type { DischargeOpenHandle, DischargeRecord } from "../ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
+import { Button } from "@/components/wf";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -17,8 +19,6 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
-
-const CAPACITY_RECORD_ACTOR: WardRecordActor = { role: "coordinator" };
 
 export function CapacityTabs({
   id,
@@ -76,6 +76,9 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
       "openDischargeRecord",
       "readDischargeRecord",
     );
+  const recordActors = useWardRecordActors();
+  const recordActor =
+    recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -88,8 +91,8 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
     heading.current?.focus();
   }, []);
   const site = siteByCode(row.unit.siteCode);
-  const records = readDischargeRecords(CAPACITY_RECORD_ACTOR, row.unit.id);
-  const detail = opened ? readDischargeRecord(CAPACITY_RECORD_ACTOR, opened.admissionId, opened.handle) : null;
+  const records = readDischargeRecords(recordActor, row.unit.id);
+  const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
   const request = refreshRequests
     .filter((entry) => entry.unitId === row.unit.id && entry.at >= row.unit.allocatable.confirmedAt)
@@ -102,7 +105,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
     });
   }
   function openRecord(record: DischargeRecord) {
-    const handle = openDischargeRecord(CAPACITY_RECORD_ACTOR, record.admissionId);
+    const handle = openDischargeRecord(recordActor, record.admissionId);
     setOpened({ admissionId: record.admissionId, handle });
   }
   return (
@@ -232,15 +235,24 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
                 {isConfirmationFresh(row.unit, now) ? "Within" : "Past"} this ward’s{" "}
                 {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold.
               </p>
-              <button
-                type="button"
-                className={styles.refreshButton}
-                onClick={() =>
-                  dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
-                }
-              >
-                Request ward update
-              </button>
+              {recordActor.role === "coordinator" ? (
+                <button
+                  type="button"
+                  className={styles.refreshButton}
+                  onClick={() =>
+                    dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
+                  }
+                >
+                  Request ward update
+                </button>
+              ) : (
+                <Button
+                  className={styles.refreshButton}
+                  disabledReason="Only the coordinator can request ward updates."
+                >
+                  Request ward update
+                </Button>
+              )}
               {request ? <p role="status">Update requested {formatInstantWithDay(request.at, now)}.</p> : null}
             </section>
           </>
@@ -330,8 +342,8 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
         )}
       </div>
       <div className={styles.sidebarFooter}>
-        <Link href={`/mockups/ward-flow/ward/${row.unit.id}`}>Open ward</Link>
-        <Link href="/mockups/ward-flow/discharges">Discharge board</Link>
+        <Link href={`/ward-flow/ward/${row.unit.id}`}>Open ward</Link>
+        <Link href="/ward-flow/discharges">Discharge board</Link>
       </div>
     </>
   );

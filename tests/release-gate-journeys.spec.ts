@@ -43,7 +43,7 @@ test.describe.configure({ timeout: 120_000 });
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
   // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/mockups/ward-flow/wards", "ward-index");
+  await goViaNav(page, "/ward-flow/wards", "ward-index");
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
@@ -55,7 +55,7 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
     await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
     await page.getByRole("link", { name: "Bed board", exact: true }).click();
   }
-  await page.waitForURL(`**/mockups/ward-flow/board/${unitId}`);
+  await page.waitForURL(`**/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
 }
 
@@ -63,7 +63,7 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   page,
 }, testInfo) => {
   // Royal Perth's inbox holds RF-009, queued and not yet raised into a movement.
-  await page.goto("/mockups/ward-flow/ed/rph-ed", { waitUntil: "load" });
+  await page.goto("/ward-flow/ed/rph-ed", { waitUntil: "load" });
   await waitForScreen(page, "ward-ed-screen");
   await plantSentinel(page);
   await expectAccessible(page, testInfo, "ED board");
@@ -165,7 +165,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   const unitId = "rph-adult-secure";
   const unitName = unitById(unitId)!.name;
 
-  await page.goto("/mockups/ward-flow/capacity", { waitUntil: "load" });
+  await page.goto("/ward-flow/capacity", { waitUntil: "load" });
   await waitForScreen(page, "ward-capacity-page");
   await plantSentinel(page);
   const readyBefore = await capacityReady(page, unitId, unitName);
@@ -187,7 +187,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await expectNoReloadSince(page, "confirming the ward's numbers");
 
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(0);
   await expectAccessible(page, testInfo, "capacity board after the ward's figures");
   await expectNoReloadSince(page, "returning to the capacity board");
@@ -209,7 +209,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   const unitName = unitById(unitId)!.name;
 
   // The sending ED records clearance, books the job and marks the patient ready for handover.
-  await page.goto(`/mockups/ward-flow/ed/${movement!.originEdId}`, { waitUntil: "load" });
+  await page.goto(`/ward-flow/ed/${movement!.originEdId}`, { waitUntil: "load" });
   await waitForScreen(page, "ward-ed-screen");
   await plantSentinel(page);
   // The patient's sheet carries clearance and the next step. Desktop opens it from the name, the
@@ -309,7 +309,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
     .sort((a, b) => a.expectedAt - b.expectedAt || a.id.localeCompare(b.id))[0];
   expect(release, `fixture assumption: ${unitId} seeds an unblocked expected release`).toBeDefined();
 
-  await page.goto("/mockups/ward-flow/capacity", { waitUntil: "load" });
+  await page.goto("/ward-flow/capacity", { waitUntil: "load" });
   await waitForScreen(page, "ward-capacity-page");
   await plantSentinel(page);
   const readyBefore = await capacityReady(page, unitId, unitName);
@@ -350,7 +350,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
 
   // The coordinator's board shows one more ready bed.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/mockups/ward-flow/capacity", "ward-capacity-page");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-page");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
   await expectAccessible(page, testInfo, "capacity board after the departure");
   await expectNoReloadSince(page, "returning to the capacity board");

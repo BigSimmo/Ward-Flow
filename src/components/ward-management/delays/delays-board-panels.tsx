@@ -332,7 +332,7 @@ export function PersonPanel({
         {movement.declines.length > 0 ? (
           <Link
             className={styles.inlineAction}
-            href="/mockups/ward-flow"
+            href="/ward-flow"
             data-testid={`delays-override-${movement.id}`}
             onClick={() => {
               setFocusMovementId(movement.id);

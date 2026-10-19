@@ -31,7 +31,7 @@
  * ⚠️ WHAT THIS SCAN WALKS, stated because the last checker in this directory shipped with a blind
  * spot in precisely this field — its ROOTS omitted `docs/`, and it printed "None found" on both
  * sides of a real repair. This one walks `src/components/ward-management/**` and
- * `src/app/mockups/ward-flow/**`, extensions `.ts` and `.tsx` only. It does NOT walk CSS (class
+ * `src/app/ward-flow/**`, extensions `.ts` and `.tsx` only. It does NOT walk CSS (class
  * names are not rendered prose), tests, scripts, `docs/`, or the mockup drawings. A pass here says
  * nothing about any of those.
  *
@@ -47,7 +47,7 @@ import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
-const ROOTS = ["src/components/ward-management", "src/app/mockups/ward-flow"];
+const ROOTS = ["src/components/ward-management", "src/app/ward-flow"];
 const EXTENSIONS = [".ts", ".tsx"];
 
 /**

@@ -72,7 +72,7 @@ The app records one of four legal statuses, in these words:
 - "Detained awaiting examination"
 - "Involuntary inpatient"
 
-Operational screens display the clinician-recorded form number and paper expiry (`src/lib/form-register.ts`) with the notice "Not legally checked", while statutory periods are demonstrated in the isolated `/mockups/ward-flow/legal-forms` reference view (`D-29`). Main operational screens never auto-calculate statutory deadlines.
+Operational screens display the clinician-recorded form number and paper expiry (`src/lib/form-register.ts`) with the notice "Not legally checked", while statutory periods are demonstrated in the isolated `/ward-flow/legal-forms` reference view (`D-29`). Main operational screens never auto-calculate statutory deadlines.
 
 The app will not let you discharge a patient recorded as involuntary or detained awaiting examination
 until their legal status is changed. _(not yet checked on screen)_
@@ -211,7 +211,7 @@ word "breach".
 Settings also lets you change the two warnings before a recorded legal due time: "First warning
 before a legal due time" (1 hour by default) and "Second warning before a legal due time" (3 hours
 by default). Each is labelled "Your default, not a legal limit." They only change when a typed due
-time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), while statutory periods are demonstrated solely in `/mockups/ward-flow/legal-forms` (`D-29`).
+time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), while statutory periods are demonstrated solely in `/ward-flow/legal-forms` (`D-29`).
 
 ---
 
@@ -241,7 +241,7 @@ These source-based corrections have not been rechecked on screen.
 ## 9. Words the app uses
 
 - **Not recorded:** nobody has entered this. The app does not guess.
-- **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Statutory period reference tables live only on `/mockups/ward-flow/legal-forms` (`D-29`).
+- **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Statutory period reference tables live only on `/ward-flow/legal-forms` (`D-29`).
 - **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
 - **Pulled (`R-B-05`):** a bed taken and held for one named, accepted patient, from pull until arrival or release.
 - **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.

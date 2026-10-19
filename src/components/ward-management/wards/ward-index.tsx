@@ -603,7 +603,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             {staleRows.map((row) => (
               <li key={row.unit.id}>
                 <StatusGlyph tone="warning" size={9} />
-                <Link className={styles.checkName} href={`/mockups/ward-flow/ward/${row.unit.id}`}>
+                <Link className={styles.checkName} href={`/ward-flow/ward/${row.unit.id}`}>
                   {row.unit.name}
                 </Link>
                 <span className={styles.checkAge}>
@@ -702,7 +702,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             !isPhone && mostReady && mostReady.ready > 0 ? (
               <Link
                 className={styles.heroJump}
-                href={`/mockups/ward-flow/ward/${mostReady.unit.id}`}
+                href={`/ward-flow/ward/${mostReady.unit.id}`}
                 aria-label={`Most ready: ${mostReady.unit.name}, ${mostReady.ready} ready. Open the ward.`}
               >
                 <span className={styles.heroJumpLabel}>Most ready</span>
@@ -929,7 +929,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <li key={row.unit.id}>
                   <Link
                     className={styles.unplacedLink}
-                    href={`/mockups/ward-flow/ward/${row.unit.id}`}
+                    href={`/ward-flow/ward/${row.unit.id}`}
                     data-testid={`ward-index-link-${row.unit.id}`}
                   >
                     {row.unit.name}
@@ -1037,7 +1037,7 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
         {/* Audit 11 Oct 2026: the whole card is the Enter target, so 22 repeated buttons go. */}
         <Link
           className={styles.cardLink}
-          href={`/mockups/ward-flow/ward/${unit.id}`}
+          href={`/ward-flow/ward/${unit.id}`}
           data-testid={`ward-index-link-${unit.id}`}
           aria-label={`Enter ${unit.name}`}
         >
@@ -1145,7 +1145,7 @@ function WardProfileBody({
         {inSheet ? null : (
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
-            href={`/mockups/ward-flow/board/${unit.id}`}
+            href={`/ward-flow/board/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
             Bed board
@@ -1154,7 +1154,7 @@ function WardProfileBody({
         {inSheet ? null : (
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
-            href={`/mockups/ward-flow/ward/${unit.id}`}
+            href={`/ward-flow/ward/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
             Enter ward
@@ -1290,8 +1290,8 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
-      secondary={{ label: "Bed board", onAction: () => router.push(`/mockups/ward-flow/board/${row.unit.id}`) }}
-      primary={{ label: "Enter ward", onAction: () => router.push(`/mockups/ward-flow/ward/${row.unit.id}`) }}
+      secondary={{ label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
+      primary={{ label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }}
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
     >
@@ -1395,7 +1395,7 @@ function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim:
               <span role="cell" className={styles.end}>
                 <Link
                   className={buttonClass({ variant: "sec", size: "sm" })}
-                  href={`/mockups/ward-flow/ward/${row.unit.id}`}
+                  href={`/ward-flow/ward/${row.unit.id}`}
                   data-testid={`ward-index-link-${row.unit.id}`}
                   aria-label={`Enter ${row.unit.name}`}
                 >

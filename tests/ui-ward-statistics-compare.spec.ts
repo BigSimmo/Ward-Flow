@@ -28,7 +28,7 @@ import { expect, test } from "playwright/test";
  * are worth the same.
  */
 
-const COMPARE = "/mockups/ward-flow/statistics/compare";
+const COMPARE = "/ward-flow/statistics/compare";
 const TABLES = ["ward-statistics-compare-wards", "ward-statistics-compare-eds"] as const;
 
 /**

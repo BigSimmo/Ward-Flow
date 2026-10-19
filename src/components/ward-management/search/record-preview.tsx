@@ -869,7 +869,7 @@ export function RecordPreview({
 
           {/* 6. Coordinator Action Bar */}
           <div className={styles.dossierActionBar}>
-            <Link href="/mockups/ward-flow/referrals" className={styles.btnPrimary}>
+            <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
               <span>Intake Board</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />

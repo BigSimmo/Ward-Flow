@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import WardPersonPage from "@/app/mockups/ward-flow/people/[patientId]/page";
+import WardPersonPage from "@/app/ward-flow/people/[patientId]/page";
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
 
 describe("patient route decoding", () => {

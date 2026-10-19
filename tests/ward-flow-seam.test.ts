@@ -34,7 +34,7 @@ import { describe, expect, it } from "vitest";
  * "somebody updated the expected number" is how the next one would arrive.
  */
 
-const WARD_DIRS = ["src/components/ward-management", "src/app/mockups/ward-flow"];
+const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow"];
 
 /**
  * The shared modules Ward Flow may reach outward for, each with the reason it is not worth
@@ -95,10 +95,10 @@ const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
   /*
    * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
-   * they are here because the literal this guard matches (`mockups/ward-flow`) is a PREFIX of
-   * their own route (`/mockups/ward-flow-sign-in`). They reference nothing; they are named by it.
+   * they are here because the route this guard matches (`/ward-flow`) is a PREFIX of
+   * their own route (`/ward-flow-sign-in`). They reference nothing; they are named by it.
    *
-   * Why the sign-in screen is a sibling rather than a child: `src/app/mockups/ward-flow/layout.tsx`
+   * Why the sign-in screen is a sibling rather than a child: `src/app/ward-flow/layout.tsx`
    * mounts the rail, the bar and the provider around every nested route with no per-route opt-out,
    * and a sign-in screen is specified to carry none of them. It imports no ward-management code at
    * all, which is what keeps this guard's real subject — code coupling — untouched.
@@ -108,7 +108,7 @@ const APPROVED_ROUTE_REFERENCES = new Map([
    * teaching the guard a second concept of "inside" and this list is read by people.
    */
   [
-    "src/app/mockups/ward-flow-sign-in/page.tsx",
+    "src/app/ward-flow-sign-in/page.tsx",
     "Ward Flow's own sign-in route — a sibling of the subtree, not a reference to it",
   ],
   [
@@ -130,7 +130,13 @@ const APPROVED_ROUTE_REFERENCES = new Map([
   ],
 ]);
 
-const WARD_ROUTE_LITERAL = "mockups/ward-flow";
+/**
+ * Ward Flow's route, `/ward-flow` (or its route folder, `app/ward-flow`), followed by a path, quote,
+ * query or the `-sign-in` sibling. Since the route left `/mockups` (19 October 2026) a bare
+ * `ward-flow` substring also matches unrelated names such as `ward-flow-v9-tokens.css` or
+ * `docs/ward-flow/`, so this matches the route only.
+ */
+const WARD_ROUTE_PATTERN = /(?:\bapp\/ward-flow|(?<![\w./-])\/ward-flow)(?=[/"'`?#)\s]|-sign-in|$)/mu;
 
 function walk(dir: string): string[] {
   const found: string[] = [];
@@ -256,7 +262,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     const unexpected = allSourceFiles
       .filter((file) => !isWardPath(file))
       .filter((file) => !APPROVED_ROUTE_REFERENCES.has(file))
-      .filter((file) => readFileSync(file, "utf8").includes(WARD_ROUTE_LITERAL));
+      .filter((file) => readFileSync(file, "utf8").match(WARD_ROUTE_PATTERN) !== null);
 
     expect(
       unexpected,
@@ -309,7 +315,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/lib/theme-client",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route
-    // (`/mockups/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised
+    // (`/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised
     // deliberately, like the module pin above: the two new entries are Ward Flow's own files, and
     // the reasons beside them say so rather than letting a bare count imply four more couplings.
     // 6 -> 7 on 2026-09-13: the digest is another intentional Ward-owned sibling. It serves the

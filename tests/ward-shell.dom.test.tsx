@@ -7,7 +7,7 @@
 // `tests/ward-shell-header.dom.test.tsx`).
 //
 // Updated 2026-09-04 for the ruling that split `ward-shell.tsx` into two components:
-// `WardGround` (the ground alone, mounted in `src/app/mockups/ward-flow/layout.tsx`, the only
+// `WardGround` (the ground alone, mounted in `src/app/ward-flow/layout.tsx`, the only
 // thing that is an ancestor of every route's `<main>`) and `WardShellHeader` (the place label
 // alone, no props, deriving its own place from `usePathname` — never a role switcher, since
 // `ClinicalRail` already renders one). See `tests/ward-shell-mounted.test.tsx` for proof the
@@ -95,7 +95,7 @@ describe("Task 1 — the shell owns the ground", () => {
   });
 });
 
-const pathnameState = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/ward/rph-adult-secure" }));
+const pathnameState = vi.hoisted(() => ({ pathname: "/ward-flow/ward/rph-adult-secure" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathnameState.pathname,
@@ -104,7 +104,7 @@ vi.mock("next/navigation", () => ({
 /**
  * A minimal route fixture: a page-level `<main>`/`<h1>` (standing in for whatever real screen
  * mounts inside `WardGround`) alongside `WardShellHeader`, exactly the shape
- * `src/app/mockups/ward-flow/layout.tsx` now produces for every real route. `WardShellHeader`
+ * `src/app/ward-flow/layout.tsx` now produces for every real route. `WardShellHeader`
  * reads `usePathname` directly (mocked above via `pathnameState`), never a `place` prop.
  */
 function renderRoute(pathname: string) {
@@ -124,18 +124,18 @@ function renderRoute(pathname: string) {
 
 describe("Task 2 — the header region adds no landmark, no heading, and no role switcher", () => {
   it("adds no second <h1> — exactly one remains, the page's own", () => {
-    renderRoute("/mockups/ward-flow/ward/rph-adult-secure");
+    renderRoute("/ward-flow/ward/rph-adult-secure");
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Page's own heading");
   });
 
   it('adds no second <main id="main-content"> — exactly one remains, the page\'s own', () => {
-    renderRoute("/mockups/ward-flow/ward/rph-adult-secure");
+    renderRoute("/ward-flow/ward/rph-adult-secure");
     expect(document.querySelectorAll('main[id="main-content"]')).toHaveLength(1);
   });
 
   it('contributes zero role="main" elements on its own, with no page main present', () => {
-    pathnameState.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    pathnameState.pathname = "/ward-flow/ward/rph-adult-secure";
     render(
       <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
         <WardGround>
@@ -148,18 +148,18 @@ describe("Task 2 — the header region adds no landmark, no heading, and no role
   });
 
   it("renders the place as text, never as a heading", () => {
-    renderRoute("/mockups/ward-flow/ward/rph-adult-secure");
+    renderRoute("/ward-flow/ward/rph-adult-secure");
     expect(screen.queryByRole("heading", { name: "Dabakarn" })).toBeNull();
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
   });
 
   it("renders no place label at all when the route has none — never a placeholder", () => {
-    renderRoute("/mockups/ward-flow/queue");
+    renderRoute("/ward-flow/queue");
     expect(screen.queryByText(/Dabakarn/)).toBeNull();
   });
 
   it("renders no role switcher — WardBar already renders the only one (formerly ClinicalRail)", () => {
-    renderRoute("/mockups/ward-flow/ward/rph-adult-secure");
+    renderRoute("/ward-flow/ward/rph-adult-secure");
     expect(screen.queryAllByRole("button", { name: /change view/i })).toHaveLength(0);
   });
 });

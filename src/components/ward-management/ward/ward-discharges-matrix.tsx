@@ -282,7 +282,7 @@ export function WardDischargesMatrix({
         </p>
         <Link
           data-testid="ward-handover-link"
-          href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+          href={`/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
         >
           Open this ward&rsquo;s handover sheet
         </Link>

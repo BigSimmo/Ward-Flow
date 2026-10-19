@@ -10,7 +10,7 @@
  * (plan defects D8/D9).
  *
  * `tests/ward-nav.test.ts` enforces the two-way property this file exists to make possible:
- * every href below must resolve to a real route under `src/app/mockups/ward-flow/`, **and**
+ * every href below must resolve to a real route under `src/app/ward-flow/`, **and**
  * every *static* route under that tree must appear here or in `WARD_NAV_INTENTIONALLY_UNLISTED`
  * with a stated reason. A one-way check ("every nav link is a real route") is exactly what let
  * D8 happen — it says nothing about a route with no link pointing at it at all.
@@ -68,7 +68,7 @@ export type WardMode = (typeof WARD_MODES)[number];
  *
  * ⚠️ **`command` IS NOT IN THIS MAP, AND WAS NEARLY RECORDED AS DEAD.** It is excluded from
  * `WardModeWorkspace`'s prop type, which reads like absence; measured 2026-09-05 it had two live
- * consumers — its own `WARD_VIEWS` entry pointing at `/mockups/ward-flow`, and
+ * consumers — its own `WARD_VIEWS` entry pointing at `/ward-flow`, and
  * `coordinator-screen.tsx`, which rendered its own per-screen rail mount with an explicit prop so
  * the Command screen highlighted itself there. **Task 8, 2026-09-11: that second consumer's own
  * mechanism is gone** — the third-edition shell's rail (`shell/ward-rail.tsx`) takes no per-mode
@@ -81,7 +81,7 @@ export type WardMode = (typeof WARD_MODES)[number];
 export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map([
   [
     "transport",
-    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen, and /mockups/ward-flow/transport is now a redirect to /movements. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
+    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen, and /ward-flow/transport is now a redirect to /movements. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
   ],
 ] as const);
 
@@ -122,12 +122,12 @@ export type WardViewItem = {
  * type below, for the same reason `queue`/`exceptions` stayed untouched after MERGE 01.
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
-  { id: "command", href: "/mockups/ward-flow", label: "Home" },
-  { id: "network", href: "/mockups/ward-flow/network", label: "Network" },
-  { id: "delays", href: "/mockups/ward-flow/delays", label: "Delays" },
-  { id: "capacity", href: "/mockups/ward-flow/capacity", label: "Capacity" },
-  { id: "movements", href: "/mockups/ward-flow/movements", label: "Movements" },
-  { id: "governance", href: "/mockups/ward-flow/governance", label: "Governance" },
+  { id: "command", href: "/ward-flow", label: "Home" },
+  { id: "network", href: "/ward-flow/network", label: "Network" },
+  { id: "delays", href: "/ward-flow/delays", label: "Delays" },
+  { id: "capacity", href: "/ward-flow/capacity", label: "Capacity" },
+  { id: "movements", href: "/ward-flow/movements", label: "Movements" },
+  { id: "governance", href: "/ward-flow/governance", label: "Governance" },
 ];
 
 /**
@@ -140,7 +140,7 @@ export const WARD_VIEWS: readonly WardViewItem[] = [
  * edition-build-master-plan.md` §1.3. The fold has since landed and the facade is real, but it
  * carries no home-route builder of its own (checked against its exported names and
  * `EXPECTED_BUILDER_LINES` directly, 2026-09-11) — only per-record builders like `movementHref`,
- * none of them a bare `/mockups/ward-flow`. This constant is still this route's one source; retire
+ * none of them a bare `/ward-flow`. This constant is still this route's one source; retire
  * it in favour of the facade's own builder if one is ever added there.
  */
 export const WARD_HOME_HREF: string = WARD_VIEWS.find((view) => view.id === "command")!.href;
@@ -209,13 +209,13 @@ export type WardNavItem = {
  * that file drifting from the route on disk. `tests/ward-nav.test.ts` checks every `WARD_NAV`
  * href against the real route tree, so the constant, the nav entry and the route stay one fact.
  */
-export const WARD_REFERRAL_INTAKE_HREF = "/mockups/ward-flow/referrals/new";
-export const WARD_ALERTS_HREF = "/mockups/ward-flow/alerts";
-export const WARD_CAPACITY_HREF = "/mockups/ward-flow/capacity";
-export const WARD_COMMAND_HREF = "/mockups/ward-flow/command";
-export const WARD_ED_HREF = "/mockups/ward-flow/ed";
+export const WARD_REFERRAL_INTAKE_HREF = "/ward-flow/referrals/new";
+export const WARD_ALERTS_HREF = "/ward-flow/alerts";
+export const WARD_CAPACITY_HREF = "/ward-flow/capacity";
+export const WARD_COMMAND_HREF = "/ward-flow/command";
+export const WARD_ED_HREF = "/ward-flow/ed";
 /** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
-export const WARD_BED_MEETING_TV_HREF = "/mockups/ward-flow/bed-meeting";
+export const WARD_BED_MEETING_TV_HREF = "/ward-flow/bed-meeting";
 
 /** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
 export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string } = {}): string {
@@ -228,7 +228,7 @@ export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: s
 /**
  * `role` — entry points for the role screens `WardRoleSwitcher` offers (Coordinator, Ward,
  * Officer, Emergency department — see that component's own doc comment). Coordinator is
- * deliberately absent here: it is `/mockups/ward-flow` itself, already present in `WARD_VIEWS`
+ * deliberately absent here: it is `/ward-flow` itself, already present in `WARD_VIEWS`
  * as "Command" — see `WARD_NAV_INTENTIONALLY_UNLISTED` below, which is where that reasoning is
  * recorded and checked. Ward and Emergency department are dynamic detail routes
  * (`ward/[unitId]`, `ed/[edId]`); the rail can only ever link to one concrete instance of each,
@@ -260,45 +260,45 @@ export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: s
 export const WARD_NAV: readonly WardNavItem[] = [
   {
     id: "statistics",
-    href: "/mockups/ward-flow/statistics",
+    href: "/ward-flow/statistics",
     label: "Statistics",
     group: "role",
   },
   {
     id: "wards",
-    href: "/mockups/ward-flow/wards",
+    href: "/ward-flow/wards",
     label: "All wards",
     group: "role",
   },
   {
     id: "community",
-    href: "/mockups/ward-flow/community",
+    href: "/ward-flow/community",
     label: "Community",
     group: "role",
   },
   {
     id: "ward",
-    href: "/mockups/ward-flow/ward/rph-adult-secure",
+    href: "/ward-flow/ward/rph-adult-secure",
     label: "Example ward",
     group: "role",
     exampleOnly: true,
   },
   {
     id: "board",
-    href: "/mockups/ward-flow/board/rph-adult-secure",
+    href: "/ward-flow/board/rph-adult-secure",
     label: "Example bed board",
     group: "role",
     exampleOnly: true,
   },
-  { id: "officer", href: "/mockups/ward-flow/transport/officer", label: "Transport", group: "role" },
+  { id: "officer", href: "/ward-flow/transport/officer", label: "Transport", group: "role" },
   {
     id: "ed",
-    href: "/mockups/ward-flow/ed/peel-ed",
+    href: "/ward-flow/ed/peel-ed",
     label: "Example ED",
     group: "role",
     exampleOnly: true,
   },
-  { id: "handover", href: "/mockups/ward-flow/handover", label: "Handover", group: "board" },
+  { id: "handover", href: "/ward-flow/handover", label: "Handover", group: "board" },
   /* The `escalation` entry was REMOVED here by MERGE 01 (owner-approved 2026-09-05): the
    * escalation board's list of patients is now shown inside `DelaysScreen`, under its own cause
    * group, so a separate board entry would be a second listing of the same people. The route
@@ -306,7 +306,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * — and the `escalation` id stays a member of `WardNavId` even though nothing in this array
    * uses it any more, for the same reason `queue`/`exceptions` stay in `WardMode`: nothing else
    * in this file depends on removing it, and leaving it costs nothing. */
-  { id: "search", href: "/mockups/ward-flow/search", label: "Patients", group: "board" },
+  { id: "search", href: "/ward-flow/search", label: "Patients", group: "board" },
   /*
    * THE MASTER SEARCH HUB, added 2026-09-06 from the owner-approved mockup.
    *
@@ -320,8 +320,8 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * derives its destination list from `WARD_VIEWS` alone, and a second chat was editing that array
    * at the time. Belonging here is why this is right; missing that guard is only a bonus.
    */
-  { id: "hub", href: "/mockups/ward-flow/hub", label: "Places", group: "board" },
-  { id: "discharges", href: "/mockups/ward-flow/discharges", label: "Discharges", group: "board" },
+  { id: "hub", href: "/ward-flow/hub", label: "Places", group: "board" },
+  { id: "discharges", href: "/ward-flow/discharges", label: "Discharges", group: "board" },
   /*
    * 🔴 **LISTED, NOT HIDDEN — AND THAT IS A JUDGEMENT ABOUT A DANGEROUS SCREEN.**
    *
@@ -332,7 +332,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * its own disclosure at the top saying what it does not hold**, which is when that sentence is
    * cheap to read rather than unwelcome.
    */
-  { id: "on-call", href: "/mockups/ward-flow/on-call", label: "On-call", group: "board" },
+  { id: "on-call", href: "/ward-flow/on-call", label: "On-call", group: "board" },
   /*
    * The Alerts screen, 2026-09-12. LISTED rather than intentionally unlisted: it is addressed to a
    * role across every movement and referral, so a coordinator who cannot reach it has no way to
@@ -340,7 +340,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * something. `WARD_NAV_INTENTIONALLY_UNLISTED` is for routes reached from another screen; nothing
    * links here.
    */
-  { id: "alerts", href: "/mockups/ward-flow/alerts", label: "Alerts", group: "board" },
+  { id: "alerts", href: "/ward-flow/alerts", label: "Alerts", group: "board" },
   /* The `morning` entry was REMOVED here by MERGE 02 (owner-approved 2026-09-05): the morning bed
    * state board's figures are now shown inside `CapacityScreen`, so a separate board entry would be
    * a second listing of the same network/hospital/ward numbers. At that point the route itself kept
@@ -352,7 +352,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * array entry: the `morning` id is no longer a member of `WardNavId`, its
    * `WARD_NAV_INTENTIONALLY_UNLISTED` entry is gone, and the Morning route file and its
    * implementation module were deleted in the same commit. */
-  { id: "referrals", href: "/mockups/ward-flow/referrals", label: "Referrals", group: "board" },
+  { id: "referrals", href: "/ward-flow/referrals", label: "Referrals", group: "board" },
   /*
    * ⚠️ THIS ENTRY REVERSES A DELIBERATE DESIGN DECISION, BY OWNER RULING ON 2026-09-03:
    * "I would like the referral form/hub in the sidebar please."
@@ -378,7 +378,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
     label: "New referral",
     group: "board",
   },
-  { id: "out-of-area", href: "/mockups/ward-flow/out-of-area", label: "Out of area", group: "board" },
+  { id: "out-of-area", href: "/ward-flow/out-of-area", label: "Out of area", group: "board" },
   /*
    * The legal forms board — every open movement that carries a legal form, ordered by time
    * remaining. A board rather than an example, the same shape `wards`/`community` above are: it is
@@ -386,7 +386,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * shortlist, the console and half a dozen other screens, each showing one movement's own form and
    * none of the others'.
    */
-  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Legal forms", group: "board" },
+  { id: "legal-forms", href: "/ward-flow/legal-forms", label: "Legal forms", group: "board" },
   /*
    * The bed meeting TV view (Josh, 15 Oct 2026): unfinished work shipped in the real app behind a
    * feature flag rather than on a hidden page. Listed only while `bed-meeting-tv` is on.
@@ -401,9 +401,9 @@ export const WARD_NAV: readonly WardNavItem[] = [
 ];
 
 /**
- * In this standalone repository, the developer hub and home destination is /mockups/ward-flow.
+ * In this standalone repository, the developer hub and home destination is /ward-flow.
  */
-export const WARD_DEVELOPER_HUB_HREF = "/mockups/ward-flow";
+export const WARD_DEVELOPER_HUB_HREF = "/ward-flow";
 
 /* `WARD_REFERRAL_INTAKE_HREF` was declared here until 2026-09-03. It moved ABOVE `WARD_NAV`
  * because `WARD_NAV` now references it, and a `const` used before its declaration is a temporal
@@ -419,22 +419,22 @@ export const WARD_DEVELOPER_HUB_HREF = "/mockups/ward-flow";
  * disk with nothing noticing. The constant, the exemption below and the route are one fact in one
  * place.
  */
-export const WARD_ADD_PERSON_HREF = "/mockups/ward-flow/people/new";
+export const WARD_ADD_PERSON_HREF = "/ward-flow/people/new";
 
 /**
  * Static Ward Flow routes intentionally absent from `WARD_VIEWS` and `WARD_NAV`, each with the
  * reason it is exempt — mirrors `REACHABILITY_ALLOWLIST` in `tests/route-reachability.test.ts`.
- * Every key must be a real static route under `src/app/mockups/ward-flow/` (checked by
+ * Every key must be a real static route under `src/app/ward-flow/` (checked by
  * `tests/ward-nav.test.ts`, which fails on a stale entry) and must never also appear in a nav
  * array — a route belongs in exactly one of the two.
  */
 export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new Map([
   [
-    "/mockups/ward-flow/command",
-    "A deliberate redirect to /mockups/ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
+    "/ward-flow/command",
+    "A deliberate redirect to /ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
   ],
   [
-    "/mockups/ward-flow/constellation",
+    "/ward-flow/constellation",
     "A deliberate 307 redirect to /network, documented in its own route file (constellation/page.tsx) — not a destination.",
   ],
   /* The entry for `WARD_REFERRAL_INTAKE_HREF` was REMOVED on 2026-09-03, in the same change that
@@ -448,13 +448,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "An action taken from the patient search, not a section of the app: the search's empty state carries the 'Add this person' <Link> that is the only way in, and it appears exactly when it is needed — you have searched, nobody came up, and this is the person who does not exist yet. Listing it in the rail would invite adding a person nobody had looked for first, which is how a duplicate record gets made.",
   ],
   [
-    "/mockups/ward-flow/statistics/overview",
+    "/ward-flow/statistics/overview",
     "Reached by Link from the statistics hub, not from the rail. Three statistics entries in the sidebar would bury the hub the owner actually wants to land on — the same reasoning WARD_REFERRAL_INTAKE_HREF above already sets, where a destination inside a screen is not a section of the app.",
   ],
-  [
-    "/mockups/ward-flow/statistics/compare",
-    "Reached by Link from the statistics hub, for the same reason as /overview above.",
-  ],
+  ["/ward-flow/statistics/compare", "Reached by Link from the statistics hub, for the same reason as /overview above."],
   /*
    * 🔴 SETTINGS IS UNLISTED BY THE DRAWING'S OWN INSTRUCTION, NOT BY THIS LANE'S JUDGEMENT.
    * `settings-third-edition.html` says it in as many words: "Settings has no rail item of its own
@@ -473,26 +470,26 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * describes rather than left to contradict three live controls.
    */
   [
-    "/mockups/ward-flow/settings",
+    "/ward-flow/settings",
     "No rail item by the drawing's own instruction — it opens from the Tools drawer on every screen. " +
       "Settings is reached from the Tools drawer (shell/ward-bar.tsx), the rail footer (shell/ward-rail.tsx) " +
       "and search (search/ward-smart-search.ts).",
   ],
   /* The next three entries were added by MERGE 01 (owner-approved 2026-09-05), which folded the
    * priority queue, the exceptions inbox and the escalation board into one screen, `DelaysScreen`
-   * at /mockups/ward-flow/delays. Each of the three old routes now redirects there rather than
+   * at /ward-flow/delays. Each of the three old routes now redirects there rather than
    * being deleted, so an existing bookmark or deep link does not 404 — the same reasoning
    * `/constellation` above already sets for a retired route kept as a redirect stub. */
   [
-    "/mockups/ward-flow/queue",
+    "/ward-flow/queue",
     "A deliberate redirect to /delays (MERGE 01), documented in its own route file (queue/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/mockups/ward-flow/exceptions",
+    "/ward-flow/exceptions",
     "A deliberate redirect to /delays (MERGE 01), documented in its own route file (exceptions/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/mockups/ward-flow/escalation",
+    "/ward-flow/escalation",
     "A deliberate redirect to /delays (MERGE 01), documented in its own route file (escalation/page.tsx) — not a destination in its own right.",
   ],
   /* MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into `MovementsScreen`.
@@ -500,43 +497,43 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * reason MERGE 01's and MERGE 02's entries above already set. `/transport/officer` is a separate,
    * nested route and is unaffected: it stays listed in WARD_NAV under its own `officer` entry. */
   [
-    "/mockups/ward-flow/transport",
+    "/ward-flow/transport",
     "A deliberate redirect to /transport/officer (shell-19; MERGE 03 sent it to /movements), documented in its own route file (transport/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/mockups/ward-flow/ed",
+    "/ward-flow/ed",
     "The statewide ED index (ed/page.tsx). The rail's Emergency entry opens it through WARD_ED_HREF; this WARD_NAV keeps `ed` as the example department the role switcher uses.",
   ],
   // Read-only reports (stream C, 9 Oct 2026). Each is a destination inside an existing area, not a
   // section of the app, so none takes a rail item.
   [
-    "/mockups/ward-flow/statistics/weekly",
+    "/ward-flow/statistics/weekly",
     "The weekly operations report. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Weekly'), for the same reason as /overview and /compare above.",
   ],
   // The four statistics index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on
   // one page. Each is a destination inside Statistics, not a section of the app.
   [
-    "/mockups/ward-flow/statistics/services",
+    "/ward-flow/statistics/services",
     "Every health service on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Services') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/mockups/ward-flow/statistics/wards",
+    "/ward-flow/statistics/wards",
     "Every ward on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Wards') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/mockups/ward-flow/statistics/eds",
+    "/ward-flow/statistics/eds",
     "Every emergency department on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'EDs') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/mockups/ward-flow/statistics/teams",
+    "/ward-flow/statistics/teams",
     "Every community team on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Teams') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/mockups/ward-flow/reports/downtime",
+    "/ward-flow/reports/downtime",
     "The printable downtime pack. Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
-    "/mockups/ward-flow/reports/chronology",
+    "/ward-flow/reports/chronology",
     "The PIR patient chronology (D-37). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
 ]);
@@ -600,7 +597,7 @@ export type WardPrimaryAction =
 export type WardPrimaryActionEntry = {
   /**
    * A real route — static exactly as it appears in `staticRoutes`, or a dynamic pattern exactly as
-   * `tests/ward-nav.test.ts`'s own scan produces it (e.g. `"/mockups/ward-flow/ward/[unitId]"`).
+   * `tests/ward-nav.test.ts`'s own scan produces it (e.g. `"/ward-flow/ward/[unitId]"`).
    * Never a hand-typed variant: the test resolves every one of these against the real route tree,
    * the same way it already does for `WARD_NAV` and `WARD_VIEWS` above.
    */
@@ -622,31 +619,31 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/delays",
+    route: "/ward-flow/delays",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/capacity",
+    route: "/ward-flow/capacity",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/wards",
+    route: "/ward-flow/wards",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/ward/[unitId]",
+    route: "/ward-flow/ward/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/ward/[unitId]/answer",
+    route: "/ward-flow/ward/[unitId]/answer",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/board/[unitId]",
+    route: "/ward-flow/board/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/ed/[edId]",
+    route: "/ward-flow/ed/[edId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // Movements, a Movement and a Community team. Device audit, 11 Oct 2026 (item 6, "keep the shell
@@ -654,43 +651,43 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
   // both unwired. New referral is now the one header primary on every page, as v10 set for
   // Statistics on 10 Oct 2026.
   {
-    route: "/mockups/ward-flow/movements",
+    route: "/ward-flow/movements",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/movements/[movementId]",
+    route: "/ward-flow/movements/[movementId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/community/[teamId]",
+    route: "/ward-flow/community/[teamId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // Statistics and its Ward, Community team, ED and Service detail routes. v10 (10 Oct 2026): New
   // referral is the one header primary on every page; Export moves into the statistics hero.
   {
-    route: "/mockups/ward-flow/statistics",
+    route: "/ward-flow/statistics",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/statistics/ward/[unitId]",
+    route: "/ward-flow/statistics/ward/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/statistics/community/[teamId]",
+    route: "/ward-flow/statistics/community/[teamId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/statistics/ed/[edId]",
+    route: "/ward-flow/statistics/ed/[edId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/mockups/ward-flow/statistics/service/[serviceId]",
+    route: "/ward-flow/statistics/service/[serviceId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // None in the bar — Patient search, Patient, Search hub, Raise a referral (the slide-out is already open).
-  { route: "/mockups/ward-flow/search", action: { kind: "none" } },
-  { route: "/mockups/ward-flow/people/[patientId]", action: { kind: "none" } },
-  { route: "/mockups/ward-flow/hub", action: { kind: "none" } },
+  { route: "/ward-flow/search", action: { kind: "none" } },
+  { route: "/ward-flow/people/[patientId]", action: { kind: "none" } },
+  { route: "/ward-flow/hub", action: { kind: "none" } },
   { route: WARD_REFERRAL_INTAKE_HREF, action: { kind: "none" } },
 ];
 
@@ -706,7 +703,7 @@ function normalizeWardPathname(pathname: string): string {
 
 /**
  * Whether `pathname` is one concrete instance of a dynamic `route` pattern like
- * `/mockups/ward-flow/ward/[unitId]` — segment-by-segment, a `[bracketed]` route segment matches
+ * `/ward-flow/ward/[unitId]` — segment-by-segment, a `[bracketed]` route segment matches
  * any single non-empty path segment, everything else must match exactly. The same shape
  * `tests/ward-nav.test.ts`'s own `routeToPattern` checks this very list against the real route
  * tree with (that file builds a `RegExp`; this is the same rule read segment-by-segment instead),
@@ -770,26 +767,26 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   const place = wardPlaceFor(normalized, units);
   if (place) return place.name;
 
-  if (normalized === "/mockups/ward-flow" || normalized === "/mockups/ward-flow/command") return "Home";
-  if (normalized.startsWith("/mockups/ward-flow/board")) return "Bed Board";
-  if (normalized.startsWith("/mockups/ward-flow/ward")) return "Ward";
-  if (normalized.startsWith("/mockups/ward-flow/ed")) return "All EDs";
-  if (normalized.startsWith("/mockups/ward-flow/community")) return "Community";
-  if (normalized.startsWith("/mockups/ward-flow/movements")) return "Movements";
-  if (normalized.startsWith("/mockups/ward-flow/statistics")) return "Statistics";
-  if (normalized.startsWith("/mockups/ward-flow/delays") || normalized === "/mockups/ward-flow/queue") return "Delays";
-  if (normalized.startsWith("/mockups/ward-flow/capacity")) return "Capacity";
-  if (normalized.startsWith("/mockups/ward-flow/network")) return "Network";
-  if (normalized.startsWith("/mockups/ward-flow/governance")) return "Governance";
-  if (normalized === "/mockups/ward-flow/reports/downtime") return "Downtime pack";
-  if (normalized === "/mockups/ward-flow/reports/chronology") return "Patient chronology";
-  if (normalized === "/mockups/ward-flow/referrals/new") return "New referral";
-  if (normalized.startsWith("/mockups/ward-flow/referrals")) return "Referrals";
-  if (normalized === "/mockups/ward-flow/people/new") return "Add a patient";
-  if (normalized.startsWith("/mockups/ward-flow/people")) return "Patients";
-  if (normalized.startsWith("/mockups/ward-flow/transport/officer")) return "Transport";
-  if (normalized.startsWith("/mockups/ward-flow/transport")) return "Transport";
-  if (normalized.startsWith("/mockups/ward-flow/settings")) return "Settings";
+  if (normalized === "/ward-flow" || normalized === "/ward-flow/command") return "Home";
+  if (normalized.startsWith("/ward-flow/board")) return "Bed Board";
+  if (normalized.startsWith("/ward-flow/ward")) return "Ward";
+  if (normalized.startsWith("/ward-flow/ed")) return "All EDs";
+  if (normalized.startsWith("/ward-flow/community")) return "Community";
+  if (normalized.startsWith("/ward-flow/movements")) return "Movements";
+  if (normalized.startsWith("/ward-flow/statistics")) return "Statistics";
+  if (normalized.startsWith("/ward-flow/delays") || normalized === "/ward-flow/queue") return "Delays";
+  if (normalized.startsWith("/ward-flow/capacity")) return "Capacity";
+  if (normalized.startsWith("/ward-flow/network")) return "Network";
+  if (normalized.startsWith("/ward-flow/governance")) return "Governance";
+  if (normalized === "/ward-flow/reports/downtime") return "Downtime pack";
+  if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";
+  if (normalized === "/ward-flow/referrals/new") return "New referral";
+  if (normalized.startsWith("/ward-flow/referrals")) return "Referrals";
+  if (normalized === "/ward-flow/people/new") return "Add a patient";
+  if (normalized.startsWith("/ward-flow/people")) return "Patients";
+  if (normalized.startsWith("/ward-flow/transport/officer")) return "Transport";
+  if (normalized.startsWith("/ward-flow/transport")) return "Transport";
+  if (normalized.startsWith("/ward-flow/settings")) return "Settings";
 
   const exactView = WARD_VIEWS.find((v) => v.href === normalized);
   if (exactView) return exactView.label;

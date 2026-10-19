@@ -20,7 +20,7 @@ const rows: InsightRow[] = [
     context: "North",
     values: { wait: 12, count: 3 },
     groups: ["urgent", "unplaced"],
-    href: "/mockups/ward-flow/statistics/ed/alpha",
+    href: "/ward-flow/statistics/ed/alpha",
   },
   { id: "beta", name: "Beta", context: "South", values: { wait: 0, count: 0 } },
   { id: "gamma", name: "Gamma", values: { wait: null, count: null }, unavailable: "Not linked" },

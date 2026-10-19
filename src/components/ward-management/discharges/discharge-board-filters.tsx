@@ -117,44 +117,54 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
     guarded,
     records,
     clearSelection,
+    sessionAdopted,
   } = s;
   return (
-    <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history">
-      <button
-        type="button"
-        aria-pressed={population === "releases"}
-        data-testid="ward-discharge-now"
-        onClick={() => {
-          setPopulation("releases");
-          setStatus("all");
-          setDestination("all");
-          setBlockerCategory("all");
-          setHighlight(null);
-          clearSelection();
-        }}
-      >
-        Now
-        <span className="sr-only">, anonymous releases {bedReleases.length}</span>
-      </button>
-      <button
-        type="button"
-        aria-pressed={population === "records"}
-        data-testid="ward-discharge-history"
-        onClick={() => {
-          setPopulation("records");
-          setStatus("all");
-          setDestination("all");
-          setBlockerCategory("all");
-          setHighlight(null);
-          clearSelection();
-        }}
-      >
-        History
-        <span className="sr-only">
-          , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+    <>
+      {!sessionAdopted ? (
+        <span className="sr-only" role="status">
+          Preparing discharge workspace…
         </span>
-      </button>
-    </div>
+      ) : null}
+      <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history" aria-busy={!sessionAdopted}>
+        <button
+          type="button"
+          disabled={!sessionAdopted}
+          aria-pressed={population === "releases"}
+          data-testid="ward-discharge-now"
+          onClick={() => {
+            setPopulation("releases");
+            setStatus("all");
+            setDestination("all");
+            setBlockerCategory("all");
+            setHighlight(null);
+            clearSelection();
+          }}
+        >
+          Now
+          <span className="sr-only">, anonymous releases {bedReleases.length}</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={population === "records"}
+          data-testid="ward-discharge-history"
+          disabled={!sessionAdopted}
+          onClick={() => {
+            setPopulation("records");
+            setStatus("all");
+            setDestination("all");
+            setBlockerCategory("all");
+            setHighlight(null);
+            clearSelection();
+          }}
+        >
+          History
+          <span className="sr-only">
+            , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+          </span>
+        </button>
+      </div>
+    </>
   );
 }
 

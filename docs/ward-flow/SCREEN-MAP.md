@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**68 mockups · 52 routes · 31 screen folders.**
+**68 mockups · 52 routes · 32 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -45,7 +45,7 @@ UNMAPPED rather than disappearing.
 | `statistics-third-edition.html` | `/statistics` | `statistics/` | yes |
 | `statistics-compare-third-edition.html` | `/statistics/compare` | `statistics/` | yes |
 | `statistics-service-third-edition.html` | `/statistics/service/[serviceId]` | `statistics/` | yes |
-| `sign-in-third-edition.html` | `/mockups/ward-flow-sign-in` | `../ward-flow-sign-in/` | yes |
+| `sign-in-third-edition.html` | `/ward-flow-sign-in` | `../ward-flow-sign-in/` | yes |
 | `ward-answer-third-edition.html` | `/ward/[unitId]/answer` | `ward/` | yes |
 
 ## Drawn, no build contract

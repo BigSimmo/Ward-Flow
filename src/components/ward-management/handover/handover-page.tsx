@@ -484,6 +484,8 @@ export function HandoverPage() {
     onMessage: announceToWardShell,
   });
   const handleSignOff = useCallback(() => {
+    // Records contain role and time only, so only the current sign-off window can be signed.
+    if (!signOffGate.allowed || handoverAt(shift, now) <= now || shift !== defaultHandoverShift(now)) return;
     const recorded = recordHandoverSignOff(
       (event) =>
         runStep(event, {
@@ -496,7 +498,7 @@ export function HandoverPage() {
       routeRole,
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
-  }, [runStep, now, routeRole]);
+  }, [runStep, now, routeRole, shift, signOffGate.allowed]);
   const handleUndoSignOff = useCallback(() => {
     runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now }, { success: "Sign-off undone." });
   }, [runStep, now, routeRole]);
@@ -630,7 +632,8 @@ export function HandoverPage() {
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
       : { id: "meet", done: false, text: "Meeting not timed" },
   ];
-  const canSignOff = signOffGate.allowed && !passed;
+  const nextShift = shift === defaultHandoverShift(now);
+  const canSignOff = signOffGate.allowed && !passed && nextShift;
 
   const signOffPanel = (
     <div ref={signOffRef}>
@@ -641,7 +644,14 @@ export function HandoverPage() {
         signedAt={signedAt}
         now={now}
         canSignOff={canSignOff}
-        cannotSignReason={passed ? "This handover has passed. Choose the next one." : signOffGate.reason}
+        cannotSignReason={
+          signOffGate.reason ??
+          (passed
+            ? "This handover has passed. Choose the next one."
+            : !nextShift
+              ? "Sign-off opens after the preceding handover. Choose the next handover to sign off now."
+              : undefined)
+        }
         onSignOff={handleSignOff}
         onUndoSignOff={handleUndoSignOff}
       />
@@ -1009,7 +1019,7 @@ export function HandoverPage() {
       <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
         {copied ? "Copied" : "Copy summary"}
       </Button>
-      <Link href="/mockups/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
+      <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
         Downtime pack
       </Link>
       <Popover

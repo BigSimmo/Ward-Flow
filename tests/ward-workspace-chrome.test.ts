@@ -29,7 +29,7 @@ import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
  * are the truth; this file is the only thing that can tell you they have diverged.**
  */
 
-const WARD_FLOW_ROUTES = path.join(process.cwd(), "src", "app", "mockups", "ward-flow");
+const WARD_FLOW_ROUTES = path.join(process.cwd(), "src", "app", "ward-flow");
 
 /** Every `page.tsx` under the ward-flow route tree, found by walking rather than by a hand-list. */
 function routeFiles(directory: string): string[] {

@@ -43,14 +43,14 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 
-The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/mockups/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
+The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
 ## Separate drawer preview — 5 October 2026
 
 Owner authorised an additional preview and then requested expedited completion. The existing
 `ward-flow` service was preserved. The new `ward-flow-drawer-preview` service
 (`5bdb71a8-2399-4d3a-80c1-5e4e6d9cdfc9`) runs in the same Ward Flow project/environment, with
-its own domain: https://ward-flow-drawer-preview-production.up.railway.app/mockups/ward-flow/delays.
+its own domain: https://ward-flow-drawer-preview-production.up.railway.app/ward-flow/delays.
 It is pinned to `ea64f464920a699ce5b62988f5589cb33b466d29` on
 `codex/drawer-preview-20261005-ea56aa7`; its source tree exactly matches local `ea56aa7`.
 Deployment `c1f42ae4-1e1a-4895-8b1c-0b619fce694c` reached `SUCCESS`. The public Delays page

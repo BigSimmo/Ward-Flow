@@ -48,7 +48,7 @@ describe("exact-file claim administration", () => {
         log: "unused",
       }),
     ).toThrow(/protected branch/);
-    expect(() => validateClaimPaths(process.cwd(), ["src/app/mockups/ward-flow/ward/[unitId]/page.tsx"])).not.toThrow();
+    expect(() => validateClaimPaths(process.cwd(), ["src/app/ward-flow/ward/[unitId]/page.tsx"])).not.toThrow();
   });
   it("keeps another writer's lock and log intact", () => {
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();

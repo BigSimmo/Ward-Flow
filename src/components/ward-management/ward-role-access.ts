@@ -255,7 +255,7 @@ function homeScreenFor(role: WardAccessRole): WardScreenId {
   }
 }
 
-const BASE = "/mockups/ward-flow";
+const BASE = "/ward-flow";
 
 /** The address of a role's home, with its own place filled in where the home is a place page. */
 export function homeHrefFor(access: WardAccess, slugForTeam: (teamName: string) => string): string {

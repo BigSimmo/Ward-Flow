@@ -111,6 +111,8 @@ const FIELD_CLASS: Record<string, "identity" | "operational" | "clinical"> = {
   communityTreatmentOrder: "operational",
   // v10 pass 2 (Josh, 10 Oct 2026): when Add patient created the record. A record fact.
   addedAt: "operational",
+  // Bounded source-desk access metadata for an unlinked registration, not a clinical fact.
+  registrationScope: "operational",
 };
 
 describe("the governance data and audit disclosures", () => {

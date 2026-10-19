@@ -22,7 +22,7 @@ npm run ensure
 ```
 
 `npm run ensure` starts or reuses this checkout's dev server and **prints the URL**. Open
-`<printed-origin>/mockups/ward-flow`.
+`<printed-origin>/ward-flow`.
 
 ### Port rules
 

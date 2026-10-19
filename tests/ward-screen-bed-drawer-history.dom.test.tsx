@@ -33,7 +33,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * - a leftover Census opener marker only sends the close Back for the exact unit and bed it opened.
  */
 const UNIT = allUnits()[0];
-const PATH = `/mockups/ward-flow/ward/${UNIT.id}`;
+const PATH = `/ward-flow/ward/${UNIT.id}`;
 
 function renderWard() {
   return render(
