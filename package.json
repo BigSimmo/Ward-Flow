@@ -133,7 +133,7 @@
     "undici": "^8.12.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.14.0",
+    "@axe-core/playwright": "~4.13.0",
     "@babel/parser": "^8.0.7",
     "@codspeed/vitest-plugin": "^6.0.1",
     "@next/bundle-analyzer": "^16.4.0",
