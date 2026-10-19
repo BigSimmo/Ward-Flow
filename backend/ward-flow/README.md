@@ -72,7 +72,14 @@ to `005`. These source files do not establish a current hosted connection or dep
   revision and clock only. A command queued behind others asks for `reply: "revision"`, so its
   accepted reply has no snapshot. The saved workspace keeps the newest 1,000 audit entries (plus
   any an audit review names); the `audit` table keeps every one. A changed workspace is still sent
-  whole to each desk on its next poll; only saving is per record (migration 10).
+  whole to each desk on its next poll; only saving is per record (migration 10). A member desk
+  also sends `&context=<hash>`, its last full read's access context: while its role, place, cover
+  and openings are unchanged it gets the same cheap answer, without the records being read or
+  locked. It leaves the context out once a minute and reads in full, because what a desk may see
+  also changes with time. JSON replies of 1 KB or more are gzipped when the browser accepts it.
+  Measured on the seed data (19 October 2026): a statewide full read is 363 KB (29 KB gzipped), a
+  one-ward desk's 35 KB (5 KB gzipped), and an unchanged poll about 360 bytes. A ward desk open for
+  an 8-hour shift reads in full at most 480 times instead of 9,600 (audit F-04).
 - Commands (`command-schemas.ts`): every command needs a known type, its sender's own allowed role
   (never defaulted) and bounded plain JSON; the core bed-flow commands also have zod field schemas.
 - Demo controls (advance clock, reset or set scenario) are refused on the shared workspace unless
@@ -99,10 +106,11 @@ to `005`. These source files do not establish a current hosted connection or dep
   accounts with no role, so forged tokens naming one real account cannot use up the checks other desks need.
   A confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
-  (`*` on Railway, which is reachable only through its proxy). A locally
+  (`*` on Railway, which is reachable only through its proxy). From migration 11 a sign-out is
+  recorded on the server and that sign-in's tokens are refused at once; before 11 a locally
   verified token stays valid until it expires, even after sign-out.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 10):
+- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 12):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -140,7 +148,16 @@ to `005`. These source files do not establish a current hosted connection or dep
     record first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
-    The backend accepts versions 5 to 11.
+  - `011-record-access-and-sign-out.sql`: the record access log (who opened which patient or
+    movement page, as which role and place, and when), which nobody can change or remove, the
+    runtime login included; break glass rows become append-only too; and server-side sign-outs, so
+    a signed-out sign-in's tokens are refused at once rather than when they expire.
+    `infra/rollback-011-record-access-and-sign-out.sql` takes a database back to 10 (export the log
+    first if it must be kept: the rollback deletes it).
+  - `012-foreign-key-indexes.sql`: an index for each of the 13 foreign keys that had none (the
+    Supabase advisor's finding). Indexes only. `infra/rollback-012-foreign-key-indexes.sql` takes a
+    database back to 11.
+    The backend accepts versions 5 to 12. Run the runtime grants again after each migration.
 
 ## Boundaries
 

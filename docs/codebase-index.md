@@ -35,7 +35,10 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 ## Ward route groups
 
-- `/mockups`: Ward Flow, digest and synthetic sign-in routes under `src/app/mockups/`.
+- `/ward-flow`: the Ward Flow app under `src/app/ward-flow/`, and `/ward-flow-sign-in`, its synthetic
+  sign-in, under `src/app/ward-flow-sign-in/`. Old `/mockups/ward-flow` links redirect here.
+- `/mockups`: design drawings (the digest and static mock-ups) under `src/app/mockups/`; blocked in
+  production.
 - `/icons`: dynamic icon/OG support under `src/app/icons/`; exempt from product-route coverage.
 
 ## Ward API routes

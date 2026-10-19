@@ -92,8 +92,11 @@ Backend settings (Railway dashboard):
   workspace id is missing. Phone push is off (no VAPID keys).
   `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
   password was set privately by the owner and lives only in Railway.
-- Watch paths: `backend/ward-flow`, `src/components/ward-management` (the engine bundles it),
-  `package.json`, `package-lock.json` and `tsconfig.json`.
+- Watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and `/src/lib/**`
+  (the engine bundles both, including the synthetic-data guard), `/package.json`,
+  `/package-lock.json` and `/tsconfig.json`. The list lives in
+  [watch-paths.mjs](../backend/ward-flow/watch-paths.mjs), and a backend test fails if the engine
+  is built from a file outside it. Change the Railway setting whenever that list changes.
 
 Signed-in site settings: the same build and start commands as `ward-flow`, plus
 `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, `NEXT_PUBLIC_WARD_AUTH_PROVIDER=supabase`, the approved

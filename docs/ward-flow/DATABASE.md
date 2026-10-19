@@ -63,7 +63,7 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 | Adapters for those names                      | `backend/ward-flow/providers.mjs` (`DATABASE_ADAPTERS`, `AUTH_ADAPTERS`)                                                          |
 | Supabase adapter                              | `backend/ward-flow/supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`, `migrate-supabase.mjs`, `infra/supabase-*` |
 | Plain PostgreSQL adapter                      | `backend/ward-flow/postgres-config.mjs`, `portable-postgres.mjs`, `migrate-postgres.mjs`, `infra/postgres-*`                      |
-| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations/001` to `010`                                         |
+| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations/001` to `012`                                         |
 | Browser sign-in                               | `src/components/ward-management/use-ward-supabase-shared.ts`, selected by `selectWardAuthProvider` in `ward-shared-access.tsx`    |
 | Browser security policy                       | `src/lib/security-headers.ts` (`resolveWardAuthProvider`, `resolveSharedWorkspaceOrigins`)                                        |
 | Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                           |
