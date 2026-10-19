@@ -20,6 +20,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import type { Movement } from "@/components/ward-management/ward-model";
 
 afterEach(cleanup);
 
@@ -99,6 +100,38 @@ describe("screens link into a view", () => {
     expect(link()).toHaveAttribute("href", "/ward-flow/delays");
     fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
     expect(link()).toHaveAttribute("href", "/ward-flow/delays?view=form");
+  });
+
+  it("Home's Form due reads the current due time, as the Delays view does", () => {
+    const base = seedWardFlowState().movements.find(
+      (movement) => movement.legalForm !== undefined && movement.legalStatus !== "Voluntary",
+    )!;
+    const due: Movement = {
+      ...base,
+      closure: undefined,
+      examination: undefined,
+      legalForm: { ...base.legalForm!, code: "1A", dueAt: NOW_ANCHOR + 30 },
+    };
+    // The form ended at the examination, so its old due time no longer counts (as on Delays).
+    const ended: Movement = { ...due, examination: { ...base.examination, outcome: "inpatient_order" } as never };
+    const queue = (movement: Movement) =>
+      render(
+        <PriorityQueue
+          movements={[movement]}
+          now={NOW_ANCHOR}
+          selectedId={undefined}
+          onSelect={() => {}}
+          filterEdId={undefined}
+          onClearFilter={() => {}}
+        />,
+      );
+    queue(due);
+    fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
+    expect(screen.queryByText("Nothing due soon")).toBeNull();
+    cleanup();
+    queue(ended);
+    fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
+    expect(screen.getByText("Nothing due soon")).toBeInTheDocument();
   });
 
   it("the Patients shift panel opens the whole list", () => {

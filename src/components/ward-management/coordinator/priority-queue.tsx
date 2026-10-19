@@ -50,6 +50,7 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { liveTurnaroundPreference } from "@/components/ward-management/ward-turnaround-priority";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { referralState } from "@/components/ward-management/ward-referrals";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
@@ -96,9 +97,12 @@ export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
     : "pending clinical sign-off"
 }`;
 
-/** "Soon": a recorded legal form due within the due-soon window, or already past it. */
+/**
+ * "Soon": a recorded legal form due within the due-soon window, or already past it. It reads the
+ * current due time, as Delays' Form due view does, so "Open in Delays" lists the same people.
+ */
 function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return false;
   const state = clockState(dueAt, now, thresholds);
   return state === "due" || state === "critical" || state === "breached";
