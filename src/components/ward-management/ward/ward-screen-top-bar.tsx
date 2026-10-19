@@ -12,7 +12,7 @@ import { buttonClass, Hero, LiveChip, ScrollRow, TextInput } from "@/components/
 import styles from "./ward.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
-import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
+import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
@@ -20,6 +20,26 @@ import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 import type { WardScreenBed } from "./ward-screen-derivations";
 
 /** The ward card and top action bar, drawn from the ward screen's own state. */
+/**
+ * Design audit DA-36: the ward views follow the tabs pattern. Left and Right (or Up and Down) move to
+ * the next view and open it, Home and End go to the first and last. Read from the list itself, so it
+ * keeps the phone's order and the desktop's order without knowing either.
+ */
+export function moveBetweenWardTabs(event: KeyboardEvent<HTMLElement>): void {
+  const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const current = tabs.findIndex((tab) => tab === document.activeElement);
+  if (current === -1) return;
+  let next: number | null = null;
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % tabs.length;
+  else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + tabs.length) % tabs.length;
+  else if (event.key === "Home") next = 0;
+  else if (event.key === "End") next = tabs.length - 1;
+  if (next === null) return;
+  event.preventDefault();
+  tabs[next]?.focus();
+  tabs[next]?.click();
+}
+
 type WardScreenTopBarProps = {
   unit: Unit;
   isPhone: boolean;
@@ -234,7 +254,13 @@ export function WardScreenTopBar({
       ) : null}
       {isPhone ? null : (
         <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
-          <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+          <ul
+            className={styles.tabList}
+            role="tablist"
+            id="mainTabList"
+            aria-label="Ward views"
+            onKeyDown={moveBetweenWardTabs}
+          >
             {isPhone ? (
               <>
                 {tabHome}
