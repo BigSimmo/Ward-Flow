@@ -511,7 +511,44 @@ button.stat:hover .statV {
 }
 
 .tableWrap {
+  --side-fade: 40px;
+
   overflow-x: auto;
+}
+
+/* DA-26 (design audit): when the table is wider than its card, fade the edge that still hides
+   columns, so it is plain that the list scrolls sideways. */
+.tableWrap[data-more-after] {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before] {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before][data-more-after] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+}
+
+/* Inside the box, because the fade's mask clips anything drawn outside it. */
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .tbl {
