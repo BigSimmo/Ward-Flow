@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
-
-export const metadata: Metadata = {
-  title: "Ward Flow network diagram",
-  description:
-    "Schematic diagram of the synthetic statewide mental health service network: services as nodes, confirmed bed pressure as node fill, and open movements as catchment-to-destination routes.",
-};
-
-export default function WardNetworkPage() {
-  return <WardModeWorkspace mode="network" />;
+/**
+ * The Network screen was retired on 19 October 2026 (Josh's decision): it repeated Home and
+ * Capacity, and its one unique part, ready beds by road time, moved to Capacity. The route stays as
+ * a bookmark backstop so an old link opens Home rather than a 404.
+ */
+export default function WardNetworkRedirect() {
+  redirect("/ward-flow");
 }

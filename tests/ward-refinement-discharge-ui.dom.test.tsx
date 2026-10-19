@@ -141,7 +141,11 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     openInesRecord();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100003");
 
+    // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.
     fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
+    );
 
     expect(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u })).toHaveAttribute(
       "aria-pressed",

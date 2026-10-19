@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -260,6 +262,32 @@ describe("the bed meeting TV view", () => {
     const off = railEntries((flag) => flag === undefined).map((entry) => entry.href);
     expect(off).not.toContain(WARD_BED_MEETING_TV_HREF);
     expect(railEntries().map((entry) => entry.href)).toContain(WARD_BED_MEETING_TV_HREF);
+  });
+
+  it("opens clean, with its own way back to the app and its own prototype line (DA-23)", () => {
+    renderTv();
+    const tv = screen.getByTestId("bed-meeting-tv");
+    // The layout hides the rail, top bar and phone dock while this mark is on the screen.
+    expect(tv).toHaveAttribute("data-wf-tv-clean");
+    expect(within(tv).getByRole("link", { name: "Leave TV view" })).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(tv).toHaveTextContent("Synthetic prototype");
+    expect(tv).toHaveTextContent("Not approved for clinical use");
+    const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
+    expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
+    expect(layoutCss).toMatch(/\.shellContent:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-bar"\]/u);
+  });
+
+  it("keeps its prototype line on a screen that is not in the network", () => {
+    renderTv({ ward: "no-such-ward" });
+    const tv = screen.getByTestId("bed-meeting-tv");
+    expect(tv).toHaveAttribute("data-wf-tv-clean");
+    expect(tv).toHaveTextContent("Synthetic prototype");
+  });
+
+  it("leaves the app's menus on the switched-off notice", () => {
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-off")).not.toHaveAttribute("data-wf-tv-clean");
   });
 
   it("is a desktop page: a phone gets the larger screen card", () => {

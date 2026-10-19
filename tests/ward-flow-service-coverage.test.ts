@@ -41,11 +41,11 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
  * knows the gap is deliberate rather than overlooked.
  */
 
-/** The three surfaces that group by health service. Each must derive from `wardServiceOrder` rather
+/** The two surfaces that group by health service (three until the Network screen's map was
+ *  retired, 19 Oct 2026). Each must derive from `wardServiceOrder` rather
  *  than hold its own copy — that is what makes the single completeness assertion above sufficient
  *  for all of them, and re-typing a list here is exactly how the original hole was dug. */
 const SERVICE_GROUPING_SURFACES = new Map([
-  ["src/components/ward-management/ward-management-network.tsx", "the network map's two columns"],
   ["src/components/ward-management/coordinator/flow-diagram.tsx", "the flow diagram's service groups"],
   ["src/components/ward-management/wards/ward-index.tsx", "the ward index's service headings"],
 ]);
@@ -56,7 +56,7 @@ describe("no health service can go missing from the screens that group by it", (
     // an empty list on either side.
     expect(HEALTH_SERVICES.length).toBeGreaterThan(1);
     expect(wardServiceOrder.length).toBeGreaterThan(1);
-    expect(SERVICE_GROUPING_SURFACES.size).toBe(3);
+    expect(SERVICE_GROUPING_SURFACES.size).toBe(2);
   });
 
   it("orders exactly the health services that exist, each once", () => {
@@ -67,7 +67,7 @@ describe("no health service can go missing from the screens that group by it", (
       ordered,
       "wardServiceOrder and HEALTH_SERVICES disagree. Every screen that groups by health service " +
         "derives its list from wardServiceOrder, so a service in HEALTH_SERVICES and missing here " +
-        "is absent from the network map, the ED unit table, the flow diagram and the ward index — " +
+        "is absent from the ED unit table, the flow diagram and the ward index — " +
         "silently, with no error and no other failing test. Add it to wardServiceOrder, deciding " +
         "where in the order it belongs; do not remove it from HEALTH_SERVICES to make this pass.",
     ).toEqual(declared);

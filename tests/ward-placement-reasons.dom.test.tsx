@@ -1,8 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { eligibility, type EligibilityVerdict } from "@/components/ward-management/ward-eligibility";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { PLACEMENT_REASON_GROUPS, placementReason } from "@/components/ward-management/ward-placement-reasons";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -51,26 +48,5 @@ describe("placement reasons", () => {
         }
       }
     }
-  });
-
-  it("renders a visible reason row per group on the network shortlist, with the caveat as text", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardModeWorkspace mode="network" />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(screen.getByRole("tab", { name: "Placement workspace" }));
-    const shortlist = screen.getByRole("complementary", { name: "Placement" });
-    for (const group of PLACEMENT_REASON_GROUPS) {
-      const row = within(shortlist).getByTestId(`ward-network-reason-${group.key}`);
-      expect(within(row).getByRole("rowheader")).toHaveTextContent(group.heading);
-      expect(row.querySelectorAll("td").length).toBeGreaterThan(0);
-    }
-    expect(within(shortlist).getByTestId("ward-network-reason-distance")).toBeInTheDocument();
-    expect(within(shortlist).getByTestId("ward-network-reason-caveat")).toHaveTextContent(
-      "home catchment and where family live are not recorded",
-    );
-    // The eligibility reason is on screen, not only in a tooltip.
-    expect(within(shortlist).getByRole("row", { name: /Eligibility/ })).toHaveTextContent(/Eligible now|Not eligible/);
   });
 });

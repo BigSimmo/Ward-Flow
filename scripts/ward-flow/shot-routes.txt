@@ -13,7 +13,6 @@
 /ward-flow/hub
 /ward-flow/legal-forms
 /ward-flow/movements
-/ward-flow/network
 /ward-flow/on-call
 /ward-flow/out-of-area
 /ward-flow/people/new

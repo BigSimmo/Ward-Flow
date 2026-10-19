@@ -964,7 +964,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
           ? view.sheet.service === null
             ? "State"
             : "Health service"
-          : "TV";
+          : "Bed meeting";
   const current = unit
     ? `ward:${unit.id}`
     : department
@@ -980,6 +980,10 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
       className={styles.tv}
       data-testid="bed-meeting-tv"
       data-view={view.kind}
+      // DA-23 (design audit, Josh, 19 Oct 2026): the TV opens clean. While this screen is shown the
+      // layout hides the rail, the top bar and the phone dock (`ward-flow-layout.module.css`), so a
+      // wall screen needs no Full screen tap first. Leave TV view below is the way back to the app.
+      data-wf-tv-clean=""
       aria-labelledby="bed-meeting-tv-title"
     >
       <header className={styles.header}>
@@ -1017,9 +1021,13 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
       ) : view.kind === "ed" ? (
         <EdTvView sheet={view.sheet} now={now} scenario={scenarioLabel} />
       ) : (
-        <p className={styles.empty} data-testid="bed-meeting-tv-missing">
-          This {view.what} is not in the network. Choose another screen above.
-        </p>
+        <>
+          <p className={styles.empty} data-testid="bed-meeting-tv-missing">
+            This {view.what} is not in the network. Choose another screen above.
+          </p>
+          {/* The app's own prototype marks are hidden on the TV, so this screen keeps its own. */}
+          <Footer scope="Bed meeting TV" scenario={scenarioLabel} now={now} />
+        </>
       )}
     </main>
   );

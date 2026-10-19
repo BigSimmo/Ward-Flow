@@ -924,7 +924,8 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
     expect(unresolved, `WARD_VIEWS href(s) with no matching route: ${unresolved.join(", ")}`).toEqual([]);
     expect(new Set(WARD_VIEWS.map((view) => view.id)).size).toBe(WARD_VIEWS.length);
     expect(new Set(WARD_VIEWS.map((view) => view.href)).size).toBe(WARD_VIEWS.length);
-    expect(WARD_VIEWS).toHaveLength(6);
+    // Five since 19 Oct 2026, when the Network screen was retired.
+    expect(WARD_VIEWS).toHaveLength(5);
   });
 
   it("no route is listed in both WARD_VIEWS and WARD_NAV", () => {
@@ -1281,7 +1282,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/capacity`, render: () => createElement(CapacityScreen) },
   { route: `${ROUTE_PREFIX}/governance`, render: () => createElement(WardModeWorkspace, { mode: "governance" }) },
   { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsScreen) },
-  { route: `${ROUTE_PREFIX}/network`, render: () => createElement(WardModeWorkspace, { mode: "network" }) },
   { route: `${ROUTE_PREFIX}/ed/[edId]`, render: () => createElement(EdScreen, { edId: "peel-ed" }) },
   {
     route: `${ROUTE_PREFIX}/community/[teamId]`,
@@ -1364,6 +1364,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     const redirectOnlyRoutes = new Set([
       `${ROUTE_PREFIX}/command`,
       `${ROUTE_PREFIX}/constellation`,
+      // The Network screen, retired 19 Oct 2026: `network/page.tsx` is now a redirect to Home.
+      `${ROUTE_PREFIX}/network`,
       `${ROUTE_PREFIX}/transport`,
       `${ROUTE_PREFIX}/queue`,
       `${ROUTE_PREFIX}/exceptions`,
@@ -1426,7 +1428,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
     // 44: the bed meeting TV view, 15 Oct 2026.
     // 43, not 44: the Sovereign showcase route was deleted once the Top 25 items moved into the real screens, 15 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(43);
+    // 42, not 43: the Network screen was retired and `/network` became a redirect to Home, 19 Oct 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(42);
   });
 });
 

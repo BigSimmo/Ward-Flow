@@ -1,8 +1,8 @@
 {
   "note": "Owner ruling D-3 (docs/ward-flow/owner-decisions-2026-09-1x.md, 2026-09-10). Count of --text-3xs / --text-2xs occurrences across git-tracked src/components/ward-management/**/*.module.css files. May fall as screens are rebuilt; must never rise. See scripts/ward-flow/check-text-size-floor.mjs header for the exact sweep definition.",
   "measuredOn": "2026-09-12",
-  "count": 370,
-  "fileCount": 34,
+  "count": 337,
+  "fileCount": 33,
   "perFile": {
     "src/components/ward-management/board/board.module.css": 25,
     "src/components/ward-management/community/community-index.module.css": 7,
@@ -29,7 +29,6 @@
     "src/components/ward-management/statistics/statistics.module.css": 11,
     "src/components/ward-management/ward-freshness.module.css": 1,
     "src/components/ward-management/ward-management-modes.module.css": 33,
-    "src/components/ward-management/ward-management-network.module.css": 33,
     "src/components/ward-management/ward-management.module.css": 11,
     "src/components/ward-management/ward-modes-second-edition.module.css": 12,
     "src/components/ward-management/ward-role-switcher.module.css": 3,
