@@ -60,7 +60,15 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { useWardCommandCompletion, wardCommandFailure, wardCommandUndoSeq } from "./use-ward-command-completion";
+import {
+  focusWardArrival,
+  useWardCommandCompletion,
+  wardCommandFailure,
+  wardCommandRefusal,
+  wardCommandUndoSeq,
+  wardUndoBlocked,
+  type WardMovementCheck,
+} from "./use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -452,13 +460,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       setToastMessage(failure);
       return;
     }
-    const refused = check.outcome
-      ? check.outcome.status === "refused"
-        ? { reason: check.outcome.message ?? "The action was refused." }
-        : undefined
-      : rejections.length > check.prior
-        ? rejections[rejections.length - 1]
-        : undefined;
+    const refused = wardCommandRefusal(check.outcome, rejections, check.prior);
     // A refusal names the person the way the success message does (Josh, 26 Sept 2026): the
     // engine's reason quotes record codes, so each code of this person's is shown as their name.
     const reason = refused
@@ -495,13 +497,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             undo: {
               durationMs: UNDO_TOAST_MS,
               onUndo: () => {
-                if (
-                  (check.outcome?.isCurrent && !check.outcome.isCurrent()) ||
-                  (check.outcome?.canUndo && !check.outcome.canUndo())
-                ) {
-                  setToastMessage("Undo is unavailable. Review the current board before trying again.");
-                  return false;
-                }
+                if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
                 return completeCommand(
                   "departure",
                   () =>
@@ -546,13 +542,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setToastMessage(failure);
         return;
       }
-      const refused = check.outcome
-        ? notRecorded
-          ? { reason: check.outcome.message ?? "The action was refused." }
-          : undefined
-        : rejections.length > check.prior
-          ? rejections[rejections.length - 1]
-          : undefined;
+      const refused = wardCommandRefusal(check.outcome, rejections, check.prior, true);
       if (refused) {
         const said = `Not recorded: ${refused.reason.replace(/\.$/, "")}. Nothing was changed.`;
         setBoardSay(said);
@@ -588,13 +578,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
-                  if (
-                    (check.outcome?.isCurrent && !check.outcome.isCurrent()) ||
-                    (check.outcome?.canUndo && !check.outcome.canUndo())
-                  ) {
-                    setToastMessage("Undo is unavailable. Review the current board before trying again.");
-                    return false;
-                  }
+                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
                   return runBoardCommand(
                     () => {
                       // Literal types, one per kind, so the override-surface guard reads each one.
@@ -818,13 +802,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const priorRejectionCountRef = useRef(rejections.length);
   const [lastActionRejection, setLastActionRejection] = useState<Rejection | undefined>(undefined);
   const [checkToken, setCheckToken] = useState(0);
-  const movementCheckRef = useRef<{
-    prior: number;
-    movementId: string;
-    attempted: string;
-    outcome?: WardCommandOutcome;
-    undo?: { movementId: string; unitId: string };
-  } | null>(null);
+  const movementCheckRef = useRef<WardMovementCheck | null>(null);
   function runMovementCommand(
     movementId: string,
     attempted: string,
@@ -854,29 +832,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       setToastMessage(failure);
       return;
     }
-    const refused: Rejection | undefined = check.outcome
-      ? check.outcome.status === "refused"
+    const refusal = wardCommandRefusal(check.outcome, rejections, check.prior);
+    const refused: Rejection | undefined =
+      check.outcome && refusal
         ? {
             id: check.outcome.commandId,
             at: nowRef.current,
             attempted: check.attempted,
             movementId: check.movementId,
-            reason: check.outcome.message ?? "The action was refused.",
+            reason: refusal.reason,
           }
-        : undefined
-      : rejections.length > check.prior
-        ? rejections[rejections.length - 1]
-        : undefined;
+        : (refusal as Rejection | undefined);
     setLastActionRejection(refused);
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
     if (!refused && check.attempted === "PULL_PATIENT") {
       toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
-      // The Pull a bed button has gone, so focus would fall to the page. Keep it on the arrival.
-      const row = document.getElementById(`ward-arrival-${check.movementId}`);
-      if (row && (document.activeElement === null || document.activeElement === document.body)) {
-        if (!row.hasAttribute("tabindex")) row.setAttribute("tabindex", "-1");
-        row.focus({ preventScroll: true });
-      }
+      focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
       const undo = check.undo;
@@ -893,13 +864,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
-                  if (
-                    (check.outcome?.isCurrent && !check.outcome.isCurrent()) ||
-                    (check.outcome?.canUndo && !check.outcome.canUndo())
-                  ) {
-                    setToastMessage("Undo is unavailable. Review the current board before trying again.");
-                    return false;
-                  }
+                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
                   return runBoardCommand(
                     () =>
                       dispatch({
