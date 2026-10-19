@@ -16,6 +16,8 @@ export const EVIDENCE_RUN_DIR_PATTERN =
  * Remove older per-run evidence folders under `resultsParent`, keeping the newest
  * `keep` (current run included). The current run's folder is never removed, nor is
  * anything that is not a real directory matching EVIDENCE_RUN_DIR_PATTERN.
+ * Pruning is housekeeping: a folder that cannot be removed (for example a file held
+ * open on Windows) is reported through `warn` and skipped, never failing the run.
  * Returns the removed folder names.
  */
 export function pruneEvidenceRuns({
@@ -23,6 +25,7 @@ export function pruneEvidenceRuns({
   currentRunDir,
   keep = KEPT_EVIDENCE_RUNS,
   remove = removePathSync,
+  warn = (message) => console.warn(message),
 }) {
   if (!Number.isInteger(keep) || keep < 1) throw new Error(`keep must be a positive integer, got ${keep}`);
   const current = path.basename(currentRunDir);
@@ -48,8 +51,12 @@ export function pruneEvidenceRuns({
   others.sort((a, b) => b.mtimeMs - a.mtimeMs || b.name.localeCompare(a.name));
   const removed = [];
   for (const { name } of others.slice(keep - 1)) {
-    remove(path.join(resultsParent, name), { recursive: true, force: true });
-    removed.push(name);
+    try {
+      remove(path.join(resultsParent, name), { recursive: true, force: true });
+      removed.push(name);
+    } catch (error) {
+      warn(`Could not prune old Playwright evidence folder ${name}: ${error?.message ?? error}`);
+    }
   }
   return removed;
 }

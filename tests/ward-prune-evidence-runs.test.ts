@@ -72,6 +72,25 @@ describe("pruneEvidenceRuns", () => {
     expect(readdirSync(root)).toHaveLength(5);
   });
 
+  it("skips a folder it cannot remove with a warning instead of failing the run", () => {
+    const root = makeRoot();
+    const current = runDir(root, `1-1-${uuid(9)}`, 0);
+    for (let i = 1; i <= 6; i += 1) runDir(root, `2-${i}-${uuid(i)}`, i);
+    const warnings: string[] = [];
+    const removed = pruneEvidenceRuns({
+      resultsParent: root,
+      currentRunDir: current,
+      remove: (target: string) => {
+        if (target.includes(uuid(5))) throw new Error("EBUSY: resource busy or locked");
+        rmSync(target, { recursive: true, force: true, maxRetries: 5 });
+      },
+      warn: (message: string) => warnings.push(message),
+    });
+    expect(removed).toEqual([`2-6-${uuid(6)}`]);
+    expect(warnings).toEqual([expect.stringMatching(/2-5-.*EBUSY/)]);
+    expect(existsSync(path.join(root, `2-5-${uuid(5)}`))).toBe(true);
+  });
+
   it("tolerates a missing test-results folder and rejects a non-positive keep", () => {
     const root = makeRoot();
     const missing = path.join(root, "absent");
