@@ -8,7 +8,7 @@ import { SettingsInstallHint } from "@/components/ward-management/settings/setti
 import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "@/components/ward-management/shell/ward-phone-push";
 import { listenForInstallPrompt } from "@/components/ward-management/shell/ward-pwa-install";
 import {
-  LEGACY_PWA_SCOPE,
+  LEGACY_PWA_SCOPES,
   PHONE_ALERTS_MOVED_NOTICE,
   WardPwaRegistration,
   wardPwaOpenTarget,
@@ -48,16 +48,19 @@ function installServiceWorker({
     installing: null as ReturnType<typeof fakeWorker> | null,
     addEventListener: (type: string, listener: Listener) => (registrationListeners[type] ??= []).push(listener),
   };
-  const legacyRegistration = {
-    scope: `${origin}${LEGACY_PWA_SCOPE}`,
+  // The registration in use before the move, and the older pre-F-11 one; the first held the alerts.
+  const legacyRegistrations = LEGACY_PWA_SCOPES.map((scope, index) => ({
+    scope: `${origin}${scope}`,
     unregister: vi.fn(async () => true),
-    pushManager: { getSubscription: async () => (legacySubscribed ? { endpoint: "https://push.example/1" } : null) },
-  };
+    pushManager: {
+      getSubscription: async () => (legacySubscribed && index === 0 ? { endpoint: "https://push.example/1" } : null),
+    },
+  }));
   const other = { scope: `${origin}/somewhere-else/`, unregister: vi.fn(async () => true) };
   const container = {
     controller: active ? {} : null,
     register: vi.fn(async () => registration),
-    getRegistrations: vi.fn(async () => (legacy ? [legacyRegistration, other] : [other])),
+    getRegistrations: vi.fn(async () => (legacy ? [...legacyRegistrations, other] : [other])),
     addEventListener: (type: string, listener: Listener) => (containerListeners[type] ??= []).push(listener),
     removeEventListener: vi.fn(),
   };
@@ -65,7 +68,7 @@ function installServiceWorker({
   return {
     container,
     registration,
-    legacyRegistration,
+    legacyRegistrations,
     other,
     emit: (type: string, event?: unknown) => containerListeners[type]?.forEach((listener) => listener(event)),
     updateFound: (worker: ReturnType<typeof fakeWorker>) => {
@@ -101,11 +104,13 @@ describe("WardPwaRegistration", () => {
     expect(browser.other.unregister).not.toHaveBeenCalled();
   });
 
-  it("removes the old /ward-flow/ registration, and nothing else", async () => {
+  it("removes both old /mockups/ward-flow registrations, and nothing else", async () => {
     const browser = installServiceWorker({ legacy: true });
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    expect(browser.legacyRegistration.unregister).toHaveBeenCalledTimes(1);
+    expect(LEGACY_PWA_SCOPES).toEqual(["/mockups/ward-flow", "/mockups/ward-flow/"]);
+    for (const legacyRegistration of browser.legacyRegistrations)
+      expect(legacyRegistration.unregister).toHaveBeenCalledTimes(1);
     expect(browser.other.unregister).not.toHaveBeenCalled();
   });
 
