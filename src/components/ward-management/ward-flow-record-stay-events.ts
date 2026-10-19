@@ -1,7 +1,7 @@
 // The RECORD_* events about a person's stay on the ward: leaving, trips to an emergency department,
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
-import { plannedAdmissionLegalStatus } from "./ward-discharge-records";
+import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
 import { isLeavingDestination } from "./ward-admissions";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
@@ -132,10 +132,9 @@ export function reduceRecordedStayEvent(
 
       // Involuntary patient discharge boundary (WA Mental Health Act 2014)
       const linkedPatient = admission.patientId ? state.patients.find((p) => p.id === admission.patientId) : undefined;
-      const stayLegalStatus = linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission);
       if (
         patientRecordIsInvoluntary(linkedPatient?.legalStatus) ||
-        (stayLegalStatus !== undefined && stayLegalStatus !== "Voluntary")
+        stayLegalStatusIsInvoluntary(state, admission, linkedMovement)
       ) {
         if (
           event.leavingDestination === "discharged-to-the-community" ||

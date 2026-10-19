@@ -85,6 +85,20 @@ export function plannedAdmissionLegalStatus(
   );
 }
 
+/**
+ * Whether the stay's own legal record (its linked movement, else the converted booking) makes it
+ * involuntary: anything recorded other than "Voluntary". No record is not involuntary here; the
+ * patient record is checked separately by `patientRecordIsInvoluntary`.
+ */
+export function stayLegalStatusIsInvoluntary(
+  state: Pick<WardFlowState, "movements"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
+  admission: Admission,
+  movement: Movement | undefined = dischargeMovement(state, admission),
+): boolean {
+  const status = movement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission);
+  return status !== undefined && status !== "Voluntary";
+}
+
 /** A previous stay must never decide this admission's discharge or transport state. */
 export function dischargeMovement(
   state: Pick<WardFlowState, "movements"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,

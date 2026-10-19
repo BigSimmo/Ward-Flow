@@ -39,6 +39,7 @@ import {
 import {
   admissionCriteriaEligibility,
   plannedAdmissionLegalStatus,
+  stayLegalStatusIsInvoluntary,
   dischargeIdentity,
   dischargeMovement,
   readOpenedDischargeRecord,
@@ -1672,10 +1673,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       event.change.authority === "none" &&
       ["ambulance", "service_vehicle", "police", "rfds"].includes(event.change.mode)
     ) {
-      const movement = dischargeMovement(state, admission);
       const patient = uniqueRecord(state.patients, admission.patientId);
-      const status = movement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission);
-      if (patientRecordIsInvoluntary(patient?.legalStatus) || (status !== undefined && status !== "Voluntary"))
+      if (patientRecordIsInvoluntary(patient?.legalStatus) || stayLegalStatusIsInvoluntary(state, admission))
         return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
     }
     if (event.change.kind === "legal" && event.change.authority === "5B") {
@@ -1850,8 +1849,10 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   // Involuntary patient discharge boundary (WA Mental Health Act 2014)
   const fullPatient = uniqueRecord(state.patients, identity.patient.id);
   const linkedMovement = dischargeMovement(state, admission);
-  const status = linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission);
-  if (patientRecordIsInvoluntary(fullPatient?.legalStatus) || (status !== undefined && status !== "Voluntary")) {
+  if (
+    patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
+    stayLegalStatusIsInvoluntary(state, admission, linkedMovement)
+  ) {
     if (
       event.leavingDestination === "discharged-to-the-community" ||
       event.leavingDestination === "left-against-advice"
