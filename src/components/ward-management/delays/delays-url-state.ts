@@ -15,19 +15,8 @@ const OWNERS: readonly DelayOwnerId[] = DELAY_OWNERS.map((owner) => owner.id);
 const ORIGINS: readonly CatchmentOrigin[] = [...HEALTH_SERVICES, "unrecorded"];
 
 /** Every query key the board reads and writes. `show=severe` is the Menu's link (shell-9). */
-export const DELAYS_QUERY_KEYS = [
-  "owner",
-  "origin",
-  "blocker",
-  "wait",
-  "locked",
-  "quiet",
-  "due",
-  "passed",
-  "show",
-  "order",
-] as const;
-type DelaysQueryKey = (typeof DELAYS_QUERY_KEYS)[number];
+type DelaysQueryKey =
+  "owner" | "origin" | "blocker" | "wait" | "locked" | "quiet" | "due" | "passed" | "show" | "order";
 
 /** The filters an address asks for. Unknown or malformed values are ignored, never guessed at. */
 export function filtersFromSearch(search: string): BoardFilters {
