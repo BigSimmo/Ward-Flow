@@ -124,3 +124,15 @@ describe("a screen's arrangement is remembered on this device", () => {
     expect(screen.getByRole("button")).toHaveTextContent("longest");
   });
 });
+
+describe("a store that refuses writes", () => {
+  it("still keeps the choice for this page", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+    render(<Arrangement />);
+    act(() => fireEvent.click(screen.getByRole("button")));
+    expect(screen.getByRole("button")).toHaveTextContent("most");
+    setItem.mockRestore();
+  });
+});

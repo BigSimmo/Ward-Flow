@@ -23,10 +23,12 @@ function subscribe(onChange: () => void): () => void {
 }
 
 function read(key: string): string | null {
+  // A store can refuse writes yet still answer reads (a full quota), so a page-only choice wins.
+  if (fallback.has(key)) return fallback.get(key) ?? null;
   try {
     return window.localStorage.getItem(key);
   } catch {
-    return fallback.get(key) ?? null;
+    return null;
   }
 }
 
@@ -46,6 +48,7 @@ export function useDeviceChoice<T extends string>(
     (next: T) => {
       try {
         window.localStorage.setItem(key, next);
+        fallback.delete(key);
       } catch {
         // Private browsing or a blocked store: the choice lasts for this page only.
         fallback.set(key, next);
