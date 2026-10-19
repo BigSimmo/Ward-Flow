@@ -128,6 +128,45 @@ describe("numbered bed designation integrity", () => {
     expect(moved.units === confirmed.units).toBe(true);
   });
 
+  // Owner ruling (PR #423, 19 Oct 2026): lockedDelta = prior locked − target locked, so open→locked
+  // (−1) lowers the free-locked count and is never refused for it already exceeding the confirmed
+  // total; locked→open (+1) raises it and stays bounded.
+  it("allows an open-to-locked move that lowers free-locked past a lower confirmed total, still bounds locked-to-open", () => {
+    const { state, unit, current, occupiedLocked } = bench();
+    expect(unit.allocatableLocked).toBeGreaterThanOrEqual(2);
+    const confirmed = send(state, {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      unitId: UNIT,
+      actingUnitId: UNIT,
+      value: 0,
+      expectedRevision: unit.allocatable.revision ?? 0,
+    } as WardFlowEvent);
+    const lowered = confirmed.units.find((row) => row.id === UNIT)!;
+    expect(lowered.allocatableLocked - 1).toBeGreaterThan(lowered.allocatable.value);
+    const open = current.find((row) => row.bedKind === "open" && row.state === "occupied")!;
+    const moved = send(confirmed, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      admissionId: open.id,
+      actingUnitId: UNIT,
+      bedNumber: occupiedLocked + 1,
+    } as WardFlowEvent);
+    expect(moved.admissions.find((row) => row.id === open.id)).toMatchObject({ bedKind: "locked" });
+    expect(moved.units.find((row) => row.id === UNIT)?.allocatableLocked).toBe(lowered.allocatableLocked - 1);
+    const locked = current.find((row) => row.bedKind === "locked" && row.state === "occupied")!;
+    const refused = wardFlowReducer(confirmed, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      now: NOW,
+      admissionId: locked.id,
+      actingUnitId: UNIT,
+      bedNumber: Math.max(...current.map((row) => row.bedNumber!)) + 1,
+    });
+    expect(refused.rejections.at(-1)?.reason).toBe("The ward's free bed-kind counts do not support this bed move.");
+    expect(refused.units === confirmed.units).toBe(true);
+  });
+
   // Codex P2 (PR #423): a same-kind move's Undo leaves capacity untouched, so a later resource
   // update (here CONFIRM_CAPACITY) must not refuse it.
   it.each(["open", "locked"] as const)(
