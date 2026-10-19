@@ -13,6 +13,13 @@
 // "Held" is not a square here: it means only a bed kept for a patient on leave, already inside
 // Occupied, and is shown as an "on leave" marker beside the squares, never a fifth state.
 //
+// 🔴 **WHY THE MAP AND THE TABLE NOW SHARE ONE SOURCE, WRITTEN DOWN RATHER THAN LEFT FOR THE NEXT
+// PERSON TO REDISCOVER.** This map depends on every bed landing in exactly one square, so it may
+// only read counts GUARANTEED to sum to `unit.beds`. It once read `unitCapacity(unit,
+// releases).available` instead of `NetworkWardRow.ready`, because that row was then computed as
+// `lockedBedsFree + openBedsFree` (allocatable alone, never `empty`) and could have drawn more or
+// fewer squares than a ward has beds once a feed let `allocatable` exceed `empty`. The row now reads
+// `bedStates` too, so the map can share it without losing that guarantee.
 // The map and `NetworkWardRow` both read `bedStates`, including its reconciliation of live
 // reservations against newer capacity observations. Ready and Pulled must be disjoint even when
 // the ward's latest offered count includes a bed already reserved for someone.

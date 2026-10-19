@@ -726,6 +726,10 @@ export function ShortlistPanel({
   const referral = referralForMovement(movement, referrals);
   const suburbLabel = referral ? referralSuburbLabel(referral.suburb) : undefined;
 
+  // A form with no current deadline is never breached — `undefined` must never reach
+  // `clockState`'s arithmetic. As of the 2026-08-23 product-owner correction, neither a Form 1A
+  // nor a Form 3B carries a `dueAt` any longer (Task 6A first established this for 3B; see
+  // `LegalForm`'s doc comment in ward-model.ts) — only the transport/transfer forms (4A/4C) do.
   // Only an expiry still in force can produce a current legal warning.
   const legalDueAt = currentLegalDueAt(movement);
   const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);

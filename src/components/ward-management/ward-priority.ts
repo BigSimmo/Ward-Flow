@@ -150,7 +150,18 @@ export function operationalScore(
     });
   }
 
-  // Score a person-recorded expiry only while that form remains in force.
+  // DORMANT FOR 1A/3B ONLY as of the 2026-08-23 product-owner correction: neither code carries
+  // a `dueAt` any longer (see `LegalForm`'s own doc comment in ward-model.ts), so this block can
+  // no longer award "Statutory timing" points on their account, and a patient referred for (or
+  // awaiting) examination has their priority ride on "Time waiting" above alone — exactly the
+  // clinician's own rule, with no compensating bonus for carrying a legal form, which would be
+  // an unsupported clinical claim of the same kind this correction removes. This block is NOT
+  // fully dormant, though: the transport/transfer forms (4A/4C) are out of scope for this
+  // correction, still carry a real `dueAt`, and still legitimately score here while in force.
+  // The 1A/3B branch is kept live, not deleted, on the same precedent Task 6A set for a Form 3B:
+  // a real examination timeframe may be supplied later and should return as a derivation, not a
+  // rewritten function.
+  // Score a person-recorded expiry only while that form remains in force (`currentLegalDueAt`).
   const legalForm = movement.legalForm;
   const dueAt = currentLegalDueAt(movement);
   if (legalForm && dueAt !== undefined) {
