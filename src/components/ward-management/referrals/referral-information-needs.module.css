@@ -1,0 +1,65 @@
+/* "What we still need" and the referrer's tick-off list (smart features idea 4). */
+
+.panel {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-block: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+}
+
+.heading {
+  margin: 0;
+  padding: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.when {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.picker {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.option {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  min-block-size: 44px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

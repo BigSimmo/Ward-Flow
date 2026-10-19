@@ -8,6 +8,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -724,6 +725,43 @@ export type WardFlowEvent =
       referralId: string;
       unitId: string;
       source?: "cld" | "departure";
+    }
+  | {
+      /**
+       * Smart features idea 3 (19 Oct 2026): the addressed ward opened this referral. Stamps
+       * `ReferralAddressing.openedAt` once, so the sender sees "Opened by <ward>". A receipt, not an
+       * answer: no state moves and the decision clock keeps running. Ward only, for its own copy.
+       */
+      type: "MARK_REFERRAL_OPENED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      actingUnitId: string;
+    }
+  | {
+      /**
+       * Smart features idea 4 (19 Oct 2026): a ward asks for items from a fixed list before it
+       * decides. Each item is membership-checked; none is typed. Does not decide the referral and
+       * does not stop the decision clock. The ward for its own copy, or the coordinator for any ward.
+       */
+      type: "REQUEST_REFERRAL_INFORMATION";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      needs: readonly ReferralInformationNeed[];
+    }
+  | {
+      /** Smart features idea 4: the referrer or the coordinator ticks off one item a ward asked for. */
+      type: "MARK_REFERRAL_INFORMATION_MET";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      need: ReferralInformationNeed;
     }
   | {
       type: "CHANGE_URGENCY";

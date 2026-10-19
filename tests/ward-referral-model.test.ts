@@ -495,6 +495,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // unit is declining a placement.
     FLAG_MOVEMENT_TURNAROUND_PRIORITY: false,
     FLAG_REFERRAL_TURNAROUND_PRIORITY: false,
+    // Smart features ideas 3 and 4: a receipt, a request for listed items and ticking one off. None
+    // decides the referral; asking for information is not a refusal and the decision clock runs on.
+    MARK_REFERRAL_OPENED: false,
+    REQUEST_REFERRAL_INFORMATION: false,
+    MARK_REFERRAL_INFORMATION_MET: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,

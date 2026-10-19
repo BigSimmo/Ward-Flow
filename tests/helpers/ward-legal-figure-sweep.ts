@@ -242,6 +242,28 @@ export function candidateEvents(
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
         .flatMap((unit) => movementIds.map((movementId) => ({ type, role, now, movementId, unitId: unit.id })));
+    // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
+    // which ward copy exists and is still waiting.
+    case "MARK_REFERRAL_OPENED":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitId, actingUnitId: unitId })),
+      );
+    case "REQUEST_REFERRAL_INFORMATION":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          unitId,
+          actingUnitId: unitId,
+          needs: ["drug_screen" as const],
+        })),
+      );
+    case "MARK_REFERRAL_INFORMATION_MET":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitId, need: "drug_screen" as const })),
+      );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)

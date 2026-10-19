@@ -173,6 +173,7 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
+import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
 import { reduceTransportEvent } from "./ward-flow-transport-events";
@@ -604,6 +605,9 @@ export function subjectId(event: WardFlowEvent): string {
     // RB7: referral-scoped too, carrying `referralId` and no `movementId`.
     case "ADD_REFERRAL_CORRECTION":
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
+    case "MARK_REFERRAL_OPENED":
+    case "REQUEST_REFERRAL_INFORMATION":
+    case "MARK_REFERRAL_INFORMATION_MET":
       return event.referralId;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
@@ -2370,6 +2374,10 @@ export function reduceClinicalEvent(
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
       return reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);
+    case "MARK_REFERRAL_OPENED":
+    case "REQUEST_REFERRAL_INFORMATION":
+    case "MARK_REFERRAL_INFORMATION_MET":
+      return reduceReferralFollowUpEvent(state, event, decision, { findReferral, reject, replaceReferral });
 
     case "PULL_PATIENT":
     case "RELEASE_PULL":

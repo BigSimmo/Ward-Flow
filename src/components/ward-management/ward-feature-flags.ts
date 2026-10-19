@@ -101,6 +101,22 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: false, production: false },
     removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
+  "referral-opened-receipts": {
+    label: "Opened by the ward",
+    description: "The referrer sees when a ward first opened a referral.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the receipt with ward and ED leads.",
+  },
+  "referral-information-needs": {
+    label: "What we still need",
+    description: "A ward can ask the referrer for listed items before deciding.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the list of items with ward and ED leads.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;

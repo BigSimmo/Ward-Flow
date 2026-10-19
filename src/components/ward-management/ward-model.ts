@@ -1,4 +1,5 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -1351,6 +1352,28 @@ export type ReferralAddressing = {
   /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */
   reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
   reassessmentNote?: string;
+  /**
+   * Smart features idea 3 (19 Oct 2026): when the addressed ward first opened this referral
+   * (`MARK_REFERRAL_OPENED`). Shown to the sender as "Opened by <ward>". A receipt, never an answer:
+   * it does not move `state` and does not stop the decision clock. Only on a `psychiatric_ward`
+   * addressing, and only the first opening is kept.
+   */
+  openedAt?: Instant;
+  /**
+   * Smart features idea 4 (19 Oct 2026): what the ward asked for before deciding
+   * (`REQUEST_REFERRAL_INFORMATION`), each ticked off by the referrer or the coordinator
+   * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only.
+   */
+  informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>;
+};
+
+/** One item a ward asked for on a referral. `by` and `metBy` are ROLES, never people. */
+export type ReferralInformationNeedEntry = {
+  need: ReferralInformationNeed;
+  at: Instant;
+  by: string;
+  metAt?: Instant;
+  metBy?: string;
 };
 
 /** The ward arm, named so signatures can require it. */

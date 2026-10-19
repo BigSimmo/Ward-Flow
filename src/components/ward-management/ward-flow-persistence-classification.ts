@@ -175,6 +175,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "FLAG_MOVEMENT_URGENT",
   "HANDOVER_READY",
   "MARK_NOTICE_READ",
+  "MARK_REFERRAL_INFORMATION_MET",
+  "MARK_REFERRAL_OPENED",
   "OPEN_DISCHARGE_RECORD",
   "PATIENT_ARRIVED",
   "PATIENT_COLLECTED",
@@ -295,6 +297,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_REFERRAL_DECISION",
   "UNDO_AUDIT_REVIEW",
   "PLACE_IN_BED",
+  "REQUEST_REFERRAL_INFORMATION",
   "UNDO_PLACE_IN_BED",
   // v10 pass 3, 10 Oct 2026: the step undos. Ids and instants only; an undo restores records the
   // session already held and adds no typed text.
