@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -93,6 +93,21 @@ describe("Ward-Flow push destination", () => {
       writeFileSync(join(root, "unrelated.txt"), "unrelated history\n");
       git("add", "unrelated.txt");
       git("commit", "--quiet", "-m", "unrelated");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      // A local replace ref that grafts the unrelated commit onto the anchor must not pass.
+      const unrelated = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
+      git("replace", "--graft", unrelated, "e735c1f8d34df005becf720b96752626a4f1dcc8");
+      git("merge-base", "--is-ancestor", "e735c1f8d34df005becf720b96752626a4f1dcc8", "HEAD");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      // A legacy info/grafts file with the same fake parent must not pass either.
+      git("replace", "-d", unrelated);
+      const gitDir = spawnSync("git", ["rev-parse", "--absolute-git-dir"], {
+        cwd: root,
+        encoding: "utf8",
+      }).stdout.trim();
+      mkdirSync(join(gitDir, "info"), { recursive: true });
+      writeFileSync(join(gitDir, "info", "grafts"), `${unrelated} e735c1f8d34df005becf720b96752626a4f1dcc8\n`);
+      git("merge-base", "--is-ancestor", "e735c1f8d34df005becf720b96752626a4f1dcc8", "HEAD");
       expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
     } finally {
       const resolvedParent = realpathSync(tmpdir());
