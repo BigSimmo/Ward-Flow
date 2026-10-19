@@ -511,7 +511,45 @@ button.stat:hover .statV {
 }
 
 .tableWrap {
+  --side-fade: 40px;
+
   overflow-x: auto;
+}
+
+/* DA-26 (design audit): when the table is wider than its card, fade the edge that still hides
+   columns, so it is plain that the list scrolls sideways. The fade lifts while the area has
+   keyboard focus, because the mask would also fade the focus ring on that edge. */
+.tableWrap[data-more-after]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before][data-more-after]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+}
+
+/* Inside the box, so the table card's overflow clip cannot hide it. */
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .tbl {
@@ -2814,5 +2852,36 @@ button.gLaneL:hover {
 
   .owners.owners {
     padding-inline: 0;
+  }
+}
+
+/*
+ * C1 (phone simplification, 19 Oct 2026): the quick filters fold into one Filter button at the end
+ * of the pinned order switch, and open in a sheet. The pinned row hides everything but the switch
+ * on a phone (above); the button is the one exception. In the sheet the chips wrap rather than
+ * scroll sideways, and keep their phone size and 48px hit areas.
+ */
+@media (max-width: 48rem) {
+  .tableCard > .chead:first-child > .phoneFold {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .tableCard > .chead:first-child:has(> .phoneFold) {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+  }
+
+  .tableCard > .chead:first-child:has(> .phoneFold) > .seg {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .fRow.fRowSheet {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-3);
+    margin: 0;
+    padding-block: var(--wf-phone-pill-hit);
+    overflow: visible;
   }
 }

@@ -452,8 +452,12 @@
   padding: var(--wf-s-2) var(--wf-s-4) 0;
 }
 
+/* Design audit DA-24: a label never shrinks under its own text. When the panel is too narrow (a 1280
+   or 1366 laptop, or wider letter spacing set for reading) the views wrap onto a second row instead of
+   overlapping. The small side padding keeps one row at 1440; the items grow to share any spare room. */
 .flowSwitch > div {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
 }
 
@@ -461,8 +465,8 @@
   flex: 1 1 auto;
   justify-content: center;
   gap: 5px;
-  min-width: 0;
-  padding-inline: var(--wf-s-2);
+  min-width: max-content;
+  padding-inline: 2px;
 }
 
 .flowBody {

@@ -32,6 +32,7 @@ import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { useAccessNavFilter, useCanOpenHref } from "../shell/ward-access";
 import { WARD_BED_MEETING_TV_HREF } from "../ward-nav";
 import { bedSummaryText } from "./ward-bed-summary";
 import { WardBedFinder } from "./ward-bed-finder";
@@ -100,6 +101,10 @@ function LinkRow({
   detail: string;
   onNavigate: () => void;
 }) {
+  // DA-09 (design audit, 19 Oct 2026): a row is offered only to a desk that may open its page, by
+  // the same role table the menu reads, so no Tools row ends at "Not part of your role".
+  const canOpen = useCanOpenHref();
+  if (!canOpen(href)) return null;
   return (
     <Link href={href} className={styles.row} onClick={onNavigate}>
       <RowText icon={icon} name={name} detail={detail} />
@@ -206,6 +211,10 @@ export function WardToolsSheet({
   onRequestHandled,
 }: WardToolsSheetProps) {
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
+  // DA-09: a ward desk updates its own ward's beds; the statewide list is not part of that desk.
+  const accessNav = useAccessNavFilter();
+  const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
+  const canOpen = useCanOpenHref();
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
@@ -275,13 +284,15 @@ export function WardToolsSheet({
           detail="Choose the patient, then the reason"
           onNavigate={onNavigate}
         />
-        <LinkRow
-          href={`${root}/wards`}
-          icon={BedSingle}
-          name="Update a bed"
-          detail="Open, close or hold a bed"
-          onNavigate={onNavigate}
-        />
+        {updateBedHref ? (
+          <LinkRow
+            href={updateBedHref}
+            icon={BedSingle}
+            name="Update a bed"
+            detail="Open, close or hold a bed"
+            onNavigate={onNavigate}
+          />
+        ) : null}
         <LinkRow
           href={handoverHref()}
           icon={FileText}
@@ -389,22 +400,24 @@ export function WardToolsSheet({
         />
       </Group>
 
-      <Group title="More pages">
-        <LinkRow
-          href={`${root}/legal-forms`}
-          icon={Scale}
-          name="Legal forms"
-          detail="Every open move that carries a form"
-          onNavigate={onNavigate}
-        />
-        <LinkRow
-          href={`${root}/out-of-area`}
-          icon={MapPinned}
-          name="Out of area"
-          detail="Who is in a bed far from home"
-          onNavigate={onNavigate}
-        />
-      </Group>
+      {[`${root}/legal-forms`, `${root}/out-of-area`].some(canOpen) ? (
+        <Group title="More pages">
+          <LinkRow
+            href={`${root}/legal-forms`}
+            icon={Scale}
+            name="Legal forms"
+            detail="Every open move that carries a form"
+            onNavigate={onNavigate}
+          />
+          <LinkRow
+            href={`${root}/out-of-area`}
+            icon={MapPinned}
+            name="Out of area"
+            detail="Who is in a bed far from home"
+            onNavigate={onNavigate}
+          />
+        </Group>
+      ) : null}
 
       <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
         <div className={styles.card}>

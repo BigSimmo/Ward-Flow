@@ -14,6 +14,7 @@ import {
 } from "react";
 import {
   Activity,
+  BedDouble,
   BedSingle,
   House,
   Inbox,
@@ -51,7 +52,16 @@ import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
-import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
+import {
+  BED_FINDER_MENU_ID as BED_FINDER_ID,
+  isActiveRailEntry,
+  isRoleMenuAction,
+  railEntries,
+  roleMenu,
+  type RailEntry,
+  type RoleMenuAction,
+} from "./ward-rail-entries";
+import { requestToolsTool } from "../tools/ward-tools-open";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
@@ -75,38 +85,61 @@ import pageDock from "./ward-phone-page-dock.module.css";
  * Menu's foot. Needs you holds only what is act-now or overdue.
  */
 
-type DockPlace = readonly [id: string, label: string];
+/** A page in the dock: a rail entry id and what the role calls it there. */
+type DockPage = { readonly kind: "page"; readonly id: string; readonly label: string };
 
-/** Two places per role, beside the +. Ids are rail entry ids. */
-const DOCK_PLACES: Record<WardChromeRole, readonly [DockPlace, DockPlace]> = {
-  coordinator: [
-    ["command", "Home"],
-    ["referrals", "Referrals"],
-  ],
-  ward: [
-    ["wards", "Wards"],
-    ["referrals", "Referrals"],
-  ],
-  ed: [
-    ["ed", "ED"],
-    ["referrals", "Referrals"],
-  ],
-  officer: [
-    ["officer", "Transport"],
-    ["movements", "Movements"],
-  ],
-  community: [
-    ["community", "Community"],
-    ["referrals", "Referrals"],
-  ],
-  bed_manager: [
-    ["command", "Home"],
-    ["capacity", "Capacity"],
-  ],
-  executive: [
-    ["command", "Home"],
-    ["statistics", "Statistics"],
-  ],
+/**
+ * A dock slot right of the +. `queue` is the coordinator's one Alerts queue or, where that is not
+ * this desk's, the Tasks drawer (today's behaviour). `alerts` is the Alerts screen, `activity` the
+ * Activity drawer and `bed-finder` the Tools bed finder.
+ */
+type DockSlot =
+  | DockPage
+  | { readonly kind: "queue" }
+  | { readonly kind: "alerts" }
+  | { readonly kind: "activity" }
+  | { readonly kind: "bed-finder"; readonly label: string };
+
+const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
+
+type ResolvedDockSlot =
+  Exclude<DockSlot, DockPage> | { readonly kind: "page"; readonly entry: RailEntry; readonly label: string };
+
+/**
+ * C2 (Josh, 19 Oct 2026): a bottom bar per role. Two places left of the +, two slots right of it.
+ * A ward gets My ward, Referrals, +, Alerts, Handover; the other roles in the B1 table get the same
+ * idea from their own menu. Alerts and Activity stay two tabs (the merge was only a "could"). The
+ * bed coordinator's dock is unchanged. A slot the desk cannot open is left out.
+ */
+const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
+  coordinator: {
+    left: [page("command", "Home"), page("referrals", "Referrals")],
+    right: [{ kind: "queue" }, { kind: "activity" }],
+  },
+  ward: {
+    left: [page("wards", "My ward"), page("referrals", "Referrals")],
+    right: [{ kind: "alerts" }, page("handover", "Handover")],
+  },
+  ed: {
+    left: [page("ed", "My ED"), page("referrals", "Referrals")],
+    right: [{ kind: "alerts" }, { kind: "bed-finder", label: "Find a bed" }],
+  },
+  officer: {
+    left: [page("officer", "My jobs"), page("alerts", "Alerts")],
+    right: [page("on-call", "On-call"), { kind: "activity" }],
+  },
+  community: {
+    left: [page("community", "My team"), page("referrals", "Referrals")],
+    right: [{ kind: "alerts" }, { kind: "activity" }],
+  },
+  bed_manager: {
+    left: [page("capacity", "Capacity"), page("wards", "Wards")],
+    right: [{ kind: "alerts" }, page("handover", "Handover")],
+  },
+  executive: {
+    left: [page("command", "Home"), page("statistics", "Statistics")],
+    right: [{ kind: "queue" }, { kind: "activity" }],
+  },
 };
 
 /** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
@@ -182,26 +215,33 @@ function phoneMenuModel(
   // Role access plan: only the screens the desk's role may open.
   const entries = accessNav(railEntries(flagOn)).filter((entry) => !isPhoneDesktopOnlyPath(entry.href));
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
-  const dock = DOCK_PLACES[dockRole].flatMap(([id, label]) => {
-    const entry = byId.get(id);
-    return entry ? [{ entry, label }] : [];
-  });
+  const resolve = (slot: DockSlot): ResolvedDockSlot[] => {
+    // The Alerts tab only for a desk that may open the Alerts screen (role access plan).
+    if (slot.kind === "alerts") return byId.has("alerts") ? [slot] : [];
+    if (slot.kind !== "page") return [slot];
+    const entry = byId.get(slot.id);
+    return entry ? [{ kind: "page", entry, label: slot.label }] : [];
+  };
+  const dock = DOCK[dockRole].left.flatMap(resolve);
+  const dockRight = DOCK[dockRole].right.flatMap(resolve);
   const needs = strictNeeds(byId, counts);
   // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
   const shown = new Set([
     "referral-intake",
-    ...dock.map((place) => place.entry.id),
+    ...[...dock, ...dockRight].flatMap((slot) => (slot.kind === "page" ? [slot.entry.id] : [])),
+    ...(dockRight.some((slot) => slot.kind === "alerts") ? ["alerts"] : []),
+    ...(dockRight.some((slot) => slot.kind === "bed-finder") ? [BED_FINDER_ID] : []),
     ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
   const rank = (id: string) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER;
-  const groups = RAIL_GROUPS.map((group) => ({
-    label: group.label,
-    entries: group.entries
-      .flatMap(([id]) => byId.get(id) ?? [])
-      .filter((entry) => !shown.has(entry.id))
-      .toSorted((a, b) => rank(a.id) - rank(b.id)),
-  })).filter((group) => group.entries.length > 0);
-  return { entries, byId, dock, needs, groups };
+  // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
+  const menu = roleMenu(entries, role, rank);
+  const main = menu.main.filter((item) => !shown.has(item.id));
+  const groups = [
+    { label: CHROME_ROLE_LABELS[role], entries: main },
+    ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
+  ].filter((group) => group.entries.length > 0);
+  return { entries, byId, dock, dockRight, needs, groups };
 }
 
 /**
@@ -435,6 +475,7 @@ function DockFace({
 
 function PhoneDock({
   places,
+  right,
   counts,
   pathname,
   tasksCount,
@@ -444,7 +485,9 @@ function PhoneDock({
   onCreate,
   onDrawer,
 }: {
-  places: ReturnType<typeof phoneMenuModel>["dock"];
+  places: ResolvedDockSlot[];
+  /** C2: the two slots right of the +, per role. */
+  right: ResolvedDockSlot[];
   counts: CountMap;
   pathname: string;
   tasksCount: number;
@@ -455,31 +498,109 @@ function PhoneDock({
   onCreate: () => void;
   onDrawer: (id: DrawerId) => void;
 }) {
+  const alertsLink = (count: number | undefined) => (
+    <Link
+      key="alerts"
+      href={WARD_ALERTS_HREF}
+      className={styles.dockItem}
+      aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
+      data-testid="ward-phone-menu-alerts"
+      onClick={() => announceToWardShell("Alerts.")}
+    >
+      <DockFace
+        icon={Bell}
+        label="Alerts"
+        count={count}
+        tail={count === undefined ? "" : dockTail("Alerts", count, "outstanding", `Alerts, ${count} outstanding`)}
+      />
+    </Link>
+  );
+  const slot = (item: ResolvedDockSlot) => {
+    switch (item.kind) {
+      case "page": {
+        const { entry, label } = item;
+        const count = countIn(counts, entry.id);
+        return (
+          <Link
+            key={entry.id}
+            href={entry.href}
+            className={styles.dockItem}
+            aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
+            data-testid="ward-phone-dock-link"
+            onClick={() => onGo(entry)}
+          >
+            {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
+            <DockFace
+              icon={entry.id === "command" ? House : entry.icon}
+              label={label}
+              count={count?.value}
+              tail={dockTail(label, count?.value, count?.noun ?? "", wardNavCountLabel(label, count))}
+            />
+          </Link>
+        );
+      }
+      case "queue":
+        return oneAlertsQueue ? (
+          alertsLink(tasksCount)
+        ) : (
+          <button
+            key="tasks"
+            type="button"
+            className={styles.dockItem}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-menu-tasks"
+            onClick={() => onDrawer("tasks")}
+          >
+            <DockFace
+              icon={ListChecks}
+              label="Tasks"
+              count={tasksCount}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+            />
+          </button>
+        );
+      case "alerts":
+        // The desk's own Alerts screen. The count is the coordinator's queue, so it is not shown here.
+        return alertsLink(undefined);
+      case "activity":
+        return (
+          <button
+            key="activity"
+            type="button"
+            className={styles.dockItem}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-menu-activity"
+            onClick={() => onDrawer("activity")}
+          >
+            <DockFace
+              icon={Activity}
+              label="Activity"
+              count={activityUnread}
+              tail={dockTail("Activity", activityUnread, "unread", "Activity")}
+            />
+          </button>
+        );
+      case "bed-finder":
+        return (
+          <button
+            key="bed-finder"
+            type="button"
+            className={styles.dockItem}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-dock-bed-finder"
+            onClick={(event) => {
+              requestToolsTool("bed-finder", event.currentTarget);
+              announceToWardShell(`${item.label}.`);
+            }}
+          >
+            <DockFace icon={BedDouble} label={item.label} count={undefined} tail="" />
+          </button>
+        );
+    }
+  };
   return (
     <nav className={styles.dock} aria-label="Quick open" data-testid="ward-phone-dock">
-      {places.map(({ entry, label }) => (
-        <Link
-          key={entry.id}
-          href={entry.href}
-          className={styles.dockItem}
-          aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
-          data-testid="ward-phone-dock-link"
-          onClick={() => onGo(entry)}
-        >
-          {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
-          <DockFace
-            icon={entry.id === "command" ? House : entry.icon}
-            label={label}
-            count={countIn(counts, entry.id)?.value}
-            tail={dockTail(
-              label,
-              countIn(counts, entry.id)?.value,
-              countIn(counts, entry.id)?.noun ?? "",
-              wardNavCountLabel(label, countIn(counts, entry.id)),
-            )}
-          />
-        </Link>
-      ))}
+      {places.map(slot)}
       <span className={styles.riseSlot}>
         <button
           type="button"
@@ -492,52 +613,30 @@ function PhoneDock({
           <Plus aria-hidden="true" strokeWidth={2} />
         </button>
       </span>
-      {oneAlertsQueue ? (
-        <Link
-          href={WARD_ALERTS_HREF}
-          className={styles.dockItem}
-          aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
-          data-testid="ward-phone-menu-alerts"
-          onClick={() => announceToWardShell("Alerts.")}
-        >
-          <DockFace
-            icon={Bell}
-            label="Alerts"
-            count={tasksCount}
-            tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
-          />
-        </Link>
-      ) : (
-        <button
-          type="button"
-          className={styles.dockItem}
-          aria-haspopup="dialog"
-          data-testid="ward-phone-menu-tasks"
-          onClick={() => onDrawer("tasks")}
-        >
-          <DockFace
-            icon={ListChecks}
-            label="Tasks"
-            count={tasksCount}
-            tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
-          />
-        </button>
-      )}
+      {right.map(slot)}
+    </nav>
+  );
+}
+
+/** B1: a role menu item that opens a tool (the ED's Find a bed opens the Tools bed finder). */
+function ActionRow({ action, onClose }: { action: RoleMenuAction; onClose: () => void }) {
+  return (
+    <li>
       <button
         type="button"
-        className={styles.dockItem}
+        className={styles.row}
         aria-haspopup="dialog"
-        data-testid="ward-phone-menu-activity"
-        onClick={() => onDrawer("activity")}
+        data-testid="ward-phone-menu-bed-finder"
+        onClick={(event) => {
+          onClose();
+          requestToolsTool("bed-finder", event.currentTarget);
+          announceToWardShell(`${action.label}.`);
+        }}
       >
-        <DockFace
-          icon={Activity}
-          label="Activity"
-          count={activityUnread}
-          tail={dockTail("Activity", activityUnread, "unread", "Activity")}
-        />
+        <RowBody icon={action.icon} label={action.label} />
+        <Chevron />
       </button>
-    </nav>
+    </li>
   );
 }
 
@@ -834,7 +933,9 @@ function MenuPages({
       </Section>
       {groups.map((group) => (
         <Section key={group.label} label={group.label}>
-          {group.entries.map((entry) => pageRow(entry))}
+          {group.entries.map((entry) =>
+            isRoleMenuAction(entry) ? <ActionRow key={entry.id} action={entry} onClose={onClose} /> : pageRow(entry),
+          )}
         </Section>
       ))}
       <MoreSection onDrawer={onDrawer} onClose={onClose} />
@@ -880,6 +981,7 @@ export function WardPhoneMenu({
     entries,
     byId,
     dock,
+    dockRight,
     needs: overdueNeeds,
     groups,
   } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav);
@@ -952,11 +1054,12 @@ export function WardPhoneMenu({
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
   // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
-  const menuGroups = oneAlertsQueue
-    ? groups
-        .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
-        .filter((group) => group.entries.length > 0)
-    : groups;
+  const menuGroups =
+    oneAlertsQueue && dockRight.some((slot) => slot.kind === "queue")
+      ? groups
+          .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
+          .filter((group) => group.entries.length > 0)
+      : groups;
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
@@ -1045,6 +1148,7 @@ export function WardPhoneMenu({
       <div className={`${pageDock.pageDock} ${pageDock.rise}`} data-wf-page-dock="rise">
         <PhoneDock
           places={dock}
+          right={dockRight}
           counts={counts}
           pathname={pathname}
           tasksCount={tasksCount}

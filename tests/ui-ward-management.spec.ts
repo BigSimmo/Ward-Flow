@@ -5,6 +5,16 @@ import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 const PATH = "/ward-flow";
 
+/**
+ * B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page under
+ * More, so a rail link is clicked where it is on screen, opening More first when it is not inline.
+ */
+async function clickRailLink(page: Page, href: string) {
+  const link = page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first();
+  if (!(await link.isVisible())) await page.getByTestId("ward-rail-more").click();
+  await link.click();
+}
+
 async function gotoWardFlow(page: Page) {
   await page.goto(PATH, { waitUntil: "domcontentloaded" });
   await expect(page.locator('[data-testid="ward-coordinator"]:visible')).toHaveCount(1, { timeout: 15_000 });
@@ -195,7 +205,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // `data-testid="ward-rail-link"`.
     const modes = navigable.map((view) => [view.href, testIdByView[view.id]] as const);
     for (const [href, testId] of modes) {
-      await page.locator(`[data-testid="ward-rail-link"][href="${href}"]`).click();
+      await clickRailLink(page, href);
       await expect(page.getByTestId(testId)).toBeVisible({ timeout: 15_000 });
       await expectNoPageOverflow(page);
     }
@@ -238,7 +248,8 @@ test.describe("@mockup Ward Flow command view", () => {
     // Phone (8 Oct 2026): at 48rem and below the rail is hidden and the header bar's Menu button
     // opens the same sheet.
     const opener = (await nav.isVisible())
-      ? page.getByRole("button", { name: /^All pages/iu })
+      ? // B1: the rail's sheet button is "More pages" now (it was "All pages").
+        page.getByRole("button", { name: /^More pages/iu })
       : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.

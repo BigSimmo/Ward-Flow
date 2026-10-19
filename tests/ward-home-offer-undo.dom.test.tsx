@@ -10,6 +10,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * v10 Home (pass 3): Offer on a State bedflow row refers the selected patient to that ward with an
@@ -41,6 +42,9 @@ function renderHome(movementId = MOVEMENT_ID) {
       </ToastProvider>
     </WardFlowProvider>,
   );
+  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+  showWholeHomeQueue();
   fireEvent.click(screen.getByTestId(`ward-queue-row-${movementId}`));
   return screen.getByRole("region", { name: "State Bedflow" });
 }
