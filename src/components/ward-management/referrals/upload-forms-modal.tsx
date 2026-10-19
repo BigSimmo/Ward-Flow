@@ -121,27 +121,27 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         aria-modal="true"
         aria-labelledby={`${baseId}-upload-modal-title`}
         style={{
-          backgroundColor: "var(--ward-card, #ffffff)",
-          color: "var(--ward-text, #0f172a)",
+          backgroundColor: "var(--wf-surface)",
+          color: "var(--wf-ink-1)",
           borderRadius: "1rem",
           maxWidth: "32rem",
           width: "100%",
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-          border: "1px solid var(--ward-border, #e2e8f0)",
+          border: "1px solid var(--wf-line)",
           overflow: "hidden",
         }}
       >
         <div
           style={{
             padding: "1.25rem 1.5rem",
-            borderBottom: "1px solid var(--ward-border, #e2e8f0)",
+            borderBottom: "1px solid var(--wf-line)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
           <div className={styles.titleGroup}>
-            <FileUp aria-hidden="true" size={20} style={{ color: "var(--ward-accent, #0284c7)" }} />
+            <FileUp aria-hidden="true" size={20} style={{ color: "var(--wf-accent)" }} />
             <h2 id={`${baseId}-upload-modal-title`} className={styles.title}>
               Record document details
             </h2>
@@ -161,8 +161,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           <div
             style={{
               padding: "0.75rem 1rem",
-              backgroundColor: "var(--ward-bg-tint, #f0fdf4)",
-              border: "1px solid var(--ward-border-tint, #bbf7d0)",
+              backgroundColor: "var(--wf-fit-tint)",
+              border: "1px solid var(--wf-fit-edge)",
               borderRadius: "0.5rem",
               fontSize: "0.875rem",
               marginBottom: "1.25rem",
@@ -171,7 +171,11 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               gap: "0.5rem",
             }}
           >
-            <CheckCircle2 aria-hidden="true" size={18} style={{ color: "#16a34a", marginTop: "2px", flexShrink: 0 }} />
+            <CheckCircle2
+              aria-hidden="true"
+              size={18}
+              style={{ color: "var(--wf-success)", marginTop: "2px", flexShrink: 0 }}
+            />
             <span>
               Only the selected file name, size and document type are recorded for the <strong>Transport</strong>{" "}
               screen. File contents are not stored or sent.
@@ -193,8 +197,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 minHeight: "48px",
                 padding: "0.625rem 0.75rem",
                 borderRadius: "0.5rem",
-                border: "1px solid var(--ward-border, #cbd5e1)",
-                backgroundColor: "var(--ward-input-bg, #ffffff)",
+                border: "1px solid var(--wf-line-ctl)",
+                backgroundColor: "var(--wf-surface)",
+                color: "var(--wf-ink-1)",
                 fontSize: "0.9375rem",
               }}
             >
@@ -213,16 +218,14 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </label>
             <div
               style={{
-                border: isInputFocused
-                  ? "2px solid var(--ward-accent, #0284c7)"
-                  : "2px dashed var(--ward-border, #cbd5e1)",
+                border: isInputFocused ? "2px solid var(--wf-accent)" : "2px dashed var(--wf-line-ctl)",
                 borderRadius: "0.75rem",
                 padding: "1.5rem",
                 textAlign: "center",
-                backgroundColor: isInputFocused ? "var(--ward-accent-soft, #f0f9ff)" : "var(--ward-bg-tint, #f8fafc)",
+                backgroundColor: isInputFocused ? "var(--wf-accent-tint)" : "var(--wf-surface-2)",
                 cursor: "pointer",
                 position: "relative",
-                outline: isInputFocused ? "2px solid var(--ward-accent, #0284c7)" : "none",
+                outline: isInputFocused ? "2px solid var(--wf-accent)" : "none",
                 outlineOffset: "2px",
               }}
             >
@@ -237,15 +240,11 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 className={styles.fileInput}
                 aria-label="Upload document file"
               />
-              <FileText
-                aria-hidden="true"
-                size={32}
-                style={{ color: "var(--ward-accent, #0284c7)", margin: "0 auto 0.5rem" }}
-              />
+              <FileText aria-hidden="true" size={32} style={{ color: "var(--wf-accent)", margin: "0 auto 0.5rem" }} />
               <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
               <div
                 id={`${baseId}-upload-forms-file-requirement`}
-                style={{ fontSize: "0.8125rem", color: "var(--ward-muted, #64748b)", marginTop: "0.25rem" }}
+                style={{ fontSize: "0.8125rem", color: "var(--wf-ink-3)", marginTop: "0.25rem" }}
               >
                 {fileAttached
                   ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
@@ -265,7 +264,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 minHeight: "48px",
                 padding: "0.625rem 1.25rem",
                 borderRadius: "0.5rem",
-                border: "1px solid var(--ward-border, #cbd5e1)",
+                border: "1px solid var(--wf-line-ctl)",
                 backgroundColor: "transparent",
                 color: "inherit",
                 fontSize: "0.9375rem",
