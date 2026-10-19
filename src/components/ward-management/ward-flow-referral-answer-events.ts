@@ -334,6 +334,14 @@ export function reduceReferralAnswerEvent(
     }
 
     case "RECEIVE_REFERRAL": {
+      if (
+        event.submissionId !== undefined &&
+        (typeof event.submissionId !== "string" ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(event.submissionId) ||
+          state.referrals.some((referral) => referral.submissionId === event.submissionId))
+      ) {
+        return reject(state, event, "RECEIVE_REFERRAL submission id must be a unique opaque UUID");
+      }
       if (event.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.atsCategory))
         return reject(state, event, "RECEIVE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
       // Spec failure behaviour: "a referral missing a required field, or carrying an unknown source
@@ -574,6 +582,7 @@ export function reduceReferralAnswerEvent(
       const created: Referral = {
         id: nextFrontDoorReferralId(sequence),
         ...(event.intake === undefined ? {} : { intake: event.intake }),
+        ...(event.submissionId === undefined ? {} : { submissionId: event.submissionId }),
         // Copied through, never defaulted: `undefined` means no person on file, and inventing an id
         // is how a referral points at the wrong human being.
         patientId: event.patientId,

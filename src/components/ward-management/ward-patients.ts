@@ -97,6 +97,8 @@ export const GENDERS = ["Female", "Male", "Non-binary", "Different term"] as con
 export type Gender = (typeof GENDERS)[number];
 
 export type Patient = {
+  /** Source desk keeps access while registration is not yet linked to a referral. */
+  registrationScope?: import("./ward-patient-registration").PatientRegistrationScope;
   id: PatientId;
   /**
    * The record number a clinician would search by. Synthetic, and one of the two search keys the
@@ -217,6 +219,7 @@ export const PATIENT_FIELDS = [
   "interpreterLanguage",
   "communityTreatmentOrder",
   "addedAt",
+  "registrationScope",
 ] as const;
 
 /** Whether this record was added through Add patient on the same demonstration day as `now`

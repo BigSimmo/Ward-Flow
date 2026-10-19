@@ -1,5 +1,15 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Referral completion — 18 October 2026
+
+`referrals/use-referral-command-completion.ts` owns submission correlation and patient-registration
+completion for the drawer. It distinguishes accepted, refused, failed and cancelled outcomes,
+rejects unrelated simultaneous snapshots, and fences old session/world completions. A saved
+referral unavailable in the current scope offers board access and Close without preserving an
+unsent recovery draft. `patients/add-patient.tsx` raises registration using its authorised role
+and source place. `ward-journey-referral-completion.dom.test.tsx` covers JSON boundaries,
+concurrency, failure recovery, scoped registration and accepted-but-hidden reopening.
+
 ## Handover review follow-up — 18 October 2026
 
 Phone and desktop referral review both expose the eligible turnaround preference, with the same

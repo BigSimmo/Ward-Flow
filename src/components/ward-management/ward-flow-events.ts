@@ -235,6 +235,7 @@ export type WardFlowEvent =
       admissionId: string;
       expectedGeneration: number;
       requestId: number;
+      requestNamespace?: string;
     }
   | {
       type: "REVIEW_AUDIT_EVENT";
@@ -663,7 +664,7 @@ export type WardFlowEvent =
    * (`ward-configuration.ts`) — so an invalid draft is refused with a reason naming the field,
    * never partially applied.
    */
-  | { type: "SET_CONFIGURATION"; role: WardFlowRole; now: Instant; payload: unknown }
+  | { type: "SET_CONFIGURATION"; role: WardFlowRole; now: Instant; payload: unknown; baseConfiguration?: unknown }
   /**
    * ADD A PATIENT. The owner's flow: search for somebody, and if nobody comes up, add them.
    *
@@ -690,6 +691,7 @@ export type WardFlowEvent =
    */
   | {
       type: "ADD_PATIENT";
+      registrationScope?: import("./ward-patient-registration").PatientRegistrationScope;
       role: WardFlowRole;
       now: Instant;
       umrn: string;
@@ -1252,6 +1254,8 @@ export type WardFlowEvent =
     }
   | {
       type: "RECEIVE_REFERRAL";
+      /** Opaque client correlation only; never patient text. */
+      submissionId?: string;
       intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
       role: WardFlowRole;
       now: Instant;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { DischargeCareJourney } from "./discharge-care-journey";
 import Link from "next/link";
 import { ChevronRight, ClipboardList } from "lucide-react";
@@ -22,7 +22,6 @@ import {
   BAND_LABELS,
   unitLabel,
   healthServiceLabel,
-  RECORD_ACTOR,
   recordStage,
   recordName,
   recordedMoment,
@@ -111,6 +110,18 @@ export function DischargeRecordDetail({
   s: DischargeWorkspaceState;
   activeRecord: DischargeRecord;
 }) {
+  const [datePending, setDatePending] = useState(false);
+  const [dateMessage, setDateMessage] = useState("");
+  const datePendingRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  const actor = s.recordActorFor(activeRecord.unitId);
+  const canUpdateDate = actor.role === "ward" || actor.role === "coordinator";
   const tabIdPrefix = useId();
   const {
     dayZero,
@@ -280,7 +291,9 @@ export function DischargeRecordDetail({
                 <Button
                   size="sm"
                   data-testid="ward-discharge-update-date-btn"
+                  disabledReason={canUpdateDate ? undefined : "Only the ward or coordinator can update this date."}
                   onClick={() => {
+                    setDateMessage("");
                     setShowUpdateDate(true);
                     setNewTimeDraft(
                       activeRecord.expectedDischargeAt !== null
@@ -295,8 +308,9 @@ export function DischargeRecordDetail({
             ) : (
               <form
                 className={pageStyles.timeForm}
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
+                  if (!canUpdateDate || datePendingRef.current) return;
                   let parsed: number | undefined;
                   if (/^\d+$/.test(newTimeDraft.trim())) {
                     parsed = Number(newTimeDraft.trim());
@@ -311,14 +325,37 @@ export function DischargeRecordDetail({
                             MINUTES_PER_DAY;
                   }
                   if (parsed !== undefined) {
-                    dispatch({
-                      type: "UPDATE_EXPECTED_DISCHARGE",
-                      role: "coordinator",
-                      admissionId: activeRecord.admissionId,
-                      expectedDischargeAt: parsed,
-                      now,
-                    });
-                    setShowUpdateDate(false);
+                    datePendingRef.current = true;
+                    setDatePending(true);
+                    setDateMessage("");
+                    try {
+                      const outcome = await dispatch({
+                        type: "UPDATE_EXPECTED_DISCHARGE",
+                        role: actor.role,
+                        ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
+                        admissionId: activeRecord.admissionId,
+                        expectedDischargeAt: parsed,
+                        now,
+                      });
+                      if (!mountedRef.current) return;
+                      if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
+                        setShowUpdateDate(false);
+                        setDateMessage("Expected departure updated.");
+                      } else {
+                        setDateMessage(
+                          outcome?.message ??
+                            "Update was not confirmed. Your time is kept; review the record before trying again.",
+                        );
+                      }
+                    } catch {
+                      if (mountedRef.current)
+                        setDateMessage(
+                          "Update was not confirmed. Your time is kept; review the record before trying again.",
+                        );
+                    } finally {
+                      datePendingRef.current = false;
+                      if (mountedRef.current) setDatePending(false);
+                    }
                   }
                 }}
               >
@@ -328,23 +365,32 @@ export function DischargeRecordDetail({
                   type="time"
                   aria-label="New expected discharge time"
                   data-testid="ward-discharge-new-time-input"
+                  disabled={datePending}
                   value={newTimeDraft}
                   onChange={(e) => setNewTimeDraft(e.target.value)}
                   required
                 />
-                <Button type="submit" size="sm" variant="pri" data-testid="ward-discharge-save-time-btn">
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="pri"
+                  data-testid="ward-discharge-save-time-btn"
+                  disabledReason={datePending ? "Waiting for confirmation" : undefined}
+                >
                   Save
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   data-testid="ward-discharge-cancel-time-btn"
+                  disabledReason={datePending ? "Waiting for confirmation" : undefined}
                   onClick={() => setShowUpdateDate(false)}
                 >
                   Cancel
                 </Button>
               </form>
             )}
+            {dateMessage ? <p role="status">{dateMessage}</p> : null}
           </dd>
           <dt>Date recorded</dt>
           <dd>
@@ -371,13 +417,17 @@ export function DischargeRecordDetail({
             {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ?? "Not recorded"}
           </dd>
         </dl>
-        <DischargeFollowUp key={activeRecord.id} record={activeRecord} actor={RECORD_ACTOR} />
-        <DischargeCareJourney key={`care-${activeRecord.id}`} record={activeRecord} actor={RECORD_ACTOR} />
+        <DischargeFollowUp key={activeRecord.id} record={activeRecord} actor={s.recordActorFor(activeRecord.unitId)} />
+        <DischargeCareJourney
+          key={`care-${activeRecord.id}`}
+          record={activeRecord}
+          actor={s.recordActorFor(activeRecord.unitId)}
+        />
         {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's discharge. */}
         <SupportNotificationChecklist
           key={`notify-${activeRecord.id}`}
           admissionId={activeRecord.admissionId}
-          role={RECORD_ACTOR.role}
+          role={s.recordActorFor(activeRecord.unitId).role}
         />
       </div>
     </>

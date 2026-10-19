@@ -326,6 +326,7 @@ export function WardGlobalSearch({
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
+  const preparing = wardFlow?.sessionAdopted === false;
 
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
@@ -1185,7 +1186,8 @@ export function WardGlobalSearch({
           aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
-          placeholder={placeholder}
+          placeholder={preparing ? "Preparing search…" : placeholder}
+          disabled={preparing}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -1246,18 +1248,26 @@ export function WardGlobalSearch({
         ) : null}
       </div>
       <span className={styles.guidance} id={hintId}>
-        Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
+        {preparing ? (
+          "Preparing workspace. Search will be available shortly."
+        ) : (
+          <>
+            Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
+          </>
+        )}
       </span>
       {/* Announced for a screen-reader user, the same reason `PatientTypeahead` announces its own
           count: the list changes under someone who cannot see it change. */}
       <p className="sr-only" role="status" aria-live="polite">
-        {refusal
-          ? refusal.sentence
-          : trimmed.length === 0
-            ? ""
-            : resultCount === 0
-              ? "No matches."
-              : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
+        {preparing
+          ? "Preparing workspace. Search will be available shortly."
+          : refusal
+            ? refusal.sentence
+            : trimmed.length === 0
+              ? ""
+              : resultCount === 0
+                ? "No matches."
+                : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
       </p>
       {palette && typeof document !== "undefined" ? createPortal(palette, document.body) : null}
     </div>
