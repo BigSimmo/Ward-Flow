@@ -1359,13 +1359,6 @@ button.registerRow:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* Tablet drops "due within 1h": the queue already shows it (v10 Home, Tablet). */
-@media (min-width: 48.0625rem) and (max-width: 80rem) {
-  .heroDueChip {
-    display: none;
-  }
-}
-
 /* Phone hero foot: New since on the left, Live and Pause on the right, one line. */
 .phoneHeroActs {
   display: flex;

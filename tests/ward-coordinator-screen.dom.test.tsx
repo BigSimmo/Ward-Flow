@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
@@ -41,9 +41,10 @@ describe("CoordinatorScreen", () => {
     expect(footer).toHaveTextContent("Synthetic prototype");
   });
 
-  // #113 review: the hero's deadline count is classified by `clockState`, which reads the saved
-  // first warning, so its label must name that same saved window rather than a fixed "1h".
-  it("names the saved first-warning window on the hero's deadline count", () => {
+  // Simplification A1 (Josh, 19 Oct 2026): the hero keeps three figures, the same three the phone
+  // shows. The forms-due count is not repeated there because the queue's "Form due" filter already
+  // carries it.
+  it("keeps the hero to three figures and leaves forms due to the queue", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SaveUrgentWindow />
@@ -51,11 +52,9 @@ describe("CoordinatorScreen", () => {
       </WardFlowProvider>,
     );
 
-    const defaultLabel = `Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`;
-    expect(screen.getByText(defaultLabel)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "save warning times" }));
-    expect(screen.getByText("Forms due within 1h 30m")).toBeInTheDocument();
-    expect(screen.queryByText(defaultLabel)).not.toBeInTheDocument();
+    expect(screen.queryByText(`Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Exceptions/ })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
   });

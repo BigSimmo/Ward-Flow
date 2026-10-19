@@ -283,7 +283,7 @@ test.describe("@mockup Ward screen", () => {
     // the bed figures ("Ward figures, right now", `ward-unit-beds`) are on Decisions. An inactive
     // tab panel is `display: none`, so each region is asserted on the tab that shows it — the same
     // four regions as before, none dropped.
-    const homeTab = wardScreen.getByRole("tab", { name: "Home (Worth Your Attention)" });
+    const homeTab = wardScreen.getByRole("tab", { name: "Ward home (Worth Your Attention)" });
     const decisionsTab = wardScreen.getByRole("tab", { name: "Decisions (Ward record)" });
     const assertStructure = async () => {
       await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();

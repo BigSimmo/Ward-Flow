@@ -14,7 +14,6 @@ import { patientIdentityLine } from "@/components/ward-management/ward-patient-r
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { NOT_RECORDED_IN_WARD_FLOW, unitName } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -597,17 +596,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
         {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
           <div className={styles.drawerFoot}>
-            {/* D-16: pressable for the coordinator; it says it is not wired rather than greying. */}
-            <button
-              type="button"
-              className={styles.btnSmSec}
-              onClick={() => {
-                announceToWardShell("Edit dossier is not wired in this prototype.");
-                setToastMessage("Not wired in this prototype.");
-              }}
-            >
-              Edit dossier
-            </button>
+            {/* Edit dossier removed: it was not wired (simplification A5, 19 Oct 2026, supersedes D-16). */}
             <div className={styles.footButtons}>
               <button
                 type="button"

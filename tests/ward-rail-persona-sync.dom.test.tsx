@@ -106,11 +106,16 @@ describe("rail persona keyboard navigation", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardRail />
+        {/* The rail no longer ends in its own policy link (simplification A7), so give Tab a next stop. */}
+        <button type="button">Next on the page</button>
       </WardFlowProvider>,
     );
     await user.click(trigger());
     await user.tab();
-    expect(screen.getByRole("link", { name: "Policy 2026.3" })).toHaveFocus();
+    // Focus moves on past the option list (the rail's old policy link was removed, simplification A7).
+    expect(screen.queryAllByRole("option").some((option) => option === document.activeElement)).toBe(false);
+    expect(trigger()).not.toHaveFocus();
+    expect(screen.getByRole("button", { name: "Next on the page" })).toHaveFocus();
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 

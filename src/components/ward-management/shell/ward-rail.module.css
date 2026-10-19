@@ -1528,27 +1528,6 @@
   font-weight: 600;
 }
 
-.railPolicyFoot {
-  margin: 0;
-  padding: 0.125rem 0.25rem 0;
-  line-height: var(--wf-lh-12);
-  text-align: center;
-}
-
-/* The shell keeps a 12px floor, so the policy line gets smaller by dropping the mono face. */
-.railPolicyLink {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 400;
-  text-decoration: none;
-}
-
-.railPolicyLink:hover {
-  color: var(--wf-accent-ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 /* ── Menu trigger and the navigation sheet (rail pop-outs, more; phone sheet) ──────────────── */
 
 .rail .mobileMenu {
@@ -1935,7 +1914,6 @@
   .rail[data-rail="closed"] .railState,
   .rail[data-rail="closed"] .userMeta,
   .rail[data-rail="closed"] .userChevron,
-  .rail[data-rail="closed"] .railPolicyFoot,
   .rail[data-rail="closed"] .utilityLink > span {
     display: none;
   }
@@ -2399,7 +2377,6 @@
   .rail:not([data-tablet]) .railState,
   .rail:not([data-tablet]) .userMeta,
   .rail:not([data-tablet]) .userChevron,
-  .rail:not([data-tablet]) .railPolicyFoot,
   .rail:not([data-tablet]) .utilityLink > span,
   .rail:not([data-tablet]) .railToggle,
   .rail:not([data-tablet]) .tag {

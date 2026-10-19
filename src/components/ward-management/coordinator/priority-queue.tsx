@@ -56,6 +56,7 @@ import { allClinicalValuesSigned } from "@/components/ward-management/ward-clini
 import styles from "./home.module.css";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { TierKey } from "../tier-key";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
@@ -267,6 +268,7 @@ export function PriorityQueue({
         />
       ) : null}
 
+      {activeTab === "patients" ? <TierKey /> : null}
       <div
         id="ward-queue-panel-patients"
         role="group"

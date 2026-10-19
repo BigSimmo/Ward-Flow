@@ -149,6 +149,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
   },
   {
+    id: "restore-notice-pause",
+    why: "How long the routine restored-save notice stays before it hides itself (simplification A3, 19 Oct 2026); a UI pause, not a limit.",
+    file: /^shell\/ward-recovery-notice\.tsx$/,
+    name: /^ROUTINE_NOTICE_MS$/,
+  },
+  {
     id: "snapshot-feedback-pause",
     why: 'How long the downtime pack shows "Taking snapshot" before the new time (v10, 10 Oct 2026); a UI pause, not a limit.',
     file: /^reports\/downtime-pack-screen\.tsx$/,

@@ -74,6 +74,7 @@ import {
   phoneUpdate,
   updateCell,
 } from "./delays-board-rows";
+import { TierKey } from "../tier-key";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -138,7 +139,11 @@ export type DelaysBoardProps = {
   service: string | null;
   isOutsideService: (movement: Movement) => boolean;
   onEscalate: (movement: Movement) => void;
-  onNotWired: () => void;
+  /**
+   * No longer read: the board's two "(not wired)" record buttons were removed (simplification A5,
+   * 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
+   */
+  onNotWired?: () => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
   /** shell-9: the Menu's Delays row opens the board filtered to the severe causes. */
@@ -191,7 +196,6 @@ export function DelaysBoard({
   service,
   isOutsideService,
   onEscalate,
-  onNotWired,
   banner,
   empty,
   initialSevere = false,
@@ -683,7 +687,6 @@ export function DelaysBoard({
         set({ silent: !filters.silent });
       }}
       onPick={reveal}
-      onNotWired={onNotWired}
     />
   );
   const portraitGroups: PortraitGroup[] = useMemo(() => {
@@ -750,7 +753,6 @@ export function DelaysBoard({
           setRailOpen(false);
           reveal(id);
         }}
-        onNotWired={onNotWired}
       />
     </PortraitRail>
   ) : null;
@@ -768,7 +770,11 @@ export function DelaysBoard({
             <>
               Prototype data, invented records · <b>{breached}</b> past recorded time
             </>
-          ) : undefined
+          ) : (
+            <>
+              <b>{breached}</b> past recorded time
+            </>
+          )
         }
         testId="delays-hero"
         className={styles.delaysHero}
@@ -811,28 +817,6 @@ export function DelaysBoard({
                 : undefined,
               "delays-stat-due",
             )}
-            {heroStat(
-              breached,
-              "Past recorded time",
-              "danger",
-              filters.breached,
-              breached > 0 || filters.breached
-                ? () => {
-                    toggle("breached", true);
-                    if (!filters.breached) setFlat(true);
-                  }
-                : undefined,
-              "delays-stat-breached",
-            )}
-            {/* Fifth chip: today's outcomes. A plain count, not a filter (v10 Delays hero). */}
-            <div className={`${styles.stat} ${styles.statStatic}`} data-testid="delays-stat-today">
-              <span className={styles.statV}>
-                {escalated.length}
-                <span className={styles.statSlash}>/</span>
-                {closedToday.length}
-              </span>
-              <span className={styles.statL}>Escalated / resolved today</span>
-            </div>
           </div>
         }
         aside={<LiveChip state="live" onHero />}
@@ -840,18 +824,11 @@ export function DelaysBoard({
           // This page watches conditions, so it says what it checked. Counts only, never "All clear".
           <CheckingFoot
             items={[
-              { id: "over24", label: `Over ${H24}`, value: over24, tone: over24 > 0 ? "danger" : "neutral" },
               {
                 id: "silent",
                 label: `No update for ${SILENT_MINUTES / 60}h and over`,
                 value: silentCount,
                 tone: silentCount > 0 ? "warning" : "neutral",
-              },
-              {
-                id: "breached",
-                label: "Past recorded time",
-                value: breached,
-                tone: breached > 0 ? "danger" : "neutral",
               },
             ]}
             notChecked={["system delays, no feed"]}
@@ -1049,6 +1026,7 @@ export function DelaysBoard({
                 </div>
               ) : null}
               <div className={styles.tableWrap} hidden={portrait}>
+                <TierKey />
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
@@ -1145,15 +1123,6 @@ export function DelaysBoard({
                   <span className={styles.phCardTitle}>Delays with no named person</span>
                   <span className={styles.phCardMeta}>None recorded statewide</span>
                 </span>
-                <button
-                  type="button"
-                  className={styles.phCardAction}
-                  onClick={onNotWired}
-                  aria-label="Record a service-wide or facility delay. Not wired in this prototype."
-                  title="Not wired in this prototype."
-                >
-                  Record (not wired)
-                </button>
               </div>
               <PhoneSheet
                 open={phoneSheet === "registers" || phoneSheet === "quiet"}
@@ -1184,7 +1153,6 @@ export function DelaysBoard({
                     setPhoneSheet(null);
                     reveal(id);
                   }}
-                  onNotWired={onNotWired}
                   part={phoneSheet === "quiet" ? "quiet" : "registers"}
                 />
               </PhoneSheet>

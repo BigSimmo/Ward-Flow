@@ -84,6 +84,9 @@ export function EdOverview({
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
+  // Simplification A1 (Josh, 19 Oct 2026): three figures on every size, the same three the phone has
+  // always shown. "Over 8h" is left to the board's own wait column.
+  const heroChips = chips.filter((chip) => chip.id !== "severe");
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
   const raiseButton = (
     <button
@@ -123,16 +126,14 @@ export function EdOverview({
               Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · updating
             </>
           }
-          figures={chips
-            .filter((chip) => chip.id !== "severe")
-            .map((chip) => ({
-              id: chip.id,
-              value: chip.value,
-              label: chip.label,
-              tone: chip.value > 0 ? chip.tone : undefined,
-              pressed: highlight === chip.id,
-              onPress: () => onHighlight(highlight === chip.id ? null : chip.id),
-            }))}
+          figures={heroChips.map((chip) => ({
+            id: chip.id,
+            value: chip.value,
+            label: chip.label,
+            tone: chip.value > 0 ? chip.tone : undefined,
+            pressed: highlight === chip.id,
+            onPress: () => onHighlight(highlight === chip.id ? null : chip.id),
+          }))}
           actions={
             <>
               {highlight && highlightNote ? (
@@ -162,7 +163,7 @@ export function EdOverview({
           }
           bar={
             <div className={styles.chips} role="group" aria-label="Highlight people on the board">
-              {chips.map((chip) => (
+              {heroChips.map((chip) => (
                 <HeroStat
                   key={chip.id}
                   inline

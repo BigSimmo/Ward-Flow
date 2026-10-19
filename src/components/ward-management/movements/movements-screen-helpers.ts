@@ -208,6 +208,9 @@ export type HeroHighlight = { id: string; label: string; tone?: WfTone; test: (m
  * tier, time waited against the configured ED access target and the named 8 hour severe-pressure
  * default, a typed legal expiry, and an escort on the transport leg. Pressing one highlights its
  * rows in the worklist; it never hides a row.
+ *
+ * Simplification A1 (Josh, 19 Oct 2026): three pills, the same three on every size. The soonest
+ * form expiry keeps its own "Next expiry" jump beside the title, and an escort shows on its row.
  */
 export function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
   const waited = (movement: Movement) => Math.max(now - movement.openedAt, 0);
@@ -226,8 +229,6 @@ export function heroHighlights(now: Instant, accessTarget: number): HeroHighligh
       tone: "warning",
       test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
     },
-    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && currentLegalDueAt(m) !== undefined },
-    { id: "escort", label: "Escort", test: (m) => isOpen(m) && m.transport?.escortRequired === true },
   ];
 }
 

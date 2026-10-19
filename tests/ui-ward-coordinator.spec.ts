@@ -298,9 +298,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
     // D-39: the Placement panel names the patient (and UMRN), never the WF journey number.
-    // Selection is still keyed by the journey id on the panel and the queue row.
+    // Selection is still keyed by the journey id on the panel and the queue row. Simplification A8:
+    // the panel writes the name "Surname, First", as the queue beside it does.
     await expect(shortlist).toHaveAttribute("data-subject-movement", "WF-005");
-    await expect(shortlist).toContainText("Noor Tremalow");
+    await expect(shortlist).toContainText("Tremalow, Noor");
     await expect(page.getByTestId("ward-queue-row-WF-005")).toHaveAttribute("aria-pressed", "true");
 
     // Phone: queue and the registers toggle survive, the diagram and the pressure strip do not

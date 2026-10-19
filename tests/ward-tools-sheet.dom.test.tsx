@@ -37,10 +37,11 @@ function renderSheet(isPhone = false) {
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
-    for (const group of ["Service now", "Do now", "Look up", "Print and share", "More pages", "Demo"]) {
+    for (const group of ["Do now", "Look up", "Print and share", "More pages", "Demo"]) {
       expect(screen.getByRole("region", { name: group })).toBeTruthy();
     }
     for (const gone of [
+      "Service now",
       "Figures at a glance",
       "Appearance",
       "Ward Flow Digest",
@@ -174,14 +175,9 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(picker).getByRole("radio", { name: /Standard night/u })).toBeTruthy();
   });
 
-  it("shows the network figures at a glance, and opens every figure in place", () => {
+  it("opens every figure in place without repeating the headline figures (simplification A2)", () => {
     renderSheet();
-    const glance = screen.getByTestId("ward-tools-service-now");
-    for (const label of ["Ready now", "Waiting", "Longest wait", "Deadline passed"]) {
-      expect(within(glance).getByText(label)).toBeTruthy();
-    }
-    expect(glance.textContent).toContain("Whole network, synthetic figures.");
-    expect(glance.querySelectorAll('[data-flagged="true"]').length).toBeLessThanOrEqual(2);
+    expect(screen.queryByTestId("ward-tools-service-now")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
     expect(screen.getByTestId("ward-stats-drawer-content")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe("/ward-flow/statistics");

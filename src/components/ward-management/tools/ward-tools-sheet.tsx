@@ -39,7 +39,6 @@ import { WardToolsContacts } from "./ward-tools-contacts";
 import { WardDemoPanel } from "./ward-demo-panel";
 import { WardFormTimes } from "./ward-form-times";
 import { NetworkFigures } from "./ward-network-figures";
-import { WardServiceNow } from "./ward-service-now";
 import styles from "./ward-tools-sheet.module.css";
 
 const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver), {
@@ -192,9 +191,9 @@ function BedSummary() {
 
 /**
  * The Tools sheet, rebuilt from the 15 Oct 2026 Tools review (`/mnt/project-files/reviews/
- * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Service now (the
- * network figures at a glance, with All figures below), then Do now, Look up, Print and share, More
- * pages and Demo at the foot. Appearance, Settings, the Digest and the repeated shortcut grids are
+ * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Do now, Look up
+ * (All figures first), Print and share, More pages and Demo at the foot. The "Service now" figures
+ * block left on 19 Oct 2026 (simplification A5): every page already leads with its own figures. Appearance, Settings, the Digest and the repeated shortcut grids are
  * gone because the rail already carries them. Phone uses the same sheet; Bed meeting TV stays
  * desktop only and shows while its `bed-meeting-tv` flag is on.
  */
@@ -264,17 +263,6 @@ export function WardToolsSheet({
         </span>
       </div>
 
-      <Group title="Service now">
-        <WardServiceNow />
-        {tool(
-          "figures",
-          BarChart3,
-          "All figures",
-          "Beds, flow and waits across the network",
-          <NetworkFigures onNavigate={onNavigate} />,
-        )}
-      </Group>
-
       <Group title="Do now">
         <button type="button" className={styles.row} onClick={() => onNewReferral()}>
           <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
@@ -310,7 +298,16 @@ export function WardToolsSheet({
         )}
       </Group>
 
+      {/* Simplification A5 (Josh, 19 Oct 2026): Tools no longer repeats the headline figures every
+          page already shows. The full figures stay one row away, under Look up. */}
       <Group title="Look up">
+        {tool(
+          "figures",
+          BarChart3,
+          "All figures",
+          "Beds, flow and waits across the network",
+          <NetworkFigures onNavigate={onNavigate} />,
+        )}
         {tool(
           "catchment",
           MapIcon,
