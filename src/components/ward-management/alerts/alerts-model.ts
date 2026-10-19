@@ -109,7 +109,7 @@ export function admissionIdOfInboxId(id: string): string | undefined {
 }
 
 /** The person a duplicate bed request row names, read from its id (audit F-19). */
-export function patientIdOfInboxId(id: string): string | undefined {
+export function personIdOfInboxId(id: string): string | undefined {
   const prefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
   return id.startsWith(prefix) ? id.slice(prefix.length) || undefined : undefined;
 }
@@ -201,8 +201,8 @@ export function resolveAlertSubject(
   /** The discharged stay a discharge notification row names. Pass it only for a discharge row: it
    *  wins over a linked movement, so the row names the ward the person left, not the movement's ED. */
   admission?: Admission,
-  /** Audit F-19: the person a row with no movement is about (`InboxItem.patientId`). */
-  patientId?: string,
+  /** Audit F-19: the person a row with no movement is about (`InboxItem.personId`). */
+  personId?: string,
 ): AlertSubject {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : undefined);
   if (admission) {
@@ -224,7 +224,7 @@ export function resolveAlertSubject(
       patientHref: info.patient ? personHref(info.patient.id) : undefined,
     };
   }
-  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "", patientId }, lookup);
+  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "", patientId: personId }, lookup);
   const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {

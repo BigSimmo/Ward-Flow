@@ -76,7 +76,7 @@ describe("two active bed requests for one person (audit F-19)", () => {
       kind: "fact",
       owner: "Bed coordinator",
       movementId: "",
-      patientId: person,
+      personId: person,
       since: NOW - 30,
     });
     expect(row?.detail).toContain("R-dup-1 and R-dup-2");
@@ -141,8 +141,8 @@ describe("two active bed requests for one person (audit F-19)", () => {
   });
 
   it("the seed is measured, not assumed: every person it flags really has two open requests", () => {
-    for (const { patientId, requests } of duplicateBedRequests(seed.referrals)) {
-      expect(requests.length, patientId).toBeGreaterThan(1);
+    for (const { personId, requests } of duplicateBedRequests(seed.referrals)) {
+      expect(requests.length, personId).toBeGreaterThan(1);
     }
   });
 });

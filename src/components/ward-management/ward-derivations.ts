@@ -590,9 +590,9 @@ export type InboxItem = {
   since?: Instant;
   /**
    * Audit F-19: set on a duplicate bed request row, which is about a person rather than a movement
-   * (`movementId` is empty). Alerts names the person from it.
+   * (`movementId` is empty). Alerts names the person from it. Coordinator only (FD-23).
    */
-  patientId?: string;
+  personId?: string;
 };
 
 /**

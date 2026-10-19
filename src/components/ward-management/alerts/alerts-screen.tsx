@@ -407,7 +407,7 @@ function AlertsWorkspace() {
         units,
         booking,
         admission,
-        item.patientId,
+        item.personId,
       );
       const owner = effectiveOwner(item, inboxOwnership[item.id]);
       return {

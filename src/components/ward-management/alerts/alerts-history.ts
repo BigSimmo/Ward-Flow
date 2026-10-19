@@ -14,7 +14,7 @@ import {
   alertKindOf,
   bookingOfInboxId,
   movementIdOfInboxId,
-  patientIdOfInboxId,
+  personIdOfInboxId,
   resolveAlertSubject,
 } from "./alerts-model";
 
@@ -68,7 +68,7 @@ export function alertsHistory({
       units,
       booking,
       admission,
-      patientIdOfInboxId(inboxItemId),
+      personIdOfInboxId(inboxItemId),
     );
     const kind = alertKindOf(inboxItemId);
     return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;

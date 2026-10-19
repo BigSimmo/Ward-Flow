@@ -33,12 +33,12 @@ export function activeBedRequestsFor(referrals: readonly Referral[], patientId: 
 /** Each person with more than one active bed request, oldest request first within each. */
 export function duplicateBedRequests(
   referrals: readonly Referral[],
-): { patientId: string; requests: Referral[]; since: Instant }[] {
+): { personId: string; requests: Referral[]; since: Instant }[] {
   const patientIds = [...new Set(referrals.flatMap((referral) => (referral.patientId ? [referral.patientId] : [])))];
-  return patientIds.flatMap((patientId) => {
-    const requests = activeBedRequestsFor(referrals, patientId);
+  return patientIds.flatMap((personId) => {
+    const requests = activeBedRequestsFor(referrals, personId);
     const second = requests[1];
-    return second ? [{ patientId, requests, since: second.raisedAt }] : [];
+    return second ? [{ personId, requests, since: second.raisedAt }] : [];
   });
 }
 
