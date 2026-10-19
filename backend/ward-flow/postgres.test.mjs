@@ -2202,7 +2202,7 @@ test(
       await migrate(pool);
       await store.ready();
       const seed = await store.read(actor);
-      const result = await store.command(actor, randomUUID(), seed.revision, {
+      const referral = {
         type: "RECEIVE_REFERRAL",
         role: "community",
         ageBand: "Adult",
@@ -2240,7 +2240,8 @@ test(
             highAcuityNursingNeeded: false,
           },
         ],
-      });
+      };
+      const result = await store.command(actor, randomUUID(), seed.revision, referral);
       assert.equal(result.status, 200, JSON.stringify(result.body.error ?? null));
       const created = result.body.snapshot.payload.state.referrals.at(-1);
       assert.deepEqual(
@@ -2268,6 +2269,28 @@ test(
       for (const secret of [file, contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
         assert.ok(!rows[0].text.includes(secret), `the audit copy must not hold ${secret}`);
       assert.ok(rows[0].text.includes("medication.pdf"), "the audit still records which files were named");
+
+      // A receipt written before this change was fingerprinted with the file content, so a tab that
+      // still sends it can retry that command and get its original answer.
+      const legacyWorkspace = randomUUID();
+      const legacyStore = createWorkspaceStore(pool, {
+        workspaceId: legacyWorkspace,
+        engine: { ...engine, storableCommand: (event) => event },
+        clock: () => at,
+      });
+      await legacyStore.ready();
+      const legacySeed = await legacyStore.read(actor);
+      const commandId = randomUUID();
+      assert.equal((await legacyStore.command(actor, commandId, legacySeed.revision, referral)).status, 200);
+      const upgraded = createWorkspaceStore(pool, { workspaceId: legacyWorkspace, engine, clock: () => at });
+      const retried = await upgraded.command(actor, commandId, legacySeed.revision, referral);
+      assert.equal(retried.status, 200, JSON.stringify(retried.body.error ?? null));
+      assert.equal(retried.body.replayed, true);
+      const changed = await upgraded.command(actor, commandId, legacySeed.revision, {
+        ...referral,
+        history: "A different synthetic story",
+      });
+      assert.equal(changed.status, 422);
     } finally {
       await pool.end();
     }

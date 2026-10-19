@@ -1484,12 +1484,18 @@ export function createWorkspaceStore(
       ) {
         event = { ...event, sendingTeamName: view.access.scope.teamName };
       }
+      const supplied = event;
       event = engine.storableCommand(event);
       if (!engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
-      const fingerprint = createHash("sha256")
-        .update(JSON.stringify(canonical({ expectedRevision, event })))
-        .digest("hex");
+      const fingerprintOf = (value) =>
+        createHash("sha256")
+          .update(JSON.stringify(canonical({ expectedRevision, event: value })))
+          .digest("hex");
+      const fingerprint = fingerprintOf(event);
+      // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
+      // an older tab retrying that same command still matches its receipt.
+      const legacyFingerprint = supplied === event ? fingerprint : fingerprintOf(supplied);
       let queued = false;
       const response = await transaction(async (client, at) => {
         queued = false;
@@ -1500,7 +1506,7 @@ export function createWorkspaceStore(
         );
         if (previous.rowCount) {
           const receipt = previous.rows[0];
-          if (receipt.fingerprint !== fingerprint)
+          if (receipt.fingerprint !== fingerprint && receipt.fingerprint !== legacyFingerprint)
             return {
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },

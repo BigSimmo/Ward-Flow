@@ -150,6 +150,20 @@ export const MAX_CONNECTIONS = 256;
 export const GZIP_MIN_BYTES = 1024;
 export const HEADERS_TIMEOUT_MS = 5_000;
 
+/** True when Accept-Encoding lists gzip without `q=0`, which means "not acceptable". */
+export function acceptsGzip(header) {
+  return String(header ?? "")
+    .split(",")
+    .some((part) => {
+      const [name, ...params] = part
+        .toLowerCase()
+        .split(";")
+        .map((piece) => piece.trim());
+      const quality = params.find((param) => param.startsWith("q="));
+      return name === "gzip" && (quality === undefined || Number(quality.slice(2)) > 0);
+    });
+}
+
 export function listen(handler, config) {
   const server = createServer(
     { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
@@ -170,7 +184,7 @@ export function listen(handler, config) {
         // Audit F-04: a full workspace read is tens of kilobytes of JSON; gzip cuts it to a few.
         if (
           body.length >= GZIP_MIN_BYTES &&
-          /\bgzip\b/.test(String(incoming.headers["accept-encoding"] ?? "")) &&
+          acceptsGzip(incoming.headers["accept-encoding"]) &&
           String(headers["content-type"] ?? "").startsWith("application/json")
         ) {
           body = gzipSync(body);

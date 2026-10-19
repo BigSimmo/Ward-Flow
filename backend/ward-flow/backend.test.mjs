@@ -352,6 +352,9 @@ test("the listener gzips JSON replies of 1 KB or more when the browser accepts i
     const plain = await fetchRaw("/big");
     assert.equal(plain.headers["content-encoding"], undefined);
     assert.deepEqual(JSON.parse(plain.body.toString()), big);
+    const refused = await fetchRaw("/big", "gzip;q=0, deflate");
+    assert.equal(refused.headers["content-encoding"], undefined);
+    assert.deepEqual(JSON.parse(refused.body.toString()), big);
     const small = await fetchRaw("/small", "gzip");
     assert.equal(small.headers["content-encoding"], undefined);
     assert.deepEqual(JSON.parse(small.body.toString()), { ok: true });
