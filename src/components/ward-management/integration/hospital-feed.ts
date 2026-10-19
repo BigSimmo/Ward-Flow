@@ -20,15 +20,15 @@ import type { Patient } from "@/components/ward-management/ward-patients";
  */
 
 /** The ADT trigger events this seam reads. Others are refused, not guessed at. */
-export const FEED_EVENTS = {
+const FEED_EVENTS = {
   A01: "admitted",
   A02: "transferred",
   A03: "discharged",
   A04: "arrived_in_ed",
 } as const;
 
-export type FeedEventCode = keyof typeof FEED_EVENTS;
-export type FeedEventKind = (typeof FEED_EVENTS)[FeedEventCode];
+type FeedEventCode = keyof typeof FEED_EVENTS;
+type FeedEventKind = (typeof FEED_EVENTS)[FeedEventCode];
 
 export type FeedMessage = {
   event: FeedEventKind;
