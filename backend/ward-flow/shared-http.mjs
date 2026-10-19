@@ -300,9 +300,17 @@ export function createSharedHandler({
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
-        const since = Number(new URL(request.url).searchParams.get("since"));
+        const params = new URL(request.url).searchParams;
+        const since = Number(params.get("since"));
+        // `&context=<hash>`: the access context of the member desk's last full read (audit F-04).
+        const context = params.get("context");
         if (Number.isSafeInteger(since) && since >= 1 && store.poll) {
-          const polled = await store.poll(actorId, since, view);
+          const polled = await store.poll(
+            actorId,
+            since,
+            view,
+            context && /^[a-f0-9]{64}$/.test(context) ? context : null,
+          );
           if (polled.notModified) {
             if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
             return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });

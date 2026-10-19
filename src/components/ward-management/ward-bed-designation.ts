@@ -11,6 +11,12 @@
 // count rendered to a coordinator as though it meant something.
 import type { Unit } from "@/components/ward-management/ward-model";
 
+/** Numbered bed sections use the same locked-first ordering as the ward board. */
+export function numberedBedKind(unit: Unit, bedNumber: number): "locked" | "open" | undefined {
+  if (!Number.isInteger(bedNumber) || bedNumber < 1 || bedNumber > unit.beds) return undefined;
+  return bedNumber <= unit.lockedBeds ? "locked" : "open";
+}
+
 /** Beds designated open. Derived — never stored, per the owner's one-source ruling. */
 export function openBeds(unit: Unit): number {
   return Math.max(0, unit.beds - unit.lockedBeds);

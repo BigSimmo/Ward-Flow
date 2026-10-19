@@ -21,6 +21,11 @@ import { breakGlassRefusal, scopeWorld, seedWorld } from "../backend/ward-flow/e
 import { DowntimePackScreen } from "../src/components/ward-management/reports/downtime-pack-screen";
 import { forgetDowntimePack, lastDowntimePack } from "../src/components/ward-management/reports/downtime-pack";
 import { ToastProvider } from "../src/components/wf";
+import {
+  DocumentationPanel,
+  EMPTY_DOCUMENTATION,
+  ReferralDocumentLinks,
+} from "../src/components/ward-management/referrals/referral-flow-panels";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -435,6 +440,55 @@ describe("shared provider boundary", () => {
     expect(screen.getByRole("textbox")).toBe(input);
     expect(input).toHaveValue("keep this draft");
     expect(screen.getByText("60")).toBeInTheDocument();
+  });
+  it("gives keyboard focus back to the control that acted once a shared save ends (audit F-09)", () => {
+    const tree = () => (
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    const button = screen.getByRole("button", { name: "Advance" });
+    button.focus();
+    fake.connection = { ...fake.connection!, status: "saving" };
+    rerender(tree());
+    expect(button.closest("[inert]")).not.toBeNull();
+    // A browser drops focus from an inert subtree; jsdom does not, so do it here.
+    button.blur();
+    expect(document.activeElement).toBe(document.body);
+    fake.connection = { ...fake.connection!, status: "ready" };
+    rerender(tree());
+    expect(document.activeElement).toBe(button);
+    // Focus the person moved elsewhere in the meantime is left where it is.
+    fake.connection = { ...fake.connection!, status: "saving" };
+    rerender(tree());
+    const draft = screen.getByRole("textbox");
+    fake.connection = { ...fake.connection!, status: "ready" };
+    draft.focus();
+    rerender(tree());
+    expect(document.activeElement).toBe(draft);
+  });
+  it("says what each mode keeps of a referral's files, and links only a file it holds (audit F-01)", () => {
+    const panel = <DocumentationPanel draft={EMPTY_DOCUMENTATION} onChange={() => {}} />;
+    const { unmount } = render(panel);
+    expect(screen.getByText("Synthetic documents only, kept for this session")).toBeInTheDocument();
+    unmount();
+    render(<WardFlowProvider>{panel}</WardFlowProvider>);
+    expect(
+      screen.getByText("Synthetic documents only. The shared board keeps the file name and size, not the file"),
+    ).toBeInTheDocument();
+    const chart = { name: "chart.pdf", mimeType: "application/pdf", sizeBytes: 4 } as const;
+    render(
+      <ReferralDocumentLinks
+        charts={[
+          { ...chart, kind: "medication", base64: "JVBERg==" },
+          { ...chart, kind: "observation" },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Medication chart · chart.pdf" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Observation chart/ })).toBeNull();
+    expect(screen.getByText("Observation chart · chart.pdf (file not shared)")).toBeInTheDocument();
   });
   it("removes the board when coordinator access is revoked", () => {
     const { rerender } = render(

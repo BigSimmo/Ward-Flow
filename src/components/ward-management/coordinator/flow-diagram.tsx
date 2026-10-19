@@ -572,7 +572,7 @@ export function FlowDiagram({
           This diagram is wider than the panel — scroll sideways to see the rest.
         </p>
       ) : null}
-      <div className={flowStyles.legend} aria-label="Flow diagram key">
+      <div className={flowStyles.legend} role="group" aria-label="Flow diagram key">
         <span className={flowStyles.legendTitle}>Capacity</span>
         <LegendItem state="available" label="Ready" />
         <LegendItem state="pulled" label={BED_STATE_LABELS.pulled} />

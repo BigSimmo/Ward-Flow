@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import {
   startTransition,
   useCallback,
@@ -137,7 +138,7 @@ export function HubScreen() {
 
   useEffect(() => {
     function handleGlobalKeyDown(event: globalThis.KeyboardEvent) {
-      if (event.key === "/" && document.activeElement !== inputRef.current) {
+      if (areCharacterShortcutsEnabled() && event.key === "/" && document.activeElement !== inputRef.current) {
         const target = event.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();
         if (tagName !== "input" && tagName !== "textarea" && tagName !== "select" && !target?.isContentEditable) {

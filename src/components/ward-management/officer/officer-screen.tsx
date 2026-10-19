@@ -1,5 +1,7 @@
 "use client";
 
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -199,9 +201,11 @@ export function OfficerScreen() {
   // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const umrnFor = useCallback((movement: Movement) => movementUmrn(movement, umrnLookup), [umrnLookup]);
+  const nameFor = usePatientNameDisplay();
+  const officerListPatientName = (movement: Movement) => nameFor(officerPatientName(movement), umrnFor(movement));
   const patientNameForMovementId = (movementId: string) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
-    return movement ? officerPatientName(movement) : "Not recorded";
+    return movement ? officerListPatientName(movement) : "Not recorded";
   };
   const now = useWardFlowClock();
   const raise = useWardRaise("officer");
@@ -380,7 +384,7 @@ export function OfficerScreen() {
       .map((u) => ({
         movementId: m.id,
         // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-        patientName: officerPatientName(m),
+        patientName: officerListPatientName(m),
         cadNumber: u.cadNumber ?? "CAD (dispatch) number not recorded",
         at: u.at,
         // A recorded reason is a code (e.g. `provider_unavailable`); show its plain label, never the code.
@@ -425,6 +429,7 @@ export function OfficerScreen() {
         }
       } else if (
         e.key === "/" &&
+        areCharacterShortcutsEnabled() &&
         !formModalJob &&
         document.activeElement?.tagName !== "INPUT" &&
         document.activeElement?.tagName !== "TEXTAREA" &&
@@ -567,7 +572,7 @@ export function OfficerScreen() {
         aria-disabled={step.blocked ? "true" : undefined}
         aria-describedby={step.blocked ? describedBy : undefined}
         title={step.blocked ?? undefined}
-        aria-label={`${step.verb}, ${officerPatientName(movement)}`}
+        aria-label={`${step.verb}, ${officerListPatientName(movement)}`}
         onClick={(event) => {
           event.stopPropagation();
           if (step.blocked) return;
@@ -867,7 +872,7 @@ export function OfficerScreen() {
                 {transportLeg(topJob.transport)}
               </span>
             </div>
-            <strong className={styles.nextCardName}>{officerPatientName(topJob)}</strong>
+            <strong className={styles.nextCardName}>{officerListPatientName(topJob)}</strong>
             <span className={styles.nextCardLine}>
               <span className={styles.mono}>{umrnFor(topJob)}</span> · {originShortFor(topJob)} to{" "}
               {destinationLabelFor(topJob)}
@@ -1081,7 +1086,7 @@ export function OfficerScreen() {
                                     className={styles.jobName}
                                     data-testid={`ward-officer-patient-${movement.id}`}
                                   >
-                                    {officerPatientName(movement)}
+                                    {officerListPatientName(movement)}
                                   </strong>
                                   {isPhone && transport.escortRequired ? (
                                     <ShieldCheck size={14} className={styles.phEscort} aria-label="Escort required" />
@@ -1214,7 +1219,7 @@ export function OfficerScreen() {
                             <span className={styles.mono}>
                               {formatInstantWithDay(movement.transport!.arrivedAt!, now)}
                             </span>{" "}
-                            <strong>{officerPatientName(movement)}</strong>{" "}
+                            <strong>{officerListPatientName(movement)}</strong>{" "}
                             <span className={styles.mono}>{umrnFor(movement)}</span> · {destinationLabelFor(movement)}{" "}
                             <span className={styles.muted}>({movement.transport!.provider})</span>
                           </span>

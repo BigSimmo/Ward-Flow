@@ -12,7 +12,8 @@
  *   2. The server's `NEXT_PUBLIC_WARD_FLAGS` setting, for example `bed-meeting-tv=off,demo-reset=on`.
  *   3. The registry default for the environment (`NEXT_PUBLIC_WARD_ENVIRONMENT`, else development
  *      for a local build and demo for a deployed build).
- * A flag marked `safeguard` skips all three in production and is always on there.
+ * A flag marked `safeguard` skips all three in production and is always on there; the same holds
+ * for a deployed build that names no environment (`wardSafeguardsLocked`).
  *
  * A device choice holds only a flag name from this registry and on or off, never typed text.
  */
@@ -133,6 +134,20 @@ export function wardEnvironment(
   return nodeEnv === "production" ? "demo" : "development";
 }
 
+/**
+ * Audit F-20 (19 Oct 2026): safeguards fail closed. A deployed build that names no environment
+ * still runs as demo, but its safeguard flags are locked on as in production, so a device or a
+ * server setting cannot switch role access off by accident. Naming `demo` keeps them switchable.
+ */
+export function wardSafeguardsLocked(
+  configured: string | undefined = process.env.NEXT_PUBLIC_WARD_ENVIRONMENT,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): boolean {
+  const environment = wardEnvironment(configured, nodeEnv);
+  if (environment === "production") return true;
+  return nodeEnv === "production" && environment !== configured?.trim().toLowerCase();
+}
+
 const ON_WORDS = new Set(["on", "true", "1", "yes"]);
 const OFF_WORDS = new Set(["off", "false", "0", "no"]);
 
@@ -175,11 +190,14 @@ export function resolveWardFeatureFlags(input: {
   environment: WardEnvironment;
   server: WardFeatureFlagOverrides;
   device: WardFeatureFlagOverrides;
+  /** Safeguards locked on; production always, and an unnamed deployed build (`wardSafeguardsLocked`). */
+  safeguardsLocked?: boolean;
 }): ResolvedWardFeatureFlag[] {
   const deviceCanChange = input.environment !== "production";
+  const safeguardsLocked = input.safeguardsLocked === true || input.environment === "production";
   return WARD_FEATURE_FLAG_NAMES.map((name) => {
     const definition: WardFeatureFlagDefinition = WARD_FEATURE_FLAGS[name];
-    if (definition.safeguard && input.environment === "production")
+    if (definition.safeguard && safeguardsLocked)
       return { name, definition, on: true, source: "default", deviceCanChange: false };
     const device = deviceCanChange ? input.device[name] : undefined;
     if (device !== undefined) return { name, definition, on: device, source: "device", deviceCanChange };

@@ -239,3 +239,18 @@ describe("a name typed the way lists print it (audit round 2, S-33)", () => {
     expect(wardsFor("Alpha Beta")).toContain(unit.id);
   });
 });
+
+describe("search result truncation", () => {
+  it.each([40, 41, 55])("distinguishes %i matches from the returned limit of 40", (count) => {
+    const patients: Patient[] = Array.from({ length: count }, (_, index) => ({
+      id: `PT-LIMIT-${index}`,
+      umrn: `UM9${index.toString().padStart(5, "0")}`,
+      givenName: "Synthetic",
+      familyName: `Limit${index}`,
+      dateOfBirth: "1990-01-01",
+    }));
+    const results = searchWardFlow({ query: "Synthetic", patients, movements: [], units: [], limitPerGroup: 40 });
+    expect(results.people).toHaveLength(40);
+    expect(results.truncatedGroups.includes("people")).toBe(count > 40);
+  });
+});

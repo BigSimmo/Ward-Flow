@@ -450,7 +450,7 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
             title="Beds by ward"
             meta={<CountPill n={wards.length} />}
             aside={
-              <span className={styles.legend} aria-label="Bar key">
+              <span className={styles.legend} role="group" aria-label="Bar key">
                 <span>
                   <i className={cx(styles.swatch, styles.segOcc)} aria-hidden="true" />
                   Occupied

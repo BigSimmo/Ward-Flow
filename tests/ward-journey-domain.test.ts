@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { mergeConfiguration } from "@/components/ward-management/ward-configuration";
+import { defaultWardConfiguration, mergeConfiguration } from "@/components/ward-management/ward-configuration";
 import { scopeWardFlowState, commandScopeRefusal } from "@/components/ward-management/ward-access-state";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -60,6 +60,43 @@ describe("journey domain integrity", () => {
     expect(
       validSharedCommand({ type: "SET_CONFIGURATION", role: "coordinator", payload: base, baseConfiguration: base }),
     ).toBe(true);
+  });
+
+  it("refuses a restore of defaults when another desk changed a field that was already at its default", () => {
+    const defaults = defaultWardConfiguration();
+    const opened = wardFlowReducer(seedWardFlowState(), {
+      type: "SET_CONFIGURATION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      payload: { ...defaults, pullHoldMinutes: 120 },
+      baseConfiguration: defaults,
+    });
+    const base = opened.configuration;
+    const reset = {
+      type: "SET_CONFIGURATION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      payload: defaults,
+      replaceAll: true,
+    } as const;
+    expect(wardFlowReducer(opened, { ...reset, baseConfiguration: base }).configuration).toEqual(defaults);
+    const otherDesk = wardFlowReducer(opened, {
+      type: "SET_CONFIGURATION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      payload: { ...base, parallelReferralCap: defaults.parallelReferralCap - 1 },
+      baseConfiguration: base,
+    });
+    expect(otherDesk.configuration.parallelReferralCap).toBe(defaults.parallelReferralCap - 1);
+    const refused = wardFlowReducer(otherDesk, { ...reset, baseConfiguration: base });
+    expect(refused.configuration).toEqual(otherDesk.configuration);
+    expect(refused.rejections.length).toBe(otherDesk.rejections.length + 1);
+    // An ordinary save of the same values still keeps the other desk's change.
+    expect(mergeConfiguration(otherDesk.configuration, defaults, base).status).toBe("merged");
+    expect(mergeConfiguration(otherDesk.configuration, defaults, base, true)).toEqual({
+      status: "conflict",
+      fields: ["parallelReferralCap"],
+    });
   });
 
   it("preserves legacy configuration commands and validates cross-field merged results", () => {

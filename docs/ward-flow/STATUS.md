@@ -2,6 +2,8 @@
 
 Last updated: **17 October 2026** (verified on `main` through commit `e025da04`, PR #392). **Current baseline (17 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `e025da04` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–17 October remediation, clinical workflow, and architecture wave across PRs #283–#392). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the 8 October remediation receipt (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82). Local checks, hosted CI, and deployment each require separate evidence.
 
+_Updated 19 October 2026 — persistence wording aligned with D-67; dated acceptance evidence above is unchanged._
+
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
 
@@ -44,7 +46,7 @@ from end-to-end application verification.
 | Pressure and safety    | ED psychiatry directory (`/ed`), individual ED psychiatry hub (`/ed/[edId]`), alerts centre (`/alerts`), escalation (`/escalation`), exceptions (`/exceptions`), governance (`/governance`)                                                                                                                                                                                                                                                                                                                                          |
 | People and directories | Patient search (`/search` Floating Glass Command Horizon), unified Patient Now flight deck (`/people/[patientId]`), add patient (`/people/new`), community directory (`/community`, `/community/[teamId]`), on-call directory (`/on-call`)                                                                                                                                                                                                                                                                                           |
 | Records and reports    | Handover (`/handover` Command Horizon flight deck and print), legal forms (`/legal-forms` with MHA expiry reminders), patient chronology (`/reports/chronology`), downtime pack (`/reports/downtime`), **12 Statistics routes** (`/statistics`, `/statistics/overview`, `/statistics/compare`, `/statistics/weekly`, `/statistics/wards`, `/statistics/ward/[unitId]`, `/statistics/eds`, `/statistics/ed/[edId]`, `/statistics/teams`, `/statistics/community/[teamId]`, `/statistics/services`, `/statistics/service/[serviceId]`) |
-| Other                  | Settings (`/settings`), sign-in (`/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase (`/sovereign`)                                                                                                                                                                                                                                                                                                  |
+| Other                  | Settings (`/settings`), sign-in (`/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner                                                                                                                                                                                                                                                                                                                           |
 
 **Dated work summary (27 September to 17 October; not a fresh verification claim):**
 
@@ -71,10 +73,19 @@ The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`doc
 and checks against stable task IDs. Confirmed source defects are fixed locally; publication, deployment and hosted validation remain separate.
 
 - **Shared synthetic operation hardening:** while opt-in shared state/event sync (`use-ward-supabase-shared.ts` via the configured backend's `/v1/workspace*` routes) is wired for synthetic demonstration, production-grade staff sign-in, trusted service/role membership, and multi-site clinical governance boundaries remain outside prototype scope.
-- **Persistence privacy:** D-18 intentionally stops browser session persistence
-  after a typed-text event. Saving a JSON scenario is an explicit file action;
-  it is not automatic shared persistence. Do not restore typed drafts to browser
-  storage to make refresh seem more reliable.
+- **Persistence privacy:** D-18 stops automatic browser saving of submitted demo
+  state after a typed-text event, whether accepted or refused. D-67 separately
+  permits bounded sessionStorage recovery for opted-in synthetic referral and
+  legal form drafts, scoped to account, session, scenario and form subject.
+  Restored drafts require human review and submission; referral attachments
+  require reattachment. Successful submission clears the relevant draft;
+  sign-out, session termination and reset invalidate drafts and pending writes.
+  Browser session restoration may preserve sessionStorage across a restart, so
+  browser-close deletion is not guaranteed. Explicit JSON scenario exports are
+  separate from draft recovery and automatic shared persistence. They refuse
+  scenarios containing repatriation or support-notification records. Loaded
+  scenarios remain in memory and must be loaded again after refresh. No real
+  patient information is authorised by any of these paths.
 - **Incomplete secondary controls:** clinician referral assignment, intervention
   recording, safeguard previews and some shell/admin actions remain explicitly
   disclosed as unavailable. A toast is not a saved record.

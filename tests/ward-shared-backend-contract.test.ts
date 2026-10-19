@@ -512,7 +512,8 @@ describe("Frontend-to-backend shared workspace contract", () => {
 
     await vi.waitFor(() => {
       expect(validView?.status).toBe("ready");
-      expect(validView?.error).toContain("The action was not applied. Review the workflow requirements.");
+      // Audit F-08: the engine's own reason reaches the screen, not a fixed sentence.
+      expect(validView?.error).toBe("No movement found for id UMRN not recorded. Nothing was changed.");
     });
     expect(validView?.snapshot?.revision).toBe(1);
     expect(validView?.eventLog?.[0]?.accepted).toBe(false);

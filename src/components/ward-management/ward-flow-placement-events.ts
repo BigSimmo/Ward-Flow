@@ -6,11 +6,12 @@ import {
   type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { movementBedReservation } from "./ward-movement-bed-hold";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -265,7 +266,19 @@ export function reducePlacementEvent(
        * check, the capacity decrement and the admission literal.
        */
       const secureBedNeeded = movement.security === "Secure";
+      const reservedBed = movementBedReservation(movement, state.referrals, unit.id).bedNumber;
+      const reservedKind = reservedBed === undefined ? undefined : numberedBedKind(unit, reservedBed);
+      if (reservedBed !== undefined && reservedKind === undefined)
+        return reject(state, event, "The numbered bed reservation is outside this ward.");
+      if (reservedKind !== undefined && (reservedKind === "locked" ? lockedBedsFree(unit) : openBedsFree(unit)) <= 0)
+        return reject(
+          state,
+          event,
+          `No free ${reservedKind} bed remains for the numbered reservation at ${unit.name}.`,
+        );
       const noLockedBedFree = lockedBedsFree(unit) <= 0;
+      if (secureBedNeeded && reservedKind === "open" && !noLockedBedFree)
+        return reject(state, event, "The numbered reservation is an open bed, but this request needs a locked bed.");
       const bedKindOverrideNeeded = secureBedNeeded && noLockedBedFree;
       const bedKindAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
       if (!bedKindAnswered && bedKindOverrideNeeded) {
@@ -275,13 +288,9 @@ export function reducePlacementEvent(
           `No locked bed is free at ${unit.name}. This placement ${OVERRIDE_REASON_REQUIRED} to use an open bed.`,
         );
       }
-      const bedKindTaken: "locked" | "open" = secureBedNeeded
-        ? noLockedBedFree
-          ? "open"
-          : "locked"
-        : openBedsFree(unit) > 0
-          ? "open"
-          : "locked";
+      const bedKindTaken: "locked" | "open" =
+        reservedKind ??
+        (secureBedNeeded ? (noLockedBedFree ? "open" : "locked") : openBedsFree(unit) > 0 ? "open" : "locked");
 
       /**
        * The eligibility gate goes last, after every existing refusal (Ward Lead ruling): a

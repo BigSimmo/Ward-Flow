@@ -81,6 +81,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
+/** The engine's refusal as a sentence: capitalised, ending in a full stop. */
+function sentence(reason: string): string {
+  const trimmed = reason.trim();
+  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`.replace(/[.!?…]?$/u, (end) => end || ".");
+}
+/** A member desk reads its part of the workspace in full at least this often (audit F-04). */
+const FULL_READ_EVERY_MS = 60_000;
 type PendingCommand = {
   dataMode: "prototype";
   classification: "synthetic";
@@ -90,6 +97,26 @@ type PendingCommand = {
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
 };
+
+/**
+ * Audit F-01: a referral's chart files never leave this device in shared mode. The shared board
+ * keeps each file's name, type and size; the server drops any file content an older client sends.
+ */
+function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
+  if (event.type !== "RECEIVE_REFERRAL" || !event.intake?.charts.some((chart) => chart.base64 !== undefined))
+    return event;
+  return {
+    ...event,
+    intake: {
+      ...event.intake,
+      charts: event.intake.charts.map((chart) => {
+        const kept = { ...chart };
+        delete kept.base64;
+        return kept;
+      }),
+    },
+  };
+}
 
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
@@ -157,6 +184,8 @@ export class SharedWorkspaceClient {
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
   private worldEpoch = 0;
+  /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
+  private fullReadAt = 0;
   private readonly lifetime = new AbortController();
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
@@ -365,8 +394,14 @@ export class SharedWorkspaceClient {
       const current = this.view.snapshot;
       const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
+      // A desk's access context lets the server say "not modified" to a member desk too (audit
+      // F-04). It is left out once a minute, so time-limited records drop off on a full read.
+      const context =
+        current?.accessContext && Date.now() - this.fullReadAt < FULL_READ_EVERY_MS
+          ? `&context=${current.accessContext}`
+          : "";
       const { response, value } = await this.request(
-        current ? `/v1/workspace?since=${current.revision}` : "/v1/workspace",
+        current ? `/v1/workspace?since=${current.revision}${context}` : "/v1/workspace",
       );
       // The role ended or a grant landed while this read was out: drop its desk, and the follow-up
       // read replaces it.
@@ -378,7 +413,10 @@ export class SharedWorkspaceClient {
           throw new Error("Incompatible workspace data");
         if (this.view.snapshot === current)
           this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
-      } else this.adopt(value.snapshot);
+      } else {
+        this.adopt(value.snapshot);
+        this.fullReadAt = Date.now();
+      }
       this.publish({
         status: "ready",
         error: this.view.status === "unavailable" ? null : this.view.error,
@@ -473,7 +511,7 @@ export class SharedWorkspaceClient {
             dataMode: "prototype",
             commandId: queued.commandId,
             expectedRevision: Math.max(snapshot.revision, this.headRevision),
-            event: queued.event,
+            event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
         }
@@ -576,7 +614,10 @@ export class SharedWorkspaceClient {
                     ? value.error
                     : command.event.role === "demo" && value.snapshot?.demoControls === false
                       ? "Demo controls are switched off on the shared workspace. Nothing was changed."
-                      : "The action was not applied. Review the workflow requirements.",
+                      : response.status === 422 && typeof value?.error === "string" && value.error.trim()
+                        ? // Audit F-08: the workflow's own reason, as the local board shows it.
+                          `${sentence(value.error)} Nothing was changed.`
+                        : "The action was not applied. Review the workflow requirements.",
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
           break;

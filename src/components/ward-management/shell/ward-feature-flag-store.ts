@@ -9,6 +9,7 @@ import {
   resolveWardFeatureFlags,
   serverWardFeatureFlags,
   wardEnvironment,
+  wardSafeguardsLocked,
   type ResolvedWardFeatureFlag,
   type WardFeatureFlag,
   type WardFeatureFlagOverrides,
@@ -63,6 +64,7 @@ function subscribe(onChange: () => void) {
 
 const SERVER_FLAGS = resolveWardFeatureFlags({
   environment: wardEnvironment(),
+  safeguardsLocked: wardSafeguardsLocked(),
   server: serverWardFeatureFlags(),
   device: {},
 });
@@ -77,6 +79,7 @@ function snapshot(): ResolvedWardFeatureFlag[] {
   cachedRaw = raw;
   cachedFlags = resolveWardFeatureFlags({
     environment: wardEnvironment(),
+    safeguardsLocked: wardSafeguardsLocked(),
     server: serverWardFeatureFlags(),
     device: parseStoredWardFeatureFlags(raw),
   });

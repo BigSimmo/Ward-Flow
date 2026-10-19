@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ed = edById(id);
   const site = ed?.name ?? id;
   return {
-    title: `${site} - Ward Flow`,
+    title: `${site} — Ward Flow`,
     description: `Synthetic single-department emergency department view for ${site} in the Ward Flow prototype.`,
   };
 }

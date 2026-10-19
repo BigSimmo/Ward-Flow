@@ -46,9 +46,10 @@ describe("v6 time formats", () => {
     expect(durMinutes(257)).toBe("4h 17m");
   });
 
-  it("formats clock time as 24 hour HH:MM", () => {
-    expect(clk(new Date(2026, 9, 7, 9, 5))).toBe("09:05");
-    expect(clk(new Date(2026, 9, 7, 22, 42).getTime())).toBe("22:42");
+  it("formats clock time as 24 hour HH:MM in Perth time", () => {
+    // Explicit +08:00 instants: clk reads Perth wall time whatever zone the test machine is in (F-22).
+    expect(clk(new Date("2026-10-07T09:05:00+08:00"))).toBe("09:05");
+    expect(clk(new Date("2026-10-07T22:42:00+08:00").getTime())).toBe("22:42");
   });
 });
 
@@ -226,7 +227,7 @@ describe("LiveChip", () => {
     expect(onTogglePause).toHaveBeenCalledOnce();
     rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
     expect(screen.getByRole("button", { name: "Paused, pause demo updates" })).toHaveAttribute("aria-pressed", "true");
-    rerender(<LiveChip state="stale" asAt={new Date(2026, 9, 7, 10, 26)} />);
+    rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} />);
     expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
   });
 });

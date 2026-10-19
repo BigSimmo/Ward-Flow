@@ -113,8 +113,8 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
       parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
     )
       return { recoveryNotice: SAVE_REJECTED };
-    // absoluteWallClockMinutes encodes the device's wall calendar, including its offset.
-    // Reading that value through UTC preserves the recorded device time without adding an offset twice.
+    // absoluteWallClockMinutes encodes Perth's wall calendar (audit F-22), offset included.
+    // Reading that value through UTC preserves the recorded Perth time without adding an offset twice.
     const savedAt = new Intl.DateTimeFormat("en-AU", {
       timeZone: "UTC",
       dateStyle: "medium",
@@ -122,7 +122,7 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
     }).format(new Date(parsed.savedAtAbsolute * 60_000));
     return {
       saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `Restored the last successful save from ${savedAt} (device time). Later changes may not have been saved.`,
+      recoveryNotice: `Restored the last successful save from ${savedAt} (Perth time). Later changes may not have been saved.`,
     };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.

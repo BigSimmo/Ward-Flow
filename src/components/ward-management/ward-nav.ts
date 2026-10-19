@@ -776,29 +776,31 @@ export function resolveWardPrimaryAction(pathname: string): WardPrimaryAction | 
  */
 export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] = []): string {
   const normalized = normalizeWardPathname(pathname);
+  // Whole path segments only: `/ward-flow/wards` (All wards) is not under `/ward-flow/ward`.
+  const isUnder = (prefix: string) => normalized === prefix || normalized.startsWith(`${prefix}/`);
   const place = wardPlaceFor(normalized, units);
   if (place) return place.name;
 
   if (normalized === "/ward-flow" || normalized === "/ward-flow/command") return "Home";
-  if (normalized.startsWith("/ward-flow/board")) return "Bed Board";
-  if (normalized.startsWith("/ward-flow/ward")) return "Ward";
-  if (normalized.startsWith("/ward-flow/ed")) return "All EDs";
-  if (normalized.startsWith("/ward-flow/community")) return "Community";
-  if (normalized.startsWith("/ward-flow/movements")) return "Movements";
-  if (normalized.startsWith("/ward-flow/statistics")) return "Statistics";
-  if (normalized.startsWith("/ward-flow/delays") || normalized === "/ward-flow/queue") return "Delays";
-  if (normalized.startsWith("/ward-flow/capacity")) return "Capacity";
-  if (normalized.startsWith("/ward-flow/network")) return "Network";
-  if (normalized.startsWith("/ward-flow/governance")) return "Governance";
+  if (isUnder("/ward-flow/board")) return "Bed Board";
+  if (isUnder("/ward-flow/ward")) return "Ward";
+  if (isUnder("/ward-flow/ed")) return "All EDs";
+  if (isUnder("/ward-flow/community")) return "Community";
+  if (isUnder("/ward-flow/movements")) return "Movements";
+  if (isUnder("/ward-flow/statistics")) return "Statistics";
+  if (isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue") return "Delays";
+  if (isUnder("/ward-flow/capacity")) return "Capacity";
+  if (isUnder("/ward-flow/network")) return "Network";
+  if (isUnder("/ward-flow/governance")) return "Governance";
   if (normalized === "/ward-flow/reports/downtime") return "Downtime pack";
   if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";
   if (normalized === "/ward-flow/referrals/new") return "New referral";
-  if (normalized.startsWith("/ward-flow/referrals")) return "Referrals";
+  if (isUnder("/ward-flow/referrals")) return "Referrals";
   if (normalized === "/ward-flow/people/new") return "Add a patient";
-  if (normalized.startsWith("/ward-flow/people")) return "Patients";
-  if (normalized.startsWith("/ward-flow/transport/officer")) return "Transport";
-  if (normalized.startsWith("/ward-flow/transport")) return "Transport";
-  if (normalized.startsWith("/ward-flow/settings")) return "Settings";
+  if (isUnder("/ward-flow/people")) return "Patients";
+  if (isUnder("/ward-flow/transport/officer")) return "Transport";
+  if (isUnder("/ward-flow/transport")) return "Transport";
+  if (isUnder("/ward-flow/settings")) return "Settings";
 
   const exactView = WARD_VIEWS.find((v) => v.href === normalized);
   if (exactView) return exactView.label;

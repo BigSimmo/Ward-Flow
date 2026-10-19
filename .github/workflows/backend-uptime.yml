@@ -1,0 +1,62 @@
+name: Ward Flow backend uptime
+
+# Audit F-06 (approved by Josh, 19 October 2026). Every 30 minutes, asks the hosted shared backend
+# whether it is up. When it stays down across three tries, opens one "backend down" issue that
+# @mentions the owner, so GitHub emails him; when it answers again, comments and closes that issue.
+# An issue is used because GitHub sends a failed scheduled run's own email only to whoever last
+# edited the schedule, which may not be the owner. Only the backend is checked: the signed-in site
+# sleeps when idle, and a check every 30 minutes would keep it awake. `/healthz` shows the server is
+# running; it does not check the database (`/readyz` needs a sign-in). Public repository: free.
+# GitHub turns scheduled workflows off after 60 days without repository activity.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ward-backend-uptime
+  cancel-in-progress: false
+
+jobs:
+  uptime:
+    name: Ward Flow backend uptime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      BACKEND_URL: https://ward-flow-backend-production.up.railway.app
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      LABEL: backend-down
+      OWNER: BigSimmo
+    steps:
+      - name: Ask the backend whether it is up
+        id: check
+        run: |
+          up=false
+          for attempt in 1 2 3; do
+            body=$(curl --silent --show-error --max-time 20 --fail "$BACKEND_URL/healthz" || true)
+            if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then up=true; break; fi
+            [ "$attempt" -lt 3 ] && sleep 30
+          done
+          echo "up=$up" >> "$GITHUB_OUTPUT"
+          echo "Backend up: $up"
+      - name: Raise or close the backend-down issue
+        run: |
+          open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ "${{ steps.check.outputs.up }}" = "true" ]; then
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "@$OWNER The shared backend is answering again ($run)."
+              gh issue close "$open"
+            fi
+            exit 0
+          fi
+          if [ -z "$open" ]; then
+            gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force
+            gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again."
+          fi
+          exit 1
