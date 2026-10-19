@@ -104,7 +104,7 @@ describe("Playwright invocation evidence", () => {
           spawnSync: (_command: string, args: string[], options: { env: Record<string, string> }) => {
             // Like Playwright, the next run clears its own output directory before writing.
             const output = path.resolve(projectRoot, args.find((arg) => arg.startsWith("--output="))!.slice(9));
-            rmSync(output, { recursive: true, force: true });
+            rmSync(output, { recursive: true, force: true, maxRetries: 5 });
             mkdirSync(output, { recursive: true });
             if (index === 0) writeFileSync(path.join(output, "trace.zip"), "original failure");
             const json = options.env.PLAYWRIGHT_JSON_OUTPUT_NAME;
