@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 // The gate script is plain .mjs. Its pure half is imported rather than re-implemented here: a
 // control that re-writes the logic it checks proves only that two copies agree.
-import { compareFailingSet, failureSignature, floorBreaches } from "../scripts/check-ward-expected-reds.mjs";
+import {
+  collectFailingFiles,
+  compareFailingSet,
+  failureSignature,
+  floorBreaches,
+} from "../scripts/check-ward-expected-reds.mjs";
 
 /**
  * THE CONTROL FOR THE EXPECTED-RED GATE, AND IT EXISTS BECAUSE ONE OF ITS TWO DIRECTIONS NEVER
@@ -174,5 +179,67 @@ describe("the expected-red comparison, in both directions", () => {
         ],
       }).changed,
     ).toEqual([]);
+  });
+});
+
+describe("a suite that crashes outside its tests (an import crash)", () => {
+  const root = "/work";
+  const crashed = { name: "/work/tests/ward-a.test.ts", status: "failed", message: "Error: Failed to load ./gone" };
+
+  it("is a failing file, with an empty or an absent assertion list", () => {
+    for (const suite of [{ ...crashed, assertionResults: [] }, crashed]) {
+      expect(collectFailingFiles([suite], root)).toEqual([
+        {
+          file: "tests/ward-a.test.ts",
+          count: 1,
+          signatures: [],
+          suiteError: failureSignature("<suite error>", crashed.message),
+        },
+      ]);
+    }
+  });
+
+  it("is an unexpected red when unlisted", () => {
+    const failing = collectFailingFiles([{ ...crashed, assertionResults: [] }], root);
+    expect(compareFailingSet({ failing, expected: [] }).unexpected).toEqual(["tests/ward-a.test.ts"]);
+  });
+
+  it("🔴 never satisfies a listed entry, even one with a matching count and no pinned signatures", () => {
+    const failing = collectFailingFiles([{ ...crashed, assertionResults: [{ status: "passed" }] }], root);
+    const result = compareFailingSet({ failing, expected: [{ file: "tests/ward-a.test.ts", failing: 1 }] });
+    expect(result.miscounted).toEqual([]);
+    expect(result.changed).toEqual([
+      { file: "tests/ward-a.test.ts", signature: failureSignature("<suite error>", crashed.message) },
+    ]);
+    const pinned = compareFailingSet({
+      failing,
+      expected: [
+        { file: "tests/ward-a.test.ts", failing: 1, signatures: [failureSignature("<suite error>", crashed.message)] },
+      ],
+    });
+    expect(pinned.changed).toHaveLength(1);
+  });
+
+  it("leaves assertion reds and passing suites as before", () => {
+    const failing = collectFailingFiles(
+      [
+        {
+          name: "/work/tests/ward-b.test.ts",
+          status: "failed",
+          assertionResults: [
+            { status: "failed", fullName: "t", failureMessages: ["Error: x\nstack"] },
+            { status: "passed" },
+          ],
+        },
+        { name: "/work/tests/ward-c.test.ts", status: "passed", assertionResults: [{ status: "passed" }] },
+      ],
+      root,
+    );
+    expect(failing).toEqual([
+      { file: "tests/ward-b.test.ts", count: 1, signatures: [failureSignature("t", "Error: x")] },
+    ]);
+    expect(compareFailingSet({ failing, expected: [{ file: "tests/ward-b.test.ts", failing: 1 }] }).changed).toEqual(
+      [],
+    );
   });
 });

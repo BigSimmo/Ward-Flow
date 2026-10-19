@@ -83,7 +83,9 @@ export function PatientNowLayout({
           {sheetRows}
           {change}
         </div>
-        <div className={styles.col} data-wf-rail="1121">
+        {/* Not the shared `data-wf-rail`: that caps the column at the window and scrolls it inside
+            itself, which cut Who to call off when this column was the longer one (Josh, 19 Oct 2026). */}
+        <div className={`${styles.col} ${styles.rail}`}>
           {why}
           {legal}
           {callCard}
