@@ -24,7 +24,7 @@
  * them legitimate rather than a number going up.
  *
  * **What changed:** `statistics-service-screen.tsx` imports `StatFootnote` (`:7`) and renders it
- * (`:370`), and `/mockups/ward-flow/statistics/service/[serviceId]` renders that screen. So these
+ * (`:370`), and `/ward-flow/statistics/service/[serviceId]` renders that screen. So these
  * cases now cover something a coordinator can open.
  *
  * ⚠️ **RESTORED THROUGH THE PROCEDURE THIS FILE ITSELF PRESCRIBES, NOT BY DELETING A `.skip`.** Its

@@ -18,7 +18,7 @@ import { bedReleases } from "@/components/ward-management/ward-movements";
  * ⚠️ **RETARGETED 2026-09-06.** This journey used to read six per-unit bed-state spans off the
  * old `CapacityView` (`ward-management-modes.tsx`, `data-testid="ward-capacity-view"`), reached
  * by clicking the rail's "Capacity" link. MERGE 02 (owner-approved 2026-09-05) repointed that
- * same link at a real route, `/mockups/ward-flow/capacity` → `CapacityScreen`
+ * same link at a real route, `/ward-flow/capacity` → `CapacityScreen`
  * (`capacity-screen.tsx`, `data-testid="ward-capacity-page"`) — confirmed nothing routes
  * `mode === "capacity"` into `ModeBody` any more (`ward-management-modes.tsx`; only `network` and
  * `governance` still reach `WardModeWorkspace`), so `CapacityView` and its old testid are
@@ -51,7 +51,7 @@ import { bedReleases } from "@/components/ward-management/ward-movements";
 const UNIT_ID = "rph-adult-secure";
 
 async function gotoWard(page: Page) {
-  await page.goto(`/mockups/ward-flow/ward/${UNIT_ID}`, { waitUntil: "load" });
+  await page.goto(`/ward-flow/ward/${UNIT_ID}`, { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   // The same streamed-content guard the containment test below already uses, and that
   // `tests/ui-ward-referrals.spec.ts` uses twice, applied here for the identical reason: React's
@@ -130,7 +130,7 @@ async function goBackToWard(page: Page) {
   // link to any one unit. Reaching this specific ward from the rail is therefore two real clicks
   // now, through the index `ward-index.tsx` already provides for exactly this purpose
   // (`data-testid="ward-index-link-${unit.id}"`, one per ward).
-  await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/wards"]').click();
+  await page.locator('[data-testid="ward-rail-link"][href="/ward-flow/wards"]').click();
   await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId(`ward-index-link-${UNIT_ID}`).click();
   await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
@@ -230,13 +230,13 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // by the app router, so the layout provider — and this journey's bed releases — stay mounted.
     await page.evaluate((unitId) => {
       const anchor = document.createElement("a");
-      anchor.href = `/mockups/ward-flow/board/${unitId}`;
+      anchor.href = `/ward-flow/board/${unitId}`;
       document.body.appendChild(anchor);
       anchor.click();
     }, UNIT_ID);
     // The click only starts the navigation; the staged-content count below means nothing until the
     // board's own address is in place and the document has finished loading.
-    await page.waitForURL(`**/mockups/ward-flow/board/${UNIT_ID}`, { waitUntil: "load" });
+    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`, { waitUntil: "load" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -292,7 +292,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     page,
   }) => {
     await page.setViewportSize({ width: 641, height: 900 });
-    await page.goto("/mockups/ward-flow/discharges", { waitUntil: "load" });
+    await page.goto("/ward-flow/discharges", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     // The streamed-content guard `tests/ui-ward-referrals.spec.ts` uses, and for the same reason:
     // React's streaming leaves a hidden staging copy of the whole screen in the document for a
@@ -395,7 +395,7 @@ test.describe("@mockup WA disposition pathways", () => {
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 1024 });
-      await page.goto(`/mockups/ward-flow/ward/${release.unitId}?tab=departure-planning`);
+      await page.goto(`/ward-flow/ward/${release.unitId}?tab=departure-planning`);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
       // Ward Hub (9 Oct 2026): the full bed list opens from the Home tab's Every bed card.
@@ -409,7 +409,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await picker.selectOption(destination.id);
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
-      await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/discharges"]').click();
+      await page.locator('[data-testid="ward-rail-link"][href="/ward-flow/discharges"]').click();
       await page.getByTestId("ward-discharge-history").click();
       await page.locator("#discharges-filter-destination").selectOption(destination.id);
       await page.getByRole("button", { name, exact: true }).click();
@@ -430,7 +430,7 @@ test.describe("@mockup WA disposition pathways", () => {
 
   // v10: Plan departure left the hero; departure planning stays on the ward's Decisions tab.
   test("the ward's Decisions tab still holds departure planning", async ({ page }) => {
-    await page.goto(`/mockups/ward-flow/ward/${encodeURIComponent(release.unitId)}?tab=departure-planning`);
+    await page.goto(`/ward-flow/ward/${encodeURIComponent(release.unitId)}?tab=departure-planning`);
     await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
   });
@@ -441,7 +441,7 @@ test.describe("@mockup complete care dossier", () => {
     const seed = seedWardFlowState();
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
     const p = seed.patients.find((p) => p.id === a.patientId)!;
-    await page.goto("/mockups/ward-flow/discharges");
+    await page.goto("/ward-flow/discharges");
     await page.getByTestId("ward-discharge-history").click();
     await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });

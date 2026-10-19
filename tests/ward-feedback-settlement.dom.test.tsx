@@ -19,7 +19,7 @@ import { inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interact
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));

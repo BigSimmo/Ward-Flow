@@ -39,16 +39,16 @@ describe("touchesTooling (WARD_GATE_SKIP_TOOLING decision, R32)", () => {
 describe("touchesRouteFiles (WARD_GATE_BUILD decision)", () => {
   it("keeps the build's own type check when a page, layout or route file changes", () => {
     for (const file of [
-      "src/app/mockups/ward-flow/capacity/page.tsx",
-      "src/app/mockups/ward-flow/layout.tsx",
-      "src/app/mockups/ward-flow/ward/[unitId]/page.tsx",
+      "src/app/ward-flow/capacity/page.tsx",
+      "src/app/ward-flow/layout.tsx",
+      "src/app/ward-flow/ward/[unitId]/page.tsx",
       "src/app/api/ward/route.ts",
       "src/app/layout.tsx",
-      "src/app/mockups/ward-flow/error.tsx",
+      "src/app/ward-flow/error.tsx",
       "src/proxy.ts",
       "next.config.ts",
       "tsconfig.json",
-      "src\\app\\mockups\\ward-flow\\alerts\\page.tsx",
+      "src\\app\\ward-flow\\alerts\\page.tsx",
     ]) {
       expect(touchesRouteFiles([file]), file).toBe(true);
     }
@@ -61,7 +61,7 @@ describe("touchesRouteFiles (WARD_GATE_BUILD decision)", () => {
         "src/lib/ward-flow-reducer.ts",
         "tests/ward-flow-reducer.test.ts",
         "docs/ward-flow/decisions.md",
-        "src/app/mockups/ward-flow/capacity/capacity-helpers.ts",
+        "src/app/ward-flow/capacity/capacity-helpers.ts",
       ]),
     ).toBe(false);
     expect(touchesRouteFiles([])).toBe(false);

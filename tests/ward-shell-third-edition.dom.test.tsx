@@ -31,7 +31,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 const mockRouterPush = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -100,7 +100,7 @@ function renderShell(checks: WardReconciliationCheck[] = OK_CHECKS) {
 // Same jsdom rAF guard `tests/sheet.dom.test.tsx` already carries — the shell's three drawers are
 // `<Sheet>`, whose open-focus controller schedules work via requestAnimationFrame.
 beforeEach(() => {
-  route.pathname = "/mockups/ward-flow";
+  route.pathname = "/ward-flow";
   mockRouterPush.mockClear();
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
@@ -143,8 +143,8 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     const destinations = links.map((link) => link.getAttribute("href"));
     expect(new Set(destinations).size).toBe(22);
     // Alerts and On-call are now reachable from the rail (previously orphaned / weakly discoverable).
-    expect(destinations).toContain("/mockups/ward-flow/alerts");
-    expect(destinations).toContain("/mockups/ward-flow/on-call");
+    expect(destinations).toContain("/ward-flow/alerts");
+    expect(destinations).toContain("/ward-flow/on-call");
   });
 
   it("leaves the bed meeting TV view off the rail while its feature flag is off", () => {
@@ -153,26 +153,26 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       renderShell();
       const links = screen.getAllByTestId("ward-rail-link");
       expect(links).toHaveLength(21);
-      expect(links.some((link) => link.getAttribute("href") === "/mockups/ward-flow/bed-meeting")).toBe(false);
+      expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
     }
   });
 
   it("keeps Wards active for a ward answer without restoring the removed example link", () => {
-    route.pathname = "/mockups/ward-flow/ward/rph-adult-secure/answer";
+    route.pathname = "/ward-flow/ward/rph-adult-secure/answer";
     renderShell();
     const links = screen.getAllByTestId("ward-rail-link");
-    expect(links.some((link) => link.getAttribute("href") === "/mockups/ward-flow/ward/rph-adult-secure")).toBe(false);
-    const wards = links.find((link) => link.getAttribute("href") === "/mockups/ward-flow/wards");
+    expect(links.some((link) => link.getAttribute("href") === "/ward-flow/ward/rph-adult-secure")).toBe(false);
+    const wards = links.find((link) => link.getAttribute("href") === "/ward-flow/wards");
     expect(wards).toHaveAttribute("aria-current", "page");
     expect(wards).toHaveAttribute("data-active", "true");
   });
 
   it.each([
-    [movementHref("WF-001"), "/mockups/ward-flow/movements"],
-    ["/mockups/ward-flow/statistics/ward/rph-adult-secure", "/mockups/ward-flow/statistics"],
-    ["/mockups/ward-flow/referrals/new", "/mockups/ward-flow/referrals/new"],
+    [movementHref("WF-001"), "/ward-flow/movements"],
+    ["/ward-flow/statistics/ward/rph-adult-secure", "/ward-flow/statistics"],
+    ["/ward-flow/referrals/new", "/ward-flow/referrals/new"],
   ])("highlights only the owning destination for %s", (pathname, href) => {
     route.pathname = pathname;
     renderShell();
@@ -495,8 +495,8 @@ describe("assertion 8 — Tasks drawer network inbox follows the signed-in coord
    * the coordinator, so nothing is dispatched under a borrowed identity.
    */
   it.each([
-    ["ward", "/mockups/ward-flow/ward/rph-adult-secure/answer"],
-    ["ED", "/mockups/ward-flow/ed/answer"],
+    ["ward", "/ward-flow/ward/rph-adult-secure/answer"],
+    ["ED", "/ward-flow/ed/answer"],
   ])("keeps the signed-in coordinator's inbox and non-zero badge on a %s route", async (_kind, pathname) => {
     const user = userEvent.setup();
     route.pathname = pathname;
@@ -732,7 +732,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
 
     const appearance = screen.getByRole("group", { name: "Appearance" });
     expect(within(appearance).getByRole("button", { name: "Dark" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/mockups/ward-flow/settings");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/ward-flow/settings");
   });
 });
 
@@ -962,7 +962,7 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
     ["record-decision", "Record a decision"],
     ["contact-team", "Contact a team"],
   ];
-  const STABLE_ROUTES = ["/mockups/ward-flow/movements", `/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`];
+  const STABLE_ROUTES = ["/ward-flow/movements", `/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`];
 
   // Unlike `renderShell()` above, this resolves and passes `primaryAction` for the given route —
   // `renderShell()` renders `<WardBar />` bare, which is why no earlier test in this file exercises
@@ -980,9 +980,9 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
   }
 
   it("v10: Statistics carries New referral as its header primary, never Export the figures", () => {
-    const action = resolveWardPrimaryAction("/mockups/ward-flow/statistics");
+    const action = resolveWardPrimaryAction("/ward-flow/statistics");
     expect(action?.kind).toBe("new-referral");
-    renderShellAt("/mockups/ward-flow/statistics");
+    renderShellAt("/ward-flow/statistics");
     expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
     expect(screen.queryByText("Export the figures")).toBeNull();
   });
@@ -996,7 +996,7 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
       '"Not wired in this prototype.", and Escape closes it with focus returning to the button',
     async (kind, label) => {
       const user = userEvent.setup();
-      renderShellAt("/mockups/ward-flow", { kind, label } as WardPrimaryAction);
+      renderShellAt("/ward-flow", { kind, label } as WardPrimaryAction);
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
       expect(trigger).toHaveTextContent(label);

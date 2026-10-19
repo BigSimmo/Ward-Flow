@@ -91,7 +91,7 @@ where marked "(inferred)". Back to [the code map index](README.md).
 - **`RULES.md`** (249 lines) — `node scripts/ward-flow/rules-index.mjs`. Generated from the 207-lesson
   store copied into `lessons/` (see that folder below); edit a lesson there.
 - **`SCREEN-MAP.md`** (124 lines) — `node scripts/ward-flow/screen-map.mjs`. "68 mockups · 52 routes ·
-  32 screen folders" (50 routes under `/mockups/ward-flow/*` plus `/mockups/ward-flow-sign-in` and
+  32 screen folders" (50 routes under `/ward-flow/*` plus `/ward-flow-sign-in` and
   `/mockups/ward-flow-digest`). The mockup-to-route pairing is hand-authored (no rule derives it); completeness
   (which files exist) is discovered from disk. This is the file the mockups section below is built
   from.
@@ -421,7 +421,7 @@ source of this table and is more current than this bullet list if the two ever d
 - **`settings-third-edition.html`** — `/settings` — one of the eleven added 11 Sept; this file (not
   `settings-perfected-third-edition.html`) is Gemini's rebuild, confirmed by commit date
   (`f0e5ea88f9`, 16 Sept, newer than the 12 Sept approved version).
-- **`sign-in-third-edition.html`** — `/mockups/ward-flow-sign-in` — one of the eleven added 11 Sept;
+- **`sign-in-third-edition.html`** — `/ward-flow-sign-in` — one of the eleven added 11 Sept;
   deliberately carries no rail, no bar and no input element (nobody is signed in yet).
 - **`ward-answer-third-edition.html`** — `/ward/[unitId]/answer` — added 11 Sept, no artifact URL yet.
 

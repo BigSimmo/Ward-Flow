@@ -21,7 +21,7 @@ repository belong to the earlier shared-history arrangement; do not use them as 
   and relevant source/tests. The [code map](code-map/README.md) preserves a dated detailed snapshot;
   open only the sections needed for the task and verify relevant drift.
 - **Code:** the engine and screens are in `src/components/ward-management/`; routes are in
-  `src/app/mockups/ward-flow/`; tests are `tests/ward-*` and `tests/ui-ward-*`.
+  `src/app/ward-flow/`; tests are `tests/ward-*` and `tests/ui-ward-*`.
 - **Current work:** use the agreed task scope, current source and existing task/checkpoint under
   the [task-receipt contract](../task-receipts.md). [`STATUS.md`](STATUS.md) opens with a
   current summary of what is built and what is left (dated; check it against `main`), followed by
@@ -90,7 +90,7 @@ Read the plan for the exact integration candidate before acceptance. When it sel
 suite, use the saved findings, resume and bounded recheck procedure in
 [`full-gate-recheck.md`](full-gate-recheck.md).
 
-Screens live under `/mockups/ward-flow/...` on the URL `npm run ensure` prints. Never assume a port.
+Screens live under `/ward-flow/...` on the URL `npm run ensure` prints. Never assume a port.
 
 **Organisation checkpoint (six non-Design systems):** the reviewed
 [`organisation/registry.json`](organisation/registry.json) maps source ownership and canonical references.

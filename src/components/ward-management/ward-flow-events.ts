@@ -631,7 +631,7 @@ export type WardFlowEvent =
       unitId: string;
       /**
        * The unit the caller stated it was acting as. The ward screen is routed as
-       * `/mockups/ward-flow/ward/[unitId]`, so a caller always has one to state; the reducer
+       * `/ward-flow/ward/[unitId]`, so a caller always has one to state; the reducer
        * refuses the event when this and `unitId` differ.
        *
        * This is a claim the caller makes about itself, recorded and compared. It is **not** an

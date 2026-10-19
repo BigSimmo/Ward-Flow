@@ -32,7 +32,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -60,7 +60,7 @@ function ServiceScopeProbe() {
   return <span data-testid="probe">{service ?? "null"}</span>;
 }
 
-function renderBar(pathname = "/mockups/ward-flow") {
+function renderBar(pathname = "/ward-flow") {
   route.pathname = pathname;
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -71,7 +71,7 @@ function renderBar(pathname = "/mockups/ward-flow") {
 }
 
 beforeEach(() => {
-  route.pathname = "/mockups/ward-flow";
+  route.pathname = "/ward-flow";
   window.sessionStorage.clear();
 });
 

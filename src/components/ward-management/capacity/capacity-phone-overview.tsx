@@ -140,7 +140,7 @@ export function CapacityPhoneOverview({
         onClose={() => setSheet(null)}
         title="Due out today"
         description={freeingTracked ? `${totalFreeing} beds freeing today` : "Not tracked here"}
-        primary={{ label: "Open discharges", onAction: () => router.push("/mockups/ward-flow/discharges") }}
+        primary={{ label: "Open discharges", onAction: () => router.push("/ward-flow/discharges") }}
       >
         {freeingWards.length === 0 ? (
           <p className={styles.phoneOverviewEmpty}>No ward reports a bed freeing today.</p>

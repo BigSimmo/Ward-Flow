@@ -195,7 +195,7 @@
  * **The conclusion is unchanged, and that is worth saying explicitly**: every composing file is
  * shell chrome, so the token's scope is the bar, the rail and the reconciliation line, never a
  * wrapper around page content. **The page layout deliberately does not compose it**:
- * `src/app/mockups/ward-flow/ward-flow-layout.module.css` says so in its own header — *"No colour
+ * `src/app/ward-flow/ward-flow-layout.module.css` says so in its own header — *"No colour
  * and no `wardShellTokens` composition."* So inside this screen the token resolves to nothing
  * whatever the shell's fold state is.
  *

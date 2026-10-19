@@ -95,13 +95,13 @@ describe("WardPwaRegistration", () => {
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalledTimes(1));
     expect(browser.container.register).toHaveBeenCalledWith(PHONE_PUSH_WORKER_URL, {
-      scope: "/mockups/ward-flow",
+      scope: "/ward-flow",
       updateViaCache: "none",
     });
     expect(browser.other.unregister).not.toHaveBeenCalled();
   });
 
-  it("removes the old /mockups/ward-flow/ registration, and nothing else", async () => {
+  it("removes the old /ward-flow/ registration, and nothing else", async () => {
     const browser = installServiceWorker({ legacy: true });
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
@@ -169,13 +169,11 @@ describe("WardPwaRegistration", () => {
     const browser = installServiceWorker();
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/mockups/ward-flow/alerts" } }));
-    expect(push).toHaveBeenCalledWith("/mockups/ward-flow/alerts");
-    act(() =>
-      browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/mockups/ward-flow" } }),
-    );
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/ward-flow/alerts" } }));
+    expect(push).toHaveBeenCalledWith("/ward-flow/alerts");
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/ward-flow" } }));
     act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/mockups/ward-flow-digest" } }));
-    act(() => browser.emit("message", { data: { type: "other", url: "/mockups/ward-flow/alerts" } }));
+    act(() => browser.emit("message", { data: { type: "other", url: "/ward-flow/alerts" } }));
     expect(push).toHaveBeenCalledTimes(1);
   });
 });
@@ -183,10 +181,8 @@ describe("WardPwaRegistration", () => {
 describe("wardPwaOpenTarget", () => {
   const origin = "https://ward.example";
   it("accepts only a same-site Ward Flow path", () => {
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/mockups/ward-flow" }, origin)).toBe("/mockups/ward-flow");
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/mockups/ward-flow/beds?x=1" }, origin)).toBe(
-      "/mockups/ward-flow/beds",
-    );
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow" }, origin)).toBe("/ward-flow");
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow/beds?x=1" }, origin)).toBe("/ward-flow/beds");
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/settings" }, origin)).toBeNull();
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: 42 }, origin)).toBeNull();
     expect(wardPwaOpenTarget("ward-flow-open", origin)).toBeNull();

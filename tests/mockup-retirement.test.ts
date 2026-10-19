@@ -558,6 +558,14 @@ describe("developer gate source", () => {
     expect(readDeveloperGatedPrefixes("/repo", fs)).toEqual(["/mockups/development", "/mockups/ward-flow"]);
   });
 
+  it("reads a deliberately empty list as no gated prefixes", () => {
+    const fs = fakeRepo(
+      { "src/lib/developer-area/headers.ts": "export const DEVELOPER_GATED_PATH_PREFIXES = [] as readonly string[];" },
+      {},
+    );
+    expect(readDeveloperGatedPrefixes("/repo", fs)).toEqual([]);
+  });
+
   it("throws rather than guessing when the declaration is gone", () => {
     const fs = fakeRepo({ "src/lib/developer-area/headers.ts": "export const OTHER = [];" }, {});
     expect(() => readDeveloperGatedPrefixes("/repo", fs)).toThrow(/no longer declares/);
@@ -590,14 +598,17 @@ describe("the committed repository", () => {
   it("indexes every mockup route it ships", () => {
     const result = auditIndex(process.cwd());
     expect(result.violations).toEqual([]);
-    expect(result.routeCount).toBeGreaterThan(0);
+    // No mockup page routes are left since Ward Flow moved out of /mockups (19 October 2026); the
+    // digest is a route handler, not a page. A new mockup page must be indexed to pass.
+    expect(result.routeCount).toBe(0);
   });
 
-  it("still declares the developer-gated prefixes the policy depends on", () => {
+  it("declares no developer-gated prefixes now that Ward Flow has left /mockups", () => {
     const prefixes = readDeveloperGatedPrefixes(process.cwd());
     // The developer hub, Care Plan and Caring Contacts prefixes went with their pages in the
-    // PsychSift removal (batch 3a, 25 September 2026); Ward Flow and its sign-in sibling remain.
-    expect([...prefixes].sort()).toEqual(["/mockups/ward-flow", "/mockups/ward-flow-sign-in"]);
+    // PsychSift removal (batch 3a, 25 September 2026). Ward Flow and its sign-in sibling moved to
+    // /ward-flow and /ward-flow-sign-in on 19 October 2026, so nothing under /mockups is public.
+    expect(prefixes).toEqual([]);
   });
 
   it("keeps every developer-gated prototype out of retirement scope", () => {

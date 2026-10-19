@@ -403,13 +403,13 @@ export function WardBoard({
     // branch) to fix that, one screen at a time.
     //
     // Task 8, 2026-09-11: neither branch mounts it directly any more. The third-edition rail
-    // (`shell/ward-rail.tsx`) mounts once in `src/app/mockups/ward-flow/layout.tsx`, an ancestor
+    // (`shell/ward-rail.tsx`) mounts once in `src/app/ward-flow/layout.tsx`, an ancestor
     // of this route regardless of which branch below runs, so this dead end stays fixed for free
     // rather than depending on this file (or any other) remembering to mount it twice.
     return (
       <div className={styles.screen} data-testid="ward-board-unknown-unit" data-ward-design="third-edition">
         <main id="main-content" className={styles.main}>
-          <WardNotFoundBody title="Ward not found" list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}>
+          <WardNotFoundBody title="Ward not found" list={{ href: "/ward-flow/wards", label: "All wards" }}>
             No ward matches this link. It never falls back to a different ward.
           </WardNotFoundBody>
         </main>

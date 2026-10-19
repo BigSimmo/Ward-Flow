@@ -53,13 +53,13 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   Capacity    Triage     Placement     Transit     Handover
 ```
 
-| Act       | In-Story Clock | Stage Duration          | Route Path                                                          | Core Clinical Focus                                                |
-| --------- | -------------- | ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **Act 1** | 09:00 - 09:12  | Min 0:00 - 2:00 (120s)  | `/mockups/ward-flow/capacity`                                       | 09:00 Morning Statewide Bed Meeting & Network Capacity Rollup      |
-| **Act 2** | 10:30          | Min 2:00 - 4:00 (120s)  | `/mockups/ward-flow/ed/rph-ed` & `/mockups/ward-flow/referrals`     | Acute ED Presentation, Triage & Form 1A Paper Expiry Recording     |
-| **Act 3** | 11:45          | Min 4:00 - 6:00 (120s)  | `/mockups/ward-flow/referrals` (Bed Match)                          | Intelligent Bed Matching, Acuity Gates & Bed Reservation           |
-| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/mockups/ward-flow/movements`                                      | St John WA Transfer Booking, CAD Integration & Transit Flight Deck |
-| **Act 5** | 14:30          | Min 8:00 - 10:00 (120s) | `/mockups/ward-flow/handover` & `/mockups/ward-flow/board/[unitId]` | Inpatient Ward Arrival, ISBAR Handover & Real-Time Board Occupancy |
+| Act       | In-Story Clock | Stage Duration          | Route Path                                          | Core Clinical Focus                                                |
+| --------- | -------------- | ----------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| **Act 1** | 09:00 - 09:12  | Min 0:00 - 2:00 (120s)  | `/ward-flow/capacity`                               | 09:00 Morning Statewide Bed Meeting & Network Capacity Rollup      |
+| **Act 2** | 10:30          | Min 2:00 - 4:00 (120s)  | `/ward-flow/ed/rph-ed` & `/ward-flow/referrals`     | Acute ED Presentation, Triage & Form 1A Paper Expiry Recording     |
+| **Act 3** | 11:45          | Min 4:00 - 6:00 (120s)  | `/ward-flow/referrals` (Bed Match)                  | Intelligent Bed Matching, Acuity Gates & Bed Reservation           |
+| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/ward-flow/movements`                              | St John WA Transfer Booking, CAD Integration & Transit Flight Deck |
+| **Act 5** | 14:30          | Min 8:00 - 10:00 (120s) | `/ward-flow/handover` & `/ward-flow/board/[unitId]` | Inpatient Ward Arrival, ISBAR Handover & Real-Time Board Occupancy |
 
 ---
 
@@ -69,7 +69,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 09:00 AM (Duration: 2 Minutes / 0:00 - 2:00)
 - **Clinical Role:** Statewide Mental Health Bed Flow Coordinator
-- **Screen:** Capacity Screen & Morning Bed-Meeting Sheet (`/mockups/ward-flow/capacity`)
+- **Screen:** Capacity Screen & Morning Bed-Meeting Sheet (`/ward-flow/capacity`)
 - **Key Health Services Highlighted:** North Metro (SCGH MHU, Graylands), South Metro (Fiona Stanley, Alma St Fremantle, Rockingham), East Metro (Royal Perth Dabakarn, Armadale Moodjar, Bentley Ward 7 & EMyU), WACHS (Albany, Bunbury, Broome).
 
 ```
@@ -91,7 +91,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 0:00 - 0:30 · Opening & Executive Welcome
 
-- **Presenter Action:** Display the primary navigation shell at `/mockups/ward-flow/capacity`. Ensure the Service Scope bar is set to `All Services`. Hover cursor gently across the top metric ribbon.
+- **Presenter Action:** Display the primary navigation shell at `/ward-flow/capacity`. Ensure the Service Scope bar is set to `All Services`. Hover cursor gently across the top metric ribbon.
 - **Presenter Spoken Dialogue:**
   > "Good morning, colleagues, Clinical Directors, and Executive leadership. It is 09:00 on a Tuesday morning. Across Western Australia, mental health executives, bed coordinators, and ED directors are dialing into the daily statewide bed meeting.
   >
@@ -120,7 +120,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Bed managers can print this directly onto a single physical page or project it onto the briefing room screen. In under two minutes, executive leadership shares an identical clinical baseline without a single telephone call.
   >
   > Now, let us see what happens when acute demand strikes our emergency network."
-- **Presenter Action:** Press `Esc` to close the modal. Transition via primary navigation to `/mockups/ward-flow/ed/rph-ed` (or `/mockups/ward-flow/referrals`).
+- **Presenter Action:** Press `Esc` to close the modal. Transition via primary navigation to `/ward-flow/ed/rph-ed` (or `/ward-flow/referrals`).
 
 ---
 
@@ -130,7 +130,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 10:30 AM (Duration: 2 Minutes / 2:00 - 4:00)
 - **Clinical Role:** Emergency Psychiatric Liaison Nurse (EPLN) / ED Psychiatric Registrar
-- **Screen:** Emergency Department Console (`/mockups/ward-flow/ed/rph-ed`) & Referral Intake Drawer (`/mockups/ward-flow/referrals/new` or `/mockups/ward-flow/referrals`)
+- **Screen:** Emergency Department Console (`/ward-flow/ed/rph-ed`) & Referral Intake Drawer (`/ward-flow/referrals/new` or `/ward-flow/referrals`)
 - **Patient Profile:**
   - **Name:** Callum Halloway (UM100001) on movement `WF-301`
   - **Demographics:** Adult resident of Bayswater (East Metropolitan Catchment)
@@ -158,7 +158,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 2:00 - 2:45 · ED Inflow & Clinical Crisis Presentation
 
-- **Presenter Action:** Navigate to the RPH Emergency Department screen (`/mockups/ward-flow/ed/rph-ed`). Point to the acute mental health patient corridor. Click on patient card `Callum Halloway (UM100001)` (seeded on RPH ED movement `WF-301`).
+- **Presenter Action:** Navigate to the RPH Emergency Department screen (`/ward-flow/ed/rph-ed`). Point to the acute mental health patient corridor. Click on patient card `Callum Halloway (UM100001)` (seeded on RPH ED movement `WF-301`).
 - **Presenter Spoken Dialogue:**
   > "It is now 10:30 AM. At Royal Perth Hospital Emergency Department, an acute clinical crisis has arrived.
   >
@@ -168,7 +168,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 2:45 - 3:30 · Recording the Form 1A Paper Expiry (Owner Ruling D-29)
 
-- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** selector and the clinician-entered paper expiry field (`legalFormExpiryIso`). Note how statutory duration reference calculators are isolated to `/mockups/ward-flow/legal-forms`.
+- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** selector and the clinician-entered paper expiry field (`legalFormExpiryIso`). Note how statutory duration reference calculators are isolated to `/ward-flow/legal-forms`.
 - **Presenter Spoken Dialogue:**
   > "Observe how Ward Flow handles Western Australian statutory recording under Owner Ruling `D-29`.
   >
@@ -177,7 +177,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Notice what Ward Flow does—and what it steadfastly refuses to do:
   > The ED movement row **does not** calculate a 72-hour Form 1A countdown from duration. Per `D-29`, the main operational engine never computes deadlines from statutory durations: the movement row displays only the **clinician-entered paper expiry time** written on the physical form (labelled _Not legally checked_).
   >
-  > Meanwhile, statutory duration reference tables and calculators live solely in the isolated `/mockups/ward-flow/legal-forms` reference demo. In operational screens, the software never makes an autonomous legal duration assumption."
+  > Meanwhile, statutory duration reference tables and calculators live solely in the isolated `/ward-flow/legal-forms` reference demo. In operational screens, the software never makes an autonomous legal duration assumption."
 
 #### 3:30 - 4:00 · Catchment Routing, UM1xxxxx Identifiers & Clinical Acuity Indicators
 
@@ -188,7 +188,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Because Callum is severely agitated and requires intensive nursing supervision, the triage team marks his clinical requirements: **Adult Acute**, **HDU / Secure Capable**, and **High Acuity Nursing Ratio**.
   >
   > The referral is signed off in ED and submitted to the statewide flow queue. Instantaneously, without a single phone call or faxed referral sheet, Callum Halloway (`UM100001`) appears on the Statewide Flow Coordinator’s radar. Let us step into the Coordinator’s shoes."
-- **Presenter Action:** Close the intake drawer and navigate to `/mockups/ward-flow/referrals`.
+- **Presenter Action:** Close the intake drawer and navigate to `/ward-flow/referrals`.
 
 ---
 
@@ -198,7 +198,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 11:45 AM (Duration: 2 Minutes / 4:00 - 6:00)
 - **Clinical Role:** Senior Statewide Bed Allocation Coordinator
-- **Screen:** Statewide Referral Inspector & Bed Match Engine (`/mockups/ward-flow/referrals` -> Click Row `Callum Halloway (UM100001)` -> Inspector Tab `Placement / Bed Match`)
+- **Screen:** Statewide Referral Inspector & Bed Match Engine (`/ward-flow/referrals` -> Click Row `Callum Halloway (UM100001)` -> Inspector Tab `Placement / Bed Match`)
 - **Key System Mechanics:** Multi-gate eligibility evaluation, gender-safety rules, travel bands, clinician override reasoning, one-click bed hold.
 
 ```
@@ -226,7 +226,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 4:00 - 4:45 · The Intelligent Eligibility Matching Engine
 
-- **Presenter Action:** On `/mockups/ward-flow/referrals`, click the row corresponding to `Callum Halloway (UM100001)`. The right-side inspector drawer smoothly expands. Click the **[Bed Match]** tab.
+- **Presenter Action:** On `/ward-flow/referrals`, click the row corresponding to `Callum Halloway (UM100001)`. The right-side inspector drawer smoothly expands. Click the **[Bed Match]** tab.
 - **Presenter Spoken Dialogue:**
   > "At 11:45 AM, our Statewide Bed Coordinator opens Callum Halloway’s referral (`UM100001`). We immediately open the **Bed Match Engine**.
   >
@@ -260,7 +260,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Third, the session event log records the action type, role, time, selected record IDs and whether it was accepted, without typed text. The separate governance audit records selected reviewable actions. A routine bed hold or acceptance appears there only when it includes an override; it does not record every hold as a clinical audit entry.
   >
   > The bed is secured. Now, we must coordinate safe inter-hospital logistics."
-- **Presenter Action:** Transition via navigation to `/mockups/ward-flow/movements`.
+- **Presenter Action:** Transition via navigation to `/ward-flow/movements`.
 
 ---
 
@@ -270,7 +270,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 13:15 PM (Duration: 2 Minutes / 6:00 - 8:00)
 - **Clinical Role:** Transport Logistics Officer & Mental Health Flight Deck Controller
-- **Screen:** Movements Flight Deck & Transit Cockpit (`/mockups/ward-flow/movements`)
+- **Screen:** Movements Flight Deck & Transit Cockpit (`/ward-flow/movements`)
 - **Key System Mechanics:** St John WA CAD transfer integration, departure verification, real-time transit status, structured `sessionStorage` persistence and `D-18` free-text privacy guard.
 
 ```
@@ -293,7 +293,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 6:00 - 6:45 · The Movements Flight Deck & Transport Bottlenecks
 
-- **Presenter Action:** Navigate to `/mockups/ward-flow/movements`. Point out the horizontal corridor visualization (`MovementHorizonGantt`) and the active transit rows.
+- **Presenter Action:** Navigate to `/ward-flow/movements`. Point out the horizontal corridor visualization (`MovementHorizonGantt`) and the active transit rows.
 - **Presenter Spoken Dialogue:**
   > "It is now 13:15 PM. We are on the **Movements Flight Deck**.
   >
@@ -322,7 +322,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > Equally important is Owner Ruling **`D-18`** (`eventCarriesTypedTextPayload(event)`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally clear the central demo snapshot and `wf-draft:*` caches, then disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
   >
   > Now, Callum’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
-- **Presenter Action:** Close the movement cockpit and navigate to `/mockups/ward-flow/handover`.
+- **Presenter Action:** Close the movement cockpit and navigate to `/ward-flow/handover`.
 
 ---
 
@@ -332,7 +332,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Time:** 14:30 PM (Duration: 2 Minutes / 8:00 - 10:00)
 - **Clinical Role:** Nurse Unit Manager (NUM) & Inpatient Admitting Psychiatric Nurse
-- **Screen:** Clinical Handover Flight Deck (`/mockups/ward-flow/handover`) & Inpatient Ward Bed Board (`/mockups/ward-flow/board/rph-adult-secure`)
+- **Screen:** Clinical Handover Flight Deck (`/ward-flow/handover`) & Inpatient Ward Bed Board (`/ward-flow/board/rph-adult-secure`)
 - **Key System Mechanics:** Clinical ISBAR handover completion, Form 1A custody receipt, physical arrival confirmation, bed status transition to "Occupied", instantaneous network synchronization.
 
 ```
@@ -355,7 +355,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 8:00 - 8:45 · Clinical ISBAR Handover Verification
 
-- **Presenter Action:** On the `/mockups/ward-flow/handover` screen, select `Dabakarn` from the Ward Scope dropdown. Highlight the arrivals corridor card for `Callum Halloway (UM100001)`.
+- **Presenter Action:** On the `/ward-flow/handover` screen, select `Dabakarn` from the Ward Scope dropdown. Highlight the arrivals corridor card for `Callum Halloway (UM100001)`.
 - **Presenter Spoken Dialogue:**
   > "It is 14:30 PM. Callum Halloway (`UM100001`) has arrived at the sally port of Dabakarn Secure Unit.
   >
@@ -367,7 +367,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 8:45 - 9:30 · Completing Arrival & Transition to "Occupied"
 
-- **Presenter Action:** Click the prominent **[Confirm Inpatient Arrival]** action button. A confirmation toast appears, and Callum moves smoothly from the _Arrivals Corridor_ into _Admitted Inpatients_. Immediately navigate via the breadcrumb link to Dabakarn’s Ward Board (`/mockups/ward-flow/board/rph-adult-secure`).
+- **Presenter Action:** Click the prominent **[Confirm Inpatient Arrival]** action button. A confirmation toast appears, and Callum moves smoothly from the _Arrivals Corridor_ into _Admitted Inpatients_. Immediately navigate via the breadcrumb link to Dabakarn’s Ward Board (`/ward-flow/board/rph-adult-secure`).
 - **Presenter Spoken Dialogue:**
   > "The nurse clicks **Confirm Inpatient Arrival**.
   >
@@ -380,7 +380,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 #### 9:30 - 10:00 · Conclusion & Presentation Close
 
-- **Presenter Action:** Return to the primary coordinator overview (`/mockups/ward-flow`) or `/mockups/ward-flow/capacity`. Allow the clean, high-density dashboard to fill the screen.
+- **Presenter Action:** Return to the primary coordinator overview (`/ward-flow`) or `/ward-flow/capacity`. Allow the clean, high-density dashboard to fill the screen.
 - **Presenter Spoken Dialogue:**
   > "In ten minutes, we have walked through a complete psychiatric patient journey:
   >
@@ -427,7 +427,7 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 ### 3. Statutory Fidelity (WA _Mental Health Act 2014_)
 
 - Under WA law, the legal authority to detain or examine a psychiatric patient resides exclusively in the signed statutory instrument (e.g. Form 1A, Form 3A, Form 6A).
-- Per Owner Ruling `D-29`, Ward Flow’s operational engine functions as a **statutory recorder**, not an automated legal arbiter: movement screens display only the paper expiry date and time typed from the physical form by the clinician, while statutory duration reference calculators live solely in the isolated `/mockups/ward-flow/legal-forms` demo.
+- Per Owner Ruling `D-29`, Ward Flow’s operational engine functions as a **statutory recorder**, not an automated legal arbiter: movement screens display only the paper expiry date and time typed from the physical form by the clinician, while statutory duration reference calculators live solely in the isolated `/ward-flow/legal-forms` demo.
 
 ### 4. Honest Denominators & Anti-Alarm Fatigue
 
@@ -551,11 +551,11 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 +----------------------------------------------------------------------------------------------------+
 | QUICK NAVIGATION URLS                                                                              |
 +----------------------------------------------------------------------------------------------------+
-| ACT 1: CAPACITY & MORNING SHEET      -->  /mockups/ward-flow/capacity                              |
-| ACT 2: ED INFLOW & REFERRAL INTAKE   -->  /mockups/ward-flow/ed/rph-ed (or /mockups/ward-flow/referrals) |
-| ACT 3: BED MATCHING ENGINE           -->  /mockups/ward-flow/referrals --> Click Callum Halloway (UM100001) Row --> [Bed Match] |
-| ACT 4: MOVEMENTS FLIGHT DECK         -->  /mockups/ward-flow/movements --> Click Callum Halloway (UM100001) Row --> [Cockpit]   |
-| ACT 5: INPATIENT HANDOVER & BOARD    -->  /mockups/ward-flow/handover  --> /mockups/ward-flow/board/rph-adult-secure            |
+| ACT 1: CAPACITY & MORNING SHEET      -->  /ward-flow/capacity                              |
+| ACT 2: ED INFLOW & REFERRAL INTAKE   -->  /ward-flow/ed/rph-ed (or /ward-flow/referrals) |
+| ACT 3: BED MATCHING ENGINE           -->  /ward-flow/referrals --> Click Callum Halloway (UM100001) Row --> [Bed Match] |
+| ACT 4: MOVEMENTS FLIGHT DECK         -->  /ward-flow/movements --> Click Callum Halloway (UM100001) Row --> [Cockpit]   |
+| ACT 5: INPATIENT HANDOVER & BOARD    -->  /ward-flow/handover  --> /ward-flow/board/rph-adult-secure            |
 +----------------------------------------------------------------------------------------------------+
 ```
 

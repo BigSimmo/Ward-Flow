@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * `/mockups/ward-flow/ed`: every emergency department, the way All wards lists every ward. It was
+ * `/ward-flow/ed`: every emergency department, the way All wards lists every ward. It was
  * a redirect to Peel ED until 9 Oct 2026, which left the rail's Emergency entry opening one
  * arbitrary department with no way to see the others side by side.
  */

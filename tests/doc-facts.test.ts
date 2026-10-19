@@ -205,7 +205,7 @@ describe("doc facts run", () => {
       'const d = env.WARD_DATABASE_PROVIDER || "supabase";\nenv.WARD_AUTH_PROVIDER || "supabase";',
     );
     put("backend/ward-flow/migrations/001-a.sql", "");
-    put("src/app/mockups/ward-flow/page.tsx", "");
+    put("src/app/ward-flow/page.tsx", "");
     put("src/app/page.tsx", "");
     put("docs/ward-flow/decisions.md", "## D-1. First\n## D-2. Second\n");
     put("package.json", JSON.stringify({ engines: { node: ">=24" } }));

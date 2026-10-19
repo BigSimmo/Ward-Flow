@@ -13,7 +13,7 @@ import path from "node:path";
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const APP_ROOT = path.join(REPO_ROOT, "src", "app");
-const WARD_FLOW_ROOT = path.join(APP_ROOT, "mockups", "ward-flow");
+const WARD_FLOW_ROOT = path.join(APP_ROOT, "ward-flow");
 
 export function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -78,7 +78,7 @@ export function hrefResolvesToRoute(href: string, routes: AppRoutes): boolean {
 }
 
 export type WardFlowRouteInfo = {
-  /** `/mockups/ward-flow/...`, matching what `usePathname()`/an `href` would carry. */
+  /** `/ward-flow/...`, matching what `usePathname()`/an `href` would carry. */
   route: string;
   dynamic: boolean;
   /** True when the page's own default export calls `redirect(...)` and renders nothing to click. */

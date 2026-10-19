@@ -520,7 +520,7 @@ export function MovementDrawer({
         <div className={d.row}>
           {accepted ? (
             <Link
-              href={`/mockups/ward-flow/board/${accepted.id}`}
+              href={`/ward-flow/board/${accepted.id}`}
               className={buttonClass({ variant: "sec", size: "sm" })}
               title={`Open ${accepted.name} Bed Board`}
             >
@@ -877,7 +877,7 @@ function MovementPhoneSheet({
             {open ? <PullNowButton movement={movement} /> : null}
             {accepted ? (
               <Link
-                href={`/mockups/ward-flow/board/${accepted.id}`}
+                href={`/ward-flow/board/${accepted.id}`}
                 className={buttonClass({ variant: "sec", size: "sm" })}
                 title={`Open ${accepted.name} Bed Board`}
               >

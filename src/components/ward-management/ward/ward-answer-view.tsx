@@ -268,7 +268,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           <WardNotFoundBody
             title="Ward not found"
             testId="ward-unit-unresolved"
-            list={{ href: "/mockups/ward-flow/wards", label: "All wards" }}
+            list={{ href: "/ward-flow/wards", label: "All wards" }}
           >
             No ward matches this link. It never falls back to a different ward.
           </WardNotFoundBody>
@@ -629,7 +629,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           foot={
             isPhone ? undefined : (
               <span className={styles.heroFoot}>
-                <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
+                <ContextualBackLink fallbackHref={`/ward-flow/ward/${unit.id}`} className={styles.backLink}>
                   <ArrowLeft size={14} aria-hidden="true" />
                   <span>Ward overview</span>
                 </ContextualBackLink>

@@ -46,7 +46,7 @@ const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").
   ssr: false,
 });
 
-const root = "/mockups/ward-flow";
+const root = "/ward-flow";
 
 export type ToolsSheetToolId =
   "figures" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo";

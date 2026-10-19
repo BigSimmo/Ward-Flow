@@ -164,7 +164,7 @@ export function SettingsTargetsColumn({
           action={
             <Link
               className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-              href="/mockups/ward-flow/governance"
+              href="/ward-flow/governance"
             >
               Full audit
             </Link>

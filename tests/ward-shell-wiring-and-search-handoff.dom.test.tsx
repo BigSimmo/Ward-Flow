@@ -27,7 +27,7 @@ vi.mock("next/navigation", () => ({
     prefetch: vi.fn(),
     back: vi.fn(),
   }),
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -125,10 +125,10 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     fireEvent.change(input, { target: { value: "UM100023" } });
 
     const fullSearchLink = screen.getByTestId("ward-global-search-full");
-    expect(fullSearchLink).toHaveAttribute("href", "/mockups/ward-flow/search");
+    expect(fullSearchLink).toHaveAttribute("href", "/ward-flow/search");
     fireEvent.click(fullSearchLink, { button: 0 });
 
-    expect(onNavigate).toHaveBeenCalledWith("/mockups/ward-flow/search");
+    expect(onNavigate).toHaveBeenCalledWith("/ward-flow/search");
     unmount();
 
     // Mounting PatientSearchPage consumes the in-memory handoff into its search input

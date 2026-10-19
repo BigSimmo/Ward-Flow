@@ -270,7 +270,7 @@ export function HandoverFlowPanel({
       </div>
 
       <div className={styles.panelFoot}>
-        <Link href="/mockups/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
+        <Link href="/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
           <Icon icon={Truck} size={14} />
           Movements
         </Link>

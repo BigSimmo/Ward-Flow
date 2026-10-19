@@ -199,7 +199,7 @@ describe("the on-call screen", () => {
       panel()
         .getByRole("link", { name: /^Open .+ workspace$/u })
         .getAttribute("href"),
-    ).toMatch(/^\/mockups\/ward-flow\/ed\//u);
+    ).toMatch(/^\/ward-flow\/ed\//u);
   });
 
   it("focuses search when / is pressed outside a field", () => {

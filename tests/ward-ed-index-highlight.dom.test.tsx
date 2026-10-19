@@ -89,9 +89,9 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     fireEvent.click(screen.getByTestId("ed-index-preview-arm-ed"));
     const body = screen.getByTestId("ed-index-preview-body");
     expect(within(body).getByText("Waiting, longest first")).toBeInTheDocument();
-    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/mockups/ward-flow/ed/arm-ed");
+    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/ward-flow/ed/arm-ed");
     fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
-    expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/mockups/ward-flow/ed/arm-ed");
+    expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/ward-flow/ed/arm-ed");
   });
 
   it("uses the Waiting by service bars as the service filter, dimming other services", () => {

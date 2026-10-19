@@ -73,11 +73,11 @@ describe("an accepted ward referral", () => {
   it("turns the patient card from Not active into the next step", () => {
     const status = buildPatientStatus(
       "idle",
-      ctx({ acceptedReferral: { unitName: "Dabakarn", boardHref: "/mockups/ward-flow/board/dab-adult" } }),
+      ctx({ acceptedReferral: { unitName: "Dabakarn", boardHref: "/ward-flow/board/dab-adult" } }),
     );
     expect(status.verdict).toBe("Accepted, no bed held");
     expect(status.meta).toBe("Accepted at Dabakarn. Next: hold the bed");
-    expect(status.cells[0]).toMatchObject({ key: "bed", href: "/mockups/ward-flow/board/dab-adult" });
+    expect(status.cells[0]).toMatchObject({ key: "bed", href: "/ward-flow/board/dab-adult" });
     expect(buildPatientStatus("idle", ctx()).verdict).toBe("Not active");
   });
 });

@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/settings",
+  usePathname: () => "/ward-flow/settings",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

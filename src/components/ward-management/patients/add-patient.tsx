@@ -798,7 +798,7 @@ export function AddPatientForm() {
                 ) : null}
                 <Link
                   className={buttonClass({ variant: "onHero", size: "sm" })}
-                  href="/mockups/ward-flow/search"
+                  href="/ward-flow/search"
                   aria-label="Back to patient search"
                 >
                   <Icon icon={ChevronLeft} size={14} />

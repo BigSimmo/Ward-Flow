@@ -6,7 +6,7 @@
  * - Registers `public/ward-flow-push-sw.js` on every Ward Flow load, not only when phone alerts are
  *   turned on, so the offline fallback page works for everyone. Same URL, scope and options as
  *   `ward-phone-push.ts`, so there is one registration and push keeps working.
- * - Removes the old `/mockups/ward-flow/` registration (F-11). Its scope left Home uncontrolled, and
+ * - Removes the old `/ward-flow/` registration (F-11). Its scope left Home uncontrolled, and
  *   as the longer match it would keep every other page on the old worker. Removing it ends any
  *   phone alerts subscribed under it, so a one-time notice says to turn them on again in Settings.
  * - A new worker version waits. A notice offers Reload; the tap tells the waiting worker to take

@@ -235,17 +235,17 @@ export { patientHref } from "@/components/ward-management/shell/ward-patient-hre
 /**
  * A ward's own screen. See `patientHref` — same two reasons.
  *
- * ⚠️ **THIS IS THE WARD ROUTE, NOT THE BED BOARD.** `/mockups/ward-flow/board/[unitId]` is a second,
+ * ⚠️ **THIS IS THE WARD ROUTE, NOT THE BED BOARD.** `/ward-flow/board/[unitId]` is a second,
  * different page about the same unit. Its Change ward control uses `wardBoardHref` below;
  * keeping the two builders distinct prevents navigation to the wrong kind of ward page.
  */
 export function unitHref(unitId: string): string {
-  return `/mockups/ward-flow/ward/${encodeURIComponent(unitId)}`;
+  return `/ward-flow/ward/${encodeURIComponent(unitId)}`;
 }
 
 /** The bed board for a unit, with the same literal-path and encoding contract as `unitHref`. */
 export function wardBoardHref(unitId: string): string {
-  return `/mockups/ward-flow/board/${encodeURIComponent(unitId)}`;
+  return `/ward-flow/board/${encodeURIComponent(unitId)}`;
 }
 
 /**
@@ -257,7 +257,7 @@ export function wardBoardHref(unitId: string): string {
  * broken URL, which is the honest failure `communityTeamById` is built to give.
  */
 export function teamHref(teamId: string): string {
-  return `/mockups/ward-flow/community/${encodeURIComponent(teamId)}`;
+  return `/ward-flow/community/${encodeURIComponent(teamId)}`;
 }
 
 /**
@@ -278,38 +278,38 @@ export function communityTeamHref(team: CommunityTeam): string {
 
 /** One emergency department's screen. See `patientHref` — same two reasons. */
 export function edHref(edId: string): string {
-  return `/mockups/ward-flow/ed/${encodeURIComponent(edId)}`;
+  return `/ward-flow/ed/${encodeURIComponent(edId)}`;
 }
 
 /** One movement's record. See `patientHref` — same two reasons. */
 export function movementHref(movementId: string): string {
-  return `/mockups/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
+  return `/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
 }
 
 /** One discharged stay, opened in the discharges board detail. The id is a synthetic admission id. */
 export function dischargeHref(admissionId: string): string {
-  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;
+  return `/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;
 }
 
 /** Fixed shell destinations live beside the parameterised builders so chrome never retypes them. */
 export function handoverHref(): string {
-  return "/mockups/ward-flow/handover";
+  return "/ward-flow/handover";
 }
 
 export function patientSearchHref(): string {
-  return "/mockups/ward-flow/search";
+  return "/ward-flow/search";
 }
 
 export function settingsHref(): string {
-  return "/mockups/ward-flow/settings";
+  return "/ward-flow/settings";
 }
 
 export function officerHref(): string {
-  return "/mockups/ward-flow/transport/officer";
+  return "/ward-flow/transport/officer";
 }
 
 export function onCallHref(): string {
-  return "/mockups/ward-flow/on-call";
+  return "/ward-flow/on-call";
 }
 
 /** The digest is a sibling GET document because it must not inherit the interactive Ward shell. */
@@ -319,7 +319,7 @@ export function digestHref(): string {
 
 /** The demonstration sign-in is a sibling page because it intentionally has no Ward shell. */
 export function signInHref(): string {
-  return "/mockups/ward-flow-sign-in";
+  return "/ward-flow-sign-in";
 }
 
 /**
@@ -333,12 +333,12 @@ export function signInHref(): string {
  * unreaching the page.
  */
 export function wardStatisticsHref(unitId: string): string {
-  return `/mockups/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;
+  return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;
 }
 
 /** The statistics detail route for one emergency department. See `wardStatisticsHref` — same reasons. */
 export function edStatisticsHref(edId: string): string {
-  return `/mockups/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;
+  return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;
 }
 
 /**
@@ -356,7 +356,7 @@ export function edStatisticsHref(edId: string): string {
  * slug here, or a name there, produces an href that looks right and resolves to nothing.
  */
 export function serviceStatisticsHref(serviceId: string): string {
-  return `/mockups/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`;
+  return `/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`;
 }
 
 /**
@@ -371,7 +371,7 @@ export function serviceStatisticsHref(serviceId: string): string {
  * wrong.
  */
 export function communityStatisticsHref(teamId: string): string {
-  return `/mockups/ward-flow/statistics/community/${encodeURIComponent(teamId)}`;
+  return `/ward-flow/statistics/community/${encodeURIComponent(teamId)}`;
 }
 
 /*
@@ -429,5 +429,5 @@ export function raiseReferralHref(target: RaiseReferralTarget): string {
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);
   if (target.teamId !== undefined) query.set("teamId", target.teamId);
   if (target.unitIds !== undefined && target.unitIds.length > 0) query.set("units", target.unitIds.join(","));
-  return `/mockups/ward-flow/referrals/new?${query.toString()}`;
+  return `/ward-flow/referrals/new?${query.toString()}`;
 }

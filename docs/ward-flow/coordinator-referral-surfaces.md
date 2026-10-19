@@ -71,7 +71,7 @@ community referral cannot reach the Command screen indirectly either.
 
 ---
 
-## Surface list 1 — the Command screen (`/mockups/ward-flow`, `coordinator/**`)
+## Surface list 1 — the Command screen (`/ward-flow`, `coordinator/**`)
 
 Every place a referral or a referral-derived count reaches the reader. **All eleven are
 movement-derived; none can carry a community referral today.**

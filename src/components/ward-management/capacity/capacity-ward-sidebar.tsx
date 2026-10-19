@@ -330,8 +330,8 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
         )}
       </div>
       <div className={styles.sidebarFooter}>
-        <Link href={`/mockups/ward-flow/ward/${row.unit.id}`}>Open ward</Link>
-        <Link href="/mockups/ward-flow/discharges">Discharge board</Link>
+        <Link href={`/ward-flow/ward/${row.unit.id}`}>Open ward</Link>
+        <Link href="/ward-flow/discharges">Discharge board</Link>
       </div>
     </>
   );

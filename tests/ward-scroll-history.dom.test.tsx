@@ -1,12 +1,12 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-let pathname = "/mockups/ward-flow/search";
+let pathname = "/ward-flow/search";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 afterEach(() => {
-  pathname = "/mockups/ward-flow/search";
+  pathname = "/ward-flow/search";
   window.history.replaceState(null, "", pathname);
 });
 
@@ -27,13 +27,13 @@ describe("Ward desktop scroll history", () => {
     fireEvent.scroll(column);
     // A shorter destination can clamp the old column during the route commit.
     column.scrollTop = 0;
-    pathname = "/mockups/ward-flow/wards";
+    pathname = "/ward-flow/wards";
     window.history.pushState(null, "", pathname);
     rerender(view());
     expect(column.scrollTop).toBe(0);
     column.scrollTop = 75;
     fireEvent.scroll(column);
-    pathname = "/mockups/ward-flow/search";
+    pathname = "/ward-flow/search";
     window.history.replaceState(null, "", pathname);
     act(() => window.dispatchEvent(new PopStateEvent("popstate")));
     rerender(view());
@@ -53,10 +53,10 @@ describe("Ward desktop scroll history", () => {
     const column = container.firstElementChild as HTMLElement;
     column.scrollTop = 420;
     fireEvent(window, new PopStateEvent("popstate"));
-    pathname = "/mockups/ward-flow/wards";
+    pathname = "/ward-flow/wards";
     rerender(view());
     expect(column.scrollTop).toBe(0);
-    pathname = "/mockups/ward-flow/search";
+    pathname = "/ward-flow/search";
     rerender(view());
     expect(column.scrollTop).toBe(0);
   });

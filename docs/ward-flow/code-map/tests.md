@@ -47,7 +47,7 @@ Evidence and limits are in the WA report (archived; see [ARCHIVE.md](../../ARCHI
 
 This part covers every Ward Flow test file: everything matching `tests/ward-*`, `tests/ui-ward-*`
 and `tests/helpers/ward-*`, plus the two further files that import from
-`src/components/ward-management` or `src/app/mockups/ward-flow` without carrying a `ward-` name
+`src/components/ward-management` or `src/app/ward-flow` without carrying a `ward-` name
 (`tests/pressure-strip.dom.test.tsx`, `tests/tracker-derivations.test.ts` — found by
 `grep -rl 'from "@/components/ward-management` over `tests/`). It also covers how these tests run:
 `vitest.config.mts`, the `chromium-mockups` Playwright project, `scripts/check-ward-expected-reds.mjs`
@@ -628,7 +628,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 #### Search hub (3 files)
 
 - **`tests/ward-hub-reconciliation-line.test.ts`** (96 lines) — the Search hub's reconciliation line
-- **`tests/ward-hub-route.test.ts`** (283 lines) — Ward Flow hub route (/mockups/ward-flow/hub)
+- **`tests/ward-hub-route.test.ts`** (283 lines) — Ward Flow hub route (/ward-flow/hub)
 - **`tests/ward-hub-screen.dom.test.tsx`** (841 lines) — Ward Flow Master Search Hub — fixture assumptions (floors the discriminating population)
 
 #### Discharges (2 files)
@@ -944,7 +944,7 @@ pass is a live, disputed question the top-level code map's "Known gaps" section 
 (two same-day audits disagree by tip). This map does not settle it. Also not checked: the internals
 of `scripts/test-focused.mjs`'s "changed files plus up to three importers" selection logic (covered
 in the sibling scripts-and-tooling map, not here); whether any of the 654 `ward-*`-named files
-additionally import `ward-management`/`mockups/ward-flow` through an indirect chain rather than a
+additionally import `ward-management`/`ward-flow` through an indirect chain rather than a
 direct import (only direct `import ... from` statements were grepped for the two non-`ward-`-named
 extras); and the full body of every file — each bullet's "what it protects" phrase is the test
 author's own `describe`/`test`/`it` title, read and lightly cleaned by script and spot-checked on

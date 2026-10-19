@@ -596,7 +596,7 @@ export function ProfilePane({ onPreview, onGoToDesk }: { onPreview: OnPreview; o
               action={
                 <Link
                   className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-                  href="/mockups/ward-flow/handover"
+                  href="/ward-flow/handover"
                 >
                   Open handover
                 </Link>
@@ -837,7 +837,7 @@ export function DataPane({
             <p className={styles.cardNote}>
               <ShieldCheck size={14} aria-hidden="true" />
               Governance and the full audit
-              <Link className={styles.inlineLink} href="/mockups/ward-flow/governance">
+              <Link className={styles.inlineLink} href="/ward-flow/governance">
                 Open
               </Link>
             </p>

@@ -28,7 +28,7 @@ const REGISTER_TABS: { id: RegisterTabId; label: string }[] = [
   { id: "refused", label: "Refused" },
 ];
 
-const ALERTS_HREF = "/mockups/ward-flow/alerts";
+const ALERTS_HREF = "/ward-flow/alerts";
 
 type ExceptionDrawerProps = {
   items: InboxItem[];

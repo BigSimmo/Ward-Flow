@@ -422,7 +422,7 @@
     {
       "id": "sign-in",
       "mockup": "sign-in-third-edition.html",
-      "route": "/mockups/ward-flow-sign-in",
+      "route": "/ward-flow-sign-in",
       "folder": "../ward-flow-sign-in",
       "component": "src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
       "testFiles": ["tests/ward-sign-in-shell.dom.test.tsx", "tests/ward-nav.test.ts"],

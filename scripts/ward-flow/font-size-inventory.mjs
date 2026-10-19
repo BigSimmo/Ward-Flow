@@ -13,7 +13,7 @@ export const FONT_SWEEP_GLOBS = [
   "src/components/ward-management/**/*.css",
   "src/components/ward-flow-sign-in/**/*.css",
   "src/components/wf/**/*.css",
-  "src/app/mockups/ward-flow*/**/*.css",
+  "src/app/ward-flow*/**/*.css",
 ];
 
 // Split only outside functions/strings: font-family spaces and var() fallbacks
@@ -134,7 +134,7 @@ export function inventoryFontSizes(stylesheets, tokenStylesheets = [], shellToke
     // Route content inherits the scoped Ward shell floor. Standalone sign-in
     // and shared primitives can render outside it (including portalled menus),
     // so never assume the shell's 12px aliases for those files.
-    const inWardShell = /^src\/(?:components\/ward-management\/|app\/mockups\/ward-flow\/)/.test(file);
+    const inWardShell = /^src\/(?:components\/ward-management\/|app\/ward-flow\/)/.test(file);
     // Outside the Ward shell, a selector-scoped local definition cannot prove every use sits
     // inside that selector, so it adds branches to the inherited token instead of replacing it.
     const base = inWardShell ? shellTokens : inherited;

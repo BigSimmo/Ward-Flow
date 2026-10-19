@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/movements/nope",
+  usePathname: () => "/ward-flow/movements/nope",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -22,8 +22,8 @@ describe("the one not-found pattern", () => {
     const main = screen.getByRole("main");
     expect(main).toHaveTextContent("No movement matches this link");
     expect(main).not.toHaveTextContent("WF-");
-    expect(screen.getByRole("link", { name: "All movements" })).toHaveAttribute("href", "/mockups/ward-flow/movements");
-    expect(screen.getByRole("link", { name: "Search patients" })).toHaveAttribute("href", "/mockups/ward-flow/search");
+    expect(screen.getByRole("link", { name: "All movements" })).toHaveAttribute("href", "/ward-flow/movements");
+    expect(screen.getByRole("link", { name: "Search patients" })).toHaveAttribute("href", "/ward-flow/search");
   });
 
   it("sends a patient-record link on to the record without quoting its internal id", () => {

@@ -73,7 +73,7 @@ export function ReferralSummaryRail({
         <section className={styles.railCard}>
           <p className={styles.eyebrow}>Next</p>
           <p className={styles.bodyMeta}>Follow {sentReferralId} on the Referrals board.</p>
-          <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
+          <Link className={styles.btn} href="/ward-flow/referrals" onClick={onClose}>
             Open Referrals board
           </Link>
         </section>
@@ -268,7 +268,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
             </button>
           </>
         ) : view === "inbox" ? (
-          <Link className={styles.btnCancelReferral} href="/mockups/ward-flow/referrals" onClick={onClose}>
+          <Link className={styles.btnCancelReferral} href="/ward-flow/referrals" onClick={onClose}>
             Open referrals board
           </Link>
         ) : sentReferralId ? (

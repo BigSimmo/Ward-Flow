@@ -9,7 +9,7 @@ const router = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   // Same reason as `tests/ward-console-controls.dom.test.tsx`: the sidebar derives its role from
   // the route, and a whole-module mock without a pathname makes `usePathname` undefined.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
 }));
 

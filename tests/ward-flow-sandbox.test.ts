@@ -12,9 +12,13 @@ import { DEVELOPER_GATED_PATH_PREFIXES } from "@/lib/developer-area/headers";
 // the pattern already proven in tests/search-results-band-adoption.test.ts.
 const REPO_ROOT = path.resolve(__dirname, "..");
 
-describe("Ward Flow is a developer-gated sandbox", () => {
-  it("is on the developer-gated prefix list, so production reaches the admin gate not a 404", () => {
-    expect(DEVELOPER_GATED_PATH_PREFIXES).toContain("/mockups/ward-flow");
+describe("Ward Flow lives at its own address, outside /mockups", () => {
+  it("has left /mockups, so production needs no exemption list to reach it", () => {
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "ward-flow", "page.tsx"))).toBe(true);
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "ward-flow-sign-in", "page.tsx"))).toBe(true);
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow"))).toBe(false);
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow-sign-in"))).toBe(false);
+    expect(DEVELOPER_GATED_PATH_PREFIXES).toEqual([]);
   });
 
   it("no longer exists as a public app route", () => {

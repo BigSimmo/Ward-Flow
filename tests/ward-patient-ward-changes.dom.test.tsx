@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/people/PT-001",
+  usePathname: () => "/ward-flow/people/PT-001",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
