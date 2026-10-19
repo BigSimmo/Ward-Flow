@@ -147,11 +147,6 @@ export type DelaysBoardProps = {
    * 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
    */
   onNotWired?: () => void;
-  /**
-   * No longer read: the board follows the address itself, the Menu's `show=severe` included
-   * (DA-15, 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
-   */
-  initialSevere?: boolean;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */

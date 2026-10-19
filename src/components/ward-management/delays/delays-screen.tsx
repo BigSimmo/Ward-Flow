@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransiti
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import { dayOf } from "@/components/ward-management/ward-clock";
+import { subscribeToLocation } from "@/components/ward-management/ward-url-state";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
@@ -32,39 +33,6 @@ export interface DelaysScreenProps {
   movements?: Movement[];
 }
 
-const LOCATION_CHANGE_EVENT = "ward-flow:locationchange";
-const HISTORY_PATCHED_KEY = "__wardFlowLocationPatched";
-
-function ensureLocationHistoryPatched() {
-  if (typeof window === "undefined") return;
-  const win = window as Window & { [HISTORY_PATCHED_KEY]?: boolean };
-  if (win[HISTORY_PATCHED_KEY]) return;
-  win[HISTORY_PATCHED_KEY] = true;
-  const origPushState = window.history.pushState.bind(window.history);
-  const origReplaceState = window.history.replaceState.bind(window.history);
-  window.history.pushState = function patchedPushState(...args) {
-    origPushState(...args);
-    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
-  };
-  window.history.replaceState = function patchedReplaceState(...args) {
-    origReplaceState(...args);
-    queueMicrotask(() => window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT)));
-  };
-}
-
-function subscribeToLocation(listener: () => void) {
-  ensureLocationHistoryPatched();
-  window.addEventListener("popstate", listener);
-  window.addEventListener(LOCATION_CHANGE_EVENT, listener);
-  return () => {
-    window.removeEventListener("popstate", listener);
-    window.removeEventListener(LOCATION_CHANGE_EVENT, listener);
-  };
-}
-/** shell-9: `?show=severe` from the Menu's Delays row. */
-function readSevereFromLocation() {
-  return new URLSearchParams(window.location.search).get("show") === "severe";
-}
 function readAliasFromLocation() {
   return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
 }
@@ -79,7 +47,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const thresholds = useDueSoonThresholds();
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
-  const showSevere = useSyncExternalStore(subscribeToLocation, readSevereFromLocation, () => false);
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
@@ -253,7 +220,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             showNotice("Not wired in this prototype.");
           }}
           banner={banner}
-          initialSevere={showSevere}
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
