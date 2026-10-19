@@ -13,6 +13,25 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+/**
+ * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
+ * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
+ * first when the row is further down.
+ */
+async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
+  const showAll = queue.getByTestId("ward-queue-show-all");
+  if (
+    !(await row.isVisible()) &&
+    (await showAll.isVisible()) &&
+    (await showAll.getAttribute("aria-expanded")) !== "true"
+  ) {
+    await showAll.click();
+  }
+  await row.click();
+  return row;
+}
+
 async function gotoCoordinator(page: Page) {
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
   // A second same-URL navigation can leave a hidden duplicate of the screen
@@ -542,7 +561,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // ineligible-routes test below, to also be an entirely different eligibility outcome) — a
     // hard-coded routed set that coincidentally matched the first movement's shortlist would
     // fail here instead of passing by coincidence.
-    await page.getByRole("region", { name: "Priority queue" }).locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-009");
     await assertRoutedMatchesShortlist(diagram, "WF-009");
   });
 
@@ -568,8 +587,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(shortlist.length).toBeGreaterThan(0);
     expect(shortlist.every((candidate) => !candidate.verdict.eligible)).toBe(true);
 
-    const selectedRow = page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-009");
-    await selectedRow.click();
+    const selectedRow = await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-009");
     await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
 
     // Every routed node is marked not-eligible on the node itself...
@@ -612,7 +630,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // `destinationUnit`'s single conflated field (`acceptedUnitId ?? referredUnitIds[0]`) used
     // to badge this "Current recorded destination", which reads as an acceptance that has not
     // happened (review Important 2).
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await pickQueueRow(queue, "WF-017");
     const bty = diagram.locator('[data-testid="ward-diagram-unit-bty-adult-secure"]');
     await expect(bty).toHaveAttribute("data-referred", "true");
     await expect(bty).not.toHaveAttribute("data-accepted", "true");
@@ -621,7 +639,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-013 carries two parallel referrals — both must be visible, not only
     // `referredUnitIds[0]`.
-    await queue.locator('[data-testid="ward-queue-row-WF-013"]').click();
+    await pickQueueRow(queue, "WF-013");
     await expect(diagram.locator('[data-testid="ward-diagram-unit-bty-older-adult"]')).toHaveAttribute(
       "data-referred",
       "true",
@@ -632,7 +650,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     );
 
     // WF-003 has an actual acceptance — a different fact, with a different badge.
-    await queue.locator('[data-testid="ward-queue-row-WF-003"]').click();
+    await pickQueueRow(queue, "WF-003");
     const accepted = diagram.locator('[data-testid="ward-diagram-unit-rph-adult-secure"]');
     await expect(accepted).toHaveAttribute("data-accepted", "true");
     await expect(accepted).toContainText("Accepted destination");
@@ -678,7 +696,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-005's accepted unit is not one of its candidates, so only the destination connector can reach it",
     ).not.toContain(acceptedUnitId);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-005"]').click();
+    await pickQueueRow(queue, "WF-005");
 
     // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
     // (Was: one destination connector with `data-recorded="accepted"`.) Exactly one unit is marked
@@ -697,7 +715,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // WF-013 carries two, so a single-referral implementation (`referredUnitIds[0]`) fails here.
     const wf013 = requireMovement("WF-013");
     expect(wf013.referredUnitIds.length, "fixture assumption: WF-013 carries two parallel referrals").toBe(2);
-    await queue.locator('[data-testid="ward-queue-row-WF-013"]').click();
+    await pickQueueRow(queue, "WF-013");
     // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
     // (Was: two destination connectors marked `data-recorded="referred"`.) Both referred units are
     // marked referred, and nothing is marked accepted.
@@ -716,7 +734,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const wf009 = requireMovement("WF-009");
     expect(wf009.acceptedUnitId).toBeUndefined();
     expect(wf009.referredUnitIds).toHaveLength(0);
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-009");
     // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
     // (Was: zero destination connectors.) No unit is marked accepted or referred.
     await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]')).toHaveCount(0);
@@ -757,7 +775,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-001 also has an open-ward candidate, so this is not blanket text",
     ).toBeGreaterThan(0);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-001"]').click();
+    await pickQueueRow(queue, "WF-001");
     await openShortlistSections(shortlist);
 
     // The locked candidates say so on their own rows; the open one does not. Both the shortlist
@@ -788,7 +806,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // A Secure movement on a Secure ward is a plain match — the note must not appear there, or it
     // would be noise a coordinator learns to ignore.
-    await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await expect(shortlist).not.toContainText("More restrictive than this movement requires");
   });
@@ -835,7 +853,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       0,
     );
 
-    await queue.locator('[data-testid="ward-queue-row-WF-301"]').click();
+    await pickQueueRow(queue, "WF-301");
 
     for (const candidate of locked) {
       const shortlistRow = shortlist.locator(`[data-testid="ward-shortlist-candidate-${candidate.unit.id}"]`);
@@ -892,7 +910,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // comment above), but its default candidate still passes all eleven gates. Every gate row
     // states its own verdict in text, not only by icon, and all eleven gates are rendered — never
     // a `.slice()`.
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await pickQueueRow(queue, "WF-017");
     await openShortlistSections(shortlist);
     const wf017Gates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(wf017Gates).toHaveCount(11);
@@ -918,7 +936,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // WF-009: guaranteed to surface a failing gate on its default candidate, unlike WF-017
     // above — this is the unconditional proof the brief's own guarded assertion could skip.
     // Selected by id, not by row position, so it does not matter which row it currently ranks.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-009");
     await openShortlistSections(shortlist);
     const wf009Gates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(wf009Gates).toHaveCount(11);
@@ -958,7 +976,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // already carries its own pre-existing "Parallel referral: BTY Adult Secure" from the
     // fixture, so the pre-click assertion checks the SPECIFIC new referral is absent, not the
     // phrase overall.
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await pickQueueRow(queue, "WF-017");
     await openShortlistSections(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
@@ -1001,7 +1019,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-017's default candidate is eligible, so only the missing selection can block Refer",
     ).toBe(true);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await pickQueueRow(queue, "WF-017");
     await openShortlistSections(shortlist);
 
     // The default candidate's gates are shown (orientation is fine)...
@@ -1065,7 +1083,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-004's default candidate is NOT its accepted destination",
     ).not.toBe(wf004.acceptedUnitId);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
     await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
@@ -1095,8 +1113,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
-    const selectedRow = queue.getByTestId("ward-queue-row-WF-009");
-    await selectedRow.click();
+    const selectedRow = await pickQueueRow(queue, "WF-009");
     await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
     const passFlags = await shortlist
       .locator('[data-testid^="ward-gate-"]')
@@ -1130,7 +1147,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const movement = requireMovement("WF-009");
     expect(movement.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-009");
     await expect(shortlist.locator('[data-testid="ward-decline-row"]')).toHaveCount(movement.declines.length);
   });
 
@@ -1152,8 +1169,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
     // panel may honestly suggest.
-    const ineligibleRow = queue.locator('[data-testid="ward-queue-row-WF-009"]');
-    await ineligibleRow.click();
+    const ineligibleRow = await pickQueueRow(queue, "WF-009");
     await expect(ineligibleRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).not.toContainText("Suggested destination");
     await expect(shortlist).toContainText("No eligible destination found yet.");
@@ -1162,8 +1178,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // "Suggested destination" must not appear here either. That referral — BTY Adult Secure,
     // selectable via the diagram's shared selection state — passes every gate, so presenting it
     // as fact carries no hidden risk of recommending a failing unit.
-    const referredRow = queue.locator('[data-testid="ward-queue-row-WF-017"]');
-    await referredRow.click();
+    const referredRow = await pickQueueRow(queue, "WF-017");
     await expect(referredRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
@@ -1191,7 +1206,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // WF-009: every candidate is ineligible, so override is the only human path that can
     // place a patient here — exactly the scenario the control exists for.
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-009");
     await openShortlistSections(shortlist);
 
     const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");
@@ -1257,7 +1272,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // not queue rank — was never meant to depend on. WF-002 (destination_review, no legal form
     // at all) is a stable, always-referable movement, selected explicitly by id like every other
     // test in this file already does.
-    await queue.locator('[data-testid="ward-queue-row-WF-002"]').click();
+    await pickQueueRow(queue, "WF-002");
 
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
@@ -1301,7 +1316,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
-    await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf004Default.unit.id}"]`).click();
 
@@ -1358,7 +1373,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const refusalMarker = page.getByTestId("ward-coordinator-refusal-marker");
     await expect(refusalMarker).toHaveText("0 refused");
 
-    await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf004Default.unit.id}"]`).click();
 
@@ -1448,7 +1463,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const queue = page.getByRole("region", { name: "Priority queue" });
     // v10 phone Home lists the first rows with "Show all"; WF-002 sits further down.
     await queue.getByRole("button", { name: /^Show all/ }).click();
-    await queue.locator('[data-testid="ward-queue-row-WF-002"]').click();
+    await pickQueueRow(queue, "WF-002");
 
     // No longer pinned (see this test's own doc comment) — the control sits in normal document
     // flow once the shortlist opens, so reaching it is an ordinary scroll, exactly like a phone
@@ -1496,7 +1511,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-009");
 
     // The pre-authored fixture record renders correctly before anything is dispatched.
     const record = shortlist.getByTestId("ward-shortlist-escalation-record");
@@ -1526,8 +1541,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Persists across a selection change and back — this is a fact stamped on the movement
     // (`movement.escalation`), not local component state that a re-render could lose.
-    await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await pickQueueRow(queue, "WF-017");
+    await pickQueueRow(queue, "WF-009");
     await expect(shortlist.getByTestId("ward-shortlist-escalation-record")).toContainText(NEW_CONTACT);
     await expect(shortlist.getByTestId("ward-shortlist-escalation-toggle")).toHaveText("Update escalation");
   });

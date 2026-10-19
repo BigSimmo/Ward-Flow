@@ -3,6 +3,25 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
 /**
+ * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
+ * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
+ * first when the row is further down.
+ */
+async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
+  const showAll = queue.getByTestId("ward-queue-show-all");
+  if (
+    !(await row.isVisible()) &&
+    (await showAll.isVisible()) &&
+    (await showAll.getAttribute("aria-expanded")) !== "true"
+  ) {
+    await showAll.click();
+  }
+  await row.click();
+  return row;
+}
+
+/**
  * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
  * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
  * inside them; idempotent, so it is safe after every queue selection.
@@ -1252,7 +1271,7 @@ test.describe("@mockup Role switcher — the loop", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    await queue.getByTestId("ward-queue-row-WF-315").click();
+    await pickQueueRow(queue, "WF-315");
     await openShortlistSections(shortlist);
     await shortlist.getByTestId("ward-shortlist-candidate-rph-adult-secure").click();
     // 🔴 2026-09-17: retargeted from `fsh-adult-secure` to `bty-adult-secure`. Re-measured against
