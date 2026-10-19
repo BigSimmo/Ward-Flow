@@ -280,6 +280,9 @@ export const NO_CHANGE_REASON_VALUE = "";
 export const URGENCY_REASON_UNCHOSEN =
   "Choose why the urgency is changing before recording it. None is chosen for you: an unpicked reason would be filed as a clinical reassessment nobody made.";
 
+export const LEGAL_STATUS_UNCHOSEN =
+  "Choose the new legal status before recording the change. None is chosen for you: a status nobody picked would be filed as the patient's legal status.";
+
 export const LEGAL_STATUS_REASON_UNCHOSEN =
   "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
 export const NO_URGENCY_VALUE = "";

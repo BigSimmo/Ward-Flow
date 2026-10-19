@@ -6,7 +6,7 @@ import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { AUDITABLE_FORM_CODES } from "../ward-audit";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
-import { formatStatutoryDateTime, parseDateTimeInput, toDateInputValue } from "./ward-form-time-input";
+import { formatStatutoryDateTime, parseDateTimeInput } from "./ward-form-time-input";
 import styles from "./ward-tools-sheet.module.css";
 
 function formLabel(code: string) {
@@ -32,14 +32,16 @@ export function WardFormTimes() {
   // date uses, so a typed date compares against the same day the board shows.
   const { dayZero } = useWardFlowSelect("dayZero");
   const now = useMemo(() => new Date(dayZero.getTime() + demoNow * 60_000), [dayZero, demoNow]);
-  const [code, setCode] = useState<string>("1A");
-  const [date, setDate] = useState(() => toDateInputValue(now));
+  // Form and date start empty too: a form type or a date already chosen would stand in for one the
+  // person read off the form (rule D5, and the owner rule that MHA forms are never prefilled).
+  const [code, setCode] = useState("");
+  const [date, setDate] = useState("");
   // The time starts empty: the result shows only a time the person typed (rule D5).
   const [time, setTime] = useState("");
   const dateId = useId();
   const timeId = useId();
   // An empty time field is not a typed time, so it never reads as midnight (rule D5).
-  const typed = time ? parseDateTimeInput(date, time) : null;
+  const typed = code && date && time ? parseDateTimeInput(date, time) : null;
 
   return (
     <div className={styles.toolBody} data-testid="ward-form-times">
@@ -53,6 +55,7 @@ export function WardFormTimes() {
           value={code}
           onChange={(event) => setCode(event.target.value)}
         >
+          <option value="">Choose a form</option>
           {/* Every form a Legal forms record can carry, so any form open there can be picked here. */}
           {AUDITABLE_FORM_CODES.map((candidate) => (
             <option key={candidate} value={candidate}>

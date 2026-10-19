@@ -300,7 +300,8 @@ export function AddPatientForm() {
   const facility = chosenFacility ?? deskFacility;
 
   const [triageUrgency, setTriageUrgency] = useState<TriageLevel>("4");
-  const [legalStatus, setLegalStatus] = useState<StatutoryLegalStatus>("Voluntary");
+  // Unchosen until a person picks one: legal status is never prefilled (owner rule, 19 Oct 2026).
+  const [legalStatus, setLegalStatus] = useState<StatutoryLegalStatus | "">("");
   const [presentingComplaint, setPresentingComplaint] = useState<string>("assessment");
   const [clinicalNotes, setClinicalNotes] = useState<string>("");
 
@@ -336,7 +337,7 @@ export function AddPatientForm() {
       facility: string;
       healthService: string;
       triageUrgency: TriageLevel;
-      legalStatus: StatutoryLegalStatus;
+      legalStatus: StatutoryLegalStatus | "";
       presentingComplaint: string;
     };
   } | null>(null);
@@ -366,7 +367,7 @@ export function AddPatientForm() {
     facility !== deskFacility;
   const intakeChanged =
     triageUrgency !== "4" ||
-    legalStatus !== "Voluntary" ||
+    legalStatus !== "" ||
     presentingComplaint !== "assessment" ||
     clinicalNotes.trim().length > 0;
   const isDirty = identityChanged || placeChanged || intakeChanged;
@@ -441,7 +442,7 @@ export function AddPatientForm() {
     setHealthService("");
     setFacility(null);
     setTriageUrgency("4");
-    setLegalStatus("Voluntary");
+    setLegalStatus("");
     setPresentingComplaint("assessment");
     setClinicalNotes("");
     setAssignedSearch(null);
@@ -526,7 +527,8 @@ export function AddPatientForm() {
       }
       if (healthService.trim()) params.set("service", healthService.trim());
       params.set("ats", triageUrgency);
-      params.set("legal", legalStatus);
+      // Only a status the person chose: an unchosen one leaves the referral's own field to choose.
+      if (legalStatus) params.set("legal", legalStatus);
       const diagBlock = COMPLAINT_TO_DIAGNOSIS_BLOCK[presentingComplaint];
       if (diagBlock) params.set("complaint", diagBlock);
       router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
@@ -1181,7 +1183,7 @@ export function AddPatientForm() {
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel}>Legal status</span>
                   </div>
-                  <Segmented
+                  <Segmented<StatutoryLegalStatus | "">
                     label="Legal status"
                     items={LEGAL_ITEMS}
                     value={legalStatus}

@@ -126,6 +126,9 @@ const URGENCY_REASON_UNCHOSEN =
 const UNWIND_REASON_UNCHOSEN =
   "Choose a reason before recording this. None is chosen for you: an unpicked reason would be filed as the coordinator's own stated reason.";
 
+const LEGAL_STATUS_UNCHOSEN =
+  "Choose the new legal status before recording the change. None is chosen for you: a status nobody picked would be filed as the patient's legal status.";
+
 const LEGAL_STATUS_REASON_UNCHOSEN =
   "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
 
@@ -623,7 +626,9 @@ export function ShortlistPanel({
   });
   const [legalStatusChangeOpen, setLegalStatusChangeOpen] = useState(false);
   const [legalStatusDraft, setLegalStatusDraft] = useState<{
-    legalStatus: LegalStatus;
+    // Starts UNCHOSEN as well (owner rule, 19 Oct 2026): legal status is never prefilled, so the
+    // current status or a default left standing cannot be recorded as a change nobody chose.
+    legalStatus: LegalStatus | undefined;
     reason: LegalStatusChangeReason | undefined;
     // Starts UNCHOSEN. `recorded_by_treating_team` used to be pre-selected, so a coordinator
     // correcting a mistyped legal status who never touched the control filed the correction as a
@@ -662,7 +667,7 @@ export function ShortlistPanel({
     setUrgencyChangeOpen(false);
     setUrgencyDraft({ urgency: movement?.urgency ?? 1, reason: undefined });
     setLegalStatusChangeOpen(false);
-    setLegalStatusDraft({ legalStatus: movement?.legalStatus ?? "Voluntary", reason: undefined });
+    setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
     setReleasePullOpen(false);
     setReleasePullReason(undefined);
     setCancelTransportOpen(false);
@@ -1029,6 +1034,14 @@ export function ShortlistPanel({
     setUrgencyChangeOpen(false);
   }
 
+  // Why the legal status change cannot be recorded yet: the new status first, then the reason.
+  const legalStatusBlocked =
+    legalStatusDraft.legalStatus === undefined
+      ? LEGAL_STATUS_UNCHOSEN
+      : legalStatusDraft.reason === undefined
+        ? LEGAL_STATUS_REASON_UNCHOSEN
+        : undefined;
+
   /**
    * Records the legal status change and nothing else. A status change can make an already
    * accepted destination unlawful (`destinationNoLongerLawful`, surfaced on the Exceptions
@@ -1038,7 +1051,7 @@ export function ShortlistPanel({
     event.preventDefault();
     // A real <form>: Enter inside a field submits it whatever the button advertises, and the
     // reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
-    if (legalStatusDraft.reason === undefined) return;
+    if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
     dispatch({
       type: "CHANGE_LEGAL_STATUS",
       role: "coordinator",
@@ -2385,7 +2398,11 @@ export function ShortlistPanel({
               data-testid="ward-change-legal-status-toggle"
               aria-expanded={legalStatusChangeOpen}
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-              onClick={() => setLegalStatusChangeOpen((open) => !open)}
+              onClick={() => {
+                setLegalStatusChangeOpen((open) => !open);
+                // Blank on every open or close, so an earlier choice never stands in for a new one.
+                setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
+              }}
             >
               Change legal status
             </button>
@@ -2472,11 +2489,15 @@ export function ShortlistPanel({
               <select
                 id="ward-change-legal-status-value"
                 className={styles.shortlistOverrideSelect}
-                value={legalStatusDraft.legalStatus}
+                value={legalStatusDraft.legalStatus ?? ""}
                 onChange={(event) =>
-                  setLegalStatusDraft((current) => ({ ...current, legalStatus: event.target.value as LegalStatus }))
+                  setLegalStatusDraft((current) => ({
+                    ...current,
+                    legalStatus: event.target.value === "" ? undefined : (event.target.value as LegalStatus),
+                  }))
                 }
               >
+                <option value="">Choose a legal status</option>
                 {LEGAL_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -2510,18 +2531,16 @@ export function ShortlistPanel({
               <button
                 type="submit"
                 className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                aria-disabled={legalStatusDraft.reason === undefined ? "true" : undefined}
-                aria-describedby={
-                  legalStatusDraft.reason === undefined ? "ward-change-legal-status-reason-blocked" : undefined
-                }
-                title={legalStatusDraft.reason === undefined ? LEGAL_STATUS_REASON_UNCHOSEN : undefined}
-                onClick={legalStatusDraft.reason === undefined ? ignoreUnavailableActivation : undefined}
+                aria-disabled={legalStatusBlocked ? "true" : undefined}
+                aria-describedby={legalStatusBlocked ? "ward-change-legal-status-reason-blocked" : undefined}
+                title={legalStatusBlocked}
+                onClick={legalStatusBlocked ? ignoreUnavailableActivation : undefined}
               >
                 Record legal status change
               </button>
-              {legalStatusDraft.reason === undefined ? (
+              {legalStatusBlocked ? (
                 <span id="ward-change-legal-status-reason-blocked" className="sr-only">
-                  {LEGAL_STATUS_REASON_UNCHOSEN}
+                  {legalStatusBlocked}
                 </span>
               ) : null}
             </form>

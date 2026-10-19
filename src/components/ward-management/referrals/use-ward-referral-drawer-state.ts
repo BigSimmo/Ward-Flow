@@ -368,11 +368,11 @@ export function useWardReferralDrawerState({
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
       urlPrefill?.legal ??
+      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026). A
+      // community referral used to start at "Voluntary" when nothing was recorded.
       (defaultPatient.legalStatus.startsWith("Form")
         ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
-        : destType === "community" && defaultPatient.legalStatus === NOT_RECORDED
-          ? "Voluntary"
-          : defaultPatient.legalStatus),
+        : defaultPatient.legalStatus),
   );
   const [urgency, setUrgency] = useState(
     kept?.urgency ??
@@ -645,7 +645,7 @@ export function useWardReferralDrawerState({
 
     // Synchronize all form fields with selected patient profile
     const baseLegal = p.legalStatus.startsWith("Form") ? p.legalStatus.split(" ").slice(0, 2).join(" ") : p.legalStatus;
-    setLegalStatus(destType === "community" && baseLegal === NOT_RECORDED ? "Voluntary" : baseLegal);
+    setLegalStatus(baseLegal);
     setUrgency(p.urgency);
     setAtsCategory(undefined);
     setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
@@ -1135,7 +1135,6 @@ export function useWardReferralDrawerState({
     setSelectedRecipient("");
     setConfirmationOpen(false);
     setFlowError(null);
-    if (kind === "community" && legalStatus === NOT_RECORDED) setLegalStatus("Voluntary");
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
   }
 
