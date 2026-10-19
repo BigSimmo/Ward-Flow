@@ -431,7 +431,13 @@ describe("the ward and ED TV views", () => {
     expect(figure("ed-tv-no-bed")).toBe(shown(sheet.noBed));
     expect(figure("ed-tv-bed-found")).toBe(shown(sheet.held));
     expect(sheet.summary.waiting).toBeGreaterThan(0);
-    expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(sheet.people.length);
+    // One row fewer than the other lists, so the busiest ED still fits a 1080p screen; the rest are counted.
+    const peopleShown = Math.min(sheet.people.length, TV_ROW_LIMIT - 1);
+    expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(peopleShown);
+    const peopleMore = sheet.morePeople + sheet.people.length - peopleShown;
+    if (peopleMore > 0) {
+      expect(screen.getByTestId("ed-tv-people-panel")).toHaveTextContent(`and ${peopleMore} more waiting`);
+    }
     expect(within(screen.getByTestId("ed-tv-trend-panel")).getAllByRole("listitem").length).toBe(sheet.trend.length);
     expect(screen.getByTestId("ed-tv-beds-ready")).toHaveTextContent(String(sheet.readyInService));
   });

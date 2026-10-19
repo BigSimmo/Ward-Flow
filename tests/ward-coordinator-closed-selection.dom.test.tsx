@@ -6,6 +6,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * **A CLOSED MOVEMENT STAYS SELECTED ON THE COORDINATOR SCREEN.**
@@ -67,12 +68,16 @@ function Probe() {
 }
 
 function renderScreen() {
-  return render(
+  const result = render(
     <WardFlowProvider initialNow={NOW}>
       <CoordinatorScreen />
       <Probe />
     </WardFlowProvider>,
   );
+  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+  showWholeHomeQueue();
+  return result;
 }
 
 function queueRow(movementId: string) {

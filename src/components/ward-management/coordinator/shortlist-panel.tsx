@@ -6,7 +6,7 @@ import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { Button, Frac, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { Button, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -295,7 +295,7 @@ function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonl
  * either direction — asserting an absence is the same overreach as asserting the seven-day figure
  * that was deleted on 2026-08-23.
  */
-function legalFormLine(movement: Movement, now: Instant, phone = false) {
+function legalFormLine(movement: Movement, now: Instant) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
   if (movement.legalForm.dueAt === undefined) {
@@ -304,12 +304,12 @@ function legalFormLine(movement: Movement, now: Instant, phone = false) {
   }
   const remaining = minutesUntil(movement.legalForm.dueAt, now);
   // "passed its deadline" is pinned by tests/ward-legal-figure-guard.test.ts (finding 7).
+  // Plain times on every layout ("2d 8h ago", "6h 40m"), never a bare count of minutes: the same
+  // formatter as the queue's form line in ward-priority.ts (Home placement redesign, Josh 19 Oct
+  // 2026). Only the recorded deadline is reformatted; nothing new is computed.
   return remaining < 0
-    ? `${formCode} passed its deadline ${Math.abs(remaining)} min ago`
-    : phone
-      ? // Phone (v10): hours and minutes ("6h 40m"), never a bare count of minutes.
-        `${formCode} due in ${splitDuration(remaining)}`
-      : `${formCode} due in ${remaining} min`;
+    ? `${formCode} passed its deadline ${splitDuration(Math.abs(remaining))} ago`
+    : `${formCode} due in ${splitDuration(remaining)}`;
 }
 
 /**
@@ -406,6 +406,19 @@ function Fact({
         {urgent ? <StatusGlyph tone="danger" size={9} /> : null}
         {value}
       </dd>
+    </div>
+  );
+}
+
+/**
+ * One fact in the desktop details line ("Male · Adult · Open · Form 4C"): the label is kept for
+ * assistive technology and the value shows on screen (Home placement redesign, Josh 19 Oct 2026).
+ */
+function InlineFact({ label, value, testId }: { label: string; value: string; testId?: string }) {
+  return (
+    <div className={shortlistStyles.inlineFact} data-testid={testId}>
+      <dt className="sr-only">{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
 }
@@ -1219,6 +1232,66 @@ export function ShortlistPanel({
     );
   }
 
+  // L3 / decision 3 (site review, 12 Oct 2026, Recommended): once a destination has accepted,
+  // the card stops offering beds and Refer and shows the one next step as its primary: hold the
+  // bed, or book transport once the bed is held. Both open the patient page, where the hold
+  // (with its override reasons and Undo) and the booking (with the sending team's answers)
+  // already live, so no second copy of either flow is built here.
+  // Home placement redesign (Josh 19 Oct 2026): the next step leads, directly under the patient's
+  // name and above the details, so its buttons are the first thing in the panel.
+  const nextStepSection =
+    placementNextStep !== undefined && acceptedUnit ? (
+      <section
+        aria-label="Next step"
+        className={`${shortlistStyles.candidatesSection} ${shortlistStyles.nextStepLead}`}
+        data-testid="ward-shortlist-next-step"
+        data-step={placementNextStep}
+      >
+        <h4 className={styles.shortlistSectionHeading}>Next step</h4>
+        <p className={styles.shortlistCandidateCapacity}>
+          {placementNextStep === "hold"
+            ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
+            : placementNextStep === "book"
+              ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
+              : placementNextStep === "release" && hold
+                ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
+                : `Transport is booked to ${acceptedUnit.name}.`}
+        </p>
+        <div className={styles.shortlistActionRow}>
+          <Link
+            href={movementHref(movement.id)}
+            data-testid={
+              placementNextStep === "hold"
+                ? "ward-shortlist-hold-bed"
+                : placementNextStep === "release"
+                  ? "ward-shortlist-move-or-release"
+                  : "ward-shortlist-book-transport"
+            }
+            className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+          >
+            {placementNextStep === "hold"
+              ? "Hold the bed"
+              : placementNextStep === "book"
+                ? "Book transport"
+                : placementNextStep === "release"
+                  ? "Move or release"
+                  : "Open patient"}
+          </Link>
+          {otherBedsFor === movement.id ? null : (
+            <button
+              type="button"
+              data-testid="ward-shortlist-find-another-bed"
+              className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+              aria-expanded={false}
+              onClick={() => setOtherBedsFor(movement.id)}
+            >
+              Find another bed
+            </button>
+          )}
+        </div>
+      </section>
+    ) : null;
+
   return (
     <div className={`${styles.shortlistBody} ${shortlistStyles.body}`} data-testid={`ward-shortlist-${movement.id}`}>
       {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
@@ -1256,6 +1329,7 @@ export function ShortlistPanel({
             </span>
           </div>
         </div>
+        {nextStepSection}
         {isPhone ? (
           <dl className={shortlistStyles.factGrid} data-phone="true">
             <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
@@ -1268,23 +1342,39 @@ export function ShortlistPanel({
             {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
           </dl>
         ) : (
-          <dl className={shortlistStyles.factGrid}>
-            <Fact label="Sex" value={movement.sex} />
-            <Fact label="Age group" value={movement.cohort} />
-            <Fact label="Security" value={movement.security} />
-            <Fact label="Legal" value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus} />
-            <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
-            <Fact label="Target" value={durMinutes(targetMinutes)} />
-            {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
-          </dl>
+          // Desktop: two compact lines instead of the six-box grid (Home placement redesign, Josh
+          // 19 Oct 2026). Each fact keeps its label for assistive technology; overdue is a glyph
+          // and the word, never colour alone.
+          <div className={shortlistStyles.factLines} data-testid="ward-shortlist-facts">
+            <dl className={shortlistStyles.factLine}>
+              <InlineFact label="Sex" value={movement.sex} />
+              <InlineFact label="Age group" value={movement.cohort} />
+              <InlineFact label="Security" value={movement.security} />
+              <InlineFact
+                label="Legal"
+                value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}
+              />
+              {suburbLabel ? <InlineFact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
+            </dl>
+            <p
+              className={`${shortlistStyles.factLine} ${shortlistStyles.waitLine} ${shortlistStyles.tabularNum}`}
+              data-urgent={overTarget ? "true" : undefined}
+              data-testid="ward-shortlist-wait-line"
+            >
+              {overTarget ? <StatusGlyph tone="danger" size={9} /> : null}
+              {`Waiting ${durMinutes(waitedMinutes)} (target ${durMinutes(targetMinutes)})`}
+              {overTarget ? <span className={shortlistStyles.waitOverdue}>· overdue</span> : null}
+            </p>
+          </div>
         )}
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
-            {`${legalFormLine(movement, now, isPhone)} · ${movement.legalStatus}`}
+            {`${legalFormLine(movement, now)} · ${movement.legalStatus}`}
             {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
         ) : null}
-        {overTarget || movement.urgency === 1 ? (
+        {/* Desktop states the tier targets once, at the panel foot; the phone sheet keeps it here. */}
+        {isPhone && (overTarget || movement.urgency === 1) ? (
           <p className={shortlistStyles.targetNote}>{TIER_TARGETS_NOTE}</p>
         ) : null}
 
@@ -1292,7 +1382,9 @@ export function ShortlistPanel({
           <>
             {movement.acceptedUnitId ? (
               acceptedUnit ? (
-                <>
+                // The destination and its desk link share one row (Home placement redesign, Josh
+                // 19 Oct 2026); the link wraps under it only when the panel is too narrow.
+                <div className={shortlistStyles.destRow}>
                   <span className={`${styles.shortlistAcceptedBadge} ${shortlistStyles.destLine}`} data-tone="good">
                     Accepted destination: {acceptedUnit.name}
                   </span>
@@ -1305,10 +1397,12 @@ export function ShortlistPanel({
                         flowSetFocusMovementId?.(movementId);
                       }}
                     >
-                      {`Open ${acceptedUnit.name} desk →`}
+                      {/* The ward is named on the same row, so the visible words stay short; a
+                          screen reader still hears which desk opens. */}
+                      Open <SrOnly>{acceptedUnit.name}</SrOnly> desk →
                     </Link>
                   ) : null}
-                </>
+                </div>
               ) : (
                 <span className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine}`} data-tone="danger">
                   Accepted destination could not be resolved.
@@ -1510,8 +1604,11 @@ export function ShortlistPanel({
                 }
               }}
             >
-              <Frac done={metCount} total={checkedCount} label="checks clear" />
-              {notMetCount > 0 ? <span className={shortlistStyles.checksClearWarn}>· {notMetCount} open</span> : null}
+              {/* Labelled in words, not a bare "8/9 · 1 open" (Home placement redesign, Josh 19 Oct 2026). */}
+              {`Checks: ${metCount} of ${checkedCount} met`}
+              {notMetCount > 0 ? (
+                <span className={shortlistStyles.checksClearWarn}>, {notMetCount} to review</span>
+              ) : null}
             </button>
             <div className={shortlistStyles.gateFilterGroup} role="group" aria-label="Filter eligibility checks">
               <button
@@ -1527,7 +1624,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                All ({sortedGates.length})
+                All checks ({sortedGates.length})
               </button>
               <button
                 type="button"
@@ -1542,7 +1639,7 @@ export function ShortlistPanel({
                   }
                 }}
               >
-                Open ({notMetCount})
+                Still to review ({notMetCount})
               </button>
             </div>
           </div>
@@ -1613,64 +1710,6 @@ export function ShortlistPanel({
         </section>
       ) : null}
 
-      {/*
-        L3 / decision 3 (site review, 12 Oct 2026, Recommended): once a destination has accepted,
-        the card stops offering beds and Refer and shows the one next step as its primary: hold the
-        bed, or book transport once the bed is held. Both open the patient page, where the hold
-        (with its override reasons and Undo) and the booking (with the sending team's answers)
-        already live, so no second copy of either flow is built here.
-      */}
-      {placementNextStep !== undefined && acceptedUnit ? (
-        <section
-          aria-label="Next step"
-          className={shortlistStyles.candidatesSection}
-          data-testid="ward-shortlist-next-step"
-          data-step={placementNextStep}
-        >
-          <h4 className={styles.shortlistSectionHeading}>Next step</h4>
-          <p className={styles.shortlistCandidateCapacity}>
-            {placementNextStep === "hold"
-              ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
-              : placementNextStep === "book"
-                ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
-                : placementNextStep === "release" && hold
-                  ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
-                  : `Transport is booked to ${acceptedUnit.name}.`}
-          </p>
-          <div className={styles.shortlistActionRow}>
-            <Link
-              href={movementHref(movement.id)}
-              data-testid={
-                placementNextStep === "hold"
-                  ? "ward-shortlist-hold-bed"
-                  : placementNextStep === "release"
-                    ? "ward-shortlist-move-or-release"
-                    : "ward-shortlist-book-transport"
-              }
-              className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-            >
-              {placementNextStep === "hold"
-                ? "Hold the bed"
-                : placementNextStep === "book"
-                  ? "Book transport"
-                  : placementNextStep === "release"
-                    ? "Move or release"
-                    : "Open patient"}
-            </Link>
-            {otherBedsFor === movement.id ? null : (
-              <button
-                type="button"
-                data-testid="ward-shortlist-find-another-bed"
-                className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-                aria-expanded={false}
-                onClick={() => setOtherBedsFor(movement.id)}
-              >
-                Find another bed
-              </button>
-            )}
-          </div>
-        </section>
-      ) : null}
       {placementNextStep === undefined || otherBedsFor === movement.id ? (
         <>
           <section aria-label="Candidate units" className={shortlistStyles.candidatesSection}>
@@ -2269,34 +2308,34 @@ export function ShortlistPanel({
       })()}
 
       {(() => {
-        const declineBadge = movement.declines.length === 0 ? "0 declines" : `${movement.declines.length} declined`;
-        const declineTone = movement.declines.length === 0 ? "good" : "warn";
-
+        // Less clutter (Home placement redesign, Josh 19 Oct 2026): no "Declines · 0" disclosure
+        // when nothing has been declined.
+        if (movement.declines.length === 0) return null;
         return (
           <details className={`${shortlistStyles.detailDisclosure} source-print`} aria-label="Declines">
-            <summary className={shortlistStyles.tabularNum} data-badge={declineBadge} data-badge-tone={declineTone}>
+            <summary
+              className={shortlistStyles.tabularNum}
+              data-badge={`${movement.declines.length} declined`}
+              data-badge-tone="warn"
+            >
               Declines · {movement.declines.length}
             </summary>
-            {movement.declines.length === 0 ? (
-              <p className={styles.placeholder}>No destination has declined this movement.</p>
-            ) : (
-              <ul className={styles.shortlistDeclineList}>
-                {movement.declines.map((decline, index) => {
-                  const unit = units.find((candidate) => candidate.id === decline.unitId);
-                  return (
-                    <li
-                      key={`${decline.unitId}-${index}`}
-                      data-testid="ward-decline-row"
-                      className={styles.shortlistDeclineRow}
-                    >
-                      <strong>{unit ? unit.name : "Unresolved unit"}</strong>
-                      <span>{decline.reason.replace(/_/g, " ")}</span>
-                      <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <ul className={styles.shortlistDeclineList}>
+              {movement.declines.map((decline, index) => {
+                const unit = units.find((candidate) => candidate.id === decline.unitId);
+                return (
+                  <li
+                    key={`${decline.unitId}-${index}`}
+                    data-testid="ward-decline-row"
+                    className={styles.shortlistDeclineRow}
+                  >
+                    <strong>{unit ? unit.name : "Unresolved unit"}</strong>
+                    <span>{decline.reason.replace(/_/g, " ")}</span>
+                    <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
+                  </li>
+                );
+              })}
+            </ul>
           </details>
         );
       })()}
@@ -2634,7 +2673,12 @@ export function ShortlistPanel({
           fact, never a toast), and the control to record a new one only while there genuinely is
           no eligible destination — the same `topEligible === undefined` condition the header
           above already uses for "No eligible destination found yet." */}
-      {movement.escalation || topEligible === undefined ? (
+      {/* No contradiction (Home placement redesign, Josh 19 Oct 2026): once a destination has
+          accepted, the "No eligible destination" prompt and its Record control are hidden. A
+          recorded escalation still shows, because it is a fact on the movement. The recorded
+          acceptance decides, not the unit lookup: an accepted ward that no longer resolves is
+          still an acceptance. */}
+      {movement.escalation || (topEligible === undefined && !movement.acceptedUnitId) ? (
         <section aria-label="Escalation" className={shortlistStyles.escalationSection}>
           <h4 className={styles.shortlistSectionHeading}>Escalation</h4>
           {movement.escalation ? (
@@ -2645,7 +2689,7 @@ export function ShortlistPanel({
               {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)} — tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"} — contact: "${movement.escalation.contact}".`}
             </p>
           ) : null}
-          {topEligible === undefined ? (
+          {topEligible === undefined && !movement.acceptedUnitId ? (
             <>
               {!movement.escalation ? (
                 <p className={styles.shortlistSectionNote}>
@@ -2712,6 +2756,16 @@ export function ShortlistPanel({
           </ul>
         )}
       </details>
+      {/* Desktop: the tier targets once, as small text at the panel foot rather than under the
+          patient (Home placement redesign, Josh 19 Oct 2026). */}
+      {isPhone ? null : (
+        <p
+          className={`${shortlistStyles.targetNote} ${shortlistStyles.footNote}`}
+          data-testid="ward-shortlist-tier-targets"
+        >
+          {TIER_TARGETS_NOTE}
+        </p>
+      )}
     </div>
   );
 }

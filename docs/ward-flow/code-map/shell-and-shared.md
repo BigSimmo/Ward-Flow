@@ -398,11 +398,13 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   `ward-service-bed-alerts.ts`. 1 importer (`layout.tsx`).
 - **`shell/ward-rail.module.css`** (2,827 lines) — the largest stylesheet in this part; must keep
   its `max-width: 1000px` breakpoint exactly matched to `ward-flow-layout.module.css`'s own.
-- **`shell/ward-broadcast-banner.tsx`** (121 lines) — `WardBroadcastBanner`: renders the single
+- **`shell/ward-broadcast-banner.tsx`** (223 lines) — `WardBroadcastBanner`: renders the single
   active WA-wide broadcast alert (`getActiveBroadcastAlert`, `alerts/ward-broadcast-model.ts`) with
   a severity badge, time-remaining, acknowledgement count and an "Acknowledge" button that dispatches
   `ACKNOWLEDGE_BROADCAST_ALERT`; renders nothing when there is no active alert. 1 importer
-  (`layout.tsx`).
+  (`layout.tsx`). Its body (answers, counts, actions) lives in
+  `shell/ward-broadcast-banner-body.tsx` (399 lines), a server-rendered `next/dynamic` chunk preloaded
+  when idle, so the shared shell's first load does not carry it.
 - **`shell/ward-broadcast-banner.module.css`** (193 lines) — its styles.
 - **`shell/ward-live-region.tsx`** (105 lines) — the shell's one polite `aria-live` region.
   `announceToWardShell(text)` is the module-level store every announcement in the shell goes
