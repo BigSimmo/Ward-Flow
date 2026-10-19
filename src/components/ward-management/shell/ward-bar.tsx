@@ -332,8 +332,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const alertsScreenOpen = accessNav(ALERTS_ACCESS_ENTRY).length > 0;
   const alertsQueueForDesk = wardTasksAreActionableForRole(shellRole);
   const oneAlertsQueue = alertsScreenOpen && alertsQueueForDesk;
-  const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
-  const onPatientsPage = pathname.replace(/\/+$/u, "") === patientSearchHref();
+  const path = pathname.replace(/\/+$/u, "");
+  const onAlertsScreen = oneAlertsQueue && path === WARD_ALERTS_HREF;
+  const onPatientsPage = path === patientSearchHref();
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
