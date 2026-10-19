@@ -23,7 +23,7 @@ import {
   YES_NO,
   yesNo,
 } from "./ward-referral-drawer-model";
-import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-fields";
+import { Field, SelectBox, Choice, CardHead, invalidProps } from "./ward-referral-drawer-fields";
 import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** Step 2, Referral: where it comes from, legal status and urgency, the presentation and the destination's needs. */
@@ -74,6 +74,15 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     reasonRoom,
     reasonNoteRequired,
   } = s;
+  // DA-12: each error is shown under its field and marks that field's control (`invalidProps`).
+  const originError = attempted.referral && !originValid ? "Choose the location of referral" : null;
+  const sendingError = attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null;
+  const reasonError =
+    doctorNote.length > reasonRoom
+      ? `Shorten to ${reasonRoom} characters or fewer`
+      : attempted.referral && reasonNoteRequired && !doctorNote.trim()
+        ? "Give the reason for referral"
+        : null;
   return (
     <div
       id={`${sectionId}-referral`}
@@ -127,11 +136,12 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
                 htmlFor={`${sectionId}-origin`}
                 required
-                error={attempted.referral && !originValid ? "Choose the location of referral" : null}
+                error={originError}
               >
                 <SelectBox>
                   <select
                     id={`${sectionId}-origin`}
+                    {...invalidProps(`${sectionId}-origin`, originError)}
                     className={styles.fieldSelect}
                     value={originSiteCode}
                     onChange={(e) => setOriginSiteCode(e.target.value)}
@@ -153,10 +163,11 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   htmlFor={`${sectionId}-sending`}
                   required
                   wide
-                  error={attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null}
+                  error={sendingError}
                 >
                   <input
                     id={`${sectionId}-sending`}
+                    {...invalidProps(`${sectionId}-sending`, sendingError)}
                     className={styles.fieldInput}
                     list={`${sectionId}-teams`}
                     autoComplete="off"
@@ -305,18 +316,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               htmlFor="refDocInput"
               required={reasonNoteRequired}
               hint={reasonNoteRequired ? undefined : "optional"}
-              error={
-                doctorNote.length > reasonRoom
-                  ? `Shorten to ${reasonRoom} characters or fewer`
-                  : attempted.referral && reasonNoteRequired && !doctorNote.trim()
-                    ? "Give the reason for referral"
-                    : null
-              }
+              error={reasonError}
             >
               <input
                 type="text"
                 className={styles.fieldInput}
                 id="refDocInput"
+                {...invalidProps("refDocInput", reasonError)}
                 maxLength={reasonRoom}
                 placeholder="Why this service is needed"
                 autoCorrect="off"

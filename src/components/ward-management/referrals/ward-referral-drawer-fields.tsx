@@ -1,10 +1,36 @@
 "use client";
 
+import type { RefObject } from "react";
 import { ChevronDown, User } from "lucide-react";
 import styles from "./ward-referral-drawer.module.css";
 import { StatusGlyph } from "@/components/wf";
 
 /* The referral slide-out's small form parts, moved unchanged from `ward-referral-drawer.tsx`. */
+
+/** The id of a field's error line, which its control names in `aria-describedby`. */
+function fieldErrorId(htmlFor: string): string {
+  return `${htmlFor}-error`;
+}
+
+/**
+ * DA-12 (design audit, Josh, 19 Oct 2026): spread on the control a `Field` labels, with the same
+ * error, so the control is marked invalid and reads out its error line.
+ */
+export function invalidProps(htmlFor: string, error: string | null | undefined) {
+  return error ? { "aria-invalid": true as const, "aria-describedby": fieldErrorId(htmlFor) } : {};
+}
+
+/**
+ * DA-12: after a refused step, once the marks are drawn, focus the first marked control on view.
+ * A step whose problem has no field of its own (documents, the catchment confirm) keeps the alert
+ * line only.
+ */
+export function focusFirstInvalid(root: RefObject<HTMLElement | null>) {
+  requestAnimationFrame(() => {
+    const marked = root.current?.querySelectorAll<HTMLElement>('[aria-invalid="true"]') ?? [];
+    [...marked].find((control) => !control.closest("[hidden]"))?.focus();
+  });
+}
 
 export function Field({
   label,
@@ -33,7 +59,7 @@ export function Field({
       </div>
       {children}
       {error ? (
-        <p className={styles.fieldError}>
+        <p className={styles.fieldError} id={fieldErrorId(htmlFor)}>
           <StatusGlyph tone="danger" size={9} />
           {error}
         </p>

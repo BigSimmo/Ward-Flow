@@ -53,6 +53,7 @@ import {
   useReferralDraftRecovery,
 } from "./referral-draft-store";
 import { type ReferralTextInput } from "./referral-letter";
+import { focusFirstInvalid } from "./ward-referral-drawer-fields";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole, wardRouteUnitId } from "@/components/ward-management/ward-chrome-role";
@@ -865,6 +866,9 @@ export function useWardReferralDrawerState({
     if (error) {
       const failed = sectionFor(error);
       if (failed) setAttempted((current) => ({ ...current, [failed]: true }));
+      // DA-12: open the step at fault and move to its first marked field.
+      if (failed) setActiveSection(failed);
+      focusFirstInvalid(bodyRef);
       return;
     }
     setActiveSection(section === "patient" ? "referral" : section === "referral" ? "documentation" : "placement");
@@ -888,6 +892,9 @@ export function useWardReferralDrawerState({
     if (error) {
       const failed = sectionFor(error);
       if (failed) setAttempted((current) => ({ ...current, [failed]: true }));
+      // DA-12: open the step at fault and move to its first marked field.
+      if (failed) setActiveSection(failed);
+      focusFirstInvalid(bodyRef);
       return;
     }
     setConfirmationOpen(true);
@@ -906,6 +913,7 @@ export function useWardReferralDrawerState({
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
+      focusFirstInvalid(bodyRef);
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);

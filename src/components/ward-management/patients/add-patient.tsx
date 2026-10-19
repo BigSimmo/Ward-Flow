@@ -97,6 +97,27 @@ const REQUIRED_FIELDS: readonly {
   { key: "dateOfBirth", name: "Date of birth" },
 ];
 
+/**
+ * DA-12 (design audit, Josh, 19 Oct 2026): the required fields in the order they appear, with the
+ * control each one marks and the line it shows after a submit with it still blank. The first blank
+ * one takes focus.
+ */
+const REQUIRED_CONTROLS: readonly {
+  readonly key: keyof PatientDraft;
+  readonly id: string;
+  readonly missing: string;
+}[] = [
+  { key: "umrn", id: "ward-add-patient-umrn", missing: "Enter the UMRN." },
+  { key: "dateOfBirth", id: "ward-add-patient-date-of-birth", missing: "Enter the date of birth." },
+  { key: "givenName", id: "ward-add-patient-given-name", missing: "Enter the given name." },
+  { key: "familyName", id: "ward-add-patient-family-name", missing: "Enter the family name." },
+];
+
+/** The refusal for a record number that is already on file, naming the existing record's UMRN. */
+function duplicateUmrnRefusal(umrn: string): string {
+  return `Patient could not be added. UMRN ${umrn} already belongs to an existing record. Open that record instead of adding a second one.`;
+}
+
 function initialDraft(prefillGivenName = ""): PatientDraft {
   return {
     umrn: "",
@@ -280,6 +301,8 @@ export function AddPatientForm() {
 
   const [lastRejection, setLastRejection] = useState<string | undefined>(undefined);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  /** The UMRN of an existing record a save was refused for, so the UMRN field can say so. */
+  const [duplicateUmrn, setDuplicateUmrn] = useState<string | null>(null);
   const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -391,6 +414,7 @@ export function AddPatientForm() {
 
   function finishSubmission() {
     setAttemptedSubmit(false);
+    setDuplicateUmrn(null);
     setLastRejection(undefined);
     setD4Notice(null);
     setIsSubmitting(false);
@@ -552,7 +576,7 @@ export function AddPatientForm() {
       return;
     }
     if (!answered) {
-      setAttemptedSubmit(true);
+      showMissingFields();
       return;
     }
     setIsSubmitting(true);
@@ -575,7 +599,19 @@ export function AddPatientForm() {
     const refuse = () => {
       if (priorSubmissionRef.current !== submission) return;
       priorSubmissionRef.current = null;
-      setLastRejection("Patient could not be added. Check the identity details and existing records.");
+      // DA-12: a refusal for a record number already on file names that record's UMRN, but only a
+      // record this desk can already see; anything else keeps the general refusal.
+      const umrnKey = submission.umrn.trim().toLowerCase();
+      const existing = [...latestRef.current.patients, ...submission.patients].find(
+        (patient) => patient.umrn.trim().toLowerCase() === umrnKey,
+      );
+      if (existing) {
+        setDuplicateUmrn(existing.umrn.trim());
+        setLastRejection(duplicateUmrnRefusal(existing.umrn.trim()));
+        document.getElementById("ward-add-patient-umrn")?.focus();
+      } else {
+        setLastRejection("Patient could not be added. Check the identity details and existing records.");
+      }
       setIsSubmitting(false);
     };
     try {
@@ -624,7 +660,23 @@ export function AddPatientForm() {
     }
     if (answered) return;
     event.preventDefault();
+    showMissingFields();
+  }
+
+  /** Marks every blank required field and moves focus to the first one (DA-12). */
+  function showMissingFields() {
     setAttemptedSubmit(true);
+    const first = REQUIRED_CONTROLS.find((control) => draft[control.key].trim() === "");
+    if (first) document.getElementById(first.id)?.focus();
+  }
+
+  /** The line under a required field: blank after a submit, or a record number already on file. */
+  function fieldError(key: keyof PatientDraft): string | undefined {
+    const value = draft[key].trim();
+    if (key === "umrn" && duplicateUmrn !== null && value.toLowerCase() === duplicateUmrn.toLowerCase())
+      return "This UMRN is already on file.";
+    if (!attemptedSubmit || value !== "") return undefined;
+    return REQUIRED_CONTROLS.find((control) => control.key === key)?.missing;
   }
 
   const setDraftField = (key: keyof PatientDraft) => (value: string) =>
@@ -932,7 +984,7 @@ export function AddPatientForm() {
                 action={<span className={styles.muted}>Saved to the record</span>}
               />
               <CardBody className={styles.grid}>
-                <Field label={<Required>UMRN</Required>} id="ward-add-patient-umrn">
+                <Field label={<Required>UMRN</Required>} id="ward-add-patient-umrn" error={fieldError("umrn")}>
                   <TextInput
                     data-testid="ward-add-patient-umrn"
                     aria-label="UMRN (Unit Medical Record Number)"
@@ -948,7 +1000,11 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("umrn")(event.target.value)}
                   />
                 </Field>
-                <Field label={<Required>Date of birth</Required>} id="ward-add-patient-date-of-birth">
+                <Field
+                  label={<Required>Date of birth</Required>}
+                  id="ward-add-patient-date-of-birth"
+                  error={fieldError("dateOfBirth")}
+                >
                   <TextInput
                     data-testid="ward-add-patient-date-of-birth"
                     type="date"
@@ -958,7 +1014,11 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("dateOfBirth")(event.target.value)}
                   />
                 </Field>
-                <Field label={<Required>Given name</Required>} id="ward-add-patient-given-name">
+                <Field
+                  label={<Required>Given name</Required>}
+                  id="ward-add-patient-given-name"
+                  error={fieldError("givenName")}
+                >
                   <TextInput
                     data-testid="ward-add-patient-given-name"
                     aria-required="true"
@@ -971,7 +1031,11 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("givenName")(event.target.value)}
                   />
                 </Field>
-                <Field label={<Required>Family name</Required>} id="ward-add-patient-family-name">
+                <Field
+                  label={<Required>Family name</Required>}
+                  id="ward-add-patient-family-name"
+                  error={fieldError("familyName")}
+                >
                   <TextInput
                     data-testid="ward-add-patient-family-name"
                     aria-required="true"
