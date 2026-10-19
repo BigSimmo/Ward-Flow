@@ -68,13 +68,7 @@ import { replaceSearchParams, useLocationSearch } from "@/components/ward-manage
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import { WAITING_VIEWS } from "./waiting-href";
-import {
-  inWaitingView,
-  queuedReferralCount,
-  waitingViewHint,
-  waitingViewLabel,
-  windowText,
-} from "./waiting-views";
+import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, windowText } from "./waiting-views";
 import styles from "./delays-board.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
@@ -393,10 +387,7 @@ export function DelaysBoard({
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
   const { referrals: allReferrals } = useWardFlowSelect("referrals");
   const scope = useServiceScope();
-  const queuedReferrals = useMemo(
-    () => queuedReferralCount(allReferrals, scope, units),
-    [allReferrals, scope, units],
-  );
+  const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (
     <p className={styles.footNote} data-testid="delays-referrals-line">
       {queuedReferrals === 0

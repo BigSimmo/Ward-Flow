@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { NO_FILTERS, boardRows, filterRows, type BoardRow } from "@/components/ward-management/delays/delays-board-model";
+import {
+  NO_FILTERS,
+  boardRows,
+  filterRows,
+  type BoardRow,
+} from "@/components/ward-management/delays/delays-board-model";
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { filtersFromSearch, filtersKey } from "@/components/ward-management/delays/delays-url-state";
 import { WAITING_VIEWS, waitingHref } from "@/components/ward-management/delays/waiting-href";
