@@ -121,7 +121,13 @@ export function PilotMeasuresSection({
   const held = durationFigures(measures.requestToBedHeld, "beds held");
   const travel = durationFigures(measures.transport.collectedToArrived, "arrivals by transport");
   const { requests, holds, transport, completeness } = measures;
-  const completePercent = per100(completeness.complete, completeness.arrivals);
+  // A rate is worked back into the count it hides, so a person-derived rate shows only when
+  // neither count behind it is held back by the small number rule.
+  const shown = (...counts: number[]) => counts.every((count) => small(count) === count);
+  const personRate = (count: number, of: number) => (shown(count, of) ? rateNote(count, of) : undefined);
+  const completePercent = shown(completeness.complete, completeness.arrivals)
+    ? per100(completeness.complete, completeness.arrivals)
+    : undefined;
 
   const cards = [
     <Card
@@ -145,14 +151,14 @@ export function PilotMeasuresSection({
           id: "missed",
           label: `No ward in ${windowText(requests.windowMinutes)}`,
           value: small(requests.noWardAsked),
-          note: rateNote(requests.noWardAsked, requests.raised),
+          note: personRate(requests.noWardAsked, requests.raised),
           testId: "ward-pilot-missed",
         },
         {
           id: "duplicates",
           label: "Same person twice",
           value: small(requests.duplicates),
-          note: rateNote(requests.duplicates, requests.raised),
+          note: personRate(requests.duplicates, requests.raised),
           testId: "ward-pilot-duplicates",
         },
       ]}

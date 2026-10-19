@@ -153,21 +153,27 @@ function openAt(movement: Movement, at: Instant): boolean {
  * being sorted (which clears the countdown in the reducer). `stoppedAt` is `undefined` while the
  * hold is still counting down.
  */
-function holdEpisodes(movement: Movement): { heldAt: Instant; stoppedAt: Instant | undefined }[] {
+function holdEpisodes(movement: Movement): { heldAt: Instant; stoppedAt: Instant | undefined; givenBack: boolean }[] {
   return movement.stageChanges.flatMap((change, index) => {
     if (change.to !== "pulled") return [];
     const heldAt = change.at;
     const after = (at: Instant | undefined) => (at !== undefined && at >= heldAt ? at : undefined);
+    const releases = movement.unwinds
+      .filter((unwind) => unwind.kind === "pull_released")
+      .map((unwind) => after(unwind.at))
+      .filter((at): at is Instant => at !== undefined);
     const stops = [
       movement.stageChanges.slice(index + 1).find((next) => next.to !== "pulled" && next.to !== "handover_ready")?.at,
-      ...movement.unwinds.filter((unwind) => unwind.kind === "pull_released").map((unwind) => unwind.at),
+      ...releases,
       movement.closure?.at,
       movement.leftDepartmentAt,
       movement.arrivalDetails?.recordedAt,
     ]
       .map(after)
       .filter((at): at is Instant => at !== undefined);
-    return [{ heldAt, stoppedAt: stops.length > 0 ? Math.min(...stops) : undefined }];
+    const stoppedAt = stops.length > 0 ? Math.min(...stops) : undefined;
+    // Given back: a recorded release is what stopped THIS hold, not a later hold's release.
+    return [{ heldAt, stoppedAt, givenBack: stoppedAt !== undefined && releases.includes(stoppedAt) }];
   });
 }
 
@@ -263,13 +269,11 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
   const holdsInWeek = movements.flatMap(holdEpisodes).filter((episode) => inWeek(episode.heldAt, week));
   const ranOut = holdsInWeek.filter((episode) => {
     const expires = episode.heldAt + pullHoldMinutes;
-    return episode.stoppedAt === undefined ? expires < counted : episode.stoppedAt > expires;
+    // Only what had run out by the end of the counted week, whenever the hold later stopped.
+    return expires < Math.min(episode.stoppedAt ?? counted, counted);
   }).length;
-  const givenBack = movements.reduce(
-    (count, movement) =>
-      count + movement.unwinds.filter((unwind) => unwind.kind === "pull_released" && inWeek(unwind.at, week)).length,
-    0,
-  );
+  // The same holds as `held`, so the rate compares like with like.
+  const givenBack = holdsInWeek.filter((episode) => episode.givenBack).length;
 
   // Supporting measure 6: transport. Ward Flow records no booking time, so booked-to-collected
   // cannot be counted; lateness is measured against the estimate instead.

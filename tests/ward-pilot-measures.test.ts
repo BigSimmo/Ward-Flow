@@ -173,6 +173,26 @@ describe("pilotMeasures", () => {
     expect(measures.holds).toEqual({ held: 6, ranOut: 3, givenBack: 1 });
   });
 
+  it("counts a release only against holds made in the week, and a hold run out only by the week's end", () => {
+    const f = fixture();
+    // Held last week and given back this week: neither a hold of this week nor one of its returns.
+    const lastWeek = f.movement("MV-last-week", {
+      openedAt: -DAY,
+      stageChanges: [{ at: -100, to: "pulled", by: "ward" }],
+      unwinds: [{ at: DAY, kind: "pull_released", by: "coordinator", reason: "patient_no_longer_coming" }],
+    });
+    // Held just before the week ends; it runs out and stops in the next week.
+    const lateInWeek = f.movement("MV-late-in-week", {
+      openedAt: 7 * DAY - 200,
+      stageChanges: [
+        { at: 7 * DAY - 10, to: "pulled", by: "ward" },
+        { at: 7 * DAY + HOLD + 60, to: "moving", by: "officer" },
+      ],
+    });
+    const measures = f.run([lastWeek, lateInWeek]);
+    expect(measures.holds).toEqual({ held: 1, ranOut: 0, givenBack: 0 });
+  });
+
   it("measures transport lateness against the estimate and counts cancellations", () => {
     const f = fixture();
     const grace = CLINICAL_VALUES.lateArrivalGrace.value;
