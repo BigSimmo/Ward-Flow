@@ -1,5 +1,7 @@
 # Ward Flow backend
 
+_Updated 2026-10-19 - schema 11, sign-out and access guidance checked against source; Documentation owns._
+
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
 > recorded in one place: [docs/ward-flow/DATABASE.md](../../docs/ward-flow/DATABASE.md). Ward Flow
@@ -9,7 +11,8 @@ This package is the optional shared synthetic workspace. It is a plain Node HTTP
 (`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005`. These source files do not establish a current hosted connection or deployment.
+to `005` and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->.
+These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
 
@@ -106,11 +109,12 @@ to `005`. These source files do not establish a current hosted connection or dep
   accounts with no role, so forged tokens naming one real account cannot use up the checks other desks need.
   A confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
-  (`*` on Railway, which is reachable only through its proxy). From migration 11 a sign-out is
-  recorded on the server and that sign-in's tokens are refused at once; before 11 a locally
-  verified token stays valid until it expires, even after sign-out.
+  (`*` on Railway, which is reachable only through its proxy). A locally
+  verified token's signature remains valid until it expires. Separately, from migration 11 the
+  workspace checks server-side sign-outs on subsequent requests and refuses the signed-out
+  session before token expiry. Before 11 that workspace revocation is unavailable.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts 6 to 12):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -148,16 +152,19 @@ to `005`. These source files do not establish a current hosted connection or dep
     record first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
-  - `011-record-access-and-sign-out.sql`: the record access log (who opened which patient or
-    movement page, as which role and place, and when), which nobody can change or remove, the
-    runtime login included; break glass rows become append-only too; and server-side sign-outs, so
-    a signed-out sign-in's tokens are refused at once rather than when they expire.
-    `infra/rollback-011-record-access-and-sign-out.sql` takes a database back to 10 (export the log
-    first if it must be kept: the rollback deletes it).
+  - `011-record-access-and-sign-out.sql`: append-only patient/movement record access history,
+    append-only protection for break glass rows and server-side session sign-outs. The
+    `/v1/workspace/record-access` and `/v1/workspace/sign-out` routes use these capabilities;
+    before 11 record opens are not logged and sign-out does not revoke the session here.
+    `infra/rollback-011-record-access-and-sign-out.sql` returns the schema to 10, dropping the
+    record access and sign-out tables and removing break glass edit protection. Preserve any
+    required record access history first. Apply it only with separate authority, in one
+    stop-on-error transaction; it takes the migration lock itself. Reapply runtime grants after 11.
   - `012-foreign-key-indexes.sql`: an index for each of the 13 foreign keys that had none (the
-    Supabase advisor's finding). Indexes only. `infra/rollback-012-foreign-key-indexes.sql` takes a
-    database back to 11.
-    The backend accepts versions 5 to 12. Run the runtime grants again after each migration.
+    Supabase advisor's finding). Indexes only: no table, row, grant or policy changes.
+    `infra/rollback-012-foreign-key-indexes.sql` takes a database back to 11. Reapply runtime
+    grants after 12.
+    The backend accepts versions 5 to 12.
 
 ## Boundaries
 

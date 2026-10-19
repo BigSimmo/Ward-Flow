@@ -1,6 +1,6 @@
 # Ward Flow
 
-_Updated 2026-10-17 - focused test example uses the maintained runner; Documentation owns._
+_Updated 2026-10-19 - describe scope-selected PR checks; Documentation owns._
 
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
@@ -50,7 +50,7 @@ npm ci --prefix backend/ward-flow
 
 ## Continuous integration and deploys
 
-- Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml): static checks, eight unit shards, browser journeys, the release gate, a secret scan and a production build. `Ward Flow required` is the single check that sums them up.
+- Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml). Its scope plan selects executable static checks, eight unit shards, browser journeys, the release gate and a production build; documentation checks and a secret scan still run for narrower changes. See [scope by change](docs/ward-flow/PUBLIC-CI.md#scope-by-change). `Ward Flow required` checks the selected results and permitted skips.
 - Dependabot opens grouped dependency updates each Monday.
 - Railway deploys `main` automatically through its GitHub integration. Build, start and health check settings are recorded in [hosting](docs/hosting.md). A green CI run does not prove a deploy; check the hosted app directly.
 

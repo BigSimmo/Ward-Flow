@@ -9,6 +9,8 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
+_Updated 2026-10-19 - added the existing hosting approval’s supersession pointer at D-2; Documentation owns. Historical decision text and dates preserved._
+
 ---
 
 ## D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)
@@ -28,6 +30,9 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
   Flow. Any Railway or other deployment tool is ask-first, whatever name it appears under.
 - **Why:** Ward Flow holds only invented data and is not ready to be hosted. Where it is eventually
   hosted is a separate decision (roadmap milestone 5).
+- **Subsequent approval:** The Railway disconnection/no-hosting position was superseded by the
+  [owner-approved hosting setup record of 27 September 2026](../hosting.md). Its Ward Flow-only
+  resource boundaries apply; provider and deployment actions remain ask-first under `AGENTS.md`.
 
 ## D-3. The PsychSift and Database code is being retired from Ward Flow
 

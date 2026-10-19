@@ -169,7 +169,7 @@ while moving active status to the current repository workflow.
   generator checks passing; browser `ui-ward-full-journey.spec.ts` and `ui-ward-roles.spec.ts` 21 passed,
   1 skipped. The other `ui-ward-*` browser specs were not run this round.
 - **Previous run** (recorded in
-  [`handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md`](handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md)
+  [`handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md`](https://github.com/BigSimmo/Ward-Flow/blob/97fa3e25276089a4a938951a59bcffabe47df149/docs/ward-flow/handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md)
   §8, measured at `cad83238a0`, before round 2): full ward suite 570 files, 6,750 tests, 0 failing;
   tsc clean; diff-integrity, mockup-retirement, screen-map, mockup-manifest, owner-rulings-index and
   screen-verification all passing; every `ui-ward-*` browser spec passed (94 passed, 3 skipped),
