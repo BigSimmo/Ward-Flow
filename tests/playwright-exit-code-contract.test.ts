@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
+import path from "node:path";
+import { runInNewContext } from "node:vm";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { childProcessExitCode } from "../scripts/child-process-result.mjs";
+import { journeyRunVerdict, requestedProjects } from "../scripts/ward-flow/journey-run-verdict.mjs";
 
 /**
  * `scripts/run-playwright.mjs` propagates failure through its exit status.
@@ -47,6 +51,155 @@ describe("run-playwright.mjs exit-code contract", () => {
     // success without reference to what actually happened.
     expect(RUNNER).not.toMatch(/process\.exit\(0\)/);
   });
+});
+
+// Execute the runner's actual post-build phase with synthetic reports and child processes. This
+// catches exit/report regressions without a production build, browser, provider or heavyweight lock.
+const RUN_PHASE = RUNNER.slice(RUNNER.indexOf("  const testEnv ="), RUNNER.lastIndexOf("\n} catch (error)"));
+function executionReport(projectName = "chromium", statuses = ["expected"]) {
+  return {
+    config: { projects: [{ name: "chromium" }, { name: "release-gate-phone" }] },
+    errors: [],
+    suites: [{ file: "a.spec.ts", specs: [{ tests: statuses.map((status) => ({ status, projectName })) }] }],
+  };
+}
+async function runPhase({
+  args = ["--project=chromium"],
+  codes = [0],
+  reports = [executionReport()],
+  rerunCode = 0,
+}: {
+  args?: string[];
+  codes?: number[];
+  reports?: (ReturnType<typeof executionReport> | null)[];
+  rerunCode?: number;
+} = {}) {
+  let exitCode: number | undefined;
+  let shardIndex = 0;
+  const exitSignal = new Error("synthetic runner exit");
+  const child = vi.fn<(command: string, args: string[], options: unknown) => { status: number }>(() => ({
+    status: rerunCode,
+  }));
+  const shardChild = vi.fn<
+    (
+      command: string,
+      args: string[],
+      options: unknown,
+    ) => { on: (event: string, callback: (code: number) => void) => void }
+  >(() => {
+    const code = codes[shardIndex++];
+    return { on: (_event: string, callback: (code: number) => void) => callback(code) };
+  });
+  const readReport = (file: string) => {
+    const shard = /shard-(\d+)\.json$/.exec(file);
+    return reports[shard ? Number(shard[1]) - 1 : 0] ?? null;
+  };
+  try {
+    await runInNewContext(`(async () => {${RUN_PHASE}})()`, {
+      process: { execPath: "node", env: { WARD_JOURNEY_SHARDS: String(codes.length) } },
+      console: { log: vi.fn(), error: vi.fn() },
+      path,
+      offlineEnv: { PLAYWRIGHT_JSON_OUTPUT_FILE: "/caller/report.json", PLAYWRIGHT_JSON_OUTPUT_DIR: "/caller" },
+      playwrightArgs: args,
+      projectRoot: "/synthetic-ward-flow",
+      absoluteRunRoot: "/synthetic-ward-flow/run",
+      relativeRunRoot: "run",
+      playwrightBin: "playwright/cli.js",
+      baseUrl: "http://localhost:4200",
+      shardServers: [],
+      stableProjectPort: () => 4200,
+      findFreePort: async () => 4201,
+      startIsolatedServer: () => ({}),
+      waitForServer: async () => {},
+      balancedShardGroups: () => null,
+      spawn: shardChild,
+      spawnSync: child,
+      childProcessExitCode,
+      requestedProjects,
+      journeyRunVerdict,
+      readJsonReport: readReport,
+      readFileSync: (file: string) => JSON.stringify(readReport(file)),
+      keepJourneyFailures: () => null,
+      wardFlowLogsRoot: () => "/synthetic-ward-flow/logs",
+      exitAfterTypeCheck: async (code: number) => {
+        exitCode = code;
+        throw exitSignal;
+      },
+    });
+  } catch (error) {
+    if (error !== exitSignal) throw error;
+  }
+  expect(exitCode).toBeDefined();
+  return { exitCode, child, shardChild };
+}
+
+describe("run-playwright post-build verdict", () => {
+  it.each([0, 1])("retains the original shard failure after a diagnostic rerun exits %s", async (rerunCode) => {
+    const result = await runPhase({
+      codes: [2, 0],
+      reports: [executionReport("chromium", ["unexpected"]), executionReport()],
+      rerunCode,
+    });
+    expect(result.child).toHaveBeenCalledOnce();
+    expect(result.child.mock.calls[0][1]).toContain("a.spec.ts");
+    expect(result.exitCode).toBe(2);
+  });
+
+  it.each([["--reporter=line"], ["--reporter", "line"]])(
+    "retains internal JSON validation when a display reporter is selected: %s",
+    async (...reporterArgs) => {
+      const result = await runPhase({
+        args: ["--project=chromium", "--project=release-gate-phone", ...reporterArgs],
+      });
+      expect(result.child.mock.calls[0][1]).toContain("--reporter=line,json");
+      expect(result.child.mock.calls[0][2]).toMatchObject({
+        env: { PLAYWRIGHT_JSON_OUTPUT_NAME: "/synthetic-ward-flow/run/journeys.json" },
+      });
+      // Phone is configured in the report but never executes.
+      expect(result.exitCode).toBe(1);
+    },
+  );
+
+  it("keeps single and shard reports at runner-owned paths despite inherited JSON output settings", async () => {
+    const single = await runPhase();
+    expect(single.exitCode).toBe(0);
+    expect(single.child.mock.calls[0][2]).toMatchObject({
+      env: { PLAYWRIGHT_JSON_OUTPUT_FILE: "/synthetic-ward-flow/run/journeys.json" },
+    });
+    const sharded = await runPhase({ codes: [0, 0], reports: [executionReport(), executionReport()] });
+    expect(sharded.exitCode).toBe(0);
+    for (const [index, call] of sharded.shardChild.mock.calls.entries()) {
+      expect(call[2]).toMatchObject({
+        env: { PLAYWRIGHT_JSON_OUTPUT_FILE: `/synthetic-ward-flow/run/shard-${index + 1}.json` },
+      });
+    }
+  });
+
+  it("fails when a display reporter leaves no readable internal report", async () => {
+    expect((await runPhase({ args: ["--project=chromium", "--reporter=json"], reports: [null] })).exitCode).toBe(1);
+  });
+
+  it.each([["--grep=@quarantine|@mockup"], ["--grep", "@quarantine|@mockup"]])(
+    "allows the explicit advisory command to select no tests: %s",
+    async (...grepArgs) => {
+      const result = await runPhase({
+        args: ["--project", "chromium", "--project=chromium-mockups", ...grepArgs, "--pass-with-no-tests"],
+        reports: [executionReport("chromium", [])],
+      });
+      expect(result.exitCode).toBe(0);
+    },
+  );
+
+  it.each(["release-gate-phone", "chromium-mockups"])(
+    "does not let --pass-with-no-tests waive execution of required project %s",
+    async (project) => {
+      const result = await runPhase({
+        args: [`--project=${project}`, "--grep=@quarantine|@mockup", "--pass-with-no-tests"],
+        reports: [executionReport(project, [])],
+      });
+      expect(result.exitCode).toBe(1);
+    },
+  );
 });
 
 describe("guidance describing that contract stays true to it", () => {

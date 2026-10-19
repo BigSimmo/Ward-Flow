@@ -7,7 +7,7 @@
 // and still looked green. A run is now red when any of these holds, whatever the exit codes say:
 //   - a shard left no readable report
 //   - a report carries top-level errors (a config or project error, a crash)
-//   - a requested --project is not among the projects the report ran with
+//   - a requested --project has no executed test across the reports
 //   - no test ran at all (nothing passed, failed or was flaky)
 
 /** Project names the caller asked for, in either CLI spelling. */
@@ -20,12 +20,15 @@ export function requestedProjects(args) {
   return names;
 }
 
-function countRan(report) {
+function countRan(report, executedProjects) {
   let ran = 0;
   const walk = (suite) => {
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests ?? []) {
-        if (test.status === "expected" || test.status === "unexpected" || test.status === "flaky") ran++;
+        if (test.status === "expected" || test.status === "unexpected" || test.status === "flaky") {
+          ran++;
+          executedProjects.add(test.projectName);
+        }
       }
     }
     for (const child of suite.suites ?? []) walk(child);
@@ -37,11 +40,13 @@ function countRan(report) {
 /**
  * @param {{ label: string, code: number | null, report: object | null }[]} runs one per shard (or one)
  * @param {string[]} projects the --project names requested
+ * @param {{ allowNoTests?: boolean }} [options] explicitly advisory selections may be empty
  * @returns {{ ok: boolean, ran: number, problems: string[] }}
  */
-export function journeyRunVerdict(runs, projects) {
+export function journeyRunVerdict(runs, projects, { allowNoTests = false } = {}) {
   const problems = [];
   let ran = 0;
+  const executedProjects = new Set();
   for (const { label, code, report } of runs) {
     if (!report) {
       problems.push(`${label} left no readable report (exit ${code})`);
@@ -50,12 +55,11 @@ export function journeyRunVerdict(runs, projects) {
     for (const error of report.errors ?? []) {
       problems.push(`${label} reported an error: ${String(error?.message ?? error).split("\n")[0]}`);
     }
-    const known = new Set((report.config?.projects ?? []).map((project) => project.name));
-    for (const project of projects) {
-      if (!known.has(project)) problems.push(`${label} did not run requested project "${project}"`);
-    }
-    ran += countRan(report);
+    ran += countRan(report, executedProjects);
   }
-  if (ran === 0) problems.push("no test ran");
+  for (const project of new Set(projects)) {
+    if (!executedProjects.has(project)) problems.push(`did not run requested project "${project}"`);
+  }
+  if (ran === 0 && !allowNoTests) problems.push("no test ran");
   return { ok: problems.length === 0, ran, problems };
 }

@@ -1,5 +1,7 @@
 # Ward Flow hosting and database decisions
 
+_Updated 2026-10-19 - shared backend route location corrected from source; Documentation owns._
+
 Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
 > This is a dated configuration and evidence record. Hosted resources, credentials, settings,
@@ -11,7 +13,7 @@ Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 - Host the synthetic prototype on Railway in its own **Ward Flow** project.
 - Connect only `BigSimmo/Ward-Flow`, branch `main`.
 - **Ward Flow must never connect to PsychSift's Supabase or Railway resources**, database, services or credentials.
-- For Ward Flow's optional shared prototype workspace (`backend/ward-flow/` and `/api/ward-flow/shared/*`), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](ward-flow/DATABASE.md). No shared backend was created by this initial Railway hosting task; see [the backend guide](../backend/ward-flow/README.md). Those guides do not establish current hosted provider state.
+- For Ward Flow's optional shared prototype workspace (the separate `backend/ward-flow/` server's `/v1/workspace*` routes), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](ward-flow/DATABASE.md). No shared backend was created by this initial Railway hosting task; see [the backend guide](../backend/ward-flow/README.md). Those guides do not establish current hosted provider state.
 - The default browser-local state is not a shared database. There is no production identity or access-control system for real patients; use invented data only.
 - Historical local-only and PsychSift hosting instructions in the imported documents describe the original source checkout. They do not authorise deploying this repository into PsychSift.
 

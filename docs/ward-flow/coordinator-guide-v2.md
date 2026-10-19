@@ -10,6 +10,8 @@ the bed board text, Settings labelling each hour rule as your default, and no sc
 "breach". Lines marked _(not yet checked on screen)_ are taken from the code and the
 owner's rulings and are confirmed by the next screen check.
 
+_Updated 2026-10-19 - corrected urgency, identifier and persistence guidance from source; Documentation owns. The screen-check dates above are unchanged._
+
 ---
 
 ## 1. What Ward Flow is, and what it is not
@@ -55,8 +57,9 @@ Every referral has one of three tiers:
 - "Tier 2 · urgent"
 - "Tier 3 · least urgent"
 
-The tiers put patients in order. They carry no hour targets: the app does not say a tier must be
-placed within a set number of hours. _(not yet checked on screen)_
+The tiers put patients in order. The prototype marks referral decisions overdue after 1 hour for
+Tier 1, 4 hours for Tier 2 and 24 hours for Tier 3 (`ward-clinical-values.ts`, D-54). These are
+synthetic prototype markers, not guaranteed placement deadlines or legal limits. _(not yet checked on screen)_
 
 ---
 
@@ -88,7 +91,7 @@ A movement goes through these stages, in the app's words:
 6. "Moving"
 7. "Arrived"
 
-Wherever a movement is linked to a patient record, screens display the patient's name with their synthetic `UM1xxxxx` UMRN—for example `"Name (UM100001)"` per `D-39`—whereas `WF-…` is the internal journey/movement ID and is never shown as a patient identifier on screen.
+Wherever a movement is linked to a patient record, screens display the patient's name with their synthetic `UM` plus six-digit UMRN (including `UM1xxxxx` hand-authored and `UM5xxxxx` generated seed records)—for example `"Name (UM100001)"` per `D-39`—whereas `WF-…` is the internal journey/movement ID and is never shown as a patient identifier on screen.
 
 ### Referrals
 
@@ -214,14 +217,24 @@ time is shown as due soon; operational screens still display only the clinician-
 
 ## 8. What is saved, and what is not
 
-Ward Flow saves the day's work in this browser, so a reload brings it back.
+In local demo mode, Ward Flow can save structured work in this tab’s session storage while
+browser storage is available and the privacy lock permits it. A valid same-day snapshot can return
+on reload; recovery after a crash, tab closure or restart is not guaranteed.
 
-- Actions you take (accepting, pulling a bed, booking transport) are saved.
-- If the app refuses an action, your earlier work is still saved. The refusal itself is not kept.
-- Anything typed as free text (notes and reasons you write yourself) is never saved. After text is
-  typed, saving pauses for that session, and the screen says so. _(not yet checked on screen)_
+- Structured actions such as accepting or pulling a bed can be saved while saving remains enabled.
+- Dispatching an event that carries typed text locks central snapshot saving, whether the action is
+  accepted or refused (D-18). The app attempts to remove the saved snapshot and reports storage
+  failure. The lock remains until a genuine reset or scenario reseed. Booking transport carries
+  the typed CAD field and also triggers this lock.
+- D-67 separately permits session draft recovery only in the opted-in synthetic referral and legal
+  form editors, scoped to account/session, scenario and subject. Restored drafts require human
+  review and submission. Successful submission, sign-out, session termination and reset clear the
+  relevant drafts; rejected submissions retain them for correction. Submitted state keeps the
+  D-18 lock. Browser session restoration can preserve these drafts across a restart.
 
-This follows Josh's ruling that only typed text locks saving.
+In shared mode, accepted workspace commands save through the authenticated backend. The local
+snapshot lock does not govern server saving. See [the backend’s current modes](../../backend/ward-flow/README.md#how-the-ui-connects).
+These source-based corrections have not been rechecked on screen.
 
 ---
 
