@@ -5,6 +5,7 @@ import { downloadBlob } from "@/components/ward-management/ward-download";
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { WardDemoReset } from "../demo-reset/ward-demo-reset";
+import { WardPracticeMode } from "../demo-reset/ward-practice-mode";
 import { formatInstant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
@@ -154,6 +155,7 @@ export function WardDemoPanel() {
         Reset demo
       </button>
       <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
+      <WardPracticeMode className={styles.resetBlock} headingClassName={styles.resetHeading} />
       <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       <p className={styles.liveNote} role="status">
         {message}
