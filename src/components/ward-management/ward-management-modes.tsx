@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 
 import { roleLabels, type ChangeAuditEntry, type WardRole } from "@/components/ward-management/ward-derivations";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { WardNetworkWorkspace } from "@/components/ward-management/ward-management-network";
 import type { WardMode } from "@/components/ward-management/ward-nav";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { DEMONSTRATION_DAY_LABEL, JURISDICTION_LABEL } from "@/components/ward-management/ward-sites";
@@ -29,10 +28,6 @@ import governance from "./governance-third-edition.module.css";
  * true: add a mode to `WardWorkspaceMode` and this stops compiling.
  */
 const modeCopy: Record<WardWorkspaceMode, { title: string; description: string }> = {
-  network: {
-    title: "Network",
-    description: "Services as nodes · movements as routes · fill shows bed pressure",
-  },
   governance: { title: "Governance", description: "Assurance, audit and synthetic data boundary" },
 };
 
@@ -233,7 +228,6 @@ export function GovernanceView() {
  * instead of a sweep's lucky day.
  */
 function ModeBody({ mode }: { mode: WardWorkspaceMode }) {
-  if (mode === "network") return <WardNetworkWorkspace />;
   if (mode === "governance") return <GovernanceView />;
   return assertEveryModeIsRouted(mode);
 }
@@ -250,13 +244,16 @@ function assertEveryModeIsRouted(mode: never): null {
 }
 
 /**
- * 🔴 **THE TWO MODES THIS COMPONENT ACTUALLY RENDERS — NOT "EVERY WARD MODE EXCEPT COMMAND".**
+ * 🔴 **THE MODE THIS COMPONENT ACTUALLY RENDERS — NOT "EVERY WARD MODE EXCEPT COMMAND".**
  *
  * The prop type was `Exclude<WardMode, "command">`, which said this workspace could render seven
  * different screens. It could render two. `WardModeWorkspace` is called from exactly two places in
  * `src/` — `governance/page.tsx` and `network/page.tsx` — and the other five branches of `ModeBody`
  * rendered views no route reached, for screens folded into `CapacityScreen`, `MovementsScreen` and
  * `DelaysScreen` by MERGE 01–03.
+ *
+ * Since 19 October 2026 it renders one: the Network screen was retired (Josh's decision) and
+ * `network/page.tsx` is now a redirect to Home, so only `governance` remains.
  *
  * ⚠️ **THE OLD TYPE WAS NOT MERELY LOOSE, IT WAS THE THING KEEPING THE DEAD CODE ALIVE.** Because
  * the prop admitted seven modes, `ModeBody`'s `never` exhaustiveness tail REQUIRED a branch for
@@ -267,7 +264,7 @@ function assertEveryModeIsRouted(mode: never): null {
  * source of destinations: rename or retire `network` there and this stops compiling rather than
  * quietly describing a mode that no longer exists.
  */
-export const WARD_WORKSPACE_MODES = ["network", "governance"] as const satisfies readonly WardMode[];
+export const WARD_WORKSPACE_MODES = ["governance"] as const satisfies readonly WardMode[];
 
 /**
  * 🔴 **THE TYPE NOW COMES FROM A RUNTIME ARRAY, AND THAT IS THE WHOLE CHANGE — 2026-09-06.**
@@ -295,9 +292,10 @@ export type WardWorkspaceMode = (typeof WARD_WORKSPACE_MODES)[number];
 
 /**
  * The `<h1>` a workspace mode actually renders. Exported because a browser test needs to find the
- * mode header by its heading, and ⚠️ **`WARD_VIEWS`' label is NOT that string** — `network` is
- * labelled *"Network"* in the rail and titled *"Network diagram"* on the page. A test deriving the
- * heading from the rail label would look for text the screen never renders.
+ * mode header by its heading, and ⚠️ **`WARD_VIEWS`' label is not guaranteed to be that string**
+ * (the retired `network` mode was labelled *"Network"* in the rail and titled *"Network diagram"*
+ * on the page). A test deriving the heading from the rail label could look for text the screen
+ * never renders.
  */
 export function wardWorkspaceModeTitle(mode: WardWorkspaceMode): string {
   return modeCopy[mode].title;
@@ -319,14 +317,7 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
             above the Network hero (a block above the hero would cost it the band). */}
         <ModeBody mode={mode} />
         {/* Audit 11 Oct 2026: the generic role focus banner is gone; the page carries the work. */}
-        <WardPrototypeFooter
-          testId={mode === "network" ? "ward-network-governance" : `ward-mode-${mode}-disclosure`}
-          note={
-            mode === "network"
-              ? "Synthetic network figures and bed statuses · Not approved for clinical use"
-              : undefined
-          }
-        />
+        <WardPrototypeFooter testId={`ward-mode-${mode}-disclosure`} />
       </main>
     </div>
   );

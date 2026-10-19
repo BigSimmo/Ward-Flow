@@ -67,7 +67,8 @@ const CANONICAL: { readonly wording: string; readonly atLeast: number }[] = [
   // author rather than on a stranger. Matched case-insensitively for that reason, and ONLY for
   // that reason: a fifth site spelling it differently in any other way still fails.
   { wording: "No legal form recorded", atLeast: 5 },
-  { wording: "Origin service not identified", atLeast: 4 },
+  // 4 -> 2 on 19 Oct 2026: two of the four sites were on the retired Network screen.
+  { wording: "Origin service not identified", atLeast: 2 },
   { wording: "No expected date set", atLeast: 2 },
 ];
 

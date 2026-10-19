@@ -175,6 +175,8 @@ const wardFlowRoutes = [
 const REDIRECT_ONLY_ROUTES = new Set<string>([
   `${ROUTE_PREFIX}/command`,
   `${ROUTE_PREFIX}/constellation`,
+  // The Network screen, retired 19 Oct 2026: `network/page.tsx` is now a redirect to Home.
+  `${ROUTE_PREFIX}/network`,
   `${ROUTE_PREFIX}/transport`,
   `${ROUTE_PREFIX}/queue`,
   `${ROUTE_PREFIX}/exceptions`,
@@ -237,7 +239,6 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/capacity`, render: () => createElement(CapacityScreen) },
   { route: `${ROUTE_PREFIX}/governance`, render: () => createElement(WardModeWorkspace, { mode: "governance" }) },
   { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsScreen) },
-  { route: `${ROUTE_PREFIX}/network`, render: () => createElement(WardModeWorkspace, { mode: "network" }) },
   { route: `${ROUTE_PREFIX}/ed/[edId]`, render: () => createElement(EdScreen, { edId: "peel-ed" }) },
   {
     route: `${ROUTE_PREFIX}/community/[teamId]`,
@@ -518,7 +519,7 @@ describe("Every Ward Flow route has exactly one <h1> (D7)", () => {
     });
   }
 
-  it.each(["/ward-flow/network", "/ward-flow/governance"])(
+  it.each(["/ward-flow/governance"])(
     'AUD-12: places the visually hidden <h1> inside <main id="main-content"> on %s',
     (route) => {
       const entry = RENDERABLE_ROUTES.find((candidate) => candidate.route === route);

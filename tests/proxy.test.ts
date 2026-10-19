@@ -131,8 +131,9 @@ describe("developer-area header (x-developer-area)", () => {
     expect(movedRouteTarget("/mockups/ward-flow")).toBe("/ward-flow");
     expect(movedRouteTarget("/mockups/ward-flow/ward/rph-adult-secure")).toBe("/ward-flow/ward/rph-adult-secure");
     expect(movedRouteTarget("/mockups/ward-flow-sign-in")).toBe("/ward-flow-sign-in");
-    // One hop for the retired constellation screen, not two.
-    expect(movedRouteTarget("/mockups/ward-flow/constellation")).toBe("/ward-flow/network");
+    // One hop for the retired constellation and Network screens, not two.
+    expect(movedRouteTarget("/mockups/ward-flow/constellation")).toBe("/ward-flow");
+    expect(movedRouteTarget("/mockups/ward-flow/network")).toBe("/ward-flow");
     expect(movedRouteTarget("/mockups/ward-flow-digest")).toBeNull();
     expect(movedRouteTarget("/mockups/ward-flow-archive")).toBeNull();
     expect(movedRouteTarget("/ward-flow/capacity")).toBeNull();
@@ -170,11 +171,13 @@ describe("developer-area header (x-developer-area)", () => {
 });
 
 describe("static compatibility redirects", () => {
-  it("forwards retired constellation deep-links to the network destination", async () => {
-    const response = await proxy(requestFor("/ward-flow/constellation"));
-    expect(response.status).toBe(307);
-    const location = new URL(response.headers.get("location")!);
-    expect(location.pathname).toBe("/ward-flow/network");
+  it("forwards retired constellation and Network deep-links to Home", async () => {
+    for (const path of ["/ward-flow/constellation", "/ward-flow/network"]) {
+      const response = await proxy(requestFor(path));
+      expect(response.status, path).toBe(307);
+      const location = new URL(response.headers.get("location")!);
+      expect(location.pathname, path).toBe("/ward-flow");
+    }
   });
 });
 
