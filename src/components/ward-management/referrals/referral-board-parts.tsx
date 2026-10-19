@@ -34,7 +34,7 @@ import {
 } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import { referralInformationNeedLabel } from "./referral-information-needs";
-import { ReferralInformationNeedsPanel } from "./referral-information-needs-panel";
+import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 

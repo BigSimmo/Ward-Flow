@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 
 import { Button, DisabledReason, StatusGlyph } from "@/components/wf";
 
 import { formatInstantWithDay, type Instant } from "../ward-clock";
-import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowClock } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import type { Referral, ReferralInformationNeedEntry } from "../ward-model";
 import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
@@ -23,35 +24,9 @@ import styles from "./referral-information-needs.module.css";
 /**
  * Smart features ideas 3 and 4 (19 Oct 2026), the screen half: the ward's "opened" receipt, the
  * ward's "what we still need" picker, and the referrer's list to tick off. None of these answers a
- * referral, and the decision clock keeps running throughout.
+ * referral, and the decision clock keeps running throughout. Screens load this file through
+ * `referral-information-needs-lazy.tsx`, so a page where nobody asks for anything skips its code.
  */
-
-/**
- * Stamps "opened" on each of this ward's live referrals the first time the ward itself shows them.
- * Only for a ward acting as itself; the coordinator looking at a ward's inbox is not the ward.
- */
-export function useMarkReferralsOpened(
-  entries: readonly WardReferralInboxEntry[],
-  unitId: string,
-  actingUnitId: string | undefined,
-) {
-  const enabled = useWardFeatureFlag("referral-opened-receipts");
-  const { dispatch } = useWardFlowSelect("dispatch");
-  const now = useWardFlowClock();
-  const routeRole = useRouteRole();
-  const unopened = entries
-    .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined && entry.openedAt === undefined)
-    .map((entry) => entry.id)
-    .join(" ");
-  useEffect(() => {
-    if (!enabled || routeRole !== "ward" || actingUnitId !== unitId || unopened === "") return;
-    for (const referralId of unopened.split(" ")) {
-      dispatch({ type: "MARK_REFERRAL_OPENED", role: "ward", now, referralId, unitId, actingUnitId });
-    }
-    // `now` is read when a referral first appears, not on every clock tick.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, routeRole, actingUnitId, unitId, unopened, dispatch]);
-}
 
 function NeedList({ needs, now }: { needs: readonly ReferralInformationNeedEntry[]; now: Instant }) {
   return (
@@ -80,9 +55,9 @@ export function WardInformationNeedsPicker({
   refusal: string | undefined;
 }) {
   const enabled = useWardFeatureFlag("referral-information-needs");
-  const { dispatch } = useWardFlowSelect("dispatch");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   const [chosen, setChosen] = useState<ReadonlySet<ReferralInformationNeed>>(() => new Set());
   const groupId = useId();
   if (!enabled) return null;
@@ -125,10 +100,7 @@ export function WardInformationNeedsPicker({
             aria-describedby={askRefusal ? `${groupId}-why` : undefined}
             onClick={() => {
               if (askRefusal) return;
-              dispatch({
-                type: "REQUEST_REFERRAL_INFORMATION",
-                role: routeRole,
-                now,
+              raise("REQUEST_REFERRAL_INFORMATION", {
                 referralId: entry.id,
                 unitId,
                 ...(routeRole === "ward" && actingUnitId !== undefined ? { actingUnitId } : {}),
@@ -171,8 +143,8 @@ function NeedsToTickOff({
   arms: { unitId: string; where: string; waiting: ReferralInformationNeedEntry[] }[];
   now: Instant;
 }) {
-  const { dispatch } = useWardFlowSelect("dispatch");
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   const reasonId = useId();
   const refusal = (TICK_OFF_ROLES as readonly string[]).includes(routeRole)
     ? undefined
@@ -197,10 +169,7 @@ function NeedsToTickOff({
                   aria-label={`Mark ${referralInformationNeedLabel(entry.need)} as provided`}
                   onClick={() => {
                     if (refusal) return;
-                    dispatch({
-                      type: "MARK_REFERRAL_INFORMATION_MET",
-                      role: routeRole,
-                      now,
+                    raise("MARK_REFERRAL_INFORMATION_MET", {
                       referralId,
                       unitId: arm.unitId,
                       need: entry.need,

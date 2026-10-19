@@ -12,7 +12,7 @@ import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-panel";
+import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
