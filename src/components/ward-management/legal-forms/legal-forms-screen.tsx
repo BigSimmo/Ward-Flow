@@ -97,16 +97,13 @@ import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
 /**
- * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
- * for each patient on a Mental Health Act form. The hero answers and carries the highlight chips;
- * three cards under it count what is still to record on the form and who is still to be told; the
- * table lists everyone on a form in two groups that are never ordered against each other; the side
- * panel is Board now (v10: the clock rail with its Passed bay, no ring) until a patient is chosen,
- * then that patient's form.
- * Desktop has no drawer. Review, rates, audit, registers and reports live on Governance.
- *
- * Owner rules kept: no invented deadlines or section numbers (D5), an unconnected action says
- * "Not wired in this prototype." (D4), and a highlight never hides a row.
+ * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
+ * patient on a Mental Health Act form. The hero answers and carries the highlight chips; three cards under it
+ * count what is still to record on the form and who is still to be told; the table lists everyone on a form in
+ * two groups that are never ordered against each other; the side panel is Board now (v10: the clock rail with
+ * its Passed bay, no ring) until a patient is chosen, then that patient's form. Desktop has no drawer. Review,
+ * rates, audit, registers and reports live on Governance. Owner rules kept: no invented deadlines or section
+ * numbers (D5), an unconnected action says "Not wired in this prototype." (D4), and a highlight never hides a row.
  */
 
 const CHART_WINDOW_MINUTES = 8 * 60;
