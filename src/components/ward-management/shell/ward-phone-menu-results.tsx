@@ -83,7 +83,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
               : group,
           )
           .filter((group) => group.items.length > 0);
-    return { needle, refusal, pages, groups };
+    return { needle, refusal, pages, groups, truncatedGroups: results.truncatedGroups };
   }, [needle, isPending, entries, movements, patients, units, referrals, plannedAdmissions, now]);
 }
 
@@ -119,7 +119,7 @@ function MenuResults({
   pageRow: PageRowRender;
   onGo: (item: SearchResultItem) => void;
 }) {
-  const { needle, refusal, pages, groups } = search;
+  const { needle, refusal, pages, groups, truncatedGroups } = search;
   // Audit round 2 (S-33): each group shows six, then "Show all N" opens the rest in place. A new
   // query starts short again.
   const [expanded, setExpanded] = useState<{ needle: string; keys: ReadonlySet<string> }>({
@@ -147,9 +147,16 @@ function MenuResults({
                   onClick={() => setExpanded({ needle, keys: new Set([...openKeys, group.key]) })}
                 >
                   <span className={styles.rowText}>
-                    <span className={styles.rowLabel}>Show all {group.items.length}</span>
+                    <span className={styles.rowLabel}>
+                      {truncatedGroups.includes(group.key) ? "Show first" : "Show all"} {group.items.length}
+                    </span>
                   </span>
                 </button>
+              </li>
+            ) : null}
+            {truncatedGroups.includes(group.key) ? (
+              <li className={styles.empty}>
+                First {group.items.length} matches. Refine your search to see other matches.
               </li>
             ) : null}
           </Section>

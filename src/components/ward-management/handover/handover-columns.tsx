@@ -3,7 +3,7 @@
  * disagree. `cell` renders the screen cell; `paper` is the plain text the printed copy carries.
  */
 import type { ReactNode } from "react";
-import { durMinutes, StatusGlyph, type WfTone } from "@/components/wf";
+import { durMinutes, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   dueParts,
@@ -61,8 +61,9 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
         <b className={styles.trunc}>{row.name}</b>
         <span className={styles.sub}>
           <span className={styles.mono}>{row.umrn}</span>
-          <span className={styles.tier} aria-label={`Tier ${row.tier}`}>
-            T{row.tier}
+          <span className={styles.tier}>
+            <span aria-hidden="true">T{row.tier}</span>
+            <SrOnly>Tier {row.tier}</SrOnly>
           </span>
         </span>
       </span>

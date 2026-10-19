@@ -19,6 +19,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
+import { movementBedReservation } from "./ward-movement-bed-hold";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -405,21 +406,13 @@ export function reduceTransportEvent(
       ) {
         return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
       }
-      const heldReferral =
-        movement.referralId === undefined
-          ? undefined
-          : state.referrals
-              .find((referral) => referral.id === movement.referralId)
-              ?.destinations.find(
-                (arm) =>
-                  arm.state === "accepted" &&
-                  arm.heldBedNumber !== undefined &&
-                  arm.destination.kind === "psychiatric_ward" &&
-                  arm.destination.unitId === unit.id,
-              );
+      const { referralArm: heldReferral, bedNumber: heldBed } = movementBedReservation(
+        movement,
+        state.referrals,
+        unit.id,
+      );
       // The patient lands in the bed held for them; if that bed has since been taken they still
       // arrive, with no bed recorded, rather than being refused at the door.
-      const heldBed = movement.heldBedNumber ?? heldReferral?.heldBedNumber;
       const heldBedNumber =
         heldBed !== undefined && bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null
           ? heldBed

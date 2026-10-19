@@ -17,6 +17,7 @@ const sqlFiles = [
   "009-access-cover-requests",
   "010-workspace-records",
   "011-record-access-and-sign-out",
+  "012-foreign-key-indexes",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {

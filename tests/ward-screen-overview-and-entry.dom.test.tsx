@@ -68,7 +68,7 @@ describe("the ward screen — the bed-list control is never gated by the confirm
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: "Decisions (Ward record)" }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Decisions \(Ward record\), / }));
     expect(screen.queryByTestId("ward-confirm-all")).not.toBeInTheDocument();
 
     const cta = screen.getByTestId("ward-hero-open-bed-list");

@@ -6,7 +6,7 @@ import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { decodeRecordAddress, querySuffix } from "@/components/ward-management/shell/ward-record-address";
 
 export const metadata: Metadata = {
-  title: "Patient - Ward Flow",
+  title: "Patient — Ward Flow",
   description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
 };
 

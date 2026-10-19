@@ -25,7 +25,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { type MovementLegState } from "./movements-derivations";
 import { ChevronRight, Lock } from "lucide-react";
-import { StatusGlyph, TierTile, Timer, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import { SrOnly, StatusGlyph, TierTile, Timer, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -330,8 +330,15 @@ export function StageRow({
       </span>
       <span className={flow.cell}>
         <span className={flow.main}>
-          <span title={originLabel} aria-label={originLabel}>
-            {originEd ? `${originEd.siteCode} ED` : originLabel}
+          <span title={originLabel}>
+            {originEd ? (
+              <>
+                <span aria-hidden="true">{`${originEd.siteCode} ED`}</span>
+                <SrOnly>{originLabel}</SrOnly>
+              </>
+            ) : (
+              originLabel
+            )}
           </span>{" "}
           {movement.acceptedUnitId ? (
             <>
