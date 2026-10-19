@@ -72,4 +72,14 @@ describe("patient page design fixes", () => {
     expect(root).toHaveTextContent("5h 30msince opened");
     expect(root).not.toHaveTextContent("Overdue wait ·");
   });
+
+  it("History reads stage times as not recorded and the example label as plain words", () => {
+    renderAt();
+    fireEvent.click(screen.getByRole("tab", { name: /History/u }));
+    const pane = document.getElementById("pnpane-history")!;
+    expect(pane).toHaveTextContent("Stage times not recorded");
+    expect(pane).not.toHaveTextContent("0 stage changes");
+    const label = within(pane).getByTestId("pn-history-example-label");
+    expect(label.className).toBe("");
+  });
 });
