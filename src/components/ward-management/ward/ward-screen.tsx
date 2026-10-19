@@ -1518,6 +1518,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         overrideReason,
       });
     } else {
+      pulledRef.current = movementId;
       raise("PULL_PATIENT", {
         movementId,
         unitId: wardUnitId,

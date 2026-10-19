@@ -21,8 +21,9 @@ import type { WardScreenBed } from "./ward-screen-derivations";
 
 /** The ward card and top action bar, drawn from the ward screen's own state. */
 /**
- * Design audit DA-36: the ward views follow the tabs pattern. Left and Right (or Up and Down) move to
- * the next view and open it, Home and End go to the first and last. Read from the list itself, so it
+ * Design audit DA-36: the ward views follow the tabs pattern. Left and Right move to the next view and
+ * open it, Home and End go to the first and last. Up and Down stay with the page, as the tabs run
+ * across. Read from the list itself, so it
  * keeps the phone's order and the desktop's order without knowing either.
  */
 export function moveBetweenWardTabs(event: KeyboardEvent<HTMLElement>): void {
@@ -30,8 +31,8 @@ export function moveBetweenWardTabs(event: KeyboardEvent<HTMLElement>): void {
   const current = tabs.findIndex((tab) => tab === document.activeElement);
   if (current === -1) return;
   let next: number | null = null;
-  if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % tabs.length;
-  else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + tabs.length) % tabs.length;
+  if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
+  else if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
   else if (event.key === "Home") next = 0;
   else if (event.key === "End") next = tabs.length - 1;
   if (next === null) return;

@@ -62,7 +62,7 @@ describe("Pull a bed feedback (DA-11)", () => {
 });
 
 describe("ward view tabs (DA-36)", () => {
-  it("move with the arrow keys, Home and End, and only the open view is a tab stop", () => {
+  it("move with Left, Right, Home and End, and only the open view is a tab stop", () => {
     renderWard(allUnits()[0]!.id);
     const list = screen.getByRole("tablist", { name: "Ward views" });
     const tabs = within(list).getAllByRole("tab");
@@ -84,6 +84,10 @@ describe("ward view tabs (DA-36)", () => {
     fireEvent.keyDown(tabs[0]!, { key: "ArrowLeft" });
     expect(document.activeElement).toBe(tabs.at(-1));
     fireEvent.keyDown(tabs.at(-1)!, { key: "Home" });
+    expect(document.activeElement).toBe(tabs[0]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    // Up and Down belong to the page while the tabs run across.
+    fireEvent.keyDown(tabs[0]!, { key: "ArrowDown" });
     expect(document.activeElement).toBe(tabs[0]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
   });
