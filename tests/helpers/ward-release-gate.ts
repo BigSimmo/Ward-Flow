@@ -13,8 +13,11 @@ import { escapeForRegExp } from "./ward-place-names";
  * 390x844, which is its own design rather than a squeezed desktop.
  */
 
-/** WCAG 2.1 A and AA. Best-practice rules are left out: the gate fails on standards, not taste. */
-const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+/**
+ * WCAG 2.1 A and AA, plus 2.2 AA (DA-21, 19 Oct 2026: target size and focus not obscured).
+ * Best-practice rules are left out: the gate fails on standards, not taste.
+ */
+const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 
 /**
