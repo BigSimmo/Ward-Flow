@@ -99,7 +99,14 @@ async function waitForScreen(page: Page, testId: string) {
 async function goViaRail(page: Page, href: string, screenTestId: string) {
   const rail = page.getByTestId("ward-rail");
   await expect(rail, "the shell rail must be mounted on this route").toBeVisible();
-  await rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`).click();
+  const link = rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`);
+  if (await link.isVisible()) {
+    await link.click();
+  } else {
+    // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
+    await rail.getByTestId("ward-rail-more").click();
+    await page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first().click();
+  }
   await waitForScreen(page, screenTestId);
 }
 
