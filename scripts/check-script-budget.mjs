@@ -91,7 +91,7 @@ async function waitForServer(base, attempts = 60) {
 }
 
 // D-39's one configured legacy movement link redirects to this exact record-address code.
-// Keep this paired with movementHref("WF-001") (tests/script-budget.test.ts checks it), rather
+// Keep this paired with movementHref("WF-001") (tests/ward-script-budget.test.ts checks it), rather
 // than accepting any same-origin redirect.
 export const LEGACY_MOVEMENT_REDIRECT = Object.freeze({
   route: "/ward-flow/movements/WF-001",
