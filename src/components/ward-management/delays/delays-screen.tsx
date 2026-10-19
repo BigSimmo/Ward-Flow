@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
@@ -11,7 +13,6 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
-import { MissedRequestsPanel } from "@/components/ward-management/coordinator/missed-requests-panel";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -25,6 +26,11 @@ import {
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
 import styles from "./delays.module.css";
+
+// Coordinators only, behind a switch: loaded on demand so other screens that include Delays stay small.
+const MissedRequestsPanel = dynamic(() =>
+  import("@/components/ward-management/coordinator/missed-requests-panel").then((m) => m.MissedRequestsPanel),
+);
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 

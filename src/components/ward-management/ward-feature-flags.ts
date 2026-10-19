@@ -103,8 +103,7 @@ export const WARD_FEATURE_FLAGS = {
   },
   "pilot-measures": {
     label: "Pilot measures",
-    description:
-      "The weekly report adds the pilot's agreed measures: request to bed held, missed and doubled requests, held beds, transport and complete records.",
+    description: "The weekly report adds the pilot's agreed measures.",
     owner: "Josh",
     added: "2026-10-19",
     defaults: { development: true, demo: true, production: false },
@@ -112,12 +111,11 @@ export const WARD_FEATURE_FLAGS = {
   },
   "missed-requests-check": {
     label: "Daily missed request check",
-    description:
-      "Delays shows coordinators a daily check of bed requests with no ward asked, accepted ED referrals with no bed request, the same person twice and one bed held twice.",
+    description: "Delays shows coordinators a daily check for missed or doubled bed requests.",
     owner: "Josh",
     added: "2026-10-19",
     defaults: { development: true, demo: true, production: false },
-    removeWhen: "Josh agrees the two-hour window and the four rules with the pilot sponsor.",
+    removeWhen: "Josh agrees the window and the rules with the pilot sponsor.",
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
