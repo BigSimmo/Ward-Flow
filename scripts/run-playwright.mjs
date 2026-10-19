@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -24,6 +25,7 @@ import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
+import { KEPT_EVIDENCE_RUNS, pruneEvidenceRuns } from "./ward-flow/prune-evidence-runs.mjs";
 import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
 import {
   appName,
@@ -153,6 +155,10 @@ if (keepBuildRoot && !requestedRunId) {
 const runId = requestedRunId || `${process.pid}-${Date.now()}`;
 const relativeRunRoot = `.next-playwright/${runId}`;
 const absoluteRunRoot = path.join(projectRoot, relativeRunRoot);
+// Evidence outlives temporary build cleanup. Each invocation owns a separate directory, even
+// when callers reuse a build id; the next CI CSRF run must not wipe preceding journey failures.
+const relativeResultsRoot = `test-results/${runId}-${randomUUID()}`;
+const absoluteResultsRoot = path.join(projectRoot, relativeResultsRoot);
 const relativeDistDir = `${relativeRunRoot}/dist`;
 const relativeTsConfigPath = `${relativeRunRoot}/tsconfig.json`;
 const configuredWaitTimeoutMs = Number(process.env.HEAVY_RUN_WAIT_TIMEOUT_MS);
@@ -513,6 +519,17 @@ try {
   const port = await findFreePort(stableProjectPort(projectRoot));
   const baseUrl = `http://localhost:${port}`;
   mkdirSync(absoluteRunRoot, { recursive: true });
+  mkdirSync(absoluteResultsRoot, { recursive: true });
+  console.log(`Playwright evidence: ${relativeResultsRoot}`);
+  const prunedEvidence = pruneEvidenceRuns({
+    resultsParent: path.dirname(absoluteResultsRoot),
+    currentRunDir: absoluteResultsRoot,
+  });
+  if (prunedEvidence.length > 0) {
+    console.log(
+      `Pruned ${prunedEvidence.length} older Playwright evidence folder(s); keeping the newest ${KEPT_EVIDENCE_RUNS}.`,
+    );
+  }
   writeFileSync(
     path.join(absoluteRunRoot, "tsconfig.json"),
     `${JSON.stringify(
@@ -753,7 +770,7 @@ try {
       await waitForServer(shardUrl, shardServer);
       shardUrls.push(shardUrl);
     }
-    const reportFor = (index) => path.join(absoluteRunRoot, `shard-${index + 1}.json`);
+    const reportFor = (index) => path.join(absoluteResultsRoot, `shard-${index + 1}.json`);
     // Duration-weighted groups instead of Playwright's count-based --shard (batch 2: one shard held
     // every slow spec and took 10.9 minutes against 3.3 and 3.9). Each spec file the filters select
     // is placed, longest first, into the group with the least measured time so far
@@ -775,7 +792,7 @@ try {
           new Promise((resolve) => {
             const child = spawn(
               process.execPath,
-              [playwrightBin, "test", ...shardArgsFor(index), `--output=test-results/shard-${index + 1}`],
+              [playwrightBin, "test", ...shardArgsFor(index), `--output=${relativeResultsRoot}/shard-${index + 1}`],
               {
                 cwd: projectRoot,
                 env: {
@@ -852,13 +869,15 @@ try {
         `Not rerunning ${knownOnly.length} spec file(s) that failed only on the known list: ${knownOnly.join(", ")}`,
       );
     }
-    // Keep the shards' failure artefacts before anything can overwrite them: the unsharded rerun
-    // below writes to test-results/ and wiped them (full-journey:126, 26 September 2026).
+    // Keep the shards' failure artefacts in the local log as well as in the invocation-scoped
+    // evidence directory (an unsharded rerun into test-results/ once wiped them: full-journey:126,
+    // 26 September 2026).
     if (exitCode !== 0) {
       try {
         const kept = keepJourneyFailures({
           projectRoot,
           shardCount,
+          resultsRoot: absoluteResultsRoot,
           logsRoot: wardFlowLogsRoot(),
         });
         if (kept) console.log(`Kept the shards' failure artefacts in ${kept}`);
@@ -869,22 +888,40 @@ try {
       }
     }
     if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
-      console.log(`Rerunning ${rerun.length} failed spec file(s) alone, unsharded: ${rerun.join(", ")}`);
+      console.log(`Diagnostic rerun of ${rerun.length} failed spec file(s), unsharded: ${rerun.join(", ")}`);
       const specArgs = playwrightArgs.filter((argument) => argument.startsWith("-"));
-      const again = spawnSync(process.execPath, [playwrightBin, "test", ...specArgs, ...rerun], {
-        cwd: projectRoot,
-        env: testEnv,
-        stdio: "inherit",
-      });
+      // Its own output and report directory, so the diagnostic run cannot clear the shards' evidence.
+      const diagnosticReport = path.join(absoluteResultsRoot, "diagnostic.json");
+      const again = spawnSync(
+        process.execPath,
+        [
+          playwrightBin,
+          "test",
+          ...specArgs,
+          ...rerun,
+          `--output=${relativeResultsRoot}/diagnostic`,
+          "--reporter=list,json",
+        ],
+        {
+          cwd: projectRoot,
+          env: { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: diagnosticReport },
+          stdio: "inherit",
+        },
+      );
       const rerunExitCode = childProcessExitCode(again);
       console.log(`Diagnostic unsharded rerun: exit ${rerunExitCode} (initial shard failure retained).`);
     }
     await exitAfterTypeCheck(exitCode);
   }
 
-  // Validate the same internal report regardless of the caller's display reporter.
-  const singleReport = path.join(absoluteRunRoot, "journeys.json");
-  const result = spawnSync(process.execPath, [playwrightBin, "test", ...reportArgs], {
+  // Validate the same internal report regardless of the caller's display reporter. The report and,
+  // unless the caller chose an output folder, the traces stay in this invocation's evidence directory.
+  const singleReport = path.join(absoluteResultsRoot, "journeys.json");
+  const callerChoseOutput = playwrightArgs.some(
+    (argument) => argument === "--output" || argument.startsWith("--output="),
+  );
+  const outputArgs = callerChoseOutput ? [] : [`--output=${relativeResultsRoot}/tests`];
+  const result = spawnSync(process.execPath, [playwrightBin, "test", ...reportArgs, ...outputArgs], {
     cwd: projectRoot,
     env: { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: singleReport, PLAYWRIGHT_JSON_OUTPUT_FILE: singleReport },
     stdio: "inherit",

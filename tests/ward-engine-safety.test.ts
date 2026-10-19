@@ -3,9 +3,9 @@
  * every single event, that the bed picture is still physically possible.
  *
  * The example-based reducer tests prove that each event does the right thing from a hand-built
- * state. These prove something they cannot: that NO ordering of events, including refused ones,
- * leaves a bed count below zero, two people in one bed, one person in two beds, a ward fuller than
- * its beds, or a world the browser copy would refuse to reload.
+ * state. These explore bounded, reproducible orderings, including refused events, checking for
+ * a bed count below zero, two people in one bed, one person in two beds, a ward fuller than its
+ * beds, or a world the browser copy would refuse to reload. Passing samples are not exhaustive proof.
  *
  * Reproducible: each sequence is one integer seed (`tests/helpers/ward-engine-fuzz.ts`). A failure
  * is shrunk to the shortest event list that still breaks the same rule, and the message prints

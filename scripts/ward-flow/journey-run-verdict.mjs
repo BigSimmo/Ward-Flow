@@ -7,15 +7,27 @@
 // and still looked green. A run is now red when any of these holds, whatever the exit codes say:
 //   - a shard left no readable report
 //   - a report carries top-level errors (a config or project error, a crash)
+//   - a requested --project is not among the projects a report was configured with
 //   - a requested --project has no executed test across the reports
 //   - no test ran at all (nothing passed, failed or was flaky)
 
-/** Project names the caller asked for, in either CLI spelling. */
+/**
+ * Project names the caller asked for, in either CLI spelling. Playwright's `--project` is variadic
+ * (`--project a b`), so following non-option arguments are project names too, up to the first one
+ * that reads as a test file filter (a path or a spec file name).
+ */
 export function requestedProjects(args) {
   const names = [];
   args.forEach((argument, index) => {
     if (argument.startsWith("--project=")) names.push(argument.slice("--project=".length));
-    else if (argument === "--project" && args[index + 1]) names.push(args[index + 1]);
+    else if (argument === "--project") {
+      for (
+        let next = index + 1;
+        next < args.length && args[next] && !args[next].startsWith("-") && !/[\\/]|\.[cm]?[jt]sx?$/.test(args[next]);
+        next++
+      )
+        names.push(args[next]);
+    }
   });
   return names;
 }
@@ -54,6 +66,12 @@ export function journeyRunVerdict(runs, projects, { allowNoTests = false } = {})
     }
     for (const error of report.errors ?? []) {
       problems.push(`${label} reported an error: ${String(error?.message ?? error).split("\n")[0]}`);
+    }
+    // Selection evidence per report: a requested project missing from a report's configuration is
+    // a "project not found" run, whatever another report executed.
+    const configured = new Set((report.config?.projects ?? []).map((project) => project.name));
+    for (const project of new Set(projects)) {
+      if (!configured.has(project)) problems.push(`${label} did not configure requested project "${project}"`);
     }
     ran += countRan(report, executedProjects);
   }
