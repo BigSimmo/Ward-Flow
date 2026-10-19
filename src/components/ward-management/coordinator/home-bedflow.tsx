@@ -38,6 +38,10 @@ import {
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
+// Loads the shared coordinator styles here, ahead of home.module.css and shortlist-panel.module.css,
+// as flow-diagram.tsx did while this card imported it. The Placement panel's own overrides depend on
+// coming later in the cascade; left to the lazy panel, these base rules arrived last and won.
+import "./coordinator.module.css";
 import { hubStatusText } from "./flow-status";
 import { fitGroups } from "./home-fit";
 import styles from "./home.module.css";
