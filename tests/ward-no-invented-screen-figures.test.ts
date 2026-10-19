@@ -160,6 +160,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^shell\/ward-early-tap\.ts$/,
     name: /^(?:EARLY_TAP_MAX_AGE_MS|SETTLE_MS)$/,
   },
+  {
+    id: "shared-full-read-pace",
+    why: "Shared mode (audit F-04, 19 Oct 2026): how often a desk re-reads its whole part of the workspace between lean polls; network pacing, never shown, not a limit.",
+    file: /^ward-shared-client\.ts$/,
+    name: /^FULL_READ_EVERY_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
