@@ -30,8 +30,14 @@ export function durMinutes(minutes: number): string {
   return dur(minutes * MINUTE);
 }
 
-/** 24 hour clock time, `HH:MM`. */
+/** Perth is UTC+8 all year (Western Australia observes no daylight saving), as in ward-clock.ts. */
+const PERTH_UTC_OFFSET = 8 * HOUR;
+
+/**
+ * 24 hour Perth (AWST) clock time, `HH:MM`, whatever the device's time zone. Every other Ward Flow
+ * clock face and date is Perth, so a device-zone reading here would disagree with them (F-22).
+ */
 export function clk(at: Date | number): string {
-  const d = typeof at === "number" ? new Date(at) : at;
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const perth = new Date((typeof at === "number" ? at : at.getTime()) + PERTH_UTC_OFFSET);
+  return `${pad(perth.getUTCHours())}:${pad(perth.getUTCMinutes())}`;
 }

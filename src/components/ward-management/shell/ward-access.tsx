@@ -20,6 +20,7 @@ import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
 import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
@@ -709,9 +710,14 @@ const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as con
  * unlocking never widens it. It runs on every build, whatever the role access switch says. In the
  * signed-in shared workspace the lock also signs out, here and on the server, so the next person
  * needs the password to carry on; the local demo has no sign-in, so it stays a privacy screen.
+ * The bed meeting TV is left running (Josh, 19 Oct 2026): it is read only, shows initials only and
+ * is meant to stay up all day; leaving the TV page starts the clock again. With TV views switched
+ * off the page is only a notice, so it locks like any other.
  */
 export function WardIdleLock() {
   const access = useEffectiveWardAccess();
+  const pathname = usePathname() ?? "";
+  const onTv = useWardFeatureFlag("bed-meeting-tv") && pathname === WARD_BED_MEETING_TV_HREF;
   const session = useContext(SharedSessionContext);
   const [locked, setLocked] = useState<false | "screen" | "signed-out">(false);
   const lockRef = useRef<HTMLDivElement | null>(null);
@@ -727,6 +733,7 @@ export function WardIdleLock() {
   });
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
+    if (onTv) return;
     const lock = () => {
       lockWardDesk();
       forgetStepUp();
@@ -743,7 +750,7 @@ export function WardIdleLock() {
       window.clearTimeout(timer);
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset);
     };
-  }, [access, minutes, session]);
+  }, [access, minutes, onTv, session]);
   if (!locked) return null;
   return (
     <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">

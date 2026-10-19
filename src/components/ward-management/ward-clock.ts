@@ -28,9 +28,14 @@ export type ClockState = "breached" | "critical" | "due" | "clear";
  * time across two of its readings has to know this to unwrap the rollover. */
 export const MINUTES_PER_DAY = 24 * 60;
 
+/** Perth is UTC+8 all year: Western Australia observes no daylight saving. */
+const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
+const PERTH_UTC_OFFSET_MS = PERTH_UTC_OFFSET_MINUTES * 60_000;
+const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
+
+/** The Perth (AWST) clock face now, 0-1439, whatever the device's time zone. */
 export function wallClockNow(): Instant {
-  const date = new Date();
-  return date.getHours() * 60 + date.getMinutes();
+  return minuteOfDay(absoluteWallClockMinutes());
 }
 
 /**
@@ -59,7 +64,7 @@ export function elapsedMinutesSinceMount(mountedAt: Instant, current: Instant): 
 }
 
 /**
- * Minutes since the Unix epoch, counted in LOCAL wall-clock terms.
+ * Minutes since the Unix epoch, counted in PERTH (AWST, UTC+8) wall-clock terms.
  *
  * `wallClockNow()` returns a minute of the day and throws the date away, which is why
  * `elapsedMinutesSinceMount` has to guess at midnight: two readings of a 0-1439 counter cannot say
@@ -68,23 +73,19 @@ export function elapsedMinutesSinceMount(mountedAt: Instant, current: Instant): 
  * over a missing concept rather than a solution.
  *
  * This carries the date, so the difference between two readings is simply their difference, over any
- * span. Dividing by `MINUTES_PER_DAY` gives the local day, which is what makes "which day is this
+ * span. Dividing by `MINUTES_PER_DAY` gives the Perth day, which is what makes "which day is this
  * instant on" answerable at all.
  *
- * Local rather than UTC deliberately: a ward's day starts at local midnight, and a demonstration in
+ * Perth rather than UTC deliberately: a ward's day starts at local midnight, and a demonstration in
  * Perth that rolled its day over at 08:00 because the epoch is UTC would be wrong in the one way
- * nobody would think to check. The daylight-saving jump is accepted - Western Australia does not
- * observe it, and an hour's discontinuity twice a year is not a risk this prototype carries.
+ * nobody would think to check. Perth rather than the device's zone too (F-22, 19 Oct 2026): every
+ * printed date and day 0 (`demoDayZero`) are already Perth, so a clock read in a Sydney or UTC
+ * browser put the board's "now" hours away from the dates beside it. Western Australia observes no
+ * daylight saving, so a fixed UTC+8 is exact.
  */
 export function absoluteWallClockMinutes(): number {
-  const now = new Date();
-  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60_000) / 60_000);
+  return Math.floor((Date.now() + PERTH_UTC_OFFSET_MS) / 60_000);
 }
-
-/** Perth is UTC+8 all year: Western Australia observes no daylight saving. */
-const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
-const PERTH_UTC_OFFSET_MS = PERTH_UTC_OFFSET_MINUTES * 60_000;
-const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
 
 /**
  * The calendar date that the demo's day 0 falls on - Perth midnight of the Perth day a session opened.

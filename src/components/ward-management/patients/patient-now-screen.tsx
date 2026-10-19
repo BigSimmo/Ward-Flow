@@ -238,7 +238,7 @@ export function PatientNowScreen({
 
   // Synchronize document title
   useEffect(() => {
-    document.title = "Patient - Ward Flow";
+    document.title = "Patient — Ward Flow";
   }, []);
 
   // Dynamically resolve the patient record

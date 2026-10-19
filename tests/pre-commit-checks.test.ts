@@ -1,9 +1,9 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { runInNewContext } from "node:vm";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
 import {
   approvedTakeoverFiles,
   isLuhnValid,
@@ -18,7 +18,51 @@ import {
   ownershipAdmission,
   partitionMergeOwnership,
   filterAdmissionMergePaths,
+  WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
+
+const verifiedCheckouts: string[] = [];
+afterAll(() => {
+  for (const root of verifiedCheckouts.splice(0))
+    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
+
+/**
+ * A synthetic checkout that the real isPublicWardFlowCheckout() verifies, so sign-out parsing tests do
+ * not depend on this checkout's clone depth. It has the canonical origin URL (never contacted) and a
+ * HEAD and origin/main whose parent is the identity anchor. The anchor commit is supplied through a
+ * replace ref onto a local root commit, because a shallow clone does not hold the real anchor object.
+ * The identity check itself is covered against real history in public-signout-boundary.test.ts.
+ */
+function verifiedWardFlowCheckout(): string {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "precommit-verified-")));
+  verifiedCheckouts.push(root);
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "Pre-commit Test",
+    GIT_AUTHOR_EMAIL: "pre-commit-test@example.invalid",
+    GIT_COMMITTER_NAME: "Pre-commit Test",
+    GIT_COMMITTER_EMAIL: "pre-commit-test@example.invalid",
+  };
+  // A hook-exported GIT_DIR or GIT_INDEX_FILE must not redirect fixture writes into the real checkout.
+  for (const name of execFileSync("git", ["rev-parse", "--local-env-vars"], { encoding: "utf8" }).split(/\r?\n/))
+    if (name) delete env[name];
+  const git = (...args: string[]) =>
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-C", root, ...args], {
+      encoding: "utf8",
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  git("init", "--quiet", "--initial-branch=ward/probe");
+  git("remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow");
+  const tree = git("hash-object", "-t", "tree", "-w", "--stdin");
+  const standIn = git("commit-tree", tree, "-m", "synthetic identity anchor stand-in");
+  git("update-ref", `refs/replace/${WARD_FLOW_IDENTITY_ANCHOR}`, standIn);
+  const head = git("commit-tree", tree, "-p", WARD_FLOW_IDENTITY_ANCHOR, "-m", "synthetic Ward Flow head");
+  git("update-ref", "refs/heads/ward/probe", head);
+  git("update-ref", "refs/remotes/origin/main", head);
+  return root;
+}
 
 describe("signOutConflicts (clash guard)", () => {
   const signOut = [
@@ -34,8 +78,9 @@ describe("signOutConflicts (clash guard)", () => {
     const file = "docs/ward-flow/last.md";
     const line = (branch: string) =>
       `Open sign-outs only\n- 2026-10-17 | Synthetic owner | ${branch} | | ${file} | repo=BigSimmo/Ward-Flow\n`;
-    expect(signOutConflicts([file], line("ward/peer"), "ward/mine", process.cwd())).toHaveLength(1);
-    expect(unsignedWardFiles([file], line("ward/mine"), "ward/mine", process.cwd())).toEqual([]);
+    const checkout = verifiedWardFlowCheckout();
+    expect(signOutConflicts([file], line("ward/peer"), "ward/mine", checkout)).toHaveLength(1);
+    expect(unsignedWardFiles([file], line("ward/mine"), "ward/mine", checkout)).toEqual([]);
   });
 
   it("flags files, folders and bare file names signed out by another branch, naming the owner", () => {
@@ -445,7 +490,8 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
   expect(mainEnd).toBeGreaterThan(mainStart);
   const mainSource = source.slice(mainStart, mainEnd);
   const incomingFile = "docs/ward-flow/incoming.md";
-  const fixtureRoot = process.cwd();
+  // ownershipAdmission() verifies this root with the real identity check, so it must be a public checkout.
+  const fixtureRoot = verifiedWardFlowCheckout();
   const mergeHeadPath = join(fixtureRoot, "MERGE_HEAD");
   const signOutFile = join(fixtureRoot, "sign-out.md");
 

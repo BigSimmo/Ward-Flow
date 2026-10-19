@@ -2,6 +2,8 @@
 
 import { Bell, ChevronDown, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
+import type { LegalStatus } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -103,7 +105,10 @@ import {
   type BoardCheck,
   boardUndoEvent,
   CENSUS_BED_OPENER_TARGET,
+  afterCommand,
   censusBedOpenerTarget,
+  commandNotRecorded,
+  commandUnconfirmed,
   ownHistoryState,
   shiftLine,
   unavailablePatientIdentity,
@@ -264,15 +269,32 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  const dischargeCheckRef = useRef<{
-    prior: number;
-    success: string;
-    who: string;
-    codes: string[];
-    /** Audit A1-12: the stay a recorded departure can take back from its toast. */
-    undoAdmissionId?: string;
-  } | null>(null);
+  // Each settled departure waits here for the effect below, so two in flight both get their answer.
+  const dischargeChecksRef = useRef<
+    {
+      prior: number;
+      success: string;
+      who: string;
+      codes: string[];
+      /** Audit A1-12: the stay a recorded departure can take back from its toast. */
+      undoAdmissionId?: string;
+      /** Audit F-02: the command's answer; in shared mode the local refusal list never grows. */
+      outcome?: Parameters<typeof commandNotRecorded>[0];
+    }[]
+  >([]);
   const [dischargeToken, setDischargeToken] = useState(0);
+  // Audit F-02 (19 Oct 2026): a departure message waits for the command's answer, so a refusal from
+  // the shared server is never shown as done.
+  const settleDischarge = useCallback(
+    (check: (typeof dischargeChecksRef.current)[number], result: ReturnType<typeof raise>) => {
+      afterCommand(result, (outcome) => {
+        check.outcome = outcome;
+        dischargeChecksRef.current.push(check);
+        setDischargeToken((token) => token + 1);
+      });
+    },
+    [],
+  );
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
@@ -341,8 +363,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");
   const [placedBed, setPlacedBed] = useState<number | null>(null);
-  const boardCheckRef = useRef<BoardCheck | null>(null);
+  // Each settled place or undo waits here for the effect below, so two in flight both get their answer.
+  const boardChecksRef = useRef<BoardCheck[]>([]);
   const [boardToken, setBoardToken] = useState(0);
+  // Audit F-02: a Bed board place or undo says what happened only once the command has an answer.
+  const settleBoard = useCallback((check: BoardCheck, result: ReturnType<typeof raise>) => {
+    afterCommand(result, (outcome) => {
+      check.outcome = outcome;
+      boardChecksRef.current.push(check);
+      setBoardToken((token) => token + 1);
+    });
+  }, []);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const routeRole = useRouteRole();
@@ -444,62 +475,72 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // The outcome of "Discharged" (Josh, 1A): a refusal shows its reason; only an accepted departure
   // shows the success message.
   useEffect(() => {
-    const check = dischargeCheckRef.current;
-    if (dischargeToken === 0 || check === null) return;
-    dischargeCheckRef.current = null;
-    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
-    // A refusal names the person the way the success message does (Josh, 26 Sept 2026): the
-    // engine's reason quotes record codes, so each code of this person's is shown as their name.
-    const reason = refused
-      ? check.codes.reduce((text, code) => text.split(code).join(check.who), refused.reason)
-      : undefined;
-    // Protected refusals deliberately omit identifiers; retain the name already shown on this scoped card.
-    const namedReason =
-      reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
-        ? `${check.who}: ${reason}`
-        : reason;
-    if (namedReason !== undefined) {
-      setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
-      return;
-    }
-    // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
-    // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
-    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-    const successText =
-      offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
-    const undoAdmissionId = check.undoAdmissionId;
-    if (!toast || undoAdmissionId === undefined) {
-      setToastMessage(successText);
-      return;
-    }
-    const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
-    toast.push({
-      tone: "success",
-      title: successText,
-      ...(undoLimit
-        ? { body: `Undo: ${undoLimit}` }
-        : {
-            undo: {
-              durationMs: UNDO_TOAST_MS,
-              onUndo: () => {
-                dischargeCheckRef.current = {
-                  prior: rejectionCountRef.current,
-                  success: `Undone. ${check.who} is back in their bed.`,
-                  who: check.who,
-                  codes: check.codes,
-                };
-                dispatch({
-                  type: "UNDO_DEPARTURE",
-                  role: "ward",
-                  now: nowRef.current,
-                  admissionId: undoAdmissionId,
-                  actingUnitId: unitId,
-                });
-                setDischargeToken((token) => token + 1);
+    if (dischargeToken === 0) return;
+    for (const check of dischargeChecksRef.current.splice(0)) {
+      const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
+      if (unconfirmed !== null) {
+        setToastMessage(unconfirmed);
+        continue;
+      }
+      const refused =
+        rejections.length > check.prior
+          ? rejections[rejections.length - 1]?.reason
+          : (commandNotRecorded(check.outcome) ?? undefined);
+      // A refusal names the person the way the success message does (Josh, 26 Sept 2026): the
+      // engine's reason quotes record codes, so each code of this person's is shown as their name.
+      const reason = refused
+        ? check.codes.reduce((text, code) => text.split(code).join(check.who), refused)
+        : undefined;
+      // Protected refusals deliberately omit identifiers; retain the name already shown on this scoped card.
+      const namedReason =
+        reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
+          ? `${check.who}: ${reason}`
+          : reason;
+      if (namedReason !== undefined) {
+        setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
+        continue;
+      }
+      // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
+      // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      const successText =
+        offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
+      const undoAdmissionId = check.undoAdmissionId;
+      if (!toast || undoAdmissionId === undefined) {
+        setToastMessage(successText);
+        continue;
+      }
+      const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
+      toast.push({
+        tone: "success",
+        title: successText,
+        ...(undoLimit
+          ? { body: `Undo: ${undoLimit}` }
+          : {
+              undo: {
+                durationMs: UNDO_TOAST_MS,
+                onUndo: () => {
+                  const undoCheck = {
+                    prior: rejectionCountRef.current,
+                    success: `Undone. ${check.who} is back in their bed.`,
+                    who: check.who,
+                    codes: check.codes,
+                  };
+                  settleDischarge(
+                    undoCheck,
+                    dispatch({
+                      type: "UNDO_DEPARTURE",
+                      role: "ward",
+                      now: nowRef.current,
+                      admissionId: undoAdmissionId,
+                      actingUnitId: unitId,
+                    }),
+                  );
+                },
               },
-            },
-          }),
-    });
+            }),
+      });
+    }
     // `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life; the token drives this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dischargeToken, rejections]);
@@ -507,73 +548,78 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers
   // Undo on the toast, gated by the route's role like any other control.
   useEffect(() => {
-    const check = boardCheckRef.current;
-    if (boardToken === 0 || check === null) return;
-    boardCheckRef.current = null;
-    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
-    if (refused) {
-      const said = `Not recorded: ${refused.reason}. Nothing was changed.`;
-      setBoardSay(said);
-      if (toast) toast.push({ tone: "warning", title: said });
-      return;
-    }
-    setBoardSay(check.success);
-    setPlacedBed(check.undo ? check.bed : null);
-    if (!toast) {
-      setToastMessage(check.success);
-      return;
-    }
-    const undo = check.undo;
-    if (!undo) {
-      toast.push({ tone: "info", title: check.success });
-      return;
-    }
-    const undoLimit = roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type);
-    toast.push({
-      tone: "success",
-      title: check.success,
-      ...(undoLimit
-        ? { body: `Undo: ${undoLimit}` }
-        : {
-            undo: {
-              durationMs: UNDO_TOAST_MS,
-              onUndo: () => {
-                boardCheckRef.current = {
-                  prior: rejectionCountRef.current,
-                  bed: check.bed,
-                  success: "Undone. The bed and the person are back where they were.",
-                };
-                // Literal types, one per kind, so the override-surface guard reads each one.
-                const at = nowRef.current;
-                if (undo.kind === "stay")
-                  dispatch({
-                    type: "UNDO_PLACE_IN_BED",
-                    role: "ward",
-                    now: at,
-                    admissionId: undo.admissionId,
-                    actingUnitId: undo.unitId,
-                  });
-                else if (undo.kind === "movement")
-                  dispatch({
-                    type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                    role: "ward",
-                    now: at,
-                    movementId: undo.movementId,
-                    actingUnitId: undo.unitId,
-                  });
-                else
-                  dispatch({
-                    type: "UNDO_REFERRAL_DECISION",
-                    role: "ward",
-                    now: at,
-                    referralId: undo.referralId,
-                    actingUnitId: undo.unitId,
-                  });
-                setBoardToken((token) => token + 1);
+    if (boardToken === 0) return;
+    for (const check of boardChecksRef.current.splice(0)) {
+      const refused =
+        rejections.length > check.prior
+          ? rejections[rejections.length - 1]?.reason
+          : (commandNotRecorded(check.outcome) ?? undefined);
+      const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
+      if (refused || unconfirmed !== null) {
+        const said = unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`;
+        setBoardSay(said);
+        if (toast) toast.push({ tone: "warning", title: said });
+        continue;
+      }
+      setBoardSay(check.success);
+      setPlacedBed(check.undo ? check.bed : null);
+      if (!toast) {
+        setToastMessage(check.success);
+        continue;
+      }
+      const undo = check.undo;
+      if (!undo) {
+        toast.push({ tone: "info", title: check.success });
+        continue;
+      }
+      const undoLimit = roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type);
+      toast.push({
+        tone: "success",
+        title: check.success,
+        ...(undoLimit
+          ? { body: `Undo: ${undoLimit}` }
+          : {
+              undo: {
+                durationMs: UNDO_TOAST_MS,
+                onUndo: () => {
+                  const undoCheck: BoardCheck = {
+                    prior: rejectionCountRef.current,
+                    bed: check.bed,
+                    success: "Undone. The bed and the person are back where they were.",
+                  };
+                  // Literal types, one per kind, so the override-surface guard reads each one.
+                  const at = nowRef.current;
+                  let result: ReturnType<typeof dispatch>;
+                  if (undo.kind === "stay")
+                    result = dispatch({
+                      type: "UNDO_PLACE_IN_BED",
+                      role: "ward",
+                      now: at,
+                      admissionId: undo.admissionId,
+                      actingUnitId: undo.unitId,
+                    });
+                  else if (undo.kind === "movement")
+                    result = dispatch({
+                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                      role: "ward",
+                      now: at,
+                      movementId: undo.movementId,
+                      actingUnitId: undo.unitId,
+                    });
+                  else
+                    result = dispatch({
+                      type: "UNDO_REFERRAL_DECISION",
+                      role: "ward",
+                      now: at,
+                      referralId: undo.referralId,
+                      actingUnitId: undo.unitId,
+                    });
+                  settleBoard(undoCheck, result);
+                },
               },
-            },
-          }),
-    });
+            }),
+      });
+    }
     // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardToken, rejections]);
@@ -809,19 +855,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 undo: {
                   durationMs: UNDO_TOAST_MS,
                   onUndo: () => {
-                    boardCheckRef.current = {
+                    const undoCheck: BoardCheck = {
                       prior: rejectionCountRef.current,
                       bed: 0,
                       success: "Acceptance undone. The referral is back with this ward.",
                     };
-                    dispatch({
-                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                      role: "ward",
-                      now: nowRef.current,
-                      movementId: acceptUndo.movementId,
-                      actingUnitId: acceptUndo.unitId,
-                    });
-                    setBoardToken((token) => token + 1);
+                    settleBoard(
+                      undoCheck,
+                      dispatch({
+                        type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                        role: "ward",
+                        now: nowRef.current,
+                        movementId: acceptUndo.movementId,
+                        actingUnitId: acceptUndo.unitId,
+                      }),
+                    );
                   },
                 },
               }),
@@ -1160,9 +1208,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       return "Not recorded";
     })();
 
-    const legalBasisText = stayMovement?.legalStatus ?? targetBed?.legalStatus ?? targetBed?.legalStatusLabel ?? "";
-    const involuntaryBedNeeded =
-      /involuntary|form 6a|form 1a|order/i.test(legalBasisText) && !/^voluntary/i.test(legalBasisText);
+    // The engine's own rule: every status but Voluntary (or none recorded) needs an authorised bed.
+    // The bed's status is typed as text but always holds a recorded status; the rule only tests "Voluntary".
+    const recordedStatus = (stayMovement?.legalStatus ?? targetBed?.legalStatus) as LegalStatus | undefined;
+    const involuntaryBedNeeded = requiresAuthorisedDestination(recordedStatus);
     const secureBedNeeded = Boolean(stayMovement ? stayMovement.security === "Secure" : false);
     const highAcuityNursingNeeded = Boolean(
       stayAdmission?.highAcuity || stayAdmission?.specialling || targetBed?.highAcuity || targetBed?.isSpecialling,
@@ -1173,7 +1222,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? ({ kind: "named", name: patientRecord.suburb } as const)
         : ({ kind: "unknown", reason: "not_known" } as const);
 
-    dispatch({
+    const result = dispatch({
       type: "RECEIVE_REFERRAL",
       role: "ward",
       now,
@@ -1203,8 +1252,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const raisedMessage = targetBed?.patientAlias
       ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
       : `Ward referral raised from ${unit.name}.`;
-    setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: selectedBed });
-    setToastMessage(raisedMessage);
+    const raisedFromBed = selectedBed;
+    afterCommand(result, (outcome) => {
+      const unconfirmed = commandUnconfirmed(outcome);
+      const refused = commandNotRecorded(outcome);
+      if (unconfirmed !== null || refused !== null) {
+        setToastMessage(unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`);
+        return;
+      }
+      setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: raisedFromBed });
+      setToastMessage(raisedMessage);
+    });
   }
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
@@ -1281,8 +1339,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
     const pick = boardPick;
     setBoardPick(null);
+    let check: BoardCheck;
+    let result: ReturnType<typeof raise>;
     if (pick.kind === "stay") {
-      boardCheckRef.current = {
+      check = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Moved ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bedNumberLabel(bedNumber)}.`,
@@ -1292,14 +1352,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      raise("PLACE_IN_BED", {
+      result = raise("PLACE_IN_BED", {
         admissionId: pick.admissionId,
         bedNumber,
         actingUnitId: boardUnitId,
       });
     } else if (pick.kind === "movement") {
       // v10 pass 3: a coordinator-sent person, accepted in principle into this numbered bed.
-      boardCheckRef.current = {
+      check = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
@@ -1309,14 +1369,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      raise("ACCEPT_IN_PRINCIPLE", {
+      result = raise("ACCEPT_IN_PRINCIPLE", {
         movementId: pick.movementId,
         unitId: boardUnitId,
         actingUnitId: boardUnitId,
         bedNumber,
       });
     } else {
-      boardCheckRef.current = {
+      check = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
@@ -1326,7 +1386,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      raise("ACCEPT_REFERRAL", {
+      result = raise("ACCEPT_REFERRAL", {
         referralId: pick.referralId,
         destinationKind: "psychiatric_ward",
         unitId: boardUnitId,
@@ -1334,7 +1394,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         bedNumber,
       });
     }
-    setBoardToken((token) => token + 1);
+    settleBoard(check, result);
   }
 
   /**
@@ -1708,21 +1768,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const destinationLabel = LEAVING_DESTINATIONS.find(
       (destination) => destination.id === drawerLeavingDestination,
     )?.label;
-    dischargeCheckRef.current = {
+    const check = {
       prior: rejections.length,
       success: `Recorded: ${who} has left the ward${destinationLabel ? ` (${destinationLabel.toLowerCase()})` : ""}.`,
       who,
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
       undoAdmissionId: admissionId,
     };
-    if (recordWardDeparture) recordWardDeparture(admissionId, unitId, drawerLeavingDestination);
-    else
-      raise("RECORD_LEAVING", {
-        admissionId,
-        actingUnitId: unitId,
-        leavingDestination: drawerLeavingDestination,
-      });
-    setDischargeToken((token) => token + 1);
+    settleDischarge(
+      check,
+      recordWardDeparture
+        ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination)
+        : raise("RECORD_LEAVING", {
+            admissionId,
+            actingUnitId: unitId,
+            leavingDestination: drawerLeavingDestination,
+          }),
+    );
     closeBedDrawer();
   }
 
@@ -2066,7 +2128,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         id="tabBtn-board"
         aria-selected={activeTab === "board"}
         aria-controls="tab-attn"
-        aria-label="Bed board (pick up and place)"
+        aria-label={
+          boardWaiting.length > 0
+            ? `Bed board (pick up and place), ${boardWaiting.length} waiting to be placed`
+            : "Bed board (pick up and place)"
+        }
         data-testid="ward-tab-board"
         onClick={() => {
           selectActiveTab("board");
@@ -2074,7 +2140,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       >
         <span>Bed board</span>
         {boardWaiting.length > 0 ? (
-          <span className={styles.tabBadge} aria-label={`${boardWaiting.length} waiting to be placed`}>
+          <span className={styles.tabBadge} aria-hidden="true">
             {boardWaiting.length}
           </span>
         ) : null}
@@ -2090,13 +2156,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         id="tabBtn-return"
         aria-selected={activeTab === "return"}
         aria-controls="tab-return"
-        aria-label="Decisions (Ward record)"
+        aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
         onClick={() => {
           selectActiveTab("return");
         }}
       >
         <span>Decisions</span>
-        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-label={decisionsDueLabel}>
+        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
       </button>

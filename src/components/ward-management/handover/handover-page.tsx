@@ -927,7 +927,12 @@ export function HandoverPage() {
         </>
       }
       bar={
-        <div className={styles.heroTools} data-testid="ward-handover-kpi-strip" aria-label="Handover counts">
+        <div
+          className={styles.heroTools}
+          data-testid="ward-handover-kpi-strip"
+          role="group"
+          aria-label="Handover counts"
+        >
           {(["act", "due", "bed", "mov"] as const).map((id) => (
             <button
               key={id}
@@ -995,7 +1000,7 @@ export function HandoverPage() {
         </div>
       }
       footAside={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} finding a ward`}>
+        <span className={styles.gap}>
           <span>
             <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
           </span>
