@@ -1,3 +1,4 @@
+import { legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { BellRing, type LucideIcon } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
@@ -102,8 +103,7 @@ type NotificationRecords = {
  * starting "Involuntary", plus "Detained awaiting examination".
  */
 export function legalStatusTextIsInvoluntary(legalStatus: string | undefined): boolean {
-  if (legalStatus === undefined) return false;
-  return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
+  return legalStatusIsDetained(legalStatus);
 }
 
 /**

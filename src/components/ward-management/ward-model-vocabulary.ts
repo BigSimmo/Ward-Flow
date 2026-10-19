@@ -342,6 +342,11 @@ export type LegalForm = {
   /** Setting recorded from the current paper, never inferred from geography. */
   region?: "metro" | "country";
   /**
+   * Age band recorded from the current paper (review 18 Oct 2026, item 1). The Act period
+   * countdown uses it when the linked patient has no date of birth. Never inferred.
+   */
+  ageBand?: "adult" | "under_18";
+  /**
    * **There is deliberately no `label` field.** Ward Flow does not hold form titles; the Chief
    * Psychiatrist's register does, and `legalFormName` in `ward-legal-forms.ts` resolves one from
    * `code` at render time. Removed on 2026-08-24, when the product owner approved adopting the

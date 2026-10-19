@@ -5,6 +5,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { patientAgeYears } from "@/components/ward-management/ward-patients";
 
 /**
  * ACT PERIODS — SYNTHETIC DEMO ONLY, NOT LEGALLY CHECKED.
@@ -140,9 +141,41 @@ export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): 
   return start + Math.round((end.getTime() - begin.getTime()) / 60_000);
 }
 
+/**
+ * Which of a form's periods a countdown runs to (review 18 Oct 2026, item 1, and the PR #410 review).
+ *
+ * - `adult` / `under18`: from the linked patient's date of birth, as their age when the period
+ *   started. This is the only source of an exact age.
+ * - With no date of birth, the age band recorded from the form (`legalForm.ageBand`) decides.
+ * - With neither, an Adult or Older adult movement is `adult` (both cohorts are 25 and
+ *   over). A Youth movement is `unknown`: the Youth cohort runs to 24, so the person may or may not
+ *   be under 18. `unknown` counts down to the shorter, under-18 period, so a young person's clock
+ *   never shows more time than the Act allows, and the screen says the age was not recorded.
+ */
+type ActPeriodBand = "adult" | "under18" | "unknown";
+
+function actPeriodBandFor(
+  movement: Pick<Movement, "cohort" | "legalForm">,
+  start: Instant,
+  dayZero: Date,
+  dateOfBirth: string | undefined,
+): ActPeriodBand {
+  if (dateOfBirth) return patientAgeYears({ dateOfBirth }, calendarDateOf(start, dayZero)) < 18 ? "under18" : "adult";
+  if (movement.legalForm?.ageBand === "under_18") return "under18";
+  if (movement.legalForm?.ageBand === "adult") return "adult";
+  return movement.cohort === "Adult" || movement.cohort === "Older adult" ? "adult" : "unknown";
+}
+
+/** The period length for that band: the under-18 period when the source gives one, else the adult. */
+function actPeriodLength(period: ActPeriod, band: ActPeriodBand): PeriodLength {
+  return band !== "adult" && period.under18 !== undefined ? period.under18 : period.adult;
+}
+
 export type ActPeriodReading = {
   period: ActPeriod;
-  /** When the adult period would end, or undefined when no written time is recorded to count from. */
+  /** Which period `endsAt` counts to (`actPeriodBandFor`). */
+  band: ActPeriodBand;
+  /** When that period would end, or undefined when no written time is recorded to count from. */
   endsAt?: Instant;
   /** One plain sentence for the screen. Always carries the demo label. */
   text: string;
@@ -152,17 +185,24 @@ export type ActPeriodReading = {
  * What the Act period would give for this movement's current form. Counts from `formedAt`, the
  * time a person typed from the form, and from nothing else: no written time, no countdown.
  *
- * The engine records no age band for a form, so the countdown always uses the ADULT period, and
- * the sentence names the under-18 period beside it wherever a source gives a different one.
+ * The countdown follows the person's age when the period started (`actPeriodBandFor`), from the
+ * linked patient's `dateOfBirth` where the caller has one. The sentence names both periods wherever
+ * they differ.
  */
-export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodReading | undefined {
+export function actPeriodReading(
+  movement: Movement,
+  dayZero: Date,
+  dateOfBirth?: string,
+): ActPeriodReading | undefined {
   const code = movement.legalForm?.code;
   if (code === undefined) return undefined;
   const period = actPeriodFor(code);
   if (!period) return undefined;
   const text = actPeriodSentence(period);
-  const endsAt = movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, period.adult, dayZero);
-  return { period, endsAt, text };
+  const band = actPeriodBandFor(movement, movement.formedAt ?? movement.openedAt, dayZero, dateOfBirth);
+  const endsAt =
+    movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, actPeriodLength(period, band), dayZero);
+  return { period, band, endsAt, text };
 }
 
 /**
@@ -183,7 +223,14 @@ export function actPeriodSentence(period: ActPeriod): string {
 /** The countdown half of the sentence: when the period would end, or why there is no countdown. */
 export function actPeriodCountdownText(reading: ActPeriodReading, now: Instant): string {
   if (reading.endsAt === undefined) return "No written time recorded on the form, so there is nothing to count from.";
-  const ending = reading.period.under18 === undefined ? "Period would end" : "Adult period would end";
+  const ending =
+    reading.period.under18 === undefined
+      ? "Period would end"
+      : reading.band === "under18"
+        ? "Under-18 period would end"
+        : reading.band === "unknown"
+          ? "Under-18 period would end (age not recorded, so the shorter period is shown)"
+          : "Adult period would end";
   const remaining = reading.endsAt - now;
   return remaining < 0
     ? `${ending} ${formatInstantWithDay(reading.endsAt, now)}, ${splitDuration(-remaining)} ago.`
@@ -207,11 +254,17 @@ export function actPeriodLineText(reading: ActPeriodReading, movement: Movement,
  * 2026). Used only to order the "Time not written" group; never shown as a figure or a deadline.
  * Undefined when the form has no sourced period.
  */
-function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): number | undefined {
+function actPeriodShareUsed(
+  movement: Movement,
+  now: Instant,
+  dayZero: Date,
+  dateOfBirth: string | undefined,
+): number | undefined {
   const code = movement.legalForm?.code;
   const period = code === undefined ? undefined : actPeriodFor(code);
   if (!period) return undefined;
-  const span = addPeriod(movement.openedAt, period.adult, dayZero) - movement.openedAt;
+  const length = actPeriodLength(period, actPeriodBandFor(movement, movement.openedAt, dayZero, dateOfBirth));
+  const span = addPeriod(movement.openedAt, length, dayZero) - movement.openedAt;
   return span > 0 ? (now - movement.openedAt) / span : undefined;
 }
 
@@ -220,8 +273,17 @@ function actPeriodShareUsed(movement: Movement, now: Instant, dayZero: Date): nu
  * a 24-hour detention order outranks a 21-day treatment order. Forms with no sourced period keep
  * their incoming order (longest in ED first) after them.
  */
-export function orderByActPeriodShare(rows: readonly Movement[], now: Instant, dayZero: Date): Movement[] {
-  const keyed = rows.map((movement, index) => ({ movement, index, share: actPeriodShareUsed(movement, now, dayZero) }));
+export function orderByActPeriodShare(
+  rows: readonly Movement[],
+  now: Instant,
+  dayZero: Date,
+  dateOfBirthOf: (movement: Movement) => string | undefined = () => undefined,
+): Movement[] {
+  const keyed = rows.map((movement, index) => ({
+    movement,
+    index,
+    share: actPeriodShareUsed(movement, now, dayZero, dateOfBirthOf(movement)),
+  }));
   keyed.sort((a, b) => {
     if (a.share !== undefined && b.share !== undefined && a.share !== b.share) return b.share - a.share;
     if (a.share !== undefined && b.share === undefined) return -1;

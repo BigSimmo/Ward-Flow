@@ -76,6 +76,7 @@ const history = (shape: z.core.$ZodShape) => z.array(z.looseObject({ at: finite,
 const legalFormRule = z.looseObject({
   code: text,
   region: z.optional(z.enum(["metro", "country"])),
+  ageBand: z.optional(z.enum(["adult", "under_18"])),
 });
 const medicalClearanceRule = z.looseObject({ cleared: bool, at: finite });
 const closureRule = z.looseObject({ at: finite, outcome: text, reason: text });

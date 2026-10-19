@@ -140,6 +140,7 @@ export function reduceRecordedLegalEvent(
       }
       if (
         (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
+        (event.ageBand != null && !["adult", "under_18"].includes(event.ageBand)) ||
         !Number.isFinite(event.writtenAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -184,6 +185,11 @@ export function reduceRecordedLegalEvent(
             ? { region: event.region }
             : sameFormTimeEdit && movement.legalForm?.region
               ? { region: movement.legalForm.region }
+              : {}),
+          ...(event.ageBand
+            ? { ageBand: event.ageBand }
+            : event.ageBand === undefined && sameFormTimeEdit && movement.legalForm?.ageBand
+              ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
         },

@@ -15,7 +15,9 @@ import {
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
 import {
+  checkedGates,
   eligibility,
+  gateMark,
   GENDER_DESIGNATION_PRIVACY_SENTENCE,
   wardFacingGateDetail,
   type EligibilityGate,
@@ -405,8 +407,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const phoneGatesVerdict = activeMovement ? eligibility(activeMovement, unit, now) : undefined;
   const phoneGates = phoneGatesVerdict
     ? {
-        pass: phoneGatesVerdict.gates.filter((gate) => gate.pass).length,
-        total: phoneGatesVerdict.gates.length,
+        pass: checkedGates(phoneGatesVerdict.gates).filter((gate) => gate.pass).length,
+        total: checkedGates(phoneGatesVerdict.gates).length,
       }
     : undefined;
 
@@ -687,6 +689,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 const eligibilityIssue = eligibilityWarning(activeMovement, unit, now);
                 const eligibilityVerdict = eligibility(activeMovement, unit, now);
                 const failedGateCount = eligibilityVerdict.gates.filter((gate) => !gate.pass).length;
+                // Information-only gates (acuity, specialling) are listed but never counted as passing.
+                const checkedGateCount = checkedGates(eligibilityVerdict.gates).length;
                 const declineOpen = declineOpenFor === activeMovement.id;
                 const sbarSections = (
                   <>
@@ -893,15 +897,16 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           <div className={styles.answerGatesHeading}>
                             <h3>This ward&rsquo;s own gates</h3>
                             <span>
-                              {eligibilityVerdict.gates.length - failedGateCount} of {eligibilityVerdict.gates.length}{" "}
-                              pass
+                              {checkedGateCount - failedGateCount} of {checkedGateCount} pass
                             </span>
                           </div>
                           <ul>
                             {eligibilityVerdict.gates.map((gate) => (
-                              <li key={gate.gate} data-pass={gate.pass}>
+                              <li key={gate.gate} data-pass={gate.pass} data-mark={gateMark(gate)}>
                                 <span className={styles.answerGateMark} aria-hidden="true">
-                                  {gate.pass ? (
+                                  {gateMark(gate) === "info" ? (
+                                    "i"
+                                  ) : gate.pass ? (
                                     <svg
                                       width="14"
                                       height="14"
@@ -935,14 +940,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                   <span>{wardFacingGateDetail(gate)}</span>
                                 </span>
                                 <strong className={styles.answerGateVerdict}>
-                                  {gate.pass ? "Pass" : "Does not pass"}
+                                  {gateMark(gate) === "info" ? "For information" : gate.pass ? "Pass" : "Does not pass"}
                                 </strong>
                               </li>
                             ))}
                           </ul>
                         </section>,
-                        eligibilityVerdict.gates.length - failedGateCount,
-                        eligibilityVerdict.gates.length,
+                        checkedGateCount - failedGateCount,
+                        checkedGateCount,
                       )}
 
                       {notice ? (
