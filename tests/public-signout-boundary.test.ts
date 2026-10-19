@@ -88,6 +88,14 @@ describe("public repository ownership boundary", () => {
     expect(isPublicWardFlowCheckout(repo())).toBe(false);
   });
 
+  it("ignores a replace ref that grafts foreign history onto the identity anchor", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    const root = repo();
+    git(root, "replace", "--graft", git(root, "rev-parse", "HEAD"), WARD_FLOW_IDENTITY_ANCHOR);
+    git(root, "merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD");
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
+  });
+
   it("keeps legacy releases from closing same-named public claims", (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();

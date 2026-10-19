@@ -94,6 +94,11 @@ describe("Ward-Flow push destination", () => {
       git("add", "unrelated.txt");
       git("commit", "--quiet", "-m", "unrelated");
       expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      // A local replace ref that grafts the unrelated commit onto the anchor must not pass.
+      const unrelated = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
+      git("replace", "--graft", unrelated, "e735c1f8d34df005becf720b96752626a4f1dcc8");
+      git("merge-base", "--is-ancestor", "e735c1f8d34df005becf720b96752626a4f1dcc8", "HEAD");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
     } finally {
       const resolvedParent = realpathSync(tmpdir());
       const resolvedRoot = realpathSync(root);

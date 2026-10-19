@@ -273,6 +273,8 @@ function checkoutProbeEnvironment() {
     .trim()
     .split(/\r?\n/);
   for (const name of localVariables) delete env[name];
+  // A `git replace --graft` could otherwise make foreign history appear to descend from the anchor.
+  env.GIT_NO_REPLACE_OBJECTS = "1";
   repositoryProbeEnvironment = env;
   return env;
 }

@@ -20,6 +20,7 @@ import {
   filterAdmissionMergePaths,
   WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const verifiedCheckouts: string[] = [];
 afterAll(() => {
@@ -28,11 +29,11 @@ afterAll(() => {
 });
 
 /**
- * A synthetic checkout that the real isPublicWardFlowCheckout() verifies, so sign-out parsing tests do
- * not depend on this checkout's clone depth. It has the canonical origin URL (never contacted) and a
- * HEAD and origin/main whose parent is the identity anchor. The anchor commit is supplied through a
- * replace ref onto a local root commit, because a shallow clone does not hold the real anchor object.
- * The identity check itself is covered against real history in public-signout-boundary.test.ts.
+ * A synthetic checkout that the real isPublicWardFlowCheckout() verifies. It has the canonical origin
+ * URL (never contacted) and a HEAD and origin/main whose parent is the identity anchor, borrowed from
+ * this checkout's objects. The identity check ignores replace refs, so the real anchor object is needed
+ * and callers skip without full history. The identity check itself is covered in
+ * public-signout-boundary.test.ts.
  */
 function verifiedWardFlowCheckout(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "precommit-verified-")));
@@ -55,9 +56,13 @@ function verifiedWardFlowCheckout(): string {
     }).trim();
   git("init", "--quiet", "--initial-branch=ward/probe");
   git("remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow");
+  const objects = join(
+    execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { encoding: "utf8", env }).trim(),
+    "objects",
+  );
+  mkdirSync(join(root, ".git", "objects", "info"), { recursive: true });
+  writeFileSync(join(root, ".git", "objects", "info", "alternates"), `${objects}\n`);
   const tree = git("hash-object", "-t", "tree", "-w", "--stdin");
-  const standIn = git("commit-tree", tree, "-m", "synthetic identity anchor stand-in");
-  git("update-ref", `refs/replace/${WARD_FLOW_IDENTITY_ANCHOR}`, standIn);
   const head = git("commit-tree", tree, "-p", WARD_FLOW_IDENTITY_ANCHOR, "-m", "synthetic Ward Flow head");
   git("update-ref", "refs/heads/ward/probe", head);
   git("update-ref", "refs/remotes/origin/main", head);
@@ -74,7 +79,8 @@ describe("signOutConflicts (clash guard)", () => {
     "- 2026-09-25 | Old | ward/old | D:/w/o | tests/b.test.ts",
   ].join("\n");
 
-  it("retains the last file before pipe metadata without requiring a trailing comma", () => {
+  it("retains the last file before pipe metadata without requiring a trailing comma", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const file = "docs/ward-flow/last.md";
     const line = (branch: string) =>
       `Open sign-outs only\n- 2026-10-17 | Synthetic owner | ${branch} | | ${file} | repo=BigSimmo/Ward-Flow\n`;
@@ -482,7 +488,7 @@ describe("the hook script end to end", () => {
   });
 });
 
-describe("admission-only merge with no HEAD-to-index changes", () => {
+describe.skipIf(!HAS_WARD_FLOW_HISTORY)("admission-only merge with no HEAD-to-index changes", () => {
   const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
   const mainStart = source.indexOf("async function main() {");
   const mainEnd = source.indexOf("\nif (process.argv[1]", mainStart);
@@ -491,7 +497,7 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
   const mainSource = source.slice(mainStart, mainEnd);
   const incomingFile = "docs/ward-flow/incoming.md";
   // ownershipAdmission() verifies this root with the real identity check, so it must be a public checkout.
-  const fixtureRoot = verifiedWardFlowCheckout();
+  const fixtureRoot = HAS_WARD_FLOW_HISTORY ? verifiedWardFlowCheckout() : tmpdir();
   const mergeHeadPath = join(fixtureRoot, "MERGE_HEAD");
   const signOutFile = join(fixtureRoot, "sign-out.md");
 

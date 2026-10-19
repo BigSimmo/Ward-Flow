@@ -233,10 +233,14 @@ export function pushedBranchNames(ranges, fallbackBranch = "") {
   return [...branches];
 }
 
-/** True when `ancestor` is reachable from `descendant`, i.e. the push fast-forwards. */
+/** True when `ancestor` is reachable from `descendant`, i.e. the push fast-forwards.
+ * Replace refs are ignored so a local graft cannot fake ancestry. */
 function isAncestor(ancestor, descendant, cwd = PROJECT_ROOT) {
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], { cwd, stdio: "ignore" });
+    execFileSync("git", ["--no-replace-objects", "merge-base", "--is-ancestor", ancestor, descendant], {
+      cwd,
+      stdio: "ignore",
+    });
     return true;
   } catch {
     return false;
