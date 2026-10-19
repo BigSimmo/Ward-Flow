@@ -66,6 +66,11 @@ export const MIGRATIONS = Object.freeze([
     file: "011-record-access-and-sign-out.sql",
     sha256: "92e8edd61d97502e9827004c5abd6dcfc88deebead7668b9ae58c6ded97812cd",
   },
+  {
+    version: 12,
+    file: "012-foreign-key-indexes.sql",
+    sha256: "7de22a95f0ecee0fe53c2f0964a2a72eaea016522dd8c7960fed5cf697577fed",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -73,13 +78,13 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 11:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 12:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
  * the workspace is saved as one record, so any change refuses every other save made against an older
  * revision. Before 11 opening a record is not logged and a sign-out does not end the sign-in's token
- * on this server.
+ * on this server. Migration 12 adds indexes only, so nothing behaves differently before it.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 

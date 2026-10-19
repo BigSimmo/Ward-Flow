@@ -255,16 +255,17 @@ not establish physical Safari or installed-PWA acceptance.
 ### Playwright project cadence
 
 `playwright.config.ts` declares ten always-present projects plus the conditional
-`chromium-mockups-known` project. Declaring a project is not proof CI executes it.
+`chromium-mockups-known` and `ward-shared-mode` projects. Declaring a project is not proof CI executes it.
 
-| Project                                                       | Execution in the dedicated Ward Flow repository                                                                        |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `release-gate-desktop`, `release-gate-phone`                  | `test:e2e:release-gate`: desktop Chromium and phone WebKit, in the browser-scoped `release-gate` job.                  |
-| `chromium-mockups`                                            | `test:e2e:ward-journeys`: required Ward journeys in three file groups when the planner selects browser work.           |
-| `chromium-mockups-known`                                      | Conditional local/fold project when `WARD_JOURNEY_KNOWN_FAILURES` is set; not a separate CI matrix.                    |
-| `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                    |
-| `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                       |
-| `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows. |
+| Project                                                       | Execution in the dedicated Ward Flow repository                                                                                                                                                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `release-gate-desktop`, `release-gate-phone`                  | `test:e2e:release-gate`: desktop Chromium and phone WebKit, in the browser-scoped `release-gate` job.                                                                                                                                 |
+| `chromium-mockups`                                            | `test:e2e:ward-journeys`: required Ward journeys in three file groups when the planner selects browser work.                                                                                                                          |
+| `chromium-mockups-known`                                      | Conditional local/fold project when `WARD_JOURNEY_KNOWN_FAILURES` is set; not a separate CI matrix.                                                                                                                                   |
+| `ward-shared-mode`                                            | Conditional: shared mode against a local backend and PostgreSQL, only through `node tests/support/ward-shared-mode-run.mjs` (needs `WARD_E2E_DATABASE_URL`); CI runs it in the static job step "Run the shared-mode browser journey". |
+| `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                                                                                                                                   |
+| `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                                                                                                                                      |
+| `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows.                                                                                                                |
 
 The responsive projects select only `tests/ui-ward-responsive-audit.spec.ts` and require `@mockup`.
 Run a selected project through `npm run test:e2e -- tests/ui-ward-responsive-audit.spec.ts --project=firefox-ward-responsive`

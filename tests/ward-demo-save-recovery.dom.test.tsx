@@ -31,7 +31,7 @@ describe("successful save identity after storage failure", () => {
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(retained);
     const restored = tryReadDemoState(dayZero, savedAt + 30);
     expect(restored.saved?.now).toBe(NOW_ANCHOR);
-    expect(restored.recoveryNotice).toMatch(/last successful save from 16 Oct 2026.*10:00.*device time/);
+    expect(restored.recoveryNotice).toMatch(/last successful save from 16 Oct 2026.*10:00.*Perth time/);
     expect(STORAGE_UNAVAILABLE).toContain("Changes stay in memory and may be lost");
   });
 });
@@ -55,9 +55,9 @@ it("shows the retained successful save label alongside the storage warning after
       <Reset />
     </WardFlowProvider>,
   );
-  // The save was stamped 30 minutes before "now" in device wall-clock minutes, so the notice shows
-  // that device time. Derive it from the device offset instead of assuming UTC.
-  const savedWall = (((10 * 60 - 30 - new Date().getTimezoneOffset()) % 1440) + 1440) % 1440;
+  // The save was stamped 30 minutes before "now" in Perth wall-clock minutes (UTC+8, no daylight
+  // saving), so the notice shows that Perth time whatever the test machine's zone (F-22).
+  const savedWall = (((10 * 60 - 30 + 8 * 60) % 1440) + 1440) % 1440;
   const savedClock = `${Math.floor(savedWall / 60) % 12 || 12}:${String(savedWall % 60).padStart(2, "0")} ${
     savedWall < 720 ? "am" : "pm"
   }`;

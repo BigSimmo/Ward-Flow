@@ -56,6 +56,22 @@ function tableRows(page: Page): Locator {
   return page.getByTestId("ward-patient-search-results-console").locator("tbody tr[data-id]");
 }
 
+/**
+ * Types one letter so the composer renders its Clear button, and waits until it has. The input is
+ * controlled by React state, so a fill that lands before hydration can be reset to the empty state
+ * and never mount Clear (seen once under full-suite load, 19 Oct 2026). Each attempt refills and
+ * waits for both the value and the button; the page has no stored or URL query to carry over.
+ */
+async function typeUntilClearShows(page: Page): Promise<void> {
+  const input = typeaheadInput(page);
+  const clear = page.locator('form[role="search"]').getByRole("button", { name: "Clear" });
+  await expect(async () => {
+    await input.fill("a");
+    await expect(input).toHaveValue("a", { timeout: 1_000 });
+    await expect(clear).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 test.describe("@mockup Ward patient search", () => {
   test.describe.configure({ timeout: 60_000 });
 
@@ -301,7 +317,7 @@ test.describe("@mockup Ward patient search", () => {
     await gotoSearch(page);
 
     const input = typeaheadInput(page);
-    await input.fill("a"); // brings the Clear button into the DOM
+    await typeUntilClearShows(page); // brings the Clear button into the DOM
 
     const form = page.locator('form[role="search"]');
     const console_ = page.getByTestId("ward-patient-search-results-console");
@@ -344,7 +360,7 @@ test.describe("@mockup Ward patient search", () => {
   test("the compact desktop DOB and Clear controls keep a 48px-tall hit area at 1440px", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoSearch(page);
-    await typeaheadInput(page).fill("a");
+    await typeUntilClearShows(page);
 
     const form = page.locator('form[role="search"]');
     const controls: Array<readonly [Locator, string]> = [

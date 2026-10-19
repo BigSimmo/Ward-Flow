@@ -3,7 +3,7 @@
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { ArrowRight, Car, ChevronRight, Clock, Map as MapIcon, Plane } from "lucide-react";
 
-import { Card, CardHead, Icon, StatusGlyph, cx } from "@/components/wf";
+import { Card, CardHead, Icon, SrOnly, StatusGlyph, cx } from "@/components/wf";
 
 import { TRAVEL_SHORT, confirmedAgeText, shortSiteName, type HomeRegionBeds } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
@@ -149,8 +149,9 @@ export function HomeBedsCard({
                       <span>{option.unit.name}</span>
                     </span>
                     <span className={styles.bedFigure}>
-                      <span className={styles.count} aria-label={`${option.beds} confirmed beds`}>
+                      <span className={styles.count}>
                         {option.beds}
+                        <SrOnly> confirmed beds</SrOnly>
                       </span>
                       <span className={cx(styles.mono, styles.sub, option.stale && styles.inkWarning)}>
                         {option.stale ? "stale " : ""}

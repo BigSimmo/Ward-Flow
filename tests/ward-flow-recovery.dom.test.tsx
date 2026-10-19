@@ -89,7 +89,7 @@ describe("conservative demo recovery", () => {
       view.unmount();
       mount();
       expect(screen.getByRole("status")).toHaveTextContent(
-        /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+        /^Restored the last successful save from .+ \(Perth time\)\. Later changes may not have been saved\.$/,
       );
       expect(current.units.find((candidate) => candidate.id === unit.id)).toEqual(accepted);
     },
@@ -211,7 +211,7 @@ describe("conservative demo recovery", () => {
     expect(boardNow).toBe(current.now);
     expect(saved().state.handoverSignOffs.at(-1).at).toBe(NOW_ANCHOR + 10);
     expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+      /^Restored the last successful save from .+ \(Perth time\)\. Later changes may not have been saved\.$/,
     );
   });
   it.each(["now", "savedAtAbsolute"])("rejects missing clock metadata %s", (key) => {
@@ -270,7 +270,7 @@ describe("conservative demo recovery", () => {
     render(consumerTree());
     expect(mounts).toBe(1);
     expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+      /^Restored the last successful save from .+ \(Perth time\)\. Later changes may not have been saved\.$/,
     );
   });
   it("starts one-time screen state from the restored day when a changed day is reloaded", () => {
@@ -457,7 +457,7 @@ describe("reviewed event privacy", () => {
     view.unmount();
     mount();
     expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from .+ \(device time\)\. Later changes may not have been saved\.$/,
+      /^Restored the last successful save from .+ \(Perth time\)\. Later changes may not have been saved\.$/,
     );
     expect(saved().state.handoverSignOffs).toHaveLength(signOffs);
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("Synthetic-private-team-text");

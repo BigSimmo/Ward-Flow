@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
@@ -212,7 +213,7 @@ export function EdIndex() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "/" || event.defaultPrevented) return;
+      if (!areCharacterShortcutsEnabled() || event.key !== "/" || event.defaultPrevented) return;
       if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
       const target = event.target as HTMLElement | null;
       if (

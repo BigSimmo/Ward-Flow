@@ -7,6 +7,7 @@ import {
   parseWardFeatureFlagList,
   resolveWardFeatureFlags,
   wardEnvironment,
+  wardSafeguardsLocked,
 } from "@/components/ward-management/ward-feature-flags";
 import { WARD_NAV } from "@/components/ward-management/ward-nav";
 
@@ -92,6 +93,23 @@ describe("resolveWardFeatureFlags", () => {
         "role-access",
       ).on,
     ).toBe(false);
+  });
+
+  it("locks safeguards on in a deployed build that names no environment (audit F-20)", () => {
+    expect(wardSafeguardsLocked(undefined, "production")).toBe(true);
+    expect(wardSafeguardsLocked("staging", "production")).toBe(true);
+    expect(wardSafeguardsLocked("production", "production")).toBe(true);
+    expect(wardSafeguardsLocked(" Demo ", "production")).toBe(false);
+    expect(wardSafeguardsLocked(undefined, "development")).toBe(false);
+    const unnamed = resolveWardFeatureFlags({
+      environment: wardEnvironment(undefined, "production"),
+      safeguardsLocked: wardSafeguardsLocked(undefined, "production"),
+      server: { "role-access": false },
+      device: { "role-access": false, "bed-meeting-tv": true },
+    });
+    expect(flag(unnamed, "role-access")).toMatchObject({ on: true, source: "default", deviceCanChange: false });
+    // Everything else still behaves as a demo build.
+    expect(flag(unnamed, "bed-meeting-tv")).toMatchObject({ on: true, source: "device", deviceCanChange: true });
   });
 
   it("lets the device beat the server, and the server beat the default", () => {

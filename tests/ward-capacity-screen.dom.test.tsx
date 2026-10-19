@@ -7,7 +7,11 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
-import { bedsForecast, forecastHeadline } from "@/components/ward-management/capacity/beds-forecast";
+import {
+  BEDS_FORECAST_LIMITS,
+  bedsForecast,
+  forecastHeadline,
+} from "@/components/ward-management/capacity/beds-forecast";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -754,6 +758,7 @@ describe("tomorrow's beds forecast", () => {
       );
     }
     expect(within(panel).queryByText("How this was worked out")).toBeNull();
-    expect(within(panel).queryByText(/not predicted/)).toBeNull();
+    // PR #423 prototype disclosure: the forecast states its limits beside the chart on this screen.
+    for (const limit of BEDS_FORECAST_LIMITS) expect(within(panel).getByText(limit)).toBeVisible();
   });
 });

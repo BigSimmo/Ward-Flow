@@ -629,6 +629,8 @@ export type SmartSearchResults = {
   tasks: TaskSearchResult[];
   hasAny: boolean;
   totalCount: number;
+  /** Group keys whose matching records exceed the returned per-group limit. */
+  truncatedGroups: string[];
   intent: SearchIntent;
 };
 
@@ -718,22 +720,35 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       tasks: [],
       hasAny: false,
       totalCount: 0,
+      truncatedGroups: [],
       intent,
     };
   }
 
   const limit = input.limitPerGroup ?? 6;
+  const truncatedGroups: string[] = [];
+  function rankGroup<T>(
+    key: string,
+    items: readonly T[],
+    needle: string,
+    fieldsOf: (item: T) => readonly (string | undefined)[],
+  ): T[] {
+    if (items.length > limit) truncatedGroups.push(key);
+    return rankAndLimit(items, needle, fieldsOf, limit);
+  }
   const names = movementDisplayNames(input.movements, input.patients, input.referrals);
 
-  const people = rankAndLimit(
-    findPatients(input.patients, trimmed),
-    trimmed,
-    (patient) => [patientDisplayName(patient), patient.givenName, patient.familyName, patient.umrn, patient.id],
-    limit,
-  );
+  const people = rankGroup("people", findPatients(input.patients, trimmed), trimmed, (patient) => [
+    patientDisplayName(patient),
+    patient.givenName,
+    patient.familyName,
+    patient.umrn,
+    patient.id,
+  ]);
 
   const movementQuery: MovementSearchQuery = { text: trimmed, patientDisplayNames: names };
-  const movements = rankAndLimit(
+  const movements = rankGroup(
+    "movements",
     searchMovements(input.movements, input.units, movementQuery),
     trimmed,
     (movement) => {
@@ -748,10 +763,10 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
         movement.owner,
       ];
     },
-    limit,
   );
 
-  const referrals = rankAndLimit(
+  const referrals = rankGroup(
+    "referrals",
     searchReferrals(trimmed, input.referrals ?? [], {
       patients: input.patients,
       movements: input.movements,
@@ -759,40 +774,37 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     }),
     trimmed,
     (result) => [result.formalName, result.umrn, result.referral.id],
-    limit,
   );
   const readyBedsOnly = isReadyBedQuery(typed);
-  const beds = searchBeds(typed, input.units).slice(0, limit);
-  const wards = rankAndLimit(
-    searchWards(typed, input.units),
-    typed,
-    (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
-    limit,
-  );
-  const emergencyDepartments = rankAndLimit(
-    searchEmergencyDepartments(typed),
-    typed,
-    (department) => [department.ed.name, department.ed.siteCode, department.ed.id],
-    limit,
-  );
-  const communityTeams = rankAndLimit(
-    searchCommunityTeams(typed),
-    typed,
-    (team) => [team.team.name, team.team.id],
-    limit,
-  );
-  const legalForms = rankAndLimit(
-    searchLegalForms(typed),
-    typed,
-    (form) => [form.form.code, form.title, `Form ${form.form.code}`],
-    limit,
-  );
-  const views = rankAndLimit(
-    searchCoreViews(typed),
-    typed,
-    (view) => [view.view.title, view.view.key, view.view.description, ...(view.view.keywords ?? [])],
-    limit,
-  );
+  const allBeds = searchBeds(typed, input.units);
+  if (allBeds.length > limit) truncatedGroups.push("beds");
+  const beds = allBeds.slice(0, limit);
+  const wards = rankGroup("wards", searchWards(typed, input.units), typed, (ward) => [
+    ward.unit.name,
+    ward.unit.siteCode,
+    ward.unit.id,
+    ward.siteName,
+  ]);
+  const emergencyDepartments = rankGroup("eds", searchEmergencyDepartments(typed), typed, (department) => [
+    department.ed.name,
+    department.ed.siteCode,
+    department.ed.id,
+  ]);
+  const communityTeams = rankGroup("teams", searchCommunityTeams(typed), typed, (team) => [
+    team.team.name,
+    team.team.id,
+  ]);
+  const legalForms = rankGroup("forms", searchLegalForms(typed), typed, (form) => [
+    form.form.code,
+    form.title,
+    `Form ${form.form.code}`,
+  ]);
+  const views = rankGroup("views", searchCoreViews(typed), typed, (view) => [
+    view.view.title,
+    view.view.key,
+    view.view.description,
+    ...(view.view.keywords ?? []),
+  ]);
 
   const shouldDeriveTasks = shouldDeriveSearchTasks(input.query);
 
@@ -806,12 +818,12 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       ))
     : [];
   const tasks = shouldDeriveTasks
-    ? rankAndLimit(
-        searchTasks(typed, tasksInbox),
-        typed,
-        (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
-        limit,
-      )
+    ? rankGroup("tasks", searchTasks(typed, tasksInbox), typed, (task) => [
+        task.task.title,
+        task.task.detail,
+        task.task.movementId,
+        task.task.owner,
+      ])
     : [];
 
   // Near spellings only for a name-shaped query that found nobody and nothing else of the person's.
@@ -822,12 +834,10 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     movements.length === 0 &&
     referrals.length === 0 &&
     trimmed.length >= 3
-      ? rankAndLimit(
-          similarPeople(input.patients, trimmed),
-          trimmed,
-          (patient) => [patient.familyName, patient.givenName],
-          limit,
-        )
+      ? rankGroup("similar", similarPeople(input.patients, trimmed), trimmed, (patient) => [
+          patient.familyName,
+          patient.givenName,
+        ])
       : [];
   const totalCount =
     people.length +
@@ -857,6 +867,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     tasks,
     hasAny: totalCount > 0,
     totalCount,
+    truncatedGroups,
     intent,
   };
 }

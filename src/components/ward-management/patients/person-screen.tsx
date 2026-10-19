@@ -228,7 +228,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
   // static server `metadata.title` alone can go stale; this keeps the browser tab and the
   // accessible document name aligned on that client-only path too.
   useEffect(() => {
-    document.title = "Patient - Ward Flow";
+    document.title = "Patient — Ward Flow";
   }, []);
 
   return (

@@ -263,6 +263,19 @@ const indexes = [
   [11, "record_access_patient", "record_access", "workspace_id, patient_id, viewed_at DESC", false],
   [11, "record_access_actor", "record_access", "workspace_id, actor_id, viewed_at DESC", false],
   [11, "session_sign_outs_pkey", "session_sign_outs", "session_id", true],
+  [12, "access_requests_workspace_mode", "access_requests", "workspace_id, data_mode", false],
+  [12, "audit_workspace_mode", "audit", "workspace_id, data_mode", false],
+  [12, "break_glass_membership", "break_glass", "membership_id", false],
+  [12, "break_glass_workspace_mode", "break_glass", "workspace_id, data_mode", false],
+  [12, "commands_workspace_mode", "commands", "workspace_id, data_mode", false],
+  [12, "memberships_workspace_mode", "memberships", "workspace_id, data_mode", false],
+  [12, "push_baselines_workspace_mode", "push_baselines", "workspace_id, data_mode", false],
+  [12, "push_subscriptions_membership", "push_subscriptions", "membership_id", false],
+  [12, "push_subscriptions_workspace_mode", "push_subscriptions", "workspace_id, data_mode", false],
+  [12, "record_access_membership", "record_access", "membership_id", false],
+  [12, "record_access_workspace_mode", "record_access", "workspace_id, data_mode", false],
+  [12, "session_sign_outs_workspace_mode", "session_sign_outs", "workspace_id, data_mode", false],
+  [12, "workspace_records_workspace_mode", "workspace_records", "workspace_id, data_mode", false],
 ];
 
 /** Each guard trigger function, the table it guards and the migration that added it. */

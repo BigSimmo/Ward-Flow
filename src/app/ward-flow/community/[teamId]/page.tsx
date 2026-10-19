@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const team = communityTeamById(id);
   const name = team?.name ?? id;
   return {
-    title: `${name} - Ward Flow`,
+    title: `${name} — Ward Flow`,
     description: `Synthetic single-team community mental health view for ${name} in the Ward Flow prototype.`,
   };
 }

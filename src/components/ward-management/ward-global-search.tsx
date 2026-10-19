@@ -485,7 +485,7 @@ export function WardGlobalSearch({
   }, [isStart, startGroups, allGroups, activeKind]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
-  /** Audit round 2 (S-33): how many each group really matched, so a cut group can offer the rest. */
+  /** Returned counts; truncated groups explicitly say that more matches exist. */
   const fullGroupCounts = useMemo(
     () => new Map(allGroups.map((group) => [group.key, group.items.length] as const)),
     [allGroups],
@@ -818,7 +818,13 @@ export function WardGlobalSearch({
                   data-testid={`ward-global-search-kind-${filter.key}`}
                 >
                   {filter.label}
-                  <span className={styles.kindCount}>{refusal ? 0 : count}</span>
+                  <span className={styles.kindCount}>
+                    {refusal ? 0 : count}
+                    {!refusal &&
+                    smartResults?.truncatedGroups.some((key) => filter.key === "all" || filter.groups.includes(key))
+                      ? "+"
+                      : ""}
+                  </span>
                 </button>
               );
             })}
@@ -856,6 +862,7 @@ export function WardGlobalSearch({
                         {isStart ? null : (
                           <span className={styles.groupCount}>
                             {fullGroupCounts.get(group.key) ?? group.items.length}
+                            {smartResults?.truncatedGroups.includes(group.key) ? "+" : ""}
                           </span>
                         )}
                         {group.key === "needs" && onSeeAllTasks ? (
@@ -884,11 +891,16 @@ export function WardGlobalSearch({
                               onClick={() => chooseKind(kind.key)}
                               data-testid={`ward-global-search-show-all-${group.key}`}
                             >
-                              Show all {full}
+                              {smartResults?.truncatedGroups.includes(group.key) ? "Show first" : "Show all"} {full}
                             </button>
                           );
                         })()}
                       </span>
+                      {smartResults?.truncatedGroups.includes(group.key) ? (
+                        <p className={styles.emptyDescription}>
+                          First {fullGroupCounts.get(group.key)} matches. Refine your search to see other matches.
+                        </p>
+                      ) : null}
                     </li>
                     {group.items.map((item) => {
                       const index = options.indexOf(item);

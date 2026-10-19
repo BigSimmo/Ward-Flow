@@ -6,19 +6,7 @@ import { draftSessionVersion, sessionDraftKey } from "../ward-session-drafts";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { ChevronLeft, Clock } from "lucide-react";
 
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Field,
-  Select,
-  Sheet,
-  StatusGlyph,
-  TextInput,
-  Textarea,
-  Timer,
-  cx,
-} from "@/components/wf";
+import { Badge, Button, Field, Select, Sheet, StatusGlyph, TextInput, Textarea, Timer, cx } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -403,39 +391,33 @@ export function RecordFormSheet({
 }
 
 /** EXTEND RECORDED FORM. Records the extended expiry typed from the form (not legally checked). */
-export function ExtendSheet({
-  target,
-  label,
-  now,
-  onClose,
-  extendUnavailable,
-  onExtendForm,
-}: {
+type ExtendSheetProps = {
   target: Movement | null;
   label: string;
   now: Instant;
   onClose: () => void;
   extendUnavailable?: string;
   onExtendForm?: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
-}) {
+};
+
+export function ExtendSheet(props: ExtendSheetProps) {
+  return <ExtendSheetContent key={props.target?.id ?? "closed"} {...props} />;
+}
+
+function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, onExtendForm }: ExtendSheetProps) {
   const thresholds = useDueSoonThresholds();
   const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const pending = useRef(false);
   const submissionVersion = useRef(0);
-  const [savingFor, setSavingFor] = useState(target?.id);
-  if (savingFor !== target?.id) {
-    setSavingFor(target?.id);
-    setSaving(false);
-    setExpiryState(null);
-  }
-  useEffect(() => {
-    submissionVersion.current += 1;
-    return () => {
+  useEffect(
+    () => () => {
       submissionVersion.current += 1;
-    };
-  }, [target?.id]);
+    },
+    [],
+  );
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
   const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
   const extendBlockReason =
@@ -445,8 +427,7 @@ export function ExtendSheet({
     (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
-    submissionVersion.current += 1;
-    setSaving(false);
+    if (pending.current) return;
     setExpiryState(null);
     onClose();
   };
@@ -470,12 +451,14 @@ export function ExtendSheet({
             disabledReason={extendBlockReason}
             title={extendBlockReason}
             onClick={() => {
-              if (extendBlockReason || !target || parsedDueAt === null) return;
+              if (extendBlockReason || pending.current || !target || parsedDueAt === null) return;
               const owner = draftSessionVersion();
               const submission = ++submissionVersion.current;
+              pending.current = true;
               setSaving(true);
               const finish = (accepted: boolean) => {
                 if (submission !== submissionVersion.current) return;
+                pending.current = false;
                 setSaving(false);
                 if (owner !== draftSessionVersion()) return;
                 if (accepted) {
@@ -551,7 +534,9 @@ export function ExtendSheet({
               autoComplete="off"
             />
           </Field>
-          <Checkbox label={`Tell the owner, ${target.owner}`} defaultChecked />
+          <p className={styles.note}>
+            Owner notification is not wired in this prototype. Tell {target.owner} separately.
+          </p>
         </div>
       ) : null}
     </Sheet>

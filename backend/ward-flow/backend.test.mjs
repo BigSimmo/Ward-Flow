@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EventEmitter } from "node:events";
 import { readConfig } from "./config.mjs";
-import { HEADERS_TIMEOUT_MS, MAX_CONNECTIONS, createHandler, listen, registerShutdown } from "./server.mjs";
+import {
+  GZIP_MIN_BYTES,
+  HEADERS_TIMEOUT_MS,
+  MAX_CONNECTIONS,
+  createHandler,
+  listen,
+  registerShutdown,
+} from "./server.mjs";
 import { VerifierUnavailableError } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
@@ -305,4 +312,80 @@ test("the listener allows many connections but drops slow headers after 5 second
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("the listener gzips JSON replies of 1 KB or more when the browser accepts it (audit F-04)", async () => {
+  const { gunzipSync } = await import("node:zlib");
+  const { request } = await import("node:http");
+  const big = { rows: "x".repeat(GZIP_MIN_BYTES * 4) };
+  const server = listen(
+    async (incoming) =>
+      Response.json(new URL(incoming.url).pathname === "/small" ? { ok: true } : big, {
+        headers: { "cache-control": "no-store", vary: "Origin" },
+      }),
+    { port: 0, host: "127.0.0.1" },
+  );
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = /** @type {import("node:net").AddressInfo} */ (server.address());
+    const fetchRaw = (path, encoding) =>
+      new Promise((resolve, reject) => {
+        const outgoing = request({
+          port,
+          host: "127.0.0.1",
+          path,
+          headers: encoding ? { "accept-encoding": encoding } : {},
+        });
+        outgoing.on("response", (response) => {
+          const chunks = [];
+          response.on("data", (chunk) => chunks.push(chunk));
+          response.on("end", () => resolve({ headers: response.headers, body: Buffer.concat(chunks) }));
+        });
+        outgoing.on("error", reject);
+        outgoing.end();
+      });
+    const zipped = await fetchRaw("/big", "gzip, deflate, br");
+    assert.equal(zipped.headers["content-encoding"], "gzip");
+    assert.equal(zipped.headers.vary, "Origin, Accept-Encoding");
+    assert.equal(Number(zipped.headers["content-length"]), zipped.body.length);
+    assert.deepEqual(JSON.parse(gunzipSync(zipped.body).toString()), big);
+    const plain = await fetchRaw("/big");
+    assert.equal(plain.headers["content-encoding"], undefined);
+    assert.deepEqual(JSON.parse(plain.body.toString()), big);
+    const refused = await fetchRaw("/big", "gzip;q=0, deflate");
+    assert.equal(refused.headers["content-encoding"], undefined);
+    assert.deepEqual(JSON.parse(refused.body.toString()), big);
+    const small = await fetchRaw("/small", "gzip");
+    assert.equal(small.headers["content-encoding"], undefined);
+    assert.deepEqual(JSON.parse(small.body.toString()), { ok: true });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("every file the engine bundle is built from is under the backend's redeploy watch paths", async () => {
+  // Audit F-07: a change to the synthetic-data guard alone once left the hosted backend unrebuilt.
+  const { build } = await import("esbuild");
+  const { fileURLToPath } = await import("node:url");
+  const { relative } = await import("node:path");
+  const { BACKEND_WATCH_PATHS, watched } = await import("./watch-paths.mjs");
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  const here = fileURLToPath(new URL("./", import.meta.url));
+  const { metafile } = await build({
+    entryPoints: [fileURLToPath(new URL("./engine.ts", import.meta.url))],
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    target: "node22",
+    tsconfig: fileURLToPath(new URL("../../tsconfig.json", import.meta.url)),
+    write: false,
+    metafile: true,
+    outfile: fileURLToPath(new URL("./dist/watch-check.mjs", import.meta.url)),
+  });
+  const inputs = Object.keys(metafile.inputs).map((input) => relative(root, `${here}${input}`).replaceAll("\\", "/"));
+  assert.ok(inputs.includes("src/lib/synthetic-data-guard.ts"), "the check must see the engine's real inputs");
+  const unwatched = inputs.filter((path) => !path.startsWith("node_modules/") && !watched(path));
+  assert.deepEqual(unwatched, [], "add these to BACKEND_WATCH_PATHS, docs/hosting.md and the Railway service");
+  assert.ok(watched("package-lock.json"), "root packages are rebuilt through the root lockfile");
+  assert.equal(watched("src/app/page.tsx", BACKEND_WATCH_PATHS), false);
 });

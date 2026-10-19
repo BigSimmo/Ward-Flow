@@ -1,5 +1,17 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Confirmed usability fixes — 19 October 2026
+
+Referral `Field` associates hints and errors with native controls, including controls inside
+`SelectBox`. `referrals/use-referral-section-navigation.ts` reveals and focuses failed validation without disturbing ordinary
+edits or a stacked dialog. `tests/ward-referral-drawer-accessibility.dom.test.tsx` covers recovery.
+Arrival and document dialogs retain their inputs until an accepted command, with pending and
+failure feedback; document submission uses the shared readable primary colors.
+Smart search keeps its bounded category limit, reports true truncation, and labels expansion
+“Show first 40” above the cap; exactly 40 results remain “Show all 40”. Chronology's phone picker
+uses the discreet-name preference, including accessible labels, covered by
+`tests/ward-chronology-patient-name.dom.test.tsx`.
+
 ## Referral completion — 18 October 2026
 
 `referrals/use-referral-command-completion.ts` owns submission correlation and patient-registration
