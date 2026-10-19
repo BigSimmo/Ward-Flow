@@ -146,7 +146,7 @@ describe("Playwright invocation evidence", () => {
       console,
       spawnSync: (_command: string, args: string[], options: { env: Record<string, string> }) => {
         outputs.push(args);
-        expect(options.env.PLAYWRIGHT_JSON_OUTPUT_NAME).toBe("/evidence/invocation/diagnostic.json");
+        expect(options.env.PLAYWRIGHT_JSON_OUTPUT_NAME).toBe(path.join("/evidence/invocation", "diagnostic.json"));
         return { status: diagnosticExit };
       },
       childProcessExitCode: (result: { status: number }) => result.status,
