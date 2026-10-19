@@ -86,6 +86,25 @@ describe("shared workspace role gate (role access plan, later pass)", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("You have asked for");
   });
 
+  it("keeps delivery uncertain when the response is lost", async () => {
+    render(
+      <WardAskForAccess
+        canRequest
+        api={{
+          ownRequest: async () => null,
+          requestAccess: async () => {
+            throw new Error("Response lost");
+          },
+        }}
+        onRetry={vi.fn()}
+        onSignOut={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ask for access" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The request could not be confirmed");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Nothing was sent");
+  });
+
   it("says asking is not wired when the server takes no requests", () => {
     render(<WardAskForAccess canRequest={false} api={null} onRetry={vi.fn()} onSignOut={vi.fn()} />);
     expect(screen.getByText(/^Not wired in this prototype\./u)).toBeInTheDocument();

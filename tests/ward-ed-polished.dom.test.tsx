@@ -14,6 +14,8 @@ vi.mock("next/link", () => ({
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import type { Movement } from "@/components/ward-management/ward-model";
 
 function PlanHarness() {
   const [labels, setLabels] = useState<string[]>([]);
@@ -78,14 +80,24 @@ function ClinicalStateProbe() {
 }
 
 describe("ED compact draft selectors", () => {
-  it("keeps each department browser count consistent with its recorded patient board", () => {
+  it("keeps each department browser count consistent with the physically waiting rows of its board", () => {
     for (const department of allEmergencyDepartments()) {
       const view = render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <EdScreen edId={department.id} />
+          <ClinicalStateProbe />
         </WardFlowProvider>,
       );
-      const count = screen.queryAllByTestId(/^ward-ed-patient-WF-/).length;
+      // The board keeps transit rows it is still accountable for; the strip's "waiting" counts
+      // only the board rows physically waiting in the department (isWaitingInEd).
+      const { movements } = JSON.parse(screen.getByTestId("clinical-state").textContent!) as {
+        movements: Movement[];
+      };
+      const byId = new Map<string, Movement>(movements.map((movement) => [movement.id, movement]));
+      const count = screen
+        .queryAllByTestId(/^ward-ed-patient-WF-/)
+        .map((row) => byId.get(row.dataset.testid!.replace("ward-ed-patient-", "")))
+        .filter((movement) => movement !== undefined && isWaitingInEd(movement)).length;
       // v6: the department strip is always shown, so there is no "Other EDs" toggle to open first.
       const strip = screen.getByRole("navigation", { name: "Emergency departments" });
       const currentDepartment = within(strip).getByRole("link", { current: "page" });

@@ -80,7 +80,7 @@ export type HandoverPhoneProps = {
   selected?: HandoverRow;
   onCopyIsbar: (row: HandoverRow) => void;
   patientHrefOf: (row: HandoverRow) => string | undefined;
-  /** Since you looked (v10): the window start and what changed since. */
+  /** The preceding handover boundary and what changed since. */
   since: string;
   sinceItems: SinceItem[];
   onCopySince: () => void;
@@ -531,7 +531,7 @@ export function HandoverPhone({
         >
           <Icon icon={Eye} size={16} />
           <span className={styles.sinceText}>
-            <span className={styles.sinceTitle}>Since you looked at {since}</span>
+            <span className={styles.sinceTitle}>Since previous handover at {since}</span>
             <span className={styles.sinceMeta}>
               {sinceShown.map((item, index) => (
                 <span key={item.id}>
@@ -685,8 +685,8 @@ export function HandoverPhone({
       <PhoneSheet
         open={sinceOpen}
         onClose={() => setSinceOpen(false)}
-        title="Since you looked"
-        description={`Your last look at ${since}`}
+        title="Since previous handover"
+        description={`Previous handover at ${since}`}
         primary={{
           label: "Copy as handover text",
           onAction: onCopySince,

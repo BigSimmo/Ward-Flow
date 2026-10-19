@@ -57,7 +57,9 @@ export function renderEdBoardTableRow(
     withdrawUnavailableFact,
   } = facts;
   const { accessTarget, isBoardRowDim, isTabletPortrait, setPhoneSheetReason, setPhoneSheetFor } = ctx;
-  const overTarget = minutesInDepartment > accessTarget;
+  // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
+  // 2026) is red "once the longest wait reaches the ED access target".
+  const overTarget = minutesInDepartment >= accessTarget;
   const waitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
   const openSheet = () => {
     setPhoneSheetReason(undefined);
@@ -230,11 +232,15 @@ export function renderEdBoardTableRow(
           data-state={overTarget ? "over" : "under"}
           title={`Access target ${splitDuration(accessTarget)}`}
         >
-          {overTarget ? <span aria-hidden="true">over target</span> : null}
+          {overTarget ? (
+            <span aria-hidden="true">{minutesInDepartment > accessTarget ? "over target" : "at target"}</span>
+          ) : null}
           <span className="sr-only">
             Access target {splitDuration(accessTarget)}.
             {overTarget
-              ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${splitDuration(accessTarget)})`
+              ? minutesInDepartment > accessTarget
+                ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${splitDuration(accessTarget)})`
+                : " At the access target."
               : ""}
           </span>
         </span>

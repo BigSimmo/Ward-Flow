@@ -215,7 +215,7 @@ export function CapacityScreen() {
     return () => observer.disconnect();
   }, [showAllColumns, tableFullscreen, service, mapLayout]);
 
-  const gapRows = useMemo(() => bedKindGaps(movements, units, now), [movements, units, now]);
+  const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
   // changes it.
@@ -634,7 +634,7 @@ export function CapacityScreen() {
                     {shortfalls.map((row) => (
                       <li key={row.id} className={styles.attentionItem}>
                         <span className={styles.attentionWho}>{row.need}</span>
-                        {Math.abs(row.gap)} short · {row.waiting} waiting, {row.bedsThatFit} fit
+                        {Math.abs(row.gap)} short · {row.waiting} waiting, {row.bedsThatFit} beds of this kind
                       </li>
                     ))}
                   </ul>
@@ -712,7 +712,7 @@ export function CapacityScreen() {
           }
           titleMeta={
             isPhone
-              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} waiting in ED${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
+              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} needing a bed${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
               : netTotals.pendingPreparation
                 ? `${netTotals.pendingPreparation} being made ready`
                 : undefined
@@ -924,7 +924,7 @@ export function CapacityScreen() {
                 <tr>
                   <th scope="col">What&apos;s needed</th>
                   <th scope="col">Waiting</th>
-                  <th scope="col">Beds that fit</th>
+                  <th scope="col">Beds of this kind</th>
                   <th scope="col">Gap</th>
                   <th scope="col">What that means</th>
                 </tr>
@@ -954,7 +954,7 @@ export function CapacityScreen() {
                     <div
                       className={styles.gapMicroGauge}
                       aria-hidden="true"
-                      title={`${gapTotals.bedsThatFit} fit vs ${gapTotals.waiting} waiting`}
+                      title={`${gapTotals.bedsThatFit} beds of these kinds vs ${gapTotals.waiting} waiting`}
                     >
                       <div
                         className={`${styles.gapGaugeFill} ${gapTotals.gap < 0 ? styles.gaugeDeficit : styles.gaugeGood}`}

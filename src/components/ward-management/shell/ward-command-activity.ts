@@ -1,3 +1,4 @@
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   type DueSoonThresholds,
   formatInstantWithDay,
@@ -95,7 +96,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       });
     });
 
-    const dueAt = movement.legalForm?.dueAt;
+    const dueAt = currentLegalDueAt(movement);
     if (dueAt !== undefined && isClockBreached(dueAt, now)) {
       events.push({
         at: dueAt,

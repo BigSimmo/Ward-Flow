@@ -25,7 +25,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import type { BedRelease, Cohort, Security } from "@/components/ward-management/ward-model";
+import type { BedRelease, Cohort, Movement, Security } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 
@@ -65,7 +65,13 @@ function expectedKind(cohort: Cohort, security: Security): BedKindId {
 
 describe("bedKindGaps", () => {
   const units = allUnits();
-  const open = wardMovements.filter(isOpen);
+  const open = wardMovements.filter(
+    (movement) =>
+      isOpen(movement) &&
+      movement.admissionId === undefined &&
+      movement.allocatedBed === undefined &&
+      ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage),
+  );
 
   it("walks a non-empty population of open movements and units, or every assertion below is vacuous", () => {
     expect(open.length, "no open movement in the fixture").toBeGreaterThan(0);
@@ -77,7 +83,7 @@ describe("bedKindGaps", () => {
     expect(rows.map((row) => row.id)).toEqual(["locked_adult", "open_adult", "older_adult", "youth"]);
   });
 
-  it("counts `waiting` as open movements of that kind, matching an independently derived mapping", () => {
+  it("counts `waiting` as movements still needing a bed of that kind", () => {
     const rows = bedKindGaps(wardMovements, units, NOW);
     for (const row of rows) {
       const expected = open.filter((movement) => expectedKind(movement.cohort, movement.security) === row.id).length;
@@ -91,9 +97,32 @@ describe("bedKindGaps", () => {
 
     const rows = bedKindGaps(wardMovements, units, NOW);
     const totalWaiting = rows.reduce((sum, row) => sum + row.waiting, 0);
-    // Every open movement lands in exactly one kind (the mapping above is total), so the sum of
-    // `waiting` across all four rows must equal the open count exactly — not merely be no larger.
+    // Every unallocated pre-pull movement lands in exactly one bed kind.
     expect(totalWaiting).toBe(open.length);
+  });
+
+  it("excludes both explicit reservations and seeded post-pull journeys from unmet bed demand", () => {
+    const source = wardMovements[0];
+    const movement = (overrides: Partial<Movement>): Movement => ({
+      ...source,
+      closure: undefined,
+      stage: "accepted_awaiting_bed",
+      admissionId: undefined,
+      allocatedBed: undefined,
+      ...overrides,
+    });
+    const rows = bedKindGaps(
+      [
+        movement({ id: "WF-NEEDS-BED" }),
+        movement({ id: "WF-HAS-ADMISSION", admissionId: "WA-RESERVED" }),
+        movement({ id: "WF-HAS-BED", allocatedBed: 1 }),
+        movement({ id: "WF-SEEDED-PULL", stage: "pulled" }),
+        movement({ id: "WF-TRAVELLING", stage: "moving" }),
+      ],
+      [],
+      NOW,
+    );
+    expect(bedKindTotals(rows)).toEqual({ waiting: 1, bedsThatFit: 0, gap: -1 });
   });
 
   it("sums `bedsThatFit` from the real locked/open free-bed split, per cohort", () => {

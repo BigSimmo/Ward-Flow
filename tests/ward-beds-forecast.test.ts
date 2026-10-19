@@ -60,6 +60,30 @@ function horizon(forecast: ReturnType<typeof bedsForecast>, hours: 24 | 48) {
 }
 
 describe("bedsForecast", () => {
+  it.each([
+    { allocatable: 2, movementId: "WF-RESERVED", ready: 1 },
+    { allocatable: 1, movementId: "WF-RESERVED", ready: 1 },
+    { allocatable: 2, movementId: null, ready: 2 },
+  ] as const)(
+    "reconciles a pulled bed without subtracting it twice ($allocatable, $movementId)",
+    ({ allocatable, movementId, ready }) => {
+      const observed = {
+        ...unit,
+        beds: 10,
+        blocked: 0,
+        empty: { ...unit.empty, value: 2 },
+        allocatable: { ...unit.allocatable, value: allocatable },
+      };
+      const admissions = [admission({ state: "pulled", movementId })];
+      for (const entry of bedsForecast([observed], [], admissions, [], NOW).horizons) {
+        expect(entry.readyNow).toBe(ready);
+        expect(entry.likely).toBe(ready);
+      }
+      expect(observed.allocatable.value).toBe(allocatable);
+      expect(observed.empty.value).toBe(2);
+    },
+  );
+
   it("adds confirmed and expected discharges due in the window and subtracts people still needing a bed", () => {
     const releases = [
       release({ state: "confirmed", expectedAt: NOW + 60 }),

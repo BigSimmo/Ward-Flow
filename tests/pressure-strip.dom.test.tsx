@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PressureStrip } from "@/components/ward-management/coordinator/pressure-strip";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -7,6 +7,16 @@ import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ED_ACCESS_TARGET_MINUTES } from "@/components/ward-management/ward-model";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
+
+const warningSettings = vi.hoisted(() => ({ urgentMinutes: 60, soonMinutes: 180 }));
+vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
+  useDueSoonThresholds: () => warningSettings,
+}));
+
+beforeEach(() => {
+  Object.assign(warningSettings, { urgentMinutes: 60, soonMinutes: 180 });
+});
 
 /**
  * `edPressure` clamps `longestWaitMinutes` to 0 for a department with nobody waiting — a
@@ -24,6 +34,50 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
  * argument produced a plausible answer instead of an error.
  */
 describe("PressureStrip", () => {
+  it("uses configured warning windows in visible and accessible deadline labels", () => {
+    Object.assign(warningSettings, { urgentMinutes: 75, soonMinutes: 180 });
+    const movement = {
+      ...wardMovements[0]!,
+      examination: undefined,
+      closure: undefined,
+      stage: "placement_requested" as const,
+      legalForm: { code: "1A", dueAt: NOW_ANCHOR + 70 },
+    };
+    const { rerender } = render(
+      <PressureStrip now={NOW_ANCHOR} selectedEdId={undefined} onSelectEd={() => {}} movements={[movement]} />,
+    );
+    const card = screen.getByTestId(`ward-ed-${movement.originEdId}`);
+    expect(card).toHaveTextContent("1 due ≤ 1h 15m");
+    expect(card).toHaveAccessibleName(/1 due within 1h 15m/);
+    Object.assign(warningSettings, { urgentMinutes: 15, soonMinutes: 90 });
+    rerender(
+      <PressureStrip
+        now={NOW_ANCHOR}
+        selectedEdId={undefined}
+        onSelectEd={() => {}}
+        movements={[{ ...movement, legalForm: { code: "1A", dueAt: NOW_ANCHOR + 10 } }]}
+      />,
+    );
+    expect(card).toHaveTextContent("1 due ≤ 15m");
+    expect(card).toHaveAccessibleName(/1 due within 15m/);
+  });
+
+  it("does not turn an ended form into a current overdue warning", () => {
+    const movement = {
+      ...wardMovements[0]!,
+      closure: undefined,
+      stage: "placement_requested" as const,
+      legalStatus: "Involuntary inpatient" as const,
+      legalForm: { code: "1A", dueAt: NOW_ANCHOR - 5 },
+      examination: { at: NOW_ANCHOR - 10, outcome: "inpatient_order" as const },
+    };
+    render(<PressureStrip now={NOW_ANCHOR} selectedEdId={undefined} onSelectEd={() => {}} movements={[movement]} />);
+    const card = screen.getByTestId(`ward-ed-${movement.originEdId}`);
+    expect(card).not.toHaveTextContent("overdue");
+    expect(card).toHaveTextContent("No deadline recorded");
+    expect(card).toHaveAccessibleName(/No deadline recorded/);
+  });
+
   it("shows an explicit empty state for a department with nobody waiting, never a false duration", () => {
     render(<PressureStrip now={600} selectedEdId={undefined} onSelectEd={() => {}} movements={[]} />);
 

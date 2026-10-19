@@ -1,6 +1,6 @@
 // src/components/ward-management/ed/ed-home-derivations.ts
 import { minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { edInpatientWaitEnd, isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
@@ -40,7 +40,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  * explanation.
  */
 export const ED_HOME_POPULATION_NOTE =
-  "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. That is the model's Movement record (an open journey from this department toward a bed), deliberately never a referral count: a patient can be waiting before any referral exists, and a referral-keyed view has no row for that — the very state a coordinator most needs to see. Ruled 2026-09-04 so both this screen and a department's own hub count the same population by construction.";
+  "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. Counts exclude ward-origin transfers, people already collected or in transit, and recorded discharge or community outcomes. The department's psychiatry board separately retains journeys it is still accountable for, including transit. A patient can be waiting before any referral exists, so this is deliberately never a referral count.";
 
 /**
  * "Detained under the Act" — the two legal statuses that place a person under the Mental Health
@@ -151,7 +151,7 @@ export type EdOpenSummary = Omit<EdSummary, "pastAccessTarget" | "detainedAndPas
  */
 export function edOpenSummaries(movements: readonly Movement[], now: Instant): EdOpenSummary[] {
   return allEmergencyDepartments().map((ed) => {
-    const open = movements.filter((movement) => isOpen(movement) && movement.originEdId === ed.id);
+    const open = movements.filter((movement) => isWaitingInEd(movement) && movement.originEdId === ed.id);
     const elapsed = open.map((movement) => elapsedOpenMinutes(movement, now));
     return {
       ed,
@@ -268,9 +268,8 @@ export function groupByHealthService(summaries: readonly EdSummary[]): ServiceBa
 /**
  * How many people were waiting at one department at each 2 hour point over the last 12 hours,
  * oldest first, the last point now. Read from the record only: a movement counts at a point when it
- * had opened by then and had not yet closed (`closure.at`). A movement that reads "arrived" with no
- * closure time cannot be placed in the past, so it is left out of every point, the same as `isOpen`
- * leaves it out now. Nothing is invented: a department with no closures shows a rising line.
+ * had opened by then and had not yet departed or closed. Ward-origin transfers are excluded.
+ * A departed journey with no end time cannot be placed in the past and is left out.
  */
 export function edWaitingSeries(
   movements: readonly Movement[],
@@ -279,15 +278,17 @@ export function edWaitingSeries(
   spanMinutes: number = ED_TREND_SPAN_MINUTES,
   stepMinutes: number = ED_TREND_STEP_MINUTES,
 ): number[] {
-  const mine = movements.filter(
-    (movement) => movement.originEdId === edId && (movement.closure !== undefined || movement.stage !== "arrived"),
-  );
+  const mine = movements
+    .filter((movement) => movement.originEdId === edId && isEdOriginJourney(movement))
+    .map((movement) => ({ movement, end: edInpatientWaitEnd(movement, now) }));
   const points: number[] = [];
   for (let back = spanMinutes; back >= 0; back -= stepMinutes) {
     const at = now - back;
     points.push(
-      mine.filter((movement) => movement.openedAt <= at && (movement.closure === undefined || movement.closure.at > at))
-        .length,
+      mine.filter(
+        ({ movement, end }) =>
+          end !== null && movement.openedAt <= at && (isWaitingInEd(movement) ? at <= end : at < end),
+      ).length,
     );
   }
   return points;

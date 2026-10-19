@@ -24,12 +24,12 @@ export function StatusCheckIcon(signed: boolean) {
 export function HandoverHistory({
   signOffs,
   meetings,
-  takenAt,
+  preparedAt,
   now,
 }: {
   signOffs: readonly { at: Instant; by: WardFlowRole }[];
   meetings: { at: Instant; minutes: number }[];
-  takenAt: Instant | null;
+  preparedAt: Instant | null;
   now: Instant;
 }) {
   const unsigned = HANDOVER_SHIFTS.filter((shift) => {
@@ -45,11 +45,11 @@ export function HandoverHistory({
             <span>Handover signed off as {record.by === "coordinator" ? "flow coordinator" : record.by}</span>
           </li>
         ))}
-        {takenAt !== null ? (
+        {preparedAt !== null ? (
           <li>
-            <span className={styles.mono}>{formatInstantWithDay(takenAt, now)}</span>
+            <span className={styles.mono}>{formatInstantWithDay(preparedAt, now)}</span>
             <StatusGlyph tone="success" size={9} />
-            <span>Printed copy taken, this session only</span>
+            <span>Copy prepared for printing, this session only; printing not confirmed</span>
           </li>
         ) : null}
         {meetings.map((meeting) => (
@@ -66,7 +66,7 @@ export function HandoverHistory({
             <span>No sign-off recorded for the {shift.label.toLowerCase()} handover</span>
           </li>
         ))}
-        {signOffs.length === 0 && takenAt === null && meetings.length === 0 && unsigned.length === 0 ? (
+        {signOffs.length === 0 && preparedAt === null && meetings.length === 0 && unsigned.length === 0 ? (
           <li>
             <span />
             <StatusGlyph tone="neutral" size={9} />

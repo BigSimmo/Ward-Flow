@@ -1,3 +1,4 @@
+import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 /**
@@ -30,4 +31,10 @@ export function formProgression(movement: Movement | undefined): FormProgression
   if (movement.examination?.outcome === "inpatient_order")
     return { endedCode: code, endedWhen: "at the examination", nextCode: "6A" };
   return undefined;
+}
+
+/** The recorded expiry still in force; ended forms retain their expiry only as history. */
+export function currentLegalDueAt(movement: Movement): Instant | undefined {
+  if (formProgression(movement) !== undefined) return undefined;
+  return movement.legalForm?.dueAt;
 }
