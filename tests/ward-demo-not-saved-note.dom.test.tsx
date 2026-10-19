@@ -51,7 +51,9 @@ describe("Not saved on this device note (S-1)", () => {
         dateOfBirth: "1990-01-01",
       });
     });
-    expect(screen.getByTestId("ward-demo-not-saved")).toHaveTextContent("Not saved on this device");
+    expect(screen.getByTestId("ward-demo-not-saved")).toHaveTextContent(
+      "Demonstration state is not saved on this device",
+    );
   });
 
   it("is never shown on a fixed-clock render, which never saves anyway", () => {

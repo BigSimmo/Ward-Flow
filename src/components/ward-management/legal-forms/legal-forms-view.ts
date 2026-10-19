@@ -25,6 +25,7 @@ import { formTitleForCode } from "@/lib/form-register";
 
 import {
   currentLegalDueAt,
+  formatReminderHours,
   isLegalDeadlineBreached,
   legalExpiryReminderOf,
   reminderHours,
@@ -97,8 +98,8 @@ export const STANDING_TONE: Record<ClockStanding, WfTone> = {
 /** The short word beside a typed expiry: "Passed", "Within 1h", "Within 3h" or "Later". */
 export function standingWord(standing: ClockStanding, thresholds: DueSoonThresholds): string {
   if (standing === "passed") return "Passed";
-  if (standing === "urgent") return `Within ${reminderHours("within-urgent", thresholds)}h`;
-  if (standing === "soon") return `Within ${reminderHours("within-soon", thresholds)}h`;
+  if (standing === "urgent") return `Within ${formatReminderHours(reminderHours("within-urgent", thresholds))}`;
+  if (standing === "soon") return `Within ${formatReminderHours(reminderHours("within-soon", thresholds))}`;
   if (standing === "later") return "Later";
   return "Time not written";
 }

@@ -800,12 +800,21 @@ export function WardIdleLock() {
 }
 
 /** Reused inside isolated paper stacks as well as ordinary page print footers. */
-export function WardPrintAttribution({ at, className }: { at?: Instant; className?: string }) {
+export function WardPrintAttribution({
+  at,
+  className,
+  lead = "Printed by",
+}: {
+  at?: Instant;
+  className?: string;
+  /** Callers that stamp before the print dialog opens say "Prepared for printing by". */
+  lead?: string;
+}) {
   const access = useEffectiveWardAccess();
   const { units, now } = useUnscopedWardFlow();
   return (
     <span className={className} data-testid="ward-print-attribution">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {lead} {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
       {formatInstantWithDay(at ?? now, now)}. Synthetic data.
     </span>
   );

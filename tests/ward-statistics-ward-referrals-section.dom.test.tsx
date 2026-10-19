@@ -149,12 +149,13 @@ describe("the ward statistics screen's referral counts", () => {
    * which is false: `acceptedUnitId` survives the patient arriving and is cleared only by a
    * withdrawal of the acceptance.**
    */
-  it("says in words that one figure is now and two are ever", () => {
+  it("distinguishes current requests, standing acceptances and recorded declines", () => {
     const text = renderWard(ALL_THREE_UNIT).textContent ?? "";
     expect(text, "nothing marks the live figure as being about right now").toMatch(
       /right now|at the moment|currently/i,
     );
-    expect(text, "nothing marks the two cumulative figures as lifetime").toMatch(/ever/i);
+    expect(text).toMatch(/Acceptances still standing/);
+    expect(text).toMatch(/excludes withdrawn acceptances/);
   });
 
   /**
