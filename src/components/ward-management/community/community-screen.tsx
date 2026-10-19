@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
@@ -468,7 +469,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveDrawer(null);
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "/") {
+      if (e.key === "/" && areCharacterShortcutsEnabled()) {
         // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
         if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
         const target = e.target;

@@ -1,5 +1,6 @@
 "use client";
 
+import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
@@ -7,6 +8,7 @@ import {
   useContext,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -117,6 +119,53 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 
+// Both local and shared dispatches report an outcome. Keep the current draft until accepted,
+// and fence the completion so an old patient's save cannot dismiss another patient's form.
+function usePatientFormSave(scope: string) {
+  const scopeToken = useMemo(() => ({ id: scope }), [scope]);
+  const currentScope = useRef<object | null>(scopeToken);
+  useLayoutEffect(() => {
+    currentScope.current = scopeToken;
+    return () => {
+      currentScope.current = null;
+    };
+  }, [scopeToken]);
+  const inFlight = useRef(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<{ scope: object; message: string }>();
+  function submit(record: () => ReturnType<WardCommandDispatch>, onAccepted: () => void) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPending(true);
+    setError(undefined);
+    const submittedScope = scopeToken;
+    const finish = (outcome?: WardCommandOutcome | void) => {
+      inFlight.current = false;
+      setPending(false);
+      if (currentScope.current !== submittedScope) return;
+      if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) onAccepted();
+      else
+        setError({
+          scope: submittedScope,
+          message: outcome?.message ?? "Save was not confirmed. Review the record before trying again.",
+        });
+    };
+    try {
+      const completion = record();
+      if (completion && "then" in completion) void completion.then(finish, () => finish());
+      else finish(completion);
+    } catch {
+      finish();
+    }
+  }
+  return {
+    pending,
+    error: error?.scope === scopeToken ? error.message : undefined,
+    clearError: () => setError(undefined),
+    submit,
+  };
+}
+
 interface PatientNowScreenProps {
   patientId?: string;
   movementId?: string;
@@ -206,10 +255,7 @@ export function PatientNowScreen({
   const [clearanceAttested, setClearanceAttested] = useState(false);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
-  // The saved ETA the form was refilled with. While the box still holds that exact text, the saved
-  // instant is kept as it is, so reopening and saving never moves an ETA from another day.
-  const [transportEtaRefill, setTransportEtaRefill] = useState<{ text: string; at: number } | undefined>();
-  const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
+  const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider | "">("");
   // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
   // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
   // Legal now asks for a recorded reason.
@@ -217,13 +263,21 @@ export function PatientNowScreen({
   const [transportLegalChanging, setTransportLegalChanging] = useState(false);
   const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
   // Audit A4-6: a Save that cannot go through says why beside the field, never silently.
-  const [transportFormErrors, setTransportFormErrors] = useState<{ cad?: string; eta?: string; legal?: string }>({});
-  const [transportEscortDraft, setTransportEscortDraft] = useState(false);
+  const [transportFormErrors, setTransportFormErrors] = useState<{
+    cad?: string;
+    eta?: string;
+    legal?: string;
+    provider?: string;
+    escort?: string;
+  }>({});
+  const [transportEscortDraft, setTransportEscortDraft] = useState<boolean | undefined>();
+  const transportSave = usePatientFormSave(selectedId);
+  const clearanceSave = usePatientFormSave(selectedId);
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
 
   const closeClearanceModal = useCallback(() => {
-    setShowClearanceModal(false);
-  }, [setShowClearanceModal]);
+    if (!clearanceSave.pending) setShowClearanceModal(false);
+  }, [clearanceSave.pending]);
 
   // The shared modal contract: the page behind is inert and held still, focus starts on the first
   // control, Tab wraps inside the box, Escape closes only this top layer, and focus returns to the
@@ -402,23 +456,20 @@ export function PatientNowScreen({
   const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
   const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
   const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const etaFromDraft = (text: string) =>
-    transportEtaRefill !== undefined && text === transportEtaRefill.text
-      ? transportEtaRefill.at
-      : instantFromEtaText(text, now);
+  const etaFromDraft = (text: string) => instantFromEtaText(text, now);
   const draftEtaAt = etaFromDraft(transportEtaDraft.trim());
   // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
   const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
 
   function openTransportForm() {
-    setTransportCadDraft(displayCadNumber ?? "");
-    const savedEta = liveMovement?.transport?.estimatedAt;
-    // A saved ETA on another day keeps its day word ("tomorrow"), so the box reads back as the
-    // same instant and the bed hold warning still fires.
-    const refillText = savedEta === undefined ? "" : formatInstantWithDay(savedEta, now);
-    setTransportEtaDraft(refillText);
-    setTransportEtaRefill(savedEta === undefined ? undefined : { text: refillText, at: savedEta });
-    setTransportLegalDraft(liveMovement?.transport?.transportLegalStatus);
+    if (isTransportBooked || transportSave.pending) return;
+    transportSave.clearError();
+    setBookingRejectionStart(undefined);
+    setTransportProviderDraft("");
+    setTransportEscortDraft(undefined);
+    setTransportCadDraft("");
+    setTransportEtaDraft("");
+    setTransportLegalDraft(undefined);
     setTransportLegalChanging(false);
     setTransportLegalReason("");
     setTransportFormErrors({});
@@ -427,49 +478,59 @@ export function PatientNowScreen({
 
   function handleSaveTransportBooking(e: React.FormEvent) {
     e.preventDefault();
+    if (transportSave.pending) return;
     const cleanCad = transportCadDraft.trim();
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = etaFromDraft(cleanEta);
-    const errors: { cad?: string; eta?: string; legal?: string } = {};
+    const errors: typeof transportFormErrors = {};
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
     else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
     if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
     else if (transportLegalClash && transportLegalReason === "") errors.legal = "Choose why it differs from Legal now";
+    if (!transportProviderDraft) errors.provider = "Choose the provider from the call";
+    if (transportEscortDraft === undefined) errors.escort = "Record whether a clinical escort is required";
     setTransportFormErrors(errors);
-    if (errors.cad || errors.eta || errors.legal || estimatedAt === undefined || transportLegalChoice === undefined)
+    if (
+      Object.values(errors).some(Boolean) ||
+      estimatedAt === undefined ||
+      transportLegalChoice === undefined ||
+      !transportProviderDraft ||
+      transportEscortDraft === undefined
+    )
       return;
 
     if (!liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
-    {
-      dispatch({
-        type: "BOOK_TRANSPORT",
-        role: routeRole,
-        now,
-        movementId: liveMovement.id,
-        ...(routeRole === "ward"
-          ? (() => {
-              const originUnitId = liveMovement.referralId
-                ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
-                : undefined;
-              const sourceUnitId =
-                originUnitId ?? admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId;
-              return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
-            })()
-          : {}),
-        provider: transportProviderDraft,
-        escortRequired: transportEscortDraft,
-        cadNumber: cleanCad,
-        transportLegalStatus: transportLegalChoice,
-        estimatedAt,
-        ...(transportLegalClash && transportLegalReason !== ""
-          ? { exception: { gaps: ["legal_status_differs" as const], reason: transportLegalReason } }
-          : {}),
-      });
-    }
-
-    setShowTransportForm(false);
+    transportSave.submit(
+      () =>
+        dispatch({
+          type: "BOOK_TRANSPORT",
+          role: routeRole,
+          now,
+          movementId: liveMovement.id,
+          ...(routeRole === "ward"
+            ? (() => {
+                const originUnitId = liveMovement.referralId
+                  ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
+                  : undefined;
+                const sourceUnitId =
+                  originUnitId ??
+                  admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId;
+                return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
+              })()
+            : {}),
+          provider: transportProviderDraft,
+          escortRequired: transportEscortDraft,
+          cadNumber: cleanCad,
+          transportLegalStatus: transportLegalChoice,
+          estimatedAt,
+          ...(transportLegalClash && transportLegalReason !== ""
+            ? { exception: { gaps: ["legal_status_differs" as const], reason: transportLegalReason } }
+            : {}),
+        }),
+      () => setShowTransportForm(false),
+    );
   }
 
   // Fill templates for record strings. D5: `due` is never computed — it is the live
@@ -755,6 +816,8 @@ export function PatientNowScreen({
     dayZero,
     onOpenPlacement: () => setNowSheet("destination"),
     onClearance: (event) => {
+      if (clearanceSave.pending) return;
+      clearanceSave.clearError();
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
@@ -887,6 +950,8 @@ export function PatientNowScreen({
      (device audit 11 Oct 2026: the dispatch block is off Now). */
   const transportSection = renderTransportSection({
     bookingRejection,
+    transportPending: transportSave.pending,
+    transportSaveError: transportSave.error,
     displayCadNumber,
     displayEscort,
     displayEta,
@@ -1243,6 +1308,7 @@ export function PatientNowScreen({
                 type="button"
                 className={styles.clearanceModalClose}
                 onClick={closeClearanceModal}
+                disabled={clearanceSave.pending}
                 aria-label="Close dialog"
               >
                 &times;
@@ -1256,6 +1322,7 @@ export function PatientNowScreen({
               <label className={styles.clearanceField}>
                 Treating-team clearance outcome
                 <select
+                  disabled={clearanceSave.pending}
                   value={clearanceDraft}
                   onChange={(event) => setClearanceDraft(event.target.value as typeof clearanceDraft)}
                 >
@@ -1267,6 +1334,7 @@ export function PatientNowScreen({
               <label className={styles.clearanceAttestation}>
                 <input
                   type="checkbox"
+                  disabled={clearanceSave.pending}
                   checked={clearanceAttested}
                   onChange={(event) => setClearanceAttested(event.target.checked)}
                 />
@@ -1275,20 +1343,34 @@ export function PatientNowScreen({
               <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
             </div>
             <div className={styles.clearanceModalFoot}>
+              {clearanceSave.error && <p role="alert">Clearance was not recorded: {clearanceSave.error}</p>}
+              {clearanceSave.pending && <p role="status">Saving clearance outcome…</p>}
               {/* A4-32: say why Save is not yet available, beside it. */}
               {clearanceGate.allowed && (!clearanceDraft || !clearanceAttested) ? (
                 <p id="clearanceSaveReason" className={styles.clearanceReason}>
                   {!clearanceDraft ? "Choose the outcome to save" : "Tick the statement to save"}
                 </p>
               ) : null}
-              <button type="button" className={styles.ctl} onClick={closeClearanceModal}>
+              <button
+                type="button"
+                className={styles.ctl}
+                disabled={clearanceSave.pending}
+                onClick={closeClearanceModal}
+              >
                 Close
               </button>
               <button
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
+                aria-busy={clearanceSave.pending}
                 aria-disabled={
-                  !clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed ? "true" : undefined
+                  clearanceSave.pending ||
+                  !clearanceDraft ||
+                  !clearanceAttested ||
+                  !liveMovement ||
+                  !clearanceGate.allowed
+                    ? "true"
+                    : undefined
                 }
                 aria-describedby={
                   clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
@@ -1296,21 +1378,30 @@ export function PatientNowScreen({
                     : clearanceGate.buttonProps["aria-describedby"]
                 }
                 onClick={(e) => {
-                  if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) {
+                  if (
+                    clearanceSave.pending ||
+                    !liveMovement ||
+                    !clearanceDraft ||
+                    !clearanceAttested ||
+                    !clearanceGate.allowed
+                  ) {
                     ignoreUnavailableActivation(e);
                     return;
                   }
-                  dispatch({
-                    type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-                    role: routeRole,
-                    now,
-                    movementId: liveMovement.id,
-                    cleared: clearanceDraft === "cleared",
-                  });
-                  closeClearanceModal();
+                  clearanceSave.submit(
+                    () =>
+                      dispatch({
+                        type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+                        role: routeRole,
+                        now,
+                        movementId: liveMovement.id,
+                        cleared: clearanceDraft === "cleared",
+                      }),
+                    () => setShowClearanceModal(false),
+                  );
                 }}
               >
-                Save clearance outcome
+                {clearanceSave.pending ? "Saving clearance outcome…" : "Save clearance outcome"}
               </button>
               {clearanceGate.note}
             </div>

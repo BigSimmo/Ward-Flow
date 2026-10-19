@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -412,7 +413,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "/" || event.defaultPrevented) return;
+      if (!areCharacterShortcutsEnabled() || event.key !== "/" || event.defaultPrevented) return;
       if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
       const target = event.target as HTMLElement | null;
       if (
