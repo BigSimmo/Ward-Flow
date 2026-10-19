@@ -796,6 +796,16 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
 const EXPECTED_BUILDER_LINE_TEXT = EXPECTED_BUILDER_LINES.map((entry) => entry.line);
 
 /**
+ * Exact shell lines that carry a former address no screen links to. The only one is the service
+ * worker scopes from before Ward Flow left /mockups (19 October 2026), which the PWA registration
+ * must name exactly so it can remove them: deriving them from the current scope is what once made
+ * that cleanup target a scope no browser had registered.
+ */
+const FORMER_ADDRESS_LINES = [
+  'export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;',
+];
+
+/**
  * ⚠️ **THE ONE BUILDER CHECKED IN `BUILDER_ROUTES` (ASSERTION 4) THAT HAS NO ENTRY ABOVE.**
  * `communityTeamHref` is a delegate, not a second builder — see its own doc comment in
  * `ward-facade.ts` — so it is deliberately excluded from `EXPECTED_BUILDER_LINES` rather than
@@ -835,7 +845,7 @@ describe("the shell directory writes a route path in exactly one kind of place",
         if (!/(?:(?<![\w./-])|\/mockups)\/ward-flow(?=[/"'`?#]|-sign-in|-digest|$)/u.test(line)) continue;
         const trimmed = line.trim();
         if (EXPECTED_BUILDER_LINE_TEXT.includes(trimmed)) found.push(trimmed);
-        else offending.push(`${relative}: ${trimmed}`);
+        else if (!FORMER_ADDRESS_LINES.includes(trimmed)) offending.push(`${relative}: ${trimmed}`);
       }
     }
 
