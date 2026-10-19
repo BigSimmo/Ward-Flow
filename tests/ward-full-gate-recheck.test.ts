@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import {
   executedAssertionCount,
@@ -10,6 +10,7 @@ import {
   splitFullGateBatches,
   validateBatchReport,
   validatePolicyReport,
+  withGateRunResult,
 } from "../scripts/ward-flow/full-gate-recheck.mjs";
 
 const root = "/work";
@@ -26,7 +27,12 @@ const receipt = () => ({
   skippedTooling: false,
   environmentFingerprint: "offline-default",
   problemFiles: [names[1]],
-  report: { numTotalTests: 3, testResults: [suite(names[0]), suite(names[1], "failed"), suite(names[2])] },
+  report: withGateRunResult(
+    { numTotalTests: 3, testResults: [suite(names[0]), suite(names[1], "failed"), suite(names[2])] },
+    names,
+    root,
+    { status: 1 },
+  ),
 });
 const input = () => ({
   receipt: receipt(),
@@ -113,14 +119,21 @@ describe("a bounded full gate recheck", () => {
   });
 
   it("replaces only rerun suites and refuses a missing or unexpected result", () => {
-    const rerun = {
-      numTotalTests: 2,
-      testResults: [
-        { ...suite(path.resolve(root, names[1])), assertionResults: [{ status: "passed" }, { status: "passed" }] },
-      ],
-    };
+    const rerun = withGateRunResult(
+      {
+        numTotalTests: 2,
+        testResults: [
+          { ...suite(path.resolve(root, names[1])), assertionResults: [{ status: "passed" }, { status: "passed" }] },
+        ],
+      },
+      [names[1]],
+      root,
+      { status: 0 },
+    );
     const merged = mergeGateReports({ baseReport: receipt().report, rerunReport: rerun, selected: [names[1]], root });
     expect(merged.numTotalTests).toBe(4);
+    expect(merged.wardGateRuns.map((run: { status: number }) => run.status)).toEqual([1, 0]);
+    expect(validateBatchReport(merged, names, root, { requireProcessEvidence: true }).valid).toBe(true);
     expect(merged.testResults.map((result: { name: string; status: string }) => [result.name, result.status])).toEqual([
       [path.resolve(root, names[0]), "passed"],
       [path.resolve(root, names[1]), "passed"],
@@ -137,6 +150,22 @@ describe("a bounded full gate recheck", () => {
         root,
       }),
     ).toThrow();
+  });
+
+  it("refuses a legacy receipt or a bounded rerun with abnormal process evidence", () => {
+    const legacy = receipt();
+    expect(
+      planFullGateRecheck({
+        ...input(),
+        receipt: { ...legacy, report: { numTotalTests: 3, testResults: legacy.report.testResults } },
+      }).eligible,
+    ).toBe(false);
+    const rerun = withGateRunResult({ numTotalTests: 1, testResults: [suite(names[1])] }, [names[1]], root, {
+      status: 1,
+    });
+    expect(() =>
+      mergeGateReports({ baseReport: receipt().report, rerunReport: rerun, selected: [names[1]], root }),
+    ).toThrow(/exit status/);
   });
 });
 
@@ -166,6 +195,142 @@ describe("crash-resumable FULL batches", () => {
     expect(validateBatchReport({ ...report, numTotalTests: 0 }, names.slice(0, 2), root).valid).toBe(false);
   });
 
+  it.each([
+    ["all-passed report with exit 1", { status: 1 }, "passed", {}],
+    ["failed assertions with exit 0", { status: 0 }, "failed", {}],
+    ["abnormal exit", { status: 2 }, "failed", {}],
+    ["signal after reporting", { status: null, signal: "SIGTERM" }, "passed", {}],
+    ["launch error", { status: null, error: new Error("spawn failed") }, "passed", {}],
+    ["missing process result", undefined, "passed", {}],
+    ["unhandled errors alongside acknowledged failures", { status: 1 }, "failed", { unhandledErrors: ["synthetic"] }],
+    ["reported errors", { status: 1 }, "failed", { errors: ["synthetic"] }],
+    ["reported unhandled count", { status: 1 }, "failed", { numUnhandledErrors: 1 }],
+  ])("does not checkpoint or resume %s", (_label, runResult, status, extra) => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-invalid-"));
+    const report = { numTotalTests: 1, testResults: [suite(names[0], status)], ...extra };
+    const options = {
+      population: [names[0]],
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-fixture-input",
+      stateDir,
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        writeFileSync(reportPath, JSON.stringify(report));
+        return runResult;
+      },
+    };
+    try {
+      expect(() => runFullGateBatches(options)).toThrow(/batch 1 is incomplete/);
+      const stable = path.join(stateDir, "batch-001.json");
+      expect(existsSync(stable)).toBe(false);
+      // Saved results must pass the same process checks as fresh reports.
+      writeFileSync(stable, JSON.stringify(withGateRunResult(report, [names[0]], root, runResult)));
+      expect(() => runFullGateBatches(options)).toThrow(/saved batch 1 is invalid/);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it("retains ordinary exit-1 assertion failures for manifest comparison and checkpoint reuse", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-red-"));
+    let calls = 0;
+    const options = {
+      population: [names[0]],
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-fixture-input",
+      stateDir,
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        calls++;
+        writeFileSync(reportPath, JSON.stringify({ numTotalTests: 1, testResults: [suite(names[0], "failed")] }));
+        return { status: 1 };
+      },
+    };
+    try {
+      expect(runFullGateBatches(options).wardGateRuns[0].status).toBe(1);
+      expect(runFullGateBatches(options).testResults[0].status).toBe("failed");
+      expect(calls).toBe(1);
+      const stable = path.join(stateDir, "batch-001.json");
+      const legacy = JSON.parse(readFileSync(stable, "utf8"));
+      delete legacy.wardGateRuns;
+      writeFileSync(stable, JSON.stringify(legacy));
+      expect(() => runFullGateBatches(options)).toThrow(/missing test process evidence/);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it.each([
+    ["an empty assertion list", { name: names[0], status: "failed", message: "Failed to load url ./missing" }, []],
+    ["no assertion list", { name: names[0], status: "failed", message: "SyntaxError" }, undefined],
+  ])("counts an import-crash suite with %s as a failing file rather than aborting", (_label, crashed, list) => {
+    const crashSuite = list === undefined ? crashed : { ...crashed, assertionResults: list };
+    const report = { numTotalTests: 1, testResults: [crashSuite, suite(names[1])] };
+    const evidenced = withGateRunResult(report, names.slice(0, 2), root, { status: 1 });
+    expect(evidenced.wardGateRuns[0].failingFiles).toEqual([names[0]]);
+    expect(validateBatchReport(evidenced, names.slice(0, 2), root, { requireProcessEvidence: true })).toEqual({
+      valid: true,
+      failing: [names[0]],
+    });
+    // A lone crashed file collects zero tests; it is still a failing file, never an empty report.
+    const lone = withGateRunResult({ numTotalTests: 0, testResults: [crashSuite] }, [names[0]], root, { status: 1 });
+    expect(validateBatchReport(lone, [names[0]], root, { requireProcessEvidence: true })).toEqual({
+      valid: true,
+      failing: [names[0]],
+    });
+    // Never tightened away: a crash with exit 0, or a crash the evidence omits, still refuses.
+    const exitZero = withGateRunResult(report, names.slice(0, 2), root, { status: 0 });
+    expect(validateBatchReport(exitZero, names.slice(0, 2), root).valid).toBe(false);
+    const omitted = { ...evidenced, wardGateRuns: [{ ...evidenced.wardGateRuns[0], failingFiles: [] }] };
+    expect(validateBatchReport(omitted, names.slice(0, 2), root).valid).toBe(false);
+    // The crash can never satisfy a policy suite.
+    expect(validatePolicyReport(report, names.slice(0, 2), root).valid).toBe(false);
+  });
+
+  it("still refuses an empty report, or a suite without assertions that did not fail", () => {
+    for (const status of ["passed", "skipped", "pending", undefined]) {
+      const report = { numTotalTests: 0, testResults: [{ name: names[0], status, assertionResults: [] }] };
+      expect(validateBatchReport(report, [names[0]], root).valid).toBe(false);
+      expect(validateBatchReport({ ...report, numTotalTests: 1 }, [names[0]], root).valid).toBe(false);
+    }
+    const malformed = { numTotalTests: 1, testResults: [{ name: names[0], status: "failed", assertionResults: "x" }] };
+    expect(validateBatchReport(malformed, [names[0]], root).valid).toBe(false);
+    expect(validateBatchReport({ numTotalTests: 0, testResults: [] }, [], root).valid).toBe(false);
+  });
+
+  it("checkpoints an import crash as a failing batch and keeps it failing on resume", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-import-crash-"));
+    let calls = 0;
+    const options = {
+      population: [names[0]],
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-fixture-input",
+      stateDir,
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        calls++;
+        writeFileSync(
+          reportPath,
+          JSON.stringify({
+            numTotalTests: 0,
+            testResults: [{ name: names[0], status: "failed", assertionResults: [] }],
+          }),
+        );
+        return { status: 1 };
+      },
+    };
+    try {
+      expect(runFullGateBatches(options).wardGateRuns[0].failingFiles).toEqual([names[0]]);
+      expect(runFullGateBatches(options).testResults[0].status).toBe("failed");
+      expect(calls).toBe(1);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
   it("keeps completed batches and findings after a crash, then runs only the missing batch", () => {
     const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-test-"));
     const options = {
@@ -188,6 +353,7 @@ describe("crash-resumable FULL batches", () => {
           testResults: files.map((file) => suite(path.resolve(root, file))),
         }),
       );
+      return { status: 0 };
     };
     try {
       expect(() => runFullGateBatches({ ...options, runBatch })).toThrow("simulated crash");

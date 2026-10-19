@@ -78,6 +78,69 @@ describe("main-push reuse decision", () => {
     expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: legacy }] })).verified).toBe(true);
   });
 
+  it("refuses an older green contradicted by a newer completed failure", () => {
+    const green = { ...evidence().runs[0], updated_at: "2026-10-06T01:00:00Z" };
+    const failed = { ...green, id: 2, conclusion: "failure", updated_at: "2026-10-06T02:00:00Z" };
+    for (const runs of [
+      [green, failed],
+      [failed, green],
+    ]) {
+      expect(decideMainReuse(evidence({ runs }))).toMatchObject({
+        verified: false,
+        reason: "newer completed run 2 concluded failure",
+      });
+    }
+  });
+
+  it("accepts a later complete green after an earlier failure", () => {
+    const green = { ...evidence().runs[0], updated_at: "2026-10-06T02:00:00Z" };
+    const failed = { ...green, id: 2, conclusion: "failure", updated_at: "2026-10-06T01:00:00Z" };
+    expect(decideMainReuse(evidence({ runs: [failed, green] })).verified).toBe(true);
+  });
+
+  it("orders reruns by the latest attempt update rather than run ID or creation time", () => {
+    const green = {
+      ...evidence().runs[0],
+      id: 20,
+      created_at: "2026-10-06T02:00:00Z",
+      updated_at: "2026-10-06T02:00:00Z",
+    };
+    const failedRerun = {
+      ...green,
+      id: 10,
+      run_attempt: 2,
+      conclusion: "failure",
+      created_at: "2026-10-06T01:00:00Z",
+      updated_at: "2026-10-06T03:00:00Z",
+    };
+    expect(decideMainReuse(evidence({ runs: [green, failedRerun] })).verified).toBe(false);
+    const recoveredRerun = { ...failedRerun, run_attempt: 3, conclusion: "success", jobs: greenJobs() };
+    expect(decideMainReuse(evidence({ runs: [green, recoveredRerun] })).verified).toBe(true);
+  });
+
+  it("fails closed when completed runs cannot be ordered reliably", () => {
+    const green = { ...evidence().runs[0], updated_at: "2026-10-06T01:00:00Z" };
+    for (const updated_at of [undefined, "invalid", green.updated_at]) {
+      const failed = { ...green, id: 2, conclusion: "failure", updated_at };
+      expect(decideMainReuse(evidence({ runs: [green, failed] }))).toMatchObject({
+        verified: false,
+        reason: "completed run ordering is unavailable or ambiguous",
+      });
+    }
+  });
+
+  it("does not treat other heads, other events or unfinished runs as completed contradictions", () => {
+    const green = evidence().runs[0];
+    const failed = { ...green, id: 2, conclusion: "failure" };
+    for (const unrelated of [
+      { ...failed, head_sha: "f".repeat(40) },
+      { ...failed, event: "workflow_dispatch" },
+      { ...failed, status: "in_progress", conclusion: null },
+    ]) {
+      expect(decideMainReuse(evidence({ runs: [unrelated, green] })).verified).toBe(true);
+    }
+  });
+
   it.each([
     ["a different tree", { headTree: "e".repeat(40) }],
     ["a head that did not contain the previous main", { compare: { status: "diverged", behind_by: 1 } }],
