@@ -161,7 +161,9 @@ These source files do not establish a current hosted connection or deployment.
     required record access history first. Apply it only with separate authority, in one
     stop-on-error transaction; it takes the migration lock itself. Reapply runtime grants after 11.
   - `012-foreign-key-indexes.sql`: an index for each of the 13 foreign keys that had none (the
-    Supabase advisor's finding). Indexes only: no table, row, grant or policy changes.
+    Supabase advisor's finding). Indexes only: no table, row, grant or policy changes. Each plain
+    `CREATE INDEX` blocks writes to its table while it builds; at prototype sizes that is well under
+    a second, so apply it at a quiet time rather than mid-demonstration.
     `infra/rollback-012-foreign-key-indexes.sql` takes a database back to 11. Reapply runtime
     grants after 12.
     The backend accepts versions 5 to 12.

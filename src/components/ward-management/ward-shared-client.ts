@@ -102,7 +102,7 @@ type PendingCommand = {
  * Audit F-01: a referral's chart files never leave this device in shared mode. The shared board
  * keeps each file's name, type and size; the server drops any file content an older client sends.
  */
-export function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
+function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
   if (event.type !== "RECEIVE_REFERRAL" || !event.intake?.charts.some((chart) => chart.base64 !== undefined))
     return event;
   return {
