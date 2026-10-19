@@ -106,13 +106,6 @@ export interface WardAnswerViewProps {
 }
 
 /** A decline reason as a sentence-case label ("no_bed" reads "No bed"). */
-// Design audit DA-34 (Josh, 19 Oct 2026): the card names no one before acceptance, but carries the
-// referral number, so two similar incoming patients are never confused. It is not a name, UMRN or WF
-// journey number (owner, 26 Sept 2026; D-14, FD-23); a request with no referral shows none.
-function incomingReference(movement: Movement): string | undefined {
-  return movement.referralId ? `Referral ${movement.referralId}` : undefined;
-}
-
 function declineReasonLabel(reason: DeclineReason): string {
   const words = reason.replace(/_/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
@@ -775,11 +768,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             </span>
                             <span className={styles.phoneFoldText}>
                               <span className={styles.phoneFoldTitle}>This patient</span>
-                              <span className={styles.phonePatientLine}>
-                                {incomingReference(activeMovement)
-                                  ? `${incomingReference(activeMovement)} · Name and UMRN shared on acceptance`
-                                  : "Name and UMRN shared on acceptance"}
-                              </span>
+                              <span className={styles.phonePatientLine}>Name and UMRN shared on acceptance</span>
                             </span>
                           </div>
                         ) : null}
@@ -799,11 +788,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         ) : (
                           <div className={styles.patientDossierBanner}>
                             <div>
-                              <div className={styles.patientNameLine}>
-                                {incomingReference(activeMovement)
-                                  ? `Incoming patient · ${incomingReference(activeMovement)}`
-                                  : "Incoming patient"}
-                              </div>
+                              <div className={styles.patientNameLine}>Incoming patient</div>
                               <div className={styles.patientMetaLine}>
                                 Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
                                 {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
@@ -1580,7 +1565,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   id="ward-answer-allocating-movement"
                   // No identity before acceptance (owner, 26 Sept 2026), so the tier and referral time tell
                   // two waiting requests from the same cohort apart (D-39).
-                  value={`Incoming patient (${activeMovement.cohort}), ${incomingReference(activeMovement) ? `${incomingReference(activeMovement)}, ` : ""}Tier ${activeMovement.urgency}${activeMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(activeMovement.referredAt, now)}`}`}
+                  value={`Incoming patient (${activeMovement.cohort}), Tier ${activeMovement.urgency}${activeMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(activeMovement.referredAt, now)}`}`}
                   readOnly
                 />
               </div>

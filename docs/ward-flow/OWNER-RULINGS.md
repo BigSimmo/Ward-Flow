@@ -236,7 +236,7 @@ safe global key across 30 files.
 | `D-65` | `decisions.md`:744 | D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026) |
 | `D-66` | `decisions.md`:758 | D-66. Granted roles work without a second approval (17 October 2026) |
 | `D-67` | `decisions.md`:765 | D-67. Recover synthetic form drafts within the browser session (17 October 2026) |
-| `D-68` | `decisions.md`:772 | D-68. Bed meeting TV content and access, and the referral number on the ward accept card (19 October 2026) |
+| `D-68` | `decisions.md`:772 | D-68. Bed meeting TV content and access (19 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -580,7 +580,7 @@ safe global key across 30 files.
 - `D-65` — line 744, heading: "D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026)"
 - `D-66` — line 758, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
 - `D-67` — line 765, heading: "D-67. Recover synthetic form drafts within the browser session (17 October 2026)"
-- `D-68` — line 772, heading: "D-68. Bed meeting TV content and access, and the referral number on the ward accept card (19 October 2026)"
+- `D-68` — line 772, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

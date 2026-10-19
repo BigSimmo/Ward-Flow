@@ -769,9 +769,9 @@ is inferred.
 - **Boundary:** This is a narrow exception to D-18 for the synthetic prototype. The general typed-event state saving lock remains in force. No real patient information is authorised. Do not put draft text in localStorage, URLs, logs, screenshots, commit messages or memory services. Browser session restoration may preserve sessionStorage across a restart, so browser-close deletion is not a guaranteed property.
 - **Why:** The existing memory-only referral draft survives closing and reopening its drawer but is lost on refresh. The requested exception supports refresh recovery while preserving explicit session cleanup and human submission.
 
-## D-68. Bed meeting TV content and access, and the referral number on the ward accept card (19 October 2026)
+## D-68. Bed meeting TV content and access (19 October 2026)
 
 - **Date:** 19 October 2026 (`2026-10-19`). **Decided by:** Josh in the project chat, answering the design audit questions: "yes to all recommendations".
-- **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The ward's accept card shows the referral number. It still shows no name, UMRN or WF number until the ward accepts (D-14, FD-23).
+- **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The audit also recommended showing the referral number on the ward's accept card. That is not built: it conflicts with D-39 (no record numbers printed on screens, Josh, 15 October 2026), which the recommendation missed. The card stays as it is, with no name, UMRN or record number until the ward accepts (D-14, FD-23), until Josh decides between the two.
 - **Boundary:** Before any real patient data, the TV content needs a privacy review: a wall screen in a shared room shows initials, sex and day of stay to anyone who walks past. This decision does not authorise real data.
-- **Why:** The design audit (DA-34 and its decision questions) found the accept card gave the ward nothing to quote when phoning the coordinator, and that ward staff at the bed meeting could not open its view.
+- **Why:** The design audit found that ward staff at the bed meeting could not open its view (decision questions), and that the accept card gives the ward nothing to quote when phoning the coordinator (DA-34).
