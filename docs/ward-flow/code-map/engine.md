@@ -1,5 +1,24 @@
 # Engine: reducer, events, state and persistence
 
+## Bed and shared-save integrity — 19 October 2026
+
+`ward-bed-designation.ts` supplies the numbered bed's kind to bed moves and numbered
+reservation pulls. `ward-movement-bed-hold.ts` resolves the same movement/referral numbered
+reservation for pull and arrival. Moves update the stay's kind and free-kind count together; mixed-ward
+stays without a recorded prior kind or number are refused rather than assigned invented
+history. `ward-undo.ts` carries an optional compatible bed-move snapshot, validated by
+`ward-flow-storage-validation.ts`; Undo checks capacity revision and current facts before
+restoring the earlier kind and count. Generic step Undo checks numbered occupancy and
+reservations before restoring a departed stay.
+
+`backend/ward-flow/records.mjs` uses stable internal subject keys for bounded Undo history,
+so evicting an old receipt does not create conflicts between unrelated commands. Existing
+numeric keys are recognised without changing their content revisions; index markers and
+ordinal ordering remain readable by older readers and rollback SQL. Regression coverage:
+`tests/ward-bed-move-integrity.test.ts`, `tests/ward-departure-undo-integrity.test.ts` and
+`backend/ward-flow/records.test.mjs`. These local contracts do not establish hosted save
+or database readiness.
+
 ## Journey integrity — 18 October 2026
 
 `RECEIVE_REFERRAL` carries an optional opaque `submissionId` through shared validation and the

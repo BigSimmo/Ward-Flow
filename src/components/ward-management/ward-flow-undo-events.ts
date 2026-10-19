@@ -120,6 +120,18 @@ export function reduceUndoEvent(
       if (refusal) return reject(state, event, refusal);
       const unit = findUnit(state, admission.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
+      const kindChange = record.bedKindChange;
+      // A same-kind move (equal locked counts) is undone without touching the ward row, so a later
+      // resource update such as CONFIRM_CAPACITY cannot be overwritten and must not block it.
+      const capacityChanged = kindChange !== undefined && kindChange.lockedBefore !== kindChange.lockedAfter;
+      if (
+        kindChange &&
+        (admission.bedKind !== kindChange.after ||
+          (capacityChanged &&
+            (unit.allocatableLocked !== kindChange.lockedAfter ||
+              (unit.allocatable.revision ?? 0) !== kindChange.capacityRevision)))
+      )
+        return reject(state, event, "The stay or ward capacity has changed since the bed move, so it cannot be undone");
       if (record.beforeBed !== null) {
         const bedRefusal = bedNumberRefusal(state, unit, record.beforeBed, admission.id);
         if (bedRefusal) return reject(state, event, `${bedRefusal}, so the move cannot be undone`);
@@ -131,11 +143,23 @@ export function reduceUndoEvent(
       // Exact: a stay that had no bed number before gets none back (the key absent, not undefined).
       const { bedNumber: _placed, ...unplaced } = admission;
       void _placed;
-      const restored: Admission = record.beforeBed === null ? unplaced : { ...admission, bedNumber: record.beforeBed };
+      let restored: Admission = record.beforeBed === null ? unplaced : { ...admission, bedNumber: record.beforeBed };
+      if (kindChange) {
+        const { bedKind: _kind, ...withoutKind } = restored;
+        void _kind;
+        restored = kindChange.before === null ? withoutKind : { ...restored, bedKind: kindChange.before };
+      }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return {
         ...replaceAdmission(state, admission.id, restored),
+        ...(capacityChanged
+          ? {
+              units: state.units.map((row) =>
+                row.id === unit.id ? { ...unit, allocatableLocked: kindChange.lockedBefore } : row,
+              ),
+            }
+          : {}),
         undoRecords: withoutUndoRecord(state.undoRecords, record),
       };
     }
@@ -161,9 +185,30 @@ export function reduceUndoEvent(
         undoWindowRefusal(record.at, event.now) ??
         (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
       if (refusal) return reject(state, event, refusal);
+      const undone = applyStepUndo(state, record);
+      // An arrival can also depart a sending stay. Every undo that restores a bed must recheck
+      // ownership, including rows a later command changed outside this step's snapshot.
+      for (const change of record.changes) {
+        if (change.slice !== "admissions" || change.mode !== "id" || change.before === null) continue;
+        const admission = change.before as Admission;
+        const after = change.after as Admission | null;
+        if (!bedIsOccupied(admission) || admission.bedNumber === undefined) continue;
+        if (
+          after &&
+          bedIsOccupied(after) &&
+          after.unitId === admission.unitId &&
+          after.bedNumber === admission.bedNumber
+        )
+          continue;
+        const unit = findUnit(undone, admission.unitId);
+        if (!unit) return reject(state, event, "The original ward is unavailable, so the step cannot be undone");
+        const bedRefusal =
+          bedNumberRefusal(undone, unit, admission.bedNumber, admission.id) ??
+          heldBedRefusal(undone, unit, admission.bedNumber);
+        if (bedRefusal) return reject(state, event, `${bedRefusal}, so the step cannot be undone`);
+      }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      const undone = applyStepUndo(state, record);
       // A stay the step created and the undo removed takes its own bed-move record with it.
       const remaining = withoutUndoRecord(state.undoRecords, record).filter(
         (other) => other.kind !== "bed-placement" || undone.admissions.some((stay) => stay.id === other.admissionId),
