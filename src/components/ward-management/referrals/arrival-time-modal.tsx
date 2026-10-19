@@ -259,7 +259,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               data-testid="save-arrival-plan-button"
               className={styles.saveBtn}
               {...saveGate.buttonProps}
-              disabled={saving}
+              disabled={saving || saveGate.buttonProps.disabled}
               aria-busy={saving || undefined}
             >
               {saving ? "Saving…" : "Save Arrival Plan"}
