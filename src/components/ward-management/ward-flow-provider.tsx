@@ -1019,7 +1019,7 @@ function WardFlowWorld({
                 nextOpenRequestSequence(saved.state.auditEvents),
               );
               lastAdoptedBroadcastWorldRef.current = saved.state;
-              localEditsSinceBroadcastRef.current = freshSeedRef.current = false;
+              localEditsSinceBroadcastRef.current = false;
               dispatchContainer({
                 type: "ADOPT_SAVED_SESSION",
                 [ADOPT_SESSION]: (current) => {
@@ -1032,6 +1032,7 @@ function WardFlowWorld({
                   if (isSameWorld) {
                     return current;
                   }
+                  freshSeedRef.current = false; // only once accepted: a refused day leaves the seed (DA-01)
                   return {
                     ...current,
                     world: saved.state,
