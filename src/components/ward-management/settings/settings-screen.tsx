@@ -371,6 +371,8 @@ export function SettingsScreen() {
   const saveConfiguration = (
     requested: WardConfiguration,
     base: WardConfiguration,
+    // Restore defaults replaces every rule, so another desk's newer change is refused, not kept.
+    replaceAll: boolean,
     onAccepted: (applied: WardConfiguration, outcome: WardCommandOutcome) => void,
   ) => {
     if (!configurationGate.allowed) {
@@ -391,14 +393,14 @@ export function SettingsScreen() {
         showToast(message, "warning");
         return;
       }
-      const merged = mergeConfiguration(latestConfiguration.current, requested, base);
+      const merged = mergeConfiguration(latestConfiguration.current, requested, base, replaceAll);
       const applied = merged.status === "merged" ? merged.configuration : requested;
       setDraft(applied);
       setDraftBase(applied);
       onAccepted(applied, outcome);
     };
     try {
-      const completion = raise("SET_CONFIGURATION", { payload: requested, baseConfiguration: base });
+      const completion = raise("SET_CONFIGURATION", { payload: requested, baseConfiguration: base, replaceAll });
       if (completion && typeof (completion as Promise<WardCommandOutcome>).then === "function") {
         void (completion as Promise<WardCommandOutcome>).then(finish, () => finish(undefined));
       } else finish(completion as void | WardCommandOutcome);
@@ -411,7 +413,7 @@ export function SettingsScreen() {
     if (!hasUnsavedRules) return;
     const before = draftBase;
     const requested = draft;
-    saveConfiguration(requested, before, (applied, outcome) => {
+    saveConfiguration(requested, before, false, (applied, outcome) => {
       setPhoneSheet(null);
       const changed = ruleDiffs(before, requested);
       toast?.push({
@@ -433,7 +435,7 @@ export function SettingsScreen() {
               showToast("The saved rules changed. Review the current settings before undoing.", "warning");
               return undefined;
             }
-            saveConfiguration(inverse.configuration, applied, () =>
+            saveConfiguration(inverse.configuration, applied, false, () =>
               showToast("Rules back as they were. Recorded in the audit."),
             );
 
@@ -571,7 +573,7 @@ export function SettingsScreen() {
       railOpen,
     };
     const defaults = defaultWardConfiguration();
-    saveConfiguration(defaults, before.configuration, (applied, outcome) => {
+    saveConfiguration(defaults, before.configuration, true, (applied, outcome) => {
       setAudioBuzz(true);
       setAudioBuzzPreference(true);
       applyAppearance("auto");
@@ -597,7 +599,7 @@ export function SettingsScreen() {
               showToast("The saved rules changed. Review the current settings before undoing.", "warning");
               return undefined;
             }
-            saveConfiguration(inverse.configuration, applied, () => {
+            saveConfiguration(inverse.configuration, applied, false, () => {
               setDraft({ ...before.draft });
               setDraftBase(before.draftBase);
               setAudioBuzz(before.buzz);
