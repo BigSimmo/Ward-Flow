@@ -134,7 +134,7 @@ describe("the duplicate sentence", () => {
 describe("L5 — Where this case is follows the case's stage", () => {
   it("points at the Referrals board while a referral still waits for an answer", () => {
     expect(duplicateCaseHref({ patientId: SOMEONE, referrals: [referralFor(SOMEONE, "queued")] })).toBe(
-      "/mockups/ward-flow/referrals",
+      "/ward-flow/referrals",
     );
   });
 

@@ -209,7 +209,8 @@ describe("legal extension accepted-completion gating", () => {
     await act(async () => {
       reject();
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("Save is not confirmed");
+    // The legal-forms screen reports the failed outcome (one message, not a second copy in the sheet).
+    expect(close).not.toHaveBeenCalled();
     expect(screen.getByLabelText("New expiry time")).toHaveValue("23:30");
     expect(screen.getByLabelText("New expiry time")).not.toBeDisabled();
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));

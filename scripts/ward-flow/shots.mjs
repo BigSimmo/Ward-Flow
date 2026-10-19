@@ -114,7 +114,7 @@ if (!base) {
   const deadline = Date.now() + 180_000;
   for (;;) {
     try {
-      const response = await fetch(`${base}/mockups/ward-flow`);
+      const response = await fetch(`${base}/ward-flow`);
       if (response.status < 500) break;
     } catch {
       // not up yet

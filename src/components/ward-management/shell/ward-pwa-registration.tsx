@@ -6,9 +6,11 @@
  * - Registers `public/ward-flow-push-sw.js` on every Ward Flow load, not only when phone alerts are
  *   turned on, so the offline fallback page works for everyone. Same URL, scope and options as
  *   `ward-phone-push.ts`, so there is one registration and push keeps working.
- * - Removes the old `/mockups/ward-flow/` registration (F-11). Its scope left Home uncontrolled, and
- *   as the longer match it would keep every other page on the old worker. Removing it ends any
- *   phone alerts subscribed under it, so a one-time notice says to turn them on again in Settings.
+ * - Removes the registrations from before Ward Flow left /mockups (19 October 2026):
+ *   `/mockups/ward-flow`, and the older `/mockups/ward-flow/` (F-11), whose scope left Home
+ *   uncontrolled. Left in place, either would keep its phone alerts subscription out of reach of
+ *   Settings, so switching alerts on again would deliver every alert twice. Removing them ends
+ *   those subscriptions, so a one-time notice says to turn alerts on again in Settings.
  * - A new worker version waits. A notice offers Reload; the tap tells the waiting worker to take
  *   over, then the page reloads once it has, so code never changes under someone mid-task.
  * - Keeps the browser's install event for the Settings install hint (`ward-pwa-install.ts`).
@@ -27,8 +29,8 @@ import { listenForInstallPrompt } from "./ward-pwa-install";
 
 /** Must match OPEN_MESSAGE in public/ward-flow-push-sw.js. */
 const WARD_PWA_OPEN_MESSAGE = "ward-flow-open";
-/** The scope used before F-11. */
-export const LEGACY_PWA_SCOPE = `${PHONE_PUSH_SCOPE}/`;
+/** Scopes registered before Ward Flow left /mockups (19 October 2026); the slashed one is pre-F-11. */
+export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;
 
 /** The Ward Flow path a worker message asks for, or null for anything else. */
 export function wardPwaOpenTarget(data: unknown, origin: string): string | null {
@@ -60,17 +62,17 @@ async function hadPushSubscription(registration: ServiceWorkerRegistration): Pro
 }
 
 /**
- * Registers the Ward Flow worker and drops the pre-F-11 registration. Resolves null when unsupported.
- * `onAlertsEnded` runs when the dropped registration held a phone alerts subscription, which the
+ * Registers the Ward Flow worker and drops the old registrations. Resolves null when unsupported.
+ * `onAlertsEnded` runs when a dropped registration held a phone alerts subscription, which the
  * browser ends with it. The server forgets that endpoint once a send to it fails.
  */
 async function registerWardPwaWorker(onAlertsEnded?: () => void): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
-  const legacyScope = new URL(LEGACY_PWA_SCOPE, window.location.origin).href;
+  const legacyScopes = new Set<string>(LEGACY_PWA_SCOPES.map((scope) => new URL(scope, window.location.origin).href));
   const existing = await navigator.serviceWorker.getRegistrations();
   const ended = await Promise.all(
     existing
-      .filter((registration) => registration.scope === legacyScope)
+      .filter((registration) => legacyScopes.has(registration.scope))
       .map(async (registration) => {
         const subscribed = await hadPushSubscription(registration);
         await registration.unregister();

@@ -136,7 +136,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         barMain:
           isPhone && (mode === "idle" || mode === "cto") ? (
             <Link
-              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/mockups/ward-flow/referrals/new"}
+              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
               className={buttonClass({ variant: "pri" })}
               data-testid="ward-person-refer-outpatient"
             >

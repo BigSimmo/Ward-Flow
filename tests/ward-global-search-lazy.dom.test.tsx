@@ -8,7 +8,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(),
 }));
 

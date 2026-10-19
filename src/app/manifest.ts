@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 import { APP_THEME_COLORS } from "@/lib/theme";
 
-const WARD_FLOW = "/mockups/ward-flow";
+const WARD_FLOW = "/ward-flow";
 const SHORTCUT_ICONS = [{ src: "/icons/icon-96", type: "image/png", sizes: "96x96" }];
 
 // PWA manifest — makes the app installable with a proper icon. Icons derive from

@@ -1211,7 +1211,7 @@ export function WardTasksDrawer({
             </Link>
           ) : null}
           <Link
-            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/mockups/ward-flow/delays"}
+            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/delays"}
             onClick={onClose}
             data-testid="ward-tasks-jump-delays"
             className={styles.quickJump}

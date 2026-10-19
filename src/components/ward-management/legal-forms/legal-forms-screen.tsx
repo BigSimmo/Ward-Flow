@@ -135,6 +135,13 @@ const GAP_ACTION: Record<RecordGap, string> = {
   examination: "Record exam",
 };
 
+// A form save whose confirmation never arrived: the sheet keeps its draft and says why.
+const UNCONFIRMED_SAVE = {
+  commandId: "",
+  status: "failed",
+  message: "Save is not confirmed. Review the board before trying again.",
+} as const;
+
 function sameHighlight(a: Highlight, b: Highlight): boolean {
   if (a === null || b === null) return a === b;
   if (a.kind !== b.kind) return false;
@@ -1070,11 +1077,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", {
-              movementId,
-              formCode,
-              writtenAt,
-            });
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", { movementId, formCode, writtenAt });
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {
@@ -1086,7 +1089,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               );
               return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
             };
-            const unconfirmed = () => accepted(UNCONFIRMED_SAVE_OUTCOME);
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
             return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
@@ -1114,7 +1117,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               );
               return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
             };
-            const unconfirmed = () => accepted(UNCONFIRMED_SAVE_OUTCOME);
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
             return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
@@ -1133,11 +1136,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   );
 }
 
-const UNCONFIRMED_SAVE_OUTCOME = {
-  commandId: "",
-  status: "failed" as const,
-  message: "Save is not confirmed. Review the board before trying again.",
-};
 const ROW_COLUMNS = "minmax(0,1.25fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,0.95fr)";
 /** The short word for a fact still to record, as the To record column names it. */
 const TO_RECORD_WORD: Record<RecordGap, string> = {

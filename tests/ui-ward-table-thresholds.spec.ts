@@ -112,7 +112,7 @@ import { expect, test } from "playwright/test";
  * min-content at 528px, at or above its 520px pin, so that pin is now 560px (35rem). It then measured
  * the wards table's min-content at 597px, above its 592px pin, so that pin is now 640px (40rem).
  */
-const OWNED = "/mockups/ward-flow/statistics/compare";
+const OWNED = "/ward-flow/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
   { testId: "ward-statistics-compare-wards", columns: 5, minWidthPx: 640 },
   { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
@@ -156,12 +156,12 @@ const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number
  */
 const ROUTES = [
   OWNED,
-  "/mockups/ward-flow/out-of-area",
-  "/mockups/ward-flow/escalation",
-  "/mockups/ward-flow/discharges",
-  "/mockups/ward-flow/referrals",
-  "/mockups/ward-flow/search",
-  "/mockups/ward-flow/queue",
+  "/ward-flow/out-of-area",
+  "/ward-flow/escalation",
+  "/ward-flow/discharges",
+  "/ward-flow/referrals",
+  "/ward-flow/search",
+  "/ward-flow/queue",
 ] as const;
 
 /**
@@ -169,7 +169,7 @@ const ROUTES = [
  * file asserts NOTHING about its design — only that two unrelated ways of measuring it land on the
  * same number, which is a fact about the probe rather than about the table.
  */
-const CROSS_CHECK_ROUTE = "/mockups/ward-flow/out-of-area";
+const CROSS_CHECK_ROUTE = "/ward-flow/out-of-area";
 const CROSS_CHECK_TESTID = "ward-out-of-area-table";
 
 /** A width no ward table's content could coincidentally produce, so a match cannot be luck. */
@@ -571,12 +571,12 @@ const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = {
 /** Named directly, never through a redirect that would read as another screen's coverage. */
 const TYPE_FLOOR_ROUTES = [
   {
-    route: "/mockups/ward-flow/delays",
+    route: "/ward-flow/delays",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  { route: "/mockups/ward-flow", expect: ["command-tier", "banner", "badge"] },
-  { route: "/mockups/ward-flow/movements", expect: ["banner", "badge"] },
-  { route: "/mockups/ward-flow/capacity", expect: ["banner", "badge"] },
+  { route: "/ward-flow", expect: ["command-tier", "banner", "badge"] },
+  { route: "/ward-flow/movements", expect: ["banner", "badge"] },
+  { route: "/ward-flow/capacity", expect: ["banner", "badge"] },
 ] as const;
 
 test.describe("@mockup the ward type floor is met where it is painted, not where it is declared", () => {
@@ -638,7 +638,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
   // table, with a person open (their panel replaces the rail beside it).
   test("the Delays board keeps its exact declared waiting-column sizes with a person open", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/mockups/ward-flow/delays", { waitUntil: "load" });
+    await page.goto("/ward-flow/delays", { waitUntil: "load" });
     await expect(page.getByRole("searchbox", { name: "Find a person or ED" })).toBeEnabled();
     const first = page.getByTestId(/^delays-select-/u).first();
     // The searchbox is enabled in the server HTML too, so it does not prove React has hydrated. A
@@ -673,7 +673,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
    */
   test("the badge still meets the floor below 40rem, where a phone override once undid it", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/mockups/ward-flow/delays", { waitUntil: "load" });
+    await page.goto("/ward-flow/delays", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
@@ -701,7 +701,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
 test("@mockup the Delays hidden-count note keeps Show everyone reachable at every width", async ({ page }) => {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    await page.goto("/ward-flow/delays", { waitUntil: "networkidle" });
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
     await page.getByTestId("delays-stat-over8").click();
@@ -714,7 +714,7 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
 });
 
 test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
-  await page.goto("/mockups/ward-flow/referrals");
+  await page.goto("/ward-flow/referrals");
   await page.waitForLoadState("networkidle");
   // Option A (9 Oct 2026) puts each table in its own view tab, so open that tab before measuring.
   const views = [

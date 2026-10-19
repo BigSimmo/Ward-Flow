@@ -17,5 +17,5 @@ import { redirect } from "next/navigation";
  * link now lands there too, not on Movements.
  */
 export default function WardTransportRedirect() {
-  redirect("/mockups/ward-flow/transport/officer");
+  redirect("/ward-flow/transport/officer");
 }

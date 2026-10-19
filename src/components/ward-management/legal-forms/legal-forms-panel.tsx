@@ -205,7 +205,7 @@ export function SummaryPanel({
       <div className={styles.panelBlock} data-testid="ward-legal-expiry-reminder">
         <div className={styles.panelEyebrowLine}>
           <h3 className={styles.eyebrow}>Warning windows</h3>
-          <Link href="/mockups/ward-flow/settings" className={styles.textLink}>
+          <Link href="/ward-flow/settings" className={styles.textLink}>
             Settings
           </Link>
         </div>

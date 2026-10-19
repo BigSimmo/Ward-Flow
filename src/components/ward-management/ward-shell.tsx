@@ -12,7 +12,7 @@ import styles from "./ward-shell.module.css";
 
 /**
  * The ground Ward Flow's panels float on — mounted once, in
- * `src/app/mockups/ward-flow/layout.tsx`, rather than reinvented per screen
+ * `src/app/ward-flow/layout.tsx`, rather than reinvented per screen
  * (docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md).
  *
  * Renders NO `<h1>` and NO `<main>`; it is a plain wrapper `<div>` so it can sit above every

@@ -22,11 +22,11 @@ spent building the wrong thing.
 **The three screens already exist.** This is not a greenfield build; it is an extension and a
 restyle of live components, and that is much cheaper — and much easier to break.
 
-| Board                | Route                                   | Component                                                                               |
-| -------------------- | --------------------------------------- | --------------------------------------------------------------------------------------- |
-| Ward                 | `/mockups/ward-flow/board/[unitId]`     | `WardBoard` — `src/components/ward-management/board/ward-board.tsx:649`                 |
-| Emergency department | `/mockups/ward-flow/ed/[edId]`          | `EdScreen` — `src/components/ward-management/ed/ed-screen.tsx:664`                      |
-| Community team       | `/mockups/ward-flow/community/[teamId]` | `CommunityScreen` — `src/components/ward-management/community/community-screen.tsx:141` |
+| Board                | Route                           | Component                                                                               |
+| -------------------- | ------------------------------- | --------------------------------------------------------------------------------------- |
+| Ward                 | `/ward-flow/board/[unitId]`     | `WardBoard` — `src/components/ward-management/board/ward-board.tsx:649`                 |
+| Emergency department | `/ward-flow/ed/[edId]`          | `EdScreen` — `src/components/ward-management/ed/ed-screen.tsx:664`                      |
+| Community team       | `/ward-flow/community/[teamId]` | `CommunityScreen` — `src/components/ward-management/community/community-screen.tsx:141` |
 
 ⚠️ **`CommunityHome` and `CommunityTeamHub` exist and are wired to no route.** Verified by
 `grep -rn "community-home" src/app/` and `grep -rn "community-team-hub" src/app/` — zero hits

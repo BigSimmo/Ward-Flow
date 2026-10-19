@@ -311,7 +311,7 @@ function WardPanel({
           <SrOnly>, preview, not wired in this prototype</SrOnly>
         </Button>
         <Link
-          href={`/mockups/ward-flow/ward?unit=${encodeURIComponent(ward.id)}`}
+          href={`/ward-flow/ward?unit=${encodeURIComponent(ward.id)}`}
           className={buttonClass({ variant: "sec", size: "sm", className: styles.footButton })}
         >
           Open ward

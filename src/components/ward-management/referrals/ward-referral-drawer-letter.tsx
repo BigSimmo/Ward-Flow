@@ -113,7 +113,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 ))}
               </ul>
               <div className={styles.cardActions}>
-                <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
+                <Link className={styles.btn} href="/ward-flow/referrals" onClick={onClose}>
                   <Users aria-hidden="true" />
                   View referrals board
                 </Link>

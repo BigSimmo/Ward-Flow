@@ -209,12 +209,12 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     ? undefined
     : pathname === WARD_ADD_PERSON_HREF
       ? "Add patient"
-      : /^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
+      : /^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
         ? "Patient"
-        : /^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
+        : /^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
           ? "Movement"
           : // The statistics tab's own word, so the lean bar never mixes "Statistics compare" with "EDs".
-            /^\/mockups\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
+            /^\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
             ? (
                 {
                   services: "Services",
@@ -228,7 +228,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
                 pathname.replace(/\/$/u, "").split("/").pop() as
                   "services" | "wards" | "eds" | "teams" | "overview" | "compare"
               ]
-            : /^\/mockups\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
+            : /^\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
               ? "Weekly"
               : place?.kind === "ward" && /\/answer\/?$/u.test(pathname)
                 ? "Ward answer"
@@ -238,21 +238,21 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
                   : undefined;
   const routeTitle =
     phoneRouteTitle ??
-    (/^\/mockups\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
+    (/^\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
+    (/^\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
+    (/^\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
+    (/^\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
+    (/^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??
-    (/^\/mockups\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
-    (/^\/mockups\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
+    (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
+    (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
-    (/^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
+    (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
-    (/^\/mockups\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
+    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
     (pathname === STATISTICS_OVERVIEW_HREF
@@ -271,14 +271,13 @@ export function fixedServiceFor(
 ): HealthService | undefined {
   if (place) {
     if (place.kind === "ward") {
-      const unitMatch =
-        /^\/mockups\/ward-flow\/ward\/([^/]+)/.exec(pathname) ?? /^\/mockups\/ward-flow\/board\/([^/]+)/.exec(pathname);
+      const unitMatch = /^\/ward-flow\/ward\/([^/]+)/.exec(pathname) ?? /^\/ward-flow\/board\/([^/]+)/.exec(pathname);
       const unitId = unitMatch ? decodeURIComponent(unitMatch[1]) : undefined;
       const currentUnit = unitId ? units.find((u) => u.id === unitId) : units.find((u) => u.name === place.name);
       if (currentUnit) return unitHealthService(currentUnit);
     }
     if (place.kind === "ed") {
-      const edMatch = /^\/mockups\/ward-flow\/ed\/([^/]+)/.exec(pathname);
+      const edMatch = /^\/ward-flow\/ed\/([^/]+)/.exec(pathname);
       if (edMatch) return edHealthService(decodeURIComponent(edMatch[1]));
     }
     if (place.kind === "team") {

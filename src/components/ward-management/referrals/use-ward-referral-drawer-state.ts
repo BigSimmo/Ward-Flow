@@ -1,4 +1,6 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
+import { patientRegistrationScope } from "../ward-patient-registration";
+import { useReferralCommandCompletion, useReferralPatientRegistration } from "./use-referral-command-completion";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -166,6 +168,7 @@ export function useWardReferralDrawerState({
   // Feature 11: the sheet dispatches as the referral's source. A ward page sends in its own ward's
   // name (role access plan item 8, Josh 15 Oct 2026), so it never borrows the ED or community role.
   const gate = useRoleGate();
+  const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
 
   const {
@@ -265,8 +268,6 @@ export function useWardReferralDrawerState({
     gender: "" as Gender | "",
     suburb: "",
   });
-  const [newPatientError, setNewPatientError] = useState<string | null>(null);
-  const pendingNewPatient = useRef<number | null>(null);
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
@@ -274,7 +275,6 @@ export function useWardReferralDrawerState({
   const [sentAt, setSentAt] = useState<Instant | null>(null);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState<Partial<Record<DrawerSection | "contact", boolean>>>({});
-  const submissionRef = useRef<{ intake: ReferralIntakeDetails; rejectionCount: number } | null>(null);
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [inboxUnitId, setInboxUnitId] = useState<string | null>(null);
   // v10 phone: the four steps are a list, and the chosen step opens as a tall sheet over it.
@@ -474,17 +474,36 @@ export function useWardReferralDrawerState({
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
+  const { submissionRef, submitReferral, submissionAwaitingRecord } = useReferralCommandCompletion({
+    dispatch,
+    referrals,
+    generation: worldGeneration,
+    draftOwnerVersion,
+    setPending: setSendPending,
+    onError: setFlowError,
+    onCommitted(intake) {
+      stopDraftAutosave();
+      discardReferralDraft(draftDiscardOwner);
+      rememberReferrerContact(intake.referrer, draftOwnerVersion);
+    },
+    onAccepted(created) {
+      setSentReferralId(created.id);
+      setSentAt(now);
+      announceToWardShell("Referral sent to the selected locations.");
+    },
+  });
+
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
-    isDirty: !sentReferralId && (dirty || draftKeptAt !== null),
+    isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);
-    if (dirty) return setGuardOpen(true);
+    if (dirty && !submissionAwaitingRecord) return setGuardOpen(true);
     approveNextHistoryNavigation();
     onClose();
-  }, [guardOpen, dirty, onClose, approveNextHistoryNavigation]);
+  }, [guardOpen, dirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -673,38 +692,19 @@ export function useWardReferralDrawerState({
     return [...matches, ...more];
   }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
 
-  // A new person is linked as soon as the record accepts them.
-  useEffect(() => {
-    if (pendingNewPatient.current === null || patients.length <= pendingNewPatient.current) return;
-    pendingNewPatient.current = null;
-    const added = patients[patients.length - 1];
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Link only the record the provider accepted.
-    if (added) handleSelectPatient(`${PATIENT_KEY_PREFIX}${added.id}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs when the record grows, nothing else.
-  }, [patients]);
-  function addNewPatient(event: React.FormEvent) {
-    event.preventDefault();
-    const familyName = newPatient.familyName.trim();
-    const givenName = newPatient.givenName.trim();
-    const umrn = newPatient.umrn.trim();
-    if (!familyName || !givenName) return setNewPatientError("Enter the family and given names.");
-    if (!newPatient.dateOfBirth) return setNewPatientError("Enter the date of birth.");
-    if (!umrn) return setNewPatientError("Enter the UMRN.");
-    if (!addPatientGate.allowed) return setNewPatientError(addPatientGate.reason ?? null);
-    setNewPatientError(null);
-    pendingNewPatient.current = patients.length;
-    dispatch({
-      type: "ADD_PATIENT",
-      role: sourceKind === "ed" ? "ed" : "community",
-      now,
-      givenName,
-      familyName,
-      umrn,
-      dateOfBirth: newPatient.dateOfBirth,
-      ...(newPatient.gender ? { gender: newPatient.gender } : {}),
-      ...(newPatient.suburb.trim() ? { suburb: newPatient.suburb.trim() } : {}),
-    });
-  }
+  const { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient } = useReferralPatientRegistration({
+    patients,
+    generation: worldGeneration,
+    dispatch,
+    now,
+    role: sourceKind === "ed" ? "ed" : "community",
+    registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
+    requiresRegistrationScope: access.scope.kind === "ward",
+    allowed: addPatientGate.allowed,
+    reason: addPatientGate.reason,
+    patient: newPatient,
+    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`),
+  });
 
   // Live capacity for the patient's cohort and the chosen bed security.
   // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
@@ -915,7 +915,7 @@ export function useWardReferralDrawerState({
   }
   function confirmAndSend(event: React.FormEvent) {
     event.preventDefault();
-    if (sendPending || sentReferralId || !sendGate.allowed) return;
+    if (sendPending || submissionRef.current || sentReferralId || !sendGate.allowed) return;
     const validation =
       patientError() ??
       referralError() ??
@@ -966,10 +966,8 @@ export function useWardReferralDrawerState({
       setFlowError("Check the patient, urgency and selected recipients.");
       return;
     }
-    submissionRef.current = { intake, rejectionCount: rejections.length };
-    setSendPending(true);
     setFlowError(null);
-    dispatch({
+    submitReferral({
       type: "RECEIVE_REFERRAL",
       role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
       now,
@@ -990,23 +988,6 @@ export function useWardReferralDrawerState({
       intake,
     });
   }
-  useEffect(() => {
-    const submitted = submissionRef.current;
-    if (!sendPending || !submitted) return;
-    const created = referrals.find((referral) => referral.intake === submitted.intake);
-    if (created) {
-      stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
-      rememberReferrerContact(submitted.intake.referrer, draftOwnerVersion);
-      setSentReferralId(created.id);
-      setSentAt(now);
-      setSendPending(false);
-      announceToWardShell("Referral sent to the selected locations.");
-    } else if (rejections.length > submitted.rejectionCount) {
-      setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
-      setSendPending(false);
-    }
-  }, [sendPending, referrals, rejections, now, stopDraftAutosave, draftDiscardOwner, draftOwnerVersion]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords
@@ -1168,6 +1149,13 @@ export function useWardReferralDrawerState({
         second: `${recipientLabels.length} ${recipientLabels.length === 1 ? "location" : "locations"} notified`,
       };
     }
+    if (submissionAwaitingRecord) {
+      return {
+        tone: "info" as WfTone,
+        first: "Referral saved. Its record is not visible yet.",
+        second: "Check the Referrals board before sending again.",
+      };
+    }
     if (flowError) {
       return { tone: "danger" as WfTone, first: flowError, second: recipientSummary(recipientLabels), alert: true };
     }
@@ -1316,6 +1304,7 @@ export function useWardReferralDrawerState({
     confirmationOpen,
     setConfirmationOpen,
     sendPending,
+    submissionAwaitingRecord,
     setSendPending,
     sentReferralId,
     setSentReferralId,

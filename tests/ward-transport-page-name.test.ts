@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * `HD-Q1`, answered by the owner 2026-08-30: the page is called **Transport**. Until then it had
  * three user-facing names and they all disagreed:
  *
- *   the route            /mockups/ward-flow/transport
+ *   the route            /ward-flow/transport
  *   the document title   "Live tracker - Ward Flow"
  *   the page heading     <h1 class="sr-only">Live tracker</h1>
  *
@@ -21,7 +21,7 @@ import { describe, expect, it } from "vitest";
  * code: no route had rendered it since MERGE 03. Its three cases went with it. What a user can still
  * reach, the redirect and the merged Movements heading, is checked below.
  */
-const PAGE = "src/app/mockups/ward-flow/transport/page.tsx";
+const PAGE = "src/app/ward-flow/transport/page.tsx";
 /** Where the transport content lives after MERGE 03, and therefore where the name must now match. */
 const MERGED = "src/components/ward-management/movements/movements-screen.tsx";
 
@@ -49,7 +49,7 @@ describe("the transport page names itself the same way everywhere a user can hea
    */
   // shell-19 (13 Oct 2026): Menu's "Transport" opens the officer page, so /transport goes there too.
   it("sends /transport to /transport/officer, the page Menu calls Transport", () => {
-    expect(page).toContain('redirect("/mockups/ward-flow/transport/officer")');
+    expect(page).toContain('redirect("/ward-flow/transport/officer")');
   });
 
   it("⚠️ HEADS THE MERGED PAGE Movements — the name a screen reader gets, matching the nav label", () => {

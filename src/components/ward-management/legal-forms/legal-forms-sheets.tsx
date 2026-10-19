@@ -410,7 +410,6 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
   const standing = target ? clockStanding(target, now, thresholds) : "none";
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const pending = useRef(false);
   const submissionVersion = useRef(0);
   useEffect(
@@ -424,6 +423,7 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
+    (!onExtendForm ? "Not wired in this prototype." : undefined) ??
     (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
@@ -456,7 +456,6 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
               const submission = ++submissionVersion.current;
               pending.current = true;
               setSaving(true);
-              setSaveError(null);
               const finish = (accepted: boolean) => {
                 if (submission !== submissionVersion.current) return;
                 pending.current = false;
@@ -465,8 +464,6 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
                 if (accepted) {
                   setExpiryState(null);
                   onClose();
-                } else {
-                  setSaveError("Save is not confirmed. Review the board before trying again.");
                 }
               };
               try {
@@ -537,11 +534,6 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
               autoComplete="off"
             />
           </Field>
-          {saveError ? (
-            <p className={styles.note} role="alert">
-              {saveError}
-            </p>
-          ) : null}
           <p className={styles.note}>
             Owner notification is not wired in this prototype. Tell {target.owner} separately.
           </p>

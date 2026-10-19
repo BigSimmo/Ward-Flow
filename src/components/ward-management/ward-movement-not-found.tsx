@@ -26,7 +26,7 @@ import { patientHref } from "@/components/ward-management/shell/ward-facade";
  *
  * 🔴 AND THE FIRST VERSION OF THIS FIX INTRODUCED A WORSE FALSE STATEMENT THAN THE ONE IT REPLACED.
  * It ended "a person is not a movement, and their record is not reachable from here." A person's
- * record IS reachable: `/mockups/ward-flow/people/[patientId]` renders it, and the patient search
+ * record IS reachable: `/ward-flow/people/[patientId]` renders it, and the patient search
  * links straight to it. So the page sent a coordinator AWAY from the screen holding what they
  * wanted, fluently and with authority. **The old bug quoted nonsense and the reader looked
  * elsewhere; this one was believable.** Caught by an adversarial review, not by me, and not by any
@@ -46,7 +46,7 @@ export function WardMovementNotFound({
   // read-once handoff), never in the link, so the search opens with it typed in.
   const searchLink = (
     <Link
-      href="/mockups/ward-flow/search"
+      href="/ward-flow/search"
       onClick={(event) => handOffPatientSearchText(isNewTabClick(event) ? undefined : requestedId)}
     >
       Search patients for {requestedId}
@@ -55,7 +55,7 @@ export function WardMovementNotFound({
   return (
     <div className={styles.patientWorkspace} data-testid="ward-patient-workspace">
       <header className={styles.workspaceHeader}>
-        <ContextualBackLink fallbackHref="/mockups/ward-flow" aria-label="Back to Ward Flow">
+        <ContextualBackLink fallbackHref="/ward-flow" aria-label="Back to Ward Flow">
           <ArrowLeft aria-hidden="true" />
         </ContextualBackLink>
         <div>
@@ -68,7 +68,7 @@ export function WardMovementNotFound({
         {aboutPerson ? (
           <WardNotFoundBody
             title="Person not found"
-            list={{ href: "/mockups/ward-flow/search", label: "All patients" }}
+            list={{ href: "/ward-flow/search", label: "All patients" }}
             search={reason === "no-such-umrn" ? searchLink : null}
           >
             {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No person matches this link."}
@@ -76,7 +76,7 @@ export function WardMovementNotFound({
         ) : (
           <WardNotFoundBody
             title="Movement not found"
-            list={{ href: "/mockups/ward-flow/movements", label: "All movements" }}
+            list={{ href: "/ward-flow/movements", label: "All movements" }}
             extra={
               reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
                 <Link href={patientHref(requestedId)}>Open their patient record</Link>

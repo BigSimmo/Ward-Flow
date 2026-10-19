@@ -884,7 +884,7 @@ describe("community hub — the team switcher, and the route it resolves", () =>
 
   it("builds every href from the derived id, under the real route", () => {
     for (const team of COMMUNITY_TEAM_PAGES) {
-      expect(communityTeamHref(team)).toBe(`/mockups/ward-flow/community/${team.id}`);
+      expect(communityTeamHref(team)).toBe(`/ward-flow/community/${team.id}`);
     }
   });
 });

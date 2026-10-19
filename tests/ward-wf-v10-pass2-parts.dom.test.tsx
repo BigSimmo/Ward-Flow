@@ -305,7 +305,7 @@ describe("BarList axis, CardHead plain icon and the layout toast", () => {
   });
 
   it("mounts one ToastProvider in the ward-flow layout so useToast works on every page", () => {
-    const layout = read("src/app/mockups/ward-flow/layout.tsx");
+    const layout = read("src/app/ward-flow/layout.tsx");
     // Audit 13 Oct 2026: the provider now carries the offline note as a prop.
     expect(layout.match(/<ToastProvider[ >]/gu)).toHaveLength(1);
     function Pusher() {

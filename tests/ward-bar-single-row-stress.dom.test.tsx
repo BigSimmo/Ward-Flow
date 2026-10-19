@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -222,7 +222,7 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
     });
 
     it("WardBarMount resolves coordinator route to Referral action", () => {
-      route.pathname = "/mockups/ward-flow";
+      route.pathname = "/ward-flow";
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardLiveRegion />

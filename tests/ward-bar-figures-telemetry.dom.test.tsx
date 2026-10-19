@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),

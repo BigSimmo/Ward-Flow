@@ -76,7 +76,7 @@ import {
   useSinceLastLook,
 } from "./since-last-look-panel";
 
-const HANDOVER_HREF = "/mockups/ward-flow/handover";
+const HANDOVER_HREF = "/ward-flow/handover";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -118,7 +118,7 @@ function subscribeHomeEdFilter(onChange: () => void) {
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
-const DELAYS_HREF = "/mockups/ward-flow/delays";
+const DELAYS_HREF = "/ward-flow/delays";
 
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
 const PHONE_QUEUE_ROWS = 20;

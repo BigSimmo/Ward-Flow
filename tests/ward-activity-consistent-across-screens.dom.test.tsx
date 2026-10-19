@@ -8,7 +8,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-let currentPathname = "/mockups/ward-flow";
+let currentPathname = "/ward-flow";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => currentPathname,
@@ -63,7 +63,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
   });
 
   it("shows 20 system events and resolved 'Movements' live tally on the movements screen", async () => {
-    currentPathname = "/mockups/ward-flow/movements";
+    currentPathname = "/ward-flow/movements";
     const { user, sheet } = await openActivityDrawer();
 
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
@@ -101,7 +101,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
   });
 
   it("shows the same 20 system events and 'Delays' live tally on the delays screen", async () => {
-    currentPathname = "/mockups/ward-flow/delays";
+    currentPathname = "/ward-flow/delays";
     const { user, sheet } = await openActivityDrawer();
 
     const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
@@ -116,7 +116,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
   });
 
   it("resolves the unit place name on a ward route while keeping the consistent 20 events", async () => {
-    currentPathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    currentPathname = "/ward-flow/ward/rph-adult-secure";
     const unitName = seeded.units.find((u) => u.id === "rph-adult-secure")?.name ?? "RPH Adult Secure";
     const { user, sheet } = await openActivityDrawer();
 
@@ -132,7 +132,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
   });
 
   it("shows the Home live tally on the ward root screen", async () => {
-    currentPathname = "/mockups/ward-flow";
+    currentPathname = "/ward-flow";
     const { user, sheet } = await openActivityDrawer();
 
     const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });

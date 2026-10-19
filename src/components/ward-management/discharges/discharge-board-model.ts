@@ -1,6 +1,6 @@
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { calendarDateOf, dayOf, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
-import type { DischargeRecord, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
+import type { DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -180,7 +180,6 @@ export function healthServiceLabel(unit: Unit | undefined): string {
   return service ?? "Service not recorded";
 }
 
-export const RECORD_ACTOR: WardRecordActor = { role: "coordinator" };
 export type Population = "records" | "releases";
 export type WorkStatus = "blocked" | "confirmed" | "expected" | "departed";
 export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {

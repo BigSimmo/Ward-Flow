@@ -19,7 +19,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_SCAN_ROOTS = ["src/components/ward-management", "src/app/mockups/ward-flow"];
+const DEFAULT_SCAN_ROOTS = ["src/components/ward-management", "src/app/ward-flow"];
 
 /**
  * Strips line and block comments while preserving string literals and newline offsets so that

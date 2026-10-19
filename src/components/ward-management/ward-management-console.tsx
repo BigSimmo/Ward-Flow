@@ -24,7 +24,7 @@ export {
  *
  * The ROUTE was `/patients/[patientId]` and just as misleading to a human reader
  * as the prop had been to the compiler. It has since moved to
- * `/mockups/ward-flow/movements/[movementId]`, nested under the existing `movements` mode page —
+ * `/ward-flow/movements/[movementId]`, nested under the existing `movements` mode page —
  * the site map, the reachability assertion and this file's own doc comment all moved with it.
  *
  * ⚠️ **THE PAGE HAS A TENSE NOW, AND THAT WAS THE DEFECT UNDER MOST OF THE OTHERS** (Ward Lead

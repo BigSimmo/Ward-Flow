@@ -24,7 +24,7 @@ function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date): strin
 }
 
 /**
- * The ED index (`/mockups/ward-flow/ed`, every emergency department listed). `wardChromeRole`
+ * The ED index (`/ward-flow/ed`, every emergency department listed). `wardChromeRole`
  * deliberately gives it the coordinator's chrome, as All wards has: only `/ed/[edId]` is an ED
  * desk, and the header, desk, nav counts, search and role switcher all read that answer. It is
  * still an ED screen, so the flag is hidden there here rather than by changing the chrome role.

@@ -66,6 +66,7 @@ export function AlertDetail({
   snoozedUntil,
   configuration,
   handlers,
+  actionDisabledReason,
   releaseRef,
   titleId,
 }: {
@@ -82,6 +83,7 @@ export function AlertDetail({
   snoozedUntil: Extract<InboxSnoozeEntry, { kind: "snoozed" }> | undefined;
   configuration: WardConfiguration;
   handlers: AlertDetailHandlers;
+  actionDisabledReason?: string;
   releaseRef?: Ref<HTMLSelectElement>;
   titleId?: string;
 }) {
@@ -203,7 +205,7 @@ export function AlertDetail({
     <Button
       size="sm"
       icon={mine ? Check : UserRound}
-      disabledReason={mine ? "You own this alert" : undefined}
+      disabledReason={actionDisabledReason ?? (mine ? "You own this alert" : undefined)}
       reasonDisplay="tooltip"
       aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
       onClick={() => handlers.onTake(item)}
@@ -215,11 +217,11 @@ export function AlertDetail({
     <details className={styles.moreActions} data-testid="alerts-more-actions">
       <summary>More actions</summary>
       <div className={styles.moreGrid}>
-        {movement ? <PullNowButton movement={movement} /> : null}
+        {movement && !actionDisabledReason ? <PullNowButton movement={movement} /> : null}
         <Button
           size="sm"
           icon={seen ? Check : undefined}
-          disabledReason={seen ? "Already acknowledged" : undefined}
+          disabledReason={actionDisabledReason ?? (seen ? "Already acknowledged" : undefined)}
           reasonDisplay="tooltip"
           aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
           onClick={() => handlers.onAcknowledge(item)}
@@ -230,9 +232,14 @@ export function AlertDetail({
           <Button
             size="sm"
             aria-label={`Return ${item.title} now for ${subject.displayName}`}
+            disabledReason={actionDisabledReason}
             onClick={() => handlers.onReturn(item)}
           >
             Return now
+          </Button>
+        ) : actionDisabledReason ? (
+          <Button size="sm" disabledReason={actionDisabledReason} aria-label={`Snooze ${subjectLine}`}>
+            Snooze
           </Button>
         ) : (
           <InboxSnoozeControl
@@ -248,13 +255,14 @@ export function AlertDetail({
           variant="ghost"
           icon={isEscalated ? Check : ArrowUpRight}
           disabledReason={
-            !movement
+            actionDisabledReason ??
+            (!movement
               ? "This alert has no movement to escalate"
               : !escalationApplies
                 ? "Escalation records that the bed search is exhausted, which is not the case for this alert"
                 : isEscalated
                   ? "Already escalated"
-                  : undefined
+                  : undefined)
           }
           reasonDisplay="tooltip"
           aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
@@ -403,7 +411,7 @@ export function AlertDetail({
           ) : (
             <Button
               variant="pri"
-              disabledReason={releaseReason === "" ? "Choose a reason first" : undefined}
+              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
               reasonDisplay="tooltip"
               onClick={() => {
                 if (releaseReason === "") return;
@@ -540,7 +548,7 @@ export function AlertDetail({
             </Field>
             <Button
               variant="pri"
-              disabledReason={releaseReason === "" ? "Choose a reason first" : undefined}
+              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
               reasonDisplay="tooltip"
               onClick={() => {
                 if (releaseReason === "") return;

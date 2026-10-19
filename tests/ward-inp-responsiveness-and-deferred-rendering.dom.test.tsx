@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigationState = vi.hoisted(() => ({
-  pathname: "/mockups/ward-flow",
+  pathname: "/ward-flow",
   replace: vi.fn(),
   push: vi.fn(),
 }));
@@ -32,7 +32,7 @@ import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 
 describe("INP responsiveness, deferred rendering, and font fallback contract", () => {
   beforeEach(() => {
-    navigationState.pathname = "/mockups/ward-flow";
+    navigationState.pathname = "/ward-flow";
     navigationState.replace.mockReset();
     navigationState.push.mockReset();
     window.localStorage.clear();

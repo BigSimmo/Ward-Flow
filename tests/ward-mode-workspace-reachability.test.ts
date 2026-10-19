@@ -8,8 +8,8 @@ import { describe, expect, it } from "vitest";
  *
  * Found during the 2026-09-05 fold, and it was created BY that fold rather than by anyone's
  * mistake. Ward Builder Two replaced two `WardModeWorkspace` modes with their own screens and
- * re-pointed the routes: `/mockups/ward-flow/capacity` now renders `CapacityScreen`, and
- * `/mockups/ward-flow/movements` renders `MovementsScreen`. Both changes are improvements and both
+ * re-pointed the routes: `/ward-flow/capacity` now renders `CapacityScreen`, and
+ * `/ward-flow/movements` renders `MovementsScreen`. Both changes are improvements and both
  * merged cleanly.
  *
  * **What merged just as cleanly was four test files still rendering `<WardModeWorkspace

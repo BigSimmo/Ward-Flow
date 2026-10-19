@@ -9,6 +9,36 @@ edits. Legal extensions follow the same completion contract; their owner notific
 unavailable. Officer phone rows, history and next task honor discreet names while detail screens
 retain their clinical identity context.
 
+## Journey completion corrections — 18 October 2026
+
+Handover sign-off is available only for the next handover's current window, because its engine
+record contains role and time rather than a selected shift. Window end timestamps are exclusive,
+so a boundary sign-off belongs to exactly one shift. `ward-journey-handover-signoff.dom.test.tsx`
+covers the three selections and the overnight transition.
+
+Legal extension confirmation keeps the sheet and typed expiry while the command is pending.
+Only accepted, current-session completion clears and closes it; refusals and failures release
+the controls for retry. A dismissed sheet or changed session fences late completion.
+`ward-journey-legal-extension.dom.test.tsx` exercises deferred refusal, timeout, acceptance,
+retry and focus restoration. DOM evidence does not establish physical browser behaviour.
+
+Settings rule steppers, Save and restore expose coordinator-only restrictions while browser
+preferences remain available to other desks. Save, Undo and restore await their own command outcome and carry a form baseline for
+atomic conflict checks. Refused operations retain the draft and appearance choices. Clear
+session uses the canonical referral/session cleanup lifecycle, including memory and delayed-save
+fences. The digest reference is explained as unavailable in production instead of linking to its
+blocked route. `ward-journey-settings.dom.test.tsx` covers these controls and competing changes.
+
+Transport officer actions await their own confirmed outcome before success or Undo. Collection
+exception and ward-decline dialogs retain input after refusal. `shell/ward-access.tsx` preserves
+outcomes through normal dispatch and returns explicit refusals for preview/read-only restrictions;
+its `useWardRecordActors` helper supplies authorised place-specific record actors. Discharges and
+Capacity use those actors, including multiple permitted wards. Discharge date updates await
+confirmation; coordinator-only Alerts and capacity refresh controls expose permission reasons.
+Discharge population controls wait for session adoption and announce their loading state.
+The desktop global search input also waits for adoption, preserving the first usable query.
+`ward-journey-action-feedback.dom.test.tsx` covers these boundaries.
+
 ## Patient dialog loading — 18 October 2026
 
 `patients/patient-now-screen.tsx` loads the arrival-plan and document-detail dialogs through
@@ -238,8 +268,8 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 
 ## `escalation/`
 
-**Route:** none live. `/escalation` (`src/app/mockups/ward-flow/escalation/page.tsx`) is a
-`redirect()` to `/mockups/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
+**Route:** none live. `/escalation` (`src/app/ward-flow/escalation/page.tsx`) is a
+`redirect()` to `/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
 inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
 `escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306
@@ -627,8 +657,8 @@ demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-shee
 
 ## `tracker/`
 
-**Route:** none live. `/transport` (`src/app/mockups/ward-flow/transport/page.tsx`) redirects to
-`/mockups/ward-flow/movements` — MERGE 03, owner-approved 2026-09-05, folding the live vehicle
+**Route:** none live. `/transport` (`src/app/ward-flow/transport/page.tsx`) redirects to
+`/ward-flow/movements` — MERGE 03, owner-approved 2026-09-05, folding the live vehicle
 tracker into `MovementsScreen`. **Mockup:** none current. **Dispatches:** none. **Reads:**
 `transportLeg` (`ward-derivations.ts`) only, via its own `tracker-derivations.ts`. **Tests:**
 `tracker-derivations.test.ts` (tests the derivations module directly — legitimate unit-test

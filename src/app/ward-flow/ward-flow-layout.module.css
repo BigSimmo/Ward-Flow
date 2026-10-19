@@ -1,5 +1,5 @@
 /*
- * src/app/mockups/ward-flow/ward-flow-layout.module.css
+ * src/app/ward-flow/ward-flow-layout.module.css
  *
  * The layout-level shell row that gives `WardRail` (`shell/ward-rail.tsx`) something to sit
  * beside. `WardRail`'s own stylesheet renders it as a flex column with an explicit width and
@@ -20,7 +20,7 @@
  * longer route content must not expose the host application's background below it.
  */
 .shellRow {
-  composes: wardShellTokens from "../../ward-flow-shell-tokens.module.css";
+  composes: wardShellTokens from "../ward-flow-shell-tokens.module.css";
   display: flex;
   align-items: stretch;
   /* The window less the Data mode bar above the shell (--wf-data-bar-height, published by

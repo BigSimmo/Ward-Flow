@@ -13,7 +13,7 @@ import {
 } from "@/components/ward-management/tools/ward-bed-finder";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/capacity",
+  usePathname: () => "/ward-flow/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -130,9 +130,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
         <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("link", { name: /Bed meeting TV/u }).getAttribute("href")).toBe(
-      "/mockups/ward-flow/bed-meeting",
-    );
+    expect(screen.getByRole("link", { name: /Bed meeting TV/u }).getAttribute("href")).toBe("/ward-flow/bed-meeting");
     unmount();
     act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
     try {
@@ -186,9 +184,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(glance.querySelectorAll('[data-flagged="true"]').length).toBeLessThanOrEqual(2);
     fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
     expect(screen.getByTestId("ward-stats-drawer-content")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe(
-      "/mockups/ward-flow/statistics",
-    );
+    expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe("/ward-flow/statistics");
   });
 });
 

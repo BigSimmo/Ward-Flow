@@ -84,7 +84,7 @@ describe("Global alert banner on a phone (remaining-pages audit ops-10)", () => 
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveAttribute("data-layout", "phone-line");
     const line = within(banner).getByRole("link", { name: /Pull now.*0 of 1 answered.*open Alerts/u });
-    expect(line).toHaveAttribute("href", "/mockups/ward-flow/alerts");
+    expect(line).toHaveAttribute("href", "/ward-flow/alerts");
     expect(within(banner).getByRole("group", { name: "Your answer" })).toBeInTheDocument();
     fireEvent.click(within(banner).getByRole("button", { name: "Pulling now" }));
     expect(within(banner).queryByRole("group", { name: "Your answer" })).toBeNull();

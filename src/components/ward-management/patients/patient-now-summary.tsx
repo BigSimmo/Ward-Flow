@@ -173,7 +173,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           phoneMovement ? (
             <div className={styles.phHeroActions}>
               <ContextualBackLink
-                fallbackHref="/mockups/ward-flow/movements"
+                fallbackHref="/ward-flow/movements"
                 className={buttonClass({ variant: "onHero" })}
                 data-testid="ward-patient-phone-movements-back"
               >
@@ -534,9 +534,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             )}
             {(mode === "idle" || mode === "cto") && !isPhone ? (
               <Link
-                href={
-                  livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/mockups/ward-flow/referrals/new"
-                }
+                href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
                 className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
                 data-testid="ward-person-refer-outpatient"
               >

@@ -1403,7 +1403,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 }
 
 /**
- * `layout.tsx`'s (`src/app/mockups/ward-flow/layout.tsx`) own mount of the bar, wired to
+ * `layout.tsx`'s (`src/app/ward-flow/layout.tsx`) own mount of the bar, wired to
  * `resolveWardPrimaryAction` — the "layout.tsx resolves the current route's action from
  * `WARD_PRIMARY_ACTIONS` and passes it" step D-16 calls for.
  *

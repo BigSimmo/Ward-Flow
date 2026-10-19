@@ -244,7 +244,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(row).toBeInTheDocument();
 
     const link = within(row).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
     expect(link.textContent).toMatch(/UM\d+|UMRN/);
   });
 
@@ -257,7 +257,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(card).toBeInTheDocument();
 
     const link = within(card).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
   });
 
   it("renders patient name and interactive UMRN link in the case inspector when a case is selected", () => {
@@ -267,7 +267,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
 
     const facts = screen.getByTestId("ward-out-of-area-subject-facts");
     const link = within(facts).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
     expect(link.textContent).toMatch(/UM\d+|UMRN/);
   });
 

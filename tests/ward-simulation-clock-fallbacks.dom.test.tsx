@@ -39,7 +39,7 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
               id: birthdayPatient.id,
               title: "Clock Test",
               meta: "",
-              href: "/mockups/ward-flow/patients",
+              href: "/ward-flow/patients",
             }}
             patients={[birthdayPatient]}
             referrals={[]}
@@ -59,7 +59,7 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
               id: birthdayPatient.id,
               title: "Clock Test",
               meta: "",
-              href: "/mockups/ward-flow/patients",
+              href: "/ward-flow/patients",
             }}
             patients={[birthdayPatient]}
             referrals={[]}

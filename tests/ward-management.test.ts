@@ -97,17 +97,17 @@ describe("Ward Flow synthetic prototype", () => {
 
   // Ward Flow is deliberately absent from the Tools catalogue — see
   // tests/ward-flow-sandbox.test.ts, which asserts no catalogue entry's href
-  // starts with "/ward-management" or "/mockups/ward-flow". Reachability here
+  // starts with "/ward-management" or "/ward-flow". Reachability here
   // is instead through the developer-gated hub panel (also asserted there).
 
   it("maps every Ward Flow view to a distinct reachable route", () => {
     const hrefs = wardModeHrefs();
     // MERGE 01 (2026-09-05): the fold at e31c9c462 combined "Priority queue" and "Exceptions"
     // into one view. It keeps the id `queue`, but its label is now "Delays" and it points at
-    // `/mockups/ward-flow/delays`, so the original eight routes became seven — the old `/queue`
+    // `/ward-flow/delays`, so the original eight routes became seven — the old `/queue`
     // and `/exceptions` destinations are gone and `/delays` replaces both.
     //
-    // ⚠️ MERGE 03 (2026-09-05) then took `/mockups/ward-flow/transport` out of the nav, folding the
+    // ⚠️ MERGE 03 (2026-09-05) then took `/ward-flow/transport` out of the nav, folding the
     // transport tracker into Movements — the same patients at two points of one journey. Seven
     // becomes SIX. The route file still exists and now `redirect()`s to `/movements`, so the
     // `existsSync` check below would have passed on it forever: a page.tsx is not a view, and this
@@ -118,12 +118,12 @@ describe("Ward Flow synthetic prototype", () => {
     // `tests/ward-route-component-binding.test.ts` records `transport` as a redirect; this one
     // still described it as a mode. Two registries, one truth, and only one of them updated.
     expect(hrefs).toEqual([
-      "/mockups/ward-flow",
-      "/mockups/ward-flow/network",
-      "/mockups/ward-flow/delays",
-      "/mockups/ward-flow/capacity",
-      "/mockups/ward-flow/movements",
-      "/mockups/ward-flow/governance",
+      "/ward-flow",
+      "/ward-flow/network",
+      "/ward-flow/delays",
+      "/ward-flow/capacity",
+      "/ward-flow/movements",
+      "/ward-flow/governance",
     ]);
     expect(new Set(hrefs).size).toBe(hrefs.length);
     for (const href of hrefs) {
