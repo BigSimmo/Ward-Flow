@@ -1,5 +1,7 @@
 # Ward Flow retention, correction and backup plan
 
+_Updated 2026-10-19 - source correction appended to the dated restore receipt; Documentation owns._
+
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
 manager and privacy officer need to review and sign it off. Prepared 18 October 2026 for readiness
@@ -176,6 +178,14 @@ All 15 checks passed. Both databases and the dump file were removed afterwards.
 **Limits.** This proves the schema, triggers and data survive a `pg_dump` and `pg_restore`. It
 does not prove a Supabase dashboard restore works. That uses physical backups, a different
 mechanism. It did not test the runtime role's permissions, Auth users, or a realistic data size.
+
+**Source correction — 19 October 2026.** The receipt above reports both 10 migration rows and a
+ledger covering 1 through 11. Those claims cannot both describe the same complete ledger:
+`backend/ward-flow/migrations.mjs` lists 11 migrations, and each SQL file inserts its version into
+`ward_flow.migrations`. Source inspection cannot establish the drill's actual row count. The
+original date and results are preserved; this discrepancy remains unresolved until the original
+drill evidence is recovered or a separately authorised repeat records the actual ledger. This
+correction is not a new restore result or sign-off.
 
 ## Steps for Josh in the Supabase console
 

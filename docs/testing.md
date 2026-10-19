@@ -1,11 +1,11 @@
 # Testing and verification
 
+_Updated 2026-10-19 - expose maintained guidance to documentation checks and label retained history; Documentation owns._
+
 Current Ward Flow commands, browser cadence and CI topology below were checked
 against the dedicated repository source on 16 October 2026. Older diagnostic and performance
 material is retained as historical context; it does not select a gate. Follow
 [AGENTS.md](../AGENTS.md) and [HOW-WE-WORK.md](ward-flow/HOW-WE-WORK.md) for authority and gate rules.
-
-<!-- docs-script-refs:historical-start -->
 
 > [!NOTE]
 > **Inherited diagnostic material:**
@@ -24,7 +24,20 @@ Vitest's Vite transform cache is outside the commonly-junctioned `node_modules` 
 
 Ordinary Vitest and Playwright runs remove OpenAI, Supabase, database, and E2E credentials and force demo/offline mode. Provider tests use the `*.live.test.ts` suffix, are excluded from default discovery, and can only be started explicitly with `ALLOW_PROVIDER_TESTS=true npm run test:live`.
 
+Provider-backed work, including `npm run test:live`, requires explicit user approval under
+[AGENTS.md](../AGENTS.md).
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical provider-command examples:** the following aliases include retired monorepo tooling.
+
 **Provider-backed boundary:** `test:live`, `eval:quality`, `eval:retrieval:quality`, `verify:release`, `check:supabase-project`, and other OpenAI/Supabase/hosted workflows need **explicit user approval** before agents run them (see root `AGENTS.md`). Prefer offline gates (`verify:cheap`, `verify:pr-local`, `eval:rag:offline`) unless that approval is in the task.
+
+<!-- docs-script-refs:historical-end -->
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical Windows diagnostic:** retained incident guidance; it does not select a Ward Flow gate.
 
 ### Windows process-spawn diagnostic (#VV83VA)
 
@@ -54,6 +67,8 @@ time node -e "console.log(process.version)"
 
 Subsecond completion (<0.2s) is healthy; if this simple command takes multiple seconds (measured up to 17s on process-starved hosts vs 0.08s after reboot), treat it as host process-spawn starvation rather than a repository or GitHub CLI fault. Close stale Codex, Node, and terminal sessions, then retry; reboot the workstation if the condition persists. Do not change Windows Defender, add security exclusions, or otherwise alter Windows security settings as part of this diagnosis.
 
+<!-- docs-script-refs:historical-end -->
+
 ## Risk-based selection
 
 Start with the cheapest check that can fail for the changed behavior. Add another check only when it covers a distinct plausible regression that the existing evidence does not. Documentation and policy changes normally need formatting, documentation, syntax, or focused contract checks; localized behavior needs its directly affected test; cross-cutting or uncertain executable changes escalate to the relevant domain or broad gate. Do not routinely stack focused tests, the full unit suite, lint, typecheck, build, and browser checks, and do not rerun an unchanged passing gate.
@@ -61,6 +76,10 @@ Start with the cheapest check that can fail for the changed behavior. Add anothe
 `npm run verify:pr-local -- --dry-run --files <comma-separated paths>` shows the local plan. Recognised documentation and workflow/policy-only scopes stay focused. Product code, tests, executable configuration, dependencies, database/container surfaces, mixed scope, and unknown non-document paths fail closed to the heavy plan. Provider, physical-device, and release-only acceptance remain separate and require their normal approval or task context.
 
 ## Testing speed playbook
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical selection examples:** this table includes the former Production UI workflow and retired process reference. Use the current commands and CI topology below.
 
 Browser gates are expensive; select the affected checks before starting them. Prefer selection, duration-balanced groups, and within-session cache reuse over raising Playwright workers (`workers: 1`, `fullyParallel: false`, `retries: 0` stay required — see `#093` and [process-hardening.md](process-hardening.md)).
 
@@ -73,6 +92,8 @@ Browser gates are expensive; select the affected checks before starting them. Pr
 | Docs / ledger only                    | `npm run verify:pr-local -- --dry-run` (confirm docs route)                    | full unit + UI                                            |
 | PR ready                              | `npm run format -- --files <owned-paths>` (commit it) + `verify:pr-local` once | mid-CI pushes that cancel Production UI                   |
 
+<!-- docs-script-refs:historical-end -->
+
 **Local Playwright keep-root (iterative UI work).** Each `run-playwright.mjs` invocation otherwise builds under a unique `.next-playwright/<id>/` and deletes it. KEEP does **not** skip the Next production build — every invocation still rebuilds. It reuses the webpack/dist cache inside one shared root across stages in the same local session:
 
 ```bash
@@ -82,6 +103,10 @@ export PLAYWRIGHT_KEEP_BUILD_ROOT=true
 # each run still builds; the shared root retains webpack cache between them
 # unset both vars (or delete `.next-playwright/local-ui`) when done
 ```
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical workstation and Cloud diagnostics:** retained from the former monorepo. The following setup recipes, hook and hosted-workflow references are not current Ward Flow instructions.
 
 ### Dev Drive trusted package cache verification (#6SMMB4)
 
@@ -147,6 +172,8 @@ does not authorize provider tests, provider credentials, deployment, or producti
 it is limited to the documented, exact GitHub connector-gap operation in
 `docs/codex-cloud.md`.
 
+<!-- docs-script-refs:historical-end -->
+
 ## Commands
 
 | Command                                   | Purpose                                                                                  |
@@ -156,10 +183,10 @@ it is limited to the documented, exact GitHub connector-gap operation in
 | `npm run test`                            | Complete default offline unit population.                                                |
 | `npm run test:ci-workflows`               | Selected offline cache, runner, lock parity, backend-CI and audit-CI contracts.          |
 | `npm run test:live`                       | Explicit provider suite; needs separate authority and `ALLOW_PROVIDER_TESTS=true`.       |
-| `npm run test:e2e:pr`                     | Production Chromium CSRF spec, excluding mockups/quarantine.                             |
+| `npm run test:e2e:pr`                     | Production Chromium CSRF spec, excluding `@mockup` and legacy `@quarantine` tags.        |
 | `npm run test:e2e:ward-journeys`          | Synthetic Ward Chromium journeys.                                                        |
 | `npm run test:e2e:release-gate`           | Dedicated desktop Chromium and phone WebKit release journeys/axe checks.                 |
-| `npm run test:e2e:advisory`               | Mockup/quarantined selections; an advisory result is not a required-gate verdict.        |
+| `npm run test:e2e:advisory`               | Tag-filtered mockup/legacy `@quarantine` selections; no waiver from required journeys.   |
 | `npm run verify:cheap`                    | Broad offline local static, lint, typecheck and unit gate.                               |
 | `npm run verify:pr-local`                 | Risk-routed local readiness; inspect `-- --dry-run` against the actual changed set.      |
 | `npm run verify:ui`                       | Lock parity plus the production Chromium selection, not the complete Ward journey suite. |
@@ -186,7 +213,13 @@ Author component tests to assert **user-visible behaviour**, not markup snapshot
 - The shared setup (`tests/setup/jsdom.setup.ts`) registers jest-dom matchers, auto-unmounts between tests, and polyfills `matchMedia` (override per test with the exported `installMatchMediaStub`) and `Element.scrollIntoView`.
 - Mock hooks/modules with `vi.mock`; when the factory needs a spy, create it with `vi.hoisted` so it exists when the hoisted mock runs.
 
+<!-- docs-script-refs:historical-start -->
+
+> **Historical component examples:** some example files below were removed; consult current tests before reusing a path.
+
 Reference examples: `tests/icon-button.dom.test.tsx` (accessible-name contract), `tests/sheet.dom.test.tsx` (stacked-overlay keyboard + scroll-lock), `tests/scroll-behavior.dom.test.tsx` (reduced-motion), `tests/registry-retry.dom.test.tsx` (`vi.hoisted` hook mock + error recovery).
+
+<!-- docs-script-refs:historical-end -->
 
 ## Playwright ownership
 
@@ -223,6 +256,10 @@ The responsive projects select only `tests/ui-ward-responsive-audit.spec.ts` and
 Run a selected project through `npm run test:e2e -- tests/ui-ward-responsive-audit.spec.ts --project=firefox-ward-responsive`
 (or `--project=webkit-ward-responsive`). Availability and a Chromium result do not prove execution
 in another engine. Phone WebKit in the release gate is emulation, not physical Safari/PWA acceptance.
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical phone geometry diagnostic:** the following pattern refers to the former PsychSift shell. It is retained as incident context, not a Ward Flow UI contract.
 
 ### Phone sticky-header settle timing (screenshots and DOM measurements)
 
@@ -272,6 +309,8 @@ await expect
   .toBe(true);
 ```
 
+<!-- docs-script-refs:historical-end -->
+
 ## Appearance verification
 
 The former `ui-style-contract`, `ui-visual-baseline` and visual-artifact specs were removed from this
@@ -280,6 +319,8 @@ workflow. The retained generic `playwright.visual.config.ts` is not evidence of 
 Verify changed Ward appearance through the affected Ward journey and direct browser inspection,
 including meaningful computed styles, geometry, keyboard interaction and accessibility where affected.
 Follow the bounded screenshot and viewport rules in [AGENTS.md](../AGENTS.md).
+
+<!-- docs-script-refs:historical-start -->
 
 ## Performance budget (historical tooling reference)
 
@@ -373,9 +414,22 @@ matrix at 30 Lighthouse calls. Its 45-minute job gives each live child 80 second
 allows a 10-second kill grace. A failed cell remains a warning so the summary can retain its existing
 evidence-based verdict rather than disguising a public-network failure as a local gate result.
 
+<!-- docs-script-refs:historical-end -->
+
 ## Flake policy
 
+Blocking Playwright tests run with zero retries. The flake ledger and quarantine tooling were
+retired on 18 October 2026; `tests/flake-ledger.json` is no longer read. A repeatable failure on
+the same commit must be fixed or reported. Legacy tag filters in command aliases do not restore
+that policy.
+
+<!-- docs-script-refs:historical-start -->
+
+> **Retired quarantine policy:** the following paragraph records the former ledger requirements.
+
 `tests/flake-ledger.json` may be empty. Each entry must match the exact spec and title, and the test title must include `@quarantine` but not `@critical`. Entries require an owner, reproduction command, local tracking reference, first/last-seen dates, and an expiry no more than 30 days away. Reproduce a candidate three times on the same SHA before adding or retaining it: fix fail/pass races, treat repeatable failures as regressions, and remove entries that no longer reproduce.
+
+<!-- docs-script-refs:historical-end -->
 
 ## CI topology
 
@@ -404,6 +458,10 @@ PR tree passed the required population. Static checks, secret scanning and selec
 still execute. Local receipt reuse is a different mechanism. `.github/workflows/dependency-audit.yml`
 is the separate dependency-audit workflow. Hosted results and deployment state require their own
 observed evidence and authority; no local check proves them.
+
+<!-- docs-script-refs:historical-start -->
+
+> **Historical contribution checklist:** retained from the former shared UI. Paths and gate references below may be retired; follow current Ward Flow agent rules and the maintained sections above.
 
 ## Contribution checklist (UI changes)
 

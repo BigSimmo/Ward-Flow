@@ -9,6 +9,8 @@
 
 ---
 
+_Updated 2026-10-19 - corrected transport, synthetic-data and persistence claims from source; Documentation owns. No new screen verification or sign-off._
+
 ## Executive Summary & Clinical Intent
 
 In Western Australia, acute psychiatric bed flow represents one of the most operationally challenging domains in modern health administration. Across five Health Service Providers—North Metropolitan (NMHS), South Metropolitan (SMHS), East Metropolitan (EMHS), Child and Adolescent (CAHS), and the WA Country Health Service (WACHS)—bed coordinators, triage nurses, and on-call consultant psychiatrists navigate complex patient journeys under immense pressure.
@@ -58,7 +60,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 | **Act 1** | 09:00 - 09:12  | Min 0:00 - 2:00 (120s)  | `/mockups/ward-flow/capacity`                                       | 09:00 Morning Statewide Bed Meeting & Network Capacity Rollup      |
 | **Act 2** | 10:30          | Min 2:00 - 4:00 (120s)  | `/mockups/ward-flow/ed/rph-ed` & `/mockups/ward-flow/referrals`     | Acute ED Presentation, Triage & Form 1A Paper Expiry Recording     |
 | **Act 3** | 11:45          | Min 4:00 - 6:00 (120s)  | `/mockups/ward-flow/referrals` (Bed Match)                          | Intelligent Bed Matching, Acuity Gates & Bed Reservation           |
-| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/mockups/ward-flow/movements`                                      | St John WA Transfer Booking, CAD Integration & Transit Flight Deck |
+| **Act 4** | 13:15          | Min 6:00 - 8:00 (120s)  | `/mockups/ward-flow/movements`                                      | Phone-Made Transfer Booking Records & Transit Flight Deck          |
 | **Act 5** | 14:30          | Min 8:00 - 10:00 (120s) | `/mockups/ward-flow/handover` & `/mockups/ward-flow/board/[unitId]` | Inpatient Ward Arrival, ISBAR Handover & Real-Time Board Occupancy |
 
 ---
@@ -179,11 +181,11 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   >
   > Meanwhile, statutory duration reference tables and calculators live solely in the isolated `/mockups/ward-flow/legal-forms` reference demo. In operational screens, the software never makes an autonomous legal duration assumption."
 
-#### 3:30 - 4:00 · Catchment Routing, UM1xxxxx Identifiers & Clinical Acuity Indicators
+#### 3:30 - 4:00 · Catchment Routing, Synthetic UMRNs & Clinical Acuity Indicators
 
 - **Presenter Action:** Highlight the automated catchment resolver and the synthetic UMRN format (`UM100001`, or sibling synthetic UMRNs such as `UM100041` per `D-39`). Show that Callum’s home suburb of Bayswater routes his primary psychiatric catchment to East Metropolitan Health Service. Point to the High Acuity and Specialling requirement flags.
 - **Presenter Spoken Dialogue:**
-  > "Every patient on screen is identified by a synthetic `UM1xxxxx` UMRN—such as `UM100001` for Callum Halloway or `UM100041` for another synthetic cohort record—while internal movement IDs like `WF-301` govern the journey behind the scenes. Callum resides in Bayswater, and Ward Flow’s internal catchment engine instantly resolves his home catchment to East Metro Health Service.
+  > "Every patient on screen is identified by a synthetic `UM` plus six-digit UMRN—such as `UM100001` for Callum Halloway or `UM100041` for another synthetic cohort record—with generated seed records also using `UM5xxxxx`, while internal movement IDs like `WF-301` govern the journey behind the scenes. Callum resides in Bayswater, and Ward Flow’s internal catchment engine instantly resolves his home catchment to East Metro Health Service.
   >
   > Because Callum is severely agitated and requires intensive nursing supervision, the triage team marks his clinical requirements: **Adult Acute**, **HDU / Secure Capable**, and **High Acuity Nursing Ratio**.
   >
@@ -271,7 +273,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 - **Time:** 13:15 PM (Duration: 2 Minutes / 6:00 - 8:00)
 - **Clinical Role:** Transport Logistics Officer & Mental Health Flight Deck Controller
 - **Screen:** Movements Flight Deck & Transit Cockpit (`/mockups/ward-flow/movements`)
-- **Key System Mechanics:** St John WA CAD transfer integration, departure verification, real-time transit status, structured `sessionStorage` persistence and `D-18` free-text privacy guard.
+- **Key System Mechanics:** Phone-made transport booking records, staff-recorded departure and transit status, local structured `sessionStorage` persistence and the `D-18` free-text privacy guard with the scoped `D-67` draft exception.
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -284,7 +286,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 | - Transport Mode: St John WA Mental Health Patient Transfer Service (Specialist Crew)             |
 | - Dispatch Identifier: CAD-20260815-8842  |  Vehicle: SJ-VAN-04                                    |
 | - Departure Confirmed: 13:12 PM           |  Estimated Arrival: 13:25 PM (10 mins remaining)       |
-| - Patient Status: In Transit [ LIVE ]     |  Escort: 2x Paramedic Crew + Mental Health Nurse       |
+| - Patient Status: In Transit [ DEMO ]     |  Escort: 2x Paramedic Crew + Mental Health Nurse       |
 | - State Invariant: Bed Held at Dabakarn (Cannot be given away during transit)                      |
 +----------------------------------------------------------------------------------------------------+
 ```
@@ -299,27 +301,27 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   >
   > In mental health operations, the period between deciding to admit a patient and their physical arrival on the ward is historically a black hole. Patients get stuck in ED corridors waiting for transport; beds on wards sit empty and staffed while charge nurses wonder if the patient is ever coming.
   >
-  > Ward Flow eliminates this blindness through the Movements Flight Deck. Every active movement across Western Australia is tracked across distinct clinical milestones from referral acceptance and bed hold through transport booking, departure, and ward arrival."
+  > Ward Flow eliminates this blindness through the Movements Flight Deck. In this synthetic demonstration, movements are shown across staff-recorded milestones from referral acceptance and bed hold through transport booking, departure, and ward arrival."
 
-#### 6:45 - 7:30 · St John WA CAD Integration & Live Transit
+#### 6:45 - 7:30 · Phone-Made Booking Records & Recorded Transit
 
-- **Presenter Action:** Click on Callum Halloway’s (`UM100001`, movement `WF-301`) active movement row. The **Movement Workspace Cockpit** drawer expands. Highlight the **Transport Details** card showing dispatch identifier `CAD-20260815-8842` and the live ETA counter.
+- **Presenter Action:** Click on Callum Halloway’s (`UM100001`, movement `WF-301`) active movement row. The **Movement Workspace Cockpit** drawer expands. Highlight the **Transport Details** card showing dispatch identifier `CAD-20260815-8842` and the countdown from the recorded estimate.
 - **Presenter Spoken Dialogue:**
   > "Look at Callum’s transport record. At 12:45, the ED liaison team booked an inter-facility transfer with St John WA.
   >
-  > Notice that Ward Flow requires a genuine Computer Aided Dispatch—or CAD—incident number: here, `CAD-20260815-8842`. Our clinical safety audit rules specifically reject generic placeholders like 'ambulance called' or 'pending'.
+  > Ward Flow records the booking already made by phone. The CAD field here contains the synthetic example `CAD-20260815-8842`. The prototype requires non-empty CAD text and a finite estimated time, alongside the provider, escort answer and transport legal status. It does not validate St John WA syntax, verify a dispatch number or reject non-empty placeholders.
   >
   > At 13:12, the St John transfer vehicle departed the ED ambulance bay. The transfer officer tapped 'Confirm Departure'.
   >
-  > Instantly, Callum’s status shifted to **In Transit**. Look at the destination ward: Dabakarn’s dashboard immediately updated with an ETA countdown: arrival expected in 10 minutes. The receiving ward nurse unit manager can see the vehicle is rolling, prepare the seclusion room or high-dependency bed, allocate the 1:1 admitting nurse, and ensure the medical registrar is present for reception."
+  > Instantly, Callum’s status shifted to **In Transit**. Look at the destination ward: Dabakarn’s dashboard immediately updated with an ETA countdown: arrival expected in 10 minutes. This reflects staff-recorded milestones and estimates, not a St John WA telemetry feed. The receiving ward nurse unit manager can prepare the seclusion room or high-dependency bed, allocate the 1:1 admitting nurse, and ensure the medical registrar is present for reception."
 
 #### 7:30 - 8:00 · Structured Session Persistence & The D-18 Free-Text Privacy Safeguard
 
-- **Presenter Action:** Perform a **structured action** (such as toggling a bed state or assigning a structured blocker/step—do **not** type into a free-text note field), then press `F5` (or `Ctrl+R`) to demonstrate `sessionStorage` recovery of structured actions. Separately point out the `D-18` privacy safeguard (`eventCarriesFreeText()`).
+- **Presenter Action:** In a fresh local demo session with saving enabled, perform a **structured action** (such as toggling a bed state or assigning a structured blocker/step—do **not** type into a free-text note field), then press `F5` (or `Ctrl+R`) to demonstrate `sessionStorage` recovery of structured actions. Recording the typed CAD booking earlier in this script locks snapshot saving, so that session cannot demonstrate this recovery. Separately point out the `D-18` privacy safeguard (`eventCarriesTypedTextPayload(event)`).
 - **Presenter Spoken Dialogue:**
-  > "A quick word on session persistence and clinical privacy: when a coordinator performs **structured actions**—such as holding a bed, toggling a bed state, or assigning a structured blocker or step—and refreshes the tab (`F5`), Ward Flow restores that structured state from `sessionStorage`.
+  > "A quick word on local demo persistence and clinical privacy: when browser storage is available and saving remains enabled, a coordinator performs **structured actions**—such as holding a bed, toggling a bed state, or assigning a structured blocker or step—and refreshes the tab (`F5`), Ward Flow can restore that structured state from `sessionStorage` on a same-day reload.
   >
-  > Equally important is Owner Ruling **`D-18`** (`eventCarriesTypedTextPayload(event)`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, makes Ward Flow intentionally clear the central demo snapshot and `wf-draft:*` caches, then disable browser persistence for the remainder of that session as a strict privacy safeguard against leaving free-text notes in shared workstation browser storage.
+  > Equally important is Owner Ruling **`D-18`** (`eventCarriesTypedTextPayload(event)`): dispatching **any event that can carry typed free text**, whether the event is accepted or refused, locks further central demo snapshot saving until a genuine reset or scenario reseed and attempts to remove that snapshot; storage failure is reported. Under **`D-67`**, only the opted-in synthetic referral and legal form editors separately recover session drafts for review, scoped to account/session, scenario and subject. Submitted state keeps the D-18 lock. Shared workspace saving uses the backend instead; see [current modes](../../backend/ward-flow/README.md#how-the-ui-connects).
   >
   > Now, Callum’s transport vehicle has arrived at Dabakarn. Let us move to the inpatient unit for receiving and handover."
 - **Presenter Action:** Close the movement cockpit and navigate to `/mockups/ward-flow/handover`.
@@ -387,7 +389,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   > - From the 09:00 morning bed meeting establishing statewide situational awareness;
   > - To an acute ED crisis presentation in Perth;
   > - Through an intelligent, multi-gate clinical bed matching process that honoured strict gender-safety boundaries;
-  > - Tracking live transit via St John WA CAD telemetry;
+  > - Tracking transport through staff-recorded booking, departure and arrival milestones;
   > - To safe, dignified inpatient admission under our Western Australian _Mental Health Act 2014_.
   >
   > Ward Flow gives our clinicians and executives what they have needed for two decades: single-pane visibility, unyielding patient safety, and complete operational transparency.
@@ -416,7 +418,7 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 
 ### 1. The Synthetic Isolation Guarantee
 
-- **100% Synthetic Records:** Every patient identifier (`UM100001`, `UM100041`), name (`Callum Halloway`), address (`No. 7, Bayswater`), and clinician name is generated from curated synthetic dictionaries. Surnames are deliberately chosen and checked by unit tests against common Western Australian surnames so that no real citizen is identified.
+- **100% Synthetic Records:** Demonstration identities are deliberately authored or generated as fictional records. Synthetic UMRNs include hand-authored `UM1xxxxx` and generated `UM5xxxxx` records. `tests/synthetic-data-guard.test.ts` checks bounded identifier and telephone patterns, and `tests/ward-synthetic-data-guard.test.ts` checks the seeded payload against that guard. These tests do not check a surname blacklist or prove that names cannot coincide with real people.
 - **Zero Production EHR Integration:** In this prototype demonstration mode, there is zero network bridge to WebPAS, PSOLIS, TOPAS, or St John WA production servers.
 
 ### 2. Clinician Supremacy & Anti-Automation Bias
@@ -451,17 +453,13 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 
 ---
 
-### Q2: "How does the St John WA CAD integration work, and what happens if CAD numbers are entered incorrectly?"
+### Q2: "How are St John WA transport bookings recorded, and what happens if CAD numbers are entered incorrectly?"
 
 **Presenter Response:**
 
-> "In live operation, Ward Flow is architected to ingest real-time webhook feeds from St John WA’s Computer Aided Dispatch (CAD) system via standard HL7/FHIR messaging protocols.
+> "Ward Flow records a transport booking already made by phone. This prototype has no St John WA CAD integration, live telemetry feed or HL7/FHIR transport ingestion.
 >
-> To ensure patient safety during manual or semi-automated booking, our clinical safety guard enforces strict validation:
->
-> 1. It checks the CAD format against St John WA incident syntax (e.g., `CAD-YYYYMMDD-XXXX`).
-> 2. It rejects empty inputs, placeholders like 'booked' or 'TBC', and refuses to mark a transfer as 'Booked' without an estimated departure timestamp.
-> 3. If a patient’s transit is canceled or diverted, the coordinator must select from a mandatory list of clinical change reasons (e.g., _Medical deterioration in ED_, _Ambulance diverted to higher acuity case_), generating an immediate audit trail and re-evaluating the held bed."
+> `BOOK_TRANSPORT` in `ward-flow-transport-events.ts` requires a non-empty CAD string and a finite estimated time, alongside the provider, escort answer and transport legal status. It does not validate St John WA incident syntax, verify that a number is genuine or reject non-empty placeholders such as 'booked' or 'TBC'. Staff must check the details against the phone booking; the prototype cannot confirm them."
 
 ---
 
@@ -471,11 +469,13 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 
 > "Ward Flow is a **synthetic demonstration prototype**, not a production patient record system.
 >
-> Actions are handled by a central state reducer. When browser storage is available and the demo's privacy lock permits saving, the central demo snapshot is saved as plain JSON in this tab's session storage; it is not encrypted by the application. A valid saved snapshot may be restored on a same-day reload while that browser session remains available. Restoration after a tab closes, a browser crash or a workstation reboot is not guaranteed.
+> In local demo mode, actions are handled by a central state reducer. When browser storage is available and the demo's privacy lock permits saving, the central demo snapshot is saved as plain JSON in this tab's session storage; it is not encrypted by the application. A valid saved snapshot may be restored on a same-day reload while that browser session remains available. Restoration after a tab closes, a browser crash or a workstation reboot is not guaranteed.
 >
-> Under Owner Ruling `D-18` (`eventCarriesTypedTextPayload(event)`), once an event that can carry typed free text is dispatched, whether accepted or refused, the central demo snapshot in `sessionStorage` and any `wf-draft:*` draft caches are cleared and further snapshot saving stops until a genuine demo reset or scenario reseed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
+> Under Owner Ruling `D-18` (`eventCarriesTypedTextPayload(event)`), once an event that can carry typed free text is dispatched, whether accepted or refused, the app attempts to clear the central demo snapshot in `sessionStorage` and stops further snapshot saving until a genuine demo reset or scenario reseed. Storage failure is reported; erasure is not guaranteed. If snapshot storage is unavailable, state changes remain in memory and may be lost when the page closes.
 >
-> Typed drafts are not restored from browser storage after that point: D-18 removes any `wf-draft:*` entries together with the central snapshot, so unsaved typed text remains in memory only and may be lost on reload.
+> D-67 separately permits session draft recovery only in the opted-in synthetic referral and legal form editors, scoped to account/session, scenario and subject. Restored drafts require human review and submission. Successful submission, sign-out, session termination and reset clear the relevant drafts; rejected submissions retain them for correction. Submitted state keeps the D-18 lock. Browser session restoration can preserve sessionStorage across a restart, so closing the browser does not guarantee draft deletion.
+>
+> In shared mode, accepted workspace commands are saved through the authenticated backend, not this local snapshot policy. Network failure does not establish that a command was saved. See [the backend’s current modes](../../backend/ward-flow/README.md#how-the-ui-connects).
 >
 > Where a form marks unsaved changes, `useDirtyStateGuard` can request a browser warning before leaving the page. That warning does not guarantee recovery or prevent loss after a crash. Use synthetic data only."
 

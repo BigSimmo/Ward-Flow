@@ -1,5 +1,7 @@
 # Ward Flow scripts inventory
 
+_Updated 2026-10-19 - separate broad local checks from scoped readiness and document actual generator coverage; Documentation owns._
+
 Curated map of `scripts/` (115 files) and the `package.json` script surface (82 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` checks the two counts above (within a small
@@ -26,7 +28,8 @@ and the review server. Their history is in Git.
 | `npm run check:ward-expected-reds`                             | `check-ward-expected-reds.mjs`, `run-ward-tests.mjs`, `ward-flow/full-gate-recheck.mjs` | The CI unit shards: run the suite and compare reds with `tests/ward-expected-reds.json`.                                      |
 | `npm run test:e2e` and the `test:e2e:*` lanes                  | `run-playwright.mjs`, `playwright-base-url.ts`, `playwright-browser-preflight.mjs`      | Playwright journeys, including the CI journey and release-gate lanes.                                                         |
 | `npm run test:backend`                                         | the `backend/ward-flow` package                                                         | Backend build and tests.                                                                                                      |
-| `npm run verify:pr-local`, `npm run verify:cheap`              | `verify-pr-local.mjs`                                                                   | Local pre-push readiness, selected from the same scope rules CI uses.                                                         |
+| `npm run verify:pr-local`                                      | `verify-pr-local.mjs`                                                                   | Local pre-push readiness selected from CI scope rules; inspect the dry run for the actual local stages.                       |
+| `npm run verify:cheap`                                         | the `package.json` command chain                                                        | Unconditional broad offline documentation, static, lint, typecheck and unit checks.                                           |
 | `npm run test:live`                                            | `run-live-tests.mjs`                                                                    | Provider-backed live tests; refuses unless `ALLOW_PROVIDER_TESTS=true` is set for an approved run. No live tests exist today. |
 | `npm run bench`                                                | none                                                                                    | Vitest benchmarks.                                                                                                            |
 
@@ -82,9 +85,13 @@ script here.
 `npm run docs:maintain` and `npm run docs:maintain:check`
 (`ward-flow/maintain-docs-and-organisation.mjs`, which also runs `check-stale-docs.mjs`), and
 `npm run ward:organise:check` (`ward-flow/organisation.mjs`, `ward-flow/organisation-core.mjs`).
-The pre-commit hook and CI keep the generated indexes in step: `ward-flow/owner-rulings-index.mjs`,
-`ward-flow/rules-index.mjs`, `ward-flow/screen-map.mjs`, `ward-flow/screen-pairs.mjs`,
-`ward-flow/mockup-manifest.mjs`, and `ward-flow/screen-verification.mjs` with its library.
+The pre-commit hook selects generated-document checks from staged paths and checks the index
+snapshot: Ward indexes block on failure; general index checks are advisory unless strict mode is
+set. CI directly checks reference-pack integrity and scope-selected owner-rulings, rules and
+organisation outputs. The full `docs:maintain:check` aggregate additionally runs
+`ward-flow/screen-map.mjs`, `ward-flow/mockup-manifest.mjs` and
+`ward-flow/screen-verification.mjs` (using `ward-flow/screen-pairs.mjs` and the verification library).
+`check-stale-docs.mjs` is a separate advisory age-and-reference report, not a generator drift check.
 `ward-flow/sync-lessons.mjs` is a retired stub that only refuses; a documentation test still
 checks that refusal.
 

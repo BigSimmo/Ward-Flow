@@ -1,5 +1,7 @@
 # Ward Flow — current architecture orientation
 
+_Updated 2026-10-19 - shared backend role and scope orientation corrected; Documentation owns._
+
 `BigSimmo/Ward-Flow` is a synthetic prototype built with Next 16 and React 19. The approved app
 governs appearance; current engine/source/tests govern behaviour. Start with the
 [Ward README](ward-flow/README.md) and [task evidence](task-receipts.md).
@@ -9,7 +11,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 | Routes             | `src/app/mockups/ward-flow/`: coordinator root [page.tsx](../src/app/mockups/ward-flow/page.tsx), unit board [board/[unitId]/page.tsx](../src/app/mockups/ward-flow/board/%5BunitId%5D/page.tsx), [handover/page.tsx](../src/app/mockups/ward-flow/handover/page.tsx) |
 | Engine and screens | `src/components/ward-management/`: [provider](../src/components/ward-management/ward-flow-provider.tsx), [reducer](../src/components/ward-management/ward-flow-reducer.ts) and role-specific screen modules                                                           |
 | Clock              | The provider reads elapsed wall-clock time and ticks every 30 seconds; controlled initial/test clocks are separate                                                                                                                                                    |
-| Backend            | [backend/ward-flow](../backend/ward-flow/README.md): opt-in coordinator-only shared commands/audit. Provider in [DATABASE.md](ward-flow/DATABASE.md); local source does not prove hosted readiness                                                                    |
+| Backend            | [backend/ward-flow](../backend/ward-flow/README.md): opt-in shared commands with server-resolved roles and scopes, restricted audit and access management. Provider in [DATABASE.md](ward-flow/DATABASE.md); local source does not prove hosted readiness             |
 | API                | `src/app/api/health/` is [liveness](../src/app/api/health/route.ts) `{status:"ok"}`; `src/app/api/local-project-id/` identifies local preview checkout/runtime                                                                                                        |
 | Shared support     | `src/lib/developer-area/`, `src/app/icons/` and shared UI/helpers; inspect affected imports rather than every historical map                                                                                                                                          |
 | Tooling/history    | `scripts/`, `tests/`, `docs/`: [package commands](../package.json), scoped gates and the [dated detailed code map](ward-flow/code-map/README.md)                                                                                                                      |
