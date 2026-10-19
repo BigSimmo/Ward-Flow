@@ -103,7 +103,7 @@ describe("two active bed requests for one person (audit F-19)", () => {
     }
   });
 
-  it("can be snoozed while it holds, and the row id stops existing once one request is answered", () => {
+  it("can be acknowledged and snoozed while it holds, and the row id stops existing once one request is answered", () => {
     const state = withRequests(openRequest("R-dup-1", NOW - 60), openRequest("R-dup-2", NOW - 30));
     const id = `${PREFIX}${person}`;
     expect(inboxRowExists(state, id)).toBe(true);
@@ -116,6 +116,13 @@ describe("two active bed requests for one person (audit F-19)", () => {
       reason: "waiting_on_ward",
     });
     expect(snoozed.inboxSnoozes[id]).toHaveLength(1);
+    const acknowledged = wardFlowReducer(state, {
+      type: "ACKNOWLEDGE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: id,
+    });
+    expect(acknowledged.inboxAcknowledgements[id]).toHaveLength(1);
 
     const answered = openRequest("R-dup-2", NOW - 30);
     answered.destinations = answered.destinations.map((addressing) => ({ ...addressing, state: "declined" }));

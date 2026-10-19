@@ -275,10 +275,12 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      // Absence and discharge rows name stays; planned-arrival rows name bookings.
-      // Keep these category-specific checks so a movement id cannot impersonate a booking.
+      // Absence and discharge rows name stays; planned-arrival rows name bookings; duplicate bed
+      // request rows name a person (audit F-19). Keep these category-specific checks so a movement
+      // id cannot impersonate a booking.
       const namesRecord =
-        inboxCategory === INBOX_CATEGORIES.absent_without_leave
+        inboxCategory === INBOX_CATEGORIES.absent_without_leave ||
+        inboxCategory === INBOX_CATEGORIES.duplicate_bed_request
           ? inboxRowExists(state, inboxItemId)
           : inboxCategory === INBOX_CATEGORIES.support_notification_discharge
             ? state.admissions.some((admission) => admission.id === inboxMovementId)
