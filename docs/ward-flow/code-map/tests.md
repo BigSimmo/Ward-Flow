@@ -250,7 +250,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-movements-screen.dom.test.tsx`** (979 lines) — the Movements screen
 - **`tests/ward-movements-service-scope.dom.test.tsx`** (389 lines) — Movements — service scoping (build plan D2, item 44)
 - **`tests/ward-movements-traffic-diagram.dom.test.tsx`** (224 lines) — TrafficDiagram hover isolation and visual elevations
-- **`tests/ward-network-queue-count.dom.test.tsx`** (95 lines) — the network's priority queue counts only people still waiting
 - **`tests/ward-no-control-characters.test.ts`** (137 lines) — no ward file carries a raw control character
 - **`tests/ward-notice-mark-read.dom.test.tsx`** (157 lines) — Item 48, Q2 — the Activity drawer's Mark as read control
 - **`tests/ward-notice-read.test.ts`** (177 lines) — MARK_NOTICE_READ — item 48, Q2 (owner answer 48)
@@ -348,8 +347,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-ed-to-community-referral.test.ts`** (540 lines) — an emergency department may refer a discharged patient to a community team
 - **`tests/ward-ed-withdraw-referral.dom.test.tsx`** (166 lines) — withdrawing a referral from the emergency department
 - **`tests/ward-movement-referral-link.test.ts`** (509 lines) — a journey raised from a referral resolves back to that exact referral
-- **`tests/ward-network-referral-clocks.dom.test.tsx`** (128 lines) — the referral clocks on the network diagram
-- **`tests/ward-network-referral-placement.dom.test.tsx`** (1144 lines) — network diagram, referral placement
 - **`tests/ward-parallel-referral-cap-ui.dom.test.tsx`** (128 lines) — coordinator/shortlist-panel.tsx reads the configured parallel referral cap
 - **`tests/ward-pull-keeps-referral-link.test.ts`** (194 lines) — PULL_PATIENT keeps the referral link its own movement already carries
 - **`tests/ward-raise-referral-uniqueness.test.ts`** (370 lines) — RAISE_REFERRAL refuses a second journey while an earlier one is still open
@@ -552,7 +549,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-coordinator-suburb.dom.test.tsx`** (202 lines) — coordinator shortlist shows a referred patient's suburb
 - **`tests/ward-delays-resolved-outcome.dom.test.tsx`** (126 lines) — the delays screen never calls a patient placed who did not arrive
 - **`tests/ward-near-patient-suggestions.test.ts`** (245 lines) — nearPatients — the three confusable pairs, all of them
-- **`tests/ward-network-initial-patient-selection.dom.test.tsx`** (88 lines) — initialNetworkPatientId — the network placement workspace's default selection
 - **`tests/ward-patient-discharge.test.ts`** (206 lines) — patient-linked discharge transition
 - **`tests/ward-patient-identity-integrity.test.ts`** (42 lines) — patient identity requires explicit compatible links
 - **`tests/ward-patient-link-default-deny.test.ts`** (376 lines) — D-14 default-deny: the patient link is read only where explicitly permitted
@@ -697,12 +693,9 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-governance-thin-sample.test.ts`** (123 lines) — the governance board refuses to publish a figure from a thin sample
 - **`tests/ward-governance.dom.test.tsx`** (395 lines) — GovernanceView
 
-#### Network (4 files)
+#### Network (1 file)
 
-- **`tests/ward-network-cluster-header.dom.test.tsx`** (130 lines) — the network cluster header
 - **`tests/ward-network-cohort-structural-gap.test.ts`** (125 lines) — the network's structural cohort answer
-- **`tests/ward-network-stage-filter.dom.test.tsx`** (180 lines) — the stage strip filters the queue without disguising it
-- **`tests/ward-network-stage-strip.dom.test.tsx`** (167 lines) — the network stage strip reconciles with the queue
 
 #### Management (misc root screens) (3 files)
 
@@ -818,7 +811,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-error-boundaries.dom.test.tsx`** (213 lines) — the ward flow error boundaries are client components
 - **`tests/ward-figure.dom.test.tsx`** (115 lines) — WardFigure
 - **`tests/ward-flow-clock-consistency.dom.test.tsx`** (129 lines) — the movements board reads the live shared clock, not a value frozen at import
-- **`tests/ward-flow-potential-chip-migration.dom.test.tsx`** (96 lines) — network view and coordinator flow diagram never show the raw potential figure
+- **`tests/ward-flow-potential-chip-migration.dom.test.tsx`** (96 lines) — coordinator flow diagram never shows the raw potential figure
 - **`tests/ward-flow-provider-safe-payload-shape-guard.test.ts`** (115 lines) — WARD_FLOW_TEXT_SAFE payload-shape compile-time guard
 - **`tests/ward-flow-provider-server-determinism.test.ts`** (144 lines) — the server's ward markup does not depend on what minute it is
 - **`tests/ward-flow-provider.dom.test.tsx`** (579 lines) — WardFlowProvider

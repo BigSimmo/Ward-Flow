@@ -11,6 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 afterEach(cleanup);
 
@@ -47,6 +48,9 @@ function offerFromHome() {
       </ToastProvider>
     </WardFlowProvider>,
   );
+  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+  showWholeHomeQueue();
   fireEvent.click(screen.getByTestId(`ward-queue-row-${offer.movementId}`));
   const bedflow = screen.getByRole("region", { name: "State Bedflow" });
   fireEvent.click(within(bedflow).getByRole("button", { name: `Offer ${offer.unitName}` }));

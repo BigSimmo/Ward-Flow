@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -262,6 +264,32 @@ describe("the bed meeting TV view", () => {
     expect(railEntries().map((entry) => entry.href)).toContain(WARD_BED_MEETING_TV_HREF);
   });
 
+  it("opens clean, with its own way back to the app and its own prototype line (DA-23)", () => {
+    renderTv();
+    const tv = screen.getByTestId("bed-meeting-tv");
+    // The layout hides the rail, top bar and phone dock while this mark is on the screen.
+    expect(tv).toHaveAttribute("data-wf-tv-clean");
+    expect(within(tv).getByRole("link", { name: "Leave TV view" })).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(tv).toHaveTextContent("Synthetic prototype");
+    expect(tv).toHaveTextContent("Not approved for clinical use");
+    const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
+    expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
+    expect(layoutCss).toMatch(/\.shellContent:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-bar"\]/u);
+  });
+
+  it("keeps its prototype line on a screen that is not in the network", () => {
+    renderTv({ ward: "no-such-ward" });
+    const tv = screen.getByTestId("bed-meeting-tv");
+    expect(tv).toHaveAttribute("data-wf-tv-clean");
+    expect(tv).toHaveTextContent("Synthetic prototype");
+  });
+
+  it("leaves the app's menus on the switched-off notice", () => {
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-off")).not.toHaveAttribute("data-wf-tv-clean");
+  });
+
   it("is a desktop page: a phone gets the larger screen card", () => {
     expect(isPhoneDesktopOnlyPath(WARD_BED_MEETING_TV_HREF)).toBe(true);
   });
@@ -403,7 +431,13 @@ describe("the ward and ED TV views", () => {
     expect(figure("ed-tv-no-bed")).toBe(shown(sheet.noBed));
     expect(figure("ed-tv-bed-found")).toBe(shown(sheet.held));
     expect(sheet.summary.waiting).toBeGreaterThan(0);
-    expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(sheet.people.length);
+    // One row fewer than the other lists, so the busiest ED still fits a 1080p screen; the rest are counted.
+    const peopleShown = Math.min(sheet.people.length, TV_ROW_LIMIT - 1);
+    expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(peopleShown);
+    const peopleMore = sheet.morePeople + sheet.people.length - peopleShown;
+    if (peopleMore > 0) {
+      expect(screen.getByTestId("ed-tv-people-panel")).toHaveTextContent(`and ${peopleMore} more waiting`);
+    }
     expect(within(screen.getByTestId("ed-tv-trend-panel")).getAllByRole("listitem").length).toBe(sheet.trend.length);
     expect(screen.getByTestId("ed-tv-beds-ready")).toHaveTextContent(String(sheet.readyInService));
   });

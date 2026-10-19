@@ -34,6 +34,9 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { pullBlockedReason } from "./ward-pull-blocked";
+
+export { pullBlockedReason };
 
 function originPlaceLabel(originEdId: string): string {
   return edById(originEdId)?.name ?? "Emergency department";
@@ -47,16 +50,6 @@ function arrivalIsLate(movement: Movement, now: Instant): boolean {
 
 function wardSafeRejectionReason(reason: string): string {
   return reason;
-}
-
-export function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
-  if (movement.acceptedUnitId !== unit.id) {
-    return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
-  }
-  if (unit.allocatable.value <= 0) {
-    return `No allocatable bed remains at ${unit.name}.`;
-  }
-  return undefined;
 }
 
 interface WardArrivalsCorridorProps {

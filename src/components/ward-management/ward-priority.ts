@@ -51,7 +51,7 @@ export const FORM_TIMING_FACTOR_LABEL = "Form due time";
  * These are TIER LABELS: three ordered categories, never a duration, quantity or statutory
  * figure of any kind.
  */
-const TIER_QUALIFIER: Record<UrgencyLevel, string> = {
+export const TIER_QUALIFIER: Record<UrgencyLevel, string> = {
   1: "most urgent",
   2: "urgent",
   3: "least urgent",

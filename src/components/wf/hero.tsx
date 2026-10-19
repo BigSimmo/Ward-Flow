@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
 import { cx } from "./cx";
+import { HeroCondensedLine } from "./phone-fold";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./hero.module.css";
@@ -55,6 +56,12 @@ export type HeroProps = {
    * `false` for a hero that must stay an inset card even at the top of a page.
    */
   band?: boolean;
+  /**
+   * Simplification C1: on a phone, one short line ("70 people waiting · 0 past recorded time")
+   * pinned under the header once this hero has scrolled away. A tap brings the hero back. Nothing
+   * changes above 48rem; leave it out to keep the hero as it was.
+   */
+  condensed?: ReactNode;
   className?: string;
 };
 
@@ -82,6 +89,7 @@ export function Hero({
   testId,
   quiet = false,
   band = true,
+  condensed,
   className,
 }: HeroProps) {
   const titleId = useId();
@@ -127,6 +135,7 @@ export function Hero({
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>
       ) : null}
+      {condensed ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
   );
 }

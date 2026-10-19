@@ -5,6 +5,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ComponentPropsWithoutRef,
   type ElementType,
   type PointerEvent as ReactPointerEvent,
@@ -12,7 +13,7 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
-import { X, type LucideIcon } from "lucide-react";
+import { ListFilter, X, type LucideIcon } from "lucide-react";
 import { OverlayPortal } from "./overlay-root";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
@@ -20,9 +21,11 @@ import { useIsPhone } from "./use-is-phone";
 import { cx, present } from "./cx";
 import type { DialogAction } from "./dialog";
 import { Icon } from "./icon";
-import { CountBubble } from "./primitives";
+import { HeroCondensedLine } from "./phone-fold";
+import { CountBubble, SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./phone.module.css";
+import foldStyles from "./phone-fold.module.css";
 import { useModalFocus } from "./use-modal-focus";
 
 /*
@@ -504,6 +507,12 @@ export type PhoneHeroProps = {
   figures?: PhoneHeroFigure[];
   /** Actions, in a row below the figures. One light primary at most. */
   actions?: ReactNode;
+  /**
+   * Simplification C1: one short line ("9 on the psychiatry board · longest 1d 5h") pinned under
+   * the header once this hero has scrolled away. A tap brings the hero back. Leave it out to keep
+   * the hero as it was.
+   */
+  condensed?: ReactNode;
   /** Heading level of the title. Defaults to 2. */
   level?: 1 | 2;
   className?: string;
@@ -525,6 +534,7 @@ export function PhoneHero({
   sub,
   figures,
   actions,
+  condensed,
   level = 2,
   className,
   "data-testid": testId,
@@ -600,6 +610,7 @@ export function PhoneHero({
         </ul>
       ) : null}
       {present(actions) ? <div className={styles.heroActions}>{actions}</div> : null}
+      {present(condensed) ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
   );
 }
@@ -692,5 +703,77 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
         {children}
       </div>
     </div>
+  );
+}
+
+/* ---------- PhoneFilterFold ---------- */
+
+export type PhoneFilterFoldProps = {
+  /** How many filters are on. Zero shows the plain "Filter" button. */
+  count: number;
+  /** The sheet's title. Defaults to "Filter". */
+  title?: string;
+  /** One line under the sheet title. */
+  description?: ReactNode;
+  /** The page's existing filter chips, unchanged. They keep their own behaviour and test ids. */
+  children: ReactNode;
+  className?: string;
+  "data-testid"?: string;
+};
+
+/**
+ * One Filter button that stands in for a row of filter chips on a phone. It reads "Filter" with a
+ * count while any filter is on, and opens the same chips in a bottom sheet with Done to close.
+ * Renders nothing above 48rem: the page keeps its chips inline there.
+ */
+export function PhoneFilterFold({
+  count,
+  title = "Filter",
+  description,
+  children,
+  className,
+  "data-testid": testId,
+}: PhoneFilterFoldProps) {
+  const isPhone = useIsPhone();
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  if (!isPhone) return null;
+  const close = () => setOpen(false);
+  return (
+    <>
+      <Button
+        ref={buttonRef}
+        variant="sec"
+        icon={ListFilter}
+        className={cx(foldStyles.foldButton, className)}
+        data-on={count > 0 ? "true" : undefined}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        data-testid={testId}
+        onClick={() => setOpen(true)}
+      >
+        Filter
+        {count > 0 ? (
+          <>
+            <span className={foldStyles.foldDot} aria-hidden="true">
+              ·
+            </span>
+            <span className={foldStyles.foldCount}>{count}</span>
+            <SrOnly>{count === 1 ? "filter on" : "filters on"}</SrOnly>
+          </>
+        ) : null}
+      </Button>
+      <PhoneSheet
+        open={open}
+        onClose={close}
+        title={title}
+        description={description}
+        returnFocusRef={buttonRef}
+        primary={{ label: "Done", onAction: close }}
+        data-testid={testId ? `${testId}-sheet` : undefined}
+      >
+        <div className={foldStyles.foldBody}>{children}</div>
+      </PhoneSheet>
+    </>
   );
 }

@@ -81,7 +81,6 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
   const {
     now,
     team,
-    setToastMessage,
     activeModalType,
     setActiveModalType,
     contactRecord,
@@ -246,16 +245,6 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>
                 <button type="button" className={styles.btnSmSec} onClick={() => setActiveModalType(null)}>
                   Close
-                </button>
-                <button
-                  type="button"
-                  className={styles.btnSmPrimary}
-                  onClick={() => {
-                    setToastMessage("Not wired in this prototype.");
-                    setActiveModalType(null);
-                  }}
-                >
-                  Ping duress GPS (not wired)
                 </button>
               </div>
             </div>

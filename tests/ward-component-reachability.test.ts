@@ -140,6 +140,14 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/coordinator/pressure-strip.tsx",
+    why: "its one route use was the Network screen, retired on 19 Oct 2026 (Josh's decision); Home has its own ED pressure card. A deletion candidate for the clean-up wave",
+  },
+  {
+    module: "src/components/ward-management/coordinator/flow-diagram.tsx",
+    why: "Home stopped drawing the flow diagram in the v6 pages (#113, 7 Oct 2026); its status sentence moved to flow-status.ts on 19 Oct 2026 so Home's first load skips the diagram. A deletion candidate for the clean-up wave",
+  },
+  {
     module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
     why: "added by #269 but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
   },

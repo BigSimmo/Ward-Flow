@@ -1,5 +1,12 @@
 # Routes, shell, navigation and shared UI
 
+## Smart defaults — 19 October 2026
+
+`shell/use-device-choice.ts` remembers one page-layout choice per device (`ward_flow_choice_*` keys),
+only from the page's own list of allowed values; a store that refuses writes keeps the choice for the
+page only. All EDs uses it for its order and layout; it never stores a filter, a name or typed text.
+`tests/ward-smart-defaults.dom.test.tsx` covers it with the desk-scoped form defaults.
+
 ## Confirmed usability fixes — 19 October 2026
 
 `shell/ward-character-shortcuts.ts` stores the browser's single-character shortcut preference.
@@ -63,12 +70,12 @@ The compact footer still identifies synthetic data. Bed, admission, decline and 
 continue to use the existing derivations, including unavailable values rather than invented history.
 
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
-sheet with Change view at the top, then Service now (`ward-service-now.tsx`, the coordinator's
-standing figures across the network, with All figures from `ward-network-figures.tsx` below), Do now,
-Look up (catchment, contacts from the On-call directory, Form times), Print and share, More pages, and
-one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
+sheet with Change view at the top, then Do now, Look up (All figures from `ward-network-figures.tsx`
+first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
+and one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry
-them. The sheet loads on demand through the existing drawer shell.
+them. The sheet loads on demand through the existing drawer shell. Simpler screens (Josh, 19 Oct 2026)
+removed the Service now panel and `ward-service-now.tsx`: those figures repeated what each page shows.
 
 The directory includes wards, ED teams, community, switchboards, bed flow coordinators, transport,
 and executive/escalation roles. Approved community contact mappings retain their published
@@ -149,7 +156,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/command`                        | redirect → `/` (`/ward-flow`)                                                                   |
 | `/community`                      | `CommunityIndex`                                                                                |
 | `/community/[teamId]`             | `CommunityScreen`                                                                               |
-| `/constellation`                  | redirect → `/network`                                                                           |
+| `/constellation`                  | redirect → `/` (`/ward-flow`)                                                                   |
 | `/delays`                         | `DelaysScreen`                                                                                  |
 | `/discharges`                     | `DischargeBoard`                                                                                |
 | `/ed`                             | `EdIndex`                                                                                       |
@@ -163,7 +170,6 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/legal-forms`                    | `LegalFormsScreen`                                                                              |
 | `/movements`                      | `MovementsScreen`                                                                               |
 | `/movements/[movementId]`         | `PatientNowScreen` (or `WardMovementNotFound`)                                                  |
-| `/network`                        | `WardModeWorkspace` mode `"network"` → `WardNetworkWorkspace`                                   |
 | `/on-call`                        | `OnCallScreen`                                                                                  |
 | `/out-of-area`                    | `OutOfAreaBoard`                                                                                |
 | `/people/[patientId]`             | `PatientNowScreen`, or `PersonScreen` with `?view=governed`/`legacy`, or `WardMovementNotFound` |
@@ -196,8 +202,8 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 `/ward-flow-sign-in`: `WardFlowSignInScreen`. `/mockups/ward-flow-digest`: not a page — a
 route handler (`GET`) that streams `design/third-edition-mockups/ward-flow-digest.html` back verbatim.
 
-**Six redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
-`command` → `/ward-flow`; `constellation` → `/network`; `escalation`, `exceptions`, `queue` → each
+**Seven redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
+`command`, `constellation` and `network` (Network screen retired 19 Oct 2026) → `/ward-flow`; `escalation`, `exceptions`, `queue` → each
 its own `/delays?from=<name>` (Delays reads that query param to show an alias banner); `transport` →
 `/movements`. (`/ed` was formerly a redirect to `/ed/fremantle-ed` and now renders `EdIndex`.) `transport/officer` is a separate, nested route unaffected by the `transport` redirect.
 
@@ -248,7 +254,7 @@ Two `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree
   URL should land on a list, not a 404) and that it is a real, linked nav entry, not a leftover.
 - **`src/app/ward-flow/community/[teamId]/page.tsx`** (22) — `/community/[teamId]` →
   `CommunityScreen`; `generateMetadata` resolves the team name via `communityTeamById`.
-- **`src/app/ward-flow/constellation/page.tsx`** (10) — redirect → `/network`.
+- **`src/app/ward-flow/constellation/page.tsx`** (10) — redirect → `/ward-flow`.
 - **`src/app/ward-flow/delays/page.tsx`** (13) — `/delays` → `DelaysScreen`.
 - **`src/app/ward-flow/discharges/page.tsx`** (12) — `/discharges` → `DischargeBoard`.
 - **`src/app/ward-flow/ed/page.tsx`** — `/ed` → `EdIndex` (`@/components/ward-management/ed/ed-index`).
@@ -267,8 +273,8 @@ mode="governance"`.
   Doc comment records a fixed defect: the old cast happened before the `startsWith` check and let a
   bare `"WF-"` sentinel satisfy the `MovementId` template-literal type, so a wrong-shaped id like
   `PT-004` was echoed back quoted as `"WF-"` rather than as the text actually typed.
-- **`src/app/ward-flow/network/page.tsx`** (13) — `/network` → `WardModeWorkspace
-mode="network"`.
+- **`src/app/ward-flow/network/page.tsx`** (10) — redirect → `/ward-flow` (Network screen retired
+  19 Oct 2026; its road-time list moved to Capacity).
 - **`src/app/ward-flow/on-call/page.tsx`** (24) — `/on-call` → `OnCallScreen`. Doc comment
   warns this is unrelated to PsychSift's own `(search-app)/on-call` mode and to
   `caring-contacts/team-roster.tsx` — three unrelated "on-call" surfaces in one repository, none a
@@ -399,11 +405,13 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   `ward-service-bed-alerts.ts`. 1 importer (`layout.tsx`).
 - **`shell/ward-rail.module.css`** (2,827 lines) — the largest stylesheet in this part; must keep
   its `max-width: 1000px` breakpoint exactly matched to `ward-flow-layout.module.css`'s own.
-- **`shell/ward-broadcast-banner.tsx`** (121 lines) — `WardBroadcastBanner`: renders the single
+- **`shell/ward-broadcast-banner.tsx`** (223 lines) — `WardBroadcastBanner`: renders the single
   active WA-wide broadcast alert (`getActiveBroadcastAlert`, `alerts/ward-broadcast-model.ts`) with
   a severity badge, time-remaining, acknowledgement count and an "Acknowledge" button that dispatches
   `ACKNOWLEDGE_BROADCAST_ALERT`; renders nothing when there is no active alert. 1 importer
-  (`layout.tsx`).
+  (`layout.tsx`). Its body (answers, counts, actions) lives in
+  `shell/ward-broadcast-banner-body.tsx` (399 lines), a server-rendered `next/dynamic` chunk preloaded
+  when idle, so the shared shell's first load does not carry it.
 - **`shell/ward-broadcast-banner.module.css`** (193 lines) — its styles.
 - **`shell/ward-live-region.tsx`** (105 lines) — the shell's one polite `aria-live` region.
   `announceToWardShell(text)` is the module-level store every announcement in the shell goes
@@ -559,10 +567,8 @@ shell itself:
   `GovernanceOverridesRegisterPanel`, `GovernanceAccessRecordPanel`), mounted by
   `ward-management-modes.tsx` for the `/governance` route. 1 importer.
 - `ward-management-modes.tsx` (535 lines) — `WardModeWorkspace`, the mode dispatcher mounted
-  directly by `governance/page.tsx` and `network/page.tsx`; also defines `GovernanceView`,
+  directly by `governance/page.tsx`; also defines `GovernanceView`,
   `NotAMedicalDeviceStatement`, `WARD_WORKSPACE_MODES`. 2 importers.
-- `ward-management-network.tsx` (1,459 lines) — `WardNetworkWorkspace`, mounted by
-  `ward-management-modes.tsx` for the `/network` route. 1 importer.
 
 **Retired / not mounted** — verified by `grep` for every importer under `src/` (not just this
 scope's own directory):
@@ -639,9 +645,6 @@ One line each: which component(s) compose/import it, and whether anything does.
 - **`ward-freshness.module.css`** (103) — `ward-freshness.tsx` only.
 - **`ward-global-search.module.css`** (706) — `ward-global-search.tsx` only.
 - **`ward-management-modes.module.css`** (1,513) — `ward-management-modes.tsx` only.
-- **`ward-management-network-third-edition.module.css`** (471) — `ward-management-network.tsx`.
-- **`ward-management-network.module.css`** (1,445) — `ward-management-network.tsx` (imported
-  alongside the third-edition module above — both are live in the same file at once).
 - **`ward-management.module.css`** (1,413) — `ward-management-console.tsx`.
 - **`ward-modes-second-edition.module.css`** (586) — not imported by any `.tsx`/`.ts` file. Only
   comments in three other stylesheets name it. `governance-registers.tsx` and
@@ -651,7 +654,7 @@ One line each: which component(s) compose/import it, and whether anything does.
 - **`ward-reduced-motion.module.css`** (32) — not imported from any `.tsx`/`.ts` file; **composed
   from** by ten other CSS modules' own classes (`coordinator/coordinator.module.css`,
   `coordinator/home.module.css`, `referrals/ward-referral-drawer.module.css`,
-  `ward-management-modes.module.css`, `ward-management-network.module.css`,
+  `ward-management-modes.module.css`,
   `ward-management.module.css`, `ward-role-switcher.module.css`, `ward-sidebar.module.css`,
   `ward-tasks-drawer.module.css`) — a shared `prefers-reduced-motion` kill-switch, not a
   standalone stylesheet.

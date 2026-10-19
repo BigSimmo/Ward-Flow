@@ -44,7 +44,11 @@ export function SearchResultIcon({
     case "movement":
       return <Route className={className} aria-hidden="true" />;
     case "ward":
+    case "bed":
+    case "stay":
       return <BedSingle className={className} aria-hidden="true" />;
+    case "referral":
+      return <Inbox className={className} aria-hidden="true" />;
     case "ed":
       return <Hospital className={className} aria-hidden="true" />;
     case "community":

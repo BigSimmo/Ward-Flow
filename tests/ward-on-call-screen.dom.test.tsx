@@ -296,12 +296,9 @@ describe("the on-call screen", () => {
     expect(panel().getByText(/Call now:/u)).toBeVisible();
   });
 
-  it("keeps Report change pressable and says it is not wired (D-16)", () => {
+  it("offers no Report change control while reporting is not connected (simplification A5)", () => {
     renderOnCall();
-    const report = panel().getByRole("button", { name: /Report change/u });
-    expect(report).not.toHaveAttribute("aria-disabled");
-    fireEvent.click(report);
-    expect(screen.getByTestId("not-wired-popover")).toHaveTextContent("Not wired in this prototype.");
+    expect(panel().queryByRole("button", { name: /Report change/u })).toBeNull();
   });
 
   it("keeps My list as contact ids only, and restores it", async () => {

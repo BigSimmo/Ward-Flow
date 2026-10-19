@@ -51,14 +51,15 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { edById } from "@/components/ward-management/ward-sites";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { pullBlockedReason } from "./ward-arrivals-corridor";
+import { pullBlockedReason } from "./ward-pull-blocked";
 import {
   useWalkRound,
   WalkRoundRowMarks,
   WardWalkRound,
+  bedStripWord,
   type WalkRoundBed,
   type WalkRoundMark,
 } from "./ward-walk-round";
@@ -528,6 +529,8 @@ export function WardHomeTab({
                   : "Due out"
                 : note;
     const glyph = bedGlyphTone(bed);
+    // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
+    const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
     // D-64: when a higher note takes the tile (Past date, Due out), the CLD state still shows as a tag.
     const criteriaTag = bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip : null;
     const number = String(bed.bedNumber).padStart(2, "0");
@@ -554,6 +557,7 @@ export function WardHomeTab({
       days,
       note,
       tileNote,
+      stripWord,
       criteriaTag,
       glyph,
       number,
@@ -658,6 +662,7 @@ export function WardHomeTab({
     number: row.number,
     name: row.name,
     note: row.note,
+    stateWord: row.stripWord,
     changeKey: [
       row.bed.status,
       row.bed.statusText,

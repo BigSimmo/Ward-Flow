@@ -1,0 +1,73 @@
+/* Practice mode in Tools (smart features idea 10). */
+.practice {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.intro {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.steps {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: practice;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: start;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.step[data-state="done"],
+.step[data-state="current"] {
+  color: var(--wf-ink-1);
+}
+
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--wf-line);
+  border-radius: 50%;
+  font-size: var(--wf-fs-11);
+}
+
+.step[data-state="done"] .mark {
+  border-color: currentColor;
+}
+
+.state {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.how {
+  display: block;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+}
+
+.link {
+  font-size: var(--wf-fs-13);
+}

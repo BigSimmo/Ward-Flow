@@ -11,8 +11,7 @@
  *
  * WHY IT EXISTS AT ALL. Most of this data is checked by nothing. `Unit.sexMix` is a
  * hand-maintained pair of counts; `HealthService` is a bare type union with no runtime array, so a
- * hospital in a new service compiles clean and then silently vanishes from the network map and
- * the ED screen; `SYNTHETIC_TRAVEL_BANDS` is keyed on plain `string` site codes that nothing
+ * hospital in a new service compiles clean and then silently vanishes from the ED screen; `SYNTHETIC_TRAVEL_BANDS` is keyed on plain `string` site codes that nothing
  * validates; nav labels hardcode ward names that nothing compares against the ward.
  *
  * READ-ONLY AND OFFLINE. It reads source files, writes nothing, and touches no network, provider
@@ -21,10 +20,9 @@
  * HOW IT READS THE DATA. Most facts are IMPORTED from the real TypeScript modules (re-running
  * this file under `tsx`), so the checks run against the same values the app runs against, using
  * the app's own `unitCapacity` and `bedIsOccupied` functions rather than a second copy of their
- * arithmetic. One fact cannot be imported because it is a module-local constant inside a React
- * component file, and it is read by TEXT PARSE (`columnServices` in ward-management-network.tsx).
- * A text parse can drift from the real code, so the parse FAILS LOUDLY when the shape it expects
- * is not found — it never quietly reports "nothing to check".
+ * arithmetic. Until 19 October 2026 one fact was read by TEXT PARSE (`columnServices` in
+ * ward-management-network.tsx); that file went with the retired Network screen, and the check on
+ * its column list went with it.
  *
  * Item 41 (owner-approved 2026-09-17) retired the morning bed-state tour along with the rest of
  * `src/components/ward-management/morning/`. This checker used to also text-parse
@@ -34,7 +32,7 @@
  * Run it with:  node scripts/check-ward-data.mjs
  * Exit code 0 = everything adds up. Exit code 1 = at least one problem, all of them printed.
  */
-import { readFileSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -50,7 +48,6 @@ export const FILES = {
   teams: "src/components/ward-management/ward-teams.ts",
   travel: "src/components/ward-management/ward-travel-bands.ts",
   derivations: "src/components/ward-management/ward-derivations.ts",
-  network: "src/components/ward-management/ward-management-network.tsx",
   nav: "src/components/ward-management/ward-nav.ts",
 };
 
@@ -448,23 +445,21 @@ export function checkCommunityTeams({ homeRegions, communityTeams }) {
 }
 
 /**
- * Check 6 — every health service a hospital uses appears in BOTH hand-written display lists.
+ * Check 6 — every health service a hospital uses appears in the hand-written display list.
  *
  * This is the one with no compiler behind it at all. `HealthService` (ward-model.ts) is a bare
- * type union with no runtime array, and both display lists are hand-written arrays typed
- * `HealthService[]` — adding a member to the union does not make either array fail to compile.
- * So a hospital in a new service typechecks, builds, and then:
- *   - `wardServiceOrder` (ward-derivations.ts) is what the ED screen's ward table and the
- *     coordinator flow diagram iterate, so its wards are dropped from both;
- *   - `columnServices` (ward-management-network.tsx) is what draws the two columns of the network
- *     map, so no column is ever drawn for them.
+ * type union with no runtime array, and `wardServiceOrder` (ward-derivations.ts) is a
+ * hand-written array typed `HealthService[]` — adding a member to the union does not make it fail
+ * to compile. So a hospital in a new service typechecks, builds, and then the ED screen's ward
+ * table and the coordinator flow diagram, which iterate that list, drop its wards from both.
  * Nothing anywhere says a word about it.
+ *
+ * (The network map's `columnServices` was the second list checked here until the Network screen
+ * was retired on 19 October 2026.)
  */
-export function checkHealthServiceLists({ sites, serviceOrder, columnServices }) {
+export function checkHealthServiceLists({ sites, serviceOrder }) {
   const problems = [];
-  const columnMembers = [...(columnServices?.left ?? []), ...(columnServices?.right ?? [])];
   const inOrder = new Set(serviceOrder ?? []);
-  const inColumns = new Set(columnMembers);
 
   const usedBy = new Map();
   for (const site of sites) {
@@ -480,12 +475,6 @@ export function checkHealthServiceLists({ sites, serviceOrder, columnServices })
         effect: `the ED screen's ward table and the coordinator flow diagram will skip these wards entirely`,
       });
     }
-    if (!inColumns.has(service)) {
-      missing.push({
-        list: `columnServices in ${FILES.network}`,
-        effect: `the network map will never draw a column for these wards, so they do not appear on it at all`,
-      });
-    }
     if (missing.length === 0) continue;
 
     const lines = [
@@ -499,36 +488,22 @@ export function checkHealthServiceLists({ sites, serviceOrder, columnServices })
     }
     lines.push(
       `Nothing else warns about this: the app compiles and runs perfectly with these wards invisible.`,
-      `To fix: add "${service}" to ${missing.length === 1 ? "that list" : "both lists"}.`,
+      `To fix: add "${service}" to that list.`,
     );
     problems.push(problem("health-service-missing-from-a-screen-list", `Health service "${service}"`, lines));
   }
 
-  for (const service of new Set([...inOrder, ...inColumns])) {
+  for (const service of inOrder) {
     if (usedBy.has(service)) continue;
     problems.push(
       problem("health-service-with-no-hospitals", `Health service "${service}"`, [
         `is listed as a health service the screens should show, but no hospital in ${FILES.sites} belongs to it.`,
-        `The network map will draw an empty column headed "${service.toUpperCase()}".`,
+        `The ED screen's ward table will show an empty "${service}" group.`,
         `To fix, either:`,
-        `  - remove "${service}" from ${inOrder.has(service) ? `wardServiceOrder (${FILES.derivations})` : ""}${inOrder.has(service) && inColumns.has(service) ? " and " : ""}${inColumns.has(service) ? `columnServices (${FILES.network})` : ""}, or`,
+        `  - remove "${service}" from wardServiceOrder (${FILES.derivations}), or`,
         `  - give a hospital that service in ${FILES.sites}`,
       ]),
     );
-  }
-
-  const seen = new Set();
-  for (const service of columnMembers) {
-    if (seen.has(service)) {
-      problems.push(
-        problem("health-service-listed-twice-on-the-map", `Health service "${service}"`, [
-          `appears more than once in columnServices (${FILES.network}).`,
-          `The network map will draw two columns for the same wards.`,
-          `To fix: remove the duplicate in ${FILES.network}`,
-        ]),
-      );
-    }
-    seen.add(service);
   }
   return problems;
 }
@@ -728,14 +703,12 @@ export function checkWardData(data) {
     ...checkHealthServiceLists({
       sites,
       serviceOrder: data.serviceOrder ?? [],
-      columnServices: data.columnServices ?? { left: [], right: [] },
     }),
     ...checkUnitReferences({
       sites,
       unitReferences: data.unitReferences ?? [],
       edReferences: data.edReferences ?? [],
     }),
-    ...(data.readingProblems ?? []),
   ];
   return {
     problems,
@@ -768,63 +741,6 @@ export function formatReport(result) {
 // Reading the real data. Import where possible; text-parse only what cannot be imported.
 // ---------------------------------------------------------------------------------------------
 
-/**
- * The one module-local constant that cannot be imported, read out of the source text.
- *
- * `columnServices` is a plain `const` inside a React component file — not exported, and its file
- * cannot be imported outside a React render anyway. So it is read as text, and the parse below
- * returns a PROBLEM rather than an empty result when the shape it expects is not there. A parser
- * that silently finds nothing would turn every check built on it into a check that cannot fail.
- *
- * (Until item 41, 2026-09-17, this function also text-parsed the morning tour's `TOUR_UNIT_ID` and
- * `TOUR_ED_ID` out of morning-tour.tsx and fed them into check 7 via `navReferences`'s callers.
- * That source is gone along with the tour; removing the parse is a deliberate guard removal, not
- * an oversight.)
- */
-export function readTextParsedFacts(readFile) {
-  const readingProblems = [];
-  const unreadable = (file, what, why) =>
-    problem("this-checker-could-not-read-the-file", `${file}`, [
-      `check:ward-data could not read ${what} out of this file, so it could NOT check it.`,
-      `Reason: ${why}`,
-      `This is a problem with the checker, not necessarily with the data — but until it is fixed,`,
-      `nothing is checking ${what}, so treat that as unchecked rather than correct.`,
-    ]);
-
-  let columnServices = { left: [], right: [] };
-  try {
-    const source = readFile(FILES.network);
-    const block = /const\s+columnServices\b[^=]*=\s*\{([\s\S]*?)\}\s*;/.exec(source);
-    if (!block) {
-      readingProblems.push(
-        unreadable(FILES.network, "the columnServices list", "no `const columnServices = { … };` was found"),
-      );
-    } else {
-      const side = (name) => {
-        const found = new RegExp(`${name}\\s*:\\s*\\[([^\\]]*)\\]`).exec(block[1]);
-        return found ? [...found[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]) : null;
-      };
-      const left = side("left");
-      const right = side("right");
-      if (left === null || right === null) {
-        readingProblems.push(
-          unreadable(FILES.network, "the columnServices list", "it no longer has both a `left:` and a `right:` array"),
-        );
-      } else if (left.length === 0 && right.length === 0) {
-        readingProblems.push(
-          unreadable(FILES.network, "the columnServices list", "both columns parsed as empty, which cannot be right"),
-        );
-      } else {
-        columnServices = { left, right };
-      }
-    }
-  } catch (error) {
-    readingProblems.push(unreadable(FILES.network, "the columnServices list", String(error?.message ?? error)));
-  }
-
-  return { columnServices, readingProblems };
-}
-
 /** Turns the nav rail's hardcoded links into the reference list check 7/8 walk. */
 export function navReferences(navItems) {
   const unitReferences = [];
@@ -855,10 +771,9 @@ export function navReferences(navItems) {
   return { unitReferences, edReferences };
 }
 
-/** Imports the real modules (needs `tsx`) and text-parses the two that cannot be imported. */
+/** Imports the real modules (needs `tsx`). */
 async function loadWardData(root) {
   const load = (relative) => import(pathToFileURL(resolve(root, relative)).href);
-  const readFile = (relative) => readFileSync(resolve(root, relative), "utf8");
 
   const [sites, seed, model, teams, travel, derivations, nav, admissionsModule] = await Promise.all([
     load(FILES.sites),
@@ -871,7 +786,6 @@ async function loadWardData(root) {
     load("src/components/ward-management/ward-admissions.ts"),
   ]);
 
-  const { columnServices, readingProblems } = readTextParsedFacts(readFile);
   const { unitReferences, edReferences } = navReferences(nav.WARD_NAV);
 
   return {
@@ -882,12 +796,10 @@ async function loadWardData(root) {
     travelBands: travel.SYNTHETIC_TRAVEL_BANDS,
     travelBandNames: [...travel.TRAVEL_BANDS],
     serviceOrder: derivations.wardServiceOrder,
-    columnServices,
     unitReferences,
     edReferences,
     unitCapacity: derivations.unitCapacity,
     bedIsOccupied: admissionsModule.bedIsOccupied,
-    readingProblems,
   };
 }
 

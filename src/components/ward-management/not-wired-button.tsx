@@ -1,13 +1,6 @@
-"use client";
-
-import { useEffect, useId, useRef, useState, type ComponentPropsWithRef } from "react";
+import type { ComponentPropsWithRef } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Button, type ButtonSize, type ButtonVariant } from "@/components/wf";
-import { announceToWardShell } from "./shell/ward-live-region";
-import styles from "./not-wired-button.module.css";
-
-/** D4 wording, shared with the shell's primary action (`shell/ward-bar.tsx`, D-16). */
-const NOT_WIRED_NOTE = "Not wired in this prototype.";
+import type { ButtonSize, ButtonVariant } from "@/components/wf";
 
 type NotWiredButtonProps = Omit<ComponentPropsWithRef<"button">, "children" | "onClick"> & {
   variant?: ButtonVariant;
@@ -15,86 +8,23 @@ type NotWiredButtonProps = Omit<ComponentPropsWithRef<"button">, "children" | "o
   icon?: LucideIcon;
   /** Icon only: `label` becomes the accessible name. */
   iconOnly?: boolean;
-  /** The control's own words, used as the button text, the popover heading and the announcement. */
+  /** The control's own words. */
   label: string;
-  /** What the popover heading and the announcement call it, when the button text alone is too short. */
+  /** What the control would be called in an announcement, when `label` alone is too short. */
   name?: string;
-  /** Class for the wrapper, so a page can place or hide the control as a whole. */
+  /** Class for the wrapper the control used to sit in. */
   wrapClassName?: string;
 };
 
 /**
- * D-16 for a control the prototype does not connect. The coordinator can do everything, so the
- * control is never greyed: it stays pressable and, on press, announces "<label> is not wired in
- * this prototype." and opens a small popover saying so — the same shape as the shell's primary
- * action in `shell/ward-bar.tsx`. Escape, a second press or a press outside closes it.
+ * A control the prototype does not connect. It renders nothing.
+ *
+ * Simplification A5 / design audit DA-29 (Josh, 19 Oct 2026): "nothing on screen does nothing".
+ * These controls used to stay pressable and open a "Not wired in this prototype." popover (D-16);
+ * that later answer retires them from the screen. Call sites keep naming the control so the place
+ * a future feature belongs is still recorded in the page that will own it.
  */
-export function NotWiredButton({
-  label,
-  name = label,
-  iconOnly,
-  icon,
-  wrapClassName,
-  className,
-  ...rest
-}: NotWiredButtonProps) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLSpanElement>(null);
-  const panelId = useId();
-  const btnClassName = className ? `${styles.button} ${className}` : styles.button;
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: PointerEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [open]);
-
-  const trigger = {
-    "aria-expanded": open,
-    "aria-controls": open ? panelId : undefined,
-    "data-not-wired": "preview",
-    className: btnClassName,
-    onClick: () => {
-      if (open) {
-        setOpen(false);
-        return;
-      }
-      setOpen(true);
-      announceToWardShell(`${name} is not wired in this prototype.`);
-    },
-  };
-
-  return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside
-    <span
-      ref={wrapRef}
-      className={wrapClassName ? `${styles.wrap} ${wrapClassName}` : styles.wrap}
-      onKeyDown={(event) => {
-        // Close the popover first; preventDefault keeps an enclosing sheet open on this press.
-        if (event.key === "Escape" && open) {
-          event.preventDefault();
-          setOpen(false);
-        }
-      }}
-    >
-      {iconOnly && icon ? (
-        <Button {...rest} {...trigger} iconOnly icon={icon} aria-label={label} />
-      ) : (
-        <Button {...rest} {...trigger} icon={icon}>
-          {label}
-        </Button>
-      )}
-      {open ? (
-        <span id={panelId} role="group" aria-label={name} className={styles.panel} data-testid="not-wired-popover">
-          <span className={styles.head}>{name}</span>
-          <span className={styles.note}>{NOT_WIRED_NOTE}</span>
-        </span>
-      ) : null}
-    </span>
-  );
+export function NotWiredButton(props: NotWiredButtonProps): null {
+  void props;
+  return null;
 }

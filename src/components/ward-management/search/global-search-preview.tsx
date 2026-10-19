@@ -16,9 +16,17 @@ import {
   type PatientLookup,
 } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
-import { edHref, movementHref, patientHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  edHref,
+  movementHref,
+  patientHref,
+  unitHref,
+  wardBoardHref,
+} from "@/components/ward-management/shell/ward-facade";
 import { unitReadyBedCount } from "./ward-smart-search";
 
+import type { Census, CensusRow } from "./patient-census";
+import { censusRowsByPatient, nextStepLine, whereNowLine } from "./search-answers";
 import styles from "./global-search-preview.module.css";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 
@@ -38,6 +46,8 @@ export type GlobalSearchPreviewItem = {
   href: string;
   /** For a task row, the movement it belongs to. */
   movementId?: string;
+  /** For a referral, ward-stay or answer row, the person it is about, so the preview shows them. */
+  personId?: string;
   tone?: WfTone;
 };
 
@@ -52,6 +62,11 @@ type PreviewProps = {
   dayZero?: Date;
   /** Called on a plain click of any action, so the palette can close and remember the record. */
   onOpen: (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
+  /**
+   * The Patients page's census, when the palette built one: each person's "where now" and next step
+   * come from it, so the header and the Patients page say the same thing. Absent means no such lines.
+   */
+  census?: Census | null;
 };
 
 const JOURNEY: readonly MovementStage[] = [
@@ -165,6 +180,7 @@ function MovementPreview({
   now,
   activeDate,
   onOpen,
+  censusRow,
 }: {
   movement: Movement;
   task?: GlobalSearchPreviewItem;
@@ -173,7 +189,9 @@ function MovementPreview({
   now?: number;
   activeDate: Date;
   onOpen: PreviewProps["onOpen"];
+  censusRow?: CensusRow;
 }) {
+  const next = censusRow ? nextStepLine(censusRow) : undefined;
   const subject = resolveSubjectPatient(movement, lookup);
   const patient = subject.patient;
   const origin = edById(movement.originEdId);
@@ -254,6 +272,12 @@ function MovementPreview({
         ) : null}
         <dt>Owner</dt>
         <dd>{movement.owner || "No owner"}</dd>
+        {next ? (
+          <>
+            <dt>Next</dt>
+            <dd data-testid="ward-global-search-preview-next">{next}</dd>
+          </>
+        ) : null}
       </dl>
       <div className={styles.actions}>
         <Action href={movementHref(movement.id)} primary onOpen={onOpen} testId="ward-global-search-preview-open">
@@ -286,6 +310,7 @@ function PersonPreview({
   now,
   activeDate,
   onOpen,
+  censusRow,
 }: {
   patient: Patient;
   lookup: PatientLookup;
@@ -294,8 +319,17 @@ function PersonPreview({
   now?: number;
   activeDate: Date;
   onOpen: PreviewProps["onOpen"];
+  censusRow?: CensusRow;
 }) {
   const name = patientListName(patient);
+  const whereNow = censusRow ? whereNowLine(censusRow) : "";
+  const next = censusRow ? nextStepLine(censusRow) : undefined;
+  // A ward stay (on the ward, a reserved bed or the ward's waiting list) opens that ward, and its bed
+  // when one is recorded, through the same address the Patients page's "Ward bed" button uses.
+  const stayUnitId = censusRow?.kind === "admission" ? censusRow.unitId : undefined;
+  const stayHref = stayUnitId
+    ? `${unitHref(stayUnitId)}${censusRow?.bedNumber !== undefined ? `?bed=${censusRow.bedNumber}` : ""}`
+    : undefined;
   // Through the shared resolver, never the raw patient link (D-14 default-deny).
   const openMovement = movements.find(
     (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
@@ -331,6 +365,18 @@ function PersonPreview({
         ) : null}
         <dt>Status</dt>
         <dd>{patient.legalStatus}</dd>
+        {whereNow ? (
+          <>
+            <dt>Now</dt>
+            <dd data-testid="ward-global-search-preview-where">{whereNow}</dd>
+          </>
+        ) : null}
+        {next ? (
+          <>
+            <dt>Next</dt>
+            <dd data-testid="ward-global-search-preview-next">{next}</dd>
+          </>
+        ) : null}
         {openMovement ? (
           <>
             <dt>Movement</dt>
@@ -367,6 +413,11 @@ function PersonPreview({
         <Action href={patientHref(patient.id)} primary onOpen={onOpen} testId="ward-global-search-preview-open">
           Open patient
         </Action>
+        {stayHref ? (
+          <Action href={stayHref} onOpen={onOpen} testId="ward-global-search-preview-open-ward">
+            {censusRow?.bedNumber !== undefined ? "Open bed" : "Open ward"}
+          </Action>
+        ) : null}
         {openMovement ? (
           <Action href={movementHref(openMovement.id)} onOpen={onOpen}>
             Open movement
@@ -563,6 +614,7 @@ export function GlobalSearchPreview({
   now,
   dayZero,
   onOpen,
+  census,
 }: PreviewProps) {
   const flow = useOptionalWardFlow();
   const resolvedNow = now ?? flow?.now;
@@ -575,9 +627,13 @@ export function GlobalSearchPreview({
     return calendarDateOf(resolvedNow, resolvedDayZero);
   }, [dayZero, flow?.dayZero, resolvedNow]);
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const rowsByPatient = useMemo(() => censusRowsByPatient(census), [census]);
+  // A referral or ward-stay row is about one person, so it previews that person: who, where now, next.
+  const personId =
+    item.kind === "person" ? item.id : item.kind === "referral" || item.kind === "stay" ? item.personId : undefined;
   let body;
-  if (item.kind === "person") {
-    const patient = patients.find((candidate) => candidate.id === item.id);
+  if (personId !== undefined) {
+    const patient = patients.find((candidate) => candidate.id === personId);
     body = patient ? (
       <PersonPreview
         patient={patient}
@@ -587,6 +643,7 @@ export function GlobalSearchPreview({
         now={resolvedNow}
         activeDate={activeDate}
         onOpen={onOpen}
+        censusRow={rowsByPatient.get(patient.id)}
       />
     ) : null;
   } else if (item.kind === "movement" || item.kind === "task") {
@@ -601,6 +658,7 @@ export function GlobalSearchPreview({
         now={resolvedNow}
         activeDate={activeDate}
         onOpen={onOpen}
+        censusRow={census?.rows.find((row) => row.kind === "movement" && row.key === movement.id)}
       />
     ) : null;
   } else if (item.kind === "ward") {

@@ -157,6 +157,10 @@ repo-wide guards.
   on the ward sidebar rather than linking to `discharges/`).
 - **`src/components/ward-management/capacity/capacity.module.css`** (1896 lines) — styles for
   `capacity-screen.tsx`.
+- **`src/components/ward-management/capacity/capacity-road-time.tsx`** — `ReadyByRoadTime`, the
+  rail's "Ready beds by road time" list: the five nearest wards with a ready bed, measured from a
+  chosen emergency department (default: the one under most pressure). Moved from the Network
+  screen when it was retired (19 Oct 2026); styles in `capacity-road-time.module.css`.
 - **`src/components/ward-management/capacity/bed-map.tsx`** (363 lines) — the network's whole bed
   supply as one square per bed, grouped by health service. Exports `bedMapWards`,
   `groupBedMapWardsByService`, `BedMap`. Header comment: every count is read from an existing
@@ -639,7 +643,7 @@ drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rathe
 one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
 these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
 **Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
-bed derivations (Service now, All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
+bed derivations (All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
 demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
 `ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
 `ward-bar-figures-telemetry.dom.test.tsx`.
