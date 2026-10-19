@@ -63,6 +63,8 @@ function executionReport(projectName = "chromium", statuses = ["expected"]) {
     suites: [{ file: "a.spec.ts", specs: [{ tests: statuses.map((status) => ({ status, projectName })) }] }],
   };
 }
+// Reports live in the invocation's evidence directory, outside the temporary build root.
+const EVIDENCE = "/synthetic-ward-flow/test-results/evidence";
 async function runPhase({
   args = ["--project=chromium"],
   codes = [0],
@@ -104,6 +106,8 @@ async function runPhase({
       projectRoot: "/synthetic-ward-flow",
       absoluteRunRoot: "/synthetic-ward-flow/run",
       relativeRunRoot: "run",
+      absoluteResultsRoot: EVIDENCE,
+      relativeResultsRoot: "test-results/evidence",
       playwrightBin: "playwright/cli.js",
       baseUrl: "http://localhost:4200",
       shardServers: [],
@@ -153,7 +157,7 @@ describe("run-playwright post-build verdict", () => {
       });
       expect(result.child.mock.calls[0][1]).toContain("--reporter=line,json");
       expect(result.child.mock.calls[0][2]).toMatchObject({
-        env: { PLAYWRIGHT_JSON_OUTPUT_NAME: "/synthetic-ward-flow/run/journeys.json" },
+        env: { PLAYWRIGHT_JSON_OUTPUT_NAME: path.join(EVIDENCE, "journeys.json") },
       });
       // Phone is configured in the report but never executes.
       expect(result.exitCode).toBe(1);
@@ -164,13 +168,13 @@ describe("run-playwright post-build verdict", () => {
     const single = await runPhase();
     expect(single.exitCode).toBe(0);
     expect(single.child.mock.calls[0][2]).toMatchObject({
-      env: { PLAYWRIGHT_JSON_OUTPUT_FILE: "/synthetic-ward-flow/run/journeys.json" },
+      env: { PLAYWRIGHT_JSON_OUTPUT_FILE: path.join(EVIDENCE, "journeys.json") },
     });
     const sharded = await runPhase({ codes: [0, 0], reports: [executionReport(), executionReport()] });
     expect(sharded.exitCode).toBe(0);
     for (const [index, call] of sharded.shardChild.mock.calls.entries()) {
       expect(call[2]).toMatchObject({
-        env: { PLAYWRIGHT_JSON_OUTPUT_FILE: `/synthetic-ward-flow/run/shard-${index + 1}.json` },
+        env: { PLAYWRIGHT_JSON_OUTPUT_FILE: path.join(EVIDENCE, `shard-${index + 1}.json`) },
       });
     }
   });

@@ -17,6 +17,8 @@
  *   4. a successful pull_request run of this workflow on the PR head ran (not skipped) every unit
  *      shard, every browser group, the coverage thresholds and the production build, and its
  *      "Ward Flow required" job succeeded.
+ *   5. no newer completed run on that head contradicts the successful evidence; ambiguous
+ *      ordering or incomplete bounded history requires a full run instead.
  *
  * It never exits non-zero: a failed job would fail the workflow run, and Railway skips the deploy of
  * a commit whose workflow failed.
@@ -92,9 +94,23 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   if (headTree !== mainTree) return refuse(`PR #${pull.number} head tree differs from the main tree`);
   if (!compare || compare.behind_by !== 0 || !["ahead", "identical"].includes(compare.status))
     return refuse(`PR #${pull.number} head did not contain the previous main commit`);
+  const relevant = (runs ?? []).filter(
+    (run) =>
+      run.head_sha === pull.head.sha &&
+      run.event === "pull_request" &&
+      (run.status === undefined || run.status === "completed"),
+  );
+  // A rerun keeps its original run ID and creation time. Its latest attempt's update time,
+  // rather than API list order or run ID, determines whether it discredits an earlier green.
+  if (relevant.length > 1) {
+    const times = relevant.map((run) => Date.parse(run.updated_at));
+    if (times.some((time) => !Number.isFinite(time)) || new Set(times).size !== times.length)
+      return refuse("completed run ordering is unavailable or ambiguous");
+    relevant.sort((left, right) => Date.parse(right.updated_at) - Date.parse(left.updated_at));
+  }
   const reasons = [];
-  for (const run of runs ?? []) {
-    if (run.head_sha !== pull.head.sha || run.event !== "pull_request" || run.conclusion !== "success") continue;
+  for (const run of relevant) {
+    if (run.conclusion !== "success") return refuse(`newer completed run ${run.id} concluded ${run.conclusion}`);
     const gap = runEvidenceGap(run.jobs ?? [], counts);
     if (!gap)
       return {
@@ -142,12 +158,19 @@ async function gatherAndDecide() {
   const headTree = (await api(`/git/commits/${headSha}`))?.tree?.sha;
   const compare = SHA.test(before) ? await api(`/compare/${before}...${headSha}?per_page=1`) : null;
   const listed = await api(
-    `/actions/workflows/${WORKFLOW}/runs?event=pull_request&status=success&head_sha=${headSha}&per_page=10`,
+    `/actions/workflows/${WORKFLOW}/runs?event=pull_request&status=completed&head_sha=${headSha}&per_page=10`,
   );
+  const completed = listed?.workflow_runs;
+  if (!Array.isArray(completed) || listed.total_count !== completed.length)
+    return { verified: false, reason: "completed run history is unavailable or exceeds the bounded lookup" };
   const runs = [];
-  for (const run of (listed?.workflow_runs ?? []).slice(0, 3)) {
-    const jobs = await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
-    runs.push({ ...run, jobs: jobs?.jobs ?? [] });
+  let inspectedGreen = 0;
+  for (const run of completed) {
+    if (run.conclusion === "success" && inspectedGreen < 3) {
+      const jobs = await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
+      runs.push({ ...run, jobs: jobs?.jobs ?? [] });
+      inspectedGreen++;
+    } else runs.push(run);
   }
   return decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, compare, runs, counts });
 }
