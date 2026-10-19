@@ -3,7 +3,7 @@
 // The patient page's summary section: the flight header with its mode pill, figures, legal and stay
 // facts and the stage strip. Split out of `patient-now-screen.tsx`, which renders it with the values
 // it has already derived.
-import { isTierOverdue } from "../ward-shared-figures";
+import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
 import Link from "next/link";
 import { BedDouble, Check, ChevronLeft, Clock, Copy, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
@@ -335,7 +335,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
                 <span className={styles.v6HeroFact}>
                   <StatusGlyph tone="danger" size={9} />
-                  Overdue wait · {waitedStr}
+                  {/* The wait itself is the "since opened" chip beside it, so this names the tier's limit. */}
+                  Overdue · over {tierOverdueAfterMinutes(urgencyTier) / 60}h
                 </span>
               ) : null}
               {liveMovement.specialling ? (
@@ -459,7 +460,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                     ? `Recorded ${firstTime ?? ""}`.trim()
                     : stateAttr === "now"
                       ? `${waitedStr} since opened`
-                      : "No transition recorded";
+                      : // An earlier stage is never marked complete without a recorded change.
+                        i < currentStageIndex
+                        ? "Before the current stage, no time recorded"
+                        : "Not reached yet";
                 return (
                   <li key={s.id} className={styles.v6Step} data-s={stateAttr}>
                     <button
