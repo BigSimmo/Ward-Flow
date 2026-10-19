@@ -14,6 +14,7 @@ import {
   PLANNED_ADMISSION_STATES,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
+import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -370,6 +371,16 @@ const referralDestination = z.discriminatedUnion("kind", [
   z.looseObject({ kind: z.literal("community_team"), teamName: text }),
   z.looseObject({ kind: z.literal("emergency_department"), edId: emergencyDepartmentId, purpose: text }),
 ]);
+// A ward's ask is a fixed item and two role labels; a tick-off carries both its time and its role.
+const informationNeed = z
+  .strictObject({
+    need: text.check(z.refine((need) => (REFERRAL_INFORMATION_NEED_IDS as readonly string[]).includes(need))),
+    at: finite,
+    by: text,
+    metAt: z.optional(finite),
+    metBy: z.optional(text),
+  })
+  .check(z.refine((entry) => (entry.metAt === undefined) === (entry.metBy === undefined)));
 const referral = z.looseObject({
   id,
   submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
@@ -391,6 +402,8 @@ const referral = z.looseObject({
       destination: referralDestination,
       state: z.enum(REFERRAL_ADDRESSING_STATES),
       acceptedUnitId: link,
+      openedAt: z.optional(finite),
+      informationNeeds: z.optional(z.array(informationNeed)),
     }),
   ),
   patientId: link,

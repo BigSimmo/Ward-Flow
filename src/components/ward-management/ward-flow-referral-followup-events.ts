@@ -109,6 +109,10 @@ export function reduceReferralFollowUpEvent(
     }
 
     case "MARK_REFERRAL_INFORMATION_MET": {
+      // Once the ward has answered, or the referrer has withdrawn, the ask is closed, as for raising one.
+      if (!awaitingAnswer(addressing)) {
+        return reject(state, event, `referral ${referral.id} is no longer waiting on this ward's answer`);
+      }
       const index = (addressing.informationNeeds ?? []).findIndex(
         (entry) => entry.need === event.need && entry.metAt === undefined,
       );
