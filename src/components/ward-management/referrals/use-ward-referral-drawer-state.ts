@@ -339,18 +339,23 @@ export function useWardReferralDrawerState({
   );
   const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
+  // Smart features idea 9 (19 Oct 2026): an ED or community desk refers from its own place unless
+  // the opener, a kept draft or the record says otherwise. Shown in the picker, so it can be changed.
+  const deskScope = useEffectiveWardAccess().scope;
+  const deskOriginSite = deskScope.kind === "ed" ? edById(deskScope.edId)?.siteCode : undefined;
+  const deskSendingTeam = deskScope.kind === "team" ? deskScope.teamName : undefined;
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
     (initialSendingTeam ? "community" : undefined) ??
       (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
       (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
         ? "ed"
         : kept?.sourceKind) ??
-      (liveOriginSite || initialCategory === "ed" ? "ed" : "community"),
+      (liveOriginSite || initialCategory === "ed" || deskOriginSite ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
-    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? "",
+    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? deskOriginSite ?? "",
   );
-  const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? "");
+  const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? deskSendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
     kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
   );
