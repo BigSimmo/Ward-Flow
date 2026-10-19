@@ -2675,8 +2675,10 @@ export function ShortlistPanel({
           above already uses for "No eligible destination found yet." */}
       {/* No contradiction (Home placement redesign, Josh 19 Oct 2026): once a destination has
           accepted, the "No eligible destination" prompt and its Record control are hidden. A
-          recorded escalation still shows, because it is a fact on the movement. */}
-      {movement.escalation || (topEligible === undefined && !acceptedUnit) ? (
+          recorded escalation still shows, because it is a fact on the movement. The recorded
+          acceptance decides, not the unit lookup: an accepted ward that no longer resolves is
+          still an acceptance. */}
+      {movement.escalation || (topEligible === undefined && !movement.acceptedUnitId) ? (
         <section aria-label="Escalation" className={shortlistStyles.escalationSection}>
           <h4 className={styles.shortlistSectionHeading}>Escalation</h4>
           {movement.escalation ? (
@@ -2687,7 +2689,7 @@ export function ShortlistPanel({
               {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)} — tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"} — contact: "${movement.escalation.contact}".`}
             </p>
           ) : null}
-          {topEligible === undefined && !acceptedUnit ? (
+          {topEligible === undefined && !movement.acceptedUnitId ? (
             <>
               {!movement.escalation ? (
                 <p className={styles.shortlistSectionNote}>

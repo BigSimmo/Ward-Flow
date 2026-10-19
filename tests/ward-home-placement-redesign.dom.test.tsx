@@ -234,4 +234,20 @@ describe("Placement panel redesign", () => {
     expect(panel).not.toHaveTextContent("No eligible destination is currently available");
     expect(within(panel).queryByTestId("ward-shortlist-escalation-toggle")).toBeNull();
   });
+
+  it("treats a recorded acceptance as accepted even when its ward cannot be found", () => {
+    // Codex review on #448: the prompt keyed on the unit lookup, so an accepted ward missing from
+    // the unit list showed "could not be resolved" and "No eligible destination" together.
+    const noBeds = (units: Unit[]) =>
+      units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, value: 0 } }));
+    const unresolved = (movement: Movement): Movement => ({
+      ...movement,
+      acceptedUnitId: "UNIT-NOT-IN-LIST",
+      escalation: undefined,
+    });
+    const panel = renderPanel({ movementId: ACCEPTED_ID, editUnits: noBeds, editMovement: unresolved });
+    expect(panel).toHaveTextContent("Accepted destination could not be resolved.");
+    expect(panel).not.toHaveTextContent("No eligible destination is currently available");
+    expect(within(panel).queryByTestId("ward-shortlist-escalation-toggle")).toBeNull();
+  });
 });
