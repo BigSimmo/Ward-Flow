@@ -19,7 +19,7 @@
  * walked and the number of tests executed, and either floor breaking is a hard failure with its own
  * message. The floors are the load-bearing half of this script; the comparison is the easy half.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
 import { runOwnedChild } from "./owned-child.mjs";
 import { childProcessExitCode } from "./child-process-result.mjs";
@@ -46,6 +46,7 @@ import {
   planFullGateRecheck,
   runFullGateBatches,
   validateBatchReport,
+  withGateRunResult,
 } from "./ward-flow/full-gate-recheck.mjs";
 
 import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs";
@@ -189,6 +190,12 @@ export function compareFailingSet({ failing, expected }) {
    * not on the list is reported as changed. Entries without `signatures` keep count-only checking.
    */
   const changed = [];
+  // A suite that crashed outside its tests ran none of the sanctioned assertions, so a listed file in
+  // that state is never the expected red, whatever its count or signatures say.
+  for (const failure of failing) {
+    if (failure.suiteError && expectedCount.has(failure.file))
+      changed.push({ file: failure.file, signature: String(failure.suiteError) });
+  }
   for (const entry of expected) {
     if (!Array.isArray(entry.signatures)) continue;
     const actual = failing.find((failure) => failure.file === entry.file);
@@ -198,6 +205,33 @@ export function compareFailingSet({ failing, expected }) {
   }
 
   return { unexpected, recovered, miscounted, changed };
+}
+
+/**
+ * Every failing file in a Vitest JSON report. A suite marked failed with zero failed assertions threw
+ * outside any test (an import crash or a suite-level hook): it is a red, counted once, and carries a
+ * `suiteError` signature so it can never stand in for a sanctioned assertion red (compareFailingSet).
+ */
+export function collectFailingFiles(suites, root) {
+  const failingFiles = [];
+  for (const suite of suites ?? []) {
+    const relative = (path.isAbsolute(suite.name) ? path.relative(root, suite.name) : suite.name)
+      .split(path.sep)
+      .join("/")
+      .replace(/\\/g, "/");
+    const failed = (Array.isArray(suite.assertionResults) ? suite.assertionResults : []).filter(
+      (result) => result.status === "failed",
+    );
+    if (failed.length === 0 && suite.status !== "failed") continue;
+    const signatures = failed.map((result) => failureSignature(result.fullName, result.failureMessages?.[0]));
+    failingFiles.push({
+      file: relative,
+      count: Math.max(failed.length, 1),
+      signatures,
+      ...(failed.length === 0 ? { suiteError: failureSignature("<suite error>", suite.message) } : {}),
+    });
+  }
+  return failingFiles;
 }
 
 /** Test name plus the first line of its failure message, with colour codes and trailing space removed. */
@@ -635,18 +669,19 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         `--outputFile=${reportPath}`,
         ...plan.selected,
       ];
-      try {
-        execFileSync(process.execPath, args, {
-          cwd: projectRoot,
-          stdio: ["ignore", "ignore", "inherit"],
-          env: gateEnvironment,
-        });
-      } catch {
-        /* Vitest exits non-zero for a red; the JSON report decides the gate. */
-      }
+      const runResult = spawnSync(process.execPath, args, {
+        cwd: projectRoot,
+        stdio: ["ignore", "ignore", "inherit"],
+        env: gateEnvironment,
+      });
       if (!existsSync(reportPath)) fail(["Bounded recheck produced no JSON report."]);
-      const rerun = JSON.parse(readFileSync(reportPath, "utf8"));
-      const check = validateBatchReport(rerun, plan.selected, projectRoot);
+      const rerun = withGateRunResult(
+        JSON.parse(readFileSync(reportPath, "utf8")),
+        plan.selected,
+        projectRoot,
+        runResult,
+      );
+      const check = validateBatchReport(rerun, plan.selected, projectRoot, { requireProcessEvidence: true });
       if (!check.valid) fail([`Bounded recheck incomplete: ${check.reason}`]);
       report = mergeGateReports({
         baseReport: receipt.report,
@@ -673,19 +708,20 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         ...(shard ? { maxFiles: Number.POSITIVE_INFINITY } : {}),
         runBatch: ({ files, index, reportPath: batchReport }) => {
           const args = gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex: index });
-          try {
-            execFileSync(process.execPath, [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args], {
+          const runResult = spawnSync(
+            process.execPath,
+            [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args],
+            {
               cwd: projectRoot,
               stdio: ["ignore", "ignore", "inherit"],
               env: gateEnvironment,
-            });
-          } catch {
-            /* The report retains failed assertions; absence or incompleteness still fails. */
-          }
+            },
+          );
           // A shard that recorded no coverage would leave the merged whole-suite coverage short, so a
           // missing blob fails this shard rather than surfacing later as a lower percentage.
           const blob = gateBatchBlobPath(args);
           if (blob && !existsSync(blob)) fail([`Coverage blob report missing for batch ${index + 1}: ${blob}`]);
+          return runResult;
         },
       });
     }
@@ -708,19 +744,7 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
       writeFileSync(process.env.WARD_SUITE_TIMINGS_OUT, `${JSON.stringify(timings, null, 1)}\n`);
     }
 
-    const failingFiles = [];
-    for (const suite of suites) {
-      const relative = path.relative(projectRoot, suite.name).split(path.sep).join("/");
-      const count = (suite.assertionResults ?? []).filter((result) => result.status === "failed").length;
-      // A suite marked failed with zero failed assertions threw before running anything — a collection
-      // error. That is a red, and counting it as one keeps it visible rather than invisible.
-      if (count > 0 || suite.status === "failed") {
-        const signatures = (suite.assertionResults ?? [])
-          .filter((result) => result.status === "failed")
-          .map((result) => failureSignature(result.fullName, result.failureMessages?.[0]));
-        failingFiles.push({ file: relative, count: Math.max(count, 1), signatures });
-      }
-    }
+    const failingFiles = collectFailingFiles(suites, projectRoot);
 
     // The run collects by the config's include, not by an explicit list, so prove the two agree:
     // a file the config collects that `population` does not name could hold a red no manifest
@@ -821,7 +845,7 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     }
     if (changed.length > 0) {
       problems.push(
-        `${changed.length} failure(s) inside listed files do NOT match their pinned signatures:`,
+        `${changed.length} failure(s) inside listed files do NOT match their pinned signatures or crashed outside a test:`,
         ...changed.map((entry) => `    ${entry.file} — ${entry.signature}`),
         "",
         "A listed red has changed its reason, or a new red is hiding inside an approved entry. Treat it",

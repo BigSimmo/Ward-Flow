@@ -29,15 +29,12 @@ describe("journeyRunVerdict", () => {
   it("aggregates project execution across shards rather than requiring every project on each shard", () => {
     const verdict = journeyRunVerdict(
       [
-        { label: "Shard 1", code: 0, report: report({ projects: [{ name: "chromium-mockups" }] }) },
+        // Every shard is configured with the same --project selection; only execution is split.
+        { label: "Shard 1", code: 0, report: report() },
         {
           label: "Shard 2",
           code: 1,
-          report: report({
-            statuses: ["unexpected", "skipped"],
-            projectName: "chromium-mockups-known",
-            projects: [{ name: "chromium-mockups-known" }],
-          }),
+          report: report({ statuses: ["unexpected", "skipped"], projectName: "chromium-mockups-known" }),
         },
       ],
       ["chromium-mockups", "chromium-mockups-known"],
@@ -69,8 +66,8 @@ describe("journeyRunVerdict", () => {
     });
   });
 
-  it("uses executed test projectName rather than configured projects, including nested suites", () => {
-    const nestedReport = report({ statuses: [], projects: [] });
+  it("counts executed tests by projectName, including nested suites", () => {
+    const nestedReport = report({ statuses: [], projects: [{ name: "release-gate-phone" }] });
     nestedReport.suites[0].suites.push(...report({ projectName: "release-gate-phone", statuses: ["flaky"] }).suites);
     expect(journeyRunVerdict([{ label: "The run", code: 0, report: nestedReport }], ["release-gate-phone"])).toEqual({
       ok: true,
@@ -133,6 +130,41 @@ describe("requestedProjects", () => {
       "chromium-mockups",
       "chromium",
     ]);
+  });
+
+  it("reads every name in a variadic --project selection, stopping at a file filter or option", () => {
+    expect(
+      requestedProjects([
+        "--project",
+        "release-gate-desktop",
+        "release-gate-phone",
+        "ui-ward-a.spec.ts",
+        "--grep",
+        "x",
+      ]),
+    ).toEqual(["release-gate-desktop", "release-gate-phone"]);
+  });
+});
+
+describe("per-report project configuration", () => {
+  it("rejects a report that does not configure a requested project, even when another report ran it", () => {
+    const verdict = journeyRunVerdict(
+      [
+        { label: "Shard 1", code: 0, report: report() },
+        { label: "Shard 2", code: 0, report: report({ projects: [{ name: "chromium-mockups" }] }) },
+      ],
+      ["chromium-mockups", "chromium-mockups-known"],
+    );
+    expect(verdict.ok).toBe(false);
+    expect(verdict.problems).toContain('Shard 2 did not configure requested project "chromium-mockups-known"');
+  });
+
+  it("still requires execution when every report configures the project", () => {
+    const verdict = journeyRunVerdict(
+      [{ label: "The run", code: 0, report: report() }],
+      ["chromium-mockups", "chromium-mockups-known"],
+    );
+    expect(verdict.problems).toEqual(['did not run requested project "chromium-mockups-known"']);
   });
 });
 

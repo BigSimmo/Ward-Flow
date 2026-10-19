@@ -68,7 +68,7 @@ import {
   symlinkSync,
   unlinkSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -233,10 +233,15 @@ export function pushedBranchNames(ranges, fallbackBranch = "") {
   return [...branches];
 }
 
-/** True when `ancestor` is reachable from `descendant`, i.e. the push fast-forwards. */
+/** True when `ancestor` is reachable from `descendant`, i.e. the push fast-forwards.
+ * Replace refs and info/grafts are ignored so local fake parents cannot fake ancestry. */
 function isAncestor(ancestor, descendant, cwd = PROJECT_ROOT) {
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], { cwd, stdio: "ignore" });
+    execFileSync("git", ["--no-replace-objects", "merge-base", "--is-ancestor", ancestor, descendant], {
+      cwd,
+      env: { ...process.env, GIT_GRAFT_FILE: devNull },
+      stdio: "ignore",
+    });
     return true;
   } catch {
     return false;
