@@ -25,6 +25,7 @@ import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
+import { KEPT_EVIDENCE_RUNS, pruneEvidenceRuns } from "./ward-flow/prune-evidence-runs.mjs";
 import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
 import {
   appName,
@@ -520,6 +521,15 @@ try {
   mkdirSync(absoluteRunRoot, { recursive: true });
   mkdirSync(absoluteResultsRoot, { recursive: true });
   console.log(`Playwright evidence: ${relativeResultsRoot}`);
+  const prunedEvidence = pruneEvidenceRuns({
+    resultsParent: path.dirname(absoluteResultsRoot),
+    currentRunDir: absoluteResultsRoot,
+  });
+  if (prunedEvidence.length > 0) {
+    console.log(
+      `Pruned ${prunedEvidence.length} older Playwright evidence folder(s); keeping the newest ${KEPT_EVIDENCE_RUNS}.`,
+    );
+  }
   writeFileSync(
     path.join(absoluteRunRoot, "tsconfig.json"),
     `${JSON.stringify(

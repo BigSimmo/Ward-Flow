@@ -258,7 +258,8 @@ not evidence that tests or builds can be skipped.
 Blocking tests run with zero retries. The browser wrapper selects list and JSON reporters;
 the reporter defaults in `playwright.config.ts` do not establish that JUnit is produced by that wrapper.
 Default reports and traces stay under a unique `test-results/<run-id>-<uuid>/` directory after the
-temporary build is removed. A later invocation, including the CI CSRF check, uses a separate directory.
+temporary build is removed. A later invocation, including the CI CSRF check, uses a separate directory. At startup the runner keeps only the newest five such run directories,
+counting the current one, and never removes anything else under `test-results/`.
 Each report must also be configured with every requested project, including each name of a variadic
 `--project a b` selection. An optional local sharded diagnostic rerun writes to its own directory and
 cannot erase the original failure. A job name is never enough to establish which tests executed or why
