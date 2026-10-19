@@ -208,6 +208,14 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    /* WCAG 2.4.11: the column is the scroller here, so the html rule above has no effect. Keep a
+       focused control or a jump target clear of the pinned header and the pinned view row under
+       it (Ward views, Home queue tools, Delays and Referrals switches: up to 6.5rem tall). */
+    scroll-padding-top: calc(var(--wf-header-height) + 6.5rem);
+  }
+
+  .shellContent:has([data-testid="ward-offline-banner"]) {
+    scroll-padding-top: calc(var(--wf-header-height) + 11.5rem);
   }
 }
 
