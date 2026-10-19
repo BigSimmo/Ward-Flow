@@ -29,8 +29,6 @@ import styles from "./coordinator.module.css";
 import flowStyles from "./flow-diagram.module.css";
 import { hubStatusText, recordedDestinationIds, type ShortlistCandidate } from "./flow-status";
 
-export { hubStatusText };
-
 type FlowDiagramProps = {
   movement: Movement | undefined;
   /** Every open movement, for the ED pressure figures along the left. Passed rather than defaulted:
