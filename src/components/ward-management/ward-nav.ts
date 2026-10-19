@@ -452,6 +452,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "Reached by Link from the statistics hub, not from the rail. Three statistics entries in the sidebar would bury the hub the owner actually wants to land on — the same reasoning WARD_REFERRAL_INTAKE_HREF above already sets, where a destination inside a screen is not a section of the app.",
   ],
   ["/ward-flow/statistics/compare", "Reached by Link from the statistics hub, for the same reason as /overview above."],
+  [
+    "/ward-flow/bed-meeting/agenda",
+    "Reached by the Meeting agenda Link on Capacity, behind the bed-meeting-actions switch: the agenda belongs to the bed meeting, not a section of the app (smart features idea 5, 19 Oct 2026).",
+  ],
   /*
    * 🔴 SETTINGS IS UNLISTED BY THE DRAWING'S OWN INSTRUCTION, NOT BY THIS LANE'S JUDGEMENT.
    * `settings-third-edition.html` says it in as many words: "Settings has no rail item of its own
@@ -789,6 +793,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/transport/officer")) return "Transport";
   if (isUnder("/ward-flow/transport")) return "Transport";
   if (isUnder("/ward-flow/settings")) return "Settings";
+  if (normalized === "/ward-flow/bed-meeting/agenda") return "Bed meeting agenda";
 
   const exactView = WARD_VIEWS.find((v) => v.href === normalized);
   if (exactView) return exactView.label;

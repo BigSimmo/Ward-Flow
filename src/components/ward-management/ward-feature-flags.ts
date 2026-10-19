@@ -134,6 +134,15 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
   },
+  "bed-meeting-actions": {
+    label: "Bed meeting agenda",
+    description:
+      "A bed meeting agenda built from fixed rules, and an action log with an owner and a due time, linked from Capacity.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the action list and owners with the coordinators after a bed meeting trial.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;
