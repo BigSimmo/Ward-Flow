@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -6,6 +6,8 @@ import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: React.ReactNode; href: string }) => (
@@ -45,93 +47,99 @@ describe("rail persona follows the desk", () => {
 });
 
 describe("rail popover and sheets share one Escape", () => {
-  it("leaves the persona popover open while a sheet is open, and closes it on the next press", () => {
+  // B6 (Josh, 19 Oct 2026): the persona popover is gone (one switcher), so the shared Escape is
+  // pinned on the rail's other popover, Appearance, which uses the same Escape handling.
+  it("leaves the appearance popover open while a sheet is open, and closes it on the next press", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardRail />
       </WardFlowProvider>,
     );
-    fireEvent.click(trigger());
-    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    const appearance = screen.getByTestId("ward-rail-appearance-toggle");
+    fireEvent.click(appearance);
+    expect(appearance).toHaveAttribute("aria-expanded", "true");
 
     const sheetNode = document.createElement("div");
     document.body.appendChild(sheetNode);
     pushSheet("test-rail-sheet", sheetNode);
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    expect(appearance).toHaveAttribute("aria-expanded", "true");
 
     popSheet("test-rail-sheet");
     sheetNode.remove();
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(trigger()).toHaveAttribute("aria-expanded", "false");
+    expect(appearance).toHaveAttribute("aria-expanded", "false");
+    expect(appearance).toHaveFocus();
   });
 });
 
-describe("rail persona keyboard navigation", () => {
-  it("opens on the selected option, navigates without selecting, and returns focus after Enter", async () => {
+describe("one switcher from the rail (B6) and no persona listbox (DA-05 pattern)", () => {
+  // B6: "Go to a desk" is the one switcher. The person on the rail opens it directly, and the old
+  // Switch persona list (an ARIA listbox holding buttons, an aria-required-children error) is gone.
+  it("opens Go to a desk from the keyboard and returns focus to the person when it closes", async () => {
     const user = userEvent.setup();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardRail />
       </WardFlowProvider>,
     );
+    expect(trigger()).toHaveAttribute("aria-haspopup", "dialog");
+    expect(trigger().getAttribute("aria-label")).toMatch(/Go to a desk\.$/u);
     trigger().focus();
     await user.keyboard("{Enter}");
-    const options = screen.getAllByRole("option");
-    expect(screen.getByRole("listbox")).toHaveAttribute("tabindex", "-1");
-    expect(document.getElementById(trigger().getAttribute("aria-controls") ?? "")).toBe(screen.getByRole("listbox"));
-    expect(options[0]).toHaveFocus();
-    expect(options.filter((option) => option.tabIndex === 0)).toHaveLength(1);
-    await user.keyboard("{ArrowDown}");
-    expect(options[1]).toHaveFocus();
-    expect(options[0]).toHaveAttribute("aria-selected", "true");
-    await user.keyboard("{End}");
-    expect(options.at(-1)).toHaveFocus();
-    await user.keyboard("{ArrowDown}");
-    expect(options[0]).toHaveFocus();
-    await user.keyboard("{ArrowUp}");
-    expect(options.at(-1)).toHaveFocus();
-    await user.keyboard("{Home}{ArrowDown}{Enter}");
-    expect(trigger()).toHaveFocus();
-    expect(trigger()).toHaveAttribute("aria-expanded", "false");
-    await user.keyboard("{Enter}");
-    expect(screen.getAllByRole("option")[1]).toHaveFocus();
+    expect(await screen.findByRole("dialog", { name: "Go to a desk" }, { timeout: 15_000 })).toBeInTheDocument();
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
     await user.keyboard("{Escape}");
-    expect(trigger()).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Go to a desk" })).not.toBeInTheDocument());
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
+    expect(trigger()).toHaveFocus();
   });
 
-  it("allows Tab to leave the option list and closes the popover without trapping focus", async () => {
+  it("has no listbox, no persona options and no second switcher in the rail", async () => {
     const user = userEvent.setup();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardRail />
-        {/* The rail no longer ends in its own policy link (simplification A7), so give Tab a next stop. */}
         <button type="button">Next on the page</button>
       </WardFlowProvider>,
     );
-    await user.click(trigger());
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    expect(screen.queryByText("Switch persona")).toBeNull();
+    expect(screen.queryByTestId("ward-rail-persona-popover")).toBeNull();
+    // Nothing traps Tab: from the person, focus moves on to the page.
+    trigger().focus();
     await user.tab();
-    // Focus moves on past the option list (the rail's old policy link was removed, simplification A7).
-    expect(screen.queryAllByRole("option").some((option) => option === document.activeElement)).toBe(false);
     expect(trigger()).not.toHaveFocus();
-    expect(screen.getByRole("button", { name: "Next on the page" })).toHaveFocus();
-    expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("keeps the popover open when a press inside blurs without a focus target (Safari, macOS Firefox)", () => {
+  it("opens the switcher on a press even when the press does not focus the button (Safari, macOS Firefox)", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardRail />
       </WardFlowProvider>,
     );
+    // WebKit does not focus a pressed <button>; the click alone must open the drawer.
     fireEvent.click(trigger());
-    expect(trigger()).toHaveAttribute("aria-expanded", "true");
-    const selected = screen.getAllByRole("option").find((option) => option.getAttribute("aria-selected") === "true")!;
-    // WebKit does not focus a pressed <button>: focus leaves the option with relatedTarget null.
-    fireEvent.blur(selected, { relatedTarget: null });
-    expect(trigger()).toHaveAttribute("aria-expanded", "true");
-    fireEvent.click(screen.getByText("Go to a desk…"));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Go to a desk" }, { timeout: 15_000 })).toBeInTheDocument();
+  });
+});
+
+describe("the person follows the desk (B6)", () => {
+  afterEach(() => {
+    act(() => setWardFeatureFlagOnDevice("role-access", null));
+    resetWardAccessStoreForTests();
+  });
+
+  it("shows the ward's nurse in charge after a reload on a ward desk, not the coordinator", () => {
+    act(() => setWardFeatureFlagOnDevice("role-access", true));
+    act(() => setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } }));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    expect(trigger().getAttribute("aria-label")).toContain("Nurse in charge");
+    expect(trigger().getAttribute("aria-label")).not.toContain("Bed coordinator");
   });
 });

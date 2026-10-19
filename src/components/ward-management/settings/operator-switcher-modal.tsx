@@ -31,6 +31,7 @@ import {
   cx,
   durMinutes,
   useIsPhone,
+  useOptionalToast,
 } from "@/components/wf";
 import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
@@ -44,8 +45,10 @@ import {
   useWardAccessSnapshot,
 } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import {
+  ACCESS_ROLE_LABELS,
   STATEWIDE_COORDINATOR,
   accessIsWholeNetwork,
   screenDecision,
@@ -134,6 +137,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const [previewOnly, setPreviewOnly] = useState(false);
   const now = useWardFlowClock();
   const router = useRouter();
+  const toast = useOptionalToast();
   const pathname = useSafePathname();
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -197,11 +201,28 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
     return false;
   }
 
+  /**
+   * B6 (Josh, 19 Oct 2026): it must be obvious the switch worked. Besides the new page and the
+   * person on the rail, one short message names the desk and the role. A place name only, never a
+   * patient, so nothing personal is shown.
+   */
+  function confirmSwitch(place: string, role: string) {
+    toast?.push({
+      tone: "success",
+      title: `Now at ${place}`,
+      body:
+        accessOn && !keepsSignedInRole
+          ? `Working as ${role}. The menu shows this desk's pages.`
+          : `Working as ${role}.`,
+    });
+  }
+
   /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
   function openAccessDesk(access: WardAccess, href: string) {
     if (!reachable(href)) return;
     takeAccess(access);
     onClose();
+    confirmSwitch(accessPlaceLabel(access, units), ACCESS_ROLE_LABELS[access.role]);
     router.push(href);
   }
 
@@ -214,6 +235,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
       dispatchPersonaSyncForRole(desk.role);
     }
     onClose();
+    confirmSwitch(desk.name, deskRoleLabel(desk.role));
     return true;
   }
 

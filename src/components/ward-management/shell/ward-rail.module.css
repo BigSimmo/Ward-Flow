@@ -938,40 +938,6 @@
   white-space: nowrap;
 }
 
-.allPagesTrigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  height: var(--wf-h-chip);
-  margin: -0.25rem -0.375rem;
-  padding: 0 0.375rem;
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-tag);
-  background: transparent;
-  color: var(--wf-accent-ink);
-  font: inherit;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.allPagesTrigger svg {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.allPagesTrigger:hover,
-.allPagesTrigger[aria-expanded="true"] {
-  border-color: var(--wf-line-2);
-  background: var(--wf-surface);
-}
-
-.allPagesTrigger:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 .railList {
   display: flex;
   flex-direction: column;
@@ -1011,6 +977,24 @@
 }
 
 .railLink:hover {
+  background: var(--wf-hover);
+}
+
+/* B1 (19 Oct 2026): More, and the ED's Find a bed, are buttons drawn as rail rows. */
+.railButton {
+  width: 100%;
+  background: transparent;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.railMore {
+  margin-top: 0.25rem;
+}
+
+.railMore[aria-expanded="true"] {
   background: var(--wf-hover);
 }
 
@@ -1348,8 +1332,7 @@
   outline-offset: 2px;
 }
 
-.userAvatar,
-.roleOptAvatar {
+.userAvatar {
   display: grid;
   place-items: center;
   width: 1.625rem;
@@ -1394,138 +1377,6 @@
   flex-shrink: 0;
   color: var(--wf-ink-off);
   transition: transform var(--wf-m-fast);
-}
-
-.userProfileCardBtn[aria-expanded="true"] .userChevron {
-  transform: rotate(180deg);
-}
-
-/* Persona pop-out (rail pop-outs, persona). */
-.roleSwitcherPopover {
-  position: absolute;
-  bottom: calc(100% + 0.375rem);
-  left: 0;
-  z-index: 70;
-  display: none;
-  flex-direction: column;
-  width: 19.5rem;
-  padding: 0.375rem;
-  box-sizing: border-box;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e3);
-  color: var(--wf-ink-1);
-}
-
-.roleSwitcherPopover[data-show="true"] {
-  display: flex;
-}
-
-.roleSwitcherHead {
-  margin: 0;
-  padding: 0.5rem 0.625rem 0.375rem;
-  font-size: var(--wf-fs-14);
-  line-height: var(--wf-lh-14);
-  font-weight: 600;
-}
-
-.roleSwitcherList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.roleOption {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  width: 100%;
-  min-height: var(--wf-h-lg);
-  padding: 0.25rem 0.625rem;
-  box-sizing: border-box;
-  border: 0;
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.roleOption:hover {
-  background: var(--wf-hover);
-}
-
-.roleOption[aria-selected="true"] {
-  background: var(--wf-selected);
-}
-
-.roleOption:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.roleOption .roleOptAvatar {
-  background: var(--wf-accent-tint);
-  color: var(--wf-accent-ink);
-}
-
-.roleOption[aria-selected="true"] .roleOptAvatar {
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
-}
-
-.roleOptInfo {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.roleOptName {
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.roleOptTitle {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.roleOptCheck {
-  width: 0.875rem;
-  height: 0.875rem;
-  margin-left: auto;
-  flex-shrink: 0;
-  color: var(--wf-ink-2);
-}
-
-.roleSwitcherFoot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0.25rem 0 0;
-  padding: 0.5rem 0.625rem 0.25rem;
-  border-top: 1px solid var(--wf-line);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.roleSwitcherFoot kbd {
-  padding: 1px 6px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-xs);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-2);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
 }
 
 /* ── Menu trigger and the navigation sheet (rail pop-outs, more; phone sheet) ──────────────── */
@@ -2116,7 +1967,6 @@
     height: 1.75rem;
   }
 
-  .rail[data-rail="closed"] .roleSwitcherPopover,
   .rail[data-rail="closed"] .appearancePopover {
     bottom: 0;
     left: calc(100% + 0.75rem);
@@ -2190,6 +2040,12 @@
   }
 
   .compactExtra {
+    display: none;
+  }
+
+  /* B1: the strip's Menu opens the role menu and More together, so the rail's own More is not
+     repeated beside it. */
+  .railMore {
     display: none;
   }
 
@@ -2348,15 +2204,11 @@
 
 /* ── Tablet (v10 shell, 10 Oct 2026) ───────────────────────────────────────────────────────────
  * Landscape 1180 (1001px to 1200px): the 64px icon rail whatever is stored (`data-tablet`, set by
- * `TABLET_LANDSCAPE_RAIL_QUERY`), Today and Where only, then More, which opens the full sidebar
- * over the page. 44px targets. The expand toggle goes: the mark and More open the sheet instead.
+ * `TABLET_LANDSCAPE_RAIL_QUERY`), the role's own menu, then More, which opens the rest over the
+ * page (B1, 19 Oct 2026). 44px targets. The expand toggle goes: the mark and More open the sheet instead.
  * Portrait 820 (769px to 1000px): no sidebar at all. The bar's Menu, at the left of the header,
  * opens the same full sidebar as a 280px sheet over a scrim. Desktop above 1200px and the phone
  * are unchanged. These blocks sit last so they win over the 1000px wrapping-row block above. */
-.stripMore {
-  display: none;
-}
-
 /* Header taps (Josh, 11 Oct 2026): the server cannot know the width, so it drew the full sidebar
  * here and the app folded it to the icon rail on load, sliding every header button 208px left
  * under a finger mid-tap. Until the rail knows it is in landscape (`data-tablet`, set on load), it
@@ -2397,34 +2249,6 @@
   .rail[data-tablet="landscape"] .railLink[data-two-line="true"] {
     min-height: 2.75rem;
   }
-
-  .rail[data-tablet="landscape"] .stripMore {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    width: 2.75rem;
-    min-height: 2.75rem;
-    margin: 0.25rem auto 0;
-    padding: 0;
-    border: 0;
-    border-radius: var(--wf-r-sm);
-    background: transparent;
-    color: var(--wf-ink-2);
-    font: 500 var(--wf-fs-12) / 1 var(--wf-font);
-    cursor: pointer;
-  }
-
-  .rail[data-tablet="landscape"] .stripMore:hover {
-    background: var(--wf-hover);
-    color: var(--wf-ink-1);
-  }
-
-  .rail[data-tablet="landscape"] .stripMore:focus-visible {
-    outline: 2px solid var(--wf-focus-ring);
-    outline-offset: -2px;
-  }
 }
 
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
@@ -2463,7 +2287,7 @@
     overflow: visible;
   }
 
-  .rail[data-rail] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown) {
+  .rail[data-rail] :is(.appearancePopover, .capacityAlertsDropdown) {
     position: fixed;
     top: auto;
     bottom: 0.75rem;
@@ -2474,8 +2298,8 @@
     overscroll-behavior: contain;
   }
 
-  .rail[data-rail="closed"] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown),
-  .rail[data-tablet="landscape"] :is(.appearancePopover, .roleSwitcherPopover, .capacityAlertsDropdown) {
+  .rail[data-rail="closed"] :is(.appearancePopover, .capacityAlertsDropdown),
+  .rail[data-tablet="landscape"] :is(.appearancePopover, .capacityAlertsDropdown) {
     left: calc(var(--rail-closed-w) + 0.375rem);
   }
 }

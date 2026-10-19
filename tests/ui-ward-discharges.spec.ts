@@ -123,6 +123,16 @@ async function goToCapacityBoard(page: Page) {
   await expect(page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`)).toBeVisible();
 }
 
+/**
+ * B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page under
+ * More, so a rail link is clicked where it is on screen, opening More first when it is not inline.
+ */
+async function clickRailLink(page: Page, href: string) {
+  const link = page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first();
+  if (!(await link.isVisible())) await page.getByTestId("ward-rail-more").click();
+  await link.click();
+}
+
 async function goBackToWard(page: Page) {
   // ⚠️ **RETARGETED.** The rail's own fixed "Ward — Dabakarn" example-unit link is gone
   // from the owner-requested grouped rail (`shell/ward-rail.tsx`'s `RAIL_GROUPS`, 2026-09-13) —
@@ -130,7 +140,7 @@ async function goBackToWard(page: Page) {
   // link to any one unit. Reaching this specific ward from the rail is therefore two real clicks
   // now, through the index `ward-index.tsx` already provides for exactly this purpose
   // (`data-testid="ward-index-link-${unit.id}"`, one per ward).
-  await page.locator('[data-testid="ward-rail-link"][href="/ward-flow/wards"]').click();
+  await clickRailLink(page, "/ward-flow/wards");
   await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId(`ward-index-link-${UNIT_ID}`).click();
   await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
@@ -409,7 +419,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await picker.selectOption(destination.id);
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
-      await page.locator('[data-testid="ward-rail-link"][href="/ward-flow/discharges"]').click();
+      await clickRailLink(page, "/ward-flow/discharges");
       await page.getByTestId("ward-discharge-history").click();
       await page.locator("#discharges-filter-destination").selectOption(destination.id);
       await page.getByRole("button", { name, exact: true }).click();

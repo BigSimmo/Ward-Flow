@@ -3,8 +3,8 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
+  ArrowLeftRight,
   ArrowRight,
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
@@ -26,6 +26,8 @@ import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/p
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
@@ -45,8 +47,15 @@ import {
   setRailOpenPreference,
   useWardDocumentPreferences,
 } from "./ward-rail-preferences";
-import { isActiveRailEntry, RAIL_GROUPS, type RailEntry, railEntries } from "./ward-rail-entries";
-import { useAccessNavFilter } from "./ward-access";
+import {
+  isActiveRailEntry,
+  isRoleMenuAction,
+  type RailEntry,
+  railEntries,
+  type RoleMenuAction,
+  roleMenu,
+} from "./ward-rail-entries";
+import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -105,18 +114,17 @@ const SERVICE_SHORT_LABEL: Record<HealthService, string> = {
 // The rail preference store moved to `./ward-rail-preferences` so a phone keeps it without the rail.
 export { setRailOpenPreference, useRailOpenStore } from "./ward-rail-preferences";
 
-const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
+/** At 1000px and below only the first few of the role's own menu stay in the row (plus the page you are on). */
+const NARROW_CORE_ENTRY_COUNT = 3;
 
 const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
 /**
- * Tablet landscape (v10 shell, "Landscape 1180"): the 64px icon rail whatever is stored, with
- * Today and Where, then More, which opens the full sidebar over the page. Above 1200px the stored
- * open or closed preference applies as before; at 1000px and below the tablet portrait and phone
- * shapes take over.
+ * Tablet landscape (v10 shell, "Landscape 1180"): the 64px icon rail whatever is stored, with the
+ * role's own menu, then More, which opens the rest over the page (B1, 19 Oct 2026: every shape
+ * shows the same short menu). Above 1200px the stored open or closed preference applies as before;
+ * at 1000px and below the tablet portrait and phone shapes take over.
  */
 export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
-/** Tablet landscape shows the first two RAIL_GROUPS (Today, Where); More holds the rest. */
-const TABLET_LANDSCAPE_GROUP_COUNT = 2;
 const GOVERNANCE_HREF = WARD_VIEWS.find((view) => view.id === "governance")?.href ?? WARD_HOME_HREF;
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
@@ -171,44 +179,24 @@ function sentenceStart(text: string): string {
   return text.length === 0 ? text : text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-const CLINICAL_PERSONAS = [
-  {
-    id: "chen",
-    name: "Dr S. Chen",
-    initials: "SC",
-    role: "Bed coordinator",
-  },
-  {
-    id: "gallagher",
-    name: "Sr M. Gallagher",
-    initials: "MG",
-    role: "Triage liaison nurse",
-  },
-  {
-    id: "vance",
-    name: "K. Vance RN",
-    initials: "KV",
-    role: "Ward 4W bed coordinator",
-  },
-  {
-    id: "robinson",
-    name: "Dr J. Robinson",
-    initials: "JR",
-    role: "Consultant psychiatrist",
-  },
-  {
-    id: "okafor",
-    name: "A. Okafor",
-    initials: "AO",
-    role: "Transport officer",
-  },
-  {
-    id: "hart",
-    name: "L. Hart",
-    initials: "LH",
-    role: "Community team clinician",
-  },
-] as const;
+type DeskPersona = { readonly id: string; readonly name: string; readonly initials: string; readonly role: string };
+
+/**
+ * B6 (Josh, 19 Oct 2026): one switcher. The person on the rail follows the desk ("Go to a desk"
+ * sets both the person and the place), so there is no separate persona list to fall out of step
+ * with the menu. Demo personas, synthetic. A desk with no drawn persona shows its role alone.
+ */
+const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
+  coordinator: { id: "chen", name: "Dr S. Chen", initials: "SC", role: "Bed coordinator" },
+  ed: { id: "gallagher", name: "Sr M. Gallagher", initials: "MG", role: "Triage liaison nurse" },
+  ward: { id: "vance", name: "K. Vance RN", initials: "KV", role: "Nurse in charge" },
+  officer: { id: "okafor", name: "A. Okafor", initials: "AO", role: "Transport officer" },
+  community: { id: "hart", name: "L. Hart", initials: "LH", role: "Community team clinician" },
+  bed_manager: { id: "bed_manager", name: CHROME_ROLE_LABELS.bed_manager, initials: "BM", role: "Demo desk" },
+  executive: { id: "executive", name: CHROME_ROLE_LABELS.executive, initials: "EX", role: "Demo desk" },
+};
+
+const SYNCED_ROLES: readonly WardChromeRole[] = ["coordinator", "ward", "ed", "community", "officer"];
 
 const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
@@ -288,41 +276,28 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const { open, appearance } = useWardDocumentPreferences();
   const service = useServiceScope();
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const moreTriggerRef = useRef<HTMLButtonElement>(null);
-  const firstMoreLinkRef = useRef<HTMLAnchorElement>(null);
+  const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
+  const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
-  const [activePersona, setActivePersona] = useState<string>("chen");
-  const [focusedPersona, setFocusedPersona] = useState<string>("chen");
-  const [openOverlay, setOpenOverlay] = useState<"alerts" | "appearance" | "persona" | null>(null);
+  // The desk a switch announced (persona sync). With role access on, the desk's own role wins below.
+  const [syncedRole, setSyncedRole] = useState<WardChromeRole>("coordinator");
+  const [openOverlay, setOpenOverlay] = useState<"alerts" | "appearance" | null>(null);
 
   useEffect(() => {
     function onPersonaSync(event: Event) {
-      const syncedRole = (event as CustomEvent<{ role?: string }>).detail?.role;
-      const nextPersona =
-        syncedRole === "ward"
-          ? "vance"
-          : syncedRole === "ed"
-            ? "gallagher"
-            : syncedRole === "coordinator"
-              ? "chen"
-              : syncedRole === "community"
-                ? "hart"
-                : syncedRole === "officer"
-                  ? "okafor"
-                  : undefined;
-      if (nextPersona) setActivePersona(nextPersona);
+      const next = (event as CustomEvent<{ role?: string }>).detail?.role;
+      const known = SYNCED_ROLES.find((candidate) => candidate === next);
+      if (known) setSyncedRole(known);
     }
     window.addEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
     return () => window.removeEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
   }, []);
-  const roleSwitcherOpen = openOverlay === "persona";
   const appearanceOpen = openOverlay === "appearance";
   const alertsOpen = openOverlay === "alerts";
-  const userCardRef = useRef<HTMLDivElement>(null);
   const personaTriggerRef = useRef<HTMLButtonElement>(null);
-  const personaListRef = useRef<HTMLDivElement>(null);
-  const personaListId = useId();
   const appearanceTriggerRef = useRef<HTMLButtonElement>(null);
   const alertsTriggerRef = useRef<HTMLButtonElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
@@ -342,16 +317,16 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // Role access plan: only the screens the desk's role may open, own place first.
   const accessNav = useAccessNavFilter();
   const entries = accessNav(railEntries(flagOn));
-  const currentPersona = CLINICAL_PERSONAS.find((p) => p.id === activePersona) ?? CLINICAL_PERSONAS[0];
+  // DA-09: chrome links outside the menu use the same role filter, and the brand opens this desk's home.
+  const canOpen = useCanOpenHref();
+  const deskHome = useDeskHomeHref();
+  // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
+  const currentPersona = DESK_PERSONAS[role === "coordinator" ? syncedRole : role];
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (roleSwitcherOpen) personaListRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
-  }, [roleSwitcherOpen]);
 
   // Every figure below comes from the derivation; nothing is typed here.
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
@@ -380,6 +355,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         // Phone (Josh, 10 Oct 2026): the bar's own phone menu answers instead (`ward-phone-menu.tsx`).
         if (isPhoneViewport()) return;
         moreTriggerRef.current = trigger;
+        setSheetShowsMain(true);
         setMoreOpen(true);
       }),
     [],
@@ -393,12 +369,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           // for the next press instead of both closing on one.
           if (hasOpenSheet()) return;
           event.preventDefault();
-          const trigger =
-            openOverlay === "persona"
-              ? personaTriggerRef.current
-              : openOverlay === "appearance"
-                ? appearanceTriggerRef.current
-                : alertsTriggerRef.current;
+          const trigger = openOverlay === "appearance" ? appearanceTriggerRef.current : alertsTriggerRef.current;
           setOpenOverlay(null);
           trigger?.focus();
           return;
@@ -413,6 +384,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTabletLandscape) {
         moreTriggerRef.current = null;
+        setSheetShowsMain(false);
         setMoreOpen(true);
         return;
       }
@@ -426,9 +398,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     function onPointerDown(event: MouseEvent) {
       const target = event.target as Node;
       setOpenOverlay((current) => {
-        if (current === "persona" && userCardRef.current && !userCardRef.current.contains(target)) {
-          return null;
-        }
         if (current === "appearance" && appearanceRef.current && !appearanceRef.current.contains(target)) {
           return null;
         }
@@ -455,31 +424,90 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
 
   // Role-aware ordering: each entry is ranked by whichever role-order list names it. An id no list
   // names, and the whole `coordinator` role, keeps its curated `RAIL_GROUPS` position.
-  const roleRank = new Map<string, number>();
-  for (const entry of entries) {
-    const rank = wardNavRoleRank(role, entry.id);
-    if (rank !== null) roleRank.set(entry.id, rank);
-  }
-  const groups = RAIL_GROUPS.map((group) => ({
-    label: group.label,
-    entries: entries
-      .filter((entry) => group.entries.some(([id]) => id === entry.id))
-      .toSorted(
-        (left, right) =>
-          (roleRank.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (roleRank.get(right.id) ?? Number.MAX_SAFE_INTEGER),
-      ),
-  }));
+  // B1 (Josh, 19 Oct 2026): the role's own short menu on the rail, everything else under More.
+  const menu = roleMenu(entries, role, (id) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER);
+  const menuLabel = CHROME_ROLE_LABELS[role];
   const activeEntry = entries.find((entry) => isActiveRailEntry(pathname, entry));
-  // Narrow navigation keeps the operational entry points plus the current route; the same Sheet
+  // Narrow navigation keeps the first few of the role's menu plus the current route; the same Sheet
   // holds the rest. Only the narrow CSS (1000px and below) hides the extras. This is the same at
   // every width, so the server render matches the browser's and the desktop rail does not grow on
   // load (13 Oct 2026: it used to depend on a width the server cannot know).
-  const compactPrimaryIds = new Set(NARROW_CORE_ENTRY_IDS);
+  const compactPrimaryIds = new Set(menu.main.slice(0, NARROW_CORE_ENTRY_COUNT).map((item) => item.id));
   if (activeEntry) compactPrimaryIds.add(activeEntry.id);
+  // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
+  const sheetGroups = sheetShowsMain
+    ? [{ label: menuLabel, entries: menu.main }, ...menu.more]
+    : (menu.more as { label: string; entries: (RailEntry | RoleMenuAction)[] }[]);
+  const firstSheetId = sheetGroups[0]?.entries[0]?.id;
+  const capacityOpen = canOpen(WARD_CAPACITY_HREF);
+  const handoverCountdown = (
+    <>
+      <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
+      <span className={styles.shiftTimerLabel}>Handover</span>
+      <span className={styles.shiftTimeBadge}>
+        {handoverText === null ? (
+          "due now"
+        ) : (
+          <>
+            <span className={styles.shiftTimeUnit}>in</span> {handoverText}
+          </>
+        )}
+      </span>
+    </>
+  );
 
-  function openMore(trigger: HTMLButtonElement) {
+  function openMore(trigger: HTMLButtonElement, withMain = false) {
     moreTriggerRef.current = trigger;
+    setSheetShowsMain(withMain);
     setMoreOpen(true);
+  }
+
+  /** B1: the ED's Find a bed opens the Tools bed finder, which is not a page. */
+  function renderAction(action: RoleMenuAction, options: { sheet?: boolean; firstInSheet?: boolean } = {}) {
+    const Icon = action.icon;
+    const showClosedRailCard = !options.sheet && !shownOpen && isClosedRailCardViewport;
+    return (
+      <li key={action.id}>
+        <Tooltip
+          content={action.label}
+          placement="right"
+          presentationOnly
+          disabled={!showClosedRailCard}
+          wrapperClassName={styles.railTooltipTrigger}
+          className={styles.railFlyCard}
+        >
+          <button
+            ref={options.firstInSheet ? firstMoreLinkRef : undefined}
+            type="button"
+            className={`${styles.railLink} ${styles.railButton}`}
+            aria-haspopup="dialog"
+            aria-label={action.label}
+            title={showClosedRailCard ? undefined : action.label}
+            data-testid="ward-rail-bed-finder"
+            onClick={(event) => {
+              if (options.sheet) setMoreOpen(false);
+              requestToolsTool("bed-finder", event.currentTarget);
+              announceToWardShell(`${action.label}.`);
+            }}
+          >
+            <Icon aria-hidden="true" className={styles.railGlyph} strokeWidth={1.75} />
+            <span className={styles.railText}>
+              <span className={styles.railLine}>
+                <span className={styles.railLabel}>{action.label}</span>
+              </span>
+            </span>
+            {options.sheet ? <ChevronRight aria-hidden="true" className={styles.sheetChevron} /> : null}
+          </button>
+        </Tooltip>
+      </li>
+    );
+  }
+
+  function renderItem(
+    item: RailEntry | RoleMenuAction,
+    options: { compactExtra?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
+  ) {
+    return isRoleMenuAction(item) ? renderAction(item, options) : renderEntry(item, options);
   }
 
   function renderEntry(
@@ -608,7 +636,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           </button>
         ) : (
           <Link
-            href={WARD_HOME_HREF}
+            href={deskHome}
             className={styles.brandLink}
             aria-label="Ward Flow WA — home"
             title="Ward Flow Western Australia"
@@ -626,7 +654,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
           aria-controls="ward-rail-more-pages"
-          onClick={(event) => openMore(event.currentTarget)}
+          // B1: the narrow strip shows only the first few menu items, so its Menu opens the whole
+          // role menu with More below it.
+          onClick={(event) => openMore(event.currentTarget, true)}
         >
           <Menu aria-hidden="true" size={18} strokeWidth={1.75} />
           Menu
@@ -699,28 +729,25 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <span className={styles.shiftLiveClockTime}>{boardClock}</span>
           <span className={styles.shiftLiveTz}>AWST</span>
         </WardDemoClockPopover>
-        <Link
-          href={handoverHref()}
-          className={styles.shiftTimerLink}
-          title="Open shift handover board"
-          aria-label={
-            handoverText === null
-              ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-              : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-          }
-        >
-          <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
-          <span className={styles.shiftTimerLabel}>Handover</span>
-          <span className={styles.shiftTimeBadge}>
-            {handoverText === null ? (
-              "due now"
-            ) : (
-              <>
-                <span className={styles.shiftTimeUnit}>in</span> {handoverText}
-              </>
-            )}
+        {canOpen(handoverHref()) ? (
+          <Link
+            href={handoverHref()}
+            className={styles.shiftTimerLink}
+            title="Open shift handover board"
+            aria-label={
+              handoverText === null
+                ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+                : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+            }
+          >
+            {handoverCountdown}
+          </Link>
+        ) : (
+          // DA-09: a desk without the handover board still sees the countdown, as plain text.
+          <span className={styles.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
+            {handoverCountdown}
           </span>
-        </Link>
+        )}
       </div>
 
       {hottest ? (
@@ -810,15 +837,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 {servicesByOccupancy.map((svc, index) => {
                   const atRisk = isBedAlert(svc.occupancyPercent);
                   const waiting = svc.edSummary?.totalWaiting ?? 0;
-                  return (
-                    <Link
-                      key={svc.id}
-                      href={WARD_CAPACITY_HREF}
-                      className={styles.alertCard}
-                      data-hot={index === 0 && atRisk ? "true" : undefined}
-                      data-testid="ward-rail-bed-alert-row"
-                      onClick={() => setOpenOverlay(null)}
-                    >
+                  const rowBody = (
+                    <>
                       <span className={styles.alertServiceName}>{svc.shortName}</span>
                       <span className={styles.alertMetrics}>
                         <BedAlertMeter percent={svc.occupancyPercent} />
@@ -843,7 +863,29 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                           {waiting > 0 ? ` · ED ${waiting} waiting` : ""}
                         </span>
                       </span>
+                    </>
+                  );
+                  // DA-09: rows open Capacity only for a desk that may open it; otherwise they are figures.
+                  return capacityOpen ? (
+                    <Link
+                      key={svc.id}
+                      href={WARD_CAPACITY_HREF}
+                      className={styles.alertCard}
+                      data-hot={index === 0 && atRisk ? "true" : undefined}
+                      data-testid="ward-rail-bed-alert-row"
+                      onClick={() => setOpenOverlay(null)}
+                    >
+                      {rowBody}
                     </Link>
+                  ) : (
+                    <div
+                      key={svc.id}
+                      className={styles.alertCard}
+                      data-hot={index === 0 && atRisk ? "true" : undefined}
+                      data-testid="ward-rail-bed-alert-row"
+                    >
+                      {rowBody}
+                    </div>
                   );
                 })}
               </div>
@@ -853,10 +895,16 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                   <Dot tone="warning" />
                   {BED_ALERT_THRESHOLD_PERCENT}% and over
                 </span>
-                <Link href={WARD_CAPACITY_HREF} className={styles.alertsOpenLink} onClick={() => setOpenOverlay(null)}>
-                  Open Capacity
-                  <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-                </Link>
+                {capacityOpen ? (
+                  <Link
+                    href={WARD_CAPACITY_HREF}
+                    className={styles.alertsOpenLink}
+                    onClick={() => setOpenOverlay(null)}
+                  >
+                    Open Capacity
+                    <ArrowRight aria-hidden="true" strokeWidth={1.75} />
+                  </Link>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -865,47 +913,33 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
 
       <div className={styles.railScroll}>
         <nav aria-label="Ward Flow views" className={styles.railNav}>
-          {(isTabletLandscape ? groups.slice(0, TABLET_LANDSCAPE_GROUP_COUNT) : groups).map((group, groupIndex) => (
-            <section key={group.label} aria-label={group.label} className={styles.railGroup}>
-              <div className={styles.groupHead}>
-                <p className={styles.eyebrow}>{group.label}</p>
-                {groupIndex === 0 ? (
-                  <button
-                    type="button"
-                    className={styles.allPagesTrigger}
-                    aria-haspopup="dialog"
-                    aria-expanded={moreOpen}
-                    aria-controls="ward-rail-more-pages"
-                    onClick={(event) => openMore(event.currentTarget)}
-                  >
-                    <LayoutGrid aria-hidden="true" strokeWidth={1.75} />
-                    All pages
-                  </button>
-                ) : null}
-              </div>
-              <ul className={styles.railList}>
-                {group.entries.map((entry) =>
-                  renderEntry(entry, {
-                    compactExtra: !compactPrimaryIds.has(entry.id),
-                  }),
-                )}
-              </ul>
-            </section>
-          ))}
-          {isTabletLandscape ? (
+          <section aria-label={`${menuLabel} menu`} className={styles.railGroup} data-testid="ward-rail-role-menu">
+            <div className={styles.groupHead}>
+              <p className={styles.eyebrow}>{menuLabel}</p>
+            </div>
+            <ul className={styles.railList}>
+              {menu.main.map((item) => renderItem(item, { compactExtra: !compactPrimaryIds.has(item.id) }))}
+            </ul>
+          </section>
+          {menu.more.length > 0 ? (
+            // B1: everything else is one tap away. One More in every desktop shape (open, strip, tablet).
             <button
               type="button"
-              className={styles.stripMore}
+              className={`${styles.railLink} ${styles.railButton} ${styles.railMore}`}
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               aria-controls="ward-rail-more-pages"
               aria-label="More pages"
-              title="More pages"
-              data-testid="ward-rail-tablet-more"
+              title={!shownOpen && isClosedRailCardViewport ? "More pages" : undefined}
+              data-testid={isTabletLandscape ? "ward-rail-tablet-more" : "ward-rail-more"}
               onClick={(event) => openMore(event.currentTarget)}
             >
               <LayoutGrid aria-hidden="true" className={styles.railGlyph} strokeWidth={1.75} />
-              <span className={styles.stripMoreLabel}>More</span>
+              <span className={styles.railText}>
+                <span className={styles.railLine}>
+                  <span className={styles.railLabel}>More</span>
+                </span>
+              </span>
             </button>
           ) : null}
         </nav>
@@ -982,20 +1016,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           </Link>
         </div>
 
-        <div
-          ref={userCardRef}
-          className={styles.userCardWrap}
-          onBlur={(event) => {
-            // Close only when focus moves to a known element outside (keyboard Tab). Safari and macOS
-            // Firefox do not focus a pressed button, so a click inside blurs with no relatedTarget;
-            // closing then would unmount "Go to a desk…" before its click and make the trigger
-            // reopen the popover. Outside presses are closed by the document mousedown handler.
-            const next = event.relatedTarget as Node | null;
-            if (next && !event.currentTarget.contains(next)) {
-              setOpenOverlay((current) => (current === "persona" ? null : current));
-            }
-          }}
-        >
+        <div className={styles.userCardWrap}>
+          {/* B6 (Josh, 19 Oct 2026): one switcher. The person opens Go to a desk, which sets both the
+              person and the place and goes to that desk's home. The separate persona list (and its
+              listbox of buttons, the DA-05 pattern) is gone, so the rail cannot show one person
+              while the menu belongs to another. */}
           <button
             type="button"
             ref={personaTriggerRef}
@@ -1006,14 +1031,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 onOpenOperatorModal();
                 return;
               }
-              setFocusedPersona(activePersona);
-              setOpenOverlay((prev) => (prev === "persona" ? null : "persona"));
+              setOpenOverlay(null);
+              setDeskModalOpen(true);
             }}
-            aria-expanded={roleSwitcherOpen}
-            aria-haspopup="listbox"
-            aria-controls={personaListId}
-            aria-label={`${currentPersona.name}, ${currentPersona.role}. Switch persona.`}
-            title={`${currentPersona.name} · ${currentPersona.role}`}
+            aria-expanded={deskModalOpen}
+            aria-haspopup="dialog"
+            aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
+            title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
           >
             <span className={styles.userAvatar} aria-hidden="true">
               {currentPersona.initials}
@@ -1022,92 +1046,17 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <span className={styles.userName}>{currentPersona.name}</span>
               <span className={styles.userRole}>{currentPersona.role}</span>
             </span>
-            <ChevronDown aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
+            <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
           </button>
-          <div
-            className={styles.roleSwitcherPopover}
-            data-testid="ward-rail-persona-popover"
-            data-show={roleSwitcherOpen ? "true" : undefined}
-          >
-            {roleSwitcherOpen ? (
-              <button
-                type="button"
-                className={styles.roleOption}
-                data-testid="ward-rail-open-desk-modal"
-                onClick={() => {
-                  setOpenOverlay(null);
-                  setDeskModalOpen(true);
-                }}
-              >
-                <span className={styles.roleOptInfo}>
-                  <span className={styles.roleOptName}>Go to a desk…</span>
-                  <span className={styles.roleOptTitle}>Switch workstation and sync role</span>
-                </span>
-                <ArrowRight aria-hidden="true" className={styles.roleOptCheck} strokeWidth={1.75} />
-              </button>
-            ) : null}
-            <p className={styles.roleSwitcherHead}>Switch persona</p>
-            <div
-              ref={personaListRef}
-              id={personaListId}
-              role="listbox"
-              tabIndex={-1}
-              aria-label="Switch clinical persona"
-              className={styles.roleSwitcherList}
-              onKeyDown={(event) => {
-                const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]'));
-                const index = options.indexOf(event.target as HTMLButtonElement);
-                const next =
-                  event.key === "Home"
-                    ? 0
-                    : event.key === "End"
-                      ? options.length - 1
-                      : event.key === "ArrowDown"
-                        ? (index + 1) % options.length
-                        : event.key === "ArrowUp"
-                          ? (index - 1 + options.length) % options.length
-                          : null;
-                if (next === null) return;
-                event.preventDefault();
-                options[next]?.focus();
+          {deskModalOpen ? (
+            <OperatorSwitcherModal
+              isOpen
+              onClose={() => {
+                setDeskModalOpen(false);
+                personaTriggerRef.current?.focus();
               }}
-            >
-              {CLINICAL_PERSONAS.map((p) => {
-                const selected = p.id === activePersona;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    tabIndex={roleSwitcherOpen && focusedPersona === p.id ? 0 : -1}
-                    onFocus={() => setFocusedPersona(p.id)}
-                    className={styles.roleOption}
-                    onClick={() => {
-                      setActivePersona(p.id);
-                      setOpenOverlay(null);
-                      personaTriggerRef.current?.focus();
-                      announceToWardShell(`Switched persona to ${p.name}, ${p.role}.`);
-                    }}
-                  >
-                    <span className={styles.roleOptAvatar} aria-hidden="true">
-                      {p.initials}
-                    </span>
-                    <span className={styles.roleOptInfo}>
-                      <span className={styles.roleOptName}>{p.name}</span>
-                      <span className={styles.roleOptTitle}>{p.role}</span>
-                    </span>
-                    {selected ? <Check aria-hidden="true" className={styles.roleOptCheck} strokeWidth={2} /> : null}
-                  </button>
-                );
-              })}
-            </div>
-            <p className={styles.roleSwitcherFoot}>
-              <span>Demo personas, synthetic</span>
-              <kbd aria-hidden="true">Esc</kbd>
-            </p>
-          </div>
-          {deskModalOpen ? <OperatorSwitcherModal isOpen onClose={() => setDeskModalOpen(false)} /> : null}
+            />
+          ) : null}
         </div>
       </div>
       <Sheet
@@ -1115,7 +1064,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         testId="ward-rail-more-pages"
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
-        title="Menu"
+        title={sheetShowsMain ? "Menu" : "More pages"}
         placement="left"
         contentStyle={{ maxWidth: "min(17.5rem, calc(100vw - 1rem))" }}
         initialFocusRef={firstMoreLinkRef}
@@ -1174,9 +1123,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             </div>
             <div className={styles.moreFootLine}>
               <span>Synthetic prototype</span>
-              <Link href={GOVERNANCE_HREF} className={styles.moreSheetPolicy} onClick={() => setMoreOpen(false)}>
-                Policy 2026.3
-              </Link>
+              {/* DA-09: the policy version links to Governance only for a desk that may open it. */}
+              {canOpen(GOVERNANCE_HREF) ? (
+                <Link href={GOVERNANCE_HREF} className={styles.moreSheetPolicy} onClick={() => setMoreOpen(false)}>
+                  Policy 2026.3
+                </Link>
+              ) : (
+                <span>Policy 2026.3</span>
+              )}
             </div>
           </>
         }
@@ -1188,52 +1142,79 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <strong>{boardClock}</strong> AWST
             </span>
           </p>
-          <Link
-            href={handoverHref()}
-            className={`${styles.menuContextCell} ${styles.menuContextLink}`}
-            onClick={() => setMoreOpen(false)}
-          >
-            <span className={styles.menuContextLabel}>Handover</span>
-            <span className={styles.menuContextValue}>
-              {handoverText === null ? (
-                <strong>due now</strong>
-              ) : (
-                <>
-                  in <strong>{handoverText}</strong>
-                </>
-              )}
-            </span>
-            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
-          </Link>
+          {canOpen(handoverHref()) ? (
+            <Link
+              href={handoverHref()}
+              className={`${styles.menuContextCell} ${styles.menuContextLink}`}
+              onClick={() => setMoreOpen(false)}
+            >
+              <span className={styles.menuContextLabel}>Handover</span>
+              <span className={styles.menuContextValue}>
+                {handoverText === null ? (
+                  <strong>due now</strong>
+                ) : (
+                  <>
+                    in <strong>{handoverText}</strong>
+                  </>
+                )}
+              </span>
+              <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
+            </Link>
+          ) : (
+            <p className={styles.menuContextCell}>
+              <span className={styles.menuContextLabel}>Handover</span>
+              <span className={styles.menuContextValue}>
+                {handoverText === null ? (
+                  <strong>due now</strong>
+                ) : (
+                  <>
+                    in <strong>{handoverText}</strong>
+                  </>
+                )}
+              </span>
+            </p>
+          )}
         </div>
         {hottest ? (
-          <Link href={WARD_CAPACITY_HREF} className={styles.sheetAlerts} onClick={() => setMoreOpen(false)}>
-            <span className={styles.alertsHead}>
-              <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
-              <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
-                {alertCount > 0 ? <Dot tone="warning" /> : null}
-                {alertCountLabel}
+          capacityOpen ? (
+            <Link href={WARD_CAPACITY_HREF} className={styles.sheetAlerts} onClick={() => setMoreOpen(false)}>
+              <span className={styles.alertsHead}>
+                <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
+                <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
+                  {alertCount > 0 ? <Dot tone="warning" /> : null}
+                  {alertCountLabel}
+                </span>
               </span>
-            </span>
-            {renderBedAlertRows()}
-          </Link>
+              {renderBedAlertRows()}
+            </Link>
+          ) : (
+            <div className={styles.sheetAlerts}>
+              <span className={styles.alertsHead}>
+                <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
+                <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
+                  {alertCount > 0 ? <Dot tone="warning" /> : null}
+                  {alertCountLabel}
+                </span>
+              </span>
+              {renderBedAlertRows()}
+            </div>
+          )
         ) : null}
-        {groups.map((group) => {
-          const remaining = group.entries;
-          return remaining.length ? (
+        {sheetGroups.map((group) =>
+          group.entries.length ? (
             <section key={group.label} aria-label={group.label}>
               <p className={styles.eyebrow}>{group.label}</p>
               <ul className={styles.moreList}>
-                {remaining.map((entry) =>
-                  renderEntry(entry, {
+                {group.entries.map((item) =>
+                  renderItem(item, {
                     sheet: true,
-                    firstInSheet: entry.id === groups[0]?.entries[0]?.id,
+                    firstInSheet: item.id === firstSheetId,
                   }),
                 )}
               </ul>
             </section>
-          ) : null;
-        })}
+          ) : null,
+        )}
       </Sheet>
     </nav>
   );

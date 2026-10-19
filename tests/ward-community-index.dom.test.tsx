@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -82,8 +82,15 @@ function teamLinksIn(main: HTMLElement): HTMLAnchorElement[] {
  * right shape: the rail is rendered once for a fact about the rail, not once per assertion.
  */
 const railHrefs: string[] = (() => {
-  const { container } = renderInProvider(<WardRail />);
-  return [...container.querySelectorAll("a[href]")].map((anchor) => anchor.getAttribute("href") ?? "");
+  const { container, getByTestId } = renderInProvider(<WardRail />);
+  // B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page,
+  // Community among them, one tap away under More. That sheet portals to the body, so it is opened
+  // and its links are collected with the rail's own.
+  fireEvent.click(getByTestId("ward-rail-more"));
+  const sheet = document.getElementById("ward-rail-more-pages");
+  return [...container.querySelectorAll("a[href]"), ...(sheet?.querySelectorAll("a[href]") ?? [])].map(
+    (anchor) => anchor.getAttribute("href") ?? "",
+  );
 })();
 
 describe("The community index's OWN reachability — the assertion that outranks the rest of this file", () => {
