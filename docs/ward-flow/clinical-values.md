@@ -13,7 +13,7 @@ governance sign-off before real patient use (D-54).
   recorded").
 - **Signed** means a named person signed it for the prototype on a date. On 15 Oct 2026 Josh signed,
   as product owner, every value with a recorded source (D-56). On 16 Oct 2026 he signed the rest,
-  changing two (D-63). This is not clinical governance sign-off. To sign a value, change its status in the source file to `signed` with `signedBy` and
+  changing two (D-63). On 20 Oct 2026 (07:02 AWST) he signed the missed bed request window (`missedRequestWindow`, 2 hours). This is not clinical governance sign-off. To sign a value, change its status in the source file to `signed` with `signedBy` and
   `signedOn`. The type will not accept one without the other.
 - **Other figures seen** lists a different figure another screen or document used for the same rule.
   Where screens disagreed, the figure the main app runs on was kept.
@@ -55,6 +55,7 @@ governance sign-off before real patient use (D-54).
 | Arrivals and answers | Arrival counted as late, past the estimate, after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `lateArrivalGrace` |
 | Arrivals and answers | Ward that has not answered a referral, first reminder after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `silentWardFirstReminder` |
 | Arrivals and answers | Ward that has not answered a referral, second reminder after | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `silentWardSecondReminder` |
+| Arrivals and answers | Bed request with no ward asked counted as missed after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-20 | Product brief success measure 2 (25 Sep 2026); signed off by owner Josh, 07:02 AWST 20 Oct 2026, prototype | None recorded | `missedRequestWindow` |
 | Arrivals and answers | Decision target, ward answers a referral within | 2 hours, default, changeable in Settings | Signed for the prototype by Josh (product owner), 2026-10-15 | Stream A, 9 Oct 2026, labelled default | None recorded | `wardAnswerTarget` |
 | Arrivals and answers | Decision target, transfer accepted within | 4 hours, default, changeable in Settings | Signed for the prototype by Josh (product owner), 2026-10-15 | Stream A, 9 Oct 2026, labelled default | None recorded | `transferAcceptanceTarget` |
 | Arrivals and answers | Decision target, transport booked within | 1 hour, default, changeable in Settings | Signed for the prototype by Josh (product owner), 2026-10-15 | Stream A, 9 Oct 2026, labelled default | None recorded | `transportBookedTarget` |

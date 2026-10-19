@@ -194,6 +194,23 @@
   border: 0;
 }
 
+/* Pilot measures (smart features idea 1): a titled group inside the weekly report. */
+.section {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.sectionHeading {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+}
+
+.stepNote {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
 @media (max-width: 1100px) {
   .grid2,
   .grid3 {

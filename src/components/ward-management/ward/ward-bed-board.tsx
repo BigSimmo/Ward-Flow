@@ -13,7 +13,7 @@ import {
 } from "@/components/ward-management/settings/discreet-names";
 
 import { bedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
 

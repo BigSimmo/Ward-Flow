@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   DISCHARGE_BARRIERS,

@@ -151,9 +151,10 @@ Back to [the code map index](README.md).
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
 - **`flow-diagram.module.css`** (336 lines) — styles for `FlowDiagram` only.
-- **`flow-diagram.tsx`** (741 lines) — exports `hubStatusText` (a pure label function, line 114) and
-  `FlowDiagram` (line 207), the live bed-pipeline diagram (referred → accepted → placed) with hub
-  status text per unit.
+- **`flow-diagram.tsx`** — `FlowDiagram`, the bed-pipeline diagram (referred → accepted → placed).
+  No route draws it since the v6 Home (#113); only tests render it, and it re-exports `hubStatusText`.
+- **`flow-status.ts`** — `hubStatusText`, the hub's one-line status, used by `home-bedflow.tsx`.
+  Kept apart so Home's first load skips the diagram.
 - **`pressure-strip.tsx`** (247 lines) — `PressureStrip`, the horizontal ED-pressure scroller at the
   top of the coordinator screen; reads `ed/ed-home-derivations.ts` directly rather than through a
   coordinator-local selector.
