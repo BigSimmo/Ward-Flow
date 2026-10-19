@@ -120,6 +120,7 @@
     "zod": "^4.6.7"
   },
   "overrides": {
+    "axe-core": "~4.13.0",
     "postcss": "^8.5.26",
     "esbuild": "0.28.2",
     "sharp": "0.35.5",
