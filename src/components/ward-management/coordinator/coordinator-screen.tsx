@@ -15,7 +15,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   allDeclines,
   allOverrides,
@@ -60,7 +60,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeBedflow } from "./home-bedflow";
-import { dueWindowLabel, HomeEdPressure } from "./home-ed-pressure";
+import { HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
@@ -122,6 +122,11 @@ const DELAYS_HREF = "/ward-flow/delays";
 
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
 const PHONE_QUEUE_ROWS = 20;
+/**
+ * Desktop Home scrolls once, so the queue shows its top 10 and a "Show all (N)" button reveals the
+ * rest in place (Home placement redesign, Josh 19 Oct 2026). A hero highlight shows every row.
+ */
+const DESKTOP_QUEUE_ROWS = 10;
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
 const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
@@ -586,17 +591,12 @@ export function CoordinatorScreen() {
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
-  const breachWithinHour = openMovements.filter(
-    (movement) =>
-      movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "critical",
-  ).length;
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).
   const overdueInQueue = queue.filter(
     (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
   ).length;
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
-  const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -679,7 +679,7 @@ export function CoordinatorScreen() {
   // sheet over a scrim on tablet portrait and the patient sheet on a phone (CSS by `data-layout`).
   const placementNode =
     hasPanelSubject || previewMovement ? (
-      <div className={styles.side} data-preview={previewMovement ? "true" : undefined}>
+      <div className={`${styles.side} ${styles.placementCol}`} data-preview={previewMovement ? "true" : undefined}>
         {hasPanelSubject ? (
           <div
             className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
@@ -848,30 +848,12 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     inline
-                    value={breachWithinHour}
-                    // Names its noun (device audit, 11 Oct 2026): it counts recorded legal forms due
-                    // within the saved window, not the queue's "due in" wait targets.
-                    label={`Forms due within ${dueWindow}`}
-                    tone={breachWithinHour > 0 ? "warning" : undefined}
-                    className={styles.heroDueChip}
-                  />
-                  <HeroStat
-                    inline
                     value={actionInbox.length}
                     label="Exceptions"
                     tone={actionInbox.length > 0 ? "warning" : undefined}
                     expanded={heroPanel === "registers" && registerTab !== "declines"}
                     controls="ward-home-hero-panel"
                     onToggle={() => toggleRegisters("exceptions")}
-                  />
-                  <HeroStat
-                    inline
-                    value={declineRegister.length}
-                    label="Declines"
-                    tone={declineRegister.length > 0 ? "closed" : undefined}
-                    expanded={heroPanel === "registers" && registerTab === "declines"}
-                    controls="ward-home-hero-panel"
-                    onToggle={() => toggleRegisters("declines")}
                   />
                 </div>
               )
@@ -911,12 +893,6 @@ export function CoordinatorScreen() {
               isPhone ? undefined : (
                 <CheckingFoot
                   items={[
-                    {
-                      id: "overdue",
-                      label: "Overdue",
-                      value: overdueInQueue,
-                      tone: overdueInQueue > 0 ? "danger" : "neutral",
-                    },
                     {
                       id: "stale-counts",
                       label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
@@ -1008,7 +984,13 @@ export function CoordinatorScreen() {
                   delaysHref={DELAYS_HREF}
                   highlight={highlight}
                   onClearHighlight={() => setHighlight(undefined)}
-                  rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                  rowCap={
+                    isPhone
+                      ? PHONE_QUEUE_ROWS
+                      : layout === "desktop" && highlight === undefined
+                        ? DESKTOP_QUEUE_ROWS
+                        : undefined
+                  }
                   phone={isPhone}
                   pinnedIds={actNowMovementIds}
                 />

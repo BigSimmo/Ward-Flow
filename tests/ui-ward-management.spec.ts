@@ -5,6 +5,16 @@ import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 const PATH = "/ward-flow";
 
+/**
+ * B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page under
+ * More, so a rail link is clicked where it is on screen, opening More first when it is not inline.
+ */
+async function clickRailLink(page: Page, href: string) {
+  const link = page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first();
+  if (!(await link.isVisible())) await page.getByTestId("ward-rail-more").click();
+  await link.click();
+}
+
 async function gotoWardFlow(page: Page) {
   await page.goto(PATH, { waitUntil: "domcontentloaded" });
   await expect(page.locator('[data-testid="ward-coordinator"]:visible')).toHaveCount(1, { timeout: 15_000 });
@@ -93,7 +103,6 @@ test.describe("@mockup Ward Flow command view", () => {
     // genuinely not navigation data. `queue` maps to `ward-delays-page` because MERGE 01 pointed
     // that entry at `/delays`, a standalone route rather than a WardModeWorkspace mode.
     const testIdByView: Record<string, string> = {
-      network: "ward-mode-network",
       /*
        * 🔴 **THIS KEY WAS `queue` AND THE SCREEN IT NAMES NEVER CHANGED.**
        *
@@ -196,7 +205,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // `data-testid="ward-rail-link"`.
     const modes = navigable.map((view) => [view.href, testIdByView[view.id]] as const);
     for (const [href, testId] of modes) {
-      await page.locator(`[data-testid="ward-rail-link"][href="${href}"]`).click();
+      await clickRailLink(page, href);
       await expect(page.getByTestId(testId)).toBeVisible({ timeout: 15_000 });
       await expectNoPageOverflow(page);
     }
@@ -239,7 +248,8 @@ test.describe("@mockup Ward Flow command view", () => {
     // Phone (8 Oct 2026): at 48rem and below the rail is hidden and the header bar's Menu button
     // opens the same sheet.
     const opener = (await nav.isVisible())
-      ? page.getByRole("button", { name: /^All pages/iu })
+      ? // B1: the rail's sheet button is "More pages" now (it was "All pages").
+        page.getByRole("button", { name: /^More pages/iu })
       : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
@@ -285,94 +295,6 @@ test.describe("@mockup Ward Flow command view", () => {
       expect(box!.height).toBeGreaterThanOrEqual(48);
       expect(box!.width).toBeGreaterThanOrEqual(48);
     }
-  });
-
-  test("routes a selected movement across the network diagram and explains the shortlist", async ({ page }) => {
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await page.goto("/ward-flow/network", { waitUntil: "domcontentloaded" });
-
-    // Match gotoCoordinator: SSR already shows the tabs, but the first click can be lost
-    // while the shell hydrates and moves the data-mode bar into the header.
-    await page.waitForLoadState("networkidle");
-    await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
-    await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
-
-    // ⚠️ **RETARGETED.** `/network` now opens on a two-tab split ("Network overview" /
-    // "Placement workspace", `ward-management-network.tsx`'s `NetworkView`, default `"overview"`)
-    // that did not exist when this journey was written. Everything this test drives — the
-    // movement pipeline, the routed connectors, the explainable shortlist — is the PLACEMENT tab's
-    // content (`data-testid="ward-network-view"` is only ever mounted there); the default overview
-    // tab is a different, summary screen entirely. Selecting the tab is therefore a real, necessary
-    // step now, not an incidental one.
-    await page.getByRole("tab", { name: "Placement workspace" }).click();
-    await expect(page.getByRole("tab", { name: "Placement workspace" })).toHaveAttribute("aria-selected", "true");
-
-    const network = page.getByTestId("ward-network-view");
-    await expect(network).toBeVisible({ timeout: 15_000 });
-
-    // Connector paths are drawn by a client layout effect, so their presence is the
-    // hydration signal: before it fires, queue clicks would be swallowed.
-    await expect(network.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
-
-    // Pipeline counts are derived from the movement records, so they must total the queue.
-    await expect(network.getByRole("region", { name: "Movement pipeline" })).toContainText("Placement requested");
-
-    // WF-001 is first in the queue; its eligible shortlist is Dabakarn, Mental Health Unit
-    // and Moodjar. FSH Adult Secure is no longer in it: WF-001 is a Female Adult movement
-    // and FSH Adult Secure is Male only, so the sex_designation gate added in 6cc80c774 excludes
-    // it and Moodjar (next in unit order) takes the freed slot.
-    // D-39: the Placement panel shows the patient's UMRN (UM100044 for WF-001 / PT-044), never WF-001.
-    const shortlist = network.getByRole("complementary", { name: "Placement", exact: true });
-    await expect(shortlist).toContainText("UM100044");
-    await expect(shortlist).not.toContainText("WF-001");
-    await expect(shortlist.getByRole("columnheader", { name: /Dabakarn/ })).toBeVisible();
-    // Eligibility is a binary verdict, not a score: gates are not commensurable, so no row
-    // ever renders a "N of M passed" fraction.
-    await expect(shortlist.getByRole("row", { name: /Eligibility/ })).toContainText("Eligible");
-    // WF-001 has no recorded destination, so none of its three candidates — including the
-    // first-ranked one — may inherit its (nonexistent) transport job.
-    await expect(shortlist.getByRole("row", { name: /Transport state/ })).toContainText("Not yet booked");
-    await expect(shortlist.getByRole("row", { name: /Transport state/ })).not.toContainText("Not yet requested");
-    await expect(shortlist).toContainText("No automatic allocation");
-
-    // Shortlisted services are marked as routed on the canvas. Armadale IS in WF-001's eligible
-    // top three and FSH Adult Secure is NOT: FSH Adult Secure is a Male-only ward, WF-001 is a
-    // Female patient, and the sex_designation eligibility gate (6cc80c774) correctly excludes it
-    // — this assertion is proving a clinical-safety gate works, not tolerating a broken one.
-    await expect(network.getByTestId("ward-network-card-rph-adult-secure")).toHaveAttribute("data-routed", "true");
-    await expect(network.getByTestId("ward-network-card-arm-adult-open")).toHaveAttribute("data-routed", "true");
-    await expect(network.getByTestId("ward-network-card-fsh-adult-secure")).not.toHaveAttribute("data-routed", "true");
-
-    // Broome is one of the services with no available beds. (Was Kununurra, which has no ward since
-    // 26 Sept 2026: owner-approved ward facts.)
-    await expect(network.getByTestId("ward-network-card-brm-adult-secure")).toContainText("Broome");
-
-    // Selecting another movement re-routes the diagram and swaps the shortlist. WF-002 is
-    // South Metro; Fremantle Older Adult is its one same-service eligible candidate.
-    await network.getByTestId("ward-network-queue-WF-002").click();
-    // D-39: WF-002 is linked through RF-012 to PT-058, so the panel names UM100058, not WF-002.
-    await expect(shortlist).toContainText("UM100058");
-    await expect(shortlist).not.toContainText("WF-002");
-    await expect(network.getByTestId("ward-network-card-fre-older-adult")).toHaveAttribute("data-routed", "true");
-    // This row compares health services against the *origin* ED, not the patient's catchment
-    // (catchment is where a patient lives, not where they presented) — named for what it
-    // actually measures rather than implying a judgement the model cannot make yet.
-    //
-    // Phase 8 Task 6 renamed the cells from "Best"/"Escalation" to "Same health service"/
-    // "Different health service", because "Best" read as the system's opinion about which bed
-    // this person should have. "Different health service" is asserted rather than "Same health
-    // service" deliberately: the row header already contains the words "Same health service", so
-    // asserting those would pass against the header alone and prove nothing about any cell.
-    await expect(shortlist.getByRole("row", { name: /Same health service as origin/ })).toContainText(
-      "Different health service",
-    );
-
-    // A service card opens its own detail block.
-    await network.getByTestId("ward-network-card-fre-older-adult").click();
-    await expect(shortlist.getByRole("region", { name: "Selected service detail" })).toContainText(
-      "Wardong (Ward 4.3)",
-    );
-    await expectNoPageOverflow(page);
   });
 
   test("provides a queue-first phone fallback without page overflow", async ({ page }) => {
@@ -426,9 +348,9 @@ test.describe("@mockup Ward Flow command view", () => {
      * route fails there, by name, instead of surfacing here as a confusing red.
      *
      * ⚠️ **THE HEADING COMES FROM `wardWorkspaceModeTitle`, NOT FROM THE `WARD_VIEWS` LABEL, AND THAT
-     * IS NOT INTERCHANGEABLE.** `network` is labelled *"Network"* in the rail and titled *"Network
-     * diagram"* on the page. Filtering on the rail label would look for text this screen never
-     * renders — a trap this test would have walked into the first time it derived anything.
+     * IS NOT INTERCHANGEABLE.** The retired `network` mode was labelled *"Network"* in the rail and
+     * titled *"Network diagram"* on the page. Filtering on a rail label could look for text a screen
+     * never renders — a trap this test would have walked into the first time it derived anything.
      *
      * If the chrome is ever retired entirely, `WARD_WORKSPACE_MODES` empties, the floor below fails
      * loudly, and THAT is the moment to delete this test — not a silent skip.

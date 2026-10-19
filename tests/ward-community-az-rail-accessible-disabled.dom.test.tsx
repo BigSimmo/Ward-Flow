@@ -1,4 +1,6 @@
 // tests/ward-community-az-rail-accessible-disabled.dom.test.tsx
+import { readFileSync } from "node:fs";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -90,5 +92,27 @@ describe("Community gateway — the A-Z rail marks an empty letter accessibly-di
     fireEvent.click(enabledButton);
     const heading = screen.getByRole("heading", { level: 3, name: enabledLetter });
     expect(document.activeElement).toBe(heading);
+  });
+});
+
+// DA-21 (design audit, 19 Oct 2026): the letters were 27 by 20px with no gap, which fails WCAG 2.5.8.
+// jsdom does not lay out, so this reads the rule itself: every letter is at least 24 by 24px, with
+// a gap between letters.
+describe("the A to Z letters meet the 24px target size (DA-21)", () => {
+  const css = readFileSync("src/components/ward-management/community/community-index.module.css", "utf8");
+  const rule = (selector: string) => {
+    const match = new RegExp(`(?:^|\\n)${selector.replace(".", "\\.")} \\{([^}]*)\\}`).exec(css);
+    expect(match, `${selector} rule not found`).not.toBeNull();
+    return match?.[1] ?? "";
+  };
+
+  it("sizes each letter at least 24 by 24px", () => {
+    const button = rule(".azRailButton");
+    expect(button).toMatch(/min-height: 1\.5rem;/);
+    expect(button).toMatch(/min-width: 1\.5rem;/);
+  });
+
+  it("spaces the letters apart", () => {
+    expect(rule(".azRail")).toMatch(/\bgap: 2px;/);
   });
 });

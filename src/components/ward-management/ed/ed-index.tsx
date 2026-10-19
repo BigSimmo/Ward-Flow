@@ -57,6 +57,7 @@ import {
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useDeviceChoice } from "@/components/ward-management/shell/use-device-choice";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -89,6 +90,8 @@ type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "past-target" | "waiting" | "clear";
 type OrderBy = "longest" | "most" | "service";
 type ViewMode = "cards" | "table" | "lanes";
+const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
+const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes";
 type WaitClock = "past" | "severe" | "in";
@@ -200,8 +203,9 @@ export function EdIndex() {
 
   const [service, setService] = useState<ServiceFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const [order, setOrder] = useState<OrderBy>("longest");
-  const [view, setView] = useState<ViewMode>("cards");
+  // Smart features idea 9: the order and layout last chosen on this device, never a filter.
+  const [order, setOrder] = useDeviceChoice("ward_flow_choice_ed_index_order", ORDERS, "longest");
+  const [view, setView] = useDeviceChoice("ward_flow_choice_ed_index_view", VIEWS, "cards");
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);

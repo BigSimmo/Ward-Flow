@@ -438,7 +438,6 @@ export function Registers({
   silentPressed,
   onSilent,
   onPick,
-  onNotWired,
   part = "all",
 }: {
   /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
@@ -454,7 +453,6 @@ export function Registers({
   silentPressed: boolean;
   onSilent: () => void;
   onPick: (id: string) => void;
-  onNotWired: () => void;
 }) {
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<"escalated" | "attention" | "resolved" | "system">("escalated");
@@ -653,15 +651,6 @@ export function Registers({
         >
           <section aria-label="Delays with no named person" className={styles.system} data-ward-primitive="panel">
             <NoStatewideDelays />
-            <button
-              type="button"
-              className={styles.chip}
-              onClick={onNotWired}
-              aria-label="Record a service-wide or facility delay. Not wired in this prototype."
-              title="Not wired in this prototype."
-            >
-              Record hold (not wired)
-            </button>
           </section>
         </div>
       </div>

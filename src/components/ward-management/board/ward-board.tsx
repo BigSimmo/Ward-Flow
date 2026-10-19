@@ -22,7 +22,7 @@ import {
 } from "@/components/ward-management/ward-board-derivations";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -150,6 +150,8 @@ export function WardBoard({
   const [pendingConfirm, setPendingConfirm] = useState<{
     kind: "leaving" | "away_at_ed";
     who: string;
+    /** The second identifier the confirmation shows: formal name, UMRN and bed (design audit DA-08). */
+    identity?: string;
     item?: ShiftTileItem;
     admissionId?: string;
   } | null>(null);
@@ -482,6 +484,16 @@ export function WardBoard({
       ? resolvePatientIdentity(subject)
       : resolveSubjectPatient(subject, { patients, movements });
     return resolved.patient ? resolved.displayName : "the patient (name not recorded)";
+  };
+  /** Design audit DA-08: a departure is confirmed against a second identifier, not the name alone. */
+  const identityFor = (admissionId: string | undefined): string | undefined => {
+    const admission = admissions.find((a) => a.id === admissionId);
+    if (!admission) return undefined;
+    const resolved = resolvePatientIdentity
+      ? resolvePatientIdentity(admission)
+      : resolveSubjectPatient(admission, { patients, movements });
+    if (!resolved.patient) return undefined;
+    return `${patientIdentityLine(resolved)}${admission.bedNumber === undefined ? "" : ` · Bed ${admission.bedNumber}`}`;
   };
 
   /*
@@ -824,6 +836,7 @@ export function WardBoard({
       setPendingConfirm({
         kind: "leaving",
         who: item.who || nameFor(item.selectableKey),
+        identity: identityFor(item.selectableKey),
         item,
         admissionId: item.selectableKey,
       });
@@ -1276,6 +1289,11 @@ export function WardBoard({
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
+                    {pendingConfirm.identity ? (
+                      <span className={styles.confirmIdentity} data-testid="ward-board-confirm-identity">
+                        Check: {pendingConfirm.identity}
+                      </span>
+                    ) : null}
                   </>
                 ) : (
                   <>

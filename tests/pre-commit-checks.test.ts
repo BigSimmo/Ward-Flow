@@ -20,6 +20,7 @@ import {
   filterAdmissionMergePaths,
   WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
+import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const verifiedCheckouts: string[] = [];
 afterAll(() => {
@@ -28,11 +29,11 @@ afterAll(() => {
 });
 
 /**
- * A synthetic checkout that the real isPublicWardFlowCheckout() verifies, so sign-out parsing tests do
- * not depend on this checkout's clone depth. It has the canonical origin URL (never contacted) and a
- * HEAD and origin/main whose parent is the identity anchor. The anchor commit is supplied through a
- * replace ref onto a local root commit, because a shallow clone does not hold the real anchor object.
- * The identity check itself is covered against real history in public-signout-boundary.test.ts.
+ * A synthetic checkout that the real isPublicWardFlowCheckout() verifies. It has the canonical origin
+ * URL (never contacted) and a HEAD and origin/main whose parent is the identity anchor, borrowed from
+ * this checkout's objects. The identity check ignores replace refs, so the real anchor object is needed
+ * and callers skip without full history. The identity check itself is covered in
+ * public-signout-boundary.test.ts.
  */
 function verifiedWardFlowCheckout(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "precommit-verified-")));
@@ -55,9 +56,13 @@ function verifiedWardFlowCheckout(): string {
     }).trim();
   git("init", "--quiet", "--initial-branch=ward/probe");
   git("remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow");
+  const objects = join(
+    execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { encoding: "utf8", env }).trim(),
+    "objects",
+  );
+  mkdirSync(join(root, ".git", "objects", "info"), { recursive: true });
+  writeFileSync(join(root, ".git", "objects", "info", "alternates"), `${objects}\n`);
   const tree = git("hash-object", "-t", "tree", "-w", "--stdin");
-  const standIn = git("commit-tree", tree, "-m", "synthetic identity anchor stand-in");
-  git("update-ref", `refs/replace/${WARD_FLOW_IDENTITY_ANCHOR}`, standIn);
   const head = git("commit-tree", tree, "-p", WARD_FLOW_IDENTITY_ANCHOR, "-m", "synthetic Ward Flow head");
   git("update-ref", "refs/heads/ward/probe", head);
   git("update-ref", "refs/remotes/origin/main", head);
@@ -74,7 +79,8 @@ describe("signOutConflicts (clash guard)", () => {
     "- 2026-09-25 | Old | ward/old | D:/w/o | tests/b.test.ts",
   ].join("\n");
 
-  it("retains the last file before pipe metadata without requiring a trailing comma", () => {
+  it("retains the last file before pipe metadata without requiring a trailing comma", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const file = "docs/ward-flow/last.md";
     const line = (branch: string) =>
       `Open sign-outs only\n- 2026-10-17 | Synthetic owner | ${branch} | | ${file} | repo=BigSimmo/Ward-Flow\n`;
@@ -156,6 +162,48 @@ describe("signOutConflicts (clash guard)", () => {
         "ward/mine",
       ),
     ).toHaveLength(1);
+  });
+
+  it("keeps a takeover note whole when it contains commas", () => {
+    const log = [
+      "Open sign-outs only",
+      "- 2026-09-27 | Other | ward/other | D:/w/other | script-budget.json",
+      "- 2026-09-27 | Me | ward/mine | D:/w/mine | script-budget.json (approved takeover by Josh: value-only raise, decision card 11:40Z), docs/a.md",
+    ].join("\n");
+    expect([...approvedTakeoverFiles(log, "ward/mine", "D:/w/mine")]).toEqual(["script-budget.json"]);
+    expect(signOutConflicts(["script-budget.json"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+    expect(unsignedWardFiles(["docs/a.md"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+  });
+
+  it("still reads every path after an unclosed bracket", () => {
+    const log = [
+      "Open sign-outs only",
+      "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md (note, docs/b.md",
+    ].join("\n");
+    expect(signOutConflicts(["docs/b.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "docs/b.md", owner: "Other", branch: "ward/other" },
+    ]);
+  });
+
+  it("releases only the named files when a RELEASED line has a files= field", () => {
+    const claim = "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md, docs/a.md";
+    const partial = "RELEASED 2026-09-27 | Other | ward/other | files=docs/a.md | handed back";
+    const log = ["Open sign-outs only", claim, partial].join("\n");
+    expect(signOutConflicts(["docs/a.md"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+    expect(signOutConflicts(["AGENTS.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "AGENTS.md", owner: "Other", branch: "ward/other" },
+    ]);
+    const all = `${log}\nRELEASED 2026-09-27 | Other | ward/other | files=AGENTS.md | done`;
+    expect(signOutConflicts(["AGENTS.md", "docs/a.md"], all, "ward/mine", "D:/w/mine")).toEqual([]);
+  });
+
+  it("releases nothing when a RELEASED line has an empty files= field", () => {
+    const claim = "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md";
+    const empty = "RELEASED 2026-09-27 | Other | ward/other | files= | slip";
+    const log = ["Open sign-outs only", claim, empty].join("\n");
+    expect(signOutConflicts(["AGENTS.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "AGENTS.md", owner: "Other", branch: "ward/other" },
+    ]);
   });
 
   it("reuses a scoped approval already recorded in an older owner description", () => {
@@ -491,7 +539,7 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
   const mainSource = source.slice(mainStart, mainEnd);
   const incomingFile = "docs/ward-flow/incoming.md";
   // ownershipAdmission() verifies this root with the real identity check, so it must be a public checkout.
-  const fixtureRoot = verifiedWardFlowCheckout();
+  const fixtureRoot = HAS_WARD_FLOW_HISTORY ? verifiedWardFlowCheckout() : tmpdir();
   const mergeHeadPath = join(fixtureRoot, "MERGE_HEAD");
   const signOutFile = join(fixtureRoot, "sign-out.md");
 
@@ -588,7 +636,8 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
     return { code: await main(), errors: errors.join("\n"), admissions };
   }
 
-  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async () => {
+  it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const missing = await run({ logPresent: false });
     expect(missing.code).toBe(1);
     expect(missing.errors).toContain("shared sign-out log unavailable");
@@ -615,17 +664,20 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
     expect(refusedSkip.admissions).toBe(0);
   });
 
-  it("keeps truly empty non-merge and identical incoming merge admissions empty", async () => {
+  it("keeps truly empty non-merge and identical incoming merge admissions empty", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     expect(await run({ merging: false, logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
     expect(await run({ incoming: "", logPresent: false })).toMatchObject({ code: 0, admissions: 0 });
   });
 
-  it("does not admit a current-side-only path from the index-to-incoming diff", async () => {
+  it("does not admit a current-side-only path from the index-to-incoming diff", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const result = await run({ incoming: "", currentOnly: "docs/ward-flow/current.md", logPresent: false });
     expect(result).toMatchObject({ code: 0, admissions: 0 });
   });
 
-  it("keeps ownership admission mandatory when merge bases are ambiguous", async () => {
+  it("keeps ownership admission mandatory when merge bases are ambiguous", async (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const result = await run({ mergeBases: `${"b".repeat(40)}\n${"c".repeat(40)}`, logPresent: false });
     expect(result).toMatchObject({ code: 1, admissions: 1 });
     expect(result.errors).toContain("shared sign-out log unavailable");

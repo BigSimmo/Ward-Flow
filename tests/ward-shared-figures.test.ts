@@ -4,7 +4,6 @@ import { alertKindOf, isQueueItem } from "@/components/ward-management/alerts/al
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { changesSinceInstant } from "@/components/ward-management/coordinator/since-last-look";
 import { sinceLastLookCount } from "@/components/ward-management/coordinator/since-last-look-panel";
-import { waitingByService } from "@/components/ward-management/network/network-overview-derivations";
 import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { occupancyPercent, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
@@ -75,9 +74,6 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
     expect(waiting.total, "picker All services vs Home").toBe(home);
     const sum = HEALTH_SERVICES.reduce((total, service) => total + (waiting.byService.get(service) ?? 0), 0);
     expect(sum, "the services add up to All services").toBe(waiting.total);
-    for (const [service, count] of waitingByService(edPressure(now, state.movements))) {
-      expect(waiting.byService.get(service), `${service}: picker vs Network`).toBe(count);
-    }
   });
 
   it("beds ready: Home's hero and the Statistics ready count read one figure", () => {

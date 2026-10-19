@@ -2,7 +2,6 @@
 
 import { useId } from "react";
 import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import {
   SUPPORT_SERVICE_TYPES,
   type SupportServiceType,
@@ -15,11 +14,12 @@ const SERVICE_LABELS: Record<SupportServiceType, string> = {
   cleaning: "Cleaning, bed made ready",
 };
 
-export const NOT_WIRED = "Not wired in this prototype.";
-
 /**
  * Top 25 item 1: after the ward confirms a discharge, the pharmacy, transport and cleaning notices
- * it can send for the bed. Unconnected notices remain explicitly not wired.
+ * it can send for the bed.
+ *
+ * Simplification A5 (Josh, 19 Oct 2026): with no sending connected, the card only confirms the
+ * discharge. It no longer lists three notices marked "not wired" that nobody could send.
  */
 export function WardDischargeNotices({
   bedLabel,
@@ -39,6 +39,7 @@ export function WardDischargeNotices({
   onClose: () => void;
 }) {
   const baseId = useId();
+  const wired = onSendService !== undefined || sentServices !== undefined;
 
   return (
     <Card
@@ -48,58 +49,50 @@ export function WardDischargeNotices({
     >
       <CardHead
         id={`${baseId}-ward-discharge-notices-title`}
-        title="Discharge support notices"
+        title={wired ? "Discharge support notices" : "Discharge confirmed"}
         meta={bedLabel}
         level={3}
       />
       <CardBody>
         <p className={styles.lead}>
           Discharge confirmed for {bedLabel}.
-          {dueSoonHours !== null ? ` Due out within ${dueSoonHours} hours, so these are best sent now.` : ""}
+          {wired && dueSoonHours !== null ? ` Due out within ${dueSoonHours} hours, so these are best sent now.` : ""}
         </p>
-        <ul className={styles.list}>
-          {SUPPORT_SERVICE_TYPES.map((service) => {
-            const isSent = sentServices?.has(service) === true;
-            return (
-              <li key={service} className={styles.row} data-sent={isSent ? "true" : "false"}>
-                <span className={styles.service}>{SERVICE_LABELS[service]}</span>
-                {onSendService || isSent ? (
-                  <Button
-                    variant="sec"
-                    size="sm"
-                    aria-disabled={isSent}
-                    aria-pressed={isSent}
-                    aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
-                    onClick={() => {
-                      if (!isSent) onSendService?.(service);
-                    }}
-                  >
-                    {isSent ? "Notice sent" : "Send notice"}
-                  </Button>
-                ) : (
-                  <NotWiredButton
-                    variant="sec"
-                    size="sm"
-                    label="Send notice"
-                    name={`Send ${SERVICE_LABELS[service]} notice`}
-                    aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
-                  />
-                )}
-                <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
-                  {isSent ? (
-                    <Badge tone="success" size="sm">
-                      Sent
-                    </Badge>
-                  ) : onSendService ? (
-                    "Ready to send"
-                  ) : (
-                    NOT_WIRED
-                  )}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        {wired ? (
+          <ul className={styles.list}>
+            {SUPPORT_SERVICE_TYPES.map((service) => {
+              const isSent = sentServices?.has(service) === true;
+              return (
+                <li key={service} className={styles.row} data-sent={isSent ? "true" : "false"}>
+                  <span className={styles.service}>{SERVICE_LABELS[service]}</span>
+                  {onSendService || isSent ? (
+                    <Button
+                      variant="sec"
+                      size="sm"
+                      aria-disabled={isSent}
+                      aria-pressed={isSent}
+                      aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
+                      onClick={() => {
+                        if (!isSent) onSendService?.(service);
+                      }}
+                    >
+                      {isSent ? "Notice sent" : "Send notice"}
+                    </Button>
+                  ) : null}
+                  <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>
+                    {isSent ? (
+                      <Badge tone="success" size="sm">
+                        Sent
+                      </Badge>
+                    ) : (
+                      "Ready to send"
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </CardBody>
       <CardFoot>
         <Button variant="ghost" size="sm" onClick={onClose}>

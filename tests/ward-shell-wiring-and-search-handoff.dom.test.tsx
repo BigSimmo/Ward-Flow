@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -11,6 +11,7 @@ import { PatientSearchPage } from "@/components/ward-management/search/patient-s
 import { takeHandedOffPatientSearchText } from "@/components/ward-management/search/patient-query-handoff";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -78,7 +79,7 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     );
   });
 
-  it("updates shiftCockpit persona and enforces single-overlay mutual exclusion + Escape focus return in WardRail", () => {
+  it("updates shiftCockpit persona and enforces single-overlay mutual exclusion + Escape focus return in WardRail", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />
@@ -93,16 +94,18 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     fireEvent.click(appearanceBtn);
     expect(appearanceBtn).toHaveAttribute("aria-expanded", "true");
 
-    // Opening Persona closes Appearance
+    // B6 (Josh, 19 Oct 2026): the person opens Go to a desk, the one switcher, and that closes Appearance.
     fireEvent.click(personaBtn);
     expect(personaBtn).toHaveAttribute("aria-expanded", "true");
     expect(appearanceBtn).toHaveAttribute("aria-expanded", "false");
+    const drawer = await screen.findByRole("dialog", { name: "Go to a desk" }, { timeout: 15_000 });
 
-    // Switch persona to Sr M. Gallagher and verify shiftCockpit updates
-    const popover = screen.getByTestId("ward-rail-persona-popover");
-    fireEvent.click(within(popover).getByRole("option", { name: /Gallagher/i }));
-    expect(personaBtn).toHaveAttribute("aria-expanded", "false");
+    // Opening a desk announces it (persona sync); the shift cockpit shows that desk's person.
+    act(() => dispatchPersonaSyncForRole("ed"));
     expect(screen.getAllByText(/Sr M\. Gallagher · Triage liaison nurse/).length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(within(drawer).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Go to a desk" })).not.toBeInTheDocument());
+    expect(personaBtn).toHaveAttribute("aria-expanded", "false");
 
     // Reopen Appearance and press Escape -> closes and restores focus to appearanceBtn
     fireEvent.click(appearanceBtn);

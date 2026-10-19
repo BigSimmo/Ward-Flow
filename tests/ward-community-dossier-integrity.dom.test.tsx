@@ -175,11 +175,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     expect(screen.queryByRole("dialog", { name: new RegExp(referralId) })).toBeNull();
   });
 
-  it("discloses the unsupported dossier editor and unavailable patient follow-up", () => {
+  it("offers no dossier editor while it is not connected, and discloses unavailable follow-up", () => {
     start();
     openPatient(seed.patients[0]!.id);
-    fireEvent.click(screen.getByRole("button", { name: "Edit dossier" }));
-    expect(document.getElementById("actionToastMsg")).toHaveTextContent("Not wired in this prototype.");
+    expect(screen.queryByRole("button", { name: "Edit dossier" })).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("digital audit signature");
     fireEvent.click(screen.getByRole("button", { name: "Arrange follow-up" }));
     expect(screen.getByTestId("community-patient-care")).toHaveTextContent("No matching admission is available");

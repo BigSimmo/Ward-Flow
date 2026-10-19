@@ -225,6 +225,10 @@
 .note {
   margin: 0;
 }
+/* A closing note under a list of cards keeps a gap from the last card (Josh, 19 Oct 2026). */
+.noteAfterList {
+  margin-block-start: var(--wf-s-3);
+}
 .facts {
   display: grid;
   grid-template-columns: 115px minmax(0, 1fr);

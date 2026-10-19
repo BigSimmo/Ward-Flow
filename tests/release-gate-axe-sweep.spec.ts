@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
@@ -10,7 +10,7 @@ import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
  *
  * The journeys scan screens mid-task. This sweep opens each route fresh, so a screen no journey
  * reaches is still checked. Redirect-only routes (command, constellation, escalation, exceptions,
- * queue) are left out because they land on a route already listed. One seeded person and one
+ * network, queue) are left out because they land on a route already listed. One seeded person and one
  * seeded movement stand in for the record pages, opened by their coded addresses.
  * The demonstration sign-in page is a sibling of `/ward-flow` with no rail or header, so it is
  * scanned on its own below (audit UI-8, 19 October 2026). It stays unlinked; this only checks it.
@@ -35,7 +35,6 @@ const ROUTES = [
   ["/legal-forms", "ward-legal-forms-page"],
   ["/movements", "ward-movements-page"],
   [`/movements/${encodeRecordAddress("WF-001")}`, "ward-person-screen"],
-  ["/network", "ward-mode-network"],
   ["/on-call", "ward-on-call-screen"],
   ["/out-of-area", "ward-out-of-area-board"],
   ["/people/new", "ward-add-patient-screen"],
@@ -117,3 +116,41 @@ for (const route of UNSHELLED_ROUTES) {
     await expectAccessible(page, testInfo, route);
   });
 }
+
+/**
+ * Design audit DA-20 (19 October 2026): the sweep above scans each screen at rest, so a structure
+ * that only exists while something is open went unchecked. These scan the header search palette
+ * with results showing and the ED actions menu open, the two places DA-05 fixed (buttons inside the
+ * results list, headings inside the menu). The search types one letter; no name is typed.
+ */
+async function openShell(page: Page, route: string, screenId: string) {
+  await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
+  await expect(page.locator("html[data-wf-bar-ready]")).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByTestId(screenId)).toBeVisible({ timeout: 15_000 });
+  await page.waitForLoadState("networkidle");
+}
+
+test("axe: the header search palette with results open has no serious or critical violation", async ({
+  page,
+}, testInfo) => {
+  await openShell(page, "/wards", "ward-index");
+  const input = page.getByTestId("ward-global-search-input");
+  await input.click();
+  await input.fill("a");
+  const popup = page.getByTestId("ward-global-search-popup");
+  await expect(popup).toBeVisible();
+  await expect(popup.getByRole("option").first()).toBeVisible();
+  await input.press("ArrowDown");
+  await expect(input).toHaveAttribute("aria-activedescendant", /.+/);
+  await expectAccessible(page, testInfo, "header search open");
+});
+
+test("axe: the ED actions menu when open has no serious or critical violation", async ({ page }, testInfo) => {
+  // The phone ED board opens each row's actions in a sheet rather than this menu.
+  test.skip(isPhoneLayout(page), "The actions menu is the desktop ED board's");
+  await openShell(page, "/ed/fsh-ed", "ward-ed-screen");
+  await page.locator('[data-testid^="ward-ed-unfold-"]:visible').first().click();
+  await expect(page.getByRole("menu")).toBeVisible();
+  await expectAccessible(page, testInfo, "ED actions menu open");
+});

@@ -74,6 +74,12 @@ function isValidDemoPayload(value: unknown): value is WardFlowDemoPayload {
   return isValidStoredWardFlowState(value.state);
 }
 
+/**
+ * The opening words of the routine "your last save came back" notice. The shell shows that notice
+ * once per tab and lets it fade (simplification A3, 19 Oct 2026); the two failure notices stay.
+ */
+export const RESTORED_NOTICE_PREFIX = "Restored the last successful save from";
+
 export const STORAGE_UNAVAILABLE =
   "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
 const SAVE_REJECTED =
@@ -122,7 +128,7 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
     }).format(new Date(parsed.savedAtAbsolute * 60_000));
     return {
       saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `Restored the last successful save from ${savedAt} (Perth time). Later changes may not have been saved.`,
+      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${savedAt} (Perth time). Later changes may not have been saved.`,
     };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.

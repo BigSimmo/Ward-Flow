@@ -158,6 +158,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* DA-21 (WCAG 2.5.8): each letter is at least 24 by 24px, with a gap between targets. */
+  gap: 2px;
   padding: var(--wf-s-2) 0;
   border-right: 1px solid var(--wf-line-2);
   background: var(--wf-surface-2);
@@ -165,7 +167,8 @@
 
 .azRailButton {
   width: 100%;
-  min-height: 1.25rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   padding: 0;
   border: 0;
   background: none;

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
@@ -180,7 +180,11 @@ describe("demo scenario save and load", () => {
     const built = current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
+    // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.
     fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
+    );
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
 
     vi.useRealTimers();

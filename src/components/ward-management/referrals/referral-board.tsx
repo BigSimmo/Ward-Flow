@@ -887,7 +887,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
                     <div className={a.panelWho}>
                       <h2 className={a.panelName}>
-                        {selectedPatientInfo.displayName}
+                        {/* "Surname, First", as the queue beside it (simplification A8, 19 Oct 2026). */}
+                        {selectedPatientInfo.formalName}
                         <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>

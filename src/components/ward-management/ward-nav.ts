@@ -80,6 +80,10 @@ export type WardMode = (typeof WARD_MODES)[number];
  */
 export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map([
   [
+    "network",
+    "The Network screen was retired on 19 October 2026 (Josh's decision): it repeated Home and Capacity, its ready-beds-by-road-time list moved to Capacity, and /ward-flow/network is now a redirect to Home. RETAINED as an id, as 'transport' was after MERGE 03, to keep the retirement small: removing it also touches WARD_MODES, WARD_VIEW_ICONS and the role orders, which is a separate tidy-up.",
+  ],
+  [
     "transport",
     "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen, and /ward-flow/transport is now a redirect to /movements. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
   ],
@@ -120,10 +124,14 @@ export type WardViewItem = {
  * `transport` entry is gone; the route still exists as a redirect to `/movements` — see
  * `WARD_NAV_INTENTIONALLY_UNLISTED` below. The `transport` id itself is untouched in the `WardMode`
  * type below, for the same reason `queue`/`exceptions` stayed untouched after MERGE 01.
+ *
+ * FIVE as of 19 October 2026 (Josh's decision): the `network` entry is gone. The Network screen
+ * repeated Home and Capacity; its one unique list, ready beds by road time, moved to Capacity, and
+ * `/ward-flow/network` is now a redirect to Home — see `WARD_NAV_INTENTIONALLY_UNLISTED`. The
+ * `network` id itself is untouched in the `WardMode` type, as `transport` was after MERGE 03.
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
   { id: "command", href: "/ward-flow", label: "Home" },
-  { id: "network", href: "/ward-flow/network", label: "Network" },
   { id: "delays", href: "/ward-flow/delays", label: "Delays" },
   { id: "capacity", href: "/ward-flow/capacity", label: "Capacity" },
   { id: "movements", href: "/ward-flow/movements", label: "Movements" },
@@ -435,7 +443,11 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/ward-flow/constellation",
-    "A deliberate 307 redirect to /network, documented in its own route file (constellation/page.tsx) — not a destination.",
+    "A deliberate 307 redirect to /ward-flow, documented in its own route file (constellation/page.tsx) — not a destination.",
+  ],
+  [
+    "/ward-flow/network",
+    "The retired Network screen (19 Oct 2026): a deliberate redirect to /ward-flow, documented in its own route file (network/page.tsx) — not a destination.",
   ],
   /* The entry for `WARD_REFERRAL_INTAKE_HREF` was REMOVED on 2026-09-03, in the same change that
    * listed the form in `WARD_NAV` by owner ruling. It had to go in THAT commit and not a later

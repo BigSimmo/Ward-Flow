@@ -131,8 +131,13 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
   const rail = page.getByTestId("ward-rail");
   const railLink = rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`);
   const dockLink = page.getByTestId("ward-phone-dock").locator(`a[href="${href}"]`);
+  // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
+  const railMore = rail.locator('[data-testid="ward-rail-more"], [data-testid="ward-rail-tablet-more"]').first();
   if (await railLink.isVisible()) {
     await railLink.click();
+  } else if (await railMore.isVisible()) {
+    await railMore.click();
+    await page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first().click();
   } else if (await dockLink.isVisible()) {
     await dockLink.click();
   } else {

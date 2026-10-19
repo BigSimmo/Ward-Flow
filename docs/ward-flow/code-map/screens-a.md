@@ -459,7 +459,16 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - Tests that read the screen's source read every one of these files through
   `tests/helpers/community-screen-sources.ts`.
 
-## `search/` — 11 files, 9,679 lines
+## `search/` — 13 files
+
+- **Header search additions (19 October 2026):** `search-answers.ts` answers a fixed list of common
+  questions ("over 24 hours", "no bed yet", "past expected discharge", "Form 1A") from the Patients
+  page census and gives the preview each person's "where now" and next step; `search-places.ts`
+  reads bed questions ("Graylands bed 4") and "free beds". `ward-smart-search.ts` also lists queued
+  referrals (opening `referralBoardHref`) and near spellings ("Did you mean?") when a name finds
+  nobody. No AI, no scoring, no typed text in storage or the address. Voluntary/involuntary are
+  deliberately not answered (see the `search-answers.ts` header). Tests:
+  `ward-search-answers.test.ts` and the provider block in `ward-global-search.dom.test.tsx`.
 
 - **Route:** `/search` (`patient-search.tsx` → `PatientSearchPage`).
 - **Mockup:** `patient-search-third-edition.html` (SCREEN-MAP.md row for `search/`). Two further

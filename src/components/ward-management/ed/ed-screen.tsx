@@ -22,6 +22,7 @@ import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "./ed-screen-actions";
@@ -151,6 +152,20 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
+  // DA-09: an ED desk cannot open Capacity or Governance, so those links are offered only to a desk that can.
+  const canOpen = useCanOpenHref();
+  const elsewhereLinks = [
+    {
+      href: "/ward-flow/capacity",
+      title: "Statewide capacity",
+      sub: "Every unit's beds, on the Capacity page",
+    },
+    {
+      href: "/ward-flow/governance",
+      title: "Seen in the last 24 hours",
+      sub: "This department's recorded events, in the Governance audit",
+    },
+  ].filter((link) => canOpen(link.href));
   const isTabletPortrait = useIsTabletPortrait();
   /** Mockups: the board is list rows with one Next button on every width; edits live in the sheet. */
   /*
@@ -241,7 +256,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   });
   const {
     patients,
-    notReviewedCount,
     heroHighlightMatch,
     selectedPatient,
     waitingForBed,
@@ -405,7 +419,6 @@ export function EdScreen({ edId }: EdScreenProps) {
             },
             { id: "held", label: "Bed held", value: waitingForBed },
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
-            { id: "unreviewed", label: "Not reviewed", value: notReviewedCount },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
           // Option B (Josh, 13 Oct 2026): one referral flow. Raise referral opens the referral
@@ -429,22 +442,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         ) : null}
         {/* Device audit 11 Oct 2026: the Statewide capacity table and the 24 hour timeline left the
             page; each is one link to the page that owns it. */}
-        {fullscreenBoard ? null : (
-          <EdElsewhereLinks
-            links={[
-              {
-                href: "/ward-flow/capacity",
-                title: "Statewide capacity",
-                sub: "Every unit's beds, on the Capacity page",
-              },
-              {
-                href: "/ward-flow/governance",
-                title: "Seen in the last 24 hours",
-                sub: "This department's recorded events, in the Governance audit",
-              },
-            ]}
-          />
-        )}
+        {fullscreenBoard || elsewhereLinks.length === 0 ? null : <EdElsewhereLinks links={elsewhereLinks} />}
         {fullscreenBoard ? null : <EdListsSection ctx={ctx} />}
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}

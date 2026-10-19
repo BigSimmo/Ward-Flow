@@ -307,6 +307,9 @@ export function FilterChip({
       aria-pressed={pressed}
       aria-disabled={unavailable || undefined}
       className={cx(styles.chip, unavailable && styles.unavailableChip, className)}
+      // Simplification A1 (Josh, 19 Oct 2026): a filter with nothing to show recedes, so the eye
+      // lands on the ones that matter. It stays pressable; only its colour changes.
+      data-dim={!pressed && (count === 0 || count === "0") ? "true" : undefined}
       onClick={() => onPressedChange(!pressed)}
     >
       {tone ? <StatusGlyph tone={tone} size={9} /> : null}

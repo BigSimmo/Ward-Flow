@@ -14,10 +14,10 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
-import { NOT_WIRED, WardDischargeNotices } from "@/components/ward-management/ward/ward-discharge-notices";
+import { WardDischargeNotices } from "@/components/ward-management/ward/ward-discharge-notices";
 import type { SupportServiceType } from "@/components/ward-management/ward-support-notifications";
 
-/** Top 25 item 1: confirming a discharge offers the support notices, honestly marked not wired. */
+/** Top 25 item 1: confirming a discharge offers the support notices once sending is connected. */
 afterEach(() => {
   cleanup();
   window.history.replaceState(null, "", "/");
@@ -38,17 +38,12 @@ function confirmFirstRelease() {
 }
 
 describe("discharge support notices", () => {
-  it("keeps unconnected pharmacy, transport and cleaning notices explicitly not wired", () => {
+  it("confirms the discharge without offering notices nobody can send", () => {
     confirmFirstRelease();
     const card = screen.getByTestId("ward-discharge-notices");
-    expect(card).toHaveTextContent("Discharge support notices");
-    const sendButtons = within(card).getAllByRole("button", { name: "Send notice" });
-    expect(sendButtons).toHaveLength(3);
-    expect(within(card).getAllByText(NOT_WIRED)).toHaveLength(3);
-    fireEvent.click(sendButtons[0]!);
-    expect(within(card).getByTestId("not-wired-popover")).toHaveTextContent(NOT_WIRED);
-    expect(within(card).queryByRole("button", { name: "Notice sent" })).toBeNull();
-    expect(within(card).queryByText("Sent")).toBeNull();
+    expect(card).toHaveTextContent("Discharge confirmed");
+    expect(within(card).queryByRole("button", { name: "Send notice" })).toBeNull();
+    expect(within(card).queryByText(/not wired/iu)).toBeNull();
     fireEvent.click(within(card).getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("ward-discharge-notices")).toBeNull();
   });

@@ -64,7 +64,7 @@ on unchanged code, following the [UI workflow](../agents/building-ui.md#building
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. Follow [AGENTS.md](../../AGENTS.md) for the single-user interactive exception:
+  append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. Follow [AGENTS.md](../../AGENTS.md) for the single-user interactive exception:
   `SKIP_SIGNOUT_GUARD=1` is an explicit normal per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`), never a hook default and never used for concurrent multi-agent work or bare-publication admission.
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.

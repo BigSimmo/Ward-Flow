@@ -183,7 +183,8 @@ input.planInput {
   padding: 3px 0;
   border-top: 1px solid var(--line);
 }
-.menuGroup > h3 {
+.menuGroupLabel {
+  display: block;
   margin: 0;
   padding: 8px 8px 4px;
   font-size: 12px;

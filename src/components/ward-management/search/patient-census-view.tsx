@@ -55,6 +55,7 @@ import {
 
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 
 const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
   act: "danger",
@@ -825,7 +826,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         Movement
       </Link>
     ) : row.kind === "referral" ? (
-      <Link className={buttonClass({ size: "sm" })} href="/ward-flow/referrals">
+      <Link className={buttonClass({ size: "sm" })} href={referralBoardHref(row.key)}>
         Referral
       </Link>
     ) : row.kind === "admission" && row.unitId && row.bedNumber !== undefined ? (

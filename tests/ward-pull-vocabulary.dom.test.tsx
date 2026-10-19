@@ -466,7 +466,7 @@ describe("the coordinator's mode workspaces say pull", () => {
   it("shows no generic role focus banner for the coordinator or the ward role", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardModeWorkspace mode="network" />
+        <WardModeWorkspace mode="governance" />
       </WardFlowProvider>,
     );
 

@@ -4,6 +4,25 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 
 /**
+ * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
+ * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
+ * first when the row is further down.
+ */
+async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
+  const showAll = queue.getByTestId("ward-queue-show-all");
+  if (
+    !(await row.isVisible()) &&
+    (await showAll.isVisible()) &&
+    (await showAll.getAttribute("aria-expanded")) !== "true"
+  ) {
+    await showAll.click();
+  }
+  await row.click();
+  return row;
+}
+
+/**
  * PR 130's Placement panel starts Candidates open; earlier versions started it closed.
  * Ensure Candidates and any Eligibility checks disclosure are open before reading or clicking
  * inside them. The helper remains idempotent after every queue selection.
@@ -99,7 +118,14 @@ async function waitForScreen(page: Page, testId: string) {
 async function goViaRail(page: Page, href: string, screenTestId: string) {
   const rail = page.getByTestId("ward-rail");
   await expect(rail, "the shell rail must be mounted on this route").toBeVisible();
-  await rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`).click();
+  const link = rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`);
+  if (await link.isVisible()) {
+    await link.click();
+  } else {
+    // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
+    await rail.getByTestId("ward-rail-more").click();
+    await page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first().click();
+  }
   await waitForScreen(page, screenTestId);
 }
 
@@ -334,7 +360,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await switchView(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
     await expectNoReloadSince(page, "ED -> coordinator");
 
-    await page.locator(`[data-testid="ward-queue-row-${movementId}"]`).click();
+    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), movementId);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
     await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
