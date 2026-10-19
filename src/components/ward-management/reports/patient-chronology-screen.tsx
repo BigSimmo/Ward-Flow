@@ -1,5 +1,6 @@
 "use client";
 
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { useId, useMemo, useRef, useState } from "react";
@@ -152,6 +153,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const now = useWardFlowClock();
   const baseId = useId();
   const isPhone = useIsPhone();
+  const nameFor = usePatientNameDisplay();
   const toast = useOptionalToast();
   // The role is the route (`ward-chrome-role.ts`); nothing else holds a current role.
   const coordinator = wardChromeRole(usePathname() ?? "") === "coordinator";
@@ -506,8 +508,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   key={patient.id}
                   as="li"
                   leading={patient.id === patientId ? <Check size={16} aria-hidden="true" /> : undefined}
-                  name={pickerName(patient)}
-                  aria-label={`${pickerName(patient)}${patient.id === patientId ? ", chosen" : ""}`}
+                  name={nameFor(pickerName(patient), patient.umrn)}
+                  aria-label={`${nameFor(pickerName(patient), patient.umrn)}${patient.id === patientId ? ", chosen" : ""}`}
                   value={<span className={phone.mono}>{patient.umrn || "UMRN not recorded"}</span>}
                   onSelect={() => {
                     choosePatient(patient.id);

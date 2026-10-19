@@ -23,7 +23,7 @@ import { communityTeamOptions, suburbOptions } from "./referral-destination-opti
 import { StatusGlyph } from "@/components/wf";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
-import { Field, SelectBox, CardHead, invalidProps } from "./ward-referral-drawer-fields";
+import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
@@ -103,11 +103,6 @@ export function ReferralPatientStep({
     setNotOnWardReason,
     heldBedWardName,
   } = s;
-  // DA-12: each error is shown under its field and marks that field's control (`invalidProps`).
-  const unidentifiedError = patientShowErrors && !unidentified?.trim() ? "Describe the person" : null;
-  const notOnWardError = patientShowErrors && !notOnWardReason ? "Choose why the ward is referring them" : null;
-  const ageBandError = patientShowErrors && !ageBand ? "Choose the age band" : null;
-  const homeRegionError = patientShowErrors && !homeRegion ? "Choose the home region" : null;
   return (
     <div
       id={`${sectionId}-patient`}
@@ -364,12 +359,11 @@ export function ReferralPatientStep({
                 htmlFor={`${sectionId}-unidentified`}
                 required
                 hint="no name on file"
-                error={unidentifiedError}
+                error={patientShowErrors && !unidentified.trim() ? "Describe the person" : null}
                 wide
               >
                 <input
                   id={`${sectionId}-unidentified`}
-                  {...invalidProps(`${sectionId}-unidentified`, unidentifiedError)}
                   className={styles.fieldInput}
                   data-testid="ward-referral-unidentified-description"
                   value={unidentified}
@@ -427,12 +421,11 @@ export function ReferralPatientStep({
                     label="Why is the ward referring them?"
                     htmlFor={`${sectionId}-not-on-ward`}
                     required
-                    error={notOnWardError}
+                    error={patientShowErrors && !notOnWardReason ? "Choose why the ward is referring them" : null}
                   >
                     <SelectBox>
                       <select
                         id={`${sectionId}-not-on-ward`}
-                        {...invalidProps(`${sectionId}-not-on-ward`, notOnWardError)}
                         className={styles.fieldSelect}
                         value={notOnWardReason}
                         onChange={(e) => setNotOnWardReason(e.target.value as NotOnSendingWardReason | "")}
@@ -450,11 +443,15 @@ export function ReferralPatientStep({
           ) : null}
           {!liveMovement && (patientRecord || unidentified !== null) ? (
             <div className={styles.fieldGrid}>
-              <Field label="Age band" htmlFor={`${sectionId}-age-band`} required error={ageBandError}>
+              <Field
+                label="Age band"
+                htmlFor={`${sectionId}-age-band`}
+                required
+                error={patientShowErrors && !ageBand ? "Choose the age band" : null}
+              >
                 <SelectBox>
                   <select
                     id={`${sectionId}-age-band`}
-                    {...invalidProps(`${sectionId}-age-band`, ageBandError)}
                     className={styles.fieldSelect}
                     value={ageBand}
                     onChange={(e) => setAgeBand(e.target.value as Cohort | "")}
@@ -643,13 +640,18 @@ export function ReferralPatientStep({
             </p>
           )}
           <div className={styles.fieldGrid}>
-            <Field label="Home region" htmlFor={`${sectionId}-region`} required error={homeRegionError}>
+            <Field
+              label="Home region"
+              htmlFor={`${sectionId}-region`}
+              required
+              error={patientShowErrors && !homeRegion ? "Choose the home region" : null}
+            >
               <SelectBox>
                 <select
                   id={`${sectionId}-region`}
                   className={styles.fieldSelect}
                   value={homeRegion}
-                  {...invalidProps(`${sectionId}-region`, homeRegionError)}
+                  aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
                   onChange={(e) => {
                     setHomeRegion(e.target.value as HomeRegion);
                     // The region is its own answer; a team already confirmed stays so,

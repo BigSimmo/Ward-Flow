@@ -9,8 +9,11 @@ export type ReferralChart = {
   name: string;
   mimeType: (typeof CHART_MIME_TYPES)[number];
   sizeBytes: number;
-  /** Actual selected file, retained in the synthetic session only; never browser storage. */
-  base64: string;
+  /**
+   * Actual selected file, retained in the synthetic session only; never browser storage. Absent on
+   * the shared board, which keeps only the name, type and size (audit F-01).
+   */
+  base64?: string;
 };
 
 /** Medical clearance, item by item (ward referrals). Each item is answered or left unrecorded. */
@@ -234,9 +237,10 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       !Number.isInteger(chart.sizeBytes) ||
       chart.sizeBytes <= 0 ||
       chart.sizeBytes > CHART_MAX_BYTES ||
-      typeof chart.base64 !== "string" ||
-      !/^[A-Za-z0-9+/]+={0,2}$/.test(chart.base64) ||
-      chart.base64.length !== 4 * Math.ceil(chart.sizeBytes / 3)
+      (chart.base64 !== undefined &&
+        (typeof chart.base64 !== "string" ||
+          !/^[A-Za-z0-9+/]+={0,2}$/.test(chart.base64) ||
+          chart.base64.length !== 4 * Math.ceil(chart.sizeBytes / 3)))
     )
       return "Charts must be nonempty PDF, PNG or JPEG files up to 2 MB.";
   }

@@ -1,6 +1,6 @@
 # Ward Flow hosting and database decisions
 
-_Updated 2026-10-19 - shared backend route location corrected from source; Documentation owns._
+_Updated 2026-10-19 - drawer preview deleted, both shared services wait for CI; Documentation owns._
 
 Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
@@ -46,6 +46,9 @@ Railway service settings hold the build and start commands. Railpack installs th
 The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
 ## Separate drawer preview — 5 October 2026
+
+> **Deleted 19 October 2026.** The owner deleted the `ward-flow-drawer-preview` service, so its
+> address below no longer answers. This section is kept as history only.
 
 Owner authorised an additional preview and then requested expedited completion. The existing
 `ward-flow` service was preserved. The new `ward-flow-drawer-preview` service
@@ -94,8 +97,17 @@ Backend settings (Railway dashboard):
   workspace id is missing. Phone push is off (no VAPID keys).
   `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
   password was set privately by the owner and lives only in Railway.
-- Watch paths: `backend/ward-flow`, `src/components/ward-management` (the engine bundles it),
-  `package.json`, `package-lock.json` and `tsconfig.json`.
+- Watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and `/src/lib/**`
+  (the engine bundles both, including the synthetic-data guard), `/package.json`,
+  `/package-lock.json` and `/tsconfig.json`. The list lives in
+  [watch-paths.mjs](../backend/ward-flow/watch-paths.mjs), and a backend test fails if the engine
+  is built from a file outside it. Change the Railway setting whenever that list changes.
+
+Both services wait for CI: the owner turned on Railway's **Wait for CI** for `ward-flow-backend`
+and `ward-flow-shared` on 19 October 2026, so a push to `main` deploys only after its GitHub
+checks pass. Still pending, deferred by the owner on 19 October 2026: in Supabase, under
+Authentication, then Sign In / Providers, turn off **Allow new users to sign up**, so only invited
+accounts can register.
 
 Signed-in site settings: the same build and start commands as `ward-flow`, plus
 `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, `NEXT_PUBLIC_WARD_AUTH_PROVIDER=supabase`, the approved

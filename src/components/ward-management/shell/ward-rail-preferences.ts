@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useEffect, useLayoutEffect } from "react";
 
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -114,7 +115,8 @@ export function useWardDocumentPreferences() {
 
 /** Shift+T, Shift+R and Shift+A open the Tasks, Referral and Activity drawers. True when handled. */
 export function openDrawerForShortcut(event: KeyboardEvent): boolean {
-  if (!event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
+  if (!areCharacterShortcutsEnabled() || !event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)
+    return false;
   const drawer =
     event.key === "T" || event.key === "t"
       ? "tasks"

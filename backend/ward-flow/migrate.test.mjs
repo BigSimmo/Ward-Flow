@@ -25,12 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
-  const expected = Array.from({ length: 11 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 11 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+  const expected = Array.from({ length: 12 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 12 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 11);
+    assert.equal(db.current(), 12);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -46,7 +46,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 12, "5"]) {
+  for (const version of [0, 13, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -155,6 +155,20 @@ test("migration 11 keeps record openings and break glass rows append-only, and i
   assert.equal(sql.match(/ENABLE ROW LEVEL SECURITY/g)?.length, 2);
   assert.match(undo, /IS DISTINCT FROM 11/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 11;/);
+});
+
+test("migration 12 only adds indexes, and its rollback refuses any other version", async () => {
+  const sql = await readFile(new URL("./migrations/012-foreign-key-indexes.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-012-foreign-key-indexes.sql", import.meta.url), "utf8");
+  const statements = sql
+    .split("\n")
+    .filter((line) => line.trim() && !line.startsWith("--"))
+    .map((line) => line.split(" ").slice(0, 2).join(" "));
+  assert.deepEqual([...new Set(statements)], ["CREATE INDEX", "INSERT INTO"]);
+  assert.equal(sql.match(/^CREATE INDEX /gm)?.length, 13);
+  assert.equal(undo.match(/^DROP INDEX ward_flow\./gm)?.length, 13);
+  assert.match(undo, /IS DISTINCT FROM 12/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 12;/);
 });
 
 test("one migration list: every SQL file is listed once, in order, and matches its checksum", async () => {

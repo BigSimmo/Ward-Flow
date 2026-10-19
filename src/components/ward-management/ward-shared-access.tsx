@@ -60,7 +60,12 @@ export type WardSharedConnection = SharedView & {
 const DataModeSlotContext = createContext<((slot: HTMLElement | null) => void) | null>(null);
 
 /** What the data mode says, for the phone menu (the phone's lean bar has no room for the pill). */
-export type WardDataMode = { detail: string; openHospitalRecords: () => void };
+export type WardDataMode = {
+  detail: string;
+  openHospitalRecords: () => void;
+  /** On the shared board: referral files are not sent, only their name, type and size (audit F-01). */
+  shared: boolean;
+};
 const DataModeContext = createContext<WardDataMode | null>(null);
 
 /** The current data mode, or null outside `WardSharedAccess`. */
@@ -345,7 +350,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const openLiveInfo = useCallback(() => {
     setShowLiveInfo(true);
   }, []);
-  const dataMode = useMemo<WardDataMode>(() => ({ detail, openHospitalRecords: openLiveInfo }), [detail, openLiveInfo]);
+  const shared = connection.enabled;
+  const dataMode = useMemo<WardDataMode>(
+    () => ({ detail, openHospitalRecords: openLiveInfo, shared }),
+    [detail, openLiveInfo, shared],
+  );
   const packAccessContext =
     typeof connection.snapshot?.accessContext === "string" && /^[a-f0-9]{64}$/u.test(connection.snapshot.accessContext)
       ? connection.snapshot.accessContext
@@ -551,7 +560,43 @@ function WardSharedWorkspaceContent({
           Sign out
         </button>
       </div>
-      <div inert={blocked}>{children}</div>
+      <FocusKeepingInert blocked={blocked}>{children}</FocusKeepingInert>
     </>
+  );
+}
+
+/**
+ * Audit F-09: the app is inert while a shared save is out, so a second press cannot race the
+ * first. Going inert drops keyboard focus, so the control last focused gets it back once the save
+ * ends, unless the person has since moved focus somewhere else.
+ */
+function FocusKeepingInert({ blocked, children }: { blocked: boolean; children: ReactNode }) {
+  const container = useRef<HTMLDivElement>(null);
+  const lastFocused = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const remember = (event: FocusEvent) => {
+      if (event.target instanceof HTMLElement) lastFocused.current = event.target;
+    };
+    element.addEventListener("focusin", remember);
+    return () => element.removeEventListener("focusin", remember);
+  }, []);
+  useEffect(() => {
+    if (blocked) return;
+    const target = lastFocused.current;
+    const active = document.activeElement;
+    if (
+      target &&
+      target.isConnected &&
+      container.current?.contains(target) &&
+      (active === null || active === document.body)
+    )
+      target.focus({ preventScroll: true });
+  }, [blocked]);
+  return (
+    <div ref={container} inert={blocked}>
+      {children}
+    </div>
   );
 }

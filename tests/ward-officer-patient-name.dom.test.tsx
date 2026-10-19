@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
+import { discreetPatientName } from "@/components/ward-management/settings/discreet-names";
 // The pre-commit hook's staged-file typecheck compiles only this file (plus .d.ts roots), so it
 // never sees tests/setup/jsdom.setup.ts's global jest-dom matcher augmentation.
 import "@testing-library/jest-dom/vitest";
@@ -16,7 +18,42 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * patient's name on each job, resolved exactly as the Referral board resolves it, and "Not
  * recorded" when no single patient is linked. Never a record id.
  */
+afterEach(() => {
+  localStorage.removeItem("ward-flow-discreet-names");
+  installMatchMediaStub(false);
+});
+
 describe("transport officer job cards name the patient", () => {
+  it.each([
+    [true, true],
+    [true, false],
+    [false, true],
+  ])("matches the name setting in job rows and action labels (phone=%s, discreet=%s)", (phone, discreet) => {
+    installMatchMediaStub(phone);
+    if (discreet) localStorage.setItem("ward-flow-discreet-names", "on");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <OfficerScreen />
+      </WardFlowProvider>,
+    );
+    const state = seedWardFlowState();
+    const job = state.movements.find(
+      (movement) => isOfficerJob(movement) && resolveSubjectPatient(movement, state).patient,
+    );
+    if (!job) throw new Error("no linked officer job");
+    const info = resolveSubjectPatient(job, state);
+    const full = phone ? info.formalName : info.displayName;
+    const shown = phone && discreet ? discreetPatientName(full, info.umrn) : full;
+    expect(screen.getByTestId(`ward-officer-patient-${job.id}`)).toHaveTextContent(shown);
+    expect(screen.getByTestId(`ward-officer-select-${job.id}`)).toHaveAccessibleName(
+      new RegExp(shown.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+    );
+    if (phone && discreet) {
+      expect(screen.getByTestId(`ward-officer-select-${job.id}`)).not.toHaveAccessibleName(
+        new RegExp(info.patient!.familyName),
+      );
+    }
+  });
   it("shows the resolved name for linked jobs and Not recorded for unlinked ones", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
