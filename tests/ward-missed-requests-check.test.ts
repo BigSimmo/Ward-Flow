@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { missedRequestCheck } from "@/components/ward-management/coordinator/missed-requests-check";
+import {
+  missedRequestCheck,
+  openRequestsByPerson,
+} from "@/components/ward-management/coordinator/missed-requests-check";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -104,6 +107,17 @@ describe("missedRequestCheck", () => {
       [referral("RF-2", NOW - 60, "accepted"), referral("RF-3", NOW - 60, "queued", NOW - 5)],
     );
     expect(settled).toEqual([]);
+
+    // The shared matcher itself, oldest first, for the duplicate bed request warning to reuse.
+    const shared = openRequestsByPerson({
+      movements: [f.movement("MV-a", { patientId: personId, openedAt: NOW - 10 })],
+      referrals: [referral("RF-1", NOW - 60, "queued")],
+      patients: f.state.patients,
+    });
+    expect(shared.get(personId)).toEqual([
+      { kind: "referral", id: "RF-1", openedAt: NOW - 60 },
+      { kind: "movement", id: "MV-a", openedAt: NOW - 10 },
+    ]);
   });
 
   it("lists one numbered bed held for two open requests", () => {

@@ -31,9 +31,9 @@ export type DurationSummary = {
   population: number;
 };
 
-export type PilotStepId = "ask" | "answer" | "hold" | "leave" | "travel";
+type PilotStepId = "ask" | "answer" | "hold" | "leave" | "travel";
 
-export type PilotStep = { id: PilotStepId; label: string; summary: DurationSummary };
+type PilotStep = { id: PilotStepId; label: string; summary: DurationSummary };
 
 export type PilotMeasures = {
   week: ReportWeek;
