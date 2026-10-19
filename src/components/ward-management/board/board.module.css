@@ -4540,6 +4540,38 @@
   color: var(--warn);
 }
 
+/* Design audit DA-08: the confirmation's main action had no rule of its own and fell back to the
+ * browser's default button. It is the filled partner of the Cancel button beside it. */
+.detailPrimaryBtn {
+  flex: 1 1 calc(50% - 0.375rem);
+  min-height: 32px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--wf-accent);
+  border-radius: var(--r1, 4px);
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detailPrimaryBtn:hover {
+  background: var(--wf-accent-hover);
+}
+
+.detailPrimaryBtn[data-tone="warn"] {
+  border-color: var(--wf-warning-ink);
+  background: var(--wf-warning-ink);
+  color: var(--wf-surface);
+}
+
+.confirmIdentity {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .recoveryContainer {
   margin-top: var(--ward-space-16);
 }

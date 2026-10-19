@@ -128,10 +128,11 @@ describe("assertion 1 — owner-selected rail destinations", () => {
   it("renders the owner-selected groups in order, with Patients only in Work", () => {
     renderShell();
     const links = screen.getAllByTestId("ward-rail-link");
-    // 22 with the bed meeting TV view, which shows while its feature flag is on (the test default).
-    expect(links).toHaveLength(22);
+    // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).
+    // (22 until the Network screen was retired on 19 Oct 2026.)
+    expect(links).toHaveLength(21);
     const groups = [
-      ["Today", ["Home", "Movements", "Capacity", "Delays", "Network", "Bed meeting TV"]],
+      ["Today", ["Home", "Movements", "Capacity", "Delays", "Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Referrals", "Handover", "Discharges"]],
       ["Checks", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
@@ -141,7 +142,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       expect(groupLinks.map((link) => link.getAttribute("aria-label")?.split(",")[0])).toEqual(labels);
     }
     const destinations = links.map((link) => link.getAttribute("href"));
-    expect(new Set(destinations).size).toBe(22);
+    expect(new Set(destinations).size).toBe(21);
     // Alerts and On-call are now reachable from the rail (previously orphaned / weakly discoverable).
     expect(destinations).toContain("/ward-flow/alerts");
     expect(destinations).toContain("/ward-flow/on-call");
@@ -152,7 +153,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     try {
       renderShell();
       const links = screen.getAllByTestId("ward-rail-link");
-      expect(links).toHaveLength(21);
+      expect(links).toHaveLength(20);
       expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));

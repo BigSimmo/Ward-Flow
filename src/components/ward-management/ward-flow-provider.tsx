@@ -7,6 +7,7 @@ import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
@@ -810,6 +811,8 @@ function WardFlowWorld({
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
   // A remote snapshot must not replace edits made locally since the last sync.
   const localEditsSinceBroadcastRef = useRef(false);
+  // Design audit DA-01: true while this tab is on the untouched seed day (`useOpenTabsDay`).
+  const freshSeedRef = useRef(true);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -829,6 +832,7 @@ function WardFlowWorld({
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       localEditsSinceBroadcastRef.current = true;
+      freshSeedRef.current = false;
       const commandId = `local-${++commandsRef.current.sequence}`;
       if (!container.sessionAdopted) {
         const queuedEvent = { ...event } as WardFlowEvent;
@@ -1028,6 +1032,7 @@ function WardFlowWorld({
                   if (isSameWorld) {
                     return current;
                   }
+                  freshSeedRef.current = false; // only once accepted: a refused day leaves the seed (DA-01)
                   return {
                     ...current,
                     world: saved.state,
@@ -1055,6 +1060,7 @@ function WardFlowWorld({
   // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
   // storage fails. Shared mode does not save actions on this device.
   const savingOnDevice = !shared.enabled && initialNow === undefined && !container.typedTextSeen && !storageUnavailable;
+  useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     savesOnDeviceRef.current = savingOnDevice;
@@ -1086,6 +1092,7 @@ function WardFlowWorld({
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
       openRequestSequence.current = Math.max(
@@ -1160,7 +1167,7 @@ function WardFlowWorld({
         dayZero,
         nowRef.current,
         mountedAtAbsolute + Math.max(0, elapsedRef.current),
-        isFromRemoteBroadcast ? undefined : getOrCreateBroadcastInstanceId(broadcastInstanceIdRef),
+        seedSafeSenderId(isFromRemoteBroadcast || freshSeedRef.current, broadcastInstanceIdRef),
       )
     ) {
       setStorageUnavailable(true);

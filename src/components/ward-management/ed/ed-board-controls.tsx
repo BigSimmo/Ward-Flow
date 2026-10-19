@@ -564,13 +564,17 @@ export function EdActionsMenu({
           <button type="button" role="menuitem" onClick={onEditPlan}>
             Edit plan
           </button>
+          {/* Design audit DA-05: a menu may hold only menu items or groups, so each group is a
+              labelled group, not a section with a heading. */}
           {groups.map(
             (group) =>
               group.items.length > 0 && (
-                <section key={group.name} className={styles.menuGroup}>
-                  <h3>{group.name}</h3>
+                <div key={group.name} role="group" aria-label={group.name} className={styles.menuGroup}>
+                  <span aria-hidden="true" className={styles.menuGroupLabel}>
+                    {group.name}
+                  </span>
                   {group.items}
-                </section>
+                </div>
               ),
           )}
           {other}

@@ -287,6 +287,41 @@ function releasedBranches(line) {
     .filter(Boolean);
 }
 
+/** Files named by a RELEASED line's `files=a, b` field, or null without one (the whole branch is released).
+ * A `files=` field naming nothing releases nothing, so a slip cannot clear every claim. */
+function releasedFiles(line) {
+  const field = line
+    .split("|")
+    .map((part) => part.trim())
+    .find((part) => /^files\s*=/i.test(part));
+  if (!field) return null;
+  return field
+    .replace(/^files\s*=\s*/i, "")
+    .split(/[,;]\s*/)
+    .map((file) => file.trim().replace(/^\.\//, ""))
+    .filter(Boolean);
+}
+
+/** Split a path list on commas and semicolons outside brackets, so a note like "(approved takeover by Josh: a, b)" stays whole. */
+function splitPathList(text) {
+  const parts = [];
+  let depth = 0;
+  let current = "";
+  for (const char of text) {
+    if (char === "(") depth += 1;
+    else if (char === ")") depth = Math.max(0, depth - 1);
+    if (depth === 0 && (char === "," || char === ";")) {
+      parts.push(current);
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  parts.push(current);
+  // An unclosed bracket would hide every later path, so fall back to a plain split.
+  return (depth === 0 ? parts : text.split(/[,;]/)).map((part) => part.trim());
+}
+
 /** Verify the checkout itself, regardless of which drive or host contains its worktree. */
 export function isPublicWardFlowCheckout(worktree) {
   if (!worktree) return false;
@@ -356,9 +391,19 @@ function signOutEntries(signOutText) {
   const entries = [];
   for (const line of signOutText.split(/\r?\n/)) {
     if (line.startsWith("RELEASED ")) {
+      const files = releasedFiles(line);
       for (const branch of releasedBranches(line)) {
         for (let index = entries.length - 1; index >= 0; index -= 1) {
-          if (entries[index].branch === branch) entries.splice(index, 1);
+          if (entries[index].branch !== branch) continue;
+          if (files === null) {
+            entries.splice(index, 1);
+            continue;
+          }
+          // A `files=` release closes only those exact paths and keeps the branch's other claims.
+          const entry = entries[index];
+          entry.paths = entry.paths.filter((file) => !files.includes(file));
+          entry.takeoverPaths = entry.takeoverPaths.filter((file) => !files.includes(file));
+          if (entry.paths.length === 0) entries.splice(index, 1);
         }
       }
       continue;
@@ -378,11 +423,10 @@ function signOutEntries(signOutText) {
       // Pipe fields after the path list are metadata or legacy additional lists.
       // Preserve the final path even when no comma precedes the repo marker.
       .filter((field) => !/^repo\s*=/i.test(field))
-      .join(",")
-      .split(/[,;]\s*/);
+      .join(",");
     const paths = [];
     const takeoverPaths = [];
-    for (const raw of pathFields) {
+    for (const raw of splitPathList(pathFields)) {
       const file = raw
         .replace(/\s*\(.*$/, "")
         .replace(/^outside git:\s*/i, "")

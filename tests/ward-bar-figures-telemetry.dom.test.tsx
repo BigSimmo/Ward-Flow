@@ -61,29 +61,16 @@ describe("Figures in the Tools sheet", () => {
     expect(within(screen.getByTestId("ward-bar")).queryByTestId("ward-tools-service-now")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
     const tools = screen.getByRole("dialog", { name: "Tools" });
-    await within(tools).findByTestId("ward-tools-service-now", {}, { timeout: 15_000 });
+    await within(tools).findByTestId("ward-tools-toggle-figures", {}, { timeout: 15_000 });
     return tools;
   }
 
-  it("keeps Figures out of the header and shows Service now at the top of Tools", async () => {
+  it("keeps Figures out of the header and does not repeat the headline figures in Tools", async () => {
     const tools = await openTools();
-    const glance = within(tools).getByTestId("ward-tools-service-now");
-    expect(glance).toHaveTextContent("Ready now");
-    expect(glance).toHaveTextContent("Whole network, synthetic figures.");
-    // Audit A3-4 (13 Oct 2026): the seeded form at exactly 60 minutes is inside the first warning,
-    // the same rule Forms and Delays use, so Service now flags it.
-    const dueSoon = within(glance)
-      .getByText(/^Due within 1h/u)
-      .closest("div");
-    expect(dueSoon).toHaveAttribute("data-flagged", "true");
-    expect(dueSoon).toHaveTextContent("1");
-  });
-
-  it("keeps deadline status reactive when the shared clock advances", async () => {
-    const tools = await openTools();
-    fireEvent.click(screen.getByTestId("test-advance-clock"));
-    const glance = within(tools).getByTestId("ward-tools-service-now");
-    expect(glance.querySelector('[data-flagged="true"]')?.textContent).toMatch(/deadline passed|due within/i);
+    // Simplification A5 (19 Oct 2026): the "Service now" block left; All figures stays one row away.
+    expect(within(tools).queryByTestId("ward-tools-service-now")).toBeNull();
+    expect(within(tools).queryByRole("region", { name: "Service now" })).toBeNull();
+    expect(within(tools).getByTestId("ward-tools-toggle-figures")).toBeVisible();
   });
 
   it("opens all figure clusters in place within the same Tools dialog", async () => {

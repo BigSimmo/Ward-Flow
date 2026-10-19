@@ -472,10 +472,11 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("keyboard search reveals the last result without moving the page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    // The Patients page keeps only its own search box, so the header search is tested on All wards.
+    await page.goto("/ward-flow/wards", { waitUntil: "domcontentloaded" });
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
-    await expect(page.getByTestId("ward-patient-search")).toBeVisible();
+    await expect(page.getByTestId("ward-index")).toBeVisible();
     await page.waitForLoadState("networkidle");
     await scrollColumn(page, 500);
     const input = page.getByTestId("ward-global-search-input");

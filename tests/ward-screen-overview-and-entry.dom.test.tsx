@@ -237,7 +237,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(bedList).toHaveAttribute("data-active", "false");
     fireEvent.click(screen.getByRole("button", { name: "Full bed list" }));
     expect(bedList).toHaveAttribute("data-active", "true");
-    expect(screen.getByRole("tab", { name: "Home (Worth Your Attention)" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Ward home (Worth Your Attention)" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
 
     // Interactive Bed Matrix is visible
     /*

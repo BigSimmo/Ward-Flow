@@ -171,7 +171,6 @@ const SEES_EVERYTHING: ReadonlyArray<{ file: string; reason: string }> = [
     file: "ward-management-console.tsx",
     reason: "the coordinator console, including the patient movement workspace",
   },
-  { file: "ward-management-network.tsx", reason: "the statewide network view" },
   { file: "ward-management-modes.tsx", reason: "the console's mode shell" },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
@@ -534,7 +533,8 @@ describe("FD-23 at the screen boundary", () => {
     // the one place a referral is written). Re-derived by running this file, not by arithmetic.
     // 18, not 21: community-home, escalation-board and live-tracker were deleted on 15 Oct 2026 as
     // dead code (no route had rendered them since their redirects landed).
-    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(18);
+    // 17, not 18: ward-management-network.tsx was deleted with the Network screen on 19 Oct 2026.
+    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(17);
     for (const { file, reason } of SEES_EVERYTHING) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no reason beside it`).toBeGreaterThan(10);

@@ -246,7 +246,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   });
   const {
     patients,
-    notReviewedCount,
     heroHighlightMatch,
     selectedPatient,
     waitingForBed,
@@ -414,7 +413,6 @@ export function EdScreen({ edId }: EdScreenProps) {
             },
             { id: "held", label: "Bed held", value: waitingForBed },
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
-            { id: "unreviewed", label: "Not reviewed", value: notReviewedCount },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
           // Option B (Josh, 13 Oct 2026): one referral flow. Raise referral opens the referral
