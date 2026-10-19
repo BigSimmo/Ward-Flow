@@ -711,6 +711,8 @@ export function DataPane({
   onImport,
   onClearSession,
   onRestore,
+  restoreUnavailable,
+  shared = false,
 }: {
   /** Held by the screen so Find a setting can open Fixed defaults. */
   reference: ReferenceTab;
@@ -723,6 +725,8 @@ export function DataPane({
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
   onClearSession: () => void;
   onRestore: () => void;
+  restoreUnavailable?: string;
+  shared?: boolean;
 }) {
   // Audit settings-24: the thresholds table is five columns wide, laid out for a tablet or computer.
   const isPhone = useIsPhone();
@@ -792,20 +796,18 @@ export function DataPane({
               >
                 Clear session
               </button>
-              <button
-                type="button"
-                className={buttonClass({
-                  variant: "sec",
-                  size: "sm",
-                  className: `${styles.pill} ${styles.pushEnd}`,
-                })}
+              <Button
+                variant="sec"
+                size="sm"
+                className={`${styles.pill} ${styles.pushEnd}`}
                 onClick={onRestore}
+                disabledReason={restoreUnavailable}
                 aria-haspopup="dialog"
                 data-setting="restore"
                 data-testid="btn-restore-baseline"
               >
                 Restore all defaults
-              </button>
+              </Button>
             </div>
             <p className={styles.cardNote}>
               <Wrench size={14} aria-hidden="true" />
@@ -827,7 +829,7 @@ export function DataPane({
               </div>
               <div>
                 <dt>Sign-in</dt>
-                <dd>Demo profile, no accounts</dd>
+                <dd>{shared ? "Signed-in shared workspace" : "Local synthetic demo"}</dd>
               </div>
               <div>
                 <dt>Rule saves</dt>
@@ -845,9 +847,13 @@ export function DataPane({
             <p className={styles.cardNote}>
               <BookOpen size={14} aria-hidden="true" />
               Product design reference
-              <a className={styles.inlineLink} href={digestHref()} target="_blank" rel="noopener noreferrer">
-                Ward Flow Digest
-              </a>
+              {process.env.NODE_ENV !== "production" ? (
+                <a className={styles.inlineLink} href={digestHref()} target="_blank" rel="noopener noreferrer">
+                  Ward Flow Digest
+                </a>
+              ) : (
+                <span>Ward Flow Digest is available in the local development preview.</span>
+              )}
             </p>
           </Card>
         </div>

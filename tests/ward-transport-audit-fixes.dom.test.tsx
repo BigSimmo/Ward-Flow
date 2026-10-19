@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -184,7 +184,7 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
 });
 
 describe("Officer Collected with an open check (A4-11, S-2) and Need forms (A4-12)", () => {
-  it("warns, records the reason, and still collects", () => {
+  it("warns, records the reason, and still collects", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -192,13 +192,19 @@ describe("Officer Collected with an open check (A4-11, S-2) and Need forms (A4-1
     );
     const select = screen.queryByTestId("ward-officer-select-WF-005");
     if (select) fireEvent.click(select);
-    fireEvent.click(screen.getByTestId("ward-officer-enroute-WF-005"));
-    fireEvent.click(screen.getByTestId("ward-officer-collect-WF-005"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("ward-officer-enroute-WF-005"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("ward-officer-collect-WF-005"));
+    });
     const check = screen.getByTestId("ward-officer-collect-check");
     expect(check).toHaveTextContent("Fit to travel not recorded");
     // Nothing is recorded until a reason is chosen; Cancel leaves the job as it was.
     fireEvent.change(screen.getByTestId("ward-officer-collect-check-reason"), { target: { value: "paper_sighted" } });
-    fireEvent.click(within(check).getByRole("button", { name: "Collected, record reason" }));
+    await act(async () => {
+      fireEvent.click(within(check).getByRole("button", { name: "Collected, record reason" }));
+    });
     expect(screen.queryByTestId("ward-officer-collect-check")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-officer-exception-WF-005")).toHaveTextContent("Paper copy sighted");
     expect(screen.getByTestId("ward-officer-stepper-WF-005")).toHaveAttribute(

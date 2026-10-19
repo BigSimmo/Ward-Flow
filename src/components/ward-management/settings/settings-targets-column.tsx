@@ -33,6 +33,7 @@ export function SettingsTargetsColumn({
   onPreview,
   ruleChanges,
   now,
+  unavailableReason,
 }: {
   rules: ReturnType<typeof fullRules>;
   saved: ReturnType<typeof fullRules>;
@@ -40,6 +41,8 @@ export function SettingsTargetsColumn({
   onPreview: (name: string) => void;
   ruleChanges: ConfigurationAuditEvent[];
   now: Instant;
+  /** Why the rules are read-only for this desk; unset when it may change them. */
+  unavailableReason?: string;
 }) {
   return (
     <div className={styles.column}>
@@ -60,6 +63,7 @@ export function SettingsTargetsColumn({
                 : "transportTarget";
           return (
             <RuleRow
+              unavailableReason={unavailableReason}
               key={step.step}
               setting={`target-${step.step}`}
               testId={`setting-target-${step.step}`}
@@ -97,6 +101,7 @@ export function SettingsTargetsColumn({
       <Card aria-labelledby="more-title">
         <CardHead iconPlain id="more-title" icon={SlidersHorizontal} title="More thresholds" aside={<PreviewTag />} />
         <RuleRow
+          unavailableReason={unavailableReason}
           setting="occupancy"
           title="Occupancy alert"
           sub="Bed alerts dot from"
@@ -116,6 +121,7 @@ export function SettingsTargetsColumn({
           previewTag={false}
         />
         <RuleRow
+          unavailableReason={unavailableReason}
           setting="tier-one"
           title="Tier 1 overdue after"
           sub="Referral queue"
@@ -135,6 +141,7 @@ export function SettingsTargetsColumn({
           previewTag={false}
         />
         <RuleRow
+          unavailableReason={unavailableReason}
           setting="ward-silent"
           title="Ward not answering"
           sub="First reminder after"

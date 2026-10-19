@@ -38,8 +38,10 @@ verdict it names that document.
    or records a refusal. See [Engine](engine.md).
 4. **Screens read through pure selectors** (`ward-derivations.ts` and friends), never by reaching
    into state ad hoc. See [Data and rules](data-and-rules.md).
-5. **The role is the route.** There is no signed-in identity; which screen you are on decides the
-   role. Who may send which event is the `EVENT_ROLE` table.
+5. **Route roles and shared identity are separate.** Local synthetic mode supplies route-role
+   previews. Shared mode authenticates an account and scopes its records and commands to the
+   authorised role/place; `EVENT_ROLE` remains the engine's event permission table. A reachable
+   screen must not borrow coordinator authority for another desk.
 6. **Time is synthetic.** `ward-clock.ts` is the only file that reads the real clock; the demo clock
    only moves through `ADVANCE_CLOCK`. Tests share one instant unless they advance it.
 7. **Demo state saves stop once anything typed happens.** D-67 separately permits bounded
