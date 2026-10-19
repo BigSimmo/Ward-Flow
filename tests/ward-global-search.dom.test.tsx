@@ -49,6 +49,7 @@ import {
   formatDateOfBirth,
   patientDisplayName,
   patientListName,
+  type Patient,
 } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
@@ -647,5 +648,32 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.focus(input);
     fireEvent.mouseDown(screen.getByTestId("ward-global-search-scrim"));
     expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+  });
+});
+
+describe("search limit guidance", () => {
+  it.each([40, 41])("describes %i people truthfully before and after expanding", (count) => {
+    const patients: Patient[] = Array.from({ length: count }, (_, index) => ({
+      id: `PT-LIMIT-${index}`,
+      umrn: `UM9${index.toString().padStart(5, "0")}`,
+      givenName: "Synthetic",
+      familyName: `Limit${index}`,
+      dateOfBirth: "1990-01-01",
+    }));
+    render(<WardGlobalSearch movements={[]} patients={patients} units={[]} scope="Test" />);
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Synthetic" } });
+    const button = screen.getByTestId("ward-global-search-show-all-people");
+    expect(button).toHaveTextContent(count > 40 ? "Show first 40" : "Show all 40");
+    expect(screen.getByTestId("ward-global-search-kind-people")).toHaveTextContent(
+      count > 40 ? "People40+" : "People40",
+    );
+    const guidance = /First 40 matches. Refine your search to see other matches./;
+    if (count > 40) expect(screen.getByText(guidance)).toBeInTheDocument();
+    else expect(screen.queryByText(guidance)).not.toBeInTheDocument();
+    fireEvent.click(button);
+    expect(screen.getAllByTestId(/^ward-global-search-result-person-/)).toHaveLength(40);
+    if (count > 40) expect(screen.getByText(guidance)).toBeInTheDocument();
   });
 });

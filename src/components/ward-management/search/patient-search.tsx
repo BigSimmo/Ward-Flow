@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
@@ -221,7 +222,7 @@ export function PatientSearchPage() {
     // The record drawer is modal: the search behind it stays put until it closes.
     if (detailsOpen) return;
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || (e.key === "/" && !areCharacterShortcutsEnabled())) return;
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();

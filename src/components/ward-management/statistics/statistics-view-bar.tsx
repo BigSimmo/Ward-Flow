@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useCallback, useEffect, useState } from "react";
 import { BedDouble, Map as MapIcon, Route, type LucideIcon } from "lucide-react";
 
@@ -116,7 +117,15 @@ export function useStatisticsView() {
   // 1, 2 and 3 switch the view, unless a field or a control with its own keys has focus.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) return;
+      if (
+        !areCharacterShortcutsEnabled() ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.defaultPrevented
+      )
+        return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true'], [role='dialog'], [role='listbox']"))
         return;

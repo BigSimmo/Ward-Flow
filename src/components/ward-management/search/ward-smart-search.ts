@@ -541,6 +541,8 @@ export type SmartSearchResults = {
   tasks: TaskSearchResult[];
   hasAny: boolean;
   totalCount: number;
+  /** Group keys whose matching records exceed the returned per-group limit. */
+  truncatedGroups: string[];
   intent: SearchIntent;
 };
 
@@ -626,22 +628,35 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       tasks: [],
       hasAny: false,
       totalCount: 0,
+      truncatedGroups: [],
       intent,
     };
   }
 
   const limit = input.limitPerGroup ?? 6;
+  const truncatedGroups: string[] = [];
+  const rankGroup = <T>(
+    key: string,
+    items: readonly T[],
+    needle: string,
+    fieldsOf: (item: T) => readonly (string | undefined)[],
+  ): T[] => {
+    if (items.length > limit) truncatedGroups.push(key);
+    return rankAndLimit(items, needle, fieldsOf, limit);
+  };
   const names = movementDisplayNames(input.movements, input.patients, input.referrals);
 
-  const people = rankAndLimit(
-    findPatients(input.patients, trimmed),
-    trimmed,
-    (patient) => [patientDisplayName(patient), patient.givenName, patient.familyName, patient.umrn, patient.id],
-    limit,
-  );
+  const people = rankGroup("people", findPatients(input.patients, trimmed), trimmed, (patient) => [
+    patientDisplayName(patient),
+    patient.givenName,
+    patient.familyName,
+    patient.umrn,
+    patient.id,
+  ]);
 
   const movementQuery: MovementSearchQuery = { text: trimmed, patientDisplayNames: names };
-  const movements = rankAndLimit(
+  const movements = rankGroup(
+    "movements",
     searchMovements(input.movements, input.units, movementQuery),
     trimmed,
     (movement) => {
@@ -656,39 +671,34 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
         movement.owner,
       ];
     },
-    limit,
   );
 
-  const wards = rankAndLimit(
-    searchWards(typed, input.units),
-    typed,
-    (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
-    limit,
-  );
-  const emergencyDepartments = rankAndLimit(
-    searchEmergencyDepartments(typed),
-    typed,
-    (department) => [department.ed.name, department.ed.siteCode, department.ed.id],
-    limit,
-  );
-  const communityTeams = rankAndLimit(
-    searchCommunityTeams(typed),
-    typed,
-    (team) => [team.team.name, team.team.id],
-    limit,
-  );
-  const legalForms = rankAndLimit(
-    searchLegalForms(typed),
-    typed,
-    (form) => [form.form.code, form.title, `Form ${form.form.code}`],
-    limit,
-  );
-  const views = rankAndLimit(
-    searchCoreViews(typed),
-    typed,
-    (view) => [view.view.title, view.view.key, view.view.description, ...(view.view.keywords ?? [])],
-    limit,
-  );
+  const wards = rankGroup("wards", searchWards(typed, input.units), typed, (ward) => [
+    ward.unit.name,
+    ward.unit.siteCode,
+    ward.unit.id,
+    ward.siteName,
+  ]);
+  const emergencyDepartments = rankGroup("eds", searchEmergencyDepartments(typed), typed, (department) => [
+    department.ed.name,
+    department.ed.siteCode,
+    department.ed.id,
+  ]);
+  const communityTeams = rankGroup("teams", searchCommunityTeams(typed), typed, (team) => [
+    team.team.name,
+    team.team.id,
+  ]);
+  const legalForms = rankGroup("forms", searchLegalForms(typed), typed, (form) => [
+    form.form.code,
+    form.title,
+    `Form ${form.form.code}`,
+  ]);
+  const views = rankGroup("views", searchCoreViews(typed), typed, (view) => [
+    view.view.title,
+    view.view.key,
+    view.view.description,
+    ...(view.view.keywords ?? []),
+  ]);
 
   const shouldDeriveTasks = shouldDeriveSearchTasks(input.query);
 
@@ -702,12 +712,12 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       ))
     : [];
   const tasks = shouldDeriveTasks
-    ? rankAndLimit(
-        searchTasks(typed, tasksInbox),
-        typed,
-        (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
-        limit,
-      )
+    ? rankGroup("tasks", searchTasks(typed, tasksInbox), typed, (task) => [
+        task.task.title,
+        task.task.detail,
+        task.task.movementId,
+        task.task.owner,
+      ])
     : [];
 
   const totalCount =
@@ -731,6 +741,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     tasks,
     hasAny: totalCount > 0,
     totalCount,
+    truncatedGroups,
     intent,
   };
 }

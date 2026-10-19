@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  areCharacterShortcutsEnabled,
+  useCharacterShortcutsPreference,
+} from "@/components/ward-management/shell/ward-character-shortcuts";
 import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
@@ -216,6 +220,7 @@ export function SettingsScreen() {
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [rowDensity, setRowDensity] = useRowDensity();
   const [discreetNames, setDiscreetNames] = useDiscreetNamesSetting();
+  const [characterShortcuts, setCharacterShortcuts] = useCharacterShortcutsPreference();
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
@@ -536,7 +541,7 @@ export function SettingsScreen() {
       const target = event.target as HTMLElement | null;
       const typing =
         target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
-      if (event.key === "/" && !typing && !event.metaKey && !event.ctrlKey) {
+      if (areCharacterShortcutsEnabled() && event.key === "/" && !typing && !event.metaKey && !event.ctrlKey) {
         event.preventDefault();
         findRef.current?.focus();
       }
@@ -961,6 +966,8 @@ export function SettingsScreen() {
         }}
         rowDensity={rowDensity}
         onRowDensityChange={chooseRowDensity}
+        characterShortcuts={characterShortcuts}
+        onCharacterShortcutsChange={setCharacterShortcuts}
         discreetNames={discreetNames}
         onDiscreetNamesChange={chooseDiscreetNames}
         onPreview={onPreview}

@@ -1,5 +1,14 @@
 # Routes, shell, navigation and shared UI
 
+## Confirmed usability fixes — 19 October 2026
+
+`shell/ward-character-shortcuts.ts` stores the browser's single-character shortcut preference.
+Settings Display and Handover share the switch; mounted screen handlers read the live choice.
+Ctrl/Cmd+K and Escape remain available. Sign-in role digits operate only within the focused role
+picker. `tests/ward-character-shortcuts.dom.test.tsx` covers these behaviors and storage fallback.
+Dimmed active content uses readable opaque ink in the shared token sheet, preserving highlight
+grouping in day and night themes.
+
 ## Placement touch targets — 17 October 2026
 
 `wf/button.module.css` gives canonical medium Buttons marked `data-placement-action` a scoped

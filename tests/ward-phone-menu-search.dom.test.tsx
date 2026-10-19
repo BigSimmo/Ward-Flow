@@ -21,7 +21,7 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { patientListName, type Patient } from "@/components/ward-management/ward-patients";
+import { findPatients, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { installMatchMediaStub } from "./setup/jsdom.setup";
@@ -58,6 +58,17 @@ function openMenu() {
 afterEach(() => installMatchMediaStub(false));
 
 describe("phone menu search", () => {
+  it("explains when the menu returns only the first 40 people", () => {
+    const input = openMenu();
+    expect(findPatients(seeded, "a").length).toBeGreaterThan(40);
+    fireEvent.change(input, { target: { value: "a" } });
+    const people = screen.getByRole("region", { name: "People" });
+    const button = within(people).getByRole("button", { name: "Show first 40" });
+    expect(within(people).getByText("First 40 matches. Refine your search to see other matches.")).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(within(people).getAllByRole("link")).toHaveLength(40);
+    expect(within(people).queryByRole("button", { name: /Show all/ })).not.toBeInTheDocument();
+  });
   it("finds a patient by name, not only page names", () => {
     const input = openMenu();
     const patient = seeded[0];

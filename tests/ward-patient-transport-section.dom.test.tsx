@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -21,10 +21,6 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-// Observe UI dispatches, not reducer evaluations: the provider may preview a pure reducer
-// before committing it. Every event and its command completion still pass through unchanged.
-const bookings = { estimatedAt: [] as Array<number | undefined> };
-
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { useWardFlow, WardFlowProvider, WardFlowOverride } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -34,13 +30,38 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
-function ObserveBookingDispatches({ children }: { children: ReactNode }) {
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+
+function ControlledCommands({
+  children,
+  control,
+}: {
+  children: ReactNode;
+  control: { deferred?: boolean; refuse?: boolean; calls: WardFlowEvent[]; finish?: () => void };
+}) {
   const flow = useWardFlow();
   const dispatch = (event: WardFlowEvent) => {
-    if (event.type === "BOOK_TRANSPORT") bookings.estimatedAt.push(event.estimatedAt);
-    return flow.dispatch(event);
+    if (event.type !== "BOOK_TRANSPORT" && event.type !== "RECORD_MOVEMENT_MEDICAL_CLEARANCE")
+      return flow.dispatch(event);
+    control.calls.push(event);
+    const record = () => flow.dispatch(control.refuse ? { ...event, movementId: "WF-SYNTHETIC-MISSING" } : event);
+    if (!control.deferred) return record();
+    return new Promise<WardCommandOutcome>((resolve) => {
+      control.finish = () => {
+        void Promise.resolve(record()).then((outcome) => {
+          if (outcome) resolve(outcome);
+        });
+      };
+    });
   };
   return <WardFlowOverride value={{ ...flow, dispatch }}>{children}</WardFlowOverride>;
+}
+
+function answerBookingFacts(form: HTMLElement) {
+  fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
+    target: { value: "Patient transport service" },
+  });
+  fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
 }
 
 function RecordTransportFixture({ estimatedAt = NOW_ANCHOR + 30 }: { estimatedAt?: number }) {
@@ -177,9 +198,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(provider).toHaveTextContent(movement.transport!.provider);
   });
 
-  it("does not display a successful booking when the reducer refuses the movement", () => {
-    // Restored after #147 dropped it: a second booking over a standing job is refused by the
-    // reducer (cancel first), so the page must say so and keep showing the first booking.
+  it("explains the supported cancel and rebook path instead of offering an edit on an active job", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RecordTransportFixture />
@@ -189,49 +208,140 @@ describe("Patient Transport & Transfer Coordination section", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
     openTransportSheet();
     const section = screen.getByTestId("ward-patient-transport-section");
-    fireEvent.click(within(section).getByTestId("ward-patient-book-transport-btn"));
-    const form = within(section).getByTestId("ward-patient-transport-form");
-    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-99210" } });
-    fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), {
-      target: { value: `${clock(NOW_ANCHOR + 60)} AWST` },
-    });
-    fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-
-    expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
+    expect(within(section).queryByRole("button", { name: "Update Booking Details" })).not.toBeInTheDocument();
+    expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
+    expect(section).toHaveTextContent("Booking details cannot be edited");
+    expect(section).toHaveTextContent("cancel the active job");
+    expect(section).toHaveTextContent("Ask the flow coordinator or booking team");
     expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
-    expect(within(section).getByTestId("ward-patient-cad-number")).not.toHaveTextContent("CAD-99210");
   });
 
-  it("refills a saved ETA from another day with its day word and accepts it unchanged", () => {
-    // The refill names the day, and an unchanged refill keeps the saved instant, so the box never
-    // fails as an unreadable time. The reducer then refuses the second booking (cancel first),
-    // which shows the form passed its own checks.
-    const yesterday = NOW_ANCHOR - 1440 + 30;
+  it("requires explicit provider and escort answers for a new booking", () => {
+    const control = { calls: [] as WardFlowEvent[] };
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <RecordTransportFixture estimatedAt={yesterday} />
-        <ObserveBookingDispatches>
-          <PatientNowScreen initialExampleId="WF-004" />
-        </ObserveBookingDispatches>
+        <ControlledCommands control={control}>
+          <PatientNowScreen movementId="WF-004" />
+        </ControlledCommands>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
     openTransportSheet();
-    const section = screen.getByTestId("ward-patient-transport-section");
-    fireEvent.click(within(section).getByTestId("ward-patient-book-transport-btn"));
-    const form = within(section).getByTestId("ward-patient-transport-form");
-    const etaInput = within(form).getByTestId("ward-patient-input-eta");
-    expect(etaInput).toHaveValue(formatInstantWithDay(yesterday, NOW_ANCHOR));
-    expect((etaInput as HTMLInputElement).value).toMatch(/ yesterday$/);
-    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-99210" } });
-    bookings.estimatedAt.length = 0;
-    fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-
-    expect(screen.queryByText("Enter the ETA as HH:MM or minutes, for example 11:15 or 45m")).not.toBeInTheDocument();
-    // The booking the form sent carries yesterday's instant, not today's 11:12.
-    expect(bookings.estimatedAt).toEqual([yesterday]);
-    expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
+    fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
+    const form = screen.getByTestId("ward-patient-transport-form");
+    expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("");
+    expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("");
+    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC" } });
+    fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
+    fireEvent.submit(form);
+    expect(form).toHaveTextContent("Choose the provider from the call");
+    expect(form).toHaveTextContent("Record whether a clinical escort is required");
+    expect(control.calls).toHaveLength(0);
+    fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
+      target: { value: "Patient transport service" },
+    });
+    fireEvent.submit(form);
+    expect(control.calls).toHaveLength(0);
+    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
+    fireEvent.submit(form);
+    expect(control.calls).toEqual([
+      expect.objectContaining({ provider: "Patient transport service", escortRequired: false }),
+    ]);
+    expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
   });
+
+  it.each([false, true])(
+    "keeps the transport draft until the real deferred command completes (refused=%s)",
+    async (refuse) => {
+      const control = {
+        calls: [] as WardFlowEvent[],
+        deferred: true,
+        refuse,
+        finish: undefined as (() => void) | undefined,
+      };
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <ControlledCommands control={control}>
+            <PatientNowScreen movementId="WF-004" />
+          </ControlledCommands>
+        </WardFlowProvider>,
+      );
+      openTransportSheet();
+      fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
+      const form = screen.getByTestId("ward-patient-transport-form");
+      answerBookingFacts(form);
+      fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC" } });
+      fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+      expect(control.calls).toHaveLength(1);
+      expect(form).toHaveAttribute("aria-busy", "true");
+      expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toBeDisabled();
+      expect(within(screen.getByTestId("ward-patient-transport-section")).getByRole("status")).toHaveTextContent(
+        "Saving transport booking",
+      );
+      await act(async () => {
+        control.finish!();
+      });
+      if (refuse) {
+        expect(form).toBeInTheDocument();
+        expect(within(form).getByTestId("ward-patient-input-cad")).toHaveValue("CAD-SYNTHETIC");
+        expect(within(form).getByTestId("ward-patient-input-eta")).toHaveValue("45m");
+        expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("Patient transport service");
+        expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("no");
+        expect(screen.getByRole("alert")).toHaveTextContent("Booking was not recorded: no movement found");
+        expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).not.toBeDisabled();
+      } else {
+        expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
+        expect(screen.getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-SYNTHETIC");
+      }
+    },
+  );
+
+  it.each([false, true])(
+    "keeps the clearance draft until the real deferred command completes (refused=%s)",
+    async (refuse) => {
+      const control = {
+        calls: [] as WardFlowEvent[],
+        deferred: true,
+        refuse,
+        finish: undefined as (() => void) | undefined,
+      };
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <ControlledCommands control={control}>
+            <PatientNowScreen movementId="WF-004" />
+          </ControlledCommands>
+        </WardFlowProvider>,
+      );
+      fireEvent.click(
+        within(screen.getByTestId("ward-patient-gate-clearance")).getByRole("button", { name: /clearance/i }),
+      );
+      const dialog = screen.getByRole("dialog", { name: "Record treating-team medical clearance" });
+      fireEvent.change(within(dialog).getByLabelText("Treating-team clearance outcome"), {
+        target: { value: "cleared" },
+      });
+      fireEvent.click(within(dialog).getByRole("checkbox"));
+      const save = within(dialog).getByRole("button", { name: "Save clearance outcome" });
+      fireEvent.click(save);
+      fireEvent.click(save);
+      expect(control.calls).toHaveLength(1);
+      expect(save).toHaveAttribute("aria-disabled", "true");
+      expect(within(dialog).getByRole("status")).toHaveTextContent("Saving clearance outcome");
+      await act(async () => {
+        control.finish!();
+      });
+      if (refuse) {
+        expect(dialog).toBeInTheDocument();
+        expect(within(dialog).getByLabelText("Treating-team clearance outcome")).toHaveValue("cleared");
+        expect(within(dialog).getByRole("checkbox")).toBeChecked();
+        expect(within(dialog).getByRole("alert")).toHaveTextContent("Clearance was not recorded");
+        expect(save).not.toHaveAttribute("aria-disabled", "true");
+      } else
+        expect(
+          screen.queryByRole("dialog", { name: "Record treating-team medical clearance" }),
+        ).not.toBeInTheDocument();
+    },
+  );
 
   it("names the day on a quoted ETA that falls on another day", () => {
     // A bare clock face would read as today, and past midnight it showed an hour above 23.

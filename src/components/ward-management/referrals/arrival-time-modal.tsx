@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
@@ -16,6 +16,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import styles from "./arrival-time-modal.module.css";
 
 /**
@@ -74,28 +75,56 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   );
   const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? "");
   const [etaMinutes, setEtaMinutes] = useState(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const pending = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const dismiss = () => {
+    if (!pending.current) onClose();
+  };
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const late = isArrivalLate(movement, now);
 
-  useWardModalFocus(isOpen, dialogRef, onClose);
+  useWardModalFocus(isOpen, dialogRef, dismiss);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!saveGate.allowed) return;
-    dispatch({
-      type: "SET_ARRIVAL_DETAILS",
-      role,
-      now,
-      movementId: movement.id,
-      ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
-      arrivalMode,
-      trackingNumber: trackingNumber.trim() || undefined,
-      estimatedArrivalAt: etaMinutes,
-    });
-    onClose();
+    if (!saveGate.allowed || pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    setSaveError(null);
+    const finish = (outcome?: WardCommandOutcome) => {
+      if (!mounted.current) return;
+      pending.current = false;
+      setSaving(false);
+      if (outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true)) onClose();
+      else setSaveError(outcome?.message ?? "Save is not confirmed. Review the board before trying again.");
+    };
+    try {
+      const result = dispatch({
+        type: "SET_ARRIVAL_DETAILS",
+        role,
+        now,
+        movementId: movement.id,
+        ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+        arrivalMode,
+        trackingNumber: trackingNumber.trim() || undefined,
+        estimatedArrivalAt: etaMinutes,
+      });
+      if (result && "then" in result) void result.then(finish, () => finish());
+      else finish(result || undefined);
+    } catch {
+      finish();
+    }
   }
 
   const etaPresets = [
@@ -113,7 +142,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       role="presentation"
       className={styles.overlay}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) dismiss();
       }}
     >
       <div
@@ -131,7 +160,13 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               Update Arrival Time & Transport
             </h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className={styles.closeBtn}>
+          <button
+            type="button"
+            onClick={dismiss}
+            disabled={saving}
+            aria-label="Close dialog"
+            className={styles.closeBtn}
+          >
             <X size={20} aria-hidden="true" />
           </button>
         </div>
@@ -164,6 +199,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             </label>
             <select
               id={`${baseId}-arrival-mode-select`}
+              disabled={saving}
               value={arrivalMode}
               onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
               className={styles.control}
@@ -182,6 +218,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             </label>
             <input
               id={`${baseId}-tracking-number-input`}
+              disabled={saving}
               type="text"
               placeholder="e.g. CAD-2026-8912 or SJA-412"
               value={trackingNumber}
@@ -200,6 +237,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
                 <button
                   key={preset.label}
                   type="button"
+                  disabled={saving}
                   onClick={() => setEtaMinutes(now + preset.offset)}
                   className={styles.preset}
                   data-active={etaMinutes === now + preset.offset ? "true" : undefined}
@@ -211,8 +249,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             </div>
           </div>
 
+          {saveError ? <p role="alert">{saveError}</p> : null}
           <div className={styles.actions}>
-            <button type="button" onClick={onClose} className={styles.cancelBtn}>
+            <button type="button" onClick={dismiss} disabled={saving} className={styles.cancelBtn}>
               Cancel
             </button>
             <button
@@ -220,8 +259,10 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               data-testid="save-arrival-plan-button"
               className={styles.saveBtn}
               {...saveGate.buttonProps}
+              disabled={saving}
+              aria-busy={saving || undefined}
             >
-              Save Arrival Plan
+              {saving ? "Saving…" : "Save Arrival Plan"}
             </button>
             {saveGate.note}
           </div>

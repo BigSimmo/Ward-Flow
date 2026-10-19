@@ -367,6 +367,8 @@ export function DisplayPane({
   onRowDensityChange,
   discreetNames,
   onDiscreetNamesChange,
+  characterShortcuts,
+  onCharacterShortcutsChange,
   onPreview,
 }: {
   theme: ThemeChoice;
@@ -379,6 +381,8 @@ export function DisplayPane({
   onHighContrastChange: (next: boolean) => void;
   rowDensity: RowDensity;
   onRowDensityChange: (next: RowDensity) => void;
+  characterShortcuts: boolean;
+  onCharacterShortcutsChange: (next: boolean) => void;
   discreetNames: boolean;
   onDiscreetNamesChange: (next: boolean) => void;
   onPreview: OnPreview;
@@ -434,6 +438,17 @@ export function DisplayPane({
             </SettingRow>
             <SettingRow setting="touch" title="Touch mode" sub="Larger targets on tablets" preview>
               <PreviewSegmented name="Touch mode" items={["Auto", "On", "Off"]} value="Auto" onPreview={onPreview} />
+            </SettingRow>
+            <SettingRow
+              setting="character-shortcuts"
+              title="Single-key shortcuts"
+              sub="Letters, numbers and punctuation across Ward Flow in this browser. Escape and Ctrl/Cmd+K stay available."
+            >
+              <RowSwitch
+                name="Single-key shortcuts"
+                checked={characterShortcuts}
+                onCheckedChange={onCharacterShortcutsChange}
+              />
             </SettingRow>
             <SettingRow setting="reduce-motion" title="Reduce motion" sub="Stops slides and pulses">
               <RowSwitch name="Reduce motion" checked={reducedMotion} onCheckedChange={onReducedMotionChange} />
@@ -496,6 +511,7 @@ export function DisplayPane({
 
           <Card aria-labelledby="shortcuts-title" data-setting="shortcuts">
             <CardHead iconPlain id="shortcuts-title" icon={Keyboard} title="Shortcuts" />
+
             <ul className={styles.shortcuts} aria-label="Keyboard shortcuts">
               {SHORTCUTS.map((shortcut) => (
                 <li key={shortcut.label}>

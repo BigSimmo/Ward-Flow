@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
@@ -408,7 +409,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       if (isTypingTarget(event.target)) return;
       if (openDrawerForShortcut(event)) return;
 
-      if (event.key !== "[") return;
+      if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTabletLandscape) {
         moreTriggerRef.current = null;

@@ -1,5 +1,14 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Confirmed usability fixes — 19 October 2026
+
+Patient transport records a fresh booking with explicit provider and escort answers. Active
+bookings explain coordinator-assisted cancellation/rebooking instead of offering an update the
+engine refuses. Transport and clearance drafts wait for accepted completion and retain failed
+edits. Legal extensions follow the same completion contract; their owner notification is visibly
+unavailable. Officer phone rows, history and next task honor discreet names while detail screens
+retain their clinical identity context.
+
 ## Patient dialog loading — 18 October 2026
 
 `patients/patient-now-screen.tsx` loads the arrival-plan and document-detail dialogs through

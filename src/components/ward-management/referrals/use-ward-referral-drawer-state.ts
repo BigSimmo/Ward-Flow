@@ -1,3 +1,4 @@
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -50,6 +51,7 @@ import {
   useReferralDraftAutosave,
   useReferralDraftRecovery,
 } from "./referral-draft-store";
+import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
@@ -549,7 +551,7 @@ export function useWardReferralDrawerState({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || !areCharacterShortcutsEnabled()) return;
       if (hasOpenSheet() && !drawerRef.current?.contains(document.activeElement)) return;
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
         const active = document.activeElement as HTMLElement | null;
@@ -856,6 +858,19 @@ export function useWardReferralDrawerState({
     if (documentationError(documentation) === error) return "documentation";
     return "placement";
   }
+  const { activateSection, selectSection, phCloseSheet, phOpenStep } = useReferralSectionNavigation({
+    sectionId,
+    bodyRef,
+    isPhone,
+    setActiveSection,
+    setPreviewOpen,
+    setConfirmationOpen,
+    setIsSearchOpen,
+    setPhoneStepOpen,
+    setFlowError,
+    sendPending,
+    sentReferralId,
+  });
   function goNext(section: "patient" | "referral" | "documentation") {
     const error =
       patientError() ??
@@ -864,18 +879,19 @@ export function useWardReferralDrawerState({
     setFlowError(error);
     if (error) {
       const failed = sectionFor(error);
-      if (failed) setAttempted((current) => ({ ...current, [failed]: true }));
+      if (failed) {
+        setAttempted((current) => ({ ...current, [failed]: true }));
+        activateSection(failed, true);
+      }
       return;
     }
-    setActiveSection(section === "patient" ? "referral" : section === "referral" ? "documentation" : "placement");
-    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    activateSection(section === "patient" ? "referral" : section === "referral" ? "documentation" : "placement");
   }
   function goBack() {
     setFlowError(null);
-    setActiveSection((current) =>
-      current === "placement" ? "documentation" : current === "documentation" ? "referral" : "patient",
+    activateSection(
+      activeSection === "placement" ? "documentation" : activeSection === "documentation" ? "referral" : "patient",
     );
-    if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }
   function handleDispatch() {
     const error =
@@ -887,7 +903,10 @@ export function useWardReferralDrawerState({
     setFlowError(error);
     if (error) {
       const failed = sectionFor(error);
-      if (failed) setAttempted((current) => ({ ...current, [failed]: true }));
+      if (failed) {
+        setAttempted((current) => ({ ...current, [failed]: true }));
+        activateSection(failed, true);
+      }
       return;
     }
     setConfirmationOpen(true);
@@ -1134,17 +1153,6 @@ export function useWardReferralDrawerState({
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
   }
 
-  function selectSection(id: DrawerSection) {
-    if (sendPending || sentReferralId) return;
-    setPreviewOpen(false);
-    setConfirmationOpen(false);
-
-    setFlowError(null);
-    setActiveSection(id);
-    setIsSearchOpen(false);
-    if (bodyRef.current) bodyRef.current.scrollTop = 0;
-  }
-
   const footStatus = (() => {
     if (view === "inbox") {
       return {
@@ -1219,16 +1227,6 @@ export function useWardReferralDrawerState({
         : placeRow;
     }
     return destType === "ward" ? "Choose up to 3 wards" : destType === "community" ? "Choose a team" : "Choose an ED";
-  }
-  function phCloseSheet() {
-    setPhoneStepOpen(false);
-    setPreviewOpen(false);
-    setConfirmationOpen(false);
-    setFlowError(null);
-  }
-  function phOpenStep(id: DrawerSection) {
-    selectSection(id);
-    setPhoneStepOpen(true);
   }
   const phStepIndex = SECTION_IDS.indexOf(activeSection);
 

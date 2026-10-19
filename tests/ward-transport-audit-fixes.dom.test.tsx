@@ -72,6 +72,10 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
       </WardFlowProvider>,
     );
     const form = openBooking();
+    fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
+      target: { value: "Ambulance service" },
+    });
+    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
     // A4-7: read only, from the form in force (Form 4C), with Change; no fixed default.
     expect(within(form).getByTestId("ward-patient-legal-from-form")).toHaveTextContent("Involuntary, from Legal now");
     expect(form).toHaveTextContent("Legal now: Involuntary inpatient, Form 4C");
@@ -109,6 +113,10 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
       </WardFlowProvider>,
     );
     const form = openBooking();
+    fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
+      target: { value: "Ambulance service" },
+    });
+    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-8" } });
     fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
     fireEvent.click(within(form).getByTestId("ward-patient-change-legal"));

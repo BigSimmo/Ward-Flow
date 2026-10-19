@@ -1,3 +1,4 @@
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 
 /**
@@ -9,7 +10,8 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
  * (`ward-global-search-lazy.tsx`), so both answer the same keys. True when the key should focus it.
  */
 export function isGlobalSearchShortcut(event: KeyboardEvent): boolean {
-  const slashShortcut = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
+  const slashShortcut =
+    areCharacterShortcutsEnabled() && event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey;
   const commandShortcut = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
   if (!slashShortcut && !commandShortcut) return false;
   // An open sheet keeps its own keys: the phone referral's "/" opens its patient step. Search

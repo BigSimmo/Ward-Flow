@@ -76,7 +76,7 @@ Only `ink-1` and `ink-2` sit on glass. Measured on the worst backdrop (dark ink 
 
 **Hatch has one meaning.** Hatch means held or quiet: a pulled bed, the third data series, or time on a wait bar with nothing recorded. There is one hatch, drawn through `--wf-hatch`. Quiet time takes the amber circle after 2h. A time axis may compress past a stated point into a hatched band labelled with its range.
 
-**Dim, never hide.** `--wf-dim` (ink at about 45%) is how rows, bars and beds recede when a highlight or a chart pick does not match them. Dim uses colour tokens, never `filter` or `opacity`, so contrast stays predictable.
+**Dim, never hide.** `--wf-dim` is readable muted ink for rows, bars and beds that do not match a highlight or chart pick. It keeps active text at a minimum 4.5:1 contrast on the supported row surfaces in day and night themes. Dim uses colour tokens, never `filter` or `opacity`, so contrast stays predictable.
 
 **Bed states.** Ready takes the fit tint and fit edge. Being made ready adds a ring. Pulled takes the hatch. Closed is never gold: it is a quiet slate, `--wf-data-closed` `light-dark(#b9c4cf, #3a4b5c)`, under a dashed edge. Occupied takes the track. A free or fit bed is never dashed, because dashed means unavailable.
 
