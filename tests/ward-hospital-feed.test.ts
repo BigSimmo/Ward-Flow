@@ -9,12 +9,14 @@ function message({
   umrn = "UM100001",
   name = "HALLOWAY^TALIA",
   dob = "19880314",
-}: { event?: string; umrn?: string; name?: string; dob?: string } = {}): string {
+  type = "ADT",
+  patientClass = "I",
+}: { event?: string; umrn?: string; name?: string; dob?: string; type?: string; patientClass?: string } = {}): string {
   return [
-    `MSH|^~\\&|PAS|HOSP|WARDFLOW|NET|202610190830||ADT^${event}|MSG0001|P|2.4`,
+    `MSH|^~\\&|PAS|HOSP|WARDFLOW|NET|202610190830||${type}^${event}|MSG0001|P|2.4`,
     `EVN|${event}|202610190825`,
     `PID|1||${umrn}^^^HOSP^MR||${name}||${dob}|F`,
-    "PV1|1|I|MH4^12^B||||",
+    `PV1|1|${patientClass}|MH4^12^B||||`,
   ].join("\r");
 }
 
@@ -29,6 +31,7 @@ describe("readFeedMessage", () => {
         familyName: "HALLOWAY",
         givenName: "TALIA",
         dateOfBirth: "1988-03-14",
+        patientClass: "I",
         location: { pointOfCare: "MH4", room: "12", bed: "B" },
         recordedAt: "202610190825",
       },
@@ -51,6 +54,10 @@ describe("readFeedMessage", () => {
       reason: "Not read: event A08 is not one this seam handles.",
     });
     expect(readFeedMessage("hello").ok).toBe(false);
+    expect(readFeedMessage(message({ type: "ORU" }))).toEqual({
+      ok: false,
+      reason: "Not read: message type ORU is not ADT.",
+    });
   });
 });
 
@@ -79,10 +86,24 @@ describe("previewFeedMessage", () => {
   });
 
   it("never matches by name alone: an unknown number with a known name is a new person", () => {
-    const preview = previewFeedMessage(read(message({ umrn: "UM999999", event: "A04" })), wardPatients);
+    const preview = previewFeedMessage(
+      read(message({ umrn: "UM999999", event: "A04", patientClass: "E" })),
+      wardPatients,
+    );
     expect(preview).toEqual({
       kind: "new_person",
       action: "No person holds UM999999. Would suggest checking whether this person needs a bed request.",
+    });
+  });
+
+  it("suggests a bed request check only for an emergency registration", () => {
+    const outpatient = previewFeedMessage(
+      read(message({ umrn: "UM999999", event: "A04", patientClass: "O" })),
+      wardPatients,
+    );
+    expect(outpatient).toEqual({
+      kind: "new_person",
+      action: "No person holds UM999999. Would suggest nothing: this registration is not an emergency attendance.",
     });
   });
 });

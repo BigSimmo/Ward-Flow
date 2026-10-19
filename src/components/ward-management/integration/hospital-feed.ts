@@ -24,7 +24,8 @@ const FEED_EVENTS = {
   A01: "admitted",
   A02: "transferred",
   A03: "discharged",
-  A04: "arrived_in_ed",
+  // A04 is any registration (outpatient, emergency, pre-admission); PV1-2 says which.
+  A04: "registered",
 } as const;
 
 type FeedEventCode = keyof typeof FEED_EVENTS;
@@ -38,6 +39,8 @@ export type FeedMessage = {
   givenName: string;
   /** `YYYY-MM-DD`, as the message gave it. */
   dateOfBirth: string | undefined;
+  /** Patient class, as given (PV1-2): `E` is an emergency attendance, `I` an inpatient. */
+  patientClass: string;
   /** The message's point of care, room and bed, as given (PV1-3). Not mapped to a Ward Flow bed. */
   location: { pointOfCare: string; room: string; bed: string };
   /** `YYYYMMDDHHmm` from EVN-2, as given. */
@@ -84,6 +87,9 @@ export function readFeedMessage(text: string): FeedReadResult {
     return { ok: false, reason: "Refused: the record number is not a synthetic UMnnnnnn number." };
   }
 
+  if (component(msh[9], 0) !== "ADT") {
+    return { ok: false, reason: `Not read: message type ${component(msh[9], 0) || "missing"} is not ADT.` };
+  }
   const code = component(msh[9], 1);
   if (!Object.hasOwn(FEED_EVENTS, code)) {
     return { ok: false, reason: `Not read: event ${code || "missing"} is not one this seam handles.` };
@@ -98,6 +104,7 @@ export function readFeedMessage(text: string): FeedReadResult {
       familyName: component(pid[5], 0),
       givenName: component(pid[5], 1),
       dateOfBirth: dateOfBirth(pid[7]),
+      patientClass: component(pv1?.[2], 0),
       location: {
         pointOfCare: component(pv1?.[3], 0),
         room: component(pv1?.[3], 1),
@@ -112,12 +119,19 @@ export type FeedPreview =
   | { kind: "known_person"; patientId: Patient["id"]; action: string; differences: string[] }
   | { kind: "new_person"; action: string };
 
-const ACTIONS: Record<FeedEventKind, string> = {
+const ACTIONS: Record<Exclude<FeedEventKind, "registered">, string> = {
   admitted: "Would suggest checking this admission against the ward's bed board.",
   transferred: "Would suggest checking the person's ward and bed.",
   discharged: "Would suggest checking the ward has recorded this discharge.",
-  arrived_in_ed: "Would suggest checking whether this person needs a bed request.",
 };
+
+/** A registration only matters to bed flow when it is an emergency attendance. */
+function action(message: FeedMessage): string {
+  if (message.event !== "registered") return ACTIONS[message.event];
+  return message.patientClass === "E"
+    ? "Would suggest checking whether this person needs a bed request."
+    : "Would suggest nothing: this registration is not an emergency attendance.";
+}
 
 /**
  * What Ward Flow would do with a read message: match the person by record number only, and list
@@ -126,7 +140,7 @@ const ACTIONS: Record<FeedEventKind, string> = {
 export function previewFeedMessage(message: FeedMessage, patients: readonly Patient[]): FeedPreview {
   const patient = patients.find((candidate) => candidate.umrn === message.umrn);
   if (!patient) {
-    return { kind: "new_person", action: `No person holds ${message.umrn}. ${ACTIONS[message.event]}` };
+    return { kind: "new_person", action: `No person holds ${message.umrn}. ${action(message)}` };
   }
   const differences: string[] = [];
   if (message.familyName && message.familyName.toLowerCase() !== patient.familyName.toLowerCase()) {
@@ -138,5 +152,5 @@ export function previewFeedMessage(message: FeedMessage, patients: readonly Pati
   if (message.dateOfBirth && message.dateOfBirth !== patient.dateOfBirth) {
     differences.push("Date of birth differs from the record");
   }
-  return { kind: "known_person", patientId: patient.id, action: ACTIONS[message.event], differences };
+  return { kind: "known_person", patientId: patient.id, action: action(message), differences };
 }
