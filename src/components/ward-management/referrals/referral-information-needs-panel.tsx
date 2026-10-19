@@ -171,7 +171,7 @@ function NeedsToTickOff({
                     if (refusal) return;
                     raise("MARK_REFERRAL_INFORMATION_MET", {
                       referralId,
-                      unitId: arm.unitId,
+                      wardUnitId: arm.unitId,
                       need: entry.need,
                     });
                   }}

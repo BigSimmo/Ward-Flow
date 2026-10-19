@@ -268,7 +268,14 @@ export function candidateEvents(
       );
     case "MARK_REFERRAL_INFORMATION_MET":
       return state.referrals.flatMap((referral) =>
-        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitId, need: "drug_screen" as const })),
+        unitIds.map((wardUnitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          wardUnitId,
+          need: "drug_screen" as const,
+        })),
       );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
