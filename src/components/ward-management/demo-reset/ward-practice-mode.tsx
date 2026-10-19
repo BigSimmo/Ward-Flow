@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/wf";
 
@@ -13,15 +13,39 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
 import styles from "./ward-practice-mode.module.css";
 
+type PracticeSession = { scenario: string; startedWith: ReadonlySet<string> };
+
+/**
+ * The running practice, held at module level so it survives the Tools sheet closing while the
+ * learner works in the real screens. Tied to the scenario: switching scenario ends it, since a new
+ * scenario's seeded requests would otherwise look like ones the learner raised.
+ */
+let session: PracticeSession | null = null;
+const listeners = new Set<() => void>();
+
+function setSession(next: PracticeSession | null) {
+  session = next;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+const readSession = () => session;
+const serverSession = () => null;
+
 /**
  * PRACTICE MODE in Tools (smart features idea 10): a guided placement on the demo data. Shown
  * wherever the one tap Demo reset is (`demo-reset` flag), since practice only makes sense on data
- * that can be reset. The steps tick off from the shared record; progress lives on this screen only.
+ * that can be reset. The steps tick off from the shared record; progress lives in this browser tab only.
  */
 export function WardPracticeMode({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { movements } = useWardFlowSelect("movements");
-  const [startedWith, setStartedWith] = useState<ReadonlySet<string> | null>(null);
+  const { movements, scenario } = useWardFlowSelect("movements", "scenario");
+  const current = useSyncExternalStore(subscribe, readSession, serverSession);
+  const startedWith = current && current.scenario === scenario ? current.startedWith : null;
   const titleId = useId();
   const progress = useMemo(
     () => (startedWith ? practiceProgress(movements, startedWith) : null),
@@ -48,7 +72,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
           </p>
           <Button
             size="sm"
-            onClick={() => setStartedWith(new Set(movements.map((movement) => movement.id)))}
+            onClick={() => setSession({ scenario, startedWith: new Set(movements.map((movement) => movement.id)) })}
             data-testid="ward-practice-start"
           >
             Start practice
@@ -92,7 +116,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
                 Open the practice request
               </Link>
             ) : null}
-            <Button size="sm" onClick={() => setStartedWith(null)} data-testid="ward-practice-stop">
+            <Button size="sm" onClick={() => setSession(null)} data-testid="ward-practice-stop">
               Stop practice
             </Button>
           </div>
