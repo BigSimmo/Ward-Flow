@@ -17,6 +17,14 @@ import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/war
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 import { CLINICAL_VALUE_LIST, clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
 
+/** The summary line the screen shows, from the list itself: a synthetic value is named, never signed off here. */
+function signedSummary(): string {
+  const unsigned = CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length;
+  return unsigned === 0
+    ? `All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`
+    : `${unsigned} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only.`;
+}
+
 /**
  * Settings v10 pass 3: the phone is its own design (a compact profile hero, Find a setting, the
  * four settings changed on a phone, then the five areas as rows that open tall sheets), and a
@@ -144,7 +152,7 @@ describe("Settings on a phone", () => {
 
     fireEvent.click(within(list).getByRole("radio", { name: /Clinical values/ }));
     const values = screen.getByTestId("ward-settings-clinical-values-phone");
-    expect(values).toHaveTextContent(`All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`);
+    expect(values).toHaveTextContent(signedSummary());
     for (const entry of CLINICAL_VALUE_LIST) {
       const row = within(values).getByTestId(`ward-settings-clinical-value-phone-${entry.id}`);
       expect(row).toHaveTextContent(entry.name);

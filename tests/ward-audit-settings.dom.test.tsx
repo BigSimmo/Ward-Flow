@@ -14,6 +14,14 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { ToastProvider } from "@/components/wf";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
 import { CLINICAL_VALUE_LIST, clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
+
+/** The summary line the screen shows, from the list itself: a synthetic value is named, never signed off here. */
+function signedSummary(): string {
+  const unsigned = CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length;
+  return unsigned === 0
+    ? `All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`
+    : `${unsigned} of ${CLINICAL_VALUE_LIST.length} values are still synthetic. The rest are signed for the prototype only.`;
+}
 beforeEach(() => {
   localStorage.clear();
 });
@@ -40,7 +48,7 @@ it("lists every clinical value with its synthetic or signed status", () => {
   fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
   fireEvent.click(screen.getByRole("tab", { name: /Clinical values/ }));
   const panel = screen.getByTestId("ward-settings-clinical-values");
-  expect(panel).toHaveTextContent(`All ${CLINICAL_VALUE_LIST.length} values are signed for the prototype only.`);
+  expect(panel).toHaveTextContent(signedSummary());
   for (const entry of CLINICAL_VALUE_LIST) {
     const row = within(panel).getByTestId(`ward-settings-clinical-value-${entry.id}`);
     expect(row).toHaveTextContent(entry.name);
