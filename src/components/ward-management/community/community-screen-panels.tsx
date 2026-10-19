@@ -688,6 +688,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
           <div
             className={styles.aboutPage}
             data-testid="ward-community-about"
+            role="group"
             aria-label="Community data provenance and matching limits"
           >
             <div className={styles.noticeGroup}>

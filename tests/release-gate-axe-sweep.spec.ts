@@ -12,6 +12,8 @@ import { expectAccessible } from "./helpers/ward-release-gate";
  * reaches is still checked. Redirect-only routes (command, constellation, escalation, exceptions,
  * queue) are left out because they land on a route already listed. One seeded person and one
  * seeded movement stand in for the record pages, opened by their coded addresses.
+ * The demonstration sign-in page is a sibling of `/ward-flow` with no rail or header, so it is
+ * scanned on its own below (audit UI-8, 19 October 2026). It stays unlinked; this only checks it.
  * Synthetic data only.
  */
 
@@ -82,5 +84,21 @@ for (const route of ROUTES) {
     });
     await page.waitForLoadState("networkidle");
     await expectAccessible(page, testInfo, route || "/");
+  });
+}
+
+/** Routes outside the `/ward-flow` shell: no header, so no header-ready mark to wait for. */
+const UNSHELLED_ROUTES = ["/ward-flow-sign-in"] as const;
+
+for (const route of UNSHELLED_ROUTES) {
+  test(`axe: ${route} has no serious or critical violation`, async ({ page }, testInfo) => {
+    await page.goto(route, { waitUntil: "load" });
+    await expect(
+      page.locator('div[hidden][id^="S:"]'),
+      "React's streamed content is still staged, so the screen is duplicated in the document",
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.locator("main:visible").first()).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("networkidle");
+    await expectAccessible(page, testInfo, route);
   });
 }

@@ -23,8 +23,8 @@
   --wf-ink-1: #161a20;
   --wf-ink-2: #414953;
   --wf-ink-3: #5b646f;
-  --wf-ink-off: #6b737d; /* v10 pass 4: 4.7:1 on the page, so "None" and "Closed" pass as text */
-  --wf-line-ctl: #828a94;
+  --wf-ink-off: #636b75; /* 4.5:1 on --wf-canvas, 5.3:1 on --wf-surface, so "None" and "Closed" pass as text */
+  --wf-line-ctl: #808892; /* 3.0:1 on --wf-canvas, 3.5:1 on --wf-surface: the non-text minimum for control edges */
   --wf-accent: #245a8c;
   --wf-accent-strong: #1f4f7d;
   --wf-accent-tint: #e3eef9;

@@ -453,7 +453,7 @@ export function WardBedBoard({
   );
 
   const legend = (
-    <span className={styles.key} aria-label="Symbol key">
+    <span className={styles.key} role="group" aria-label="Symbol key">
       <span>
         <StatusGlyph tone="danger" size={9} />
         Act now

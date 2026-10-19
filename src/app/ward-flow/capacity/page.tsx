@@ -10,7 +10,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
  * is now the only place those figures are shown.
  */
 export const metadata: Metadata = {
-  title: "Capacity - Ward Flow",
+  title: "Capacity — Ward Flow",
   description: "Synthetic ward-confirmed mental health bed-state and capability view.",
 };
 

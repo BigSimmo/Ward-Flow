@@ -797,7 +797,7 @@ export function WardBedsMatrix({
            FOOTER NOTES, CENSUS & ACCESSIBLE LEGEND
            ───────────────────────────────────────────────────────────── */}
         <div className={styles.bedsFooterNotes}>
-          <div className={styles.bedKeyLegend} aria-label="Bed stay bands and symbol key">
+          <div className={styles.bedKeyLegend} role="group" aria-label="Bed stay bands and symbol key">
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand1}`} />
               <span>Under 2 weeks</span>
