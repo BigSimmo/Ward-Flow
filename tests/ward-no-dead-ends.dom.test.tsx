@@ -155,7 +155,6 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
       render: () => <WardPatientWorkspace movementId={movement.id} />,
     },
   ],
-  ["/ward-flow/network", { concrete: "/ward-flow/network", render: () => <WardModeWorkspace mode="network" /> }],
   ["/ward-flow/out-of-area", { concrete: "/ward-flow/out-of-area", render: () => <OutOfAreaBoard /> }],
   [
     "/ward-flow/people/[patientId]",

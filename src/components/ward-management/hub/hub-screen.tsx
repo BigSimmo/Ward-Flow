@@ -701,14 +701,6 @@ export function HubScreen() {
                 />
                 <HeroStat
                   inline
-                  value={network.closed}
-                  label={BED_STATE_LABELS.closed}
-                  pressed={highlight === "closed"}
-                  onToggle={() => toggleHighlight("closed")}
-                />
-                <HeroStat inline value={occupancyShare(network) ?? "Not recorded"} label="Occupancy" />
-                <HeroStat
-                  inline
                   value={staleCount}
                   label="Stale counts"
                   tone={staleCount > 0 ? "warning" : undefined}
@@ -722,12 +714,6 @@ export function HubScreen() {
             isPhone ? undefined : (
               <CheckingFoot
                 items={[
-                  {
-                    id: "stale",
-                    label: "Stale bed counts",
-                    value: staleCount,
-                    tone: staleCount > 0 ? "warning" : undefined,
-                  },
                   {
                     id: "oldest",
                     label: "Oldest bed count",

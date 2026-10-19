@@ -4,6 +4,9 @@
 // `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { wardRouteUnitId } from "../ward-chrome-role";
+import { useWardFlowSelect } from "../ward-flow-provider";
 
 export const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
@@ -49,11 +52,31 @@ export const WardDischargesMatrix = dynamic(
   },
 );
 export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), { ssr: false });
+// Design audit DA-02: the inbox sits above the ward's action bar and its chunk arrives late on a
+// phone, so while it loads it holds about the space its cards will take. That keeps the buttons
+// below it from moving under a finger. A ward with no entries holds no space, as the inbox shows none.
+// Heights are the rendered card's at phone width (header and one entry); a wider screen settles shorter.
+const INBOX_HEADER_REM = 3;
+const INBOX_ENTRY_REM = 10.5;
+function WardReferralInboxPlaceholder() {
+  const unitId = wardRouteUnitId(usePathname() ?? "");
+  const { wardReferralInbox } = useWardFlowSelect("wardReferralInbox");
+  const count = unitId ? (wardReferralInbox?.(unitId)?.length ?? 0) : 0;
+  if (!count) return null;
+  return (
+    <section
+      aria-label="Ward referral inbox"
+      aria-busy="true"
+      style={{ minBlockSize: `${INBOX_HEADER_REM + count * INBOX_ENTRY_REM}rem` }}
+    />
+  );
+}
 // Client-only like the other ward sections below; it renders nothing until the store has entries.
 export const WardReferralInbox = dynamic(
   () => import("../referrals/ward-referral-inbox").then((m) => m.WardReferralInbox),
   {
     ssr: false,
+    loading: () => <WardReferralInboxPlaceholder />,
   },
 );
 // Shown only after a confirmed discharge, so it loads when first needed.

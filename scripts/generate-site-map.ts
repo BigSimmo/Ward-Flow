@@ -30,7 +30,8 @@ type SiteMapData = {
 const documentedRedirectTargets: Record<string, string> = {
   // The proxy and the page both forward this unlinked compatibility path; pinned because
   // the page's `redirect()` target is not a plain string literal.
-  "/ward-flow/constellation": "/ward-flow/network",
+  "/ward-flow/constellation": "/ward-flow",
+  "/ward-flow/network": "/ward-flow",
 };
 
 // Ward Flow's routes carry no curated description: they render with the generic "Route

@@ -1,0 +1,112 @@
+/*
+ * Simplification C1 (Josh, 19 Oct 2026): the phone summary line and the folded filter button.
+ * Phone only (the components render nothing above 48rem). Design tokens only.
+ */
+
+/* ---------- The summary line ---------- */
+
+/* Pinned under the header (its `top` is the header's measured bottom edge). Off: hidden, out of
+   the tab order and the accessibility tree. On: it fades and slides in from under the header. */
+.line {
+  --wf-focus-ring: var(--wf-hero-ink);
+  position: fixed;
+  right: 0;
+  left: 0;
+  pointer-events: auto;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--wf-t-exit) var(--wf-ease-in),
+    transform var(--wf-t-exit) var(--wf-ease-in),
+    visibility 0s linear var(--wf-t-exit);
+}
+
+.line[data-shown="true"] {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--wf-t-enter) var(--wf-ease-out),
+    transform var(--wf-t-enter) var(--wf-ease-out),
+    visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .line[data-shown="true"] {
+    transform: none;
+    transition: none;
+  }
+}
+
+.lineButton {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-bottom: 1px solid var(--wf-hero-edge);
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lineButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+}
+
+.lineText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineIcon {
+  flex: none;
+  color: var(--wf-hero-ink-2);
+}
+
+/* ---------- The folded filter button ---------- */
+
+/* The phone tap floor; a filter that is on gets the accent edge, never colour alone (the count
+   says it in words). */
+.foldButton {
+  flex: none;
+  min-height: var(--spacing-tap, 3rem);
+  white-space: nowrap;
+}
+
+.foldButton[data-on="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.foldDot {
+  margin-inline: 2px;
+  color: var(--wf-ink-2);
+}
+
+.foldCount {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* In the sheet the page's own chip row wraps instead of scrolling sideways, so every chip shows. The
+   attribute selector outranks a page's one-class row rule. */
+.foldBody > [class] {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.foldBody > [class] > * {
+  flex: none;
+}

@@ -803,3 +803,47 @@ describe("AddPatientForm safety regressions", () => {
     },
   );
 });
+
+describe("AddPatientForm — errors mark and move to the field at fault (DA-12)", () => {
+  it("marks each blank required field and moves focus to the first one on submit", () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999999" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+
+    const umrn = screen.getByTestId("ward-add-patient-umrn");
+    expect(umrn).not.toHaveAttribute("aria-invalid");
+    const dateOfBirth = screen.getByTestId("ward-add-patient-date-of-birth");
+    expect(dateOfBirth).toHaveFocus();
+    for (const [testId, message] of [
+      ["ward-add-patient-date-of-birth", "Enter the date of birth."],
+      ["ward-add-patient-given-name", "Enter the given name."],
+      ["ward-add-patient-family-name", "Enter the family name."],
+    ] as const) {
+      const control = screen.getByTestId(testId);
+      expect(control).toHaveAttribute("aria-invalid", "true");
+      expect(control).toHaveAccessibleDescription(message);
+    }
+
+    // A filled field drops its mark straight away.
+    fireEvent.change(dateOfBirth, { target: { value: "1990-01-01" } });
+    expect(dateOfBirth).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("names the existing record's UMRN when a duplicate is refused, and marks the UMRN field", async () => {
+    renderForm();
+    fillDraft();
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "um100002" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+
+    expect(await screen.findByTestId("ward-add-patient-rejection")).toHaveTextContent(
+      "Patient could not be added. UMRN UM100002 already belongs to an existing record.",
+    );
+    const umrn = screen.getByTestId("ward-add-patient-umrn");
+    expect(umrn).toHaveAttribute("aria-invalid", "true");
+    expect(umrn).toHaveAccessibleDescription("This UMRN is already on file.");
+    expect(umrn).toHaveFocus();
+
+    fireEvent.change(umrn, { target: { value: "UM999999" } });
+    expect(umrn).not.toHaveAttribute("aria-invalid");
+  });
+});

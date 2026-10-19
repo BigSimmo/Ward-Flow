@@ -40,12 +40,13 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
  * page keeps its own redirect as a backstop for anything the matcher misses.
  */
 const staticRouteRedirects: Record<string, string> = {
-  // Ward Flow Constellation was retired in Phase 2; keep
-  // /ward-flow/constellation as an intentional unlinked compatibility
-  // redirect to /ward-flow/network so historical deep-links match the
-  // page backstop (PR #2303). The redirect moved with Ward Flow, first into
+  // Ward Flow Constellation was retired in Phase 2 and the Network screen it
+  // forwarded to on 19 October 2026; both stay as unlinked compatibility
+  // redirects to Home so historical deep-links match the page backstops
+  // (PR #2303). The redirects moved with Ward Flow, first into
   // /mockups/ward-flow and then, on 19 October 2026, out to /ward-flow.
-  "/ward-flow/constellation": "/ward-flow/network",
+  "/ward-flow/constellation": "/ward-flow",
+  "/ward-flow/network": "/ward-flow",
 };
 
 /**

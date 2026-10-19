@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { ArrowLeft, FileQuestion } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { cn, primaryControl } from "@/components/ui-primitives";
+
+// Design audit DA-28: the tab named only "Ward Flow" on a missing page.
+export const metadata: Metadata = {
+  title: "Page not found — Ward Flow",
+};
 
 export default function NotFound() {
   return (

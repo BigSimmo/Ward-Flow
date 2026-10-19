@@ -3,9 +3,13 @@
 // that file under the line cap; the palette and the phone menu's search both build rows here.
 
 import type { GlobalSearchPreviewItem } from "@/components/ward-management/search/global-search-preview";
+import type { CensusRow } from "@/components/ward-management/search/patient-census";
+import type { SearchAnswer } from "@/components/ward-management/search/search-answers";
+import { wardFactsLine } from "@/components/ward-management/search/search-places";
 import { searchGroupOrder, type SmartSearchResults } from "@/components/ward-management/search/ward-smart-search";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
-import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, patientListName } from "@/components/ward-management/ward-patients";
 import {
@@ -28,7 +32,7 @@ export type SearchResultItem = GlobalSearchPreviewItem & {
   dateOfBirth?: string;
   readyBeds?: number;
   siteName?: string;
-  /** A movement row's patient UMRN, used only to show its title discreetly on a phone. */
+  /** A movement, referral or ward-stay row's patient UMRN, used only to show its title discreetly on a phone. */
   subjectUmrn?: string;
 };
 
@@ -41,8 +45,8 @@ export function patientResultTitle(
   item: SearchResultItem,
   nameFor: (name: string, umrn: string | undefined | null) => string,
 ): string {
-  if (item.kind === "person") return nameFor(item.title, item.umrn);
-  if (item.kind === "movement") return nameFor(item.title, item.subjectUmrn);
+  if (item.kind === "person") return nameFor(item.title, item.umrn ?? item.subjectUmrn);
+  if (item.kind === "movement" || item.subjectUmrn !== undefined) return nameFor(item.title, item.subjectUmrn);
   return item.title;
 }
 
@@ -65,6 +69,32 @@ export function needsYouMeta(
   return detail.replace(info.umrn, shown.includes(info.umrn) ? shown : `${shown} · ${info.umrn}`);
 }
 
+/**
+ * One census row as a search result, opening where that person's record lives: the movement, the
+ * referral on the board, the ward (and bed, when one is recorded) or the person's own page.
+ */
+export function censusRowItem(row: CensusRow): SearchResultItem {
+  const meta = [row.umrn, row.where, row.timeText].filter((part) => part.length > 0).join(" · ");
+  const base = { title: row.name, meta, subjectUmrn: row.umrn, personId: row.patientRecordId ?? undefined };
+  if (row.kind === "movement") {
+    return { ...base, kind: "movement", kindLabel: "Movement", id: row.key, href: movementHref(row.key) };
+  }
+  if (row.kind === "referral") {
+    return { ...base, kind: "referral", kindLabel: "Referral", id: row.key, href: referralBoardHref(row.key) };
+  }
+  if (row.kind === "admission" && row.unitId) {
+    const href = `${unitHref(row.unitId)}${row.bedNumber !== undefined ? `?bed=${row.bedNumber}` : ""}`;
+    return { ...base, kind: "stay", kindLabel: row.group === "ward" ? "On ward" : "Ward list", id: row.key, href };
+  }
+  return {
+    ...base,
+    kind: "person",
+    kindLabel: "Person",
+    id: row.patientRecordId ?? row.key,
+    href: row.patientRecordId ? patientHref(row.patientRecordId) : "/ward-flow/search",
+  };
+}
+
 export type SearchResultGroup = {
   key: string;
   heading: string;
@@ -80,6 +110,7 @@ export function smartSearchGroups(
   trimmed: string,
   units: Unit[],
   lookup: PatientLookup,
+  answer?: SearchAnswer,
 ): SearchResultGroup[] {
   const g: SearchResultGroup[] = [];
 
@@ -122,16 +153,68 @@ export function smartSearchGroups(
     });
   }
 
+  if (smartResults.similarPeople.length > 0) {
+    g.push({
+      key: "similar",
+      heading: "Did you mean?",
+      items: smartResults.similarPeople.map((p) => ({
+        kind: "person",
+        kindLabel: "Similar name",
+        id: p.id,
+        title: patientListName(p),
+        meta: `${p.umrn} · born ${formatDateOfBirth(p.dateOfBirth)}`,
+        umrn: p.umrn,
+        dateOfBirth: p.dateOfBirth,
+        href: patientHref(p.id),
+      })),
+    });
+  }
+  if (smartResults.referrals.length > 0) {
+    g.push({
+      key: "referrals",
+      heading: "Referrals",
+      items: smartResults.referrals.map((r) => ({
+        kind: "referral",
+        kindLabel: "Referral",
+        id: r.referral.id,
+        title: r.formalName,
+        subjectUmrn: r.umrn,
+        personId: resolveSubjectPatient(r.referral, lookup).patient?.id,
+        meta: `${r.umrn} · Waiting for a bed`,
+        href: referralBoardHref(r.referral.id),
+      })),
+    });
+  }
+  if (smartResults.beds.length > 0) {
+    g.push({
+      key: "beds",
+      heading: "Beds",
+      items: smartResults.beds.map((b) => ({
+        kind: "bed",
+        kindLabel: "Bed",
+        id: `${b.unit.id}:${b.bedNumber}`,
+        title: `Bed ${b.bedNumber} · ${b.unit.name}`,
+        meta: b.siteName,
+        href: b.href,
+      })),
+    });
+  }
   if (smartResults.wards.length > 0) {
     g.push({
       key: "wards",
-      heading: "Wards",
+      heading: smartResults.readyBedsOnly ? "Wards with a ready bed" : "Wards",
       items: smartResults.wards.map((w) => ({
         kind: "ward",
         kindLabel: "Ward",
         id: w.unit.id,
         title: w.unit.name,
-        meta: `${w.siteName} · ${w.readyBeds === null ? "ready beds not recorded" : `${w.readyBeds} ready`}`,
+        meta: [
+          w.siteName,
+          w.readyBeds === null ? "ready beds not recorded" : `${w.readyBeds} ready`,
+          wardFactsLine(w.unit),
+        ]
+          .filter((part) => part.length > 0)
+          .join(" · "),
         siteName: w.siteName,
         readyBeds: w.readyBeds ?? undefined,
         href: w.href,
@@ -219,5 +302,12 @@ export function smartSearchGroups(
   const order = searchGroupOrder(smartResults.intent, trimmed);
   const position = new Map<string, number>(order.map((key, index) => [key, index]));
   g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
-  return g;
+  if (!answer) return g;
+  // A question's answer leads, and a record it already lists is not listed again further down.
+  const answered = answer.rows.map(censusRowItem);
+  const shown = new Set(answered.map((item) => item.href));
+  const rest = g
+    .map((group) => ({ ...group, items: group.items.filter((item) => !shown.has(item.href)) }))
+    .filter((group) => group.items.length > 0);
+  return [{ key: "answers", heading: answer.question.heading, items: answered }, ...rest];
 }

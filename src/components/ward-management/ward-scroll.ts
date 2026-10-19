@@ -11,13 +11,14 @@ export function wardScrollBehavior(): ScrollBehavior {
 export function revealWardOption(option: HTMLElement | null): void {
   const list = option?.closest<HTMLElement>('[role="listbox"]');
   if (!option || !list) return;
-  // The global palette and patient typeahead scroll the list's parent; the legacy
-  // palette scrolls the list itself. Never climb into the application's page scroller.
-  const scroller = [list, list.parentElement].find(
-    (element): element is HTMLElement =>
-      element instanceof HTMLElement && /^(auto|scroll)$/.test(window.getComputedStyle(element).overflowY),
-  );
-  if (!scroller) return;
+  // The patient typeahead scrolls the list's parent and the legacy palette the list itself; the
+  // global palette, whose groups are separate listboxes (DA-05), scrolls a pane a few levels up.
+  // Never climb into the application's page scroller.
+  let scroller: HTMLElement | null = list;
+  for (let depth = 0; ; depth += 1, scroller = scroller.parentElement) {
+    if (!scroller || depth > 3 || scroller.hasAttribute("data-wf-scroller") || scroller === document.body) return;
+    if (/^(auto|scroll)$/.test(window.getComputedStyle(scroller).overflowY)) break;
+  }
   const row = option.getBoundingClientRect();
   const box = scroller.getBoundingClientRect();
   const top = box.top + scroller.clientTop;

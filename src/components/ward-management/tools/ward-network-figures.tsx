@@ -19,7 +19,7 @@ const root = "/ward-flow";
 /**
  * Tools, All figures: the whole-network figures in three groups (beds, flow, waits), always counted
  * across the whole network whatever screen is open. Kept by the Tools review (15 Oct 2026) for a quick
- * look across the service, under the Service now strip at the top of the sheet.
+ * look across the service; first under Look up since the Service now strip went (19 Oct 2026).
  */
 export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {}) {
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
@@ -211,9 +211,9 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
 /**
  * The longest wait reads as a duration with the ED it started from. The shared strip's version carries
  * the movement's internal reference and the word "waiting", which cut the label off in this grid
- * (Tools polish, Josh approved 15 Oct 2026). Service now shows the same figure.
+ * (Tools polish, Josh approved 15 Oct 2026).
  */
-export function longestWait(open: readonly Movement[], now: Instant) {
+function longestWait(open: readonly Movement[], now: Instant) {
   const worst = open.reduce<Movement | undefined>(
     (found, movement) => (found === undefined || movement.openedAt < found.openedAt ? movement : found),
     undefined,

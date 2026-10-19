@@ -8,6 +8,7 @@ import {
   decisionTargetInboxItems,
 } from "../src/components/ward-management/ward-decision-targets";
 import { absenceInboxItems } from "../src/components/ward-management/ward-absence-tasks";
+import { duplicateBedRequestInboxItems } from "../src/components/ward-management/ward-act-now-items";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
   INBOX_CATEGORIES,
@@ -27,6 +28,8 @@ const KINDS: readonly InboxItemKind[] = ["fact", "commitment"];
 
 /** Audit A3-1: emitted by `absenceInboxItems` (via `taskItems`), not by `buildActionInbox`. */
 const ABSENCE_CATEGORIES = 1;
+/** Audit F-19: `duplicateBedRequestInboxItems` (`ward-act-now-items.ts`) emits one category. */
+const DUPLICATE_CATEGORIES = 1;
 
 /**
  * A real, valid, open fixture movement to spread from — same template and the same `Object.assign`
@@ -114,7 +117,30 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
     ...decisionTargetInboxItems(movements, NOW, defaultWardConfiguration()),
     // Audit A3-1 (13 Oct 2026): absent without leave on an order, from the stay's held bed.
     ...absenceInboxItems(absenceOnOrderRecords(), NOW),
+    // Audit F-19: one person with two referrals still awaiting a ward answer.
+    ...duplicateBedRequestInboxItems({ referrals: duplicateRequestRecords() }),
   ];
+}
+
+/** Two seed referrals pointed at one person, each still awaiting a ward answer (audit F-19). */
+function duplicateRequestRecords() {
+  const seed = seedWardFlowState();
+  const person = seed.patients[0]?.id;
+  const base = seed.referrals.find((referral) =>
+    referral.destinations.some((addressing) => addressing.destination.kind === "psychiatric_ward"),
+  );
+  if (person === undefined || base === undefined) throw new Error("the seed has no patient or ward referral");
+  return ["R-dup-a", "R-dup-b"].map((id, index) => ({
+    ...base,
+    id,
+    patientId: person,
+    raisedAt: NOW - 60 + index,
+    destinations: base.destinations.map((addressing) => ({
+      ...addressing,
+      state: "queued" as const,
+      withdrawnAt: undefined,
+    })),
+  }));
 }
 
 /** One occupied stay of a person on an order, recorded absent without leave. */
@@ -260,7 +286,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     expect(
       pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length - ABSENCE_CATEGORIES);
+    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length - ABSENCE_CATEGORIES - DUPLICATE_CATEGORIES);
   });
 
   /**

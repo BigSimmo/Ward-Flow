@@ -171,3 +171,38 @@ describe("approved four-tab referral drawer journey", () => {
     expect(board).toHaveTextContent("Synthetic patient story for inbox review");
   }, 90_000);
 });
+
+describe("errors mark and move to the field at fault (DA-12)", () => {
+  const origin = () => screen.getByLabelText(/Referring (emergency department|service location)/);
+
+  it("marks a missing field, names its error and moves focus to it", async () => {
+    setup();
+    confirmCatchment();
+    next("Next, referral");
+    // The sample person's record fills the location; clear it to leave the step unanswered.
+    fireEvent.change(origin(), { target: { value: "" } });
+    expect(origin()).not.toHaveAttribute("aria-invalid");
+    next("Next, clearance");
+
+    expect(origin()).toHaveAttribute("aria-invalid", "true");
+    expect(origin()).toHaveAccessibleDescription("Choose the location of referral");
+    await waitFor(() => expect(origin()).toHaveFocus());
+
+    fireEvent.change(origin(), { target: { value: "RPH" } });
+    expect(origin()).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("opens the step at fault when Send finds a problem on an earlier step", async () => {
+    setup();
+    confirmCatchment();
+    tab("Referral");
+    fireEvent.change(origin(), { target: { value: "" } });
+    tab("Wards");
+    expect(origin()).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose the location of referral");
+    expect(origin()).toBeVisible();
+    await waitFor(() => expect(origin()).toHaveFocus());
+  });
+});

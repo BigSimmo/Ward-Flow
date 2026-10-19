@@ -1003,10 +1003,6 @@ const KNOWN_OPEN = new Map<string, string>([
     "src/components/ward-management/referrals/referral-match.tsx|noBed.total",
     "refusal wording is the owner's; see the block above",
   ],
-  [
-    "src/components/ward-management/ward-management-network.tsx|primary.verdict.gates.length",
-    "a whole-panel live region; the fix is a design decision, see the block above",
-  ],
 ]);
 
 function registerKeyOf(violation: Violation): string {

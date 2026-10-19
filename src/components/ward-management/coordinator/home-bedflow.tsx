@@ -340,7 +340,7 @@ export function HomeBedflow({
               same three groups Placement lists. Words neutral; the glyphs carry the tone. */}
           <div className={styles.forLine}>
             <span className="sr-only">For</span>
-            <strong className={styles.forName}>{who.displayName}</strong>
+            <strong className={styles.forName}>{who.formalName}</strong>
             <span className={styles.forFits}>
               <span className={styles.forCount}>
                 <StatusGlyph tone="success" size={9} />
