@@ -1,5 +1,12 @@
 # Routes, shell, navigation and shared UI
 
+## Smart defaults — 19 October 2026
+
+`shell/use-device-choice.ts` remembers one page-layout choice per device (`ward_flow_choice_*` keys),
+only from the page's own list of allowed values; a store that refuses writes keeps the choice for the
+page only. All EDs uses it for its order and layout; it never stores a filter, a name or typed text.
+`tests/ward-smart-defaults.dom.test.tsx` covers it with the desk-scoped form defaults.
+
 ## Confirmed usability fixes — 19 October 2026
 
 `shell/ward-character-shortcuts.ts` stores the browser's single-character shortcut preference.
