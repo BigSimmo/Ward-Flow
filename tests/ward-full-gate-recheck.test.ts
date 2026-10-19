@@ -262,6 +262,75 @@ describe("crash-resumable FULL batches", () => {
     }
   });
 
+  it.each([
+    ["an empty assertion list", { name: names[0], status: "failed", message: "Failed to load url ./missing" }, []],
+    ["no assertion list", { name: names[0], status: "failed", message: "SyntaxError" }, undefined],
+  ])("counts an import-crash suite with %s as a failing file rather than aborting", (_label, crashed, list) => {
+    const crashSuite = list === undefined ? crashed : { ...crashed, assertionResults: list };
+    const report = { numTotalTests: 1, testResults: [crashSuite, suite(names[1])] };
+    const evidenced = withGateRunResult(report, names.slice(0, 2), root, { status: 1 });
+    expect(evidenced.wardGateRuns[0].failingFiles).toEqual([names[0]]);
+    expect(validateBatchReport(evidenced, names.slice(0, 2), root, { requireProcessEvidence: true })).toEqual({
+      valid: true,
+      failing: [names[0]],
+    });
+    // A lone crashed file collects zero tests; it is still a failing file, never an empty report.
+    const lone = withGateRunResult({ numTotalTests: 0, testResults: [crashSuite] }, [names[0]], root, { status: 1 });
+    expect(validateBatchReport(lone, [names[0]], root, { requireProcessEvidence: true })).toEqual({
+      valid: true,
+      failing: [names[0]],
+    });
+    // Never tightened away: a crash with exit 0, or a crash the evidence omits, still refuses.
+    const exitZero = withGateRunResult(report, names.slice(0, 2), root, { status: 0 });
+    expect(validateBatchReport(exitZero, names.slice(0, 2), root).valid).toBe(false);
+    const omitted = { ...evidenced, wardGateRuns: [{ ...evidenced.wardGateRuns[0], failingFiles: [] }] };
+    expect(validateBatchReport(omitted, names.slice(0, 2), root).valid).toBe(false);
+    // The crash can never satisfy a policy suite.
+    expect(validatePolicyReport(report, names.slice(0, 2), root).valid).toBe(false);
+  });
+
+  it("still refuses an empty report, or a suite without assertions that did not fail", () => {
+    for (const status of ["passed", "skipped", "pending", undefined]) {
+      const report = { numTotalTests: 0, testResults: [{ name: names[0], status, assertionResults: [] }] };
+      expect(validateBatchReport(report, [names[0]], root).valid).toBe(false);
+      expect(validateBatchReport({ ...report, numTotalTests: 1 }, [names[0]], root).valid).toBe(false);
+    }
+    const malformed = { numTotalTests: 1, testResults: [{ name: names[0], status: "failed", assertionResults: "x" }] };
+    expect(validateBatchReport(malformed, [names[0]], root).valid).toBe(false);
+    expect(validateBatchReport({ numTotalTests: 0, testResults: [] }, [], root).valid).toBe(false);
+  });
+
+  it("checkpoints an import crash as a failing batch and keeps it failing on resume", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-import-crash-"));
+    let calls = 0;
+    const options = {
+      population: [names[0]],
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-fixture-input",
+      stateDir,
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        calls++;
+        writeFileSync(
+          reportPath,
+          JSON.stringify({
+            numTotalTests: 0,
+            testResults: [{ name: names[0], status: "failed", assertionResults: [] }],
+          }),
+        );
+        return { status: 1 };
+      },
+    };
+    try {
+      expect(runFullGateBatches(options).wardGateRuns[0].failingFiles).toEqual([names[0]]);
+      expect(runFullGateBatches(options).testResults[0].status).toBe("failed");
+      expect(calls).toBe(1);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
   it("keeps completed batches and findings after a crash, then runs only the missing batch", () => {
     const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-test-"));
     const options = {

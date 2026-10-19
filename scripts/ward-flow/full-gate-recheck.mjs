@@ -50,6 +50,21 @@ export function splitFullGateBatches(files, { maxFiles = 100, maxChars = 12_000 
   return batches;
 }
 
+const hasFailedAssertion = (suite) =>
+  Array.isArray(suite?.assertionResults) && suite.assertionResults.some((test) => test.status === "failed");
+
+// A suite Vitest marks failed with no failed assertion crashed before its tests ran (an import or
+// collection error). It is a failing file like any other red; it must never be read as a pass.
+export function isFailingSuite(suite) {
+  return suite?.status === "failed" || hasFailedAssertion(suite);
+}
+
+// Only a crashed (failed) suite may arrive with an empty or absent assertion list.
+const isCollectionFailure = (suite) =>
+  suite?.status === "failed" &&
+  (suite.assertionResults === undefined || Array.isArray(suite.assertionResults)) &&
+  !hasFailedAssertion(suite);
+
 // Retain the real child verdict: JSON reporters can omit errors outside test assertions.
 export function withGateRunResult(report, files, root, runResult) {
   return {
@@ -60,25 +75,32 @@ export function withGateRunResult(report, files, root, runResult) {
         status: runResult?.status ?? null,
         signal: runResult?.signal ?? null,
         error: runResult?.error ? String(runResult.error.message ?? runResult.error) : null,
-        failingFiles: (report.testResults ?? [])
-          .filter((suite) => suite.assertionResults?.some((test) => test.status === "failed"))
-          .map((suite) => relativeName(root, suite.name)),
+        failingFiles: (report.testResults ?? []).filter(isFailingSuite).map((suite) => relativeName(root, suite.name)),
       },
     ],
   };
 }
 
 export function validateBatchReport(report, expectedFiles, root, { requireProcessEvidence = false } = {}) {
-  if (!Array.isArray(report?.testResults) || !Number.isInteger(report.numTotalTests) || report.numTotalTests < 1)
+  if (
+    !Array.isArray(report?.testResults) ||
+    !Number.isInteger(report.numTotalTests) ||
+    report.numTotalTests < 0 ||
+    (report.numTotalTests === 0 && !report.testResults.some(isCollectionFailure))
+  )
     return { valid: false, reason: "missing or empty Vitest report" };
   const files = report.testResults.map((suite) => relativeName(root, suite.name));
   if (new Set(files).size !== files.length || !sameFiles(sorted(files), sorted(expectedFiles)))
     return { valid: false, reason: "batch result files differ from selected files" };
-  if (report.testResults.some((suite) => !Array.isArray(suite.assertionResults) || suite.assertionResults.length === 0))
+  if (
+    report.testResults.some(
+      (suite) =>
+        (suite.assertionResults !== undefined && !Array.isArray(suite.assertionResults)) ||
+        ((suite.assertionResults?.length ?? 0) === 0 && suite.status !== "failed"),
+    )
+  )
     return { valid: false, reason: "batch result has no assertion list" };
-  const failing = report.testResults
-    .filter((suite) => suite.status === "failed" || suite.assertionResults.some((test) => test.status === "failed"))
-    .map((suite) => relativeName(root, suite.name));
+  const failing = report.testResults.filter(isFailingSuite).map((suite) => relativeName(root, suite.name));
   if (report.numUnhandledErrors > 0 || report.errors?.length || report.unhandledErrors?.length)
     return { valid: false, reason: "Vitest reported unhandled errors" };
   if (requireProcessEvidence || report.wardGateRuns !== undefined) {
@@ -107,11 +129,7 @@ export function validateBatchReport(report, expectedFiles, root, { requireProces
     if (
       report.testResults.some((suite) => {
         const file = relativeName(root, suite.name);
-        const assertionFailed = suite.assertionResults.some((test) => test.status === "failed");
-        return (
-          latest.get(file).failingFiles.includes(file) !== assertionFailed ||
-          (suite.status === "failed" && !assertionFailed)
-        );
+        return latest.get(file).failingFiles.includes(file) !== isFailingSuite(suite);
       })
     )
       return { valid: false, reason: "test process evidence and assertion verdict disagree" };
@@ -246,7 +264,11 @@ export function mergeGateReports({ baseReport, rerunReport, selected, root }) {
   const replacements = new Map();
   for (const suite of rerunReport.testResults) {
     const file = relativeName(root, suite.name);
-    if (!selected.includes(file) || replacements.has(file) || !Array.isArray(suite.assertionResults))
+    if (
+      !selected.includes(file) ||
+      replacements.has(file) ||
+      (!Array.isArray(suite.assertionResults) && !isCollectionFailure(suite))
+    )
       throw new Error(`unexpected or duplicate recheck result: ${file}`);
     replacements.set(file, suite);
   }
@@ -256,7 +278,7 @@ export function mergeGateReports({ baseReport, rerunReport, selected, root }) {
     const replacement = replacements.get(suite.name);
     return { ...(replacement ?? suite), name: path.resolve(root, suite.name) };
   });
-  const numTotalTests = testResults.reduce((total, suite) => total + suite.assertionResults.length, 0);
+  const numTotalTests = testResults.reduce((total, suite) => total + (suite.assertionResults?.length ?? 0), 0);
   return {
     ...baseReport,
     testResults,
