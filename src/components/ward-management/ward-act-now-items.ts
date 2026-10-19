@@ -12,10 +12,13 @@
  * act now is the red subset of the same active list, so the figures cannot drift apart again.
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
+import { Copy } from "lucide-react";
+
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { duplicateBedRequests } from "@/components/ward-management/ward-duplicate-bed-requests";
 import {
   buildActionInbox,
   isOpen,
@@ -23,7 +26,9 @@ import {
   type InboxItem,
 } from "@/components/ward-management/ward-derivations";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 
 /**
@@ -73,7 +78,36 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
       stuckHandoverMinutes: source.stuckHandoverMinutes,
     }),
     ...decisionTargetInboxItems(open, now, source.configuration),
+    ...duplicateBedRequestInboxItems(source),
   ];
+}
+
+/** The bed coordinator's own owner words: `inboxOwnerRoles` places them on the coordinator alone. */
+const DUPLICATE_OWNER = "Bed coordinator";
+
+/**
+ * Audit F-19: one amber row per person with more than one active bed request
+ * (`ward-duplicate-bed-requests.ts`). Coordinator only: the coordinator may see every referral
+ * (FD-23), so naming the requests here tells them nothing a ward screen could not already.
+ */
+function duplicateBedRequestInboxItems(source: TaskSource): InboxItem[] {
+  return duplicateBedRequests(source.referrals ?? []).map(({ patientId, requests, since }) => {
+    const ids = requests.map((referral) => referral.id);
+    const named = ids.length === 2 ? ids.join(" and ") : `${ids.slice(0, -1).join(", ")} and ${ids.at(-1)}`;
+    return {
+      id: `${INBOX_CATEGORIES.duplicate_bed_request.idPrefix}${patientId}`,
+      kind: INBOX_CATEGORIES.duplicate_bed_request.kind,
+      tone: "warning",
+      icon: Copy,
+      title: "More than one active bed request",
+      detail: `${named} are all waiting for a bed answer. Check each is still needed.`,
+      owner: DUPLICATE_OWNER,
+      movementId: "",
+      patientId,
+      href: patientHref(patientId),
+      since,
+    };
+  });
 }
 
 /** The active (not snoozed) task rows at `now`: the header's Tasks badge and Home's Exceptions. */
@@ -107,12 +141,15 @@ export function inboxOwnerRoles(owner: string, wardNames: readonly string[] = []
   return [...roles];
 }
 
-/** The task rows the role owns. The coordinator, and the bed manager desk, see every row. */
+/** The task rows the role owns. The coordinator sees every row; the bed manager desk every row but duplicate bed requests. */
 export function inboxItemsForRole(
   items: readonly InboxItem[],
   role: WardChromeRole,
   wardNames: readonly string[] = [],
 ): InboxItem[] {
-  if (role === "coordinator" || role === "bed_manager") return [...items];
+  if (role === "coordinator") return [...items];
+  // Audit F-19: duplicate bed request rows name other referrals, so they stay with the coordinator.
+  if (role === "bed_manager")
+    return items.filter((item) => !item.id.startsWith(INBOX_CATEGORIES.duplicate_bed_request.idPrefix));
   return items.filter((item) => inboxOwnerRoles(item.owner, wardNames).includes(role));
 }

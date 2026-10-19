@@ -588,6 +588,11 @@ export type InboxItem = {
    * and is ignored. Set from `inboxOccurrenceSince`, which the reducer reads too.
    */
   since?: Instant;
+  /**
+   * Audit F-19: set on a duplicate bed request row, which is about a person rather than a movement
+   * (`movementId` is empty). Alerts names the person from it.
+   */
+  patientId?: string;
 };
 
 /**

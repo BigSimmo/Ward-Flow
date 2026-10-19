@@ -6,6 +6,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
 import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
+import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
 import {
   activeSnooze,
   currentInboxOwner,
@@ -90,6 +91,10 @@ export const INBOX_CATEGORIES = {
    *  in the network. The patient stays on the waitlist with a visible flag and the bed coordinator
    *  is notified; nothing drops or releases them. Act now. Remainder is the movement id. */
   no_eligible_bed: { idPrefix: "no-eligible-bed-", kind: "fact" },
+  /** Audit F-19 (19 Oct 2026): one person with more than one active bed request. Coordinator only
+   *  (Josh, 19 Oct). Leaves when one is answered or withdrawn. Remainder is the patient id
+   *  (`ward-duplicate-bed-requests.ts`). */
+  duplicate_bed_request: { idPrefix: "duplicate-bed-request-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -116,6 +121,8 @@ const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "support_notification_discharge",
   // Stream D: an overdue planned arrival is an amber row, so it snoozes like other review rows.
   "planned_arrival_overdue",
+  // Audit F-19: a duplicate bed request is something to check, not act on now.
+  "duplicate_bed_request",
 ];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
@@ -141,6 +148,11 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
     const admission = state.admissions.find((stay) => stay.id === admissionId);
     if (!admission || admission.state === "departed" || !isOnOrder(stayLegalStatus(admission, state))) return false;
     return state.leaveBeds.some((bed) => bed.admissionId === admissionId && Boolean(bed.absentWithoutLeave));
+  }
+  // Audit F-19: a duplicate row names a person, and exists while they still have two active requests.
+  const duplicatePrefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
+  if (inboxItemId.startsWith(duplicatePrefix)) {
+    return duplicateBedRequestSince(state.referrals, inboxItemId.slice(duplicatePrefix.length)) !== undefined;
   }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
@@ -208,6 +220,11 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   if (inboxItemId.startsWith(absencePrefix)) {
     const admissionId = inboxItemId.slice(absencePrefix.length);
     return state.leaveBeds.find((bed) => bed.admissionId === admissionId)?.absentWithoutLeave?.since;
+  }
+  // Audit F-19: a duplicate row's occurrence starts when the second active request was raised.
+  const duplicatePrefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
+  if (inboxItemId.startsWith(duplicatePrefix)) {
+    return duplicateBedRequestSince(state.referrals, inboxItemId.slice(duplicatePrefix.length));
   }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);

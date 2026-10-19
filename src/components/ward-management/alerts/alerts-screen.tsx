@@ -400,7 +400,15 @@ function AlertsWorkspace() {
       const dischargeAdmissionId = admissionIdOfInboxId(item.id);
       const admission =
         dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
-      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking, admission);
+      const subject = resolveAlertSubject(
+        movement,
+        item.movementId,
+        umrnLookup,
+        units,
+        booking,
+        admission,
+        item.patientId,
+      );
       const owner = effectiveOwner(item, inboxOwnership[item.id]);
       return {
         item,
