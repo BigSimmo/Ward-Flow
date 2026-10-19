@@ -53,7 +53,7 @@ export function wardChromeRole(pathname: string): WardChromeRole {
  * app root, so a page about a ward (`/statistics/ward/<unitId>`) never names a sending ward.
  */
 export function wardRouteUnitId(pathname: string): string | undefined {
-  const match = /^(?:\/mockups\/ward-flow)?\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
+  const match = /^(?:\/ward-flow)?\/(?:ward|board)\/([^/?#]+)/.exec(pathname);
   if (!match?.[1]) return undefined;
   try {
     return decodeURIComponent(match[1]);

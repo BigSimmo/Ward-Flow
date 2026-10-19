@@ -252,7 +252,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     this.invalidate();
     this.clear();
     const redirect = redirectTo ? new URL(redirectTo) : null;
-    if (redirect && (redirect.pathname !== "/mockups/ward-flow" || redirect.search || redirect.hash))
+    if (redirect && (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash))
       throw new WardAuthError("unavailable", "Invalid confirmation destination.");
     const result = (await this.request(
       "/signup" + (redirect ? "?redirect_to=" + encodeURIComponent(redirect.toString()) : ""),
@@ -313,7 +313,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   }
   async recover(email: string, redirectTo: string) {
     const redirect = new URL(redirectTo);
-    if (redirect.pathname !== "/mockups/ward-flow" || redirect.search || redirect.hash)
+    if (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash)
       throw new WardAuthError("unavailable", "Invalid recovery destination.");
     await this.request("/recover?redirect_to=" + encodeURIComponent(redirect.toString()), {
       method: "POST",

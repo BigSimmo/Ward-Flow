@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * ~685-697): a patient's typed name or record number must never reach the address bar. Before this
  * fix, `patient-typeahead.tsx`'s "Add this person" link and `patient-search.tsx`'s two "Add patient"
  * links carried the typed text as a `?name=`/`?search=` query parameter on the way to
- * `/mockups/ward-flow/people/new` — written into browser history and logged by every proxy between
+ * `/ward-flow/people/new` — written into browser history and logged by every proxy between
  * the browser and the server, on what this repository documents as routinely a SHARED ward
  * computer.
  *
@@ -25,7 +25,7 @@ const router = vi.hoisted(() => ({ push: vi.fn() }));
 // Same reason as `ward-add-patient.dom.test.tsx`: `AddPatientForm` navigates via `useRouter()` and
 // jsdom has no App Router context to resolve it against.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));

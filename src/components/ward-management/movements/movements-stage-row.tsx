@@ -337,7 +337,7 @@ export function StageRow({
             <>
               to{" "}
               <Link
-                href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
+                href={`/ward-flow/board/${movement.acceptedUnitId}`}
                 className={flow.wardLink}
                 title={`Open ${destinationLabel} Bed Board`}
               >

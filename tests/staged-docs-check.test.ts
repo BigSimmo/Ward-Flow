@@ -33,6 +33,26 @@ it("checks each mandatory generator and its shared input helper", () => {
     "scripts/ward-flow/screen-verification.mjs",
   );
 });
+it("selects drawing checks from the actual design directory and verification only from its manifest", () => {
+  const drawingChecks = ["scripts/ward-flow/screen-map.mjs", "scripts/ward-flow/mockup-manifest.mjs"];
+  expect(selectedDocChecks(["design/third-edition-mockups/command-third-edition.html"], true)).toEqual(drawingChecks);
+  expect(selectedDocChecks(["design/third-edition-mockups/MANIFEST.json"], true)).toEqual([
+    ...drawingChecks,
+    "scripts/ward-flow/screen-verification.mjs",
+  ]);
+});
+it("keeps drawing checks scoped away from retired roots, unrelated design files and screen components", () => {
+  for (const file of [
+    "docs/ward-flow/mockups/command-third-edition.html",
+    "docs/ward-flow/mockups/MANIFEST.json",
+    "design/other/MANIFEST.json",
+    "design/third-edition-mockups-backup/command-third-edition.html",
+    "docs/ward-flow/README.md",
+    "src/components/ward-management/coordinator/coordinator.tsx",
+  ]) {
+    expect(selectedDocChecks([file], true), file).toEqual([]);
+  }
+});
 it("selects maintained architecture checks for the checker and tracked design roots", () => {
   for (const file of ["scripts/check-codebase-index-coverage.mjs", ".design/brief.md", "design/figma/tokens.json"])
     expect(selectedDocChecks([file])).toContain("scripts/check-codebase-index-coverage.mjs");

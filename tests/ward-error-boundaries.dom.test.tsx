@@ -3,13 +3,13 @@ import ts from "typescript";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { WardFlowErrorPanel } from "@/app/mockups/ward-flow/ward-flow-error-panel";
+import { WardFlowErrorPanel } from "@/app/ward-flow/ward-flow-error-panel";
 import MockupsErrorBoundary from "@/app/mockups/error";
 
 /**
  * THE BOUNDARY OVER THE WARD SCREENS, AND THE TWO WAYS IT COULD BE MADE WORSE THAN NOTHING.
  *
- * Before `src/app/mockups/ward-flow/error.tsx` existed, any throw below it fell through to the
+ * Before `src/app/ward-flow/error.tsx` existed, any throw below it fell through to the
  * application shell's boundary and replaced the whole document. Ten deliberate guards live in
  * `src/components/ward-management`; one of them firing removed every patient from the screen to
  * announce that one record was wrong.
@@ -28,8 +28,8 @@ import MockupsErrorBoundary from "@/app/mockups/error";
  */
 
 const BOUNDARY_FILES = [
-  "src/app/mockups/ward-flow/error.tsx",
-  "src/app/mockups/ward-flow/statistics/error.tsx",
+  "src/app/ward-flow/error.tsx",
+  "src/app/ward-flow/statistics/error.tsx",
   "src/app/mockups/error.tsx",
 ] as const;
 
@@ -37,7 +37,7 @@ const BOUNDARY_FILES = [
  *  return both answers. Without these a broken read would report "use client" absent everywhere,
  *  or present everywhere, and one of those directions passes silently. */
 const KNOWN_CLIENT_FILE = "src/app/error.tsx";
-const KNOWN_SERVER_FILE = "src/app/mockups/ward-flow/statistics/page.tsx";
+const KNOWN_SERVER_FILE = "src/app/ward-flow/statistics/page.tsx";
 
 function read(file: string): string {
   return readFileSync(file, "utf8");

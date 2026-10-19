@@ -33,13 +33,13 @@ const THEMES = ["light", "dark"];
 
 function resolveRoute(route) {
   let r = route;
-  if (route.startsWith("/mockups/")) {
+  if (route.startsWith("/mockups/") || route === "/ward-flow-sign-in") {
     return route;
   }
   if (route === "/") {
-    r = "/mockups/ward-flow";
+    r = "/ward-flow";
   } else {
-    r = `/mockups/ward-flow${route}`;
+    r = `/ward-flow${route}`;
   }
   return r
     .replace(/\[unitId\]/g, "rph-adult-secure")

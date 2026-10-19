@@ -6,7 +6,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -59,7 +59,7 @@ function updateABedHref(): string | null {
 
 afterEach(() => {
   installMatchMediaStub(false);
-  route.pathname = "/mockups/ward-flow";
+  route.pathname = "/ward-flow";
 });
 
 describe("Menu desk wording and Update a bed (shell-2)", () => {
@@ -93,9 +93,6 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     expect(within(sheet).getByRole("button", { name: /New referral/u })).toBeInTheDocument();
     expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toBeInTheDocument();
     expect(within(sheet).queryByRole("link", { name: /Book transport/u })).toBeNull();
-    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/people/new",
-    );
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
   });
 });

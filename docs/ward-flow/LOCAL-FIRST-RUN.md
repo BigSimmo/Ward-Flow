@@ -1,5 +1,7 @@
 # Ward Flow — local first run
 
+_Updated 2026-10-19 - audit target resolution and required ownership log; Documentation owns._
+
 **Audience:** anyone opening the Ward Flow UI on their own machine (Windows, macOS or Linux).
 **Product/process entry:** [`README.md`](README.md). This page is only how to boot the UI.
 
@@ -20,7 +22,7 @@ npm run ensure
 ```
 
 `npm run ensure` starts or reuses this checkout's dev server and **prints the URL**. Open
-`<printed-origin>/mockups/ward-flow`.
+`<printed-origin>/ward-flow`.
 
 ### Port rules
 
@@ -47,8 +49,13 @@ npm run docs:check-links                   # links and anchors in tracked Markdo
 
 One-off audit and capture scripts find the app origin from:
 
-1. `WARD_FLOW_URL` if set (no trailing slash), else
-2. `http://localhost:` plus this checkout's `stableProjectPort`.
+1. `WARD_FLOW_URL`, else
+2. `WARD_URL`, else
+3. `PLAYWRIGHT_BASE_URL`, else
+4. `scripts/ensure-local-server.mjs --print-url`.
+
+The shared resolver accepts only an explicit loopback HTTP origin with a port and verifies
+`/api/local-project-id` identifies this checkout as a safe local Ward Flow server before auditing.
 
 ```sh
 npm run ensure
@@ -58,11 +65,13 @@ WARD_FLOW_URL="<printed-origin>" node scripts/ward-flow/audit-all-screens-visual
 $env:WARD_FLOW_URL = "<printed-origin>"; node scripts/ward-flow/audit-all-screens-visual.mjs
 ```
 
-## Sign-out log (optional)
+## Sign-out log
 
-On Josh's PC, the pre-commit hook checks file sign-outs in `D:/Repos/ward-flow-logs/sign-out.md`.
-Set `WARD_SIGNOUT_FILE` to use a log elsewhere. Without a log, the hook prints a notice and skips
-that check.
+Before editing, claim files in the coordinating group's append-only sign-out log.
+`WARD_SIGNOUT_FILE` selects its exact path; otherwise `WARD_FLOW_LOGS/sign-out.md`, then
+`D:/Repos/ward-flow-logs/sign-out.md` on Windows or `~/ward-flow-logs/sign-out.md` elsewhere applies.
+Missing or unreadable logs fail closed. Follow [HOW-WE-WORK §2](HOW-WE-WORK.md#2-branches-and-worktrees)
+for ownership, Cloud coordination and the limited single-user exception.
 
 ## Current checkout vs base
 

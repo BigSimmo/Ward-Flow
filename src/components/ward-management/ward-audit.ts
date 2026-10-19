@@ -52,6 +52,7 @@ import {
   uniqueRecord,
   validRecordActor,
   safeCounter,
+  validDischargeRequestNamespace,
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
@@ -216,7 +217,11 @@ export type AuditEvent = AuditBase &
           | "RECORD_ADMISSION_CARE";
         details: DischargeDetails;
       }
-    | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
+    | {
+        category: "record-access";
+        action: "OPEN_DISCHARGE_RECORD";
+        details: { requestId: number | null; requestNamespace?: string };
+      }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
         // v10 pass 2: a review taken back. `decision` is always null so no screen reads it as a review.
@@ -516,6 +521,9 @@ export function captureAuditEvent(
             safeCounter(event.requestId) && event.expectedGeneration === before.worldGeneration
               ? event.requestId
               : null,
+          ...(validDischargeRequestNamespace(event.requestNamespace)
+            ? { requestNamespace: event.requestNamespace }
+            : {}),
         },
       };
       break;

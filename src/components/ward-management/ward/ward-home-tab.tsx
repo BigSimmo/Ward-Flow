@@ -1618,7 +1618,7 @@ export function WardHomeTab({
               <span>
                 {recentAnswers.length} answered · {incoming.length} waiting
               </span>
-              <Link className={styles.keyLink} href={`/mockups/ward-flow/ward/${unit.id}/answer`}>
+              <Link className={styles.keyLink} href={`/ward-flow/ward/${unit.id}/answer`}>
                 Answer one by one
               </Link>
             </>

@@ -20,10 +20,10 @@ for real patient data or clinical deployment.
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
 (9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
 10,881 tests during remediation). The estate now spans **52 total routes** (**50
-Next.js page routes under `/mockups/ward-flow/*`**, including `/mockups/ward-flow/bed-meeting`
+Next.js page routes under `/ward-flow/*`**, including `/ward-flow/bed-meeting`
 and **12 Statistics routes**,
-plus `/mockups/ward-flow-sign-in` and the `/mockups/ward-flow-digest` route handler,
-with `/` and `/ward-flow` entry points redirecting to `/mockups/ward-flow`). Note that
+plus `/ward-flow-sign-in` and the `/mockups/ward-flow-digest` route handler,
+with `/` and `/ward-flow` entry points redirecting to `/ward-flow`). Note that
 `"v10 sections 8 to 14"` in `src/components/wf/v10-parts.tsx` implements Sections 8–14
 of [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
 
@@ -34,7 +34,7 @@ from end-to-end application verification.
 
 ## What is built
 
-**Screens** (**50 page routes** under `src/app/mockups/ward-flow/`, plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 total routes**; engine and components under
+**Screens** (**50 page routes** under `src/app/ward-flow/`, plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 total routes**; engine and components under
 `src/components/ward-management/` and `src/components/wf/`):
 
 | Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -44,7 +44,7 @@ from end-to-end application verification.
 | Pressure and safety    | ED psychiatry directory (`/ed`), individual ED psychiatry hub (`/ed/[edId]`), alerts centre (`/alerts`), escalation (`/escalation`), exceptions (`/exceptions`), governance (`/governance`)                                                                                                                                                                                                                                                                                                                                          |
 | People and directories | Patient search (`/search` Floating Glass Command Horizon), unified Patient Now flight deck (`/people/[patientId]`), add patient (`/people/new`), community directory (`/community`, `/community/[teamId]`), on-call directory (`/on-call`)                                                                                                                                                                                                                                                                                           |
 | Records and reports    | Handover (`/handover` Command Horizon flight deck and print), legal forms (`/legal-forms` with MHA expiry reminders), patient chronology (`/reports/chronology`), downtime pack (`/reports/downtime`), **12 Statistics routes** (`/statistics`, `/statistics/overview`, `/statistics/compare`, `/statistics/weekly`, `/statistics/wards`, `/statistics/ward/[unitId]`, `/statistics/eds`, `/statistics/ed/[edId]`, `/statistics/teams`, `/statistics/community/[teamId]`, `/statistics/services`, `/statistics/service/[serviceId]`) |
-| Other                  | Settings (`/settings`), sign-in (`/mockups/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase (`/sovereign`)                                                                                                                                                                                                                                                                                          |
+| Other                  | Settings (`/settings`), sign-in (`/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase (`/sovereign`)                                                                                                                                                                                                                                                                                                  |
 
 **Dated work summary (27 September to 17 October; not a fresh verification claim):**
 
@@ -169,7 +169,7 @@ while moving active status to the current repository workflow.
   generator checks passing; browser `ui-ward-full-journey.spec.ts` and `ui-ward-roles.spec.ts` 21 passed,
   1 skipped. The other `ui-ward-*` browser specs were not run this round.
 - **Previous run** (recorded in
-  [`handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md`](handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md)
+  [`handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md`](https://github.com/BigSimmo/Ward-Flow/blob/97fa3e25276089a4a938951a59bcffabe47df149/docs/ward-flow/handovers/WARD-FLOW-PROGRESS-2026-09-16-NIGHT.md)
   §8, measured at `cad83238a0`, before round 2): full ward suite 570 files, 6,750 tests, 0 failing;
   tsc clean; diff-integrity, mockup-retirement, screen-map, mockup-manifest, owner-rulings-index and
   screen-verification all passing; every `ui-ward-*` browser spec passed (94 passed, 3 skipped),
@@ -246,7 +246,7 @@ owner answers 17 Sept)"), eight worker branches: `ward/r2-legal-gates-20260917`,
   read from configuration. **Which Settings file is Gemini's rebuild (R2-15) is now recorded:**
   `settings-third-edition.html` — confirmed by git date (its Gemini rebuild commit `f0e5ea88f9`,
   16 September, is newer than the previously approved `1ef9ed3975`, 12 September) and it is the file
-  routed at `/mockups/ward-flow/settings`. `settings-perfected-third-edition.html` stays reference
+  routed at `/ward-flow/settings`. `settings-perfected-third-edition.html` stays reference
   only. See `mockups/README.md`. This resolves STATUS follow-up 8.
 - **Housekeeping:** the stray control bytes in two lesson files replaced with visible escapes
   (`685a730d82`); the Aboriginal cultural safety review recorded as deferred by the owner, with an
@@ -367,7 +367,7 @@ repository-wide `docs/outstanding-issues.md` is not used for Ward Flow (owner ru
 4. **Rules index.** Regenerated (the lesson control-byte fix it was waiting on, `685a730d82`, folded
    before this round started) and `node scripts/ward-flow/rules-index.mjs --check` re-run.
 5. **Which Settings file is Gemini's rebuild.** Recorded: `settings-third-edition.html` (routed at
-   `/mockups/ward-flow/settings`), confirmed by commit date. See "What is built" above and
+   `/ward-flow/settings`), confirmed by commit date. See "What is built" above and
    `design/third-edition-mockups/README.md`.
 
 **Closed by Wave 2 docs hygiene (22 September):**

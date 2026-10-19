@@ -1,3 +1,4 @@
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState } from "react";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
@@ -19,7 +20,6 @@ import {
   groupDischarges,
   unitLabel,
   healthServiceLabel,
-  RECORD_ACTOR,
   type Population,
   type WorkStatus,
   WORK_STATUS_LABELS,
@@ -53,6 +53,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     dispatch,
     recordWardDeparture,
     rejections,
+    sessionAdopted,
   } = useWardFlowSelect(
     "bedReleases",
     "units",
@@ -64,7 +65,12 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     "dispatch",
     "recordWardDeparture",
     "rejections",
+    "sessionAdopted",
   );
+  const recordActors = useWardRecordActors();
+  const recordActorFor = (unitId?: string) =>
+    recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === unitId) ?? recordActors[0]!;
+  const recordActor = recordActors[0]!;
   const toast = useOptionalToast();
   const now = useWardFlowClock();
   const [population, setPopulation] = useState<Population>("releases");
@@ -113,12 +119,15 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     dispatch,
     rejections,
     now,
-    routeRole: "coordinator",
+    routeRole: recordActor.role,
     toast,
     onMessage: announceToWardShell,
   });
-  const guarded = readDischargeRecords(RECORD_ACTOR);
-  const records = guarded.status === "allowed" ? guarded.value : [];
+  const reads = recordActors.map((actor) => readDischargeRecords(actor));
+  const records = reads.flatMap((read) => (read.status === "allowed" ? [...read.value] : []));
+  const guarded = reads.some((read) => read.status === "allowed")
+    ? { status: "allowed" as const, value: records }
+    : { status: "denied" as const };
   // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
   const openedFromLinkRef = useRef(false);
   const linkedRecordExists =
@@ -130,13 +139,20 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     // the selection shows its outcome, once.
     let handle: DischargeOpenHandle;
     try {
-      handle = openDischargeRecord(RECORD_ACTOR, initialAdmissionId);
+      handle = openDischargeRecord(
+        recordActors.find(
+          (actor) =>
+            actor.role === "ward" &&
+            actor.actingUnitId === records.find((record) => record.admissionId === initialAdmissionId)?.unitId,
+        ) ?? recordActors[0]!,
+        initialAdmissionId,
+      );
     } catch {
       handle = { generation: -1, requestId: -1 };
     }
     setPopulation("records");
     setSelected({ admissionId: initialAdmissionId, handle });
-  }, [initialAdmissionId, linkedRecordExists, openDischargeRecord]);
+  }, [initialAdmissionId, linkedRecordExists, openDischargeRecord, recordActors, records]);
   const services = [...new Set(units.map(healthServiceLabel))].sort();
   const scopedUnits = units.filter((unit) => service === "all" || healthServiceLabel(unit) === service);
   const inScope = (unitId: string) => {
@@ -236,7 +252,11 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const visibleReleaseIds = visibleReleaseGroups.flatMap((key) => releaseGroups[key].map((release) => release.id));
   const opened =
     selected && population === "records" && visibleRecords.some((record) => record.admissionId === selected.admissionId)
-      ? readDischargeRecord(RECORD_ACTOR, selected.admissionId, selected.handle)
+      ? readDischargeRecord(
+          recordActorFor(records.find((record) => record.admissionId === selected.admissionId)?.unitId),
+          selected.admissionId,
+          selected.handle,
+        )
       : null;
   // Never retain the selected DTO: each render obtains a newly guarded current read.
   const detailRecord = opened?.status === "allowed" ? opened.value : null;
@@ -255,11 +275,14 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     releasePatientId !== null &&
     activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
-  const canRecordDeparture = detailRelease?.state === "confirmed";
+  const releaseActor = recordActorFor(detailRelease?.unitId);
+  const canChangeRelease = releaseActor.role === "ward" || releaseActor.role === "coordinator";
+  const canRecordDeparture = canChangeRelease && detailRelease?.state === "confirmed";
   const departureDestination: LeavingDestination =
     departure.releaseId === detailRelease?.id ? departure.destination : "discharged-to-the-community";
   // One primary per area: on a phone a blocked release keeps Clear blocker as the primary.
-  const phoneClearBlocker = isPhone && !!detailRelease?.blocker && detailRelease.state !== "discharged";
+  const phoneClearBlocker =
+    canChangeRelease && isPhone && !!detailRelease?.blocker && detailRelease.state !== "discharged";
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
@@ -314,7 +337,10 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     setOpenError(false);
     setShowUpdateDate(false);
     try {
-      setSelected({ admissionId: record.admissionId, handle: openDischargeRecord(RECORD_ACTOR, record.admissionId) });
+      setSelected({
+        admissionId: record.admissionId,
+        handle: openDischargeRecord(recordActorFor(record.unitId), record.admissionId),
+      });
     } catch {
       setSelected({ admissionId: record.admissionId, handle: { generation: -1, requestId: -1 } });
       setOpenError(false);
@@ -480,6 +506,9 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
 
   return {
     initialAdmissionId,
+    sessionAdopted,
+    recordActorFor,
+    releaseActor,
     bedReleases,
     units,
     patients,

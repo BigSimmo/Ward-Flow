@@ -49,7 +49,7 @@ export const PAIRS = [
   ["statistics-third-edition.html", "/statistics", "statistics", true],
   ["statistics-compare-third-edition.html", "/statistics/compare", "statistics", true],
   ["statistics-service-third-edition.html", "/statistics/service/[serviceId]", "statistics", true],
-  ["sign-in-third-edition.html", "/mockups/ward-flow-sign-in", "../ward-flow-sign-in", true],
+  ["sign-in-third-edition.html", "/ward-flow-sign-in", "../ward-flow-sign-in", true],
   ["design-system-third-edition.html", null, null, false],
   ["ward-answer-third-edition.html", "/ward/[unitId]/answer", "ward", true],
   ["ward-flow-digest.html", "/mockups/ward-flow-digest", null, false],
@@ -100,7 +100,7 @@ export const SUPERSEDED = ["patient-search-console.html", "patient-search-workin
 
 /**
  * Complete 53-route roster mapping every commissioned Ward Flow route (51 under
- * `/mockups/ward-flow/**` plus `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
+ * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
  */
@@ -164,7 +164,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/ward/[unitId]/answer", folder: "ward", react: "ward/ward-screen.tsx" },
   { route: "/wards", folder: "wards", react: "wards/ward-index.tsx" },
   {
-    route: "/mockups/ward-flow-sign-in",
+    route: "/ward-flow-sign-in",
     folder: "../ward-flow-sign-in",
     react: "../ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
   },

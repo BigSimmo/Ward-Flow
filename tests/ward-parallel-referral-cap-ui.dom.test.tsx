@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 // tests/ward-referral-destinations.dom.test.tsx): a pathname so ward-nav-role-order.ts can derive
 // a role, and a plain <a> so next/link never requires an App Router context jsdom cannot provide.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 

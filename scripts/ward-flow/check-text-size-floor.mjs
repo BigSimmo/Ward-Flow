@@ -128,7 +128,7 @@
  *            them: **no individual file's count may rise, and a new file carrying any is a rise.**
  *
  * ✅ **Population widened the same day** to the two ward stylesheets that sat outside the old glob —
- * `src/components/ward-flow-sign-in/` and `src/app/mockups/ward-flow/`. **Both carry zero occurrences,
+ * `src/components/ward-flow-sign-in/` and `src/app/ward-flow/`. **Both carry zero occurrences,
  * so this cost nothing and closed two holes**; a new ward screen in a new top-level folder was
  * previously invisible to the ruling it is subject to.
  *
@@ -136,7 +136,7 @@
  * FALSE about this one, and three chats believed it on 2026-09-12.**
  *
  *     TRUE   the ROUTE tally in `tests/ward-nav.test.ts` counts the ward-flow SUBTREE, so
- *            `src/app/mockups/ward-flow-sign-in` is a SIBLING directory and its page.tsx is
+ *            `src/app/ward-flow-sign-in` is a SIBLING directory and its page.tsx is
  *            genuinely outside the 40.
  *     FALSE  this ratchet. `src/components/ward-flow-sign-in/**` is glob #2 below and has been
  *            swept since the widening above.
@@ -217,7 +217,7 @@ const SWEEP_GLOBS = [
   // Widened 2026-09-12. Both carry zero occurrences today, so this changed no number — it closed the
   // hole a new ward screen in a NEW top-level folder had already walked through unguarded.
   "src/components/ward-flow-sign-in/**/*.module.css",
-  "src/app/mockups/ward-flow/**/*.css",
+  "src/app/ward-flow/**/*.css",
 ];
 const TOKEN_PATTERN = /--text-3xs|--text-2xs/g;
 

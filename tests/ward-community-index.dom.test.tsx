@@ -42,10 +42,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Only a browser journey can close that, and no assertion below should be read as having closed it.
  */
 
-const TEAM_ROUTE_PREFIX = "/mockups/ward-flow/community";
+const TEAM_ROUTE_PREFIX = "/ward-flow/community";
 
 /** The index route itself — the thing the root nav names, checked below. */
-const INDEX_ROUTE = "/mockups/ward-flow/community";
+const INDEX_ROUTE = "/ward-flow/community";
 
 function renderInProvider(node: ReactNode) {
   return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);

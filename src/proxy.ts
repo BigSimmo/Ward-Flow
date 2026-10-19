@@ -31,7 +31,7 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //      production mockup exemption or Ward Flow's database-free runtime. There
 //      is no sign-in gate behind these markers: the developer key was removed on
 //      28 September 2026 at the owner's request, and the Ward Flow subtrees are
-//      public synthetic-data prototypes (see src/app/mockups/ward-flow/layout.tsx).
+//      public synthetic-data prototypes (see src/app/ward-flow/layout.tsx).
 
 /**
  * Retired paths that forward, query string intact, to the surface that
@@ -41,13 +41,33 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
  */
 const staticRouteRedirects: Record<string, string> = {
   // Ward Flow Constellation was retired in Phase 2; keep
-  // /mockups/ward-flow/constellation as an intentional unlinked compatibility
-  // redirect to /mockups/ward-flow/network so historical deep-links match the
-  // page backstop (PR #2303). Ward Flow moved under the developer-gated
-  // /mockups/ward-flow prefix in the sandbox move (see
-  // src/lib/developer-area/headers.ts); the constellation redirect moved with it.
-  "/mockups/ward-flow/constellation": "/mockups/ward-flow/network",
+  // /ward-flow/constellation as an intentional unlinked compatibility
+  // redirect to /ward-flow/network so historical deep-links match the
+  // page backstop (PR #2303). The redirect moved with Ward Flow, first into
+  // /mockups/ward-flow and then, on 19 October 2026, out to /ward-flow.
+  "/ward-flow/constellation": "/ward-flow/network",
 };
+
+/**
+ * Ward Flow's addresses before it left /mockups on 19 October 2026 (rollout readiness review item
+ * 3.2). Old links, bookmarks and installed apps keep working: each forwards permanently, query
+ * string intact, to the same screen at its new address. `/mockups/ward-flow-digest` is a design
+ * reference, not a screen, so it stays where it is.
+ */
+const movedPrefixes = [
+  ["/mockups/ward-flow-sign-in", "/ward-flow-sign-in"],
+  ["/mockups/ward-flow", "/ward-flow"],
+] as const;
+
+/** The new address for a path under a moved prefix, or null. */
+export function movedRouteTarget(pathname: string): string | null {
+  for (const [from, to] of movedPrefixes) {
+    if (pathname !== from && !pathname.startsWith(`${from}/`)) continue;
+    const moved = `${to}${pathname.slice(from.length)}`;
+    return staticRouteRedirects[moved] ?? moved;
+  }
+  return null;
+}
 
 // Same runtime flags next.config.ts uses for the static headers, so the nonce'd
 // CSP matches the rest of the policy (unsafe-eval in dev, HTTPS upgrade off local
@@ -107,6 +127,14 @@ export async function proxy(request: NextRequest) {
     response.headers.set("content-security-policy", csp);
     return response;
   };
+
+  const movedTarget = movedRouteTarget(pathname);
+
+  if (movedTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = movedTarget;
+    return withCsp(NextResponse.redirect(url, 308));
+  }
 
   const redirectTarget = staticRouteRedirects[pathname];
 

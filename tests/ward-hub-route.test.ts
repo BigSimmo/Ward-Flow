@@ -1,7 +1,7 @@
 /**
- * The Master Search Hub route (`/mockups/ward-flow/hub`, `src/app/mockups/ward-flow/hub/page.tsx`).
+ * The Master Search Hub route (`/ward-flow/hub`, `src/app/ward-flow/hub/page.tsx`).
  * A thin binding, in the house pattern every other Ward Flow route follows (see
- * `src/app/mockups/ward-flow/search/page.tsx`, `.../capacity/page.tsx`): a `Metadata` export
+ * `src/app/ward-flow/search/page.tsx`, `.../capacity/page.tsx`): a `Metadata` export
  * naming the screen and stating this is a synthetic prototype, and a default component that
  * renders one real component and nothing else.
  *
@@ -14,7 +14,7 @@
  *     and no row for a route that is gone" fails because `PINNED` has no `hub` entry.
  *   - `tests/ward-nav.test.ts` — "finds every known page.tsx …" fails because it pins the route
  *     count at 33 (this makes 34), and "every static Ward Flow route appears in the navigation or
- *     is recorded as intentionally unlisted" fails because `/mockups/ward-flow/hub` is in neither
+ *     is recorded as intentionally unlisted" fails because `/ward-flow/hub` is in neither
  *     `WARD_NAV` nor `WARD_NAV_INTENTIONALLY_UNLISTED`.
  *
  * Both are owned by files this task must not edit (`ward-nav.ts` is being edited concurrently by
@@ -35,13 +35,13 @@ import { hubEntries, type HubKind } from "@/components/ward-management/hub/hub-d
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, edById, NOW_ANCHOR, unitById, wardSites } from "@/components/ward-management/ward-sites";
 
-const ROUTE_FILE = "src/app/mockups/ward-flow/hub/page.tsx";
+const ROUTE_FILE = "src/app/ward-flow/hub/page.tsx";
 
 function readRoute(): string {
   return readFileSync(resolve(process.cwd(), ROUTE_FILE), "utf8");
 }
 
-describe("Ward Flow hub route (/mockups/ward-flow/hub)", () => {
+describe("Ward Flow hub route (/ward-flow/hub)", () => {
   it("exists on disk", () => {
     expect(() => readRoute()).not.toThrow();
   });
@@ -105,7 +105,7 @@ describe("Ward Flow hub route (/mockups/ward-flow/hub)", () => {
  * PHASE 5 — EVERY DESTINATION THE HUB OFFERS IS A ROUTE THAT EXISTS.
  *
  * 🔴 **A HUB IS NOTHING BUT INTERNAL LINKS, AND A BROKEN ONE LOOKS EXACTLY LIKE A WORKING ONE.**
- * Next's dynamic segments make this worse, not better: `/mockups/ward-flow/ward/anything-at-all`
+ * Next's dynamic segments make this worse, not better: `/ward-flow/ward/anything-at-all`
  * resolves, renders a page, and returns 200. Nothing about the URL tells you the id was real. So
  * "the link works" cannot be established by following it — only by checking the id against the
  * fixture it came from, and the route against the filesystem.
@@ -118,11 +118,11 @@ describe("Ward Flow hub route (/mockups/ward-flow/hub)", () => {
  * so a browser-only guard here would be a guard nothing executes.
  */
 describe("Ward Flow hub — every destination it offers resolves to a route on disk", () => {
-  const ROUTE_ROOT = resolve(process.cwd(), "src/app/mockups/ward-flow");
+  const ROUTE_ROOT = resolve(process.cwd(), "src/app/ward-flow");
 
   /** A concrete href maps to a page.tsx by substituting each dynamic segment back in. */
   function routeFileFor(href: string): string | undefined {
-    const rest = href.replace("/mockups/ward-flow", "").replace(/^\//, "");
+    const rest = href.replace("/ward-flow", "").replace(/^\//, "");
     const segments = rest === "" ? [] : rest.split("/");
     // Try the static path first, then progressively treat trailing segments as dynamic values.
     const candidates = [
@@ -185,7 +185,7 @@ describe("Ward Flow hub — every destination it offers resolves to a route on d
 
   /**
    * 🔴 **AN ED ENTRY POINTING AT THE WARD ROUTE PASSED EVERY OTHER ASSERTION HERE.** Found by
-   * mutating the href to `/mockups/ward-flow/ward/${ed.id}` and watching this file stay green.
+   * mutating the href to `/ward-flow/ward/${ed.id}` and watching this file stay green.
    *
    * Both of the checks above were satisfied, each for a good reason: `ward/[unitId]/page.tsx`
    * exists on disk, so "the route exists" held; and the id in the last segment was still the real
@@ -202,8 +202,8 @@ describe("Ward Flow hub — every destination it offers resolves to a route on d
      * ⚠️ **PREDICATES, NOT PREFIX STRINGS, AND WARD VERIFIER IS THE REASON.**
      *
      * This was three prefixes. Two carried a trailing slash and one did not, and a prefix without
-     * a trailing slash is porous: `/mockups/ward-flow/wards/{realUnitId}` startsWith
-     * `/mockups/ward-flow/ward`, so a one-character typo would have passed BOTH this check and the
+     * a trailing slash is porous: `/ward-flow/wards/{realUnitId}` startsWith
+     * `/ward-flow/ward`, so a one-character typo would have passed BOTH this check and the
      * id check above it. Verifier's attack found that the only entry missing the slash —
      * `community` — is also the one kind that cannot be bitten by it, because its route is static
      * and pinned by exact equality below.
@@ -215,15 +215,15 @@ describe("Ward Flow hub — every destination it offers resolves to a route on d
      */
     const ROUTE_FAMILY: Record<HubKind, (href: string) => boolean> = {
       // Dynamic: an id follows, so the separator is part of the claim.
-      ward: (href) => href.startsWith("/mockups/ward-flow/ward/"),
-      ed: (href) => href.startsWith("/mockups/ward-flow/ed/"),
+      ward: (href) => href.startsWith("/ward-flow/ward/"),
+      ed: (href) => href.startsWith("/ward-flow/ed/"),
       // Dynamic since 2026-09-18. This was exact-equality against the bare index, because the hub
       // listed ten REGION placeholders whose slugs resolved against COMMUNITY_TEAM_PAGES to
       // nothing — an href that lands on "No community team matches…" is not an arrival, so the
       // rows deliberately pointed at the index instead. The hub now lists the real catchment teams
       // and takes each id from the same list the route resolves against, so every row reaches its
       // own page. Kept as a prefix test on the same family, not loosened to "contains".
-      community: (href) => href.startsWith("/mockups/ward-flow/community/"),
+      community: (href) => href.startsWith("/ward-flow/community/"),
     };
     const wrong = entries
       .filter((entry) => !ROUTE_FAMILY[entry.kind](entry.href))

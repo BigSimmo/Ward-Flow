@@ -2683,8 +2683,8 @@ describe("the coordinator's work list — direction of the LIVE destinations", (
        * panel of missing patients is still a worse failure than one visible row somebody can
        * question. **The reason does not depend on how much of the screen is lost.**
        *
-       * (Boundaries exist now — `src/app/mockups/ward-flow/error.tsx` and its nearer sibling
-       * `src/app/mockups/ward-flow/statistics/error.tsx` — so it is no longer true that nothing
+       * (Boundaries exist now — `src/app/ward-flow/error.tsx` and its nearer sibling
+       * `src/app/ward-flow/statistics/error.tsx` — so it is no longer true that nothing
        * catches these throws. What stays true is the blast radius: both boundaries render inside
        * `ward-flow/layout.tsx`, and per `statistics/error.tsx`'s own doc comment, "It does NOT keep
        * more of the screen alive than the parent would" — both replace the entire page, navigation

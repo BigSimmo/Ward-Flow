@@ -5,7 +5,7 @@ import { overBudget, routeKb, scriptSources, validateBudgets } from "../scripts/
 import { encodeRecordAddress } from "../src/components/ward-management/shell/ward-record-address";
 
 const BASE = "http://127.0.0.1:3210";
-const ROUTE = "/mockups/ward-flow";
+const ROUTE = "/ward-flow";
 const SCRIPT = "/_next/static/chunks/a.js";
 const HTML = `<script src="${SCRIPT}"></script>`;
 
@@ -60,8 +60,8 @@ describe("phone script budget", () => {
   it("budgets the canonical movement page directly, preserving its existing limit", () => {
     const { budgets } = JSON.parse(readFileSync(new URL("../script-budget.json", import.meta.url), "utf8"));
     expect(() => validateBudgets(budgets)).not.toThrow();
-    expect(budgets[`/mockups/ward-flow/movements/${encodeRecordAddress("WF-001")}`]).toBe(623);
-    expect(budgets).not.toHaveProperty("/mockups/ward-flow/movements/WF-001");
+    expect(budgets[`/ward-flow/movements/${encodeRecordAddress("WF-001")}`]).toBe(624);
+    expect(budgets).not.toHaveProperty("/ward-flow/movements/WF-001");
   });
 
   it("measures a declared script and requests both resources without following redirects", async () => {

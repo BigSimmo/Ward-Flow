@@ -8,7 +8,7 @@ import { SettingsInstallHint } from "@/components/ward-management/settings/setti
 import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "@/components/ward-management/shell/ward-phone-push";
 import { listenForInstallPrompt } from "@/components/ward-management/shell/ward-pwa-install";
 import {
-  LEGACY_PWA_SCOPE,
+  LEGACY_PWA_SCOPES,
   PHONE_ALERTS_MOVED_NOTICE,
   WardPwaRegistration,
   wardPwaOpenTarget,
@@ -48,16 +48,19 @@ function installServiceWorker({
     installing: null as ReturnType<typeof fakeWorker> | null,
     addEventListener: (type: string, listener: Listener) => (registrationListeners[type] ??= []).push(listener),
   };
-  const legacyRegistration = {
-    scope: `${origin}${LEGACY_PWA_SCOPE}`,
+  // The registration in use before the move, and the older pre-F-11 one; the first held the alerts.
+  const legacyRegistrations = LEGACY_PWA_SCOPES.map((scope, index) => ({
+    scope: `${origin}${scope}`,
     unregister: vi.fn(async () => true),
-    pushManager: { getSubscription: async () => (legacySubscribed ? { endpoint: "https://push.example/1" } : null) },
-  };
+    pushManager: {
+      getSubscription: async () => (legacySubscribed && index === 0 ? { endpoint: "https://push.example/1" } : null),
+    },
+  }));
   const other = { scope: `${origin}/somewhere-else/`, unregister: vi.fn(async () => true) };
   const container = {
     controller: active ? {} : null,
     register: vi.fn(async () => registration),
-    getRegistrations: vi.fn(async () => (legacy ? [legacyRegistration, other] : [other])),
+    getRegistrations: vi.fn(async () => (legacy ? [...legacyRegistrations, other] : [other])),
     addEventListener: (type: string, listener: Listener) => (containerListeners[type] ??= []).push(listener),
     removeEventListener: vi.fn(),
   };
@@ -65,7 +68,7 @@ function installServiceWorker({
   return {
     container,
     registration,
-    legacyRegistration,
+    legacyRegistrations,
     other,
     emit: (type: string, event?: unknown) => containerListeners[type]?.forEach((listener) => listener(event)),
     updateFound: (worker: ReturnType<typeof fakeWorker>) => {
@@ -95,17 +98,19 @@ describe("WardPwaRegistration", () => {
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalledTimes(1));
     expect(browser.container.register).toHaveBeenCalledWith(PHONE_PUSH_WORKER_URL, {
-      scope: "/mockups/ward-flow",
+      scope: "/ward-flow",
       updateViaCache: "none",
     });
     expect(browser.other.unregister).not.toHaveBeenCalled();
   });
 
-  it("removes the old /mockups/ward-flow/ registration, and nothing else", async () => {
+  it("removes both old /mockups/ward-flow registrations, and nothing else", async () => {
     const browser = installServiceWorker({ legacy: true });
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    expect(browser.legacyRegistration.unregister).toHaveBeenCalledTimes(1);
+    expect(LEGACY_PWA_SCOPES).toEqual(["/mockups/ward-flow", "/mockups/ward-flow/"]);
+    for (const legacyRegistration of browser.legacyRegistrations)
+      expect(legacyRegistration.unregister).toHaveBeenCalledTimes(1);
     expect(browser.other.unregister).not.toHaveBeenCalled();
   });
 
@@ -169,13 +174,11 @@ describe("WardPwaRegistration", () => {
     const browser = installServiceWorker();
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/mockups/ward-flow/alerts" } }));
-    expect(push).toHaveBeenCalledWith("/mockups/ward-flow/alerts");
-    act(() =>
-      browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/mockups/ward-flow" } }),
-    );
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/ward-flow/alerts" } }));
+    expect(push).toHaveBeenCalledWith("/ward-flow/alerts");
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/ward-flow" } }));
     act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/mockups/ward-flow-digest" } }));
-    act(() => browser.emit("message", { data: { type: "other", url: "/mockups/ward-flow/alerts" } }));
+    act(() => browser.emit("message", { data: { type: "other", url: "/ward-flow/alerts" } }));
     expect(push).toHaveBeenCalledTimes(1);
   });
 });
@@ -183,10 +186,8 @@ describe("WardPwaRegistration", () => {
 describe("wardPwaOpenTarget", () => {
   const origin = "https://ward.example";
   it("accepts only a same-site Ward Flow path", () => {
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/mockups/ward-flow" }, origin)).toBe("/mockups/ward-flow");
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/mockups/ward-flow/beds?x=1" }, origin)).toBe(
-      "/mockups/ward-flow/beds",
-    );
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow" }, origin)).toBe("/ward-flow");
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow/beds?x=1" }, origin)).toBe("/ward-flow/beds");
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/settings" }, origin)).toBeNull();
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: 42 }, origin)).toBeNull();
     expect(wardPwaOpenTarget("ward-flow-open", origin)).toBeNull();

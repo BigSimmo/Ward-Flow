@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://api.example.test");
   sessionStorage.clear();
-  window.history.replaceState({}, "", "/mockups/ward-flow");
+  window.history.replaceState({}, "", "/ward-flow");
 });
 /** A stand-in for the app badge API, removed again by the caller. */
 function stubAppBadge() {
@@ -67,7 +67,7 @@ describe("Supabase shared sign-in", () => {
   it.each(["#error=access_denied&error_code=otp_expired&type=recovery", "#type=recovery&access_token=incomplete"])(
     "keeps sign-in usable after an invalid recovery link %s",
     async (fragment) => {
-      window.history.replaceState({}, "", "/mockups/ward-flow" + fragment);
+      window.history.replaceState({}, "", "/ward-flow" + fragment);
       const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
       vi.stubGlobal("fetch", fetcher);
       render(<Probe />);
@@ -84,7 +84,7 @@ describe("Supabase shared sign-in", () => {
     "keeps recovery and nominated signup usable after an invalid link %s",
     async (fragment) => {
       vi.stubEnv("NEXT_PUBLIC_WARD_COORDINATOR_EMAIL", "nominated@example.invalid");
-      window.history.replaceState({}, "", "/mockups/ward-flow" + fragment);
+      window.history.replaceState({}, "", "/ward-flow" + fragment);
       const fetcher = vi.fn<typeof fetch>(async () => Response.json({}));
       vi.stubGlobal("fetch", fetcher);
       render(<Probe />);
@@ -132,7 +132,7 @@ describe("Supabase shared sign-in", () => {
     window.history.replaceState(
       {},
       "",
-      "/mockups/ward-flow#type=recovery&access_token=access&refresh_token=refresh&expires_in=3600",
+      "/ward-flow#type=recovery&access_token=access&refresh_token=refresh&expires_in=3600",
     );
     let complete!: (response: Response) => void;
     const calls: string[] = [];
@@ -167,11 +167,7 @@ describe("Supabase shared sign-in", () => {
 });
 
 it("keeps signup confirmation tokens out of workspace and storage", async () => {
-  window.history.replaceState(
-    {},
-    "",
-    "/mockups/ward-flow#type=signup&access_token=confirmation&refresh_token=confirmation",
-  );
+  window.history.replaceState({}, "", "/ward-flow#type=signup&access_token=confirmation&refresh_token=confirmation");
   const fetcher = vi.fn();
   vi.stubGlobal("fetch", fetcher);
   render(<Probe />);

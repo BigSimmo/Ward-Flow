@@ -23,7 +23,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
 }));
 
@@ -51,11 +51,20 @@ import {
   patientListName,
 } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
-import { allUnits } from "@/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 
 const units = allUnits();
+function SessionSearch({ adopted }: { adopted: boolean }) {
+  const state = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...state, sessionAdopted: adopted }}>
+      <WardGlobalSearch movements={wardMovements} patients={wardPatients} units={units} />
+    </WardFlowOverride>
+  );
+}
 
 /*
  * ⚠️ EVERY EXPECTATION BELOW IS DERIVED FROM THE SEEDED FIXTURE, NEVER FROM A STRING TYPED HERE.
@@ -101,6 +110,25 @@ describe("WardGlobalSearch — anti-vacuity floor", () => {
 });
 
 describe("WardGlobalSearch", () => {
+  it("prepares the session before accepting the first query", () => {
+    const content = (adopted: boolean) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SessionSearch adopted={adopted} />
+      </WardFlowProvider>
+    );
+    const view = render(content(false));
+    const input = screen.getByTestId("ward-global-search-input");
+    expect(input).toBeDisabled();
+    expect(input).toHaveAttribute("placeholder", "Preparing search…");
+    expect(input).toHaveAccessibleDescription("Preparing workspace. Search will be available shortly.");
+    view.rerender(content(true));
+    expect(input).toBeEnabled();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: movementQuery } });
+    const result = screen.getByTestId(`ward-global-search-result-movement-${targetMovement.id}`);
+    expect(result).toBeVisible();
+    expect(result).toHaveAttribute("href", movementHref(targetMovement.id));
+  });
   function renderSearch(onNavigate = vi.fn()) {
     render(
       <WardGlobalSearch
@@ -128,11 +156,11 @@ describe("WardGlobalSearch", () => {
     expect(within(popup).getByTestId("ward-global-search-group-goto")).toHaveTextContent("Go to");
     expect(within(popup).getByTestId("ward-global-search-result-view-capacity")).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/capacity",
+      "/ward-flow/capacity",
     );
     expect(within(popup).getByTestId("ward-global-search-result-action-new-referral")).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/referrals/new",
+      "/ward-flow/referrals/new",
     );
     // No caller tasks, no recents: no person or movement rows before anything is typed.
     expect(within(popup).queryByTestId("ward-global-search-group-needs")).not.toBeInTheDocument();
@@ -425,7 +453,7 @@ describe("WardGlobalSearch", () => {
     const popup = screen.getByTestId("ward-global-search-popup");
     expect(within(popup).getByText("Wards")).toBeInTheDocument();
     const wardItem = screen.getByTestId("ward-global-search-result-ward-scgh-adult-open");
-    expect(wardItem).toHaveAttribute("href", "/mockups/ward-flow/ward/scgh-adult-open");
+    expect(wardItem).toHaveAttribute("href", "/ward-flow/ward/scgh-adult-open");
     expect(wardItem).toHaveTextContent("Ward");
   });
 
@@ -436,7 +464,7 @@ describe("WardGlobalSearch", () => {
     const popup = screen.getByTestId("ward-global-search-popup");
     expect(within(popup).getAllByText("ED").length).toBeGreaterThan(0);
     const edItem = screen.getByTestId("ward-global-search-result-ed-fsh-ed");
-    expect(edItem).toHaveAttribute("href", "/mockups/ward-flow/ed/fsh-ed");
+    expect(edItem).toHaveAttribute("href", "/ward-flow/ed/fsh-ed");
     expect(edItem).toHaveTextContent("ED");
   });
 
@@ -447,7 +475,7 @@ describe("WardGlobalSearch", () => {
     const popup = screen.getByTestId("ward-global-search-popup");
     expect(within(popup).getAllByText("Community").length).toBeGreaterThan(0);
     const teamItem = screen.getByTestId("ward-global-search-result-community-mead-centre-armadale");
-    expect(teamItem).toHaveAttribute("href", "/mockups/ward-flow/community/mead-centre-armadale");
+    expect(teamItem).toHaveAttribute("href", "/ward-flow/community/mead-centre-armadale");
     expect(teamItem).toHaveTextContent("Community");
   });
 
@@ -458,7 +486,7 @@ describe("WardGlobalSearch", () => {
     const popup = screen.getByTestId("ward-global-search-popup");
     expect(within(popup).getByText("Legal")).toBeInTheDocument();
     const formItem = screen.getByTestId("ward-global-search-result-form-1a");
-    expect(formItem).toHaveAttribute("href", "/mockups/ward-flow/legal-forms");
+    expect(formItem).toHaveAttribute("href", "/ward-flow/legal-forms");
     expect(formItem).toHaveTextContent("Legal Form");
   });
 
@@ -469,7 +497,7 @@ describe("WardGlobalSearch", () => {
     const popup = screen.getByTestId("ward-global-search-popup");
     expect(within(popup).getByText("Screens")).toBeInTheDocument();
     const viewItem = screen.getByTestId("ward-global-search-result-view-handover");
-    expect(viewItem).toHaveAttribute("href", "/mockups/ward-flow/handover");
+    expect(viewItem).toHaveAttribute("href", "/ward-flow/handover");
     expect(viewItem).toHaveTextContent("View");
   });
 
@@ -482,7 +510,7 @@ describe("WardGlobalSearch", () => {
     expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Tasks");
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
-    expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/mockups\/ward-flow\/movements\//));
+    expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/ward-flow\/movements\//));
   });
 });
 

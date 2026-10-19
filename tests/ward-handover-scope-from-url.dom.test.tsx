@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/handover",
+  usePathname: () => "/ward-flow/handover",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
@@ -51,7 +51,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const WARD = allUnits()[0];
 
 function renderAt(search: string) {
-  window.history.replaceState({}, "", `/mockups/ward-flow/handover${search}`);
+  window.history.replaceState({}, "", `/ward-flow/handover${search}`);
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <HandoverPage />

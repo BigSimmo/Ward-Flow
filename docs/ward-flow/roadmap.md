@@ -48,7 +48,7 @@ remaining decisions. Historical proposals below do not mark current tasks comple
 ## Historical programme — 25 September 2026
 
 Written 25 September 2026 from the [product brief](product-brief.md), the two audits of that day
-([`audit-2026-09-25-full-review.md`](audit-2026-09-25-full-review.md) and the fresh full audit
+([`audit-2026-09-25-full-review.md`](https://github.com/BigSimmo/Ward-Flow/blob/97fa3e25276089a4a938951a59bcffabe47df149/docs/ward-flow/audit-2026-09-25-full-review.md) and the fresh full audit
 written the same day) and [`STATUS.md`](STATUS.md), on the ward line at `64c6be7ab2`. **Josh
 approved milestones 1 to 4 in this order on 25 September** ([`decisions.md`](decisions.md), D-7).
 Milestones 5 and 6 are still a proposal he has not reviewed. Update this file in place when a
@@ -79,7 +79,7 @@ every search noisier.
 
 ### 2. Get the ward tests back to green
 
-The [test baseline](test-baseline.md) of 25 September found 79 of 648 ward test files failing
+The [test baseline](https://github.com/BigSimmo/Ward-Flow/blob/97fa3e25276089a4a938951a59bcffabe47df149/docs/ward-flow/test-baseline.md) of 25 September found 79 of 648 ward test files failing
 (176 tests), with none on the expected-failures list. The type check passes. The failures cluster
 into a few causes: referring a patient is now refused by an eligibility check in 14 files, a date
 crash on the activity and notice screens, seed counts that grew while the tests did not, behaviour

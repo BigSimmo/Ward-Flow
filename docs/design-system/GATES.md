@@ -481,7 +481,7 @@ widening the target.
 
 **Confirmed already covered, not re-litigated:** the Ward Flow pinned-clock fix (`a1aa449`,
 ledger `#YTR84P`) is unrelated — a different component tree, reachable only from non-production
-`/mockups/ward-flow`, not any of the five targets. No data-ordering risk exists on any of the
+`/ward-flow`, not any of the five targets. No data-ordering risk exists on any of the
 five targets (every reachable `.sort()` has a real tiebreaker or a fixed pre-sort array; demo
 mode bypasses live queries entirely before any DB call is made). The `.answer-progress-dot`
 breathing-dot motion exception cannot appear on these five targets by default, since no query is

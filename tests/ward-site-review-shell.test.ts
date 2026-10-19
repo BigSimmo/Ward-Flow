@@ -10,7 +10,7 @@ const read = (path: string) => readFileSync(path, "utf8").replace(/\/\*[\s\S]*?\
 
 describe("site review shell fixes", () => {
   it("fills the focus gap and adds the halo, at zero specificity, inside the Ward shell", () => {
-    const layout = read("src/app/mockups/ward-flow/ward-flow-layout.module.css");
+    const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
     const rule = /:where\(\.shellRow\)\s*:where\([^)]*button[^{]*:focus-visible\s*\{([^}]*)\}/u.exec(layout)?.[1];
     expect(rule, "no shared two-tone focus rule").toBeDefined();
     expect(rule).toMatch(/0 0 0 2px var\(--wf-focus-gap/u);

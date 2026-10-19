@@ -11,5 +11,5 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
  */
 export function patientHref(patientId: string): string {
   // D-39: the address carries a code, never the person's record number.
-  return `/mockups/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
+  return `/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;
 }

@@ -5,7 +5,7 @@ import { PatientNowScreen } from "@/components/ward-management/patients/patient-
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/people/WF-009",
+  usePathname: () => "/ward-flow/people/WF-009",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 function MetadataProbe() {

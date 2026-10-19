@@ -250,7 +250,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           signUp: (email, password) =>
             run(async () => {
               disconnect();
-              await auth!.signUp(email, password, window.location.origin + "/mockups/ward-flow");
+              await auth!.signUp(email, password, window.location.origin + "/ward-flow");
               if (!closed) {
                 setForm((old) => ({
                   ...old,
@@ -268,7 +268,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
             }),
           recover: (email) =>
             run(async () => {
-              await auth!.recover(email, window.location.origin + "/mockups/ward-flow");
+              await auth!.recover(email, window.location.origin + "/ward-flow");
               if (!closed) {
                 setForm((old) => ({
                   ...old,

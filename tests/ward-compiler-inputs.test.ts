@@ -33,8 +33,8 @@ const screens = sourceFiles(SRC).filter((path) => path.endsWith(".tsx"));
 /** Server route files whose `generateMetadata` names the ward in the browser tab. Not React
  *  components, so the compiler never caches them; they read the standard network. */
 const SERVER_METADATA = new Set([
-  join(SRC, "app/mockups/ward-flow/ward/[unitId]/page.tsx"),
-  join(SRC, "app/mockups/ward-flow/ward/[unitId]/answer/page.tsx"),
+  join(SRC, "app/ward-flow/ward/[unitId]/page.tsx"),
+  join(SRC, "app/ward-flow/ward/[unitId]/answer/page.tsx"),
 ]);
 
 /** The one place that points the module-wide lookups at the scenario's network, and reads them

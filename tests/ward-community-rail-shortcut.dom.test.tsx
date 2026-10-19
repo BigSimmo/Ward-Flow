@@ -13,7 +13,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/mockups/ward-flow/community/test-team",
+  usePathname: () => "/ward-flow/community/test-team",
   useSearchParams: () => new URLSearchParams(),
 }));
 

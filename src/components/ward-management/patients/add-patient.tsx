@@ -20,6 +20,9 @@ import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -244,7 +247,15 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 export function AddPatientForm() {
   const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
   const now = useWardFlowClock();
-  const raise = useWardRaise("coordinator");
+  const role = useRouteRole();
+  const access = useEffectiveWardAccess();
+  // The approved ward registration allowance uses the source/community event role.
+  const raise = useWardRaise(role === "ward" ? "community" : role);
+  const registrationScope = patientRegistrationScope(access.scope);
+  const registrationUnavailable =
+    access.scope.kind === "ward" && !registrationScope
+      ? "Open a referral from a single source ward before registering the patient."
+      : undefined;
   const router = useRouter();
 
   const [handoff] = useState(() => takeHandedOffPatientQuery());
@@ -536,6 +547,10 @@ export function AddPatientForm() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting || priorSubmissionRef.current?.generation === worldGeneration) return;
+    if (registrationUnavailable) {
+      setLastRejection(registrationUnavailable);
+      return;
+    }
     if (!answered) {
       setAttemptedSubmit(true);
       return;
@@ -565,6 +580,7 @@ export function AddPatientForm() {
     };
     try {
       const completion = raise("ADD_PATIENT", {
+        registrationScope,
         umrn: answered.umrn,
         givenName: answered.givenName,
         familyName: answered.familyName,
@@ -798,7 +814,7 @@ export function AddPatientForm() {
                 ) : null}
                 <Link
                   className={buttonClass({ variant: "onHero", size: "sm" })}
-                  href="/mockups/ward-flow/search"
+                  href="/ward-flow/search"
                   aria-label="Back to patient search"
                 >
                   <Icon icon={ChevronLeft} size={14} />
@@ -1171,6 +1187,7 @@ export function AddPatientForm() {
                   icon={FileText}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-register-and-refer"
+                  disabledReason={registrationUnavailable}
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={(event) => {
@@ -1190,6 +1207,7 @@ export function AddPatientForm() {
                   icon={UserPlus}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-submit"
+                  disabledReason={registrationUnavailable}
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={(event) => {

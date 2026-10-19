@@ -34,12 +34,14 @@ export function TransportExceptionDialog({
   /** The step's verb, as on its button ("Collected"). */
   action: string;
   gaps: TransportExceptionGap[];
-  onConfirm: (reason: TransportExceptionReason) => void;
+  onConfirm: (reason: TransportExceptionReason) => void | boolean | Promise<boolean>;
   onClose: () => void;
   testId?: string;
 }) {
   const [reason, setReason] = useState<TransportExceptionReason | "">("");
+  const [pending, setPending] = useState(false);
   const close = () => {
+    if (pending) return;
     setReason("");
     onClose();
   };
@@ -53,14 +55,23 @@ export function TransportExceptionDialog({
       data-testid={testId}
       primary={{
         label: `${action}, record reason`,
-        disabledReason: reason === "" ? "Choose a reason first" : undefined,
-        onAction: () => {
-          if (reason === "") return;
-          onConfirm(reason);
-          setReason("");
+        disabledReason: pending ? "Waiting for confirmation" : reason === "" ? "Choose a reason first" : undefined,
+        onAction: async () => {
+          if (reason === "" || pending) return;
+          setPending(true);
+          try {
+            const accepted = await onConfirm(reason);
+            if (accepted !== false) setReason("");
+          } catch {
+            // The caller communicates the failure; retain the coded reason for retry.
+          } finally {
+            setPending(false);
+          }
         },
       }}
-      secondary={[{ label: "Cancel", onAction: close }]}
+      secondary={[
+        { label: "Cancel", onAction: close, disabledReason: pending ? "Waiting for confirmation" : undefined },
+      ]}
     >
       <ul aria-label="Not recorded" className={styles.gapList}>
         {gaps.map((gap) => (
@@ -73,6 +84,7 @@ export function TransportExceptionDialog({
       <Field label="Reason">
         <Select
           value={reason}
+          disabled={pending}
           onChange={(event) => setReason(event.target.value as TransportExceptionReason | "")}
           data-testid={`${testId}-reason`}
         >

@@ -14,7 +14,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *
  * This file rendered `<WardModeWorkspace mode="queue" />`. MERGE 01 folded the priority queue, the
  * exceptions inbox and the escalation board into `DelaysScreen` and made
- * `/mockups/ward-flow/queue` a redirect, so the pin went on passing over a screen no coordinator
+ * `/ward-flow/queue` a redirect, so the pin went on passing over a screen no coordinator
  * can open.
  *
  * **The property is not about a selection control. It is about STALENESS.** `QueueView` held the

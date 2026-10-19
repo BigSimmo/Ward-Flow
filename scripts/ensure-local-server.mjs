@@ -30,7 +30,7 @@ const debugEnabled = process.env.ENSURE_DEBUG === "1";
 const startupLockStaleMs = 3 * 60 * 1000;
 const readyStableMs = 5 * 1000;
 // Ward Flow is the only app left (PsychSift removal, 25 September 2026), so readiness is its front page.
-const readinessPaths = ["/mockups/ward-flow"];
+const readinessPaths = ["/ward-flow"];
 // Servers started here run detached and unref'd, so nothing stops them when the
 // task/session that called `ensure` ends. Default them to a self-shutdown after
 // this many idle minutes so unattended background servers don't accumulate.

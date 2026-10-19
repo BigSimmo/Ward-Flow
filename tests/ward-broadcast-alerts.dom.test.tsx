@@ -22,7 +22,7 @@ function renderAlertsScreen(wardDeskId?: string) {
           <WardBroadcastBanner currentUnitId={wardDeskId} />
         </div>
       ) : null}
-      {/* Mounted exactly as the real app mounts it — src/app/mockups/ward-flow/layout.tsx
+      {/* Mounted exactly as the real app mounts it — src/app/ward-flow/layout.tsx
           passes no `currentUnitId`, so acknowledging here sends
           COORDINATOR_DESK_ACKNOWLEDGER_ID, the one non-unit sender
           ACKNOWLEDGE_BROADCAST_ALERT exempts from the "must name a real unit" refusal
