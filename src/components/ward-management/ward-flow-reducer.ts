@@ -175,6 +175,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
+import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
 import { reduceTransportEvent } from "./ward-flow-transport-events";
@@ -612,6 +613,9 @@ export function subjectId(event: WardFlowEvent): string {
     case "REQUEST_REFERRAL_INFORMATION":
     case "MARK_REFERRAL_INFORMATION_MET":
       return event.referralId;
+    case "RECORD_BED_MEETING_ACTION":
+    case "COMPLETE_BED_MEETING_ACTION":
+      return event.subject.id;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
     case "SET_SCENARIO":
@@ -2384,6 +2388,16 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    case "RECORD_BED_MEETING_ACTION":
+    case "COMPLETE_BED_MEETING_ACTION":
+      return reduceBedMeetingEvent(state, event, decision, {
+        findAdmission,
+        findMovement,
+        findUnit,
+        reject,
+        replaceAdmission,
+        replaceMovement,
+      });
 
     case "PULL_PATIENT":
     case "RELEASE_PULL":

@@ -1,6 +1,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
+import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -804,6 +805,8 @@ export type Movement = {
   arrivalMode?: "self" | "ambulance" | "police";
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
+  /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
+  meetingActions?: BedMeetingAction[];
   /**
    * WHEN THE COORDINATOR PLANS THE MOVE TO HAPPEN (owner, 26 Sept 2026: "go ahead with your
    * recommendations" — the 48-hour horizon shows demo moves spread across the window rather than

@@ -48,6 +48,7 @@ const DEFINITION_FILES = new Set([
   `${WARD_ROOT}/ward-flow-bed-events.ts`,
   `${WARD_ROOT}/ward-flow-referral-followup-events.ts`,
   `${WARD_ROOT}/ward-flow-ward-closure-events.ts`,
+  `${WARD_ROOT}/ward-flow-bed-meeting-events.ts`,
   `${WARD_ROOT}/ward-flow-events.ts`,
   // Holds a classification list of every event name (which carry typed text vs. not), not dispatches.
   `${WARD_ROOT}/ward-flow-persistence-classification.ts`,
