@@ -62,6 +62,8 @@ import {
 } from "./delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
+import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -145,10 +147,13 @@ export type DelaysBoardProps = {
    * 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
    */
   onNotWired?: () => void;
+  /**
+   * No longer read: the board follows the address itself, the Menu's `show=severe` included
+   * (DA-15, 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
+   */
+  initialSevere?: boolean;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
-  /** shell-9: the Menu's Delays row opens the board filtered to the severe causes. */
-  initialSevere?: boolean;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
 };
@@ -222,7 +227,6 @@ export function DelaysBoard({
   onEscalate,
   banner,
   empty,
-  initialSevere = false,
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
@@ -230,14 +234,26 @@ export function DelaysBoard({
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const catchments = useMemo(() => boardCatchments(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
-  // shell-9: the address is read after hydration, so follow the Menu's severe filter whenever it
-  // changes (Back and Forward included). Adjusting state during render is React's pattern for
-  // state derived from a prop.
-  const [seenSevere, setSeenSevere] = useState(false);
-  if (initialSevere !== seenSevere) {
-    setSeenSevere(initialSevere);
-    setFilters((current) => ({ ...current, severe: initialSevere }));
+  // DA-15: the filters live in the web address, so a reload or a shared link opens the same list
+  // (`delays-url-state.ts`). The address is read after hydration and followed whenever it asks for
+  // something new: Back, Forward, or the Menu's severe link (shell-9). Search text stays on this
+  // page only. Adjusting state during render is React's pattern for state derived from a store.
+  const addressSearch = useLocationSearch();
+  const addressKey = filtersKeyOf(addressSearch);
+  const [seenAddressKey, setSeenAddressKey] = useState("");
+  if (addressKey !== seenAddressKey) {
+    setSeenAddressKey(addressKey);
+    setFilters((current) => ({ ...filtersFromSearch(addressSearch), search: current.search }));
   }
+  // The viewer's own change, written back. A value just read from the address already matches it.
+  // Marking it seen at once keeps a second quick tap from being overruled by the first one's address.
+  const chosenKey = filtersKey(chosenFilters);
+  useEffect(() => {
+    if (chosenKey === addressKey) return;
+    replaceSearchParams(filtersToParams(chosenFilters));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- records what was just written to the address, an external store
+    setSeenAddressKey(chosenKey);
+  }, [chosenKey, addressKey, chosenFilters]);
   // A blocker filter whose group has emptied (the person was recategorised) stops applying, so no
   // chip names a cause the board no longer shows.
   const filters = useMemo(
@@ -251,8 +267,13 @@ export function DelaysBoard({
   // Adjusting state during render is React's pattern for state derived from changed props.
   if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
     setFilters((current) => ({ ...current, cause: null }));
-  const flat = useDelaysFlatStore();
-  const setFlat = writeDelaysFlat;
+  // The order the address names wins (a shared link); otherwise the viewer's own remembered choice.
+  const storedFlat = useDelaysFlatStore();
+  const flat = flatOrderFromSearch(addressSearch) ?? storedFlat;
+  const setFlat = (next: boolean) => {
+    writeDelaysFlat(next);
+    replaceSearchParams({ order: next ? "longest" : "blocker" });
+  };
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
