@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { bedMapWards, groupBedMapWardsByService, type BedMapWard } from "@/components/ward-management/capacity/bed-map";
-import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
+import {
+  bedKindGaps,
+  bedKindTotals,
+  networkTotals,
+  networkWardRows,
+} from "@/components/ward-management/capacity/capacity-derivations";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { HEALTH_SERVICES, type BedRelease, type Unit } from "@/components/ward-management/ward-model";
@@ -137,14 +143,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     expect(ward.ready + ward.pulled + ward.closed + ward.occupied).toBe(brokenUnit.beds);
   });
 
-  /**
-   * ⚠️ **DOCUMENTED, NOT ASSUMED: WHY THE MAP DOES NOT READ `NetworkWardRow.ready`.** The two
-   * figures are different computations (`bed-map.tsx`'s own file header explains why) and this pins
-   * that they nonetheless agree for every unit in TODAY's fixture — the property that keeps this
-   * map and the table beside it from ever visibly disagreeing about the same ward's ready count.
-   * A red here means the two screens now show different numbers for the same ward and needs
-   * attention, not a silent fix to either derivation.
-   */
+  /** The map and table must retain the same Ready population for identical inputs. */
   it("agrees with the network table's own ready figure for every real ward, today", () => {
     const wards = bedMapWards(units, bedReleases);
     const tableRows = networkWardRows(units, NOW, bedReleases);
@@ -153,6 +152,97 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
       const row = tableRows.find((candidate) => candidate.unit.id === ward.unit.id);
       expect(row, ward.unit.id).toBeDefined();
       expect(ward.ready, `${ward.unit.id}: bed map and network table disagree on Ready`).toBe(row?.ready);
+    }
+  });
+
+  it("keeps a last-bed pull out of unmet demand and reconciles a later capacity confirmation", () => {
+    let state = seedWardFlowState();
+    const unitId = "scgh-adult-open";
+    const existingPulls = state.admissions.filter(
+      (admission) => admission.unitId === unitId && admission.state === "pulled",
+    );
+    const existingLivePulls = existingPulls.filter((admission) => admission.movementId !== null).length;
+    state = wardFlowReducer(state, {
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW,
+      edId: "jhc-ed",
+      draft: {
+        cohort: "Adult",
+        security: "Open",
+        sex: "Female",
+        gender: "Female",
+        specialling: false,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+    const movementId = state.movements.at(-1)!.id;
+    state = wardFlowReducer(state, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW,
+      movementId,
+      unitIds: [unitId],
+    });
+    state = wardFlowReducer(state, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW, movementId, unitId });
+    const unit = () => state.units.find((candidate) => candidate.id === unitId)!;
+    const confirm = (value: number) => {
+      state = wardFlowReducer(state, {
+        type: "CONFIRM_CAPACITY",
+        role: "ward",
+        now: NOW,
+        unitId,
+        actingUnitId: unitId,
+        expectedRevision: unit().allocatable.revision ?? 0,
+        value,
+      });
+    };
+    confirm(1);
+    state = wardFlowReducer(state, { type: "PULL_PATIENT", role: "ward", now: NOW, movementId, unitId });
+    expect(state.rejections).toEqual([]);
+    expect(unit().allocatable.value).toBe(0);
+    expect(
+      bedKindTotals(
+        bedKindGaps(
+          state.movements.filter((movement) => movement.id === movementId),
+          [unit()],
+          NOW,
+        ),
+      ),
+    ).toEqual({ waiting: 0, bedsThatFit: 0, gap: 0 });
+
+    // A newer ward observation can disagree with the reservation without erasing it. The
+    // display must partition it once while retaining the exact observed empty/offered figures.
+    const empty = structuredClone(unit().empty);
+    confirm(empty.value);
+    expect(state.rejections).toEqual([]);
+    expect(unit().allocatable.value).toBe(empty.value);
+    expect(unit().empty).toEqual(empty);
+    const rows = networkWardRows([unit()], NOW, state.bedReleases, state.admissions, state.leaveBeds);
+    const [row] = rows;
+    const [map] = bedMapWards([unit()], state.bedReleases, state.admissions, state.leaveBeds);
+    expect(row.ready).toBe(empty.value - existingLivePulls - 1);
+    expect(row.pulled).toBe(existingPulls.length + 1);
+    expect(row.ready + row.pulled + row.closed + row.occupied).toBe(unit().beds);
+    expect([row.ready, row.pulled, row.closed, row.occupied]).toEqual([
+      map.ready,
+      map.pulled,
+      map.closed,
+      map.occupied,
+    ]);
+    expect(networkTotals(rows).ready).toBe(map.ready);
+    const movements = state.movements.filter((movement) => movement.id === movementId);
+    expect(bedKindTotals(bedKindGaps(movements, [unit()], NOW, state.admissions))).toEqual({
+      waiting: 0,
+      bedsThatFit: map.ready,
+      gap: map.ready,
+    });
+    for (const horizon of bedsForecast([unit()], [], state.admissions, movements, NOW).horizons) {
+      expect(horizon.readyNow).toBe(map.ready);
+      expect(horizon.waitingForBed).toBe(0);
     }
   });
 });

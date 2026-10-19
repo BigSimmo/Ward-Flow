@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { communityTeamOptionsForSuburb } from "@/components/ward-management/referrals/referral-destination-options";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
 import { edReferralSheetHref } from "../referrals/open-referral-sheet";
@@ -63,7 +64,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
     toggleExamination,
     toggleBookTransport,
   } = ctx;
-  const minutesInDepartment = Math.max(now - movement.openedAt, 0);
+  const minutesInDepartment = Math.max(Math.min(now, recordedEdDeparture(movement) ?? now) - movement.openedAt, 0);
   const medicalClearance = movementMedicalClearance(movement, referrals);
   const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now) : undefined;
   const formExpiryWarningText = movement.legalForm ? formExpiryWarning(movement.legalForm, now, thresholds) : undefined;

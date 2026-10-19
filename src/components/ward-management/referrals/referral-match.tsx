@@ -1,7 +1,7 @@
 "use client";
 
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { useState, type Dispatch, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
-import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
   COMMUNITY_DECLINE_REASONS,
   ED_DECLINE_REASONS,
@@ -82,15 +82,14 @@ type ReferralMatchViewProps = {
   referral: Referral;
   units: Unit[];
   now: Instant;
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   rejections: Rejection[];
   patientInfo?: { displayName: string; umrn: string };
   hideDossierHeader?: boolean;
   /**
-   * v10: called straight after an Accept or Decline is dispatched, with the toast title. The board
-   * checks the reducer took it and offers Undo (`useReferralDecisionUndo`).
+   * Carries the decision's completion so the board offers Undo only after acceptance.
    */
-  onDecision?: (title: string) => void;
+  onDecision?: (title: string, completion: ReturnType<WardCommandDispatch>) => void;
   /**
    * v10 phone only. When set, the ward decision renders as the phone's one scrolling sheet: the
    * candidate lists ("Fits, bed ready", "Fits, no bed now", "Needs review") with Decline and Accept
@@ -362,7 +361,7 @@ export function ReferralMatchView({
     genderPlacementChecked?: true,
   ) {
     priorRejectionCountRef.current = rejections.length;
-    dispatch({
+    const completion = dispatch({
       type: "ACCEPT_REFERRAL",
       role: "coordinator",
       now,
@@ -374,7 +373,7 @@ export function ReferralMatchView({
       genderPlacementChecked,
     });
     setCheckToken((token) => token + 1);
-    onDecision?.(`Accepted at ${units.find((unit) => unit.id === unitId)?.name ?? "the ward"}`);
+    onDecision?.(`Accepted at ${units.find((unit) => unit.id === unitId)?.name ?? "the ward"}`, completion);
   }
 
   /**
@@ -419,7 +418,7 @@ export function ReferralMatchView({
     // by that route. Belt and braces, because the thing being prevented is a fabricated clinical
     // judgement rather than an inconvenience.
     if (reason === undefined) return;
-    dispatch({
+    const completion = dispatch({
       type: "DECLINE_REFERRAL",
       role: "coordinator",
       now,
@@ -429,7 +428,7 @@ export function ReferralMatchView({
       reason,
     });
     setCheckToken((token) => token + 1);
-    onDecision?.("Referral declined");
+    onDecision?.("Referral declined", completion);
   }
 
   /**
@@ -444,7 +443,7 @@ export function ReferralMatchView({
     priorRejectionCountRef.current = rejections.length;
     // ⚠️ GUARDED HERE TOO, NOT ONLY ON THE BUTTON — same reasoning as `handleDecline` above.
     if (communityDeclineReason === undefined) return;
-    dispatch({
+    const completion = dispatch({
       type: "DECLINE_REFERRAL",
       role: "coordinator",
       now,
@@ -453,7 +452,7 @@ export function ReferralMatchView({
       reason: communityDeclineReason,
     });
     setCheckToken((token) => token + 1);
-    onDecision?.("Community referral declined");
+    onDecision?.("Community referral declined", completion);
   }
 
   /**
@@ -472,7 +471,7 @@ export function ReferralMatchView({
    */
   function handleCommunityAccept() {
     priorRejectionCountRef.current = rejections.length;
-    dispatch({
+    const completion = dispatch({
       type: "ACCEPT_REFERRAL",
       role: "coordinator",
       now,
@@ -480,12 +479,12 @@ export function ReferralMatchView({
       destinationKind: "community_team",
     });
     setCheckToken((token) => token + 1);
-    onDecision?.("Accepted for community follow-up");
+    onDecision?.("Accepted for community follow-up", completion);
   }
 
   function handleEdAccept() {
     priorRejectionCountRef.current = rejections.length;
-    dispatch({
+    const completion = dispatch({
       type: "ACCEPT_REFERRAL",
       role: "coordinator",
       now,
@@ -494,7 +493,7 @@ export function ReferralMatchView({
     });
     setEdAcceptConfirmOpen(false);
     setCheckToken((token) => token + 1);
-    onDecision?.("Accepted by the emergency department");
+    onDecision?.("Accepted by the emergency department", completion);
   }
 
   /**

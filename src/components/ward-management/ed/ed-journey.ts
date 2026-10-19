@@ -1,6 +1,7 @@
 import type { JourneyStage } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 
 /**
  * JourneyRibbon stages for one person in an emergency department (v10 ED page, person sheet): where
@@ -15,13 +16,15 @@ import type { Movement } from "@/components/ward-management/ward-model";
 export function edJourneyStages(
   movement: Pick<
     Movement,
-    "id" | "openedAt" | "examination" | "referredAt" | "acceptedAt" | "leftDepartmentAt" | "closure"
-  >,
+    "id" | "openedAt" | "examination" | "referredAt" | "acceptedAt" | "leftDepartmentAt" | "closure" | "transport"
+  > &
+    Partial<Pick<Movement, "stageChanges">>,
   clearance: { cleared: boolean; at: Instant } | undefined,
   currentLabel: string,
   now: Instant,
 ): JourneyStage[] {
-  const end = Math.max(movement.openedAt, Math.min(now, movement.closure?.at ?? now));
+  const departure = recordedEdDeparture(movement);
+  const end = Math.max(movement.openedAt, Math.min(now, departure ?? movement.closure?.at ?? now));
   const milestones: { at: Instant; stageBefore: string }[] = [];
   const add = (at: Instant | undefined, stageBefore: string) => {
     if (at === undefined || at < movement.openedAt || at > end) return;
@@ -31,7 +34,7 @@ export function edJourneyStages(
   add(movement.examination?.at, "To review");
   add(movement.referredAt, "To referral");
   add(movement.acceptedAt, "Finding a bed");
-  add(movement.leftDepartmentAt, "Waiting to leave");
+  add(departure, "Waiting to leave");
   milestones.sort((a, b) => a.at - b.at);
 
   const stages: JourneyStage[] = [];
@@ -40,11 +43,12 @@ export function edJourneyStages(
     stages.push({ id: `${movement.id}-${index}`, label: milestone.stageBefore, minutes: milestone.at - from });
     from = milestone.at;
   });
-  stages.push({
-    id: `${movement.id}-now`,
-    label: milestones.length === 0 ? "In the department" : currentLabel,
-    minutes: end - from,
-    now: true,
-  });
+  if (from < end || (departure === undefined && movement.closure === undefined))
+    stages.push({
+      id: `${movement.id}-now`,
+      label: milestones.length === 0 ? "In the department" : currentLabel,
+      minutes: end - from,
+      now: departure === undefined && movement.closure === undefined,
+    });
   return stages;
 }

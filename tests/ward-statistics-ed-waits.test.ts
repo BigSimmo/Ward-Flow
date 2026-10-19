@@ -58,6 +58,33 @@ function specimen(changes: Partial<Movement>): Movement {
 }
 
 describe("who is on this department's list right now", () => {
+  it("excludes ward-origin and collected journeys without erasing genuine ED history", () => {
+    const figures = edWaitFigures(
+      [
+        specimen({ id: "WF-here" }),
+        specimen({ id: "WF-ward", sourceAdmissionId: "AD-source" }),
+        specimen({ id: "WF-moving", stage: "moving" }),
+        specimen({
+          id: "WF-collected-step-back",
+          stage: "pulled",
+          transport: {
+            id: "TR-test",
+            provider: "Patient transport service",
+            escortRequired: false,
+            collectedAt: NOW - 10,
+          },
+        }),
+      ],
+      HERE,
+      NOW,
+    );
+    expect(figures.departmentMovements.map((item) => item.id)).toEqual(["WF-here"]);
+    expect(figures.allDepartmentMovements.map((item) => item.id)).toEqual([
+      "WF-here",
+      "WF-moving",
+      "WF-collected-step-back",
+    ]);
+  });
   /**
    * ⚠️ **Each of the three is asserted separately.** A single total of 2 would hold with `urgent`
    * and `unplaced` wired to each other's movement.

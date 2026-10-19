@@ -39,7 +39,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(morleyRes.healthService.name).toContain("East Metropolitan");
     expect(morleyRes.primaryHospital).toContain("Royal Perth Hospital");
     expect(morleyRes.communityClinic).toBe("Inner City");
-    expect(morleyRes.status).toBe("Reviewed direct match");
+    expect(morleyRes.status).toBe("Reviewed clinic match");
 
     // 2. Alexander Heights (NMHS)
     const alex = resolveCatchmentQuery("Alexander Heights");
@@ -50,7 +50,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(alexRes.healthService.code).toBe("NMHS");
     expect(alexRes.communityClinic).toBe("Mirrabooka");
     expect(alexRes.primaryHospital).toContain("Graylands");
-    expect(alexRes.status).toBe("Reviewed direct match");
+    expect(alexRes.status).toBe("Reviewed clinic match");
 
     // 3. Fremantle (SMHS)
     const freo = resolveCatchmentQuery("Fremantle");
@@ -61,7 +61,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(freoRes.healthService.code).toBe("SMHS");
     expect(freoRes.primaryHospital).toContain("Fiona Stanley");
     expect(freoRes.communityClinic).toBe("Alma Street (Fremantle)");
-    expect(freoRes.status).toBe("Reviewed direct match");
+    expect(freoRes.status).toBe("Reviewed clinic match");
 
     // 4. Armadale (EMHS)
     const armadale = resolveCatchmentQuery("Armadale");
@@ -72,7 +72,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(armRes.healthService.code).toBe("EMHS");
     expect(armRes.primaryHospital).toContain("Armadale");
     expect(armRes.communityClinic).toContain("Mead Centre");
-    expect(armRes.status).toBe("Reviewed direct match");
+    expect(armRes.status).toBe("Reviewed clinic match");
 
     // 5. Joondalup (NMHS)
     const jhc = resolveCatchmentQuery("Joondalup");
@@ -83,7 +83,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(jhcRes.healthService.code).toBe("NMHS");
     expect(jhcRes.primaryHospital).toContain("Joondalup");
     expect(jhcRes.communityClinic).toBe("Joondalup");
-    expect(jhcRes.status).toBe("Reviewed direct match");
+    expect(jhcRes.status).toBe("Reviewed clinic match");
 
     // 6. Rockingham (SMHS)
     const rgh = resolveCatchmentQuery("Rockingham");
@@ -94,7 +94,7 @@ describe("resolveCatchmentQuery & resolveSuburb - Suburb Search", () => {
     expect(rghRes.healthService.code).toBe("SMHS");
     expect(rghRes.primaryHospital).toContain("Rockingham");
     expect(rghRes.communityClinic).toBe("Rockingham");
-    expect(rghRes.status).toBe("Reviewed direct match");
+    expect(rghRes.status).toBe("Reviewed clinic match");
   });
 
   it("resolves suburbs case-insensitively with leading/trailing whitespace", () => {
@@ -349,12 +349,15 @@ describe("formatCatchmentSummary", () => {
     const summary = formatCatchmentSummary(morley!);
 
     expect(summary).toContain("WA Mental Health Catchment Summary");
+    expect(summary).toContain("not a verified referral destination");
+    expect(summary).toContain("Clinic sources:");
+    expect(summary).toContain("Hospital and service mappings are not verified by these clinic sources");
     expect(summary).toContain("Suburb: Morley");
     expect(summary).toContain("Postcode: 6062");
-    expect(summary).toContain("Health Service: East Metropolitan Health Service (EMHS)");
-    expect(summary).toContain("Primary Admitting Hospital: Royal Perth Hospital");
+    expect(summary).toContain("Health Service (unverified prototype mapping): East Metropolitan Health Service (EMHS)");
+    expect(summary).toContain("Hospital (unverified prototype mapping): Royal Perth Hospital");
     expect(summary).toContain("Follow-up Community Clinic: Inner City");
-    expect(summary).toContain("Catchment Status: Reviewed direct match");
+    expect(summary).toContain("Clinic Match Status: Reviewed clinic match");
   });
 
   it("includes discrepancy details for contested suburb", () => {
@@ -363,7 +366,7 @@ describe("formatCatchmentSummary", () => {
     const summary = formatCatchmentSummary(hallsHead!);
 
     expect(summary).toContain("Suburb: Halls Head");
-    expect(summary).toContain("Catchment Status: Contested / split");
+    expect(summary).toContain("Clinic Match Status: Contested / split");
     expect(summary).toContain("Caveats / Notes:");
     expect(summary).toContain("Discrepancy Details:");
   });
@@ -397,7 +400,7 @@ describe("WardCatchmentResolver React Component UI", () => {
     expect(screen.getByTestId("health-service-pill").textContent).toContain("EMHS");
     expect(screen.getByTestId("primary-hospital-value").textContent).toContain("Royal Perth Hospital");
     expect(screen.getByTestId("community-clinic-value").textContent).toContain("Inner City");
-    expect(screen.getByTestId("catchment-status-badge").textContent).toContain("Reviewed direct match");
+    expect(screen.getByTestId("catchment-status-badge").textContent).toContain("Reviewed clinic match");
   });
 
   it("searching by postcode displays multiple suburb tabs and updates active card", () => {
