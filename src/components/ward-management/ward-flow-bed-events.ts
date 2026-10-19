@@ -110,7 +110,9 @@ export function reduceBedEvent(
         );
       const lockedDelta = Number(priorKind === "locked") - Number(targetKind === "locked");
       const lockedAfter = unit.allocatableLocked + lockedDelta;
-      if (lockedAfter < 0 || lockedAfter > Math.min(unit.lockedBeds, unit.allocatable.value))
+      // A same-kind move changes neither count, so it is never refused for the separately confirmed
+      // aggregate sitting below the free-locked count (the schema accepts that mismatch).
+      if (lockedAfter < 0 || (lockedDelta !== 0 && lockedAfter > Math.min(unit.lockedBeds, unit.allocatable.value)))
         return reject(state, event, "The ward's free bed-kind counts do not support this bed move.");
       decision.outcome = "accepted";
       decision.reasonCode = "none";

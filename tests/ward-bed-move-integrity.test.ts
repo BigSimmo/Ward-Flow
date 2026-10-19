@@ -101,6 +101,33 @@ describe("numbered bed designation integrity", () => {
     expect(refused.units === confirmed.units).toBe(true);
   });
 
+  // Codex P2 (PR #423): CONFIRM_CAPACITY may set the aggregate below the separately recorded
+  // free-locked count. A same-kind move changes neither figure, so that mismatch must not block it.
+  it.each(["open", "locked"] as const)("allows a %s-to-same-kind move after a lower capacity confirmation", (kind) => {
+    const { state, unit, current, occupiedLocked } = bench();
+    const confirmed = send(state, {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      unitId: UNIT,
+      actingUnitId: UNIT,
+      value: 0,
+      expectedRevision: unit.allocatable.revision ?? 0,
+    } as WardFlowEvent);
+    const lowered = confirmed.units.find((row) => row.id === UNIT)!;
+    expect(lowered.allocatableLocked).toBeGreaterThan(lowered.allocatable.value);
+    const stay = current.find((row) => row.bedKind === kind && row.state === "occupied")!;
+    const target = kind === "locked" ? occupiedLocked + 1 : Math.max(...current.map((row) => row.bedNumber!)) + 1;
+    const moved = send(confirmed, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      admissionId: stay.id,
+      actingUnitId: UNIT,
+      bedNumber: target,
+    } as WardFlowEvent);
+    expect(moved.admissions.find((row) => row.id === stay.id)).toMatchObject({ bedNumber: target, bedKind: kind });
+    expect(moved.units === confirmed.units).toBe(true);
+  });
+
   it("preserves an unknown historical kind on Undo of a single-kind seeded stay", () => {
     const state = seedWardFlowStateAt(0);
     const stay = state.admissions.find((row) => row.unitId === "scgh-adult-open" && row.state === "occupied")!;
