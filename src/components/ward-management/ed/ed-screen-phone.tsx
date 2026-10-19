@@ -7,7 +7,7 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph } from "@/components/wf";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
-import { EdBoardChips } from "./ed-screen-board";
+import { EdBoardChips } from "./ed-board-chips";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
 import styles from "./ed.module.css";
