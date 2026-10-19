@@ -662,7 +662,7 @@ export function CapacityScreen() {
           {/* The phone rail is hidden on every tab, so the phone shows this list on Overview instead. */}
           {isPhone ? null : (
             <ReadyByRoadTime
-              rows={networkRows}
+              rows={scopedNetworkRows}
               defaultEdId={roadTimeFromEdId}
               selectedUnitId={selectedUnitId}
               onSelectUnit={selectWard}
@@ -991,7 +991,7 @@ export function CapacityScreen() {
           ) : null}
           {isPhone && phoneTab === "overview" ? (
             <ReadyByRoadTime
-              rows={networkRows}
+              rows={scopedNetworkRows}
               defaultEdId={roadTimeFromEdId}
               selectedUnitId={selectedUnitId}
               onSelectUnit={selectWard}

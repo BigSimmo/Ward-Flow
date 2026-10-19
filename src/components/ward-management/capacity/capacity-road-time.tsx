@@ -18,8 +18,8 @@ import styles from "./capacity-road-time.module.css";
  * Network screen (Josh, 19 Oct 2026), which was otherwise a copy of Home and Capacity: this list
  * was the one part no other screen had.
  *
- * "Ready" is Capacity's own figure (`NetworkWardRow.ready`), so the list cannot disagree with the
- * ward table beside it. A ward with no measured route is left out rather than given a guessed
+ * "Ready" is Capacity's own figure (`NetworkWardRow.ready`), and the screen passes the same
+ * service-scoped rows its ward table uses, so the list cannot disagree with the table beside it. A ward with no measured route is left out rather than given a guessed
  * time, and the caveat says the distances are indicative, not live traffic.
  */
 export function ReadyByRoadTime({
