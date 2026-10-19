@@ -96,6 +96,17 @@ describe("public repository ownership boundary", () => {
     expect(isPublicWardFlowCheckout(root)).toBe(false);
   });
 
+  it("ignores a legacy info/grafts file that gives foreign history the identity anchor as a parent", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    const root = repo();
+    writeFileSync(
+      join(root, ".git", "info", "grafts"),
+      `${git(root, "rev-parse", "HEAD")} ${WARD_FLOW_IDENTITY_ANCHOR}\n`,
+    );
+    git(root, "merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD");
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
+  });
+
   it("keeps legacy releases from closing same-named public claims", (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();
