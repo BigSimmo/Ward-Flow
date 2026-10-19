@@ -57,6 +57,7 @@ import {
 } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { GapRow, GapWord, ReadyNowSection } from "./capacity-gap-rows";
 import { formatGap, isConfirmationFresh, phoneGap, totalsSentence } from "./capacity-gap-words";
 import { NetworkServiceGroupRows } from "./capacity-network-rows";
@@ -993,8 +994,9 @@ export function CapacityScreen() {
             <ReadyByRoadTime
               rows={scopedNetworkRows}
               defaultEdId={roadTimeFromEdId}
-              selectedUnitId={selectedUnitId}
+              selectedUnitId={undefined}
               onSelectUnit={selectWard}
+              wardHref={unitHref}
             />
           ) : null}
 

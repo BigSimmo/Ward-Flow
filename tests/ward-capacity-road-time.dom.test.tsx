@@ -23,13 +23,19 @@ function routeFrom(edId: string, row: NetworkWardRow) {
   return referenceDistance(ed?.referenceEdId, siteByCode(row.unit.siteCode)?.referenceSiteId);
 }
 
-function renderCard(cardRows: readonly NetworkWardRow[], defaultEdId = departments[0]?.id, onSelectUnit = vi.fn()) {
+function renderCard(
+  cardRows: readonly NetworkWardRow[],
+  defaultEdId = departments[0]?.id,
+  onSelectUnit = vi.fn(),
+  wardHref?: (unitId: string) => string,
+) {
   render(
     <ReadyByRoadTime
       rows={cardRows}
       defaultEdId={defaultEdId}
       selectedUnitId={undefined}
       onSelectUnit={onSelectUnit}
+      wardHref={wardHref}
     />,
   );
   const card = screen.getByTestId("capacity-road-time");
@@ -105,5 +111,15 @@ describe("Ready beds by road time", () => {
 
     await user.click(within(within(card).getByRole("list")).getAllByRole("button")[0]!);
     expect(onSelectUnit).toHaveBeenCalledTimes(1);
+  });
+
+  it("links each row to its ward when the rail that would show the selection is hidden (phone)", () => {
+    const onSelectUnit = vi.fn();
+    const { card } = renderCard(rows, departments[0]?.id, onSelectUnit, (unitId) => `/ward-flow/ward/${unitId}`);
+    const list = within(card).getByRole("list");
+    expect(within(list).queryAllByRole("button")).toEqual([]);
+    const links = within(list).getAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/./u);
   });
 });

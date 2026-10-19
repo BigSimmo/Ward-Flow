@@ -10,7 +10,7 @@ import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
  *
  * The journeys scan screens mid-task. This sweep opens each route fresh, so a screen no journey
  * reaches is still checked. Redirect-only routes (command, constellation, escalation, exceptions,
- * queue) are left out because they land on a route already listed. One seeded person and one
+ * network, queue) are left out because they land on a route already listed. One seeded person and one
  * seeded movement stand in for the record pages, opened by their coded addresses.
  * The demonstration sign-in page is a sibling of `/ward-flow` with no rail or header, so it is
  * scanned on its own below (audit UI-8, 19 October 2026). It stays unlinked; this only checks it.
@@ -35,7 +35,6 @@ const ROUTES = [
   ["/legal-forms", "ward-legal-forms-page"],
   ["/movements", "ward-movements-page"],
   [`/movements/${encodeRecordAddress("WF-001")}`, "ward-person-screen"],
-  ["/network", "ward-mode-network"],
   ["/on-call", "ward-on-call-screen"],
   ["/out-of-area", "ward-out-of-area-board"],
   ["/people/new", "ward-add-patient-screen"],

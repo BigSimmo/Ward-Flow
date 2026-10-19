@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin } from "lucide-react";
+import Link from "next/link";
 import { useId, useState } from "react";
 
 import { Card, CardHead, Select, cx, durMinutes } from "@/components/wf";
@@ -27,12 +28,18 @@ export function ReadyByRoadTime({
   defaultEdId,
   selectedUnitId,
   onSelectUnit,
+  wardHref,
 }: {
   rows: readonly NetworkWardRow[];
   /** The department to measure from until one is chosen: the one under most pressure. */
   defaultEdId: string | undefined;
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string, opener: HTMLElement) => void;
+  /**
+   * When given, each row is a link to the ward instead of a select button. The phone uses this:
+   * its Overview tab hides the rail where a selected ward's details would open.
+   */
+  wardHref?: (unitId: string) => string;
 }) {
   const baseId = useId();
   const departments = allEmergencyDepartments();
@@ -73,11 +80,11 @@ export function ReadyByRoadTime({
         <ol className={styles.list}>
           {ranked.map(({ row, route }, index) => (
             <li key={row.unit.id}>
-              <button
-                type="button"
+              <RowControl
+                href={wardHref?.(row.unit.id)}
                 className={cx(styles.row, row.unit.id === selectedUnitId && styles.rowSelected)}
-                aria-pressed={row.unit.id === selectedUnitId}
-                onClick={(event) => onSelectUnit(row.unit.id, event.currentTarget)}
+                selected={row.unit.id === selectedUnitId}
+                onSelect={(opener) => onSelectUnit(row.unit.id, opener)}
               >
                 <span className={styles.rank}>{index + 1}</span>
                 <span className={styles.text}>
@@ -97,12 +104,44 @@ export function ReadyByRoadTime({
                     </>
                   )}
                 </span>
-              </button>
+              </RowControl>
             </li>
           ))}
         </ol>
       )}
       <p className={styles.caveat}>{REFERENCE_DISTANCE_CAVEAT}</p>
     </Card>
+  );
+}
+
+function RowControl({
+  href,
+  className,
+  selected,
+  onSelect,
+  children,
+}: {
+  href: string | undefined;
+  className: string;
+  selected: boolean;
+  onSelect: (opener: HTMLElement) => void;
+  children: React.ReactNode;
+}) {
+  if (href !== undefined) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-pressed={selected}
+      onClick={(event) => onSelect(event.currentTarget)}
+    >
+      {children}
+    </button>
   );
 }
