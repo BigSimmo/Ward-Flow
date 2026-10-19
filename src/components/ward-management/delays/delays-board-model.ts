@@ -36,6 +36,8 @@ import {
   type DelayOwnerId,
 } from "./delays-derivations";
 import { overTwelveHoursMinutes, type CatchmentOrigin } from "./delays-view-model";
+import type { WaitingViewId } from "./waiting-href";
+import { inWaitingView, isForHandover, isFormDue } from "./waiting-views";
 
 export const OVER_8H = ED_SEVERE_PRESSURE_WAIT_MINUTES;
 export const OVER_12H = overTwelveHoursMinutes;
@@ -87,6 +89,8 @@ export type BoardRow = {
   dueIn: number | undefined;
   origin: CatchmentOrigin;
   locked: boolean;
+  /** In the For handover view: act now, or due before the next handover (`waiting-views.ts`). */
+  forHandover: boolean;
 };
 
 export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow[] {
@@ -115,6 +119,7 @@ export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow
         dueIn: legalDeadlineMinutes(movement, now),
         origin: edHealthService(movement.originEdId) ?? "unrecorded",
         locked: movement.security === "Secure",
+        forHandover: isForHandover(movement, now),
       };
     }),
   );
@@ -218,6 +223,8 @@ export type BoardFilters = {
   breached: boolean;
   /** shell-9: only the severe causes (at a time limit or with nowhere to go), the Menu's figure. */
   severe: boolean;
+  /** B4: one saved view (Needs me now, Form due, For handover), or none. */
+  view: WaitingViewId | null;
   bin: number | null;
   search: string;
 };
@@ -232,6 +239,7 @@ export const NO_FILTERS: BoardFilters = {
   dueSoon: false,
   breached: false,
   severe: false,
+  view: null,
   bin: null,
   search: "",
 };
@@ -247,6 +255,7 @@ export function hasFilters(filters: BoardFilters): boolean {
     filters.dueSoon ||
     filters.breached ||
     filters.severe ||
+    filters.view !== null ||
     filters.bin !== null ||
     filters.search.trim() !== ""
   );
@@ -284,6 +293,7 @@ function rowMatchesFilters(
     (!filters.dueSoon || isDueSoon(row, thresholds)) &&
     (!filters.breached || isBreached(row)) &&
     (!filters.severe || row.severe) &&
+    (filters.view === null || inWaitingView(filters.view, row, thresholds)) &&
     (binIds === null || binIds.has(row.movement.id)) &&
     (needle === "" ||
       nameOf(row.movement).toLowerCase().includes(needle) ||
@@ -553,5 +563,5 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
 
 /** Rows whose recorded legal time is pinned above the rest in the Longest wait view. */
 export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean {
-  return row.dueIn !== undefined && row.dueIn <= thresholds.soonMinutes;
+  return isFormDue(row, thresholds);
 }

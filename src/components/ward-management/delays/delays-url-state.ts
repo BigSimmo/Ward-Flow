@@ -3,6 +3,7 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabul
 import { NO_FILTERS, type BoardFilters } from "./delays-board-model";
 import { DELAY_CAUSE_ORDER, DELAY_OWNERS, type DelayCause, type DelayOwnerId } from "./delays-derivations";
 import type { CatchmentOrigin } from "./delays-view-model";
+import { WAITING_VIEWS, type WaitingViewId } from "./waiting-href";
 
 /**
  * DA-15: the Delays board's filters and order in the web address (`ward-url-state.ts`). Plain
@@ -16,7 +17,7 @@ const ORIGINS: readonly CatchmentOrigin[] = [...HEALTH_SERVICES, "unrecorded"];
 
 /** Every query key the board reads and writes. `show=severe` is the Menu's link (shell-9). */
 type DelaysQueryKey =
-  "owner" | "origin" | "blocker" | "wait" | "locked" | "quiet" | "due" | "passed" | "show" | "order";
+  "owner" | "origin" | "blocker" | "wait" | "locked" | "quiet" | "due" | "passed" | "show" | "view" | "order";
 
 /** The filters an address asks for. Unknown or malformed values are ignored, never guessed at. */
 export function filtersFromSearch(search: string): BoardFilters {
@@ -37,6 +38,7 @@ export function filtersFromSearch(search: string): BoardFilters {
     dueSoon: params.get("due") === "soon",
     breached: params.get("passed") === "1",
     severe: params.get("show") === "severe",
+    view: pick<WaitingViewId>("view", WAITING_VIEWS),
   };
 }
 
@@ -53,6 +55,7 @@ export function filtersToParams(filters: BoardFilters): Record<Exclude<DelaysQue
     due: filters.dueSoon ? "soon" : null,
     passed: filters.breached ? "1" : null,
     show: filters.severe ? "severe" : null,
+    view: filters.view,
   };
 }
 

@@ -3,6 +3,7 @@
 import { useCharacterShortcutsPreference } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   ChevronDown,
@@ -1027,6 +1028,10 @@ export function HandoverPage() {
       </Button>
       <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
         Downtime pack
+      </Link>
+      {/* B4: act now and due before the next handover, as Delays' For handover view. */}
+      <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
+        Open in Delays
       </Link>
       <Popover
         label="Keyboard shortcuts"

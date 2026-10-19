@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import { useState } from "react";
 
 import {
@@ -562,7 +563,8 @@ export function PriorityQueue({
           </button>
         ) : phone ? null : (
           // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
-          <Link href={delaysHref} className={styles.footLink}>
+          // B4: with Form due on, Delays opens on its own Form due view.
+          <Link href={soonOnly ? waitingHref("form") : delaysHref} className={styles.footLink}>
             Open in Delays
           </Link>
         )}
