@@ -6,11 +6,9 @@ import {
   movementIdOfInboxId,
   resolveAlertSubject,
 } from "../src/components/ward-management/alerts/alerts-model";
+import { missedRequestCheck } from "../src/components/ward-management/coordinator/missed-requests-check";
 import { inboxItemsForRole, taskItems } from "../src/components/ward-management/ward-act-now-items";
-import {
-  activeBedRequestsFor,
-  duplicateBedRequests,
-} from "../src/components/ward-management/ward-duplicate-bed-requests";
+import { duplicateBedRequests } from "../src/components/ward-management/ward-duplicate-bed-requests";
 import {
   INBOX_CATEGORIES,
   inboxItemIsActNow,
@@ -19,7 +17,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { inboxRowExists } from "../src/components/ward-management/ward-inbox-reducer";
-import type { Referral } from "../src/components/ward-management/ward-model";
+import type { Movement, Referral } from "../src/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "../src/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -53,8 +51,9 @@ function openRequest(id: string, raisedAt: number, patientId: string | null = pe
 }
 
 function withRequests(...extra: Referral[]): WardFlowState {
-  // Only this suite's referrals, so a duplicate already in the seed cannot make a case pass.
-  return { ...seed, referrals: extra };
+  // Only this suite's referrals and no bed requests, so a duplicate already in the seed cannot make
+  // a case pass.
+  return { ...seed, referrals: extra, movements: [] };
 }
 
 function rows(state: WardFlowState) {
@@ -90,7 +89,7 @@ describe("two active bed requests for one person (audit F-19)", () => {
     withdrawn.destinations = withdrawn.destinations.map((addressing) => ({ ...addressing, withdrawnAt: NOW - 10 }));
     const unnamed = openRequest("R-dup-4", NOW - 10, null);
     const state = withRequests(openRequest("R-dup-1", NOW - 60), declined, withdrawn, unnamed);
-    expect(activeBedRequestsFor(state.referrals, person).map((referral) => referral.id)).toEqual(["R-dup-1"]);
+    expect(duplicateBedRequests(state)).toEqual([]);
     expect(rows(state)).toEqual([]);
   });
 
@@ -148,8 +147,32 @@ describe("two active bed requests for one person (audit F-19)", () => {
     });
   });
 
+  it("counts an open bed request and the referral it was raised from once, and agrees with the daily check", () => {
+    const referral = openRequest("R-dup-1", NOW - 60);
+    const movement = seed.movements.find(
+      (candidate) => candidate.closure === undefined && candidate.stage === "placement_requested",
+    );
+    if (movement === undefined) throw new Error("the seed has no open bed request");
+    const raised: Movement = {
+      ...movement,
+      id: "WF-dup-1",
+      patientId: person,
+      referralId: referral.id,
+      openedAt: NOW - 50,
+    };
+    const once = { ...seed, referrals: [referral], movements: [raised] };
+    expect(rows(once)).toEqual([]);
+
+    const twice = { ...once, referrals: [referral, openRequest("R-dup-2", NOW - 30)] };
+    const [row] = rows(twice);
+    expect(row?.detail).toContain("WF-dup-1 and R-dup-2");
+    const daily = missedRequestCheck({ ...twice, now: NOW }).filter((item) => item.kind === "two_requests");
+    expect(daily.map((item) => item.key)).toEqual([`two_requests:${person}`]);
+    expect(daily[0]?.since).toBe(row?.since);
+  });
+
   it("the seed is measured, not assumed: every person it flags really has two open requests", () => {
-    for (const { personId, requests } of duplicateBedRequests(seed.referrals)) {
+    for (const { personId, requests } of duplicateBedRequests(seed)) {
       expect(requests.length, personId).toBeGreaterThan(1);
     }
   });

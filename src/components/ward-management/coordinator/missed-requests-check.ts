@@ -68,7 +68,7 @@ function isOpen(movement: Movement): boolean {
 }
 
 /** One open request for a person: a bed request, or a referral still waiting on a ward or an ED. */
-type OpenRequest =
+export type OpenRequest =
   | { kind: "movement"; id: Movement["id"]; openedAt: Instant }
   | { kind: "referral"; id: Referral["id"]; openedAt: Instant };
 

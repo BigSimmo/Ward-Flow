@@ -152,7 +152,7 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
   // Audit F-19: a duplicate row names a person, and exists while they still have two active requests.
   const duplicatePrefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
   if (inboxItemId.startsWith(duplicatePrefix)) {
-    return duplicateBedRequestSince(state.referrals, inboxItemId.slice(duplicatePrefix.length)) !== undefined;
+    return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length)) !== undefined;
   }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
@@ -224,7 +224,7 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   // Audit F-19: a duplicate row's occurrence starts when the second active request was raised.
   const duplicatePrefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
   if (inboxItemId.startsWith(duplicatePrefix)) {
-    return duplicateBedRequestSince(state.referrals, inboxItemId.slice(duplicatePrefix.length));
+    return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length));
   }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);

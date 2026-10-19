@@ -89,9 +89,12 @@ const DUPLICATE_OWNER = "Bed coordinator";
  * (`ward-duplicate-bed-requests.ts`). Coordinator only: the coordinator may see every referral
  * (FD-23), so naming the requests here tells them nothing a ward screen could not already.
  */
-export function duplicateBedRequestInboxItems(source: Pick<TaskSource, "referrals">): InboxItem[] {
-  return duplicateBedRequests(source.referrals ?? []).map(({ personId, requests, since }) => {
-    const ids = requests.map((referral) => referral.id);
+export function duplicateBedRequestInboxItems(
+  source: Pick<TaskSource, "movements" | "referrals" | "patients">,
+): InboxItem[] {
+  const records = { movements: source.movements, referrals: source.referrals ?? [], patients: source.patients ?? [] };
+  return duplicateBedRequests(records).map(({ personId, requests, since }) => {
+    const ids = requests.map((request) => request.id);
     const named = ids.length === 2 ? ids.join(" and ") : `${ids.slice(0, -1).join(", ")} and ${ids.at(-1)}`;
     return {
       id: `${INBOX_CATEGORIES.duplicate_bed_request.idPrefix}${personId}`,
