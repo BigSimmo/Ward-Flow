@@ -25,7 +25,8 @@ export type AlertKind =
   | "planned"
   | "notify"
   | "target"
-  | "running";
+  | "running"
+  | "duplicate";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type AlertGroup = "act" | "wait" | "running";
@@ -52,6 +53,8 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["target", INBOX_CATEGORIES.target_referral_decision.idPrefix],
   ["target", INBOX_CATEGORIES.target_transfer_acceptance.idPrefix],
   ["target", INBOX_CATEGORIES.target_transport_booked.idPrefix],
+  // Audit F-19: one person with more than one active bed request. Its remainder is a patient id.
+  ["duplicate", INBOX_CATEGORIES.duplicate_bed_request.idPrefix],
 ];
 
 export function alertKindOf(id: string): AlertKind | undefined {
@@ -105,12 +108,18 @@ export function admissionIdOfInboxId(id: string): string | undefined {
   return undefined;
 }
 
+/** The person a duplicate bed request row names, read from its id (audit F-19). */
+export function personIdOfInboxId(id: string): string | undefined {
+  const prefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
+  return id.startsWith(prefix) ? id.slice(prefix.length) || undefined : undefined;
+}
+
 export function movementIdOfInboxId(id: string): string | undefined {
   const match = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate));
   // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
   if (!match || match[0] === "planned") return undefined;
   if (match[1] === INBOX_CATEGORIES.support_notification_discharge.idPrefix) return undefined;
-  if (match[0] === "awol") return undefined;
+  if (match[0] === "awol" || match[0] === "duplicate") return undefined;
   return id.slice(match[1].length);
 }
 
@@ -139,6 +148,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   notify: "Notifications to record",
   target: "Decision target overdue",
   running: "Decision target running",
+  duplicate: "More than one active bed request",
 };
 
 /** Remove the legacy movement reference from presentation, preserving the recorded detail. */
@@ -191,6 +201,8 @@ export function resolveAlertSubject(
   /** The discharged stay a discharge notification row names. Pass it only for a discharge row: it
    *  wins over a linked movement, so the row names the ward the person left, not the movement's ED. */
   admission?: Admission,
+  /** Audit F-19: the person a row with no movement is about (`InboxItem.personId`). */
+  personId?: string,
 ): AlertSubject {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : undefined);
   if (admission) {
@@ -212,7 +224,7 @@ export function resolveAlertSubject(
       patientHref: info.patient ? personHref(info.patient.id) : undefined,
     };
   }
-  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "" }, lookup);
+  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "", patientId: personId }, lookup);
   const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {
@@ -245,6 +257,8 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       return { kind: "link", label: "Chase transport", href: "/ward-flow/movements" };
     case "planned":
       return { kind: "link", label: "Open bookings", href: item.href ?? "/ward-flow/capacity" };
+    case "duplicate":
+      return { kind: "link", label: "Open referrals", href: "/ward-flow/referrals" };
     case "notify":
       // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
       return item.admissionId !== undefined
