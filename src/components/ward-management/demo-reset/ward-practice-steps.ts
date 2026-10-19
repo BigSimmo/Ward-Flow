@@ -10,7 +10,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * raised since practice started.
  */
 
-export type PracticeStepId = "raise" | "ask" | "accept" | "hold" | "transport" | "arrive";
+type PracticeStepId = "raise" | "ask" | "accept" | "hold" | "transport" | "arrive";
 
 export type PracticeStep = { id: PracticeStepId; title: string; how: string };
 
