@@ -132,10 +132,10 @@ export function reduceRecordedStayEvent(
 
       // Involuntary patient discharge boundary (WA Mental Health Act 2014)
       const linkedPatient = admission.patientId ? state.patients.find((p) => p.id === admission.patientId) : undefined;
+      const stayLegalStatus = linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission);
       if (
         patientRecordIsInvoluntary(linkedPatient?.legalStatus) ||
-        ((linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission)) !== undefined &&
-          (linkedMovement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission)) !== "Voluntary")
+        (stayLegalStatus !== undefined && stayLegalStatus !== "Voluntary")
       ) {
         if (
           event.leavingDestination === "discharged-to-the-community" ||
