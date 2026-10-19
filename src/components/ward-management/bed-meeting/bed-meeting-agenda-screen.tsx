@@ -18,6 +18,7 @@ import {
   BED_MEETING_ACTION_KINDS,
   BED_MEETING_ACTION_OWNERS,
   bedMeetingActionLabel,
+  openMeetingAction,
   type BedMeetingAction,
   type BedMeetingActionKind,
   type BedMeetingActionOwner,
@@ -217,6 +218,8 @@ function ActionForm({
   const [owner, setOwner] = useState<BedMeetingActionOwner>("coordinator");
   const [dueHours, setDueHours] = useState<string>(String(BED_MEETING_ACTION_DUE_HOURS[1]));
   const owners = BED_MEETING_ACTION_OWNERS.filter((candidate) => candidate !== "ward" || item.unitId !== undefined);
+  // One open action per kind per person, as the reducer insists: offer only the kinds still free.
+  const kinds = BED_MEETING_ACTION_KINDS.filter((entry) => !openMeetingAction(item.record.meetingActions, entry.id));
   return (
     <div id={id} className={styles.form} data-testid="bed-meeting-action-form">
       <Field label="Action">
@@ -226,7 +229,7 @@ function ActionForm({
           data-testid="bed-meeting-action-kind"
         >
           <option value="">Choose an action</option>
-          {BED_MEETING_ACTION_KINDS.map((entry) => (
+          {kinds.map((entry) => (
             <option key={entry.id} value={entry.id}>
               {entry.label}
             </option>

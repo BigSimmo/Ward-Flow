@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { bedMeetingAgenda, meetingActionSummary } from "@/components/ward-management/bed-meeting/bed-meeting-agenda";
 import type { BedMeetingSubject } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { selectPatientHistory } from "@/components/ward-management/ward-history";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -91,6 +93,32 @@ describe("RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION", () => {
     expect(record(state, subject, { owner: "ward" }).rejections).toHaveLength(1);
     expect(record(state, { kind: "movement", id: "no-such-request" }).rejections).toHaveLength(1);
     expect(record(state, subject, { role: "ward" }).rejections).toHaveLength(1);
+  });
+});
+
+describe("bed meeting actions in the record's history", () => {
+  it("lists a recorded and a completed action under the bed request they name", () => {
+    const { movement } = setup();
+    const subject = { kind: "movement" as const, id: movement.id };
+    const events: WardFlowEvent[] = [
+      {
+        type: "RECORD_BED_MEETING_ACTION",
+        role: "coordinator",
+        now: NOW,
+        subject,
+        action: "book_transport",
+        owner: "coordinator",
+        dueAt: NOW + 120,
+      },
+      { type: "COMPLETE_BED_MEETING_ACTION", role: "coordinator", now: NOW + 30, subject, action: "book_transport" },
+    ];
+    const history = selectPatientHistory(events, movement.id, NOW + 60);
+    expect(history.map((entry) => entry.summary)).toEqual([
+      expect.any(String),
+      expect.stringContaining("Bed meeting action recorded"),
+      expect.stringContaining("Bed meeting action done"),
+    ]);
+    expect(selectPatientHistory(events, "someone-else", NOW + 60)).toHaveLength(1);
   });
 });
 

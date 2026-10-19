@@ -12,7 +12,7 @@ import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions"
  * already recorded, never typed: the longest ED waits, held beds soonest to run out, stranded
  * stays, people out of area, and the actions agreed last time. Read only.
  */
-export const AGENDA_ITEMS_PER_SECTION = 5;
+const AGENDA_ITEMS_PER_SECTION = 5;
 
 const STILL_IN_ED = new Set<Movement["stage"]>(["placement_requested", "destination_review", "accepted_awaiting_bed"]);
 

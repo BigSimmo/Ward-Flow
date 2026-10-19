@@ -39,6 +39,12 @@ describe("bed meeting agenda", () => {
     expect(within(list).getByText(/Book transport/)).toBeInTheDocument();
     expect(within(waits).getByText("Agreed: Book transport")).toBeInTheDocument();
 
+    // The open kind is not offered again for the same person, so the reducer never has to refuse it.
+    fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
+    const kinds = within(screen.getByTestId("bed-meeting-action-kind")).getAllByRole("option");
+    expect(kinds.map((option) => option.getAttribute("value"))).not.toContain("book_transport");
+    expect(kinds.length).toBeGreaterThan(1);
+
     fireEvent.click(within(list).getByTestId("bed-meeting-action-done"));
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
       "1 done in the last day · 0 overdue · 0 still open",
