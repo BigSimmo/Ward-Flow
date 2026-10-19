@@ -697,7 +697,7 @@ test(
 );
 
 test(
-  "real PostgreSQL: row-level security lets only the runtime role through, and 011, 010, 009, 008, 007 then 006 roll back to 5",
+  "real PostgreSQL: row-level security lets only the runtime role through, and 012, 011, 010, 009, 008, 007 then 006 roll back to 5",
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
@@ -851,10 +851,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-008-role-access.sql"), /not at migration 8/);
       await assert.rejects(rollBack("./infra/rollback-009-access-cover-requests.sql"), /not at migration 9/);
       await assert.rejects(rollBack("./infra/rollback-010-workspace-records.sql"), /not at migration 10/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 11);
+      await assert.rejects(rollBack("./infra/rollback-011-record-access-and-sign-out.sql"), /not at migration 11/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 12);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-012-foreign-key-indexes.sql", 11],
         ["./infra/rollback-011-record-access-and-sign-out.sql", 10],
         ["./infra/rollback-010-workspace-records.sql", 9],
         ["./infra/rollback-009-access-cover-requests.sql", 8],
@@ -1281,11 +1283,14 @@ test(
         /role-ended/,
       );
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
-      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (011,
-      // 010 and 009, which keep every audit row, go first).
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (012,
+      // 011, 010 and 009, which keep every audit row, go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-012-foreign-key-indexes.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-011-record-access-and-sign-out.sql", import.meta.url), "utf8"),
         );
@@ -2116,6 +2121,40 @@ test(
           },
         );
       }
+      await t.test("an unchanged member poll naming its access context reads no workspace records", async () => {
+        // Audit F-04. Another connection holds the workspace row and every record exclusively, so
+        // any read of the records (or the share lock a full scoped read takes) would wait.
+        const f = await fixture();
+        const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
+        assert.match(first.accessContext, /^[a-f0-9]{64}$/);
+        const blocker = await pool.connect();
+        try {
+          await blocker.query("BEGIN");
+          await blocker.query("SELECT 1 FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [f.workspaceId]);
+          await blocker.query("LOCK TABLE ward_flow.workspace_records IN ACCESS EXCLUSIVE MODE");
+          const within = (promise) =>
+            Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve("waited"), 1000))]);
+          const lean = await within(
+            f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse), first.accessContext),
+          );
+          assert.notEqual(lean, "waited", "an unchanged member poll must not touch the records");
+          assert.equal(lean.notModified, true);
+          assert.equal(lean.revision, first.revision);
+          assert.equal(lean.now, first.now);
+          const full = f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse), "0".repeat(64));
+          assert.equal(await within(full), "waited", "a different access context reads in full");
+          await blocker.query("COMMIT");
+          assert.equal((await full).notModified, false);
+        } finally {
+          await blocker.query("ROLLBACK").catch(() => {});
+          blocker.release();
+        }
+        // Gaining cover changes the context, so the old one no longer earns the cheap answer.
+        await f.cover();
+        const widened = await f.store.poll(f.nurse, first.revision, await f.store.viewer(f.nurse), first.accessContext);
+        assert.equal(widened.notModified, false);
+        assert.ok(widened.snapshot.payload.state.patients.length > first.payload.state.patients.length);
+      });
       await t.test("same-revision polls send fresh scopes after cover grant, revoke and expiry", async () => {
         const f = await fixture();
         const first = await f.store.read(f.nurse, await f.store.viewer(f.nurse));
@@ -2139,6 +2178,119 @@ test(
           "bootstrap whole-network views keep lean polls",
         );
       });
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: a shared referral stores no chart file, and its audit copy no contact details",
+  { skip: !url },
+  async () => {
+    // Audit F-01. An older browser may still send the file; the server drops it before saving.
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actor = "33333333-3333-4333-8333-333333333333";
+    const at = new Date("2026-10-07T10:00:00Z");
+    const workspaceId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+    const file = "JVBERi0xLjQKJSBzeW50aGV0aWMK"; // "%PDF-1.4\n% synthetic\n"
+    const contact = { name: "Demo Sender", phone: "5550 0101", email: "demo@example.test" };
+    const chart = (kind) => ({ kind, name: `${kind}.pdf`, mimeType: "application/pdf", sizeBytes: 21, base64: file });
+    try {
+      await migrate(pool);
+      await store.ready();
+      const seed = await store.read(actor);
+      const referral = {
+        type: "RECEIVE_REFERRAL",
+        role: "community",
+        ageBand: "Adult",
+        homeRegion: "Perth Metropolitan",
+        suburb: { kind: "named", name: "Perth" },
+        source: "community",
+        urgency: 2,
+        originSiteCode: "SCGH",
+        transportNeeded: false,
+        history: "Synthetic patient story",
+        intake: {
+          catchment: { teamName: "Inner City Clinic", service: "East Metro", confirmed: true },
+          reasonForReferral: "Synthetic referral for assessment",
+          legalStatus: "Voluntary",
+          riskFlags: [],
+          medicalClearance: {
+            cleared: false,
+            expectedAt: "2026-10-07T18:00+08:00",
+            contactName: "Demo Doctor",
+            contactPhone: "5550 0102",
+          },
+          triageAndRampCompleted: false,
+          additionalDocuments: false,
+          charts: [chart("medication"), chart("observation")],
+          referrer: { ...contact, role: "Nurse", location: "Synthetic ED" },
+        },
+        destinations: [
+          {
+            kind: "psychiatric_ward",
+            unitId: "scgh-adult-open",
+            sex: "Female",
+            gender: "Female",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+        ],
+      };
+      const result = await store.command(actor, randomUUID(), seed.revision, referral);
+      assert.equal(result.status, 200, JSON.stringify(result.body.error ?? null));
+      const created = result.body.snapshot.payload.state.referrals.at(-1);
+      assert.deepEqual(
+        created.intake.charts.map((row) => [row.kind, row.name, row.sizeBytes, "base64" in row]),
+        [
+          ["medication", "medication.pdf", 21, false],
+          ["observation", "observation.pdf", 21, false],
+        ],
+      );
+      // The workspace keeps the contact details the workflow needs; the audit does not.
+      assert.equal(created.intake.referrer.email, contact.email);
+      const saved = await pool.query(
+        "SELECT string_agg(body::text, '') AS text FROM ward_flow.workspace_records WHERE workspace_id=$1",
+        [workspaceId],
+      );
+      const whole = await pool.query("SELECT payload::text AS text FROM ward_flow.workspaces WHERE id=$1", [
+        workspaceId,
+      ]);
+      for (const text of [saved.rows[0].text ?? "", whole.rows[0].text ?? ""]) assert.ok(!text.includes(file));
+      const { rows } = await pool.query(
+        "SELECT changes::text AS text FROM ward_flow.audit WHERE workspace_id=$1 AND action='RECEIVE_REFERRAL'",
+        [workspaceId],
+      );
+      assert.equal(rows.length, 1);
+      for (const secret of [file, contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
+        assert.ok(!rows[0].text.includes(secret), `the audit copy must not hold ${secret}`);
+      assert.ok(rows[0].text.includes("medication.pdf"), "the audit still records which files were named");
+
+      // A receipt written before this change was fingerprinted with the file content, so a tab that
+      // still sends it can retry that command and get its original answer.
+      const legacyWorkspace = randomUUID();
+      const legacyStore = createWorkspaceStore(pool, {
+        workspaceId: legacyWorkspace,
+        engine: { ...engine, storableCommand: (event) => event },
+        clock: () => at,
+      });
+      await legacyStore.ready();
+      const legacySeed = await legacyStore.read(actor);
+      const commandId = randomUUID();
+      assert.equal((await legacyStore.command(actor, commandId, legacySeed.revision, referral)).status, 200);
+      const upgraded = createWorkspaceStore(pool, { workspaceId: legacyWorkspace, engine, clock: () => at });
+      const retried = await upgraded.command(actor, commandId, legacySeed.revision, referral);
+      assert.equal(retried.status, 200, JSON.stringify(retried.body.error ?? null));
+      assert.equal(retried.body.replayed, true);
+      const changed = await upgraded.command(actor, commandId, legacySeed.revision, {
+        ...referral,
+        history: "A different synthetic story",
+      });
+      assert.equal(changed.status, 422);
     } finally {
       await pool.end();
     }

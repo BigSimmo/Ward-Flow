@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
+import { gzipSync } from "node:zlib";
 import { readConfig } from "./config.mjs";
 import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { createBackend } from "./providers.mjs";
@@ -145,7 +146,23 @@ export function clientAddress(incoming, trustedProxyAddresses = []) {
  * request within 15, so a handful of slow or idle connections cannot hold every slot.
  */
 export const MAX_CONNECTIONS = 256;
+/** Replies smaller than this are sent as they are; compressing them saves almost nothing. */
+export const GZIP_MIN_BYTES = 1024;
 export const HEADERS_TIMEOUT_MS = 5_000;
+
+/** True when Accept-Encoding lists gzip without `q=0`, which means "not acceptable". */
+export function acceptsGzip(header) {
+  return String(header ?? "")
+    .split(",")
+    .some((part) => {
+      const [name, ...params] = part
+        .toLowerCase()
+        .split(";")
+        .map((piece) => piece.trim());
+      const quality = params.find((param) => param.startsWith("q="));
+      return name === "gzip" && (quality === undefined || Number(quality.slice(2)) > 0);
+    });
+}
 
 export function listen(handler, config) {
   const server = createServer(
@@ -162,8 +179,21 @@ export function listen(handler, config) {
         const response = await handler(request, {
           clientAddress: clientAddress(incoming, config.trustedProxyAddresses),
         });
-        outgoing.writeHead(response.status, Object.fromEntries(response.headers));
-        outgoing.end(Buffer.from(await response.arrayBuffer()));
+        const headers = Object.fromEntries(response.headers);
+        let body = Buffer.from(await response.arrayBuffer());
+        // Audit F-04: a full workspace read is tens of kilobytes of JSON; gzip cuts it to a few.
+        if (
+          body.length >= GZIP_MIN_BYTES &&
+          acceptsGzip(incoming.headers["accept-encoding"]) &&
+          String(headers["content-type"] ?? "").startsWith("application/json")
+        ) {
+          body = gzipSync(body);
+          headers["content-encoding"] = "gzip";
+          headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : "Accept-Encoding";
+        }
+        if (body.length) headers["content-length"] = String(body.length);
+        outgoing.writeHead(response.status, headers);
+        outgoing.end(body);
       } catch (error) {
         // Name and code only: a database or engine message can quote values from the request.
         const { errorName, errorCode } = errorFields(error);

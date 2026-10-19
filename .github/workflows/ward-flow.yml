@@ -62,7 +62,7 @@ jobs:
   static:
     name: Ward Flow static checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16
@@ -191,6 +191,21 @@ jobs:
         run: |
           node node_modules/next/dist/bin/next typegen
           node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
+      # Shared mode in a real browser (audit F-16): two signed-in desks against the real backend and
+      # this job's PostgreSQL, with a local fake sign-in service. It runs here, not in the browser
+      # jobs, because backend-only changes reach this job and this job has the database.
+      - name: Install Chromium for the shared-mode journey
+        id: shared-chromium
+        timeout-minutes: 10
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        run: |
+          node scripts/ward-ci-public/install-chromium.mjs
+      - name: Run the shared-mode browser journey
+        timeout-minutes: 10
+        if: ${{ !cancelled() && steps.shared-chromium.outcome == 'success' }}
+        env:
+          WARD_E2E_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/postgres
+        run: node tests/support/ward-shared-mode-run.mjs
 
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}

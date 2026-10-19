@@ -11,7 +11,7 @@ This package is the optional shared synthetic workspace. It is a plain Node HTTP
 (`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->011-record-access-and-sign-out<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
@@ -75,7 +75,14 @@ These source files do not establish a current hosted connection or deployment.
   revision and clock only. A command queued behind others asks for `reply: "revision"`, so its
   accepted reply has no snapshot. The saved workspace keeps the newest 1,000 audit entries (plus
   any an audit review names); the `audit` table keeps every one. A changed workspace is still sent
-  whole to each desk on its next poll; only saving is per record (migration 10).
+  whole to each desk on its next poll; only saving is per record (migration 10). A member desk
+  also sends `&context=<hash>`, its last full read's access context: while its role, place, cover
+  and openings are unchanged it gets the same cheap answer, without the records being read or
+  locked. It leaves the context out once a minute and reads in full, because what a desk may see
+  also changes with time. JSON replies of 1 KB or more are gzipped when the browser accepts it.
+  Measured on the seed data (19 October 2026): a statewide full read is 363 KB (29 KB gzipped), a
+  one-ward desk's 35 KB (5 KB gzipped), and an unchanged poll about 360 bytes. A ward desk open for
+  an 8-hour shift reads in full at most 480 times instead of 9,600 (audit F-04).
 - Commands (`command-schemas.ts`): every command needs a known type, its sender's own allowed role
   (never defaulted) and bounded plain JSON; the core bed-flow commands also have zod field schemas.
 - Demo controls (advance clock, reset or set scenario) are refused on the shared workspace unless
@@ -107,7 +114,7 @@ These source files do not establish a current hosted connection or deployment.
   workspace checks server-side sign-outs on subsequent requests and refuses the signed-out
   session before token expiry. Before 11 that workspace revocation is unavailable.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->011-record-access-and-sign-out<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -145,7 +152,6 @@ These source files do not establish a current hosted connection or deployment.
     record first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
-    The backend accepts versions 5 to 11.
   - `011-record-access-and-sign-out.sql`: append-only patient/movement record access history,
     append-only protection for break glass rows and server-side session sign-outs. The
     `/v1/workspace/record-access` and `/v1/workspace/sign-out` routes use these capabilities;
@@ -154,6 +160,13 @@ These source files do not establish a current hosted connection or deployment.
     record access and sign-out tables and removing break glass edit protection. Preserve any
     required record access history first. Apply it only with separate authority, in one
     stop-on-error transaction; it takes the migration lock itself. Reapply runtime grants after 11.
+  - `012-foreign-key-indexes.sql`: an index for each of the 13 foreign keys that had none (the
+    Supabase advisor's finding). Indexes only: no table, row, grant or policy changes. Each plain
+    `CREATE INDEX` blocks writes to its table while it builds; at prototype sizes that is well under
+    a second, so apply it at a quiet time rather than mid-demonstration.
+    `infra/rollback-012-foreign-key-indexes.sql` takes a database back to 11. Reapply runtime
+    grants after 12.
+    The backend accepts versions 5 to 12.
 
 ## Boundaries
 
