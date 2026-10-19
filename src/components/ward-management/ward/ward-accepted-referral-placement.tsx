@@ -5,6 +5,7 @@ import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { allEmergencyDepartments } from "../ward-sites";
 import { LEGAL_STATUS_OPTIONS } from "../ed/ed-screen-model";
+import { useDeskInScope } from "../shell/ward-access";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import styles from "./ward.module.css";
@@ -26,6 +27,9 @@ export function WardAcceptedReferralPlacement({
   const inboxEntries = wardReferralInbox(unitId);
   const raise = useWardRaise("ward");
   const completeCommand = useWardCommandCompletion();
+  // Starting the journey raises it for the source ED, so a desk scoped to its own ward(s) only is refused
+  // by the engine. Send that desk to the coordinator instead of offering a button that cannot succeed.
+  const deskInScope = useDeskInScope();
   const [placementDraft, setPlacementDraft] = useState<{
     referralId: string;
     legalStatus: string;
@@ -90,7 +94,7 @@ export function WardAcceptedReferralPlacement({
     <section aria-label="Accepted referrals awaiting placement" className={styles.unitCard}>
       <h2 className={styles.sectionHeading}>Accepted referrals awaiting placement</h2>
       <p className={styles.cardMeta}>Start the accepted journey, then hold a bed. Starting does not reserve a bed.</p>
-      {acceptedToStart.map(({ entry }) => (
+      {acceptedToStart.map(({ entry, ed }) => (
         <div key={entry.id}>
           <p>{resolvePatientIdentity(entry).displayName}</p>
           {placementDraft?.referralId === entry.id ? (
@@ -145,6 +149,10 @@ export function WardAcceptedReferralPlacement({
                 Cancel
               </button>
             </form>
+          ) : deskInScope && !deskInScope(ed.id) ? (
+            <p className={styles.cardMeta} data-testid="ward-accepted-placement-coordinator">
+              This desk cannot start a placement from {ed.name}. Ask the flow coordinator to start it.
+            </p>
           ) : (
             <button
               type="button"
