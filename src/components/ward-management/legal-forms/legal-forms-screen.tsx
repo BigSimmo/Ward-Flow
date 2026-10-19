@@ -55,6 +55,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 
 import {
   currentLegalDueAt,
+  formatReminderHours,
   legalDeadlineText,
   legalExpiryReminderSummary,
   legalFormBreakdown,
@@ -96,16 +97,10 @@ import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
 /**
- * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
- * for each patient on a Mental Health Act form. The hero answers and carries the highlight chips;
- * three cards under it count what is still to record on the form and who is still to be told; the
- * table lists everyone on a form in two groups that are never ordered against each other; the side
- * panel is Board now (v10: the clock rail with its Passed bay, no ring) until a patient is chosen,
- * then that patient's form.
- * Desktop has no drawer. Review, rates, audit, registers and reports live on Governance.
- *
- * Owner rules kept: no invented deadlines or section numbers (D5), an unconnected action says
- * "Not wired in this prototype." (D4), and a highlight never hides a row.
+ * Forms (owner 9 Oct 2026): live form work, with highlights that never hide rows and separately
+ * ordered deadline/no-deadline groups. The side panel shows Board now or the selected form.
+ * Review, rates, audit, registers and reports live on Governance; desktop has no drawer.
+ * D5: no invented deadlines or section numbers. D4: unconnected actions say "Not wired in this prototype."
  */
 
 const CHART_WINDOW_MINUTES = 8 * 60;
@@ -694,10 +689,15 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               eyebrow="Mental Health Act forms"
               chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
               title={`${rows.length} forms on open moves`}
-              sub={`${voluntary} voluntary, no form · warnings at ${reminders.soonHours}h and ${reminders.urgentHours}h`}
+              sub={`${voluntary} voluntary, no form · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
               figures={[
                 { id: "act", value: actNow, label: "Act now", tone: "danger" },
-                { id: "soon", value: reminders.withinSoon, label: `Within ${reminders.soonHours}h`, tone: "warning" },
+                {
+                  id: "soon",
+                  value: reminders.withinSoon,
+                  label: `Within ${formatReminderHours(reminders.soonHours)}`,
+                  tone: "warning",
+                },
                 { id: "none", value: noDeadline.length, label: "Time not written", tone: "closed" },
               ]}
               actions={
@@ -871,7 +871,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                     <HeroStat
                       inline
                       value={reminders.withinSoon}
-                      label={`Within ${reminders.soonHours}h`}
+                      label={`Within ${formatReminderHours(reminders.soonHours)}`}
                       tone="warning"
                       pressed={highlight?.kind === "soon"}
                       onToggle={() => toggleHighlight({ kind: "soon" })}

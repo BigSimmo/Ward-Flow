@@ -5,7 +5,7 @@ import { Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, useIsPhone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { StatisticsSection } from "./statistics-sections";
 
@@ -112,7 +112,8 @@ export function StatisticsHero({
   /** Phone only (v10 phone): a sentence title, its subtitle, a leading ring and up to three figures. */
   phone?: StatisticsPhoneHero;
 }) {
-  const wardCount = useWardFlowSelect("units").units.length;
+  const { units, dayZero } = useWardFlowSelect("units", "dayZero");
+  const wardCount = units.length;
   const liveNow = useWardFlowClock();
   const now = nowProp ?? liveNow;
   const isPhone = useIsPhone();
@@ -127,7 +128,15 @@ export function StatisticsHero({
       onClick={() =>
         downloadCsv(
           `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
-          statisticsExportLines(exportFigures, formatInstant(now)),
+          statisticsExportLines(
+            exportFigures,
+            `${calendarDateOf(now, dayZero).toLocaleDateString("en-AU", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              timeZone: "Australia/Perth",
+            })} ${formatInstant(now)} AWST`,
+          ),
         )
       }
     >

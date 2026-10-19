@@ -13,6 +13,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { declinesByReason } from "@/components/ward-management/statistics/statistics-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
+import { edInpatientWaitEnd, isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { reasonLabel } from "./patient-chronology";
 
 /**
@@ -68,12 +69,7 @@ function days(minutes: number): number {
  * so it is left out rather than counted as still waiting.
  */
 export function edWaitEnd(movement: Movement, now: Instant): Instant | null {
-  if (movement.leftDepartmentAt !== undefined) return movement.leftDepartmentAt;
-  const departed = movement.stageChanges.find((change) => change.to === "moving" || change.to === "arrived");
-  if (departed) return departed.at;
-  if (movement.closure) return movement.closure.at;
-  if (movement.stage === "moving" || movement.stage === "arrived") return null;
-  return now;
+  return edInpatientWaitEnd(movement, now);
 }
 
 export type ReasonCount = { reason: string; count: number };
@@ -182,13 +178,14 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
   // ED waits that passed the target inside the week. A wait that crossed it in an earlier week was
   // counted there, so a long wait is counted once, in the week it went over.
   const edRows = movements
+    .filter(isEdOriginJourney)
     .map((movement) => {
       const end = edWaitEnd(movement, now);
       if (end === null) return null;
       const crossed = movement.openedAt + target;
       if (!(crossed >= week.start && crossed < week.countedEnd && end > crossed)) return null;
       const waitedMinutes = Math.min(end, week.countedEnd) - movement.openedAt;
-      return { movement, waitedMinutes, stillWaiting: end >= now && movement.leftDepartmentAt === undefined };
+      return { movement, waitedMinutes, stillWaiting: end >= now && isWaitingInEd(movement) };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
     .sort((a, b) => b.waitedMinutes - a.waitedMinutes);

@@ -11,7 +11,8 @@ import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivati
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
-import { formProgression } from "./legal-form-progression";
+import { currentLegalDueAt, formProgression } from "./legal-form-progression";
+export { currentLegalDueAt } from "./legal-form-progression";
 
 /**
  * LEGAL FORMS AND DEADLINES — pure derivations for `LegalFormsScreen`.
@@ -97,17 +98,6 @@ export type LegalFormGroup = "with-deadline" | "no-deadline";
 
 export function legalFormGroupOf(movement: Movement): LegalFormGroup {
   return currentLegalDueAt(movement) === undefined ? "no-deadline" : "with-deadline";
-}
-
-/**
- * The typed expiry that still governs, or `undefined`. Audit S-6 (13 Oct 2026): once
- * `formProgression` says the form ended (an inpatient order at the examination, or arrival), the
- * old form's typed expiry is history, not a current deadline, so Forms and Delays never count it
- * in force or overdue. The record keeps it; this only stops it being read as live.
- */
-export function currentLegalDueAt(movement: Movement): Instant | undefined {
-  if (formProgression(movement) !== undefined) return undefined;
-  return movement.legalForm?.dueAt;
 }
 
 /**
@@ -275,10 +265,10 @@ export function legalFormRowClassification(
   if (reminder !== undefined) {
     // A reminder before a typed expiry lapses (item 13, 4 Oct 2026). The thresholds are Josh's
     // Settings warnings, never a legal limit; the expiry itself is the time a person typed.
-    const hours = reminderHours(reminder, thresholds);
+    const window = formatReminderHours(reminderHours(reminder, thresholds));
     return {
       tone: "warning",
-      chip: { level: reminder === "within-urgent" ? "urgent" : "stalled", text: `Expires within ${hours}h` },
+      chip: { level: reminder === "within-urgent" ? "urgent" : "stalled", text: `Expires within ${window}` },
       reasonLevel: "warning",
     };
   }
@@ -330,10 +320,15 @@ export function legalExpiryReminderOf(
   return undefined;
 }
 
-/** The whole-hour window a reminder names, read from the Settings thresholds passed in. */
+/** The exact window in hours, including fractional hours, from the passed Settings. */
 export function reminderHours(reminder: LegalExpiryReminder, thresholds: DueSoonThresholds): number {
   const { urgentMinutes, soonMinutes } = thresholds;
-  return Math.round((reminder === "within-urgent" ? urgentMinutes : soonMinutes) / 60);
+  return (reminder === "within-urgent" ? urgentMinutes : soonMinutes) / 60;
+}
+
+/** Keep whole-hour labels compact while retaining minute precision for other windows. */
+export function formatReminderHours(hours: number): string {
+  return Number.isInteger(hours) ? `${hours}h` : splitDuration(hours * 60);
 }
 
 export type LegalExpiryReminderSummary = {
@@ -371,8 +366,9 @@ export function legalExpiryReminderSummary(
  */
 export function legalExpiryReminderText(summary: LegalExpiryReminderSummary): string | undefined {
   const parts: string[] = [];
-  if (summary.withinUrgent > 0) parts.push(`${summary.withinUrgent} within ${summary.urgentHours}h`);
-  if (summary.withinSoon > 0) parts.push(`${summary.withinSoon} within ${summary.soonHours}h`);
+  if (summary.withinUrgent > 0)
+    parts.push(`${summary.withinUrgent} within ${formatReminderHours(summary.urgentHours)}`);
+  if (summary.withinSoon > 0) parts.push(`${summary.withinSoon} within ${formatReminderHours(summary.soonHours)}`);
   if (parts.length === 0) return undefined;
   const total = summary.withinUrgent + summary.withinSoon;
   return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}). Expiry times are typed from the form and not legally checked; warning windows are set in Settings.`;

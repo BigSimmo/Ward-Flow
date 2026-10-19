@@ -1,5 +1,7 @@
 "use client";
 
+import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -298,11 +300,14 @@ function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonl
 function legalFormLine(movement: Movement, now: Instant, phone = false) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
-  if (movement.legalForm.dueAt === undefined) {
+  const progression = formProgression(movement);
+  if (progression) return `${formCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
+  const dueAt = currentLegalDueAt(movement);
+  if (dueAt === undefined) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).
     return `${formCode} · no deadline recorded (${elapsedLabel(movement, now)} in ED)`;
   }
-  const remaining = minutesUntil(movement.legalForm.dueAt, now);
+  const remaining = minutesUntil(dueAt, now);
   // "passed its deadline" is pinned by tests/ward-legal-figure-guard.test.ts (finding 7).
   return remaining < 0
     ? `${formCode} passed its deadline ${Math.abs(remaining)} min ago`
@@ -721,12 +726,8 @@ export function ShortlistPanel({
   const referral = referralForMovement(movement, referrals);
   const suburbLabel = referral ? referralSuburbLabel(referral.suburb) : undefined;
 
-  // A form with no `dueAt` is never breached — `undefined` must never reach `clockState`'s
-  // arithmetic. As of the 2026-08-23 product-owner correction, neither a Form 1A nor a Form 3B
-  // carries one any longer (Task 6A first established this for 3B; see `LegalForm`'s doc
-  // comment in ward-model.ts) — only the transport/transfer forms (4A/4C) still do, and none of
-  // those are due in the past on today's fixture, so `legalBreached` is false today.
-  const legalDueAt = movement.legalForm?.dueAt;
+  // Only an expiry still in force can produce a current legal warning.
+  const legalDueAt = currentLegalDueAt(movement);
   const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
 
   // The destination slot. An accepted unit and every outstanding referral are independent facts

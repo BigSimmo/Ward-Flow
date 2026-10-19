@@ -1,4 +1,9 @@
-import { admissionsForUnit, bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
+import {
+  admissionsForUnit,
+  bedIsOccupied,
+  remainingSpeciallingCapacity,
+  type Admission,
+} from "@/components/ward-management/ward-admissions";
 import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
@@ -223,8 +228,7 @@ export function acceptingBedCounts(
   now: Instant,
 ): AcceptingBedCounts {
   const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
-  const capacity = unit.speciallingCapacity;
-  const staffable = Number.isFinite(capacity) && capacity > 0 ? Math.floor(capacity) : 0;
+  const staffable = remainingSpeciallingCapacity(unit, admissions);
 
   return {
     forFemale: bedAcceptsSex(unit, "Female", admissions, now) ? free : 0,

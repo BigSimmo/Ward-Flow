@@ -143,7 +143,7 @@ export function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolea
         <div
           className={styles.gapMicroGauge}
           aria-hidden="true"
-          title={`${row.bedsThatFit} fit vs ${row.waiting} waiting (${fillPct}% covered)`}
+          title={`${row.bedsThatFit} beds of this kind vs ${row.waiting} waiting (${fillPct}% covered)`}
         >
           <div
             className={`${styles.gapGaugeFill} ${isDeficit ? styles.gaugeDeficit : styles.gaugeGood}`}

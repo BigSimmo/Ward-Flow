@@ -1,79 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import { useOptionalToast } from "@/components/wf";
-
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-roles";
-import { UNDO_TOAST_MS } from "../ward-operational-defaults";
-import { roleLimitReason } from "../ward-role-permissions";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useUndoableStep } from "../use-undoable-step";
 
-type Watch =
-  | { kind: "decision"; referralId: string; title: string; priorRejections: number }
-  | { kind: "undo"; referralId: string; priorRejections: number };
-
-/**
- * v10 Referrals: "Accept presentation records the decision, toasts with Undo that puts the
- * referral back." Call `watch` straight after dispatching `ACCEPT_REFERRAL` or `DECLINE_REFERRAL`.
- * If the reducer accepted it (no new rejection), a toast offers Undo for 8 s; Undo dispatches
- * `UNDO_REFERRAL_DECISION` and, if the engine refuses it, the toast says why.
- */
+/** Offer Undo only once this decision's own command has been accepted. */
 export function useReferralDecisionUndo(role: WardFlowRole, actingUnitId?: string) {
-  const { dispatch, rejections, referrals } = useWardFlowSelect("dispatch", "rejections", "referrals");
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   const now = useWardFlowClock();
-  const toast = useOptionalToast();
-  const watchRef = useRef<Watch | null>(null);
-  const [token, setToken] = useState(0);
-  const nowRef = useRef(now);
-  const rejectionsRef = useRef(rejections.length);
+  const step = useUndoableStep({
+    dispatch,
+    requireConfirmation: true,
+    rejections,
+    now,
+    routeRole: role,
+  });
 
-  useEffect(() => {
-    nowRef.current = now;
-    rejectionsRef.current = rejections.length;
-  }, [now, rejections.length]);
-
-  const undo = useCallback(
-    (referralId: string) => {
-      watchRef.current = { kind: "undo", referralId, priorRejections: rejectionsRef.current };
-      dispatch({ type: "UNDO_REFERRAL_DECISION", role, now: nowRef.current, referralId, actingUnitId });
-      setToken((value) => value + 1);
-    },
-    [dispatch, role, actingUnitId],
-  );
-
-  useEffect(() => {
-    const watch = watchRef.current;
-    if (!watch || token === 0) return;
-    watchRef.current = null;
-    const refused = rejections.length > watch.priorRejections ? rejections.at(-1) : undefined;
-    if (watch.kind === "decision") {
-      // A refused decision is already said beside the control that raised it.
-      if (refused || !toast) return;
-      const undoReason = roleLimitReason(role, "UNDO_REFERRAL_DECISION");
-      toast.push({
-        tone: "success",
-        title: watch.title,
-        body: undoReason,
-        undo: undoReason ? undefined : { durationMs: UNDO_TOAST_MS, onUndo: () => undo(watch.referralId) },
-        duration: undoReason ? undefined : 0,
-      });
-      return;
-    }
-    if (!toast) return;
-    toast.push(
-      refused
-        ? { tone: "warning", title: "Could not undo", body: refused.reason }
-        : { tone: "info", title: "Decision undone", body: "The referral is back in the queue." },
+  return (referralId: string, title: string, completion: ReturnType<WardCommandDispatch>) => {
+    step.offer(
+      {
+        success: title,
+        undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role, now: at, referralId, actingUnitId }),
+        undone: "Decision undone",
+      },
+      { completion },
     );
-    // `referrals` is read so a successful decision (which changes no rejection) still re-runs this.
-  }, [token, rejections, referrals, toast, role, undo]);
-
-  return useCallback(
-    (referralId: string, title: string) => {
-      watchRef.current = { kind: "decision", referralId, title, priorRejections: rejections.length };
-      setToken((value) => value + 1);
-    },
-    [rejections.length],
-  );
+  };
 }

@@ -6,6 +6,7 @@ import { useToast, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
+import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -65,6 +66,8 @@ export type UndoableStep = {
 
 export type UndoableStepOptions = {
   dispatch: WardCommandDispatch;
+  /** Require an explicit command outcome; false retains older local-adapter behaviour. */
+  requireConfirmation?: boolean;
   rejections: readonly Rejection[];
   now: Instant;
   /** The route's role: the toast's Undo is greyed with its reason like any other control. */
@@ -86,6 +89,7 @@ export type UndoableStepOptions = {
  */
 export function useUndoableStep({
   dispatch,
+  requireConfirmation = false,
   rejections,
   now,
   routeRole,
@@ -218,7 +222,8 @@ export function useUndoableStep({
   }, [token, rejections]);
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {
-    const completion = record ? record() : dispatch(event);
+    const result = record ? record() : dispatch(event);
+    const completion = requireConfirmation ? confirmedWardCommand(result) : result;
     if (completion && "then" in completion) {
       void completion
         .then((outcome) => {
@@ -263,9 +268,13 @@ export function useUndoableStep({
     },
     /** Offers Undo for a step another component on the page has already recorded. */
     offer(step: UndoableStep, options?: { guard?: boolean; completion?: ReturnType<WardCommandDispatch> }) {
-      if (options?.completion) {
+      if (options?.completion || requireConfirmation) {
         const offered = step.undo?.(nowRef.current);
-        submit(offered!, { prior: rejectionCountRef.current, ...step, guard: options.guard }, () => options.completion);
+        submit(
+          offered!,
+          { prior: rejectionCountRef.current, ...step, guard: options?.guard },
+          () => options?.completion,
+        );
       } else {
         pendingRef.current.push({ prior: rejectionCountRef.current, ...step, guard: options?.guard });
         setToken((value) => value + 1);

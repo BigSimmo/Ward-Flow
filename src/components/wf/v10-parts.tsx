@@ -392,16 +392,16 @@ function isClockLike(since: string): boolean {
  * looked, as up to five figures with one line each, and Copy as handover text.
  */
 export function SinceYouLooked({
+  title = "Since you looked",
   since,
   items,
   onCopy,
   id,
   className,
 }: {
-  /**
-   * When they last looked: a clock time ("07:12", "Tue 07:12"), drawn mono, or words for a named
-   * window ("the start of this shift"), drawn as plain text. Both read "Since you looked at …".
-   */
+  /** Name the observation window without implying a personal visit when none is recorded. */
+  title?: string;
+  /** Window start: a clock time drawn mono, or words drawn as plain text. */
   since: string;
   items: SinceItem[];
   /** Copies the digest as handover text. Omit to hide the action. */
@@ -449,9 +449,9 @@ export function SinceYouLooked({
       </ul>
     );
   const full = (
-    <section id={id} className={cx(styles.since, className)} aria-label={`Since you looked at ${since}`}>
+    <section id={id} className={cx(styles.since, className)} aria-label={`${title} at ${since}`}>
       <CardHead
-        title="Since you looked"
+        title={title}
         meta={<>at {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}</>}
         level={2}
         action={
@@ -482,8 +482,9 @@ export function SinceYouLooked({
   );
   return (
     <SinceYouLookedFold
+      title={title}
       summary={summary}
-      label={`Since you looked at ${since}`}
+      label={`${title} at ${since}`}
       id={id}
       className={cx(styles.since, className)}
       sheetDescription={<>At {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}</>}

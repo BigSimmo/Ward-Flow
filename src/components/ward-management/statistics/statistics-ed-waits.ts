@@ -1,5 +1,5 @@
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -14,7 +14,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * this module's suite — a wait exactly ON twenty-four hours, one minute either side of it, an
  * `openedAt` sitting in the future — cannot be reached from the seed at all**, so before this
  * extraction nothing in the repository could state what happens at them. **That is the whole gain.
- * The arithmetic is unchanged.**
+ * The elapsed arithmetic is unchanged; the population now excludes departed and ward-origin journeys.**
  *
  * 🔴 **AN EXTRACTION, NOT A REDESIGN.** Three things here look questionable and NONE is repaired:
  * the two wait figures overlap rather than partition, `longestWait` has no tie-break, and `unplaced`
@@ -23,10 +23,10 @@ import type { Movement } from "@/components/ward-management/ward-model";
  *
  * ⚠️ **TWO POPULATIONS, AND SWAPPING THEM CHANGES CLINICAL FIGURES SILENTLY:**
  *
- *     departmentMovements      OPEN only — `originEdId` matches AND `isOpen`. Every waiting figure
- *                              derives from this. Somebody who has arrived drops out at once.
- *     allDepartmentMovements   EVERY movement ever attributed here, open or closed, with NO
- *                              `isOpen` filter. 🔴 A decline is a historical fact that stays true
+ *     departmentMovements      Physically in this ED, still awaiting an inpatient bed.
+ *                              Departed and ward-origin journeys never count as waiting here.
+ *     allDepartmentMovements   Every genuine ED-origin journey, open or closed.
+ *                              A decline is a historical fact that stays true
  *                              after the movement it was made against reaches a bed — scoping
  *                              decline counts to the open population would erase precisely the
  *                              declines belonging to the movements this department eventually
@@ -50,9 +50,9 @@ export type EdWaitingEntry = {
 };
 
 export type EdWaitFigures = {
-  /** OPEN population — the base for every waiting figure below. */
+  /** Physical ED inpatient-bed wait population — the base for every waiting figure below. */
   readonly departmentMovements: readonly Movement[];
-  /** Everyone with an open movement from this department right now. */
+  /** Everyone still in this department awaiting an inpatient bed right now. */
   readonly onTheList: number;
   /** Of the open population, those flagged urgent. */
   readonly urgent: number;
@@ -82,7 +82,7 @@ export type EdWaitFigures = {
  * and lets a test place a movement exactly on a boundary.
  */
 export function edWaitFigures(movements: readonly Movement[], edId: string, now: Instant): EdWaitFigures {
-  const departmentMovements = movements.filter((movement) => movement.originEdId === edId && isOpen(movement));
+  const departmentMovements = movements.filter((movement) => movement.originEdId === edId && isWaitingInEd(movement));
 
   /*
    * `Math.max(..., 0)` reproduces the screen's own guard: a movement whose `openedAt` sits after
@@ -103,7 +103,7 @@ export function edWaitFigures(movements: readonly Movement[], edId: string, now:
     over48h: waitingMovements.filter((entry) => entry.waitMinutes >= VERY_LONG_WAIT_MINUTES).length,
     longestWait: waitingMovements[0],
     // Deliberately unfiltered by `isOpen` — see the module comment above for why.
-    allDepartmentMovements: movements.filter((movement) => movement.originEdId === edId),
+    allDepartmentMovements: movements.filter((movement) => movement.originEdId === edId && isEdOriginJourney(movement)),
   };
 }
 

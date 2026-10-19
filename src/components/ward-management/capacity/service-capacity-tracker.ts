@@ -1,6 +1,7 @@
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { elapsedOpenMinutes, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import {
   HEALTH_SERVICES,
@@ -396,7 +397,7 @@ export function trackServiceBedCapacity(
       if (site.emergencyDepartment) {
         serviceEdDeptsCount++;
         const ed = site.emergencyDepartment;
-        const openMovements = movements.filter((m) => isOpen(m) && m.originEdId === ed.id);
+        const openMovements = movements.filter((m) => isWaitingInEd(m) && m.originEdId === ed.id);
         const elapsedTimes = openMovements.map((m) => elapsedOpenMinutes(m, now));
         const longest = elapsedTimes.length > 0 ? Math.max(...elapsedTimes) : 0;
         const detained = openMovements.filter((m) => isDetainedUnderTheAct(m.legalStatus)).length;
@@ -408,9 +409,10 @@ export function trackServiceBedCapacity(
             : openMovements.filter(
                 (m, idx) => isDetainedUnderTheAct(m.legalStatus) && elapsedTimes[idx] >= accessTargetMinutes,
               ).length;
-        const statutoryBreaches = openMovements.filter(
-          (m) => m.legalForm?.dueAt !== undefined && isClockBreached(m.legalForm.dueAt, now),
-        ).length;
+        const statutoryBreaches = openMovements.filter((m) => {
+          const dueAt = currentLegalDueAt(m);
+          return dueAt !== undefined && isClockBreached(dueAt, now);
+        }).length;
 
         serviceEdWaiting += openMovements.length;
         if (longest > serviceEdLongestWait) {

@@ -13,6 +13,7 @@ import styles from "./v10-parts.module.css";
  * before. A client part so `v10-parts.tsx` stays usable from server components.
  */
 export function SinceYouLookedFold({
+  title = "Since you looked",
   summary,
   label,
   id,
@@ -22,6 +23,7 @@ export function SinceYouLookedFold({
   onCopy,
   children,
 }: {
+  title?: string;
   /** The summary line under the row's title. */
   summary: ReactNode;
   label: string;
@@ -49,7 +51,7 @@ export function SinceYouLookedFold({
         data-testid="wf-since-summary"
       >
         <span className={styles.sinceRowLines}>
-          <span className={styles.sinceRowTitle}>Since you looked</span>
+          <span className={styles.sinceRowTitle}>{title}</span>
           <span className={styles.sinceRowText}>{summary}</span>
         </span>
         <ChevronDown className={styles.sinceRowChevron} size={16} aria-hidden="true" />
@@ -57,7 +59,7 @@ export function SinceYouLookedFold({
       <PhoneSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Since you looked"
+        title={title}
         description={sheetDescription}
         primary={onCopy ? { label: "Copy as handover text", onAction: onCopy } : undefined}
         data-testid="wf-since-sheet"

@@ -540,7 +540,7 @@ export function StatisticsWardScreen({
             <StatCard
               icon={Users}
               title="Referrals into ward"
-              aside="Ever, this ward"
+              aside="Recorded for this ward"
               id="ward-referrals"
               data-testid="ward-statistics-ward-referrals-panel"
             >
@@ -557,7 +557,7 @@ export function StatisticsWardScreen({
                       <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
                         {small(referrals.everAccepted)}
                       </dd>
-                      <dt className={styles.figureLabel}>Ever accepted</dt>
+                      <dt className={styles.figureLabel}>Acceptances still standing</dt>
                     </div>
                     <div className={styles.figure}>
                       <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
@@ -570,8 +570,9 @@ export function StatisticsWardScreen({
                     </div>
                   </dl>
                   <SrOnly>
-                    Asking now counts referrals waiting on this ward right now. Ever accepted and ever declined count
-                    every referral since records began, and one movement can appear in both, so the three do not add up.
+                    Asking now counts referrals waiting on this ward right now. Acceptances still standing includes
+                    arrivals, but excludes withdrawn acceptances. Ever declined counts recorded declines. One movement
+                    can appear in both accepted and declined counts, so the three do not add up.
                   </SrOnly>
                 </section>
                 {statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0 ? (

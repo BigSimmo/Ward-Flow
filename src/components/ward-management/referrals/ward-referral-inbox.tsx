@@ -166,7 +166,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                     }
                     setLocalNote(null);
                     setAttempt({ id: entry.id, count: rejections.length });
-                    dispatch({
+                    const completion = dispatch({
                       type: "ACCEPT_REFERRAL",
                       ...decisionBase,
                       referralId: entry.id,
@@ -174,7 +174,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                         : {}),
                     });
-                    watchDecision(entry.id, "Referral accepted");
+                    watchDecision(entry.id, "Referral accepted", completion);
                   }}
                 >
                   Accept referral
@@ -196,14 +196,14 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                       return;
                     }
                     setAttempt({ id: entry.id, count: rejections.length });
-                    dispatch({
+                    const completion = dispatch({
                       type: "DECLINE_REFERRAL",
                       ...decisionBase,
                       referralId: entry.id,
                       reason: "no_suitable_bed",
                       waitlist: true,
                     });
-                    watchDecision(entry.id, "Referral waitlisted");
+                    watchDecision(entry.id, "Referral waitlisted", completion);
                   }}
                 >
                   Waitlist
@@ -244,13 +244,13 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                             return;
                           }
                           setAttempt({ id: entry.id, count: rejections.length });
-                          dispatch({
+                          const completion = dispatch({
                             type: "DECLINE_REFERRAL",
                             ...decisionBase,
                             referralId: entry.id,
                             reason,
                           });
-                          watchDecision(entry.id, "Referral declined");
+                          watchDecision(entry.id, "Referral declined", completion);
                         }}
                       >
                         Decline referral

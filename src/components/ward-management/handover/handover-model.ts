@@ -525,6 +525,7 @@ export function isbarLines(
 
 export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number = () => 0): string {
   return [
+    "Synthetic demonstration · Not approved for clinical use",
     `${row.name} ${row.umrn}`,
     ...isbarLines(row, now, readyBeds).map((line) => `${line.label}: ${line.text}`),
   ].join("\n");

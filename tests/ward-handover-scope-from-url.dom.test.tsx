@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/mockups/ward-flow/handover",
@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 
 import { HandoverPage, handoverScopeValue } from "@/components/ward-management/handover/handover-page";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -49,6 +50,13 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 
 const WARD = allUnits()[0];
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  Reflect.deleteProperty(navigator, "clipboard");
+});
 
 function renderAt(search: string) {
   window.history.replaceState({}, "", `/mockups/ward-flow/handover${search}`);
@@ -120,5 +128,61 @@ describe("the handover sheet takes its scope from the URL", () => {
       ).toContain("Whole network");
       cleanup();
     }
+  });
+});
+
+describe("handover output evidence boundaries", () => {
+  it.each([
+    ["ed:scgh-ed", "Sir Charles Gairdner Hospital Emergency Department"],
+    [`team:${COMMUNITY_TEAM_PAGES[0]!.id}`, COMMUNITY_TEAM_PAGES[0]!.name],
+  ])("keeps the wider ward population explicit when the selected scope is %s", (scope, label) => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderAt(`?scope=${encodeURIComponent(scope)}`);
+
+    expect(scopeSummary()).toContain(label);
+    const changes = within(screen.getByTestId("ward-handover-since"));
+    expect(changes.getByText("admitted across accessible wards")).toBeInTheDocument();
+    expect(changes.getByText("discharged across accessible wards")).toBeInTheDocument();
+    // The copy action belongs to the phone digest sheet; desktop only displays the digest.
+    cleanup();
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    renderAt(`?scope=${encodeURIComponent(scope)}`);
+    fireEvent.click(screen.getByTestId("ward-handover-phone-since"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-handover-phone-since-sheet")).getByRole("button", {
+        name: "Copy as handover text",
+      }),
+    );
+    expect(writeText).toHaveBeenCalledOnce();
+    const copied = writeText.mock.calls[0]![0];
+    expect(copied).toContain(label);
+    expect(copied).toContain("admitted across accessible wards");
+    expect(copied).toContain("discharged across accessible wards");
+    expect(copied).toContain("Synthetic demonstration · Not approved for clinical use");
+  });
+
+  it("records preparation, never successful printing, when the native dialog returns without confirmation", () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    renderAt("");
+    fireEvent.click(screen.getByTestId("ward-handover-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
+    expect(print).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Back to handover" }));
+
+    expect(screen.getByTestId("ward-handover-sign-off-checks")).toHaveTextContent("Copy prepared for printing");
+    expect(screen.getByTestId("ward-handover-sign-off-checks")).not.toHaveTextContent("Printed copy taken");
+    fireEvent.click(screen.getByRole("tab", { name: /History/ }));
+    expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("printing not confirmed");
+    expect(screen.getByTestId("ward-handover-history")).not.toHaveTextContent("Printed copy taken");
   });
 });

@@ -1,4 +1,6 @@
 "use client";
+
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 
 import { useMemo, useRef, type FormEvent } from "react";
@@ -27,14 +29,7 @@ import { EdBoardSection } from "./ed-screen-board";
 import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
-import {
-  DEFAULT_DRAFT,
-  edStepSaid,
-  instantFromDateAndTimeInputs,
-  isEdInitiatedWithdrawal,
-  waitLine,
-  type EdStepEvent,
-} from "./ed-screen-model";
+import { DEFAULT_DRAFT, edStepSaid, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
 import { EdPhonePanes } from "./ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "./ed-screen-raise-section";
@@ -374,12 +369,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           departments={departments.map((candidate) => {
             const candidateSite = siteByCode(candidate.siteCode);
             const candidateMovements = movements.filter(
-              (movement) =>
-                movement.originEdId === candidate.id &&
-                movement.stage !== "arrived" &&
-                (!movement.closure ||
-                  (movement.edOutcome !== undefined && !movement.leftDepartmentAt) ||
-                  isEdInitiatedWithdrawal(movement)),
+              (movement) => movement.originEdId === candidate.id && isWaitingInEd(movement),
             );
             return {
               id: candidate.id,
@@ -390,7 +380,9 @@ export function EdScreen({ edId }: EdScreenProps) {
               longest: candidateMovements.length
                 ? splitDuration(Math.max(...candidateMovements.map((movement) => Math.max(now - movement.openedAt, 0))))
                 : "—",
-              breaches: candidateMovements.filter((movement) => now - movement.openedAt > accessTarget).length,
+              breaches: candidateMovements.filter(
+                (movement) => isWaitingInEd(movement) && now - movement.openedAt > accessTarget,
+              ).length,
             };
           })}
           onBoard={patients.length}
@@ -409,7 +401,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             {
               id: "longest",
               label: "Longest here",
-              value: longestHere === undefined ? 0 : splitDuration(longestHere),
+              value: longestHere === undefined ? "—" : splitDuration(longestHere),
               tone: longestHere !== undefined && longestHere > accessTarget ? "danger" : undefined,
             },
             { id: "held", label: "Bed held", value: waitingForBed },

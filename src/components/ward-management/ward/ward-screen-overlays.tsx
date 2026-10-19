@@ -7,6 +7,8 @@ import type { LeavingDestination } from "@/components/ward-management/ward-admis
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import styles from "./ward.module.css";
@@ -241,6 +243,18 @@ export function WardScreenBedDrawer({
 }: WardScreenBedDrawerProps) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
+  const { rejections } = useWardFlowSelect("rejections");
+  const step = useUndoableStep({
+    dispatch,
+    requireConfirmation: true,
+    rejections,
+    now,
+    routeRole,
+    onMessage: setToastMessage,
+  });
+  function record(recordAction: () => ReturnType<WardCommandDispatch>, success: string) {
+    step.runRecorded(recordAction, { success });
+  }
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
@@ -273,36 +287,48 @@ export function WardScreenBedDrawer({
                       // A blocked release clears the stay's reason with it; otherwise the stay's own
                       // reason is cleared, so nothing is refused as a no-op.
                       if (pendingRelease && pendingRelease.blocker !== null) {
-                        raise("CLEAR_BED_RELEASE_BLOCK", {
-                          releaseId: pendingRelease.id,
-                          actingUnitId: unitId,
-                        });
+                        record(
+                          () =>
+                            raise("CLEAR_BED_RELEASE_BLOCK", {
+                              releaseId: pendingRelease.id,
+                              actingUnitId: unitId,
+                            }),
+                          "Discharge blocker cleared.",
+                        );
                       } else if (stay && stay.blockReason !== null) {
-                        raise("CLEAR_STAY_DISCHARGE_BLOCKER", {
-                          admissionId,
-                          actingUnitId: unitId,
-                        });
+                        record(
+                          () => raise("CLEAR_STAY_DISCHARGE_BLOCKER", { admissionId, actingUnitId: unitId }),
+                          "Discharge blocker cleared.",
+                        );
+                      } else {
+                        setToastMessage("No discharge blocker is recorded.");
                       }
-                      setToastMessage("Discharge blocker cleared.");
                       return;
                     }
                     const validBlocker = blocker as BedReleaseBlocker;
                     // With a bed release the release event keeps the stay's reason in step; without
                     // one the stay records it directly.
                     if (pendingRelease) {
-                      raise("BLOCK_BED_RELEASE", {
-                        releaseId: pendingRelease.id,
-                        actingUnitId: unitId,
-                        blocker: validBlocker,
-                      });
+                      record(
+                        () =>
+                          raise("BLOCK_BED_RELEASE", {
+                            releaseId: pendingRelease.id,
+                            actingUnitId: unitId,
+                            blocker: validBlocker,
+                          }),
+                        `Discharge blocker recorded: ${blocker}`,
+                      );
                     } else {
-                      raise("RECORD_STAY_DISCHARGE_BLOCKER", {
-                        admissionId,
-                        actingUnitId: unitId,
-                        blocker: validBlocker,
-                      });
+                      record(
+                        () =>
+                          raise("RECORD_STAY_DISCHARGE_BLOCKER", {
+                            admissionId,
+                            actingUnitId: unitId,
+                            blocker: validBlocker,
+                          }),
+                        `Discharge blocker recorded: ${blocker}`,
+                      );
                     }
-                    setToastMessage(`Discharge blocker recorded: ${blocker}`);
                   }
                 : undefined
             }
@@ -317,31 +343,34 @@ export function WardScreenBedDrawer({
                 );
                 return;
               }
-              raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
-                admissionId: selectedBedItem.admissionId,
-                actingUnitId: unitId,
-              });
-              setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
+              record(
+                () =>
+                  raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
+                    admissionId: selectedBedItem.admissionId!,
+                    actingUnitId: unitId,
+                  }),
+                `Bed ${bedNum} patient marked away at ED.`,
+              );
             }}
             onMarkBack={(bedNum) => {
-              if (selectedBedItem?.admissionId) {
-                raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
-                  admissionId: selectedBedItem.admissionId,
-                  actingUnitId: unitId,
-                });
-              }
-              setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
+              if (!selectedBedItem?.admissionId) return;
+              record(
+                () =>
+                  raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+                    admissionId: selectedBedItem.admissionId!,
+                    actingUnitId: unitId,
+                  }),
+                `Bed ${bedNum} patient marked returned to ward.`,
+              );
             }}
             onMarkReady={() => {
               // A4-24: one tap clears the release this bed is being made ready for.
               const releaseId = selectedBedItem?.preparingReleaseId;
               if (!releaseId) return;
-              raise("SET_BED_PREPARATION", {
-                releaseId,
-                actingUnitId: unitId,
-                preparing: false,
-              });
-              setToastMessage("Bed marked Ready. It is offered again.");
+              record(
+                () => raise("SET_BED_PREPARATION", { releaseId, actingUnitId: unitId, preparing: false }),
+                "Bed marked Ready. It is offered again.",
+              );
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
@@ -356,15 +385,17 @@ export function WardScreenBedDrawer({
             onSetBarrier={
               barrierGate.allowed
                 ? (admissionId, barrier) => {
-                    dispatch({
-                      type: "SET_DISCHARGE_BARRIER",
-                      role: routeRole,
-                      now,
-                      actingUnitId: unitId,
-                      admissionId,
-                      barrier,
-                    });
-                    setToastMessage(barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.");
+                    step.run(
+                      {
+                        type: "SET_DISCHARGE_BARRIER",
+                        role: routeRole,
+                        now,
+                        actingUnitId: unitId,
+                        admissionId,
+                        barrier,
+                      },
+                      { success: barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared." },
+                    );
                   }
                 : undefined
             }

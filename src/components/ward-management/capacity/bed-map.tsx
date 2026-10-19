@@ -13,16 +13,9 @@
 // "Held" is not a square here: it means only a bed kept for a patient on leave, already inside
 // Occupied, and is shown as an "on leave" marker beside the squares, never a fifth state.
 //
-// 🔴 **DELIBERATELY NOT `NetworkWardRow.ready` (`capacity-derivations.ts`), AND THE REASON IS
-// WRITTEN DOWN RATHER THAN LEFT FOR THE NEXT PERSON TO REDISCOVER.** `NetworkWardRow.ready` is
-// `lockedBedsFree(unit) + openBedsFree(unit)`, which reduces to `unit.allocatable.value` alone —
-// it never reads `unit.empty.value`. `unitCapacity(unit, releases).available` is
-// `min(allocatable.value, empty.value)`. The two agree on every unit in today's fixture (checked in
-// `tests/ward-capacity-bed-map.test.ts`: `allocatable.value <= empty.value` holds everywhere today),
-// but they are not the same computation, and only `unitCapacity`'s four fields are the ones
-// GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
-// exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
-// ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
+// The map and `NetworkWardRow` both read `bedStates`, including its reconciliation of live
+// reservations against newer capacity observations. Ready and Pulled must be disjoint even when
+// the ward's latest offered count includes a bed already reserved for someone.
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -49,8 +42,7 @@ export type BedMapLayout = "grid" | "row" | "table";
 
 export type BedMapWard = {
   unit: Unit;
-  /** `unitCapacity(unit, releases).available` — see the file header for why this is not
-   *  `NetworkWardRow.ready`. */
+  /** `bedStates().ready` — the same partition as the network table. */
   ready: number;
   /** `bedStates().pulled` — allocated to a named patient who has not arrived yet. */
   pulled: number;

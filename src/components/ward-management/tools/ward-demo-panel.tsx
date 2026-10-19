@@ -46,7 +46,7 @@ export function WardDemoPanel() {
       return;
     }
     downloadBlob(new Blob([built.json], { type: "application/json" }), built.fileName);
-    setMessage(`Saved ${built.fileName} to your downloads.`);
+    setMessage(`Download requested: ${built.fileName}. Check your browser downloads.`);
   }
 
   async function loadFromFile(event: ChangeEvent<HTMLInputElement>) {

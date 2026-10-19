@@ -1,3 +1,4 @@
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 /**
  * Board-clock time features that use times the record already holds.
  *
@@ -96,7 +97,7 @@ export function openWorkBeforeShiftEnd(movements: readonly Movement[], now: Inst
       items.push({ movement, kind: "pull_hold", at: pullExpiresAt });
     }
 
-    const dueAt = movement.legalForm?.dueAt;
+    const dueAt = currentLegalDueAt(movement);
     if (dueAt !== undefined && dueAt < shiftEnd) {
       items.push({ movement, kind: "typed_form", at: dueAt });
     }

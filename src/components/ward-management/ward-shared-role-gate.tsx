@@ -124,7 +124,7 @@ export function WardAskForAccess({
               },
               () => {
                 setBusy(false);
-                setMessage("The server was not reached. Nothing was sent.");
+                setMessage("The request could not be confirmed. Reload to check its status before trying again.");
               },
             );
           }}

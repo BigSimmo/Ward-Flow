@@ -1,3 +1,4 @@
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edHomeSummaries } from "../ed/ed-home-derivations";
 import { type Instant, isClockBreached, splitDuration } from "../ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, type Movement } from "../ward-model";
@@ -68,9 +69,10 @@ export function publishedThresholds(
 
   // The same predicate `ward-pressure.ts` tints a department's card on. A deadline is per-form, so
   // this threshold has no single constant to quote — which is itself worth saying in the row.
-  const breachedForms = movements.filter(
-    (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
-  ).length;
+  const breachedForms = movements.filter((movement) => {
+    const dueAt = currentLegalDueAt(movement);
+    return dueAt !== undefined && isClockBreached(dueAt, now);
+  }).length;
 
   return [
     {

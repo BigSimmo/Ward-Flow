@@ -3,12 +3,7 @@
 import { createContext, useContext } from "react";
 import styles from "./ward-offline-banner.module.css";
 
-/**
- * S-1 (audit 13 Oct 2026): whether this demonstration has stopped saving on this device. Typed free
- * text is never stored (the default-deny lock in `ward-flow-provider.tsx`), so once someone types
- * into a field the saved day is cleared and a reload starts again. That rule stays; this context
- * only lets the shell say so instead of losing the day silently.
- */
+/** Whether submitted demonstration state has stopped saving on this device. Session draft recovery is separate. */
 export const WardDemoNotSavedContext = createContext(false);
 
 function useWardDemoNotSaved(): boolean {
@@ -21,7 +16,8 @@ export function WardDemoNotSavedNote() {
   if (!notSaved) return null;
   return (
     <p className={styles.quiet} role="status" data-testid="ward-demo-not-saved">
-      Not saved on this device. Typed text is never stored, so a reload starts the demonstration again.
+      Demonstration state is not saved on this device, so a reload starts it again. Some synthetic form drafts may still
+      be recovered within this browser session.
     </p>
   );
 }

@@ -50,6 +50,7 @@ import {
 } from "@/components/ward-management/ward-configuration";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
@@ -347,49 +348,88 @@ export function SettingsScreen() {
     }
   };
 
-  /**
-   * A save waits for the reducer: the toast with Undo shows only once the saved configuration has
-   * changed, and never when the save was refused (the refusal line says why instead).
-   */
-  const pendingSave = useRef<{ before: WardConfiguration; count: number; rejectionsAt: number } | null>(null);
+  const currentConfiguration = useRef(configuration);
+  useEffect(() => {
+    currentConfiguration.current = configuration;
+  }, [configuration]);
+  const configurationVersion = useRef(0);
+  const configurationPending = useRef(false);
+
+  /** Local and shared commands report their own outcome; a changed snapshot is not an acknowledgement. */
+  const saveConfiguration = (
+    next: WardConfiguration,
+    onAccepted: (version: number, outcome: WardCommandOutcome) => void,
+  ) => {
+    if (configurationPending.current) {
+      showToast("A rule change is still awaiting confirmation.", "warning");
+      return;
+    }
+    configurationPending.current = true;
+    const finish = (outcome: WardCommandOutcome | void) => {
+      configurationPending.current = false;
+      if (!outcome || outcome.status !== "accepted" || outcome.isCurrent?.() === false) {
+        showToast(
+          outcome?.status === "refused"
+            ? `Not recorded: ${outcome.message ?? "The rule change was refused."}`
+            : (outcome?.message ?? "Save is not confirmed. Review the rules before trying again."),
+          "warning",
+        );
+        return;
+      }
+      currentConfiguration.current = next;
+      onAccepted(++configurationVersion.current, outcome);
+    };
+    try {
+      const completion = raise("SET_CONFIGURATION", { payload: next });
+      if (completion && "then" in completion) void completion.then(finish, () => finish());
+      else finish(completion);
+    } catch {
+      finish();
+    }
+  };
+
+  const canUndoConfiguration = (expected: WardConfiguration, version: number, outcome: WardCommandOutcome) => {
+    if (
+      configurationVersion.current !== version ||
+      ruleDiffs(expected, currentConfiguration.current).length > 0 ||
+      outcome.isCurrent?.() === false ||
+      outcome.canUndo?.() === false
+    ) {
+      showToast("Rules changed since this save. Review them before making another change.", "warning");
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = () => {
     if (!hasUnsavedRules) return;
-    pendingSave.current = { before: configuration, count: unsavedCount, rejectionsAt: rejections.length };
-    raise("SET_CONFIGURATION", { payload: draft });
+    const before = configuration;
+    const submitted = draft;
+    const count = unsavedCount;
+    saveConfiguration(submitted, (version, outcome) => {
+      const changed = ruleDiffs(before, submitted);
+      toast?.push({
+        tone: "success",
+        title:
+          changed.length > 0
+            ? `${changed.join(", ")}, saved and recorded.`
+            : count === 1
+              ? "Rule saved and recorded."
+              : `${count} rules saved and recorded.`,
+        undo: {
+          durationMs: UNDO_TOAST_MS,
+          onUndo: () => {
+            if (!canUndoConfiguration(submitted, version, outcome)) return;
+            saveConfiguration(before, () => {
+              setDraft({ ...before });
+              showToast("Rules back as they were. Recorded in the audit.");
+            });
+          },
+        },
+      });
+    });
     setPhoneSheet(null);
   };
-
-  useEffect(() => {
-    const pending = pendingSave.current;
-    if (!pending) return;
-    if (rejections.length > pending.rejectionsAt) {
-      pendingSave.current = null;
-      return;
-    }
-    if (configuration === pending.before) return;
-    pendingSave.current = null;
-    const { before, count } = pending;
-    const changed = ruleDiffs(before, configuration);
-    toast?.push({
-      tone: "success",
-      title:
-        changed.length > 0
-          ? `${changed.join(", ")}, saved and recorded.`
-          : count === 1
-            ? "Rule saved and recorded."
-            : `${count} rules saved and recorded.`,
-      // Undo puts the rules back with a second recorded save, so the audit keeps both.
-      undo: {
-        durationMs: UNDO_TOAST_MS,
-        onUndo: () => {
-          raise("SET_CONFIGURATION", { payload: before });
-          setDraft({ ...before });
-          showToast("Rules back as they were. Recorded in the audit.");
-        },
-      },
-    });
-  }, [configuration, rejections, toast, raise, showToast]);
 
   const handleDiscard = () => {
     const kept = draft;
@@ -495,30 +535,33 @@ export function SettingsScreen() {
       railOpen,
     };
     const defaults = defaultWardConfiguration();
-    raise("SET_CONFIGURATION", { payload: defaults });
-    setDraft({ ...defaults });
-    setAudioBuzz(true);
-    setAudioBuzzPreference(true);
-    applyAppearance("auto");
-    applyGlare(false);
-    setRailOpenPreference(true);
     setIsResetModalOpen(false);
-    toast?.push({
-      tone: "success",
-      title: "Defaults restored and recorded.",
-      undo: {
-        durationMs: UNDO_TOAST_MS,
-        onUndo: () => {
-          raise("SET_CONFIGURATION", { payload: before.configuration });
-          setDraft({ ...before.draft });
-          setAudioBuzz(before.buzz);
-          setAudioBuzzPreference(before.buzz);
-          applyAppearance(before.appearance);
-          applyGlare(before.glare);
-          setRailOpenPreference(before.railOpen);
-          showToast("Settings back as they were. Recorded in the audit.");
+    saveConfiguration(defaults, (version, outcome) => {
+      setDraft({ ...defaults });
+      setAudioBuzz(true);
+      setAudioBuzzPreference(true);
+      applyAppearance("auto");
+      applyGlare(false);
+      setRailOpenPreference(true);
+      toast?.push({
+        tone: "success",
+        title: "Defaults restored and recorded.",
+        undo: {
+          durationMs: UNDO_TOAST_MS,
+          onUndo: () => {
+            if (!canUndoConfiguration(defaults, version, outcome)) return;
+            saveConfiguration(before.configuration, () => {
+              setDraft({ ...before.draft });
+              setAudioBuzz(before.buzz);
+              setAudioBuzzPreference(before.buzz);
+              applyAppearance(before.appearance);
+              applyGlare(before.glare);
+              setRailOpenPreference(before.railOpen);
+              showToast("Settings back as they were. Recorded in the audit.");
+            });
+          },
         },
-      },
+      });
     });
   };
 

@@ -1,5 +1,5 @@
 // tests/ward-settings-configuration.dom.test.tsx
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -16,9 +16,11 @@ vi.mock("next/link", () => ({
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { ToastProvider } from "@/components/wf";
 import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-model";
+import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
 
 /**
  * Task 9 of the audit-wiring plan, 2026-09-16: the settings screen edits a local draft of
@@ -40,12 +42,30 @@ function Probe() {
   );
 }
 
-function renderSettings() {
+type Intercept = (
+  event: Parameters<WardCommandDispatch>[0],
+  dispatch: WardCommandDispatch,
+) => ReturnType<WardCommandDispatch>;
+
+function DispatchOverride({ children, intercept }: { children: ReactNode; intercept?: Intercept }) {
+  const value = useWardFlow();
+  return (
+    <WardFlowOverride
+      value={{ ...value, dispatch: intercept ? (event) => intercept(event, value.dispatch) : value.dispatch }}
+    >
+      {children}
+    </WardFlowOverride>
+  );
+}
+
+function renderSettings(intercept?: Intercept) {
   return render(
     <ToastProvider>
       <WardFlowProvider>
-        <SettingsScreen />
-        <Probe />
+        <DispatchOverride intercept={intercept}>
+          <SettingsScreen />
+          <Probe />
+        </DispatchOverride>
       </WardFlowProvider>
     </ToastProvider>,
   );
@@ -68,6 +88,69 @@ function setEdToMinimum() {
 }
 
 describe("settings screen configuration draft", () => {
+  it("does not announce or apply a restore before its command is accepted, and keeps the draft on refusal", async () => {
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const completion = new Promise<WardCommandOutcome>((settle) => {
+      resolve = settle;
+    });
+    renderSettings(() => completion);
+    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
+    fireEvent.click(screen.getByTestId("confirm-restore-defaults-btn"));
+    expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    await act(async () => resolve({ commandId: "restore", status: "refused", message: "Rules changed elsewhere." }));
+    expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Unsaved rule changes" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    expect(edStepper()).toHaveAttribute("aria-valuenow", "720");
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    act(() => applyAppearance("auto"));
+  });
+
+  it("does not announce an Undo before its command is accepted or change the draft on refusal", async () => {
+    let defer = false;
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const completion = new Promise<WardCommandOutcome>((settle) => {
+      resolve = settle;
+    });
+    renderSettings((event, dispatch) => (defer ? completion : dispatch(event)));
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
+    const savedToast = within(screen.getByTestId("toast-region"))
+      .getByText(/saved and recorded\./)
+      .closest<HTMLElement>('[data-testid="toast"]')!;
+    defer = true;
+    fireEvent.click(within(savedToast).getByRole("button", { name: "Undo" }));
+    expect(screen.queryByText("Rules back as they were. Recorded in the audit.")).not.toBeInTheDocument();
+    await act(async () => resolve({ commandId: "undo", status: "refused", message: "Rules changed elsewhere." }));
+    expect(screen.queryByText("Rules back as they were. Recorded in the audit.")).not.toBeInTheDocument();
+    expect(screen.getByTestId("probe-ed-target")).toHaveTextContent("720");
+    expect(edStepper()).toHaveAttribute("aria-valuenow", "720");
+    expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
+  });
+
+  it("refuses an older save's Undo after a later save without overwriting either rule", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    setEdToMinimum();
+    fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
+    const firstToast = within(screen.getByTestId("toast-region"))
+      .getByText(/saved and recorded\./)
+      .closest<HTMLElement>('[data-testid="toast"]')!;
+    fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
+    expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("585");
+    fireEvent.click(within(firstToast).getByRole("button", { name: "Undo" }));
+    expect(screen.getByTestId("probe-ed-target")).toHaveTextContent("720");
+    expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("585");
+  });
+
   it("announces surge values as an unsaved draft and shows saved status only after acceptance", () => {
     renderSettings();
     const beforeTarget = screen.getByTestId("probe-ed-target").textContent;

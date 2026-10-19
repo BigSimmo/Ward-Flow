@@ -1,5 +1,7 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+
 import Link from "next/link";
 import { useState } from "react";
 
@@ -96,7 +98,7 @@ export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
-  const dueAt = movement.legalForm?.dueAt;
+  const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return false;
   const state = clockState(dueAt, now, thresholds);
   return state === "due" || state === "critical" || state === "breached";
@@ -285,7 +287,7 @@ export function PriorityQueue({
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
             const { score, factors } = operationalScore(movement, now, dueSoonThresholds);
-            const legalDueAt = movement.legalForm?.dueAt;
+            const legalDueAt = currentLegalDueAt(movement);
             const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);

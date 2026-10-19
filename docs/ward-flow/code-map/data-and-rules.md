@@ -1,5 +1,22 @@
 # Data, seeds and domain rules
 
+## Output accuracy corrections
+
+Physical ED wait counts use `ward-ed-presence.ts` to exclude ward-origin transfers and stop at
+recorded collection or departure. The ED accountability board retains journeys in transit.
+Weekly ED rows count placement journeys in the week each first crosses the target, not unique people.
+Current legal warnings use `currentLegalDueAt` in `legal-forms/legal-form-progression.ts`, which
+excludes ended authority; recorded historical expiry fields remain available.
+Capacity presentation uses the same `bedStates` Ready partition for the network table, map,
+bed-kind supply and forecast when admissions are supplied, and excludes already allocated journeys
+from unmet demand. Recorded `min(allocatable, empty)` observations are unchanged.
+The catchment resolver's clinic review state does not verify its prototype hospital/service mapping;
+screen and copied output now state that limitation and retain dated clinic sources.
+Shared action feedback waits for the command outcome; `ward-command-completion.ts` treats a missing
+outcome as unconfirmed. Settings Undo also checks that the accepted
+configuration is still current. Handover distinguishes the previous handover boundary from a personal
+visit, qualifies network activity outside ward/service scopes and records print preparation only.
+
 PR262 review repair, 13 October 2026: `unitCapacity` follows R-B-09's existing
 Ready contract, `min(allocatable, empty)`, as do `capacityBreakdown` and the
 eligibility Ready helper. `openBedsNow` starts with that count, subtracts

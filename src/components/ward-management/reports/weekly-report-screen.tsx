@@ -151,7 +151,7 @@ export function WeeklyReportScreen() {
             sub: weekRange,
             stats: (
               <>
-                <HeroStat value={report.edWaits.count} label={`ED waits ${longHoursLabel}+`} />
+                <HeroStat value={report.edWaits.count} label={`New ED waits ${longHoursLabel}+`} />
                 {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
                 <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
                 <HeroStat
@@ -180,7 +180,7 @@ export function WeeklyReportScreen() {
           }
           stats={
             <>
-              <HeroStat value={report.edWaits.count} label={`ED waits ${targetText}`} />
+              <HeroStat value={report.edWaits.count} label={`New ED waits ${targetText}`} />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
               <HeroStat value={delayedDays} label="Delayed discharge days" />
               <HeroStat value={occupancyText} label="Average occupancy" />
@@ -208,13 +208,18 @@ export function WeeklyReportScreen() {
             </p>
             <PhoneCard
               icon={Clock}
-              title={`ED waits ${phoneTargetText}`}
+              title={`ED waits first passing ${phoneTargetText}`}
               aside={`In the week it passed ${longHoursLabel}`}
             >
               <PhoneFacts
                 flush
                 facts={[
-                  { id: "people", label: "People", value: report.edWaits.count, testId: "ward-weekly-ed-count" },
+                  {
+                    id: "people",
+                    label: "Placement journeys",
+                    value: report.edWaits.count,
+                    testId: "ward-weekly-ed-count",
+                  },
                   {
                     id: "longest",
                     label: "Longest",
@@ -278,11 +283,14 @@ export function WeeklyReportScreen() {
                 ]}
               />
             </PhoneCard>
-            <PhoneGroup title={`Who waited ${phoneTargetText}`} aside={`${report.edWaits.rows.length} in the week`}>
+            <PhoneGroup
+              title={`Waits first passing ${phoneTargetText}`}
+              aside={`${report.edWaits.rows.length} in the week`}
+            >
               {report.edWaits.rows.length === 0 ? (
-                <p className={phone.note}>Nobody waited {phoneTargetText}</p>
+                <p className={phone.note}>No wait first passed {phoneTargetText} in this week.</p>
               ) : (
-                <PhoneList label={`ED waits ${phoneTargetText} in the week`}>
+                <PhoneList label={`ED waits first passing ${phoneTargetText} in the week`}>
                   {report.edWaits.rows.map((row) => {
                     return (
                       <PhoneListRow
@@ -341,13 +349,13 @@ export function WeeklyReportScreen() {
 
             <div className={styles.grid3}>
               <StatCard
-                title={`ED waits ${targetText}`}
+                title={`ED waits first passing ${targetText}`}
                 icon={Clock}
                 meta="Counted in the week the wait passes the target (a default set in Settings)"
               >
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
-                    <dt>People</dt>
+                    <dt>Placement journeys</dt>
                     <dd data-testid="ward-weekly-ed-count">{report.edWaits.count}</dd>
                   </div>
                   <div className={styles.figure}>
@@ -425,16 +433,18 @@ export function WeeklyReportScreen() {
             </div>
 
             <StatCard
-              title={`Who waited ${targetText}`}
+              title={`Waits first passing ${targetText}`}
               icon={Clock}
               meta={`${report.edWaits.rows.length} in the week`}
             >
               {report.edWaits.rows.length === 0 ? (
-                <p className={styles.empty}>Nobody waited {targetText}</p>
+                <p className={styles.empty}>No wait first passed {targetText} in this week.</p>
               ) : (
                 <div className={styles.tableWrap}>
                   <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-weekly-ed-table">
-                    <caption className={styles.srOnly}>ED waits {targetText} in the week, synthetic</caption>
+                    <caption className={styles.srOnly}>
+                      ED waits first passing {targetText} in the week, synthetic
+                    </caption>
                     <thead>
                       <tr>
                         <th scope="col">Admission</th>

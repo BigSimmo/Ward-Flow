@@ -263,7 +263,7 @@ export function HandoverPage() {
   const [present, setPresent] = useState(false);
   const [meetingStartedAt, setMeetingStartedAt] = useState<number | null>(null);
   const [meetings, setMeetings] = useState<{ at: Instant; minutes: number }[]>([]);
-  const [takenAt, setTakenAt] = useState<Instant | null>(null);
+  const [preparedAt, setPreparedAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
   const [copied, setCopied] = useState(false);
   const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useState(true);
@@ -364,11 +364,7 @@ export function HandoverPage() {
   );
   const readyTotal = wards.reduce((sum, ward) => sum + ward.ready, 0);
 
-  /*
-   * Since you looked (v10, Elevate): what changed since the window opened, taken from the record.
-   * The prototype has no per-person "last looked" store, so the window start stands in for it and
-   * the strip says the time. Counts only; 0 shows 0.
-   */
+  // Changes since the preceding handover boundary, not a recorded personal visit.
   const [sinceOpen, setSinceOpen] = useState(true);
   const sinceItems = useMemo((): SinceItem[] => {
     const inScopeUnit = (unitId: string) => wards.some((ward) => ward.id === unitId);
@@ -381,16 +377,25 @@ export function HandoverPage() {
       }
       return [...byUnit.entries()].map(([name, n]) => `${n} ${name}`).join(", ") || "None";
     };
+    // ED/team membership is not recorded for every ward admission. Keep the all-ward counts,
+    // but name their broader population on screen and in copied handover text.
+    const wardPopulation = scope.kind === "ed" || scope.kind === "team" ? " across accessible wards" : "";
     const admitted = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.arrivedAt));
     const discharged = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.leftAt));
     const opened = rows.filter((row) => row.openedAt >= newSince);
     const newAct = opened.filter((row) => isActNow(row, now));
     return [
-      { id: "admitted", value: admitted.length, word: "admitted", detail: unitWords(admitted), tone: "success" },
+      {
+        id: "admitted",
+        value: admitted.length,
+        word: `admitted${wardPopulation}`,
+        detail: unitWords(admitted),
+        tone: "success",
+      },
       {
         id: "discharged",
         value: discharged.length,
-        word: "discharged",
+        word: `discharged${wardPopulation}`,
         detail: unitWords(discharged),
         tone: "success",
       },
@@ -409,13 +414,14 @@ export function HandoverPage() {
         tone: newAct.length ? "danger" : "neutral",
       },
     ];
-  }, [admissions, wards, units, rows, newSince, now]);
+  }, [admissions, wards, units, rows, scope.kind, newSince, now]);
   // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
   // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
   const sinceTotal = sinceItems.reduce((sum, item) => (item.id === "act" ? sum : sum + item.value), 0);
   const copySince = useCallback(() => {
     const text = [
-      `Since ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
+      "Synthetic demonstration · Not approved for clinical use",
+      `Since previous handover at ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
       ...sinceItems.map((item) => `${item.value} ${item.word}${item.detail ? ` (${item.detail})` : ""}`),
     ].join("\n");
     void navigator.clipboard?.writeText(text).then(
@@ -622,10 +628,10 @@ export function HandoverPage() {
               },
         }
       : { id: "feeds", done: true, text: "Every ward feed is current" },
-    takenAt !== null
-      ? { id: "print", done: true, text: `Printed copy taken ${formatInstantWithDay(takenAt, now)}` }
+    preparedAt !== null
+      ? { id: "print", done: true, text: `Copy prepared for printing ${formatInstantWithDay(preparedAt, now)}` }
       : // Print and the meeting timer live once, in the hero (device audit 11 Oct 2026).
-        { id: "print", done: false, text: "No printed copy yet" },
+        { id: "print", done: false, text: "No copy prepared for printing yet" },
     meetings.length
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
       : { id: "meet", done: false, text: "Meeting not timed" },
@@ -824,11 +830,13 @@ export function HandoverPage() {
           }))}
           meetingOn={meetingStartedAt !== null}
           onToggleMeeting={toggleMeeting}
-          history={<HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />}
+          history={
+            <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} preparedAt={preparedAt} now={now} />
+          }
         />
         <WardPrototypeFooter
           testId="ward-handover-governance"
-          note="Synthetic data · Not approved for clinical use · Printed copies carry the time they were taken"
+          note="Synthetic data · Not approved for clinical use · Print copies carry their preparation time"
         />
       </main>
     );
@@ -949,7 +957,7 @@ export function HandoverPage() {
           data-testid="ward-handover-since-chip"
         >
           <Icon icon={Sparkles} size={14} />
-          Changed since you looked
+          Changed since previous handover
           <span className={styles.heroCount}>{sinceTotal}</span>
         </button>
       }
@@ -1256,8 +1264,8 @@ export function HandoverPage() {
           pick(id);
         }}
         onBack={() => setSheetOpen(false)}
-        onPrinted={(at) => setTakenAt(at)}
-        takenAt={takenAt}
+        onPrintPrepared={(at) => setPreparedAt(at)}
+        preparedAt={preparedAt}
         now={now}
       />
     );
@@ -1287,7 +1295,7 @@ export function HandoverPage() {
   } else if (tab === "hist") {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="hist">
-        <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} takenAt={takenAt} now={now} />
+        <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} preparedAt={preparedAt} now={now} />
       </TabPanel>
     );
   } else if (portrait) {
@@ -1347,6 +1355,7 @@ export function HandoverPage() {
   const sinceStrip = sinceOpen ? (
     <div data-testid="ward-handover-since">
       <SinceYouLooked
+        title="Since previous handover"
         id="ward-handover-since"
         since={formatInstantWithDay(newSince, now)}
         items={sinceTotal === 0 ? [] : sinceItems}
@@ -1374,7 +1383,7 @@ export function HandoverPage() {
       ) : null}
       <WardPrototypeFooter
         testId="ward-handover-governance"
-        note="Synthetic data · Not approved for clinical use · Printed copies carry the time they were taken"
+        note="Synthetic data · Not approved for clinical use · Print copies carry their preparation time"
       />
     </main>
   );

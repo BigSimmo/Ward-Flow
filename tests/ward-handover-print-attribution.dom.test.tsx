@@ -23,7 +23,7 @@ it("prints the current desk and full place on every sheet, using the copy genera
   // The same clock face one day earlier must identify the older copy as yesterday.
   const earlier = NOW_ANCHOR - 24 * 60;
   function Sheet() {
-    const [takenAt, setTakenAt] = useState<Instant | null>(earlier);
+    const [preparedAt, setPreparedAt] = useState<Instant | null>(earlier);
     return (
       <HandoverPrintSheet
         groups={[]}
@@ -44,8 +44,8 @@ it("prints the current desk and full place on every sheet, using the copy genera
         highlightControls={null}
         onOpenPatient={() => {}}
         onBack={() => {}}
-        onPrinted={setTakenAt}
-        takenAt={takenAt}
+        onPrintPrepared={setPreparedAt}
+        preparedAt={preparedAt}
         now={NOW_ANCHOR}
       />
     );

@@ -13,7 +13,7 @@ import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { PhoneSheet, StatusGlyph, durMinutes } from "@/components/wf";
 
 import type { NetworkWardRow } from "./capacity-derivations";
-import type { BedsForecast } from "./beds-forecast";
+import { forecastHeadline, type BedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
 import styles from "./capacity.module.css";
 
@@ -102,12 +102,7 @@ export function CapacityPhoneOverview({
         <span className={styles.phoneWardText}>
           <span className={styles.phoneWardName}>Bed forecast</span>
           <span className={styles.phoneWardSub}>
-            {/* Device audit option A: "About 13 fewer beds ready tomorrow", never a negative count. */}
-            {tomorrow
-              ? tomorrow.likely < 0
-                ? `About ${Math.abs(tomorrow.likely)} fewer beds ready tomorrow`
-                : `About ${tomorrow.likely} more beds ready tomorrow`
-              : "Forecast not available"}
+            {tomorrow ? `${forecastHeadline(tomorrow.likely)} tomorrow` : "Forecast not available"}
           </span>
         </span>
         <ChevronRight size={16} aria-hidden="true" />

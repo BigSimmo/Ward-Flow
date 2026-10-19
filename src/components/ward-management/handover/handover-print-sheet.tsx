@@ -223,8 +223,8 @@ export type HandoverPrintSheetProps = {
   highlightControls: ReactNode;
   onOpenPatient: (movementId: string) => void;
   onBack: () => void;
-  onPrinted: (takenAt: Instant) => void;
-  takenAt: Instant | null;
+  onPrintPrepared: (preparedAt: Instant) => void;
+  preparedAt: Instant | null;
   now: Instant;
 };
 
@@ -255,8 +255,8 @@ export function HandoverPrintSheet({
   highlightControls,
   onOpenPatient,
   onBack,
-  onPrinted,
-  takenAt,
+  onPrintPrepared,
+  preparedAt,
   now,
 }: HandoverPrintSheetProps) {
   const baseId = useId();
@@ -318,7 +318,7 @@ export function HandoverPrintSheet({
     ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],
   ];
 
-  const taken = formatInstantWithDay(takenAt ?? now, now);
+  const prepared = formatInstantWithDay(preparedAt ?? now, now);
   const meta = `${scopeLabel} · ${shiftLabel} · ${densityLabel} columns${anyHighlight ? " · highlighted rows marked" : ""}`;
 
   const header = (pageNumber: number) => (
@@ -328,18 +328,18 @@ export function HandoverPrintSheet({
         <div className={styles.meta}>{meta}</div>
       </div>
       <div className={styles.stamp}>
-        Taken {taken} {sheetDate} AWST
+        Prepared {prepared} {sheetDate} AWST
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
-        <WardPrintAttribution at={takenAt ?? now} className={styles.attribution} />
+        <WardPrintAttribution at={preparedAt ?? now} className={styles.attribution} />
       </div>
     </header>
   );
 
   const footer = (
     <footer className={styles.pf}>
-      <span>Copy taken {taken}. Check the live board before acting.</span>
+      <span>Copy prepared {prepared}. Check the live board before acting.</span>
       <span className={styles.spacer} />
       <span>Form times as typed, not legally checked</span>
       <span>Ward Flow prototype</span>
@@ -589,7 +589,7 @@ export function HandoverPrintSheet({
   });
 
   const print = () => {
-    flushSync(() => onPrinted(now));
+    flushSync(() => onPrintPrepared(now));
     window.print();
   };
 
@@ -606,7 +606,10 @@ export function HandoverPrintSheet({
           <Button variant="sec" size="sm" icon={ChevronLeft} onClick={onBack} className={styles.back}>
             Back to handover
           </Button>
-          <p className={styles.sub}>The sheet follows the board. Printing freezes a copy with the time it was taken.</p>
+          <p className={styles.sub}>
+            The sheet follows the board. Opening the print dialog records the preparation time; printing is not
+            confirmed.
+          </p>
         </div>
         <div className={styles.controls}>{controls}</div>
         <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-include`}>
@@ -648,8 +651,8 @@ export function HandoverPrintSheet({
           <Button variant="pri" icon={Printer} onClick={print} className={styles.printButton}>
             Print or save PDF
           </Button>
-          {takenAt !== null ? (
-            <span className={styles.sub}>Last copy taken {formatInstantWithDay(takenAt, now)}</span>
+          {preparedAt !== null ? (
+            <span className={styles.sub}>Last copy prepared {formatInstantWithDay(preparedAt, now)}</span>
           ) : null}
         </div>
       </Card>
