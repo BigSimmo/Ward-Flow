@@ -123,4 +123,48 @@ describe("already-recorded command completions", () => {
       title: "Save is not confirmed. Review the board before trying again.",
     });
   });
+  it.each([
+    ["refused with an inline rejection", "refused", true, 0],
+    ["refused only by the server", "refused", false, 1],
+    ["unconfirmed", "failed", true, 1],
+  ] as const)(
+    "says a %s step on the toast only when the page does not already say it inline",
+    (_label, status, inline, toasts) => {
+      const push = vi.fn<(input: ToastInput) => string>(() => "toast");
+      const rejection = wardFlowReducer(seedWardFlowState(), {
+        type: "ADVANCE_CLOCK",
+        role: "ward",
+        now: 642,
+        minutes: 1,
+      }).rejections;
+      function Offer() {
+        const [rejections, setRejections] = useState<typeof rejection>([]);
+        const step = useUndoableStep({
+          dispatch: vi.fn(),
+          requireConfirmation: true,
+          rejections,
+          now: 642,
+          routeRole: "coordinator",
+          toast: { push },
+        });
+        return (
+          <button
+            onClick={() => {
+              step.offer(
+                { success: "Referral accepted", refusalShownInline: true },
+                { completion: { commandId: "decision", status, message: "Review the referral." } },
+              );
+              if (inline) setRejections(rejection);
+            }}
+          >
+            Decide
+          </button>
+        );
+      }
+      render(<Offer />);
+      fireEvent.click(screen.getByText("Decide"));
+      expect(push).toHaveBeenCalledTimes(toasts);
+      if (toasts) expect(push.mock.calls[0]![0].tone).toBe("warning");
+    },
+  );
 });

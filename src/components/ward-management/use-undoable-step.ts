@@ -38,6 +38,8 @@ type Pending = {
   undo?: (now: Instant) => WardFlowEvent;
   /** What the toast says once the undo is accepted. */
   undone?: string;
+  /** A refusal is already said inline by the page; see `UndoableStep.refusalShownInline`. */
+  refusalShownInline?: boolean;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
   /**
@@ -62,6 +64,12 @@ export type UndoableStep = {
   undo?: (now: Instant) => WardFlowEvent;
   /** The toast's title once the undo is accepted. Defaults to "Undone. Back as it was." */
   undone?: string;
+  /**
+   * The page already says a refusal beside the control that raised it (from `rejections`), so the
+   * toast stays silent for a refusal that reached `rejections`. A refusal known only from the
+   * command outcome, and an unconfirmed save, are still said, because nothing inline covers them.
+   */
+  refusalShownInline?: boolean;
 };
 
 export type UndoableStepOptions = {
@@ -133,6 +141,10 @@ export function useUndoableStep({
           ? rejections[rejections.length - 1]
           : undefined;
       if (pending.outcome && pending.outcome.status !== "accepted") {
+        // Only when the refusal also reached `rejections`, which is what the inline surface reads;
+        // a refusal known only from the command outcome (shared mode) is still said here.
+        if (pending.outcome.status === "refused" && pending.refusalShownInline && rejections.length > pending.prior)
+          continue;
         const said =
           pending.outcome.status === "refused"
             ? `Not recorded: ${sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused.")}`
@@ -142,6 +154,7 @@ export function useUndoableStep({
         continue;
       }
       if (refused) {
+        if (pending.refusalShownInline) continue;
         const said = `Not recorded: ${sayRefusal ? sayRefusal(refused.reason) : refused.reason}. Nothing was changed.`;
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said);
