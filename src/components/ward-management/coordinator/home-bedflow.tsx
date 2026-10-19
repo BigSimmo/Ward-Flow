@@ -38,7 +38,7 @@ import {
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
-import { hubStatusText } from "./flow-diagram";
+import { hubStatusText } from "./flow-status";
 import { fitGroups } from "./home-fit";
 import styles from "./home.module.css";
 
