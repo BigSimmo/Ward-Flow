@@ -245,7 +245,12 @@ export function DelaysBoard({
   const chosenKey = filtersKey(chosenFilters);
   useEffect(() => {
     if (chosenKey === addressKey) return;
-    replaceSearchParams(filtersToParams(chosenFilters));
+    // The order goes with the filters, so a link copied from a filtered list opens in the order its
+    // sender saw, not the receiver's remembered one. A bare address stays bare: each viewer's own order.
+    replaceSearchParams({
+      ...filtersToParams(chosenFilters),
+      order: (flatOrderFromSearch(window.location.search) ?? readDelaysFlat()) ? "longest" : "blocker",
+    });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- records what was just written to the address, an external store
     setSeenAddressKey(chosenKey);
   }, [chosenKey, addressKey, chosenFilters]);
