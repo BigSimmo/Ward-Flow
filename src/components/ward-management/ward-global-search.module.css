@@ -457,6 +457,12 @@
   padding: 0;
 }
 
+.groupList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .groupItem:not(:first-child) {
   margin-top: 4px;
   padding-top: 4px;

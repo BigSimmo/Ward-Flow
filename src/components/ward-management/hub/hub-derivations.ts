@@ -235,12 +235,15 @@ export function searchHub(entries: HubEntry[], query: string, kind: HubKind | "a
   const scoped = kind === "all" ? entries : entries.filter((entry) => entry.kind === kind);
   const needle = query.trim().toLowerCase();
   if (needle === "") return scoped;
+  // Every typed word must appear, in any order, as the header search matches EDs: "fremantle older"
+  // finds the Fremantle older adult ward rather than nothing (search review, 19 October 2026).
+  const tokens = needle.split(/\s+/);
   return scoped.filter((entry) => {
     const haystack = [entry.name, entry.site, entry.service]
       .filter((value): value is string => typeof value === "string")
       .join(" ")
       .toLowerCase();
-    return haystack.includes(needle);
+    return tokens.every((token) => haystack.includes(token));
   });
 }
 

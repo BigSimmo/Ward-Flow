@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { NOTHING_FOUND, refusalFor } from "@/components/ward-management/search/search-refusals";
+import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { answerQuestion, questionFor } from "@/components/ward-management/search/search-answers";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import { useDebouncedValue } from "@/components/ward-management/search/use-debounced-value";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -37,13 +40,17 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions } = useWardFlowSelect(
-    "movements",
-    "patients",
-    "units",
-    "referrals",
-    "plannedAdmissions",
-  );
+  const { movements, patients, units, referrals, plannedAdmissions, admissions, dayZero, configuration } =
+    useWardFlowSelect(
+      "movements",
+      "patients",
+      "units",
+      "referrals",
+      "plannedAdmissions",
+      "admissions",
+      "dayZero",
+      "configuration",
+    );
   const now = useWardFlowClock();
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
@@ -62,6 +69,26 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
       limitPerGroup: MENU_RESULTS_FULL,
       plannedAdmissions,
     });
+    // A common question ("over 24 hours") is answered from the Patients page's census, built only
+    // when the text is one of those questions (search-answers.ts), as the header palette does.
+    const answer =
+      refusal || !questionFor(needle)
+        ? undefined
+        : answerQuestion(
+            needle,
+            buildCensus({
+              movements,
+              referrals,
+              units,
+              patients,
+              admissions,
+              plannedAdmissions,
+              now,
+              thresholds: dueSoonThresholdsOf(configuration),
+              dayZero,
+            }),
+            MENU_RESULTS_FULL,
+          );
     const viewHrefs = new Set(results.views.map((view) => view.href));
     const lower = needle.toLowerCase();
     const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
@@ -71,7 +98,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     const pageLabels = new Set(pages.map((entry) => entry.label.toLowerCase()));
     const groups: SearchResultGroup[] = refusal
       ? []
-      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions })
+      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions }, answer)
           .map((group) =>
             group.key === "views"
               ? {
@@ -83,8 +110,23 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
               : group,
           )
           .filter((group) => group.items.length > 0);
-    return { needle, refusal, pages, groups, truncatedGroups: results.truncatedGroups };
-  }, [needle, isPending, entries, movements, patients, units, referrals, plannedAdmissions, now]);
+    const truncatedGroups =
+      answer && answer.total > answer.rows.length ? [...results.truncatedGroups, "answers"] : results.truncatedGroups;
+    return { needle, refusal, pages, groups, truncatedGroups };
+  }, [
+    needle,
+    isPending,
+    entries,
+    movements,
+    patients,
+    units,
+    referrals,
+    plannedAdmissions,
+    admissions,
+    dayZero,
+    configuration,
+    now,
+  ]);
 }
 
 function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
