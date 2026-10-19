@@ -659,12 +659,15 @@ export function CapacityScreen() {
             scopedOpenReady={scopedOpenReady}
             scopedPendingPreparation={scopedPendingPreparation}
           />
-          <ReadyByRoadTime
-            rows={networkRows}
-            defaultEdId={roadTimeFromEdId}
-            selectedUnitId={selectedUnitId}
-            onSelectUnit={selectWard}
-          />
+          {/* The phone rail is hidden on every tab, so the phone shows this list on Overview instead. */}
+          {isPhone ? null : (
+            <ReadyByRoadTime
+              rows={networkRows}
+              defaultEdId={roadTimeFromEdId}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={selectWard}
+            />
+          )}
         </>
       )}
     </aside>
@@ -984,6 +987,14 @@ export function CapacityScreen() {
               freeingTracked={freeingTracked}
               totalFreeing={totalFreeing}
               freeingWards={freeingWards}
+            />
+          ) : null}
+          {isPhone && phoneTab === "overview" ? (
+            <ReadyByRoadTime
+              rows={networkRows}
+              defaultEdId={roadTimeFromEdId}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={selectWard}
             />
           ) : null}
 
