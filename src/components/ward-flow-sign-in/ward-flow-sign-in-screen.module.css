@@ -283,7 +283,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: var(--wf-s-3);
-  min-height: var(--wf-row);
+  min-height: max(44px, var(--wf-row));
   padding: var(--wf-s-2) var(--wf-s-3);
   border: 0;
   border-top: 1px solid var(--wf-line);

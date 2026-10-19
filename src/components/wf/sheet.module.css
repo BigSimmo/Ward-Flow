@@ -18,6 +18,11 @@
     inset 0 1px 0 var(--wf-glass-hl),
     var(--wf-e3);
   font-family: var(--wf-font);
+  overscroll-behavior: contain;
+}
+
+:where(.body) {
+  overscroll-behavior: contain;
 }
 
 :where(.header) {

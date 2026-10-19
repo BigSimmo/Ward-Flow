@@ -7,10 +7,30 @@ import styles from "./status-glyph.module.css";
  */
 export type WfTone = "danger" | "warning" | "success" | "info" | "neutral" | "closed";
 
-export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size?: number; className?: string }) {
+export function StatusGlyph({
+  tone,
+  size = 10,
+  className,
+  label,
+}: {
+  tone: WfTone;
+  size?: number;
+  className?: string;
+  label?: string;
+}) {
   const cls = [styles.glyph, styles[tone], className].filter(Boolean).join(" ");
   return (
-    <svg className={cls} width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+    <svg
+      className={cls}
+      width={size}
+      height={size}
+      viewBox="0 0 10 10"
+      aria-hidden={label ? undefined : "true"}
+      aria-label={label}
+      role={label ? "img" : undefined}
+      focusable="false"
+    >
+      {label ? <title>{label}</title> : null}
       {tone === "danger" && <path d="M5 0.8 9.6 9.2H0.4Z" fill="currentColor" />}
       {tone === "warning" && <circle cx="5" cy="5" r="4" fill="currentColor" />}
       {tone === "success" && (
@@ -33,6 +53,8 @@ export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size
 }
 
 /** An 8px status dot in the same shape language, for meters and legends. */
-export function Dot({ tone, className }: { tone: WfTone; className?: string }) {
-  return <StatusGlyph tone={tone} size={8} className={[styles.dot, className].filter(Boolean).join(" ")} />;
+export function Dot({ tone, className, label }: { tone: WfTone; className?: string; label?: string }) {
+  return (
+    <StatusGlyph tone={tone} size={8} label={label} className={[styles.dot, className].filter(Boolean).join(" ")} />
+  );
 }

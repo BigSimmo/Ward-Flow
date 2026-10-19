@@ -1077,11 +1077,11 @@ body {
  * text-* utilities, giving every control a 16px floor on small screens
  * (search field, scope filter, PDF page input) without per-call-site edits.
  */
-@media (max-width: 640px) {
-  input,
+@media (max-width: 860px), (pointer: coarse) and (max-height: 500px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
   select,
   textarea {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 }
 
@@ -1094,6 +1094,17 @@ select {
   outline: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+button svg,
+button svg *,
+a svg,
+a svg *,
+summary svg,
+summary svg *,
+[role="button"] svg,
+[role="button"] svg * {
+  pointer-events: none;
 }
 
 /* One focus owner per interaction. Buttons and links use a single external

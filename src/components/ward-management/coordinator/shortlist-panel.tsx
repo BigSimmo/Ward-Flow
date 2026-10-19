@@ -2320,6 +2320,7 @@ export function ShortlistPanel({
             <button
               type="button"
               data-testid="ward-change-urgency-toggle"
+              aria-label="Change urgency"
               aria-expanded={urgencyChangeOpen}
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
               onClick={() => setUrgencyChangeOpen((open) => !open)}
@@ -2329,6 +2330,7 @@ export function ShortlistPanel({
             <button
               type="button"
               data-testid="ward-change-legal-status-toggle"
+              aria-label="Change legal status"
               aria-expanded={legalStatusChangeOpen}
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
               onClick={() => setLegalStatusChangeOpen((open) => !open)}
@@ -2499,6 +2501,7 @@ export function ShortlistPanel({
                 <button
                   type="button"
                   data-testid="ward-cancel-transport-toggle"
+                  aria-label="Cancel transport"
                   aria-expanded={cancelTransportOpen}
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   onClick={() => setCancelTransportOpen((open) => !open)}

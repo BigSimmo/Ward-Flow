@@ -1379,6 +1379,11 @@ table.censusTable {
   margin: 0 calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
+  pointer-events: none;
+}
+
+.phoneSeg > * {
+  pointer-events: auto;
 }
 
 .phone > .phoneList {

@@ -78,8 +78,9 @@
   .railToggle,
   .capacityChevron,
   .liveClockDot {
-    transition: none;
-    animation: none;
+    transition: none !important;
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 
@@ -342,6 +343,13 @@
   border-radius: 50%;
   background: var(--wf-success);
   animation: wfPulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveClockDot {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 
 .shiftLiveClockLabel {

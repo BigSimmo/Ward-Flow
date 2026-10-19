@@ -6,8 +6,19 @@ const WARD_DRAWER_EVENT = "ward-flow-open-drawer";
 
 const WARD_DRAWER_CLOSE_EVENT = "ward-flow-close-drawer";
 
+let lastDrawerActionTime = 0;
+const DRAWER_ACTION_THROTTLE_MS = 200;
+
+function shouldThrottleDrawerAction(): boolean {
+  const now = Date.now();
+  if (now - lastDrawerActionTime < DRAWER_ACTION_THROTTLE_MS) return true;
+  lastDrawerActionTime = now;
+  return false;
+}
+
 export function openWardDrawer(drawerId: WardDrawerId) {
   if (typeof window === "undefined") return;
+  if (shouldThrottleDrawerAction()) return;
   window.dispatchEvent(new CustomEvent(WARD_DRAWER_EVENT, { detail: { drawerId } }));
 }
 
@@ -17,11 +28,13 @@ export function openWardDrawer(drawerId: WardDrawerId) {
  */
 export function openReferralSheet(href: string) {
   if (typeof window === "undefined") return;
+  if (shouldThrottleDrawerAction()) return;
   window.dispatchEvent(new CustomEvent(WARD_DRAWER_EVENT, { detail: { drawerId: "referral", href } }));
 }
 
 export function closeWardDrawer() {
   if (typeof window === "undefined") return;
+  if (shouldThrottleDrawerAction()) return;
   window.dispatchEvent(new CustomEvent(WARD_DRAWER_CLOSE_EVENT));
 }
 

@@ -17,6 +17,7 @@
     left: 0;
     z-index: 40;
     display: block;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
   /* Bottom bar (Josh, 11 Oct 2026, iPhone Safari): the icons sit 8px off the bottom edge, or just
@@ -38,7 +39,10 @@
     --wf-dock-top: calc(50px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
 
-  :global(body):has(.pageDock) :global([data-wf-scroller]) {
+  :global(body):has(.pageDock) :global([data-wf-scroller]),
+  :global(body):has(.pageDock) :global(main),
+  :global(body):has(.pageDock) :global([role="main"]),
+  :global(body):has(.pageDock) :global([data-wf-page-scroller]) {
     padding-bottom: var(--wf-dock-clear);
   }
 

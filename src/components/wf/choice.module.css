@@ -515,6 +515,14 @@
   min-height: var(--wf-tablet-tap, 0px);
 }
 
+@media (pointer: coarse) {
+  .tab,
+  .ptItem,
+  .segItem {
+    min-height: 44px;
+  }
+}
+
 /* ── Phone compact size (Josh, 12 Oct 2026) ────────────────────────────────────────────────────────
  * Every phone segmented control and filter chip reads at one compact size, set once in the v6 tokens
  * (`--wf-phone-*`): a 44px track with 38px options, 40px chips, 13px 600 labels (refined buttons,
