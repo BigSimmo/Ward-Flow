@@ -126,6 +126,8 @@ export function EdOverview({
               Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · updating
             </>
           }
+          // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the board scrolls.
+          condensed={`${onBoard} on the psychiatry board · longest ${checkValue("longest") ?? "—"}`}
           figures={heroChips.map((chip) => ({
             id: chip.id,
             value: chip.value,

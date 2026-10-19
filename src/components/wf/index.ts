@@ -73,6 +73,7 @@ export { Timeline, Avatar, EmptyState, StatusLine, type TimelineItem } from "./f
 export { BarList, ColumnChart, Donut, type BarListRow } from "./chart";
 export {
   PhoneSheet,
+  PhoneFilterFold,
   PhoneTabBar,
   PhoneListRow,
   PhoneHero,

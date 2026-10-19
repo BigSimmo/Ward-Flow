@@ -2816,3 +2816,34 @@ button.gLaneL:hover {
     padding-inline: 0;
   }
 }
+
+/*
+ * C1 (phone simplification, 19 Oct 2026): the quick filters fold into one Filter button at the end
+ * of the pinned order switch, and open in a sheet. The pinned row hides everything but the switch
+ * on a phone (above); the button is the one exception. In the sheet the chips wrap rather than
+ * scroll sideways, and keep their phone size and 48px hit areas.
+ */
+@media (max-width: 48rem) {
+  .tableCard > .chead:first-child > .phoneFold {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .tableCard > .chead:first-child:has(> .phoneFold) {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+  }
+
+  .tableCard > .chead:first-child:has(> .phoneFold) > .seg {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .fRow.fRowSheet {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-3);
+    margin: 0;
+    padding-block: var(--wf-phone-pill-hit);
+    overflow: visible;
+  }
+}

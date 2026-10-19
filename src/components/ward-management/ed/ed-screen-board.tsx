@@ -5,6 +5,7 @@
 // 15 Oct 2026).
 import type { ReactNode } from "react";
 import { PortraitRail } from "@/components/wf";
+import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -14,6 +15,7 @@ import { TierKey } from "../tier-key";
 export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
   const {
     boardTable,
+    isPhone,
     isTabletPortrait,
     needsRailSlides,
     needsYouItems,
@@ -23,13 +25,6 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
     setFullscreenBoard,
     patients,
     visiblePatients,
-    boardFilter,
-    setBoardFilter,
-    notReviewedCount,
-    underFormCount,
-    noDestCount,
-    dischargeCount,
-    withdrawnCount,
     patientQuery,
     setPatientQuery,
     patientSort,
@@ -105,71 +100,9 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           </span>
         </div>
       </div>
-      <div className={styles.boardChips} role="group" aria-label="Filter the board">
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "all"}
-          onClick={() => setBoardFilter("all")}
-        >
-          Everyone <span className={styles.c}>{patients.length}</span>
-        </button>
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "not_reviewed"}
-          onClick={() => setBoardFilter("not_reviewed")}
-        >
-          Not reviewed{" "}
-          <span className={styles.c} data-zero={notReviewedCount === 0 ? "true" : undefined}>
-            {notReviewedCount}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "under_form"}
-          onClick={() => setBoardFilter("under_form")}
-        >
-          Under a form{" "}
-          <span className={styles.c} data-zero={underFormCount === 0 ? "true" : undefined}>
-            {underFormCount}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "no_destination"}
-          onClick={() => setBoardFilter("no_destination")}
-        >
-          No bed yet{" "}
-          <span className={styles.c} data-zero={noDestCount === 0 ? "true" : undefined}>
-            {noDestCount}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "discharge"}
-          onClick={() => setBoardFilter("discharge")}
-        >
-          For discharge{" "}
-          <span className={styles.c} data-zero={dischargeCount === 0 ? "true" : undefined}>
-            {dischargeCount}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.boardChip}
-          aria-pressed={boardFilter === "withdrawn"}
-          onClick={() => setBoardFilter("withdrawn")}
-        >
-          Withdrawn{" "}
-          <span className={styles.c} data-zero={withdrawnCount === 0 ? "true" : undefined}>
-            {withdrawnCount}
-          </span>
-        </button>
-      </div>
+      {/* C1 (phone simplification, 19 Oct 2026): on a phone the chips fold into the Filter button
+          beside Board, Needs you and Lists (ed-screen-phone.tsx). */}
+      {isPhone ? null : <EdBoardChips ctx={ctx} />}
       <div className={styles.boardTools}>
         <label className={styles.patientSearch}>
           <span aria-hidden="true">⌕</span>

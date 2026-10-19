@@ -22,6 +22,7 @@ import {
   CheckingFoot,
   Hero,
   LiveChip,
+  PhoneFilterFold,
   PhoneSheet,
   PortraitList,
   PortraitRail,
@@ -758,6 +759,77 @@ export function DelaysBoard({
   ) : null;
   const tiles = ownerTiles(rows);
   const cumulative = WAIT_THRESHOLDS.map((limit) => rows.filter((row) => row.waited >= limit).length);
+  // C1: the filters that are on, for the phone Filter button. The hero's 8h and 24h figures set the
+  // same wait threshold as the 12h chip, so any threshold counts once; the search box is separate.
+  const filterCount =
+    chips.length + (filters.threshold !== 0 ? 1 : 0) + (filters.locked ? 1 : 0) + (filters.silent ? 1 : 0);
+  /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
+  const filterRow = (inSheet: boolean) => (
+    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
+      {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
+          12h step, which the hero does not carry, stays here as a chip. */}
+      <button
+        type="button"
+        className={styles.chip}
+        aria-pressed={filters.threshold === 2}
+        disabled={cumulative[2] === 0 && filters.threshold !== 2}
+        onClick={() => {
+          set({ threshold: filters.threshold === 2 ? 0 : 2 });
+        }}
+      >
+        {WAIT_THRESHOLD_LABELS[2]} <span className={styles.k}>{cumulative[2]}</span>
+      </button>
+      <button
+        type="button"
+        className={styles.chip}
+        aria-pressed={filters.locked}
+        // F-24: "locked" is the app's word for a secure bed, so the chip keeps it and hints.
+        title="People who need a secure (locked) bed"
+        onClick={() => {
+          set({ locked: !filters.locked });
+        }}
+      >
+        Locked bed <span className={styles.k}>{rows.filter((row) => row.locked).length}</span>
+      </button>
+      <button
+        type="button"
+        className={styles.chip}
+        aria-pressed={filters.silent}
+        onClick={() => {
+          set({ silent: !filters.silent });
+        }}
+      >
+        <Glyph tone="warning" />
+        {`No update ${SILENT_MINUTES / 60}h+`}{" "}
+        <span className={styles.k}>{rows.filter((row) => row.silent).length}</span>
+      </button>
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          className={styles.chip}
+          aria-pressed="true"
+          aria-label={`Remove filter ${chip.label}`}
+          onClick={chip.clear}
+        >
+          {chip.label}
+          <X size={12} aria-hidden="true" />
+        </button>
+      ))}
+      <span className={styles.sp} />
+      {filtered ? (
+        <button
+          type="button"
+          className={styles.lnk}
+          onClick={() => {
+            setFilters(NO_FILTERS);
+          }}
+        >
+          Clear
+        </button>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -778,6 +850,8 @@ export function DelaysBoard({
         }
         testId="delays-hero"
         className={styles.delaysHero}
+        // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
+        condensed={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting · ${breached} past recorded time`}
         stats={
           <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
             {heroStat(
@@ -954,71 +1028,21 @@ export function DelaysBoard({
                     Longest wait
                   </button>
                 </div>
-              </div>
-              <div className={`${styles.chead} ${styles.fRow}`}>
-                {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
-                    12h step, which the hero does not carry, stays here as a chip. */}
-                <button
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={filters.threshold === 2}
-                  disabled={cumulative[2] === 0 && filters.threshold !== 2}
-                  onClick={() => {
-                    set({ threshold: filters.threshold === 2 ? 0 : 2 });
-                  }}
-                >
-                  {WAIT_THRESHOLD_LABELS[2]} <span className={styles.k}>{cumulative[2]}</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={filters.locked}
-                  // F-24: "locked" is the app's word for a secure bed, so the chip keeps it and hints.
-                  title="People who need a secure (locked) bed"
-                  onClick={() => {
-                    set({ locked: !filters.locked });
-                  }}
-                >
-                  Locked bed <span className={styles.k}>{rows.filter((row) => row.locked).length}</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={filters.silent}
-                  onClick={() => {
-                    set({ silent: !filters.silent });
-                  }}
-                >
-                  <Glyph tone="warning" />
-                  {`No update ${SILENT_MINUTES / 60}h+`}{" "}
-                  <span className={styles.k}>{rows.filter((row) => row.silent).length}</span>
-                </button>
-                {chips.map((chip) => (
-                  <button
-                    key={chip.key}
-                    type="button"
-                    className={styles.chip}
-                    aria-pressed="true"
-                    aria-label={`Remove filter ${chip.label}`}
-                    onClick={chip.clear}
+                {isPhone ? (
+                  <PhoneFilterFold
+                    count={filterCount}
+                    title="Filter the list"
+                    description="Filters narrow the list. The list says how many they hide."
+                    className={styles.phoneFold}
+                    data-testid="delays-filter-fold"
                   >
-                    {chip.label}
-                    <X size={12} aria-hidden="true" />
-                  </button>
-                ))}
-                <span className={styles.sp} />
-                {filtered ? (
-                  <button
-                    type="button"
-                    className={styles.lnk}
-                    onClick={() => {
-                      setFilters(NO_FILTERS);
-                    }}
-                  >
-                    Clear
-                  </button>
+                    {filterRow(true)}
+                  </PhoneFilterFold>
                 ) : null}
               </div>
+              {/* C1 (phone simplification, 19 Oct 2026): on a phone this row folds into the Filter
+                  button in the pinned row above. */}
+              {isPhone ? null : filterRow(false)}
               {portrait ? (
                 <div className={styles.portraitBody}>
                   <div className={styles.portraitTools}>{portraitRail}</div>
