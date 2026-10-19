@@ -810,6 +810,10 @@ function WardFlowWorld({
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
   // A remote snapshot must not replace edits made locally since the last sync.
   const localEditsSinceBroadcastRef = useRef(false);
+  // Design audit DA-01: a tab still on the untouched seed day (nothing restored, adopted or done
+  // here) never broadcasts that seed, or a newly opened tab would reset every open tab's day. It
+  // asks the open tabs for their day instead (`REQUEST_SAVED_STATE` below).
+  const freshSeedRef = useRef(true);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -829,6 +833,7 @@ function WardFlowWorld({
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
       localEditsSinceBroadcastRef.current = true;
+      freshSeedRef.current = false;
       const commandId = `local-${++commandsRef.current.sequence}`;
       if (!container.sessionAdopted) {
         const queuedEvent = { ...event } as WardFlowEvent;
@@ -995,6 +1000,21 @@ function WardFlowWorld({
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
         if (
+          messageEvent.data?.type === "WARD_FLOW_DISPATCH" &&
+          messageEvent.data.eventType === "REQUEST_SAVED_STATE" &&
+          messageEvent.data.senderId !== instanceId
+        ) {
+          // A new tab asks for the day: answer only with a day this tab has really worked on.
+          if (initialNow !== undefined || shared.enabled || freshSeedRef.current) return;
+          try {
+            const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+            if (raw) broadcastDispatchEvent("SYNC_SAVED_STATE", instanceId, raw);
+          } catch {
+            // Storage unreadable: the new tab keeps its seed day.
+          }
+          return;
+        }
+        if (
           initialNow !== undefined ||
           messageEvent.data?.type !== "WARD_FLOW_DISPATCH" ||
           !messageEvent.data.payload
@@ -1016,6 +1036,7 @@ function WardFlowWorld({
               );
               lastAdoptedBroadcastWorldRef.current = saved.state;
               localEditsSinceBroadcastRef.current = false;
+              freshSeedRef.current = false;
               dispatchContainer({
                 type: "ADOPT_SAVED_SESSION",
                 [ADOPT_SESSION]: (current) => {
@@ -1086,6 +1107,7 @@ function WardFlowWorld({
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    if (saved) freshSeedRef.current = false;
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
       openRequestSequence.current = Math.max(
@@ -1160,7 +1182,9 @@ function WardFlowWorld({
         dayZero,
         nowRef.current,
         mountedAtAbsolute + Math.max(0, elapsedRef.current),
-        isFromRemoteBroadcast ? undefined : getOrCreateBroadcastInstanceId(broadcastInstanceIdRef),
+        isFromRemoteBroadcast || freshSeedRef.current
+          ? undefined
+          : getOrCreateBroadcastInstanceId(broadcastInstanceIdRef),
       )
     ) {
       setStorageUnavailable(true);
@@ -1177,6 +1201,14 @@ function WardFlowWorld({
     storageUnavailable,
     shared.enabled,
   ]);
+
+  // Design audit DA-01: once this tab has settled on the untouched seed day, ask any open tab for the
+  // day it is working on. An open tab answers with its saved day and this tab adopts it through the
+  // ordinary sync path above; with no other tab open nothing answers and the seed day stays.
+  useEffect(() => {
+    if (shared.enabled || initialNow !== undefined || !container.sessionAdopted || !freshSeedRef.current) return;
+    broadcastDispatchEvent("REQUEST_SAVED_STATE", getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
+  }, [container.sessionAdopted, initialNow, shared.enabled]);
 
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
