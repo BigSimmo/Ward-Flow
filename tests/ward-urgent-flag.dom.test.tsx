@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
 import { MovementDrawer } from "@/components/ward-management/movements/movement-drawer";
+import { URGENT_MARK_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -150,7 +151,7 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
     const optionValues = Array.from(select.options)
       .map((option) => option.value)
       .filter((value) => value.length > 0);
-    expect(optionValues).toHaveLength(10);
+    expect(optionValues).toEqual([...URGENT_MARK_REASONS]);
   });
 
   /**

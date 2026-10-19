@@ -32,12 +32,27 @@ export function getStageBedflowDetail(stageId: string, liveMovement?: Movement):
     };
   const changes = liveMovement.stageChanges.filter((change) => change.to === stageId);
   const current = liveMovement.stage === stageId;
+  const stageIndex = STAGES.findIndex((stage) => stage.id === stageId);
+  const currentIndex = STAGES.findIndex((stage) => stage.id === liveMovement.stage);
+  // A stage before the current one with no recorded change is placed, never marked complete: no
+  // transition or time is inferred.
+  const earlier = !current && stageIndex >= 0 && currentIndex >= 0 && stageIndex < currentIndex;
   return {
-    statusText: current ? "Current recorded stage" : changes.length ? "Previously recorded" : "No transition recorded",
+    statusText: current
+      ? "Current stage"
+      : changes.length
+        ? "Recorded"
+        : earlier
+          ? "No time recorded"
+          : "Not reached yet",
     badgeTone: current ? "accent" : "neutral",
     summary: current
       ? `Current movement stage: ${STAGES.find((stage) => stage.id === stageId)?.label ?? stageId}.`
-      : "Historical transitions are shown only when recorded.",
+      : changes.length
+        ? "Recorded stage changes for this stage."
+        : earlier
+          ? "This stage comes before the current one. No stage change was recorded for it, so no time is shown."
+          : "This movement has not reached this stage.",
     milestones: changes.map((change) => ({
       time: clock(change.at),
       label: "Stage recorded",
