@@ -170,6 +170,20 @@ Local gates always execute: the receipt store and gate arbiter were retired on 1
 `run-heavy.mjs` and `run-vitest.mjs` never skip a run on an earlier result. Report reused evidence only
 when you reuse an exact earlier run of the same inputs, with its time and scope.
 
+Playwright keeps an internal JSON report even with a caller-selected display reporter. Explicitly
+requested projects must each execute a test across the reports; listing a project in configuration
+or skipping all its tests is insufficient. Only the existing `test:e2e:advisory` selection may be
+empty. A diagnostic rerun cannot erase an initial shard failure. Browser preflight includes both
+mobile WebKit projects. The release accessibility sweep checks HTTP success, the intended final
+URL and screen identity before axe, including the bed-meeting phone fallback.
+
+The script-budget check requires positive finite limits and complete measurements, counts queried
+Next script assets, and rejects missing/empty assets or unexpected redirects. The existing WF-001
+legacy redirect is accepted only at its exact coded destination. `check:client-bundle-secrets` scans
+tracked source for known credential patterns, fails on unreadable eligible files, and retains its
+synthetic exclusions; it does not inspect built bundles. Bounded FULL dependency analysis resolves
+safe local const literal imports; unresolved or shadowed loads still retain the full gate.
+
 Set `FAST_CHECK_SEED` to reproduce a property-test run. Local and ordinary CI runs default to `424242`; scheduled CI may derive a bounded seed from the run ID.
 
 ## Component tests (jsdom)
