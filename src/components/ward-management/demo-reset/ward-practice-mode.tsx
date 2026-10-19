@@ -13,12 +13,13 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
 import styles from "./ward-practice-mode.module.css";
 
-type PracticeSession = { scenario: string; startedWith: ReadonlySet<string> };
+type PracticeSession = { scenario: string; generation: number; startedWith: ReadonlySet<string> };
 
 /**
  * The running practice, held at module level so it survives the Tools sheet closing while the
- * learner works in the real screens. Tied to the scenario: switching scenario ends it, since a new
- * scenario's seeded requests would otherwise look like ones the learner raised.
+ * learner works in the real screens. Tied to the scenario and the world generation: switching
+ * scenario, resetting the demo or loading a scenario file ends it, since newly seeded requests would
+ * otherwise look like ones the learner raised.
  */
 let session: PracticeSession | null = null;
 const listeners = new Set<() => void>();
@@ -43,9 +44,10 @@ const serverSession = () => null;
  */
 export function WardPracticeMode({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { movements, scenario } = useWardFlowSelect("movements", "scenario");
+  const { movements, scenario, worldGeneration } = useWardFlowSelect("movements", "scenario", "worldGeneration");
   const current = useSyncExternalStore(subscribe, readSession, serverSession);
-  const startedWith = current && current.scenario === scenario ? current.startedWith : null;
+  const startedWith =
+    current && current.scenario === scenario && current.generation === worldGeneration ? current.startedWith : null;
   const titleId = useId();
   const progress = useMemo(
     () => (startedWith ? practiceProgress(movements, startedWith) : null),
@@ -72,7 +74,13 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
           </p>
           <Button
             size="sm"
-            onClick={() => setSession({ scenario, startedWith: new Set(movements.map((movement) => movement.id)) })}
+            onClick={() =>
+              setSession({
+                scenario,
+                generation: worldGeneration,
+                startedWith: new Set(movements.map((movement) => movement.id)),
+              })
+            }
             data-testid="ward-practice-start"
           >
             Start practice

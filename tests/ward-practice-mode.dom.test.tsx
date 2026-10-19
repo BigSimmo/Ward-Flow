@@ -14,10 +14,14 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-/** Shows practice when `shown`, as the Tools sheet does when open, under a chosen scenario name. */
-function Harness({ shown, scenario }: { shown: boolean; scenario?: string }) {
+/** Shows practice when `shown`, as the Tools sheet does when open, under a chosen scenario and world generation. */
+function Harness({ shown, scenario, generation }: { shown: boolean; scenario?: string; generation?: number }) {
   const value = useWardFlow();
-  const next = scenario === undefined ? value : { ...value, scenario: scenario as typeof value.scenario };
+  const next = {
+    ...value,
+    ...(scenario === undefined ? {} : { scenario: scenario as typeof value.scenario }),
+    ...(generation === undefined ? {} : { worldGeneration: generation }),
+  };
   return <WardFlowOverride value={next}>{shown ? <WardPracticeMode /> : null}</WardFlowOverride>;
 }
 
@@ -27,10 +31,10 @@ function renderPractice() {
       <Harness shown />
     </WardFlowProvider>,
   );
-  const show = (shown: boolean, scenario?: string) =>
+  const show = (shown: boolean, scenario?: string, generation?: number) =>
     view.rerender(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Harness shown={shown} scenario={scenario} />
+        <Harness shown={shown} scenario={scenario} generation={generation} />
       </WardFlowProvider>,
     );
   return { show };
@@ -58,5 +62,15 @@ describe("practice mode session", () => {
     show(true, "another-scenario");
     expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
     expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
+    show(true); // back to the first world, so the clean-up below can stop the session
+  });
+
+  it("ends when the world is reseeded under the same scenario, such as a loaded scenario file", () => {
+    const { show } = renderPractice();
+    fireEvent.click(screen.getByTestId("ward-practice-start"));
+    show(true, undefined, 999);
+    expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
+    expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
+    show(true);
   });
 });
