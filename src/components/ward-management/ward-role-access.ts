@@ -174,6 +174,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     ward: "own",
     board: "own",
     discharges: "own",
+    // Ward desks attend the bed meeting, so they may open its TV view; ED desks may not (Josh, 19 Oct 2026).
+    "bed-meeting": "own",
     referrals: "own",
     "referral-new": "all",
     "patient-new": "all",
