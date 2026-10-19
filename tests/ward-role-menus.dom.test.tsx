@@ -105,6 +105,11 @@ describe("the rail shows the desk's own menu (B1)", () => {
       "Find a bed",
     ]);
     expect(screen.getByTestId("ward-rail-bed-finder")).toHaveAttribute("type", "button");
+    // The narrow strip keeps the first three items; Find a bed, the fourth, waits in its Menu.
+    expect(screen.getByTestId("ward-rail-bed-finder").closest("li")?.className).toMatch(/compactExtra/u);
+    expect(screen.getByRole("link", { name: /^My ED board/u }).closest("li")?.className ?? "").not.toMatch(
+      /compactExtra/u,
+    );
   });
 
   it("gives the transport officer My jobs and Alerts", () => {

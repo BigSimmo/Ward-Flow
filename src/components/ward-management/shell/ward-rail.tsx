@@ -463,11 +463,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   }
 
   /** B1: the ED's Find a bed opens the Tools bed finder, which is not a page. */
-  function renderAction(action: RoleMenuAction, options: { sheet?: boolean; firstInSheet?: boolean } = {}) {
+  function renderAction(
+    action: RoleMenuAction,
+    options: { compactExtra?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
+  ) {
     const Icon = action.icon;
     const showClosedRailCard = !options.sheet && !shownOpen && isClosedRailCardViewport;
     return (
-      <li key={action.id}>
+      <li key={action.id} className={options.compactExtra ? styles.compactExtra : undefined}>
         <Tooltip
           content={action.label}
           placement="right"
