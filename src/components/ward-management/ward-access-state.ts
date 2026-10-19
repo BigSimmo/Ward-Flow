@@ -402,6 +402,9 @@ function closeReferences(
     admissions: scoped.admissions.map((admission) => {
       // Older converted bookings predate the admission's retained status. Carry the joined
       // provenance before this projection drops the ward's bookings or movement references.
+      // Executive and dates-only views never carry it, even when the admission already does:
+      // take it out of the spread and add it back only for a view allowed to see it.
+      const { plannedLegalStatus: retained, ...rest } = admission;
       const plannedLegalStatus =
         includePlannedLegalStatus && !datesOnlyAdmissionIds.has(admission.id)
           ? plannedAdmissionLegalStatus(whole, admission)
@@ -412,9 +415,10 @@ function closeReferences(
         admission.movementId !== null && !movements.has(admission.movementId) ? null : admission.movementId;
       return referralId === admission.referralId &&
         movementId === admission.movementId &&
-        plannedLegalStatus === admission.plannedLegalStatus
+        plannedLegalStatus === retained &&
+        (plannedLegalStatus !== undefined || !Object.hasOwn(admission, "plannedLegalStatus"))
         ? admission
-        : { ...admission, referralId, movementId, ...(plannedLegalStatus === undefined ? {} : { plannedLegalStatus }) };
+        : { ...rest, referralId, movementId, ...(plannedLegalStatus === undefined ? {} : { plannedLegalStatus }) };
     }),
     plannedAdmissions: scoped.plannedAdmissions.filter(
       (booking) =>
