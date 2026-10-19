@@ -58,7 +58,7 @@ describe("Task 6: Background render-churn elimination & HandoverPage timer isola
       </WardFlowProvider>,
     );
 
-    const sinceHeading = screen.getByRole("heading", { name: /since you looked/i });
+    const sinceHeading = screen.getByRole("heading", { name: /since previous handover/i });
     expect(sinceHeading.tagName).toBe("H2");
 
     const headings = Array.from(container.querySelectorAll("h1, h2, h3, h4, h5, h6")).map((el) => ({

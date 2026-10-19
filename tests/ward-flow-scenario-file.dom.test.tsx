@@ -176,7 +176,7 @@ describe("demo scenario save and load", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(message()).toHaveTextContent(/^Saved ward-flow-scenario-/);
+    expect(message()).toHaveTextContent(/^Download requested: ward-flow-scenario-.*Check your browser downloads\.$/);
     const built = current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
