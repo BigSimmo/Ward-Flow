@@ -87,7 +87,10 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("retains failed journey evidence separately for every browser group", () => {
     const browser = job("browser");
     expect(browser).toContain("id: journeys");
-    expect(browser).toContain("if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}");
+    expect(browser).toContain("id: csrf");
+    expect(browser).toContain(
+      "if: ${{ !cancelled() && (steps.journeys.outcome == 'failure' || steps.csrf.outcome == 'failure') }}",
+    );
     expect(browser).toMatch(/uses: actions\/upload-artifact@[0-9a-f]{40}/u);
     expect(browser).toContain("name: ward-browser-failures-${{ github.run_id }}-${{ matrix.group }}");
     expect(browser).toContain("path: test-results/");

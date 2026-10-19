@@ -19,7 +19,7 @@
  * walked and the number of tests executed, and either floor breaking is a hard failure with its own
  * message. The floors are the load-bearing half of this script; the comparison is the easy half.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
 import { runOwnedChild } from "./owned-child.mjs";
 import { childProcessExitCode } from "./child-process-result.mjs";
@@ -46,6 +46,7 @@ import {
   planFullGateRecheck,
   runFullGateBatches,
   validateBatchReport,
+  withGateRunResult,
 } from "./ward-flow/full-gate-recheck.mjs";
 
 import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs";
@@ -635,18 +636,19 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         `--outputFile=${reportPath}`,
         ...plan.selected,
       ];
-      try {
-        execFileSync(process.execPath, args, {
-          cwd: projectRoot,
-          stdio: ["ignore", "ignore", "inherit"],
-          env: gateEnvironment,
-        });
-      } catch {
-        /* Vitest exits non-zero for a red; the JSON report decides the gate. */
-      }
+      const runResult = spawnSync(process.execPath, args, {
+        cwd: projectRoot,
+        stdio: ["ignore", "ignore", "inherit"],
+        env: gateEnvironment,
+      });
       if (!existsSync(reportPath)) fail(["Bounded recheck produced no JSON report."]);
-      const rerun = JSON.parse(readFileSync(reportPath, "utf8"));
-      const check = validateBatchReport(rerun, plan.selected, projectRoot);
+      const rerun = withGateRunResult(
+        JSON.parse(readFileSync(reportPath, "utf8")),
+        plan.selected,
+        projectRoot,
+        runResult,
+      );
+      const check = validateBatchReport(rerun, plan.selected, projectRoot, { requireProcessEvidence: true });
       if (!check.valid) fail([`Bounded recheck incomplete: ${check.reason}`]);
       report = mergeGateReports({
         baseReport: receipt.report,
@@ -673,19 +675,20 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         ...(shard ? { maxFiles: Number.POSITIVE_INFINITY } : {}),
         runBatch: ({ files, index, reportPath: batchReport }) => {
           const args = gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex: index });
-          try {
-            execFileSync(process.execPath, [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args], {
+          const runResult = spawnSync(
+            process.execPath,
+            [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args],
+            {
               cwd: projectRoot,
               stdio: ["ignore", "ignore", "inherit"],
               env: gateEnvironment,
-            });
-          } catch {
-            /* The report retains failed assertions; absence or incompleteness still fails. */
-          }
+            },
+          );
           // A shard that recorded no coverage would leave the merged whole-suite coverage short, so a
           // missing blob fails this shard rather than surfacing later as a lower percentage.
           const blob = gateBatchBlobPath(args);
           if (blob && !existsSync(blob)) fail([`Coverage blob report missing for batch ${index + 1}: ${blob}`]);
+          return runResult;
         },
       });
     }

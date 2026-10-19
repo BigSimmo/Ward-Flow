@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -63,6 +64,8 @@ routeSmokePaths = fullRouteSmokePaths;
  * reads.
  */
 const playwrightArgs = process.argv.slice(2);
+const explicitProjects = requestedProjects(playwrightArgs);
+const optionalZeroProjects = [];
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it
 // whenever the mockups project is requested and the list has entries. playwright.config.ts only
 // defines that project when the list names at least one test, so an emptied list must not ask for
@@ -75,8 +78,15 @@ if (
       (argument === "--project" && playwrightArgs[index + 1] === "chromium-mockups"),
   )
 ) {
-  playwrightArgs.push("--project=chromium-mockups-known");
+  if (!explicitProjects.includes("chromium-mockups-known")) {
+    playwrightArgs.push("--project=chromium-mockups-known");
+    optionalZeroProjects.push("chromium-mockups-known");
+  }
 }
+const verdictOptions = {
+  optionalZeroProjects,
+  passWithNoTests: playwrightArgs.includes("--pass-with-no-tests"),
+};
 // WARD_JOURNEY_GROUP="<index>/<count>" (public CI): run only group <index> of the same
 // duration-balanced split WARD_JOURNEY_SHARDS=<count> would make, on this run's single server. Each
 // CI runner then has a whole machine to itself; three shards sharing one 4-core runner made
@@ -153,6 +163,10 @@ if (keepBuildRoot && !requestedRunId) {
 const runId = requestedRunId || `${process.pid}-${Date.now()}`;
 const relativeRunRoot = `.next-playwright/${runId}`;
 const absoluteRunRoot = path.join(projectRoot, relativeRunRoot);
+// Evidence outlives temporary build cleanup. Each invocation owns a separate directory, even
+// when callers reuse a build id; the next CI CSRF run must not wipe preceding journey failures.
+const relativeResultsRoot = `test-results/${runId}-${randomUUID()}`;
+const absoluteResultsRoot = path.join(projectRoot, relativeResultsRoot);
 const relativeDistDir = `${relativeRunRoot}/dist`;
 const relativeTsConfigPath = `${relativeRunRoot}/tsconfig.json`;
 const configuredWaitTimeoutMs = Number(process.env.HEAVY_RUN_WAIT_TIMEOUT_MS);
@@ -513,6 +527,8 @@ try {
   const port = await findFreePort(stableProjectPort(projectRoot));
   const baseUrl = `http://localhost:${port}`;
   mkdirSync(absoluteRunRoot, { recursive: true });
+  mkdirSync(absoluteResultsRoot, { recursive: true });
+  console.log(`Playwright evidence: ${relativeResultsRoot}`);
   writeFileSync(
     path.join(absoluteRunRoot, "tsconfig.json"),
     `${JSON.stringify(
@@ -707,8 +723,8 @@ try {
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its
   // own output folder, all running at once. Ward Flow keeps no server-side state (every test's data
   // lives in its own browser context), so the shards cannot see each other's data. The exit code is
-  // non-zero if any shard fails; a failing spec is then rerun alone, unsharded, before anyone is
-  // blamed.
+  // non-zero if any shard fails. A failing spec may be rerun alone for diagnosis; that rerun
+  // cannot replace the original verdict.
   const shardCount = Number(process.env.WARD_JOURNEY_SHARDS ?? "1");
   if (Number.isInteger(shardCount) && shardCount > 1) {
     const shardUrls = [baseUrl];
@@ -725,7 +741,7 @@ try {
       await waitForServer(shardUrl, shardServer);
       shardUrls.push(shardUrl);
     }
-    const reportFor = (index) => path.join(absoluteRunRoot, `shard-${index + 1}.json`);
+    const reportFor = (index) => path.join(absoluteResultsRoot, `shard-${index + 1}.json`);
     // Duration-weighted groups instead of Playwright's count-based --shard (batch 2: one shard held
     // every slow spec and took 10.9 minutes against 3.3 and 3.9). Each spec file the filters select
     // is placed, longest first, into the group with the least measured time so far
@@ -751,7 +767,7 @@ try {
                 playwrightBin,
                 "test",
                 ...shardArgsFor(index),
-                `--output=test-results/shard-${index + 1}`,
+                `--output=${relativeResultsRoot}/shard-${index + 1}`,
                 "--reporter=list,json",
               ],
               {
@@ -800,24 +816,19 @@ try {
     console.log(
       `Sharded journeys: ${totals.passed} passed, ${totals.failed} failed, ${totals.skipped} skipped, ${totals.flaky} flaky.`,
     );
-    let exitCode = codes.find((code) => code !== 0) ?? 0;
+    const exitCode = codes.find((code) => code !== 0) ?? 0;
     const shardVerdict = journeyRunVerdict(
       codes.map((code, index) => ({ label: `Shard ${index + 1}`, code, report: readJsonReport(reportFor(index)) })),
       requestedProjects(playwrightArgs),
+      verdictOptions,
     );
     if (!shardVerdict.ok) {
       for (const problem of shardVerdict.problems) console.error(`Journeys run is not trustworthy: ${problem}.`);
       // A run that did not really run cannot pass, and a rerun of "failed files" cannot rescue it.
       await exitAfterTypeCheck(exitCode === 0 ? 1 : exitCode);
     }
-    // G4: a spec that failed in a shard is rerun alone, unsharded, on the primary server, before
-    // any branch is blamed. The rerun's result is the verdict.
-    //
-    // Gate speed-up (Josh, 26 September): a file whose ONLY failures are in the known-failures
-    // project ("chromium-mockups-known") is not rerun. Those tests already ran once, in their own
-    // fast-fail project, and the expected-reds comparison reads that run; a second run adds about
-    // eleven minutes and no information. The exit code is unchanged either way, and any failure in
-    // any other project still sends its file to the rerun, whose result is still the verdict.
+    // Rerun ordinary failures only for diagnosis. Known-only failures already have their
+    // fast-fail report; every original shard failure remains blocking either way.
     const specFailures = [...failedFiles].filter((file) => file.endsWith(".spec.ts"));
     const rerun = specFailures.filter((file) =>
       [...(failedFileProjects.get(file) ?? [])].some((project) => project !== "chromium-mockups-known"),
@@ -828,13 +839,13 @@ try {
         `Not rerunning ${knownOnly.length} spec file(s) that failed only on the known list: ${knownOnly.join(", ")}`,
       );
     }
-    // Keep the shards' failure artefacts before anything can overwrite them: the unsharded rerun
-    // below writes to test-results/ and wiped them (full-journey:126, 26 September 2026).
+    // Retain the existing local log backup as well as the invocation-scoped CI evidence.
     if (exitCode !== 0) {
       try {
         const kept = keepJourneyFailures({
           projectRoot,
           shardCount,
+          resultsRoot: absoluteResultsRoot,
           logsRoot: wardFlowLogsRoot(),
         });
         if (kept) console.log(`Kept the shards' failure artefacts in ${kept}`);
@@ -845,30 +856,48 @@ try {
       }
     }
     if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
-      console.log(`Rerunning ${rerun.length} failed spec file(s) alone, unsharded: ${rerun.join(", ")}`);
+      console.log(`Diagnostic rerun of ${rerun.length} failed spec file(s), unsharded: ${rerun.join(", ")}`);
       const specArgs = playwrightArgs.filter((argument) => argument.startsWith("-"));
-      const again = spawnSync(process.execPath, [playwrightBin, "test", ...specArgs, ...rerun], {
-        cwd: projectRoot,
-        env: testEnv,
-        stdio: "inherit",
-      });
-      exitCode = childProcessExitCode(again);
-      console.log(`Unsharded rerun: exit ${exitCode}`);
+      const diagnosticReport = path.join(absoluteResultsRoot, "diagnostic.json");
+      const again = spawnSync(
+        process.execPath,
+        [
+          playwrightBin,
+          "test",
+          ...specArgs,
+          ...rerun,
+          `--output=${relativeResultsRoot}/diagnostic`,
+          "--reporter=list,json",
+        ],
+        {
+          cwd: projectRoot,
+          env: { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: diagnosticReport },
+          stdio: "inherit",
+        },
+      );
+      console.log(
+        `Diagnostic rerun: exit ${childProcessExitCode(again)}; original shard verdict remains exit ${exitCode}.`,
+      );
     }
-    // Before this speed-up the known-only files were in the rerun and failed it again, so the run
-    // could never exit 0 while they had failed. Keep that: skipping their rerun must not turn the run
-    // green.
-    if (knownOnly.length > 0 && exitCode === 0) exitCode = 1;
     await exitAfterTypeCheck(exitCode);
   }
 
   // The same verdict as the sharded path, read from a JSON report, unless the caller chose its own
   // reporter (then only the exit code is available, as before).
   const callerChoseReporter = playwrightArgs.some((argument) => argument.startsWith("--reporter"));
-  const singleReport = path.join(absoluteRunRoot, "journeys.json");
+  const singleReport = path.join(absoluteResultsRoot, "journeys.json");
+  const callerChoseOutput = playwrightArgs.some(
+    (argument) => argument === "--output" || argument.startsWith("--output="),
+  );
   const result = spawnSync(
     process.execPath,
-    [playwrightBin, "test", ...playwrightArgs, ...(callerChoseReporter ? [] : ["--reporter=list,json"])],
+    [
+      playwrightBin,
+      "test",
+      ...playwrightArgs,
+      ...(callerChoseOutput ? [] : [`--output=${relativeResultsRoot}/tests`]),
+      ...(callerChoseReporter ? [] : ["--reporter=list,json"]),
+    ],
     {
       cwd: projectRoot,
       env: callerChoseReporter ? testEnv : { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: singleReport },
@@ -881,6 +910,7 @@ try {
     const verdict = journeyRunVerdict(
       [{ label: "The run", code: exitCode, report: readJsonReport(singleReport) }],
       requestedProjects(playwrightArgs),
+      verdictOptions,
     );
     for (const problem of verdict.problems) console.error(`Playwright run is not trustworthy: ${problem}.`);
     if (!verdict.ok && exitCode === 0) verdictExitCode = 1;

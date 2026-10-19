@@ -50,7 +50,25 @@ export function splitFullGateBatches(files, { maxFiles = 100, maxChars = 12_000 
   return batches;
 }
 
-export function validateBatchReport(report, expectedFiles, root) {
+// Retain the real child verdict: JSON reporters can omit errors outside test assertions.
+export function withGateRunResult(report, files, root, runResult) {
+  return {
+    ...report,
+    wardGateRuns: [
+      {
+        files,
+        status: runResult?.status ?? null,
+        signal: runResult?.signal ?? null,
+        error: runResult?.error ? String(runResult.error.message ?? runResult.error) : null,
+        failingFiles: (report.testResults ?? [])
+          .filter((suite) => suite.assertionResults?.some((test) => test.status === "failed"))
+          .map((suite) => relativeName(root, suite.name)),
+      },
+    ],
+  };
+}
+
+export function validateBatchReport(report, expectedFiles, root, { requireProcessEvidence = false } = {}) {
   if (!Array.isArray(report?.testResults) || !Number.isInteger(report.numTotalTests) || report.numTotalTests < 1)
     return { valid: false, reason: "missing or empty Vitest report" };
   const files = report.testResults.map((suite) => relativeName(root, suite.name));
@@ -61,6 +79,43 @@ export function validateBatchReport(report, expectedFiles, root) {
   const failing = report.testResults
     .filter((suite) => suite.status === "failed" || suite.assertionResults.some((test) => test.status === "failed"))
     .map((suite) => relativeName(root, suite.name));
+  if (report.numUnhandledErrors > 0 || report.errors?.length || report.unhandledErrors?.length)
+    return { valid: false, reason: "Vitest reported unhandled errors" };
+  if (requireProcessEvidence || report.wardGateRuns !== undefined) {
+    if (!Array.isArray(report.wardGateRuns) || report.wardGateRuns.length === 0)
+      return { valid: false, reason: "missing test process evidence" };
+    const latest = new Map();
+    for (const run of report.wardGateRuns) {
+      if (run?.error || run?.signal || ![0, 1].includes(run?.status))
+        return { valid: false, reason: "interrupted or failed test launch" };
+      if (
+        !Array.isArray(run.files) ||
+        run.files.length === 0 ||
+        new Set(run.files).size !== run.files.length ||
+        run.files.some((file) => !expectedFiles.includes(file)) ||
+        !Array.isArray(run.failingFiles) ||
+        run.failingFiles.some((file) => !run.files.includes(file))
+      )
+        return { valid: false, reason: "invalid test process population evidence" };
+      if ((run.status === 0) !== (run.failingFiles.length === 0))
+        return { valid: false, reason: "test exit status and assertion verdict disagree" };
+      for (const file of run.files) latest.set(file, run);
+    }
+    if (expectedFiles.some((file) => !latest.has(file)))
+      return { valid: false, reason: "missing test process population evidence" };
+    // A bounded rerun supersedes the original result for its selected files only.
+    if (
+      report.testResults.some((suite) => {
+        const file = relativeName(root, suite.name);
+        const assertionFailed = suite.assertionResults.some((test) => test.status === "failed");
+        return (
+          latest.get(file).failingFiles.includes(file) !== assertionFailed ||
+          (suite.status === "failed" && !assertionFailed)
+        );
+      })
+    )
+      return { valid: false, reason: "test process evidence and assertion verdict disagree" };
+  }
   return { valid: true, failing };
 }
 
@@ -77,7 +132,7 @@ export function runFullGateBatches({
   if (!environmentFingerprint) throw new Error("FULL checkpoint requires a reliable outcome-input identity");
   const batches = splitFullGateBatches(population, { maxFiles });
   const identity = {
-    version: 2,
+    version: 3,
     commit,
     root: path.resolve(root),
     population,
@@ -97,17 +152,19 @@ export function runFullGateBatches({
     writeFileSync(identityPath, `${JSON.stringify(identity, null, 2)}\n`, { flag: "wx" });
   }
   const testResults = [];
+  const wardGateRuns = [];
   let numTotalTests = 0;
   for (const [index, files] of batches.entries()) {
     const stable = path.join(stateDir, `batch-${String(index + 1).padStart(3, "0")}.json`);
     const resumed = existsSync(stable);
     if (!resumed) {
       const pending = `${stable}.${process.pid}.${Date.now()}.partial`;
-      runBatch({ files, index, reportPath: pending });
+      const runResult = runBatch({ files, index, reportPath: pending });
       if (!existsSync(pending)) throw new Error(`batch ${index + 1} produced no report`);
-      const candidate = JSON.parse(readFileSync(pending, "utf8"));
-      const check = validateBatchReport(candidate, files, root);
+      const candidate = withGateRunResult(JSON.parse(readFileSync(pending, "utf8")), files, root, runResult);
+      const check = validateBatchReport(candidate, files, root, { requireProcessEvidence: true });
       if (!check.valid) throw new Error(`batch ${index + 1} is incomplete: ${check.reason}`);
+      writeFileSync(pending, `${JSON.stringify(candidate)}\n`);
       renameSync(pending, stable);
       appendFileSync(
         path.join(stateDir, "findings.log"),
@@ -115,15 +172,16 @@ export function runFullGateBatches({
       );
     }
     const report = JSON.parse(readFileSync(stable, "utf8"));
-    const check = validateBatchReport(report, files, root);
+    const check = validateBatchReport(report, files, root, { requireProcessEvidence: true });
     if (!check.valid) throw new Error(`saved batch ${index + 1} is invalid: ${check.reason}`);
     console.log(
       `FULL batch ${index + 1}/${batches.length}: ${resumed ? "reused" : "ran"} ${files.length} files, ${report.numTotalTests} tests; failures: ${check.failing.length}.`,
     );
     testResults.push(...report.testResults);
+    wardGateRuns.push(...report.wardGateRuns);
     numTotalTests += report.numTotalTests;
   }
-  return { numTotalTests, testResults };
+  return { numTotalTests, testResults, wardGateRuns };
 }
 
 export function planFullGateRecheck({
@@ -150,6 +208,8 @@ export function planFullGateRecheck({
   const prior = receipt.report;
   if (!Array.isArray(prior?.testResults) || executedAssertionCount(prior) < minimumTests)
     return refuse("the original full report is incomplete");
+  const original = validateBatchReport(prior, population, "", { requireProcessEvidence: true });
+  if (!original.valid) return refuse(`the original full report is invalid: ${original.reason}`);
   const ran = prior.testResults.map((suite) => suite.name);
   if (new Set(ran).size !== ran.length || !sameFiles(sorted(ran), sorted(population)))
     return refuse("the original full report did not cover exactly the population");
@@ -175,6 +235,14 @@ const relativeName = (root, name) =>
 export function mergeGateReports({ baseReport, rerunReport, selected, root }) {
   if (!Array.isArray(baseReport?.testResults) || !Array.isArray(rerunReport?.testResults))
     throw new Error("missing test results in the full or recheck report");
+  const baseFiles = baseReport.testResults.map((suite) => relativeName(root, suite.name));
+  for (const [report, files] of [
+    [baseReport, baseFiles],
+    [rerunReport, selected],
+  ]) {
+    const check = validateBatchReport(report, files, root, { requireProcessEvidence: true });
+    if (!check.valid) throw new Error(`invalid full or recheck report: ${check.reason}`);
+  }
   const replacements = new Map();
   for (const suite of rerunReport.testResults) {
     const file = relativeName(root, suite.name);
@@ -189,5 +257,10 @@ export function mergeGateReports({ baseReport, rerunReport, selected, root }) {
     return { ...(replacement ?? suite), name: path.resolve(root, suite.name) };
   });
   const numTotalTests = testResults.reduce((total, suite) => total + suite.assertionResults.length, 0);
-  return { ...baseReport, testResults, numTotalTests };
+  return {
+    ...baseReport,
+    testResults,
+    numTotalTests,
+    wardGateRuns: [...baseReport.wardGateRuns, ...rerunReport.wardGateRuns],
+  };
 }

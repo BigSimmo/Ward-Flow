@@ -166,9 +166,16 @@ it is limited to the documented, exact GitHub connector-gap operation in
 | `npm run check:coverage-inventory`        | Verify the declared executable-file population against produced LCOV.                    |
 | `npm run docs:maintain:check`             | Read-only document, index, organisation and reference-pack integrity aggregate.          |
 
-Local gates always execute: the receipt store and gate arbiter were retired on 18 October 2026, so
+Local readiness always invokes its selected gates: the cross-gate receipt store and gate arbiter
+were retired on 18 October 2026, so
 `run-heavy.mjs` and `run-vitest.mjs` never skip a run on an earlier result. Report reused evidence only
 when you reuse an exact earlier run of the same inputs, with its time and scope.
+
+The full unit gate separately checkpoints complete batches. Reuse requires matching source,
+dependencies, command and environment, including all three `WARD_ENGINE_FUZZ_*` settings. Each batch
+must retain its process outcome as well as assertion results; older checkpoints without that evidence
+are refused. A normal exit 1 is valid evidence of assertion failures, not permission to ignore a
+launch failure, signal, unhandled error or disagreement between the process and its assertion report.
 
 Set `FAST_CHECK_SEED` to reproduce a property-test run. Local and ordinary CI runs default to `424242`; scheduled CI may derive a bounded seed from the run ID.
 
@@ -199,7 +206,15 @@ The active Ward CI restores the Next build cache into the runner temporary direc
 critical-job build artifact to PR shards. Local keep-root/cache reuse still rebuilds the app and is
 not evidence that tests or builds can be skipped.
 
-Blocking tests run with zero retries. CI publishes list, JUnit, and JSON reports. Failed-test classification parses JUnit test cases and uses exact spec/title matches; a job name is never enough to classify a failure as a known flake.
+Blocking tests run with zero retries. The browser wrapper selects list and JSON reporters;
+the reporter defaults in `playwright.config.ts` do not establish that JUnit is produced by that wrapper.
+Default reports and traces stay under a unique `test-results/<run-id>-<uuid>/` directory after the
+temporary build is removed. A later invocation, including the CI CSRF check, uses a separate directory.
+Each explicitly requested project must execute tests, rather than merely appear in configuration;
+an automatically added known-failures project may be empty for a narrow selection. An explicit
+advisory `--pass-with-no-tests` permits an empty selection, but does not excuse report or configuration
+errors. An optional local sharded diagnostic rerun cannot erase the original failure.
+A job name is never enough to establish which tests executed or why they failed.
 
 The former `verify:phone-chrome` command is retired in this repository. For phone changes select the
 affected current Ward journey or the dedicated release-gate phone project. Browser emulation does
@@ -375,7 +390,10 @@ evidence-based verdict rather than disguising a public-network failure as a loca
 
 ## Flake policy
 
-`tests/flake-ledger.json` may be empty. Each entry must match the exact spec and title, and the test title must include `@quarantine` but not `@critical`. Entries require an owner, reproduction command, local tracking reference, first/last-seen dates, and an expiry no more than 30 days away. Reproduce a candidate three times on the same SHA before adding or retaining it: fix fail/pass races, treat repeatable failures as regressions, and remove entries that no longer reproduce.
+Blocking tests run with zero retries. The flake-ledger tooling was retired on 18 October 2026;
+`tests/flake-ledger.json` does not authorise quarantine or turn a failure into a pass. Report and
+investigate failures on the same revision. A diagnostic rerun supplies additional evidence and
+does not erase the initial failure. See [checks and evidence](agents/checks-and-evidence.md).
 
 ## CI topology
 

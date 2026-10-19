@@ -18,7 +18,25 @@ export function scriptSources(html) {
   return [...new Set([...html.matchAll(/src="(\/_next\/static\/[^"]+\.js)"/g)].map((match) => match[1]))];
 }
 
+export function validateBudgets(budgets) {
+  if (!budgets || typeof budgets !== "object" || Array.isArray(budgets) || Object.keys(budgets).length === 0) {
+    throw new Error("Script budgets must be a nonempty object of route limits");
+  }
+  for (const [route, limit] of Object.entries(budgets)) {
+    const localRoute = route.startsWith("/") && !route.startsWith("//") && !route.includes("\\");
+    if (!localRoute || !Number.isFinite(limit) || limit <= 0) {
+      throw new Error(`Invalid script budget for ${route}: expected a route and a finite positive KB limit`);
+    }
+  }
+}
+
 export function overBudget(measured, budgets) {
+  validateBudgets(budgets);
+  for (const route of Object.keys(budgets)) {
+    if (!Number.isFinite(measured?.[route]) || measured[route] < 0) {
+      throw new Error(`Invalid script measurement for ${route}: expected finite nonnegative KB`);
+    }
+  }
   return Object.entries(budgets)
     .filter(([route, limit]) => measured[route] > limit)
     .map(([route, limit]) => ({ route, kb: measured[route], limit }));
@@ -49,13 +67,20 @@ async function waitForServer(base, attempts = 60) {
   throw new Error("The built app did not start");
 }
 
-async function routeKb(base, route) {
-  const response = await fetch(base + route, { headers: { "user-agent": PHONE_UA } });
-  if (!response.ok) throw new Error(`${route} answered ${response.status}`);
+async function measuredResponse(url, label, request, headers) {
+  const response = await request(url, { redirect: "manual", ...(headers ? { headers } : {}) });
+  if (!response.ok) throw new Error(`${label} answered ${response.status}; redirects and errors cannot be measured`);
+  if (response.url !== url) throw new Error(`${label} answered at ${response.url}, expected ${url}`);
+  return response;
+}
+
+export async function routeKb(base, route, request = fetch) {
+  const response = await measuredResponse(new URL(route, base).href, route, request, { "user-agent": PHONE_UA });
+  const sources = scriptSources(await response.text());
+  if (sources.length === 0) throw new Error(`${route} names no Next static scripts, so its size cannot be measured`);
   let bytes = 0;
-  for (const src of scriptSources(await response.text())) {
-    const script = await fetch(base + src);
-    if (!script.ok) throw new Error(`${route}: ${src} answered ${script.status}, so its size cannot be counted`);
+  for (const src of sources) {
+    const script = await measuredResponse(new URL(src, base).href, `${route}: ${src}`, request);
     bytes += gzipSync(Buffer.from(await script.arrayBuffer()), { level: 9 }).length;
   }
   return Math.round(bytes / 1024);
@@ -63,6 +88,7 @@ async function routeKb(base, route) {
 
 async function main() {
   const { budgets } = JSON.parse(readFileSync(join(process.cwd(), "script-budget.json"), "utf8"));
+  validateBudgets(budgets);
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const server = spawn(
