@@ -2,7 +2,15 @@ import { createServer } from "node:http";
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 
-import { overBudget, routeKb, scriptSources, validateBudgets } from "../scripts/check-script-budget.mjs";
+import {
+  LEGACY_MOVEMENT_REDIRECT,
+  overBudget,
+  routeKb,
+  scriptSources,
+  validateBudgets,
+} from "../scripts/check-script-budget.mjs";
+import scriptBudget from "../script-budget.json";
+import { movementHref } from "../src/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "../src/components/ward-management/shell/ward-record-address";
 
 type Fixture = { status?: number; type?: string; body?: string; location?: string };
@@ -130,9 +138,14 @@ describe("phone script budget", () => {
     );
   });
 
+  it("keeps the legacy movement redirect paired with the configured route and movementHref", () => {
+    expect(LEGACY_MOVEMENT_REDIRECT.destination).toBe(movementHref("WF-001"));
+    expect(Object.keys(scriptBudget.budgets)).toContain(LEGACY_MOVEMENT_REDIRECT.route);
+  });
+
   it("preserves the configured movement's exact record-address redirect", async () => {
-    const legacy = "/mockups/ward-flow/movements/WF-001";
-    const canonical = `/mockups/ward-flow/movements/${encodeRecordAddress("WF-001")}`;
+    const legacy = "/ward-flow/movements/WF-001";
+    const canonical = `/ward-flow/movements/${encodeRecordAddress("WF-001")}`;
     await withPages(
       {
         [legacy]: { status: 307, location: canonical },
@@ -148,9 +161,10 @@ describe("phone script budget", () => {
 
   it.each([
     ["/a", "/login"],
-    ["/mockups/ward-flow/movements/WF-001", "/login"],
-    ["/mockups/ward-flow/movements/WF-001", "http://127.0.0.1:1/mockups/ward-flow/movements/1nfzcp26wc0g"],
-    ["/mockups/ward-flow/movements/WF-001", "/mockups/ward-flow/movements/1nfzcp26wc0g?other=record"],
+    ["/ward-flow/movements/WF-001", "/login"],
+    ["/ward-flow/movements/WF-001", "http://127.0.0.1:1/ward-flow/movements/1nfzcp26wc0g"],
+    ["/ward-flow/movements/WF-001", "/ward-flow/movements/1nfzcp26wc0g?other=record"],
+    ["/ward-flow/movements/WF-001", "/mockups/ward-flow/movements/1nfzcp26wc0g"],
   ])("rejects unexpected route redirects from %s to %s", async (route, location) => {
     await withPages({ [route]: { status: 307, location } }, async (base, requests) => {
       await expect(routeKb(base, route)).rejects.toThrow(/answered 307|unexpected redirect destination/);

@@ -90,15 +90,21 @@ async function waitForServer(base, attempts = 60) {
   throw new Error("The built app did not start");
 }
 
+// D-39's one configured legacy movement link redirects to this exact record-address code.
+// Keep this paired with movementHref("WF-001") (tests/script-budget.test.ts checks it), rather
+// than accepting any same-origin redirect.
+export const LEGACY_MOVEMENT_REDIRECT = Object.freeze({
+  route: "/ward-flow/movements/WF-001",
+  destination: "/ward-flow/movements/1nfzcp26wc0g",
+});
+
 export async function routeKb(base, route) {
   const options = { headers: { "user-agent": PHONE_UA }, redirect: "manual" };
   let response = await fetch(base + route, options);
-  // D-39's one configured legacy movement link redirects to this exact record-address code.
-  // Keep this paired with movementHref("WF-001"), rather than accepting any same-origin redirect.
-  if ((response.status === 307 || response.status === 308) && route === "/mockups/ward-flow/movements/WF-001") {
+  if ((response.status === 307 || response.status === 308) && route === LEGACY_MOVEMENT_REDIRECT.route) {
     const location = response.headers.get("location");
     const destination = location && new URL(location, base + route);
-    if (!destination || destination.href !== `${base}/mockups/ward-flow/movements/1nfzcp26wc0g`) {
+    if (!destination || destination.href !== `${base}${LEGACY_MOVEMENT_REDIRECT.destination}`) {
       throw new Error(`${route}: unexpected redirect destination`);
     }
     response = await fetch(destination, options);
@@ -144,7 +150,8 @@ async function main() {
       console.log(`${route}: ${measured[route].toFixed(1)} KB gzipped (budget ${budgets[route]} KB)`);
     }
     const over = overBudget(measured, budgets);
-    for (const { route, kb, limit } of over) console.error(`Over budget: ${route} is ${kb} KB, budget ${limit} KB`);
+    for (const { route, kb, limit } of over)
+      console.error(`Over budget: ${route} is ${kb.toFixed(1)} KB, budget ${limit} KB`);
     if (over.length) process.exitCode = 1;
   } finally {
     server.kill();
