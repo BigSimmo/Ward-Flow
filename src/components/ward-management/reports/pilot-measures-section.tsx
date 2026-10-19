@@ -6,6 +6,7 @@ import { BedDouble, ClipboardCheck, Clock, Route, Truck, UserX } from "lucide-re
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
@@ -31,6 +32,11 @@ function durationFigures(summary: DurationSummary, what: string): { typical: Fig
     typical: { id: "typical", label: "Typical", value: splitDuration(summary.median), note: sample },
     slow: { id: "slow", label: "Slowest 1 in 10", value: splitDuration(summary.p90) },
   };
+}
+
+/** A window from the clinical values, in whole hours where it is one ("2h"), never typed here. */
+function windowText(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
 function rateNote(count: number, of: number): string | undefined {
@@ -113,8 +119,6 @@ export function PilotMeasuresSection({
   const held = durationFigures(measures.requestToBedHeld, "beds held");
   const travel = durationFigures(measures.transport.collectedToArrived, "arrivals by transport");
   const { requests, holds, transport, completeness } = measures;
-  const windowText =
-    requests.windowMinutes % 60 === 0 ? `${requests.windowMinutes / 60}h` : splitDuration(requests.windowMinutes);
   const completePercent = per100(completeness.complete, completeness.arrivals);
 
   const cards = [
@@ -137,7 +141,7 @@ export function PilotMeasuresSection({
       figures={[
         {
           id: "missed",
-          label: `No ward in ${windowText}`,
+          label: `No ward in ${windowText(requests.windowMinutes)}`,
           value: small(requests.noWardAsked),
           note: rateNote(requests.noWardAsked, requests.raised),
           testId: "ward-pilot-missed",
@@ -184,7 +188,7 @@ export function PilotMeasuresSection({
       figures={[
         {
           id: "late",
-          label: "Over 1h late",
+          label: `Over ${windowText(CLINICAL_VALUES.lateArrivalGrace.value)} late`,
           value: transport.lateCollections,
           note: rateNote(transport.lateCollections, transport.collections),
           testId: "ward-pilot-transport-late",
