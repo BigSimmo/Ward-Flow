@@ -40,34 +40,37 @@ export function reduceWardClosureEvent(
   const unit = findUnit(state, event.unitId);
   if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
 
-  if (event.type === "CLOSE_WARD_TO_ADMISSIONS") {
-    if (unit.isClosed) return reject(state, event, `${unit.name} is already closed to admissions`);
-    // Chosen, never typed: the runtime half of the union-type check, for an untyped caller.
-    if (!WARD_CLOSURE_REASON_IDS.includes(event.reason)) {
-      return reject(state, event, `${event.type} reason must be chosen from WARD_CLOSURE_REASONS`);
+  switch (event.type) {
+    case "CLOSE_WARD_TO_ADMISSIONS": {
+      if (unit.isClosed) return reject(state, event, `${unit.name} is already closed to admissions`);
+      // Chosen, never typed: the runtime half of the union-type check, for an untyped caller.
+      if (!WARD_CLOSURE_REASON_IDS.includes(event.reason)) {
+        return reject(state, event, `${event.type} reason must be chosen from WARD_CLOSURE_REASONS`);
+      }
+      if (event.until !== undefined && event.until <= event.now) {
+        return reject(state, event, "The expected reopening time must be later than now");
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const closed: Unit = {
+        ...unit,
+        isClosed: true,
+        admissionsClosure: {
+          reason: event.reason,
+          at: event.now,
+          by: WARD_FLOW_ROLE_LABELS[event.role],
+          ...(event.until !== undefined ? { until: event.until } : {}),
+        },
+      };
+      return replaceUnit(state, unit.id, closed);
     }
-    if (event.until !== undefined && event.until <= event.now) {
-      return reject(state, event, "The expected reopening time must be later than now");
+    case "REOPEN_WARD_TO_ADMISSIONS": {
+      if (!unit.isClosed) return reject(state, event, `${unit.name} is not closed to admissions`);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const reopened: Unit = { ...unit, isClosed: false };
+      delete reopened.admissionsClosure;
+      return replaceUnit(state, unit.id, reopened);
     }
-    decision.outcome = "accepted";
-    decision.reasonCode = "none";
-    const closed: Unit = {
-      ...unit,
-      isClosed: true,
-      admissionsClosure: {
-        reason: event.reason,
-        at: event.now,
-        by: WARD_FLOW_ROLE_LABELS[event.role],
-        ...(event.until !== undefined ? { until: event.until } : {}),
-      },
-    };
-    return replaceUnit(state, unit.id, closed);
   }
-
-  if (!unit.isClosed) return reject(state, event, `${unit.name} is not closed to admissions`);
-  decision.outcome = "accepted";
-  decision.reasonCode = "none";
-  const reopened: Unit = { ...unit, isClosed: false };
-  delete reopened.admissionsClosure;
-  return replaceUnit(state, unit.id, reopened);
 }
