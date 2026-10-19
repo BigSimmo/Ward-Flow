@@ -11,6 +11,7 @@ import { admissionCriteriaEligibility } from "@/components/ward-management/ward-
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import styles from "./ward.module.css";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
+import { toastAfterCommand } from "./ward-screen-helpers";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -272,37 +273,39 @@ export function WardScreenBedDrawer({
                     if (blocker === null) {
                       // A blocked release clears the stay's reason with it; otherwise the stay's own
                       // reason is cleared, so nothing is refused as a no-op.
+                      let cleared: ReturnType<WardRaise> = undefined;
                       if (pendingRelease && pendingRelease.blocker !== null) {
-                        raise("CLEAR_BED_RELEASE_BLOCK", {
+                        cleared = raise("CLEAR_BED_RELEASE_BLOCK", {
                           releaseId: pendingRelease.id,
                           actingUnitId: unitId,
                         });
                       } else if (stay && stay.blockReason !== null) {
-                        raise("CLEAR_STAY_DISCHARGE_BLOCKER", {
+                        cleared = raise("CLEAR_STAY_DISCHARGE_BLOCKER", {
                           admissionId,
                           actingUnitId: unitId,
                         });
                       }
-                      setToastMessage("Discharge blocker cleared.");
+                      toastAfterCommand(cleared, "Discharge blocker cleared.", setToastMessage);
                       return;
                     }
                     const validBlocker = blocker as BedReleaseBlocker;
                     // With a bed release the release event keeps the stay's reason in step; without
                     // one the stay records it directly.
+                    let recorded: ReturnType<WardRaise>;
                     if (pendingRelease) {
-                      raise("BLOCK_BED_RELEASE", {
+                      recorded = raise("BLOCK_BED_RELEASE", {
                         releaseId: pendingRelease.id,
                         actingUnitId: unitId,
                         blocker: validBlocker,
                       });
                     } else {
-                      raise("RECORD_STAY_DISCHARGE_BLOCKER", {
+                      recorded = raise("RECORD_STAY_DISCHARGE_BLOCKER", {
                         admissionId,
                         actingUnitId: unitId,
                         blocker: validBlocker,
                       });
                     }
-                    setToastMessage(`Discharge blocker recorded: ${blocker}`);
+                    toastAfterCommand(recorded, `Discharge blocker recorded: ${blocker}`, setToastMessage);
                   }
                 : undefined
             }
@@ -317,31 +320,37 @@ export function WardScreenBedDrawer({
                 );
                 return;
               }
-              raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
-                admissionId: selectedBedItem.admissionId,
-                actingUnitId: unitId,
-              });
-              setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
-            }}
-            onMarkBack={(bedNum) => {
-              if (selectedBedItem?.admissionId) {
-                raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+              toastAfterCommand(
+                raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
                   admissionId: selectedBedItem.admissionId,
                   actingUnitId: unitId,
-                });
-              }
-              setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
+                }),
+                `Bed ${bedNum} patient marked away at ED.`,
+                setToastMessage,
+              );
+            }}
+            onMarkBack={(bedNum) => {
+              const returned = selectedBedItem?.admissionId
+                ? raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+                    admissionId: selectedBedItem.admissionId,
+                    actingUnitId: unitId,
+                  })
+                : undefined;
+              toastAfterCommand(returned, `Bed ${bedNum} patient marked returned to ward.`, setToastMessage);
             }}
             onMarkReady={() => {
               // A4-24: one tap clears the release this bed is being made ready for.
               const releaseId = selectedBedItem?.preparingReleaseId;
               if (!releaseId) return;
-              raise("SET_BED_PREPARATION", {
-                releaseId,
-                actingUnitId: unitId,
-                preparing: false,
-              });
-              setToastMessage("Bed marked Ready. It is offered again.");
+              toastAfterCommand(
+                raise("SET_BED_PREPARATION", {
+                  releaseId,
+                  actingUnitId: unitId,
+                  preparing: false,
+                }),
+                "Bed marked Ready. It is offered again.",
+                setToastMessage,
+              );
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
@@ -356,15 +365,18 @@ export function WardScreenBedDrawer({
             onSetBarrier={
               barrierGate.allowed
                 ? (admissionId, barrier) => {
-                    dispatch({
-                      type: "SET_DISCHARGE_BARRIER",
-                      role: routeRole,
-                      now,
-                      actingUnitId: unitId,
-                      admissionId,
-                      barrier,
-                    });
-                    setToastMessage(barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.");
+                    toastAfterCommand(
+                      dispatch({
+                        type: "SET_DISCHARGE_BARRIER",
+                        role: routeRole,
+                        now,
+                        actingUnitId: unitId,
+                        admissionId,
+                        barrier,
+                      }),
+                      barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
+                      setToastMessage,
+                    );
                   }
                 : undefined
             }
