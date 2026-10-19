@@ -13,34 +13,23 @@ const PROJECTS = [{ name: "chromium-mockups" }, { name: "chromium-mockups-known"
 function report({
   statuses = ["expected"],
   projects = PROJECTS,
-  errors = [],
   projectName = "chromium-mockups",
-}: { statuses?: string[]; projects?: { name: string }[]; errors?: unknown[]; projectName?: string } = {}) {
+  errors = [],
+}: { statuses?: string[]; projects?: { name: string }[]; projectName?: string; errors?: unknown[] } = {}) {
+  const suites: { title: string; specs: { tests: { status: string; projectName: string }[] }[]; suites: unknown[] }[] =
+    [{ title: "a.spec.ts", specs: [{ tests: statuses.map((status) => ({ status, projectName })) }], suites: [] }];
   return {
     config: { projects },
     errors,
-    suites: [
-      {
-        title: "a.spec.ts",
-        specs: [
-          {
-            tests: statuses.map((status) => ({
-              status,
-              projectName,
-              results: [{ status: status === "skipped" ? "skipped" : status === "unexpected" ? "failed" : "passed" }],
-            })),
-          },
-        ],
-        suites: [],
-      },
-    ],
+    suites,
   };
 }
 
 describe("journeyRunVerdict", () => {
-  it("passes a run whose shards all reported, ran tests and ran every requested project", () => {
+  it("aggregates project execution across shards rather than requiring every project on each shard", () => {
     const verdict = journeyRunVerdict(
       [
+        // Every shard is configured with the same --project selection; only execution is split.
         { label: "Shard 1", code: 0, report: report() },
         {
           label: "Shard 2",
@@ -59,67 +48,44 @@ describe("journeyRunVerdict", () => {
       ["chromium-mockups", "chromium-mockups-known"],
     );
     expect(verdict.ok).toBe(false);
-    expect(verdict.problems).toContain('Shard 1 did not run requested project "chromium-mockups-known"');
+    expect(verdict.problems).toContain('did not run requested project "chromium-mockups-known"');
   });
 
-  it("fails a configured requested project with zero executed tests even when another project passed", () => {
+  it("rejects a configured project with only skipped tests even when another project ran", () => {
     const verdict = journeyRunVerdict(
-      [{ label: "The run", code: 0, report: report() }],
+      [
+        { label: "Shard 1", code: 0, report: report() },
+        { label: "Shard 2", code: 0, report: report({ statuses: ["skipped"], projectName: "chromium-mockups-known" }) },
+      ],
       ["chromium-mockups", "chromium-mockups-known"],
     );
-    expect(verdict.ok).toBe(false);
-    expect(verdict.ran).toBe(1);
-    expect(verdict.problems).toEqual(['no test ran for requested project "chromium-mockups-known"']);
+    expect(verdict).toEqual({
+      ok: false,
+      ran: 1,
+      problems: ['did not run requested project "chromium-mockups-known"'],
+    });
   });
 
-  it("does not treat skipped or unstarted tests as project execution", () => {
-    const skipped = report({ statuses: ["skipped"], projectName: "chromium-mockups-known" });
-    const unstarted = report({ projectName: "chromium-mockups-known" });
-    unstarted.suites[0].specs[0].tests[0].results = [];
-    const verdict = journeyRunVerdict(
-      [report(), skipped, unstarted].map((value) => ({ label: "The run", code: 0, report: value })),
-      ["chromium-mockups", "chromium-mockups-known"],
-    );
-    expect(verdict.ok).toBe(false);
-    expect(verdict.ran).toBe(1);
+  it("counts executed tests by projectName, including nested suites", () => {
+    const nestedReport = report({ statuses: [], projects: [{ name: "release-gate-phone" }] });
+    nestedReport.suites[0].suites.push(...report({ projectName: "release-gate-phone", statuses: ["flaky"] }).suites);
+    expect(journeyRunVerdict([{ label: "The run", code: 0, report: nestedReport }], ["release-gate-phone"])).toEqual({
+      ok: true,
+      ran: 1,
+      problems: [],
+    });
   });
 
-  it("permits only the deliberately optional auto-added known project to execute zero tests", () => {
-    const runs = [{ label: "The run", code: 0, report: report() }];
+  it("permits an explicitly advisory empty selection while still requiring a readable error-free report", () => {
     expect(
-      journeyRunVerdict(runs, ["chromium-mockups", "chromium-mockups-known"], {
-        optionalZeroProjects: ["chromium-mockups-known"],
-      }).ok,
-    ).toBe(true);
-    expect(journeyRunVerdict(runs, ["chromium-mockups-known"]).ok).toBe(false);
-    expect(
-      journeyRunVerdict([{ label: "The run", code: 0, report: report({ statuses: [] }) }], ["chromium-mockups-known"], {
-        optionalZeroProjects: ["chromium-mockups-known"],
-      }).ok,
-    ).toBe(false);
-  });
-
-  it("honours an explicit advisory empty selection without hiding report or project errors", () => {
-    const empty = [{ label: "The run", code: 0, report: report({ statuses: [] }) }];
-    expect(journeyRunVerdict(empty, ["chromium-mockups"], { passWithNoTests: true }).ok).toBe(true);
-    expect(journeyRunVerdict(empty, ["missing"], { passWithNoTests: true }).ok).toBe(false);
-    expect(journeyRunVerdict([{ label: "The run", code: 0, report: null }], [], { passWithNoTests: true }).ok).toBe(
-      false,
-    );
+      journeyRunVerdict([{ label: "The run", code: 0, report: report({ statuses: [] }) }], [], { allowNoTests: true }),
+    ).toEqual({ ok: true, ran: 0, problems: [] });
+    expect(journeyRunVerdict([{ label: "The run", code: 0, report: null }], [], { allowNoTests: true }).ok).toBe(false);
     expect(
       journeyRunVerdict(
-        [
-          {
-            label: "The run",
-            code: 0,
-            report: report({
-              statuses: [],
-              errors: [{ message: "configuration error" }],
-            }),
-          },
-        ],
+        [{ label: "The run", code: 0, report: report({ statuses: [], errors: [{ message: "configuration error" }] }) }],
         [],
-        { passWithNoTests: true },
+        { allowNoTests: true },
       ).ok,
     ).toBe(false);
   });
@@ -164,6 +130,41 @@ describe("requestedProjects", () => {
       "chromium-mockups",
       "chromium",
     ]);
+  });
+
+  it("reads every name in a variadic --project selection, stopping at a file filter or option", () => {
+    expect(
+      requestedProjects([
+        "--project",
+        "release-gate-desktop",
+        "release-gate-phone",
+        "ui-ward-a.spec.ts",
+        "--grep",
+        "x",
+      ]),
+    ).toEqual(["release-gate-desktop", "release-gate-phone"]);
+  });
+});
+
+describe("per-report project configuration", () => {
+  it("rejects a report that does not configure a requested project, even when another report ran it", () => {
+    const verdict = journeyRunVerdict(
+      [
+        { label: "Shard 1", code: 0, report: report() },
+        { label: "Shard 2", code: 0, report: report({ projects: [{ name: "chromium-mockups" }] }) },
+      ],
+      ["chromium-mockups", "chromium-mockups-known"],
+    );
+    expect(verdict.ok).toBe(false);
+    expect(verdict.problems).toContain('Shard 2 did not configure requested project "chromium-mockups-known"');
+  });
+
+  it("still requires execution when every report configures the project", () => {
+    const verdict = journeyRunVerdict(
+      [{ label: "The run", code: 0, report: report() }],
+      ["chromium-mockups", "chromium-mockups-known"],
+    );
+    expect(verdict.problems).toEqual(['did not run requested project "chromium-mockups-known"']);
   });
 });
 

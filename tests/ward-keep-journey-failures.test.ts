@@ -5,7 +5,7 @@ import path from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { keepJourneyFailures } from "../scripts/ward-flow/keep-journey-failures.mjs";
-import { journeyRunVerdict, requestedProjects } from "../scripts/ward-flow/journey-run-verdict.mjs";
+import { journeyRunVerdict } from "../scripts/ward-flow/journey-run-verdict.mjs";
 
 // The unsharded rerun wipes test-results/, so a spec that failed in a shard and passed alone left
 // no trace to diagnose (full-journey:126, 26 September 2026). These copies must survive that wipe.
@@ -62,11 +62,28 @@ describe("Playwright invocation evidence", () => {
     const absoluteRunRoot = path.join(projectRoot, ".next-playwright", "reused-build");
     const report = (projectName: string, failed: boolean) => ({
       config: { projects: [{ name: projectName }] },
-      suites: [{ specs: [{ tests: [{ projectName, results: [{ status: failed ? "failed" : "passed" }] }] }] }],
+      suites: [
+        {
+          specs: [
+            {
+              tests: [
+                {
+                  projectName,
+                  status: failed ? "unexpected" : "expected",
+                  results: [{ status: failed ? "failed" : "passed" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
     const allocation = runnerSection("const relativeResultsRoot =", "const relativeDistDir =");
     const cleanup = runnerSection("function cleanup() {", 'process.once("SIGINT"');
-    const singleRun = runnerSection("  // The same verdict as the sharded path", "} catch (error) {\n  cleanup();");
+    const singleRun = runnerSection(
+      "  // Validate the same internal report regardless of the caller's display reporter.",
+      "} catch (error) {\n  cleanup();",
+    );
     for (const [index, projectName] of ["chromium-mockups", "chromium"].entries()) {
       mkdirSync(absoluteRunRoot, { recursive: true });
       await runInNewContext(
@@ -94,10 +111,11 @@ describe("Playwright invocation evidence", () => {
           process: { execPath: "fake-node" },
           playwrightBin: "fake-playwright",
           playwrightArgs: [`--project=${projectName}`],
+          reportArgs: [`--project=${projectName}`, "--reporter=list,json"],
+          requiredProjects: [projectName],
+          advisoryRun: false,
           testEnv: {},
-          verdictOptions: {},
           journeyRunVerdict,
-          requestedProjects,
           verdicts,
           readJsonReport: (file: string) => JSON.parse(readFileSync(file, "utf8")),
           childProcessExitCode: (result: { status: number }) => result.status,
@@ -127,7 +145,7 @@ describe("Playwright invocation evidence", () => {
     const outputs: string[][] = [];
     const rerun = runnerSection(
       "    if (exitCode !== 0 && rerun.length > 0",
-      "  // The same verdict as the sharded path",
+      "  // Validate the same internal report regardless of the caller's display reporter.",
     );
     // The closing brace belongs to the sharded branch surrounding the extracted block.
     await runInNewContext(`(async () => { if (true) { ${rerun} })()`, {

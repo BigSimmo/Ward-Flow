@@ -203,6 +203,22 @@ dependencies, command and environment, including all three `WARD_ENGINE_FUZZ_*` 
 must retain its process outcome as well as assertion results; older checkpoints without that evidence
 are refused. A normal exit 1 is valid evidence of assertion failures, not permission to ignore a
 launch failure, signal, unhandled error or disagreement between the process and its assertion report.
+A test file that fails outside its tests (an import crash) is a failing file; it is never accepted as
+a listed expected red.
+
+Playwright keeps an internal JSON report even with a caller-selected display reporter. Explicitly
+requested projects must each execute a test across the reports; listing a project in configuration
+or skipping all its tests is insufficient. Only the existing `test:e2e:advisory` selection may be
+empty. A diagnostic rerun cannot erase an initial shard failure. Browser preflight includes both
+mobile WebKit projects. The release accessibility sweep checks HTTP success, the intended final
+URL and screen identity before axe, including the bed-meeting phone fallback.
+
+The script-budget check requires positive finite limits and complete measurements, counts queried
+Next script assets, and rejects missing/empty assets or unexpected redirects. The existing WF-001
+legacy redirect is accepted only at its exact coded destination. `check:client-bundle-secrets` scans
+tracked source for known credential patterns, fails on unreadable eligible files, and retains its
+synthetic exclusions; it does not inspect built bundles. Bounded FULL dependency analysis resolves
+safe local const literal imports; unresolved or shadowed loads still retain the full gate.
 
 Set `FAST_CHECK_SEED` to reproduce a property-test run. Local and ordinary CI runs default to `424242`; scheduled CI may derive a bounded seed from the run ID.
 
@@ -243,11 +259,10 @@ Blocking tests run with zero retries. The browser wrapper selects list and JSON 
 the reporter defaults in `playwright.config.ts` do not establish that JUnit is produced by that wrapper.
 Default reports and traces stay under a unique `test-results/<run-id>-<uuid>/` directory after the
 temporary build is removed. A later invocation, including the CI CSRF check, uses a separate directory.
-Each explicitly requested project must execute tests, rather than merely appear in configuration;
-an automatically added known-failures project may be empty for a narrow selection. An explicit
-advisory `--pass-with-no-tests` permits an empty selection, but does not excuse report or configuration
-errors. An optional local sharded diagnostic rerun cannot erase the original failure.
-A job name is never enough to establish which tests executed or why they failed.
+Each report must also be configured with every requested project, including each name of a variadic
+`--project a b` selection. An optional local sharded diagnostic rerun writes to its own directory and
+cannot erase the original failure. A job name is never enough to establish which tests executed or why
+they failed.
 
 The former `verify:phone-chrome` command is retired in this repository. For phone changes select the
 affected current Ward journey or the dedicated release-gate phone project. Browser emulation does

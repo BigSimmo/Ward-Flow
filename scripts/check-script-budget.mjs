@@ -15,27 +15,50 @@ const PHONE_UA =
   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
 
 export function scriptSources(html) {
-  return [...new Set([...html.matchAll(/src="(\/_next\/static\/[^"]+\.js)"/g)].map((match) => match[1]))];
+  const sources = [];
+  for (const match of html.matchAll(/<script\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi)) {
+    const src = (match[1] ?? match[2] ?? match[3]).replace(/&amp;|&#38;|&#x26;/gi, "&");
+    if (!src.startsWith("/_next/static/")) continue;
+    const url = new URL(src, "http://local.invalid");
+    // Fragments do not change the fetched resource; count and deduplicate its actual request URL.
+    if (url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js"))
+      sources.push(url.pathname + url.search);
+  }
+  return [...new Set(sources)];
 }
 
 export function validateBudgets(budgets) {
   if (!budgets || typeof budgets !== "object" || Array.isArray(budgets) || Object.keys(budgets).length === 0) {
-    throw new Error("Script budgets must be a nonempty object of route limits");
+    throw new Error("Script budgets must be a non-empty route map");
   }
   for (const [route, limit] of Object.entries(budgets)) {
-    const localRoute = route.startsWith("/") && !route.startsWith("//") && !route.includes("\\");
-    if (!localRoute || !Number.isFinite(limit) || limit <= 0) {
-      throw new Error(`Invalid script budget for ${route}: expected a route and a finite positive KB limit`);
+    const url = new URL(route, "http://local.invalid");
+    if (!route.startsWith("/") || url.origin !== "http://local.invalid" || url.pathname !== route) {
+      throw new Error(`Invalid script budget route: ${route}`);
+    }
+    if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0) {
+      throw new Error(`Invalid script budget for ${route}: expected a positive finite number`);
     }
   }
 }
 
 export function overBudget(measured, budgets) {
   validateBudgets(budgets);
+  if (!measured || typeof measured !== "object" || Array.isArray(measured)) {
+    throw new Error("Script measurements must be a route map");
+  }
   for (const route of Object.keys(budgets)) {
-    if (!Number.isFinite(measured?.[route]) || measured[route] < 0) {
-      throw new Error(`Invalid script measurement for ${route}: expected finite nonnegative KB`);
+    if (
+      !Object.hasOwn(measured, route) ||
+      typeof measured[route] !== "number" ||
+      !Number.isFinite(measured[route]) ||
+      measured[route] <= 0
+    ) {
+      throw new Error(`Invalid or missing script measurement for ${route}`);
     }
+  }
+  if (Object.keys(measured).some((route) => !Object.hasOwn(budgets, route))) {
+    throw new Error("Script measurements include an unconfigured route");
   }
   return Object.entries(budgets)
     .filter(([route, limit]) => measured[route] > limit)
@@ -67,23 +90,43 @@ async function waitForServer(base, attempts = 60) {
   throw new Error("The built app did not start");
 }
 
-async function measuredResponse(url, label, request, headers) {
-  const response = await request(url, { redirect: "manual", ...(headers ? { headers } : {}) });
-  if (!response.ok) throw new Error(`${label} answered ${response.status}; redirects and errors cannot be measured`);
-  if (response.url !== url) throw new Error(`${label} answered at ${response.url}, expected ${url}`);
-  return response;
-}
+// D-39's one configured legacy movement link redirects to this exact record-address code.
+// Keep this paired with movementHref("WF-001") (tests/ward-script-budget.test.ts checks it), rather
+// than accepting any same-origin redirect.
+export const LEGACY_MOVEMENT_REDIRECT = Object.freeze({
+  route: "/ward-flow/movements/WF-001",
+  destination: "/ward-flow/movements/1nfzcp26wc0g",
+});
 
-export async function routeKb(base, route, request = fetch) {
-  const response = await measuredResponse(new URL(route, base).href, route, request, { "user-agent": PHONE_UA });
+export async function routeKb(base, route) {
+  const options = { headers: { "user-agent": PHONE_UA }, redirect: "manual" };
+  let response = await fetch(base + route, options);
+  if ((response.status === 307 || response.status === 308) && route === LEGACY_MOVEMENT_REDIRECT.route) {
+    const location = response.headers.get("location");
+    const destination = location && new URL(location, base + route);
+    if (!destination || destination.href !== `${base}${LEGACY_MOVEMENT_REDIRECT.destination}`) {
+      throw new Error(`${route}: unexpected redirect destination`);
+    }
+    response = await fetch(destination, options);
+  }
+  if (!response.ok) throw new Error(`${route} answered ${response.status}`);
+  if (!/^text\/html(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) {
+    throw new Error(`${route}: expected an HTML page`);
+  }
   const sources = scriptSources(await response.text());
-  if (sources.length === 0) throw new Error(`${route} names no Next static scripts, so its size cannot be measured`);
+  if (sources.length === 0) throw new Error(`${route}: no Next static scripts found`);
   let bytes = 0;
   for (const src of sources) {
-    const script = await measuredResponse(new URL(src, base).href, `${route}: ${src}`, request);
-    bytes += gzipSync(Buffer.from(await script.arrayBuffer()), { level: 9 }).length;
+    const script = await fetch(base + src, { redirect: "manual" });
+    if (!script.ok) throw new Error(`${route}: ${src} answered ${script.status}, so its size cannot be counted`);
+    if (!/^(?:text|application)\/(?:javascript|ecmascript)(?:\s*;|$)/i.test(script.headers.get("content-type") ?? "")) {
+      throw new Error(`${route}: ${src} did not return JavaScript`);
+    }
+    const body = Buffer.from(await script.arrayBuffer());
+    if (body.length === 0) throw new Error(`${route}: ${src} was empty`);
+    bytes += gzipSync(body, { level: 9 }).length;
   }
-  return Math.round(bytes / 1024);
+  return bytes / 1024;
 }
 
 async function main() {
@@ -104,10 +147,11 @@ async function main() {
     const measured = {};
     for (const route of Object.keys(budgets)) {
       measured[route] = await routeKb(base, route);
-      console.log(`${route}: ${measured[route]} KB gzipped (budget ${budgets[route]} KB)`);
+      console.log(`${route}: ${measured[route].toFixed(1)} KB gzipped (budget ${budgets[route]} KB)`);
     }
     const over = overBudget(measured, budgets);
-    for (const { route, kb, limit } of over) console.error(`Over budget: ${route} is ${kb} KB, budget ${limit} KB`);
+    for (const { route, kb, limit } of over)
+      console.error(`Over budget: ${route} is ${kb.toFixed(1)} KB, budget ${limit} KB`);
     if (over.length) process.exitCode = 1;
   } finally {
     server.kill();

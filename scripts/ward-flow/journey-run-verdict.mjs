@@ -7,27 +7,39 @@
 // and still looked green. A run is now red when any of these holds, whatever the exit codes say:
 //   - a shard left no readable report
 //   - a report carries top-level errors (a config or project error, a crash)
-//   - a requested --project is not among the projects the report ran with
-//   - a required project executed no tests across the shards (or no test ran at all)
+//   - a requested --project is not among the projects a report was configured with
+//   - a requested --project has no executed test across the reports
+//   - no test ran at all (nothing passed, failed or was flaky)
 
-/** Project names the caller asked for, in either CLI spelling. */
+/**
+ * Project names the caller asked for, in either CLI spelling. Playwright's `--project` is variadic
+ * (`--project a b`), so following non-option arguments are project names too, up to the first one
+ * that reads as a test file filter (a path or a spec file name).
+ */
 export function requestedProjects(args) {
   const names = [];
   args.forEach((argument, index) => {
     if (argument.startsWith("--project=")) names.push(argument.slice("--project=".length));
-    else if (argument === "--project" && args[index + 1]) names.push(args[index + 1]);
+    else if (argument === "--project") {
+      for (
+        let next = index + 1;
+        next < args.length && args[next] && !args[next].startsWith("-") && !/[\\/]|\.[cm]?[jt]sx?$/.test(args[next]);
+        next++
+      )
+        names.push(args[next]);
+    }
   });
   return names;
 }
 
-function countRan(report, byProject) {
+function countRan(report, executedProjects) {
   let ran = 0;
   const walk = (suite) => {
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests ?? []) {
-        if (test.results?.some((result) => ["passed", "failed", "timedOut", "interrupted"].includes(result.status))) {
+        if (test.status === "expected" || test.status === "unexpected" || test.status === "flaky") {
           ran++;
-          byProject.set(test.projectName, (byProject.get(test.projectName) ?? 0) + 1);
+          executedProjects.add(test.projectName);
         }
       }
     }
@@ -40,13 +52,13 @@ function countRan(report, byProject) {
 /**
  * @param {{ label: string, code: number | null, report: object | null }[]} runs one per shard (or one)
  * @param {string[]} projects the --project names requested
- * @param {{ optionalZeroProjects?: string[], passWithNoTests?: boolean }} options
+ * @param {{ allowNoTests?: boolean }} [options] explicitly advisory selections may be empty
  * @returns {{ ok: boolean, ran: number, problems: string[] }}
  */
-export function journeyRunVerdict(runs, projects, { optionalZeroProjects = [], passWithNoTests = false } = {}) {
+export function journeyRunVerdict(runs, projects, { allowNoTests = false } = {}) {
   const problems = [];
   let ran = 0;
-  const byProject = new Map();
+  const executedProjects = new Set();
   for (const { label, code, report } of runs) {
     if (!report) {
       problems.push(`${label} left no readable report (exit ${code})`);
@@ -55,23 +67,17 @@ export function journeyRunVerdict(runs, projects, { optionalZeroProjects = [], p
     for (const error of report.errors ?? []) {
       problems.push(`${label} reported an error: ${String(error?.message ?? error).split("\n")[0]}`);
     }
-    const known = new Set((report.config?.projects ?? []).map((project) => project.name));
-    for (const project of projects) {
-      if (!known.has(project)) problems.push(`${label} did not run requested project "${project}"`);
-    }
-    ran += countRan(report, byProject);
-  }
-  // A project appearing in config proves selection only. Require actual execution across the
-  // whole invocation, since an individual shard may legitimately have none for a project.
-  // Only the runner's auxiliary known-failures selection may be empty by default. Callers must
-  // opt into advisory empty selections explicitly; report/configuration errors still fail.
-  if (!passWithNoTests) {
+    // Selection evidence per report: a requested project missing from a report's configuration is
+    // a "project not found" run, whatever another report executed.
+    const configured = new Set((report.config?.projects ?? []).map((project) => project.name));
     for (const project of new Set(projects)) {
-      if (!optionalZeroProjects.includes(project) && !byProject.get(project)) {
-        problems.push(`no test ran for requested project "${project}"`);
-      }
+      if (!configured.has(project)) problems.push(`${label} did not configure requested project "${project}"`);
     }
-    if (ran === 0) problems.push("no test ran");
+    ran += countRan(report, executedProjects);
   }
+  for (const project of new Set(projects)) {
+    if (!executedProjects.has(project)) problems.push(`did not run requested project "${project}"`);
+  }
+  if (ran === 0 && !allowNoTests) problems.push("no test ran");
   return { ok: problems.length === 0, ran, problems };
 }

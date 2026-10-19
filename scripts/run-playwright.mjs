@@ -64,8 +64,6 @@ routeSmokePaths = fullRouteSmokePaths;
  * reads.
  */
 const playwrightArgs = process.argv.slice(2);
-const explicitProjects = requestedProjects(playwrightArgs);
-const optionalZeroProjects = [];
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it
 // whenever the mockups project is requested and the list has entries. playwright.config.ts only
 // defines that project when the list names at least one test, so an emptied list must not ask for
@@ -78,15 +76,8 @@ if (
       (argument === "--project" && playwrightArgs[index + 1] === "chromium-mockups"),
   )
 ) {
-  if (!explicitProjects.includes("chromium-mockups-known")) {
-    playwrightArgs.push("--project=chromium-mockups-known");
-    optionalZeroProjects.push("chromium-mockups-known");
-  }
+  playwrightArgs.push("--project=chromium-mockups-known");
 }
-const verdictOptions = {
-  optionalZeroProjects,
-  passWithNoTests: playwrightArgs.includes("--pass-with-no-tests"),
-};
 // WARD_JOURNEY_GROUP="<index>/<count>" (public CI): run only group <index> of the same
 // duration-balanced split WARD_JOURNEY_SHARDS=<count> would make, on this run's single server. Each
 // CI runner then has a whole machine to itself; three shards sharing one 4-core runner made
@@ -718,13 +709,41 @@ try {
   }
 
   const testEnv = { ...offlineEnv };
+  // A display reporter must never disable the internal execution evidence.
+  const reportArgs = [];
+  let reporter = "list";
+  for (let index = 0; index < playwrightArgs.length; index++) {
+    const argument = playwrightArgs[index];
+    if (argument === "--reporter") reporter = playwrightArgs[++index] ?? "";
+    else if (argument.startsWith("--reporter=")) reporter = argument.slice("--reporter=".length);
+    else reportArgs.push(argument);
+  }
+  reportArgs.push(`--reporter=${reporter.split(",").includes("json") ? reporter : `${reporter},json`}`);
+  const projects = requestedProjects(playwrightArgs);
+  const grep = playwrightArgs.reduce(
+    (value, argument, index) =>
+      argument === "--grep"
+        ? playwrightArgs[index + 1]
+        : argument.startsWith("--grep=")
+          ? argument.slice("--grep=".length)
+          : value,
+    undefined,
+  );
+  // Only the existing explicit advisory command may omit project execution. Required gates stay
+  // strict even if a caller supplies --pass-with-no-tests.
+  const advisoryRun =
+    projects.length === 2 &&
+    projects.includes("chromium") &&
+    projects.includes("chromium-mockups") &&
+    grep === "@quarantine|@mockup" &&
+    playwrightArgs.includes("--pass-with-no-tests");
+  const requiredProjects = advisoryRun ? [] : projects;
 
   // WARD_JOURNEY_SHARDS=N (off unless set; Ward Flow fold gate only, once proven): split the specs
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its
   // own output folder, all running at once. Ward Flow keeps no server-side state (every test's data
   // lives in its own browser context), so the shards cannot see each other's data. The exit code is
-  // non-zero if any shard fails. A failing spec may be rerun alone for diagnosis; that rerun
-  // cannot replace the original verdict.
+  // non-zero if any shard fails; a failing spec is then rerun alone, unsharded, for diagnosis.
   const shardCount = Number(process.env.WARD_JOURNEY_SHARDS ?? "1");
   if (Number.isInteger(shardCount) && shardCount > 1) {
     const shardUrls = [baseUrl];
@@ -755,27 +774,22 @@ try {
     }
     const shardArgsFor = (index) =>
       shardGroups
-        ? [...playwrightArgs.filter((argument) => argument.startsWith("-")), ...shardGroups[index].files]
-        : [...playwrightArgs, `--shard=${index + 1}/${shardCount}`];
+        ? [...reportArgs.filter((argument) => argument.startsWith("-")), ...shardGroups[index].files]
+        : [...reportArgs, `--shard=${index + 1}/${shardCount}`];
     const codes = await Promise.all(
       shardUrls.map(
         (shardUrl, index) =>
           new Promise((resolve) => {
             const child = spawn(
               process.execPath,
-              [
-                playwrightBin,
-                "test",
-                ...shardArgsFor(index),
-                `--output=${relativeResultsRoot}/shard-${index + 1}`,
-                "--reporter=list,json",
-              ],
+              [playwrightBin, "test", ...shardArgsFor(index), `--output=${relativeResultsRoot}/shard-${index + 1}`],
               {
                 cwd: projectRoot,
                 env: {
                   ...testEnv,
                   PLAYWRIGHT_BASE_URL: shardUrl,
                   PLAYWRIGHT_JSON_OUTPUT_NAME: reportFor(index),
+                  PLAYWRIGHT_JSON_OUTPUT_FILE: reportFor(index),
                 },
                 stdio: "inherit",
               },
@@ -819,16 +833,22 @@ try {
     const exitCode = codes.find((code) => code !== 0) ?? 0;
     const shardVerdict = journeyRunVerdict(
       codes.map((code, index) => ({ label: `Shard ${index + 1}`, code, report: readJsonReport(reportFor(index)) })),
-      requestedProjects(playwrightArgs),
-      verdictOptions,
+      requiredProjects,
+      { allowNoTests: advisoryRun },
     );
     if (!shardVerdict.ok) {
       for (const problem of shardVerdict.problems) console.error(`Journeys run is not trustworthy: ${problem}.`);
       // A run that did not really run cannot pass, and a rerun of "failed files" cannot rescue it.
       await exitAfterTypeCheck(exitCode === 0 ? 1 : exitCode);
     }
-    // Rerun ordinary failures only for diagnosis. Known-only failures already have their
-    // fast-fail report; every original shard failure remains blocking either way.
+    // A failed spec is rerun alone on the primary server for diagnosis. The initial blocking
+    // failure remains the verdict even when the diagnostic rerun passes.
+    //
+    // Gate speed-up (Josh, 26 September): a file whose ONLY failures are in the known-failures
+    // project ("chromium-mockups-known") is not rerun. Those tests already ran once, in their own
+    // fast-fail project, and the expected-reds comparison reads that run; a second run adds about
+    // eleven minutes and no information. The exit code is unchanged either way, and any failure in
+    // any other project still sends its file to the diagnostic rerun.
     const specFailures = [...failedFiles].filter((file) => file.endsWith(".spec.ts"));
     const rerun = specFailures.filter((file) =>
       [...(failedFileProjects.get(file) ?? [])].some((project) => project !== "chromium-mockups-known"),
@@ -839,7 +859,9 @@ try {
         `Not rerunning ${knownOnly.length} spec file(s) that failed only on the known list: ${knownOnly.join(", ")}`,
       );
     }
-    // Retain the existing local log backup as well as the invocation-scoped CI evidence.
+    // Keep the shards' failure artefacts in the local log as well as in the invocation-scoped
+    // evidence directory (an unsharded rerun into test-results/ once wiped them: full-journey:126,
+    // 26 September 2026).
     if (exitCode !== 0) {
       try {
         const kept = keepJourneyFailures({
@@ -858,6 +880,7 @@ try {
     if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
       console.log(`Diagnostic rerun of ${rerun.length} failed spec file(s), unsharded: ${rerun.join(", ")}`);
       const specArgs = playwrightArgs.filter((argument) => argument.startsWith("-"));
+      // Its own output and report directory, so the diagnostic run cannot clear the shards' evidence.
       const diagnosticReport = path.join(absoluteResultsRoot, "diagnostic.json");
       const again = spawnSync(
         process.execPath,
@@ -875,46 +898,32 @@ try {
           stdio: "inherit",
         },
       );
-      console.log(
-        `Diagnostic rerun: exit ${childProcessExitCode(again)}; original shard verdict remains exit ${exitCode}.`,
-      );
+      const rerunExitCode = childProcessExitCode(again);
+      console.log(`Diagnostic unsharded rerun: exit ${rerunExitCode} (initial shard failure retained).`);
     }
     await exitAfterTypeCheck(exitCode);
   }
 
-  // The same verdict as the sharded path, read from a JSON report, unless the caller chose its own
-  // reporter (then only the exit code is available, as before).
-  const callerChoseReporter = playwrightArgs.some((argument) => argument.startsWith("--reporter"));
+  // Validate the same internal report regardless of the caller's display reporter. The report and,
+  // unless the caller chose an output folder, the traces stay in this invocation's evidence directory.
   const singleReport = path.join(absoluteResultsRoot, "journeys.json");
   const callerChoseOutput = playwrightArgs.some(
     (argument) => argument === "--output" || argument.startsWith("--output="),
   );
-  const result = spawnSync(
-    process.execPath,
-    [
-      playwrightBin,
-      "test",
-      ...playwrightArgs,
-      ...(callerChoseOutput ? [] : [`--output=${relativeResultsRoot}/tests`]),
-      ...(callerChoseReporter ? [] : ["--reporter=list,json"]),
-    ],
-    {
-      cwd: projectRoot,
-      env: callerChoseReporter ? testEnv : { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: singleReport },
-      stdio: "inherit",
-    },
-  );
+  const outputArgs = callerChoseOutput ? [] : [`--output=${relativeResultsRoot}/tests`];
+  const result = spawnSync(process.execPath, [playwrightBin, "test", ...reportArgs, ...outputArgs], {
+    cwd: projectRoot,
+    env: { ...testEnv, PLAYWRIGHT_JSON_OUTPUT_NAME: singleReport, PLAYWRIGHT_JSON_OUTPUT_FILE: singleReport },
+    stdio: "inherit",
+  });
   const exitCode = childProcessExitCode(result);
-  let verdictExitCode = exitCode;
-  if (!callerChoseReporter) {
-    const verdict = journeyRunVerdict(
-      [{ label: "The run", code: exitCode, report: readJsonReport(singleReport) }],
-      requestedProjects(playwrightArgs),
-      verdictOptions,
-    );
-    for (const problem of verdict.problems) console.error(`Playwright run is not trustworthy: ${problem}.`);
-    if (!verdict.ok && exitCode === 0) verdictExitCode = 1;
-  }
+  const verdict = journeyRunVerdict(
+    [{ label: "The run", code: exitCode, report: readJsonReport(singleReport) }],
+    requiredProjects,
+    { allowNoTests: advisoryRun },
+  );
+  for (const problem of verdict.problems) console.error(`Playwright run is not trustworthy: ${problem}.`);
+  const verdictExitCode = verdict.ok ? exitCode : exitCode || 1;
   await exitAfterTypeCheck(verdictExitCode);
 } catch (error) {
   cleanup();

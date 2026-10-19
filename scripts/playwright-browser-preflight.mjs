@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import { playwrightBrowserRevisionCheck } from "./check-playwright-browser-revision.mjs";
+import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 
 const BROWSER_TYPES = {
   chromium,
@@ -21,6 +22,8 @@ export const playwrightProjectNames = Object.freeze({
   webkit: "webkit",
   firefoxWardResponsive: "firefox-ward-responsive",
   webkitWardResponsive: "webkit-ward-responsive",
+  mobileWebkit: "mobile-webkit",
+  mobilePwaStandalone: "mobile-pwa-standalone",
   // The release gate (tests/release-gate-journeys.spec.ts): desktop Chrome and phone WebKit.
   releaseGateDesktop: "release-gate-desktop",
   releaseGatePhone: "release-gate-phone",
@@ -28,12 +31,16 @@ export const playwrightProjectNames = Object.freeze({
 
 const DEFAULT_CONFIG_PROJECTS = Object.freeze({
   "playwright.config.ts": [
+    playwrightProjectNames.releaseGateDesktop,
+    playwrightProjectNames.releaseGatePhone,
+    playwrightProjectNames.firefoxWardResponsive,
+    playwrightProjectNames.webkitWardResponsive,
     playwrightProjectNames.chromium,
     playwrightProjectNames.chromiumMockups,
     playwrightProjectNames.firefox,
     playwrightProjectNames.webkit,
-    playwrightProjectNames.firefoxWardResponsive,
-    playwrightProjectNames.webkitWardResponsive,
+    playwrightProjectNames.mobileWebkit,
+    playwrightProjectNames.mobilePwaStandalone,
   ],
   "playwright.visual.config.ts": [playwrightProjectNames.chromiumArtifacts],
 });
@@ -47,6 +54,8 @@ const PROJECT_BROWSER_FAMILIES = Object.freeze({
   [playwrightProjectNames.webkit]: "webkit",
   [playwrightProjectNames.firefoxWardResponsive]: "firefox",
   [playwrightProjectNames.webkitWardResponsive]: "webkit",
+  [playwrightProjectNames.mobileWebkit]: "webkit",
+  [playwrightProjectNames.mobilePwaStandalone]: "webkit",
   [playwrightProjectNames.releaseGateDesktop]: "chromium",
   [playwrightProjectNames.releaseGatePhone]: "webkit",
 });
@@ -139,7 +148,7 @@ export function defaultChromiumHeadlessShellPath(chromeExecutablePath = chromium
   return path.join(browsersRoot, `chromium_headless_shell-${revision}`, ...shellLayout);
 }
 
-export function requestedPlaywrightBrowserProjects(args = []) {
+export function requestedPlaywrightBrowserProjects(args = [], env = process.env) {
   const projects = new Set();
   let configPath = "playwright.config.ts";
   for (let index = 0; index < args.length; index += 1) {
@@ -162,6 +171,15 @@ export function requestedPlaywrightBrowserProjects(args = []) {
   }
   if (projects.size === 0) {
     const configName = path.basename(configPath);
+    if (configName === "playwright.config.ts" && knownFailurePatternFromEnvironment(env)) {
+      const configured = [...DEFAULT_CONFIG_PROJECTS[configName]];
+      configured.splice(
+        configured.indexOf(playwrightProjectNames.chromiumMockups) + 1,
+        0,
+        playwrightProjectNames.chromiumMockupsKnown,
+      );
+      return configured;
+    }
     return DEFAULT_CONFIG_PROJECTS[configName] ?? [`config:${configPath}`];
   }
   return [...projects];
@@ -249,7 +267,7 @@ export function resolvePlaywrightBrowserExecutable(
 }
 
 export function playwrightBrowserPreflight(args = [], env = process.env, resolveOptions = {}) {
-  const projects = requestedPlaywrightBrowserProjects(args);
+  const projects = requestedPlaywrightBrowserProjects(args, env);
   const unsupportedProjects = projects.filter((project) => !browserFamilyForProject(project));
   const families = [...new Set(projects.map(browserFamilyForProject).filter(Boolean))];
   const missing = unsupportedProjects.map((project) => ({
