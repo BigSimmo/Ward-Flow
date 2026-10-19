@@ -1,7 +1,7 @@
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 // The ward screen's pure derivations: the alerts its Home tab lists and the bed roster its board
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,

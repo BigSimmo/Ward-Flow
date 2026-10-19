@@ -1,4 +1,3 @@
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 /**
  * Board-clock time features that use times the record already holds.
  *
@@ -7,6 +6,7 @@ import { currentLegalDueAt } from "@/components/ward-management/legal-forms/lega
  * uses. Nothing here invents a Mental Health Act limit or a night curfew.
  */
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   dayOf,
   formatRemaining,

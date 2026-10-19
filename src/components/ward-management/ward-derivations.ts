@@ -1,4 +1,3 @@
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 /**
  * Pure derivations shared by the three Ward Flow view files (console, modes, network). Nothing
  * here depends on React — no hooks, no browser APIs — so this module carries no "use client"
@@ -6,6 +5,7 @@ import { currentLegalDueAt } from "@/components/ward-management/legal-forms/lega
  * these three files can drift out of sync if a formula changes, so a change here changes every
  * consumer at once rather than needing three coordinated edits.
  */
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,

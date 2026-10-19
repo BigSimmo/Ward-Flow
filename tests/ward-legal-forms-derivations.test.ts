@@ -446,5 +446,10 @@ describe("current form deadlines across operational outputs", () => {
     expect(summary).toEqual({ withinUrgent: 1, withinSoon: 1, urgentHours: 1.25, soonHours: 1.5 });
     expect(legalExpiryReminderText(summary)).toContain("1 within 1h 15m, 1 within 1h 30m");
     expect(formatReminderHours(1)).toBe("1h");
+    // A window built from whole minutes prints whole minutes, never float residue.
+    for (const minutes of [7, 41, 100, 107, 173, 599]) {
+      expect(formatReminderHours(minutes / 60)).toMatch(/^(?:\d+h(?: \d{2}m)?|\d+m)$/);
+    }
+    expect(formatReminderHours(100 / 60)).toBe("1h 40m");
   });
 });

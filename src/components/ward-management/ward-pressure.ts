@@ -1,5 +1,5 @@
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 // src/components/ward-management/ward-pressure.ts
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";

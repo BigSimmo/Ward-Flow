@@ -328,7 +328,8 @@ export function reminderHours(reminder: LegalExpiryReminder, thresholds: DueSoon
 
 /** Keep whole-hour labels compact while retaining minute precision for other windows. */
 export function formatReminderHours(hours: number): string {
-  return Number.isInteger(hours) ? `${hours}h` : splitDuration(hours * 60);
+  // Rounded to whole minutes: a fractional hour derived from minutes must never print float residue.
+  return Number.isInteger(hours) ? `${hours}h` : splitDuration(Math.round(hours * 60));
 }
 
 export type LegalExpiryReminderSummary = {

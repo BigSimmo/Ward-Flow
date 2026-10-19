@@ -380,9 +380,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               longest: candidateMovements.length
                 ? splitDuration(Math.max(...candidateMovements.map((movement) => Math.max(now - movement.openedAt, 0))))
                 : "—",
-              breaches: candidateMovements.filter(
-                (movement) => isWaitingInEd(movement) && now - movement.openedAt > accessTarget,
-              ).length,
+              breaches: candidateMovements.filter((movement) => now - movement.openedAt > accessTarget).length,
             };
           })}
           onBoard={patients.length}

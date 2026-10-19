@@ -1,5 +1,5 @@
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 // src/components/ward-management/ward-priority.ts
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   clockState,
   type DueSoonThresholds,
