@@ -307,7 +307,13 @@ test("the poll names its revision; an unchanged workspace answers with the clock
   assert.equal(value.revision, 7);
   assert.equal(value.now, 900);
   assert.equal(value.snapshot, undefined);
-  assert.deepEqual(calls, [["poll", coordinator, 7, { ...STATEWIDE_VIEW, actorId: coordinator }]]);
+  assert.deepEqual(calls, [["poll", coordinator, 7, { ...STATEWIDE_VIEW, actorId: coordinator }, null]]);
+  // A member desk names its access context (audit F-04); anything but a 64-hex hash is ignored.
+  const context = "a".repeat(64);
+  await handler(request(`?since=7&context=${context}`));
+  assert.equal(calls.at(-1).at(-1), context);
+  await handler(request("?since=7&context=not-a-hash"));
+  assert.equal(calls.at(-1).at(-1), null);
   for (const since of ["0", "x", "1.5"]) {
     const { calls: plain, handler: other } = setup();
     assert.equal((await other(request(`?since=${since}`))).status, 200);

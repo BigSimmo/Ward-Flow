@@ -115,6 +115,66 @@ export function boundAudit(state: WardFlowState): WardFlowState {
 
 const SKIP_FACT_KEYS = new Set(["auditEvents", "auditReviews", "rejections"]);
 
+/**
+ * Audit F-01: a referral's chart files are never stored on the shared board. Older clients may
+ * still send the file content; it is dropped here, before the command is fingerprinted or applied,
+ * and the name, type and size are kept.
+ */
+export function storableCommand(supplied: unknown): unknown {
+  const fields = supplied as { type?: unknown; intake?: { charts?: unknown } } | null;
+  if (fields?.type !== "RECEIVE_REFERRAL" || !Array.isArray(fields.intake?.charts)) return supplied;
+  return {
+    ...fields,
+    intake: {
+      ...fields.intake,
+      charts: fields.intake.charts.map((chart: unknown) => {
+        if (!chart || typeof chart !== "object" || !Object.hasOwn(chart, "base64")) return chart;
+        const kept = { ...(chart as Record<string, unknown>) };
+        delete kept.base64;
+        return kept;
+      }),
+    },
+  };
+}
+
+/**
+ * Audit F-01: the audit table can never be changed or purged, so a referral row copied into a
+ * change record leaves out the referrer's and clearance contact's details and any file content.
+ * The workspace record itself keeps them, where the workflow needs them and they can be removed.
+ */
+const WITHHELD = "withheld from the audit";
+function auditableFact(key: string, row: unknown): unknown {
+  if (key !== "referrals" || !row || typeof row !== "object") return row;
+  const intake = (row as { intake?: Record<string, unknown> }).intake;
+  if (!intake || typeof intake !== "object") return row;
+  const clearance = intake.medicalClearance as Record<string, unknown> | undefined;
+  return {
+    ...row,
+    intake: {
+      ...intake,
+      ...(intake.referrer === undefined ? {} : { referrer: WITHHELD }),
+      ...(clearance && typeof clearance === "object"
+        ? {
+            medicalClearance: Object.fromEntries(
+              Object.entries(clearance).map(([field, value]) =>
+                field === "contactName" || field === "contactPhone" ? [field, WITHHELD] : [field, value],
+              ),
+            ),
+          }
+        : {}),
+      ...(Array.isArray(intake.charts)
+        ? {
+            charts: intake.charts.map((chart: unknown) =>
+              chart && typeof chart === "object" && Object.hasOwn(chart, "base64")
+                ? { ...chart, base64: WITHHELD }
+                : chart,
+            ),
+          }
+        : {}),
+    },
+  };
+}
+
 function changedFacts(before: WardFlowState, after: WardFlowState, rawAfter?: WardFlowState) {
   const changes: Record<string, unknown> = {};
   for (const [key, nextValue] of Object.entries(after) as [keyof WardFlowState, WardFlowState[keyof WardFlowState]][]) {
@@ -133,8 +193,12 @@ function changedFacts(before: WardFlowState, after: WardFlowState, rawAfter?: Wa
       const previousRows = new Set(previousSerialized);
       const nextRows = new Set(nextSerialized);
       changes[key as string] = {
-        before: previousValue.filter((_, index) => !nextRows.has(previousSerialized[index]!)),
-        after: nextValue.filter((_, index) => !previousRows.has(nextSerialized[index]!)),
+        before: previousValue
+          .filter((_, index) => !nextRows.has(previousSerialized[index]!))
+          .map((row) => auditableFact(key as string, row)),
+        after: nextValue
+          .filter((_, index) => !previousRows.has(nextSerialized[index]!))
+          .map((row) => auditableFact(key as string, row)),
       };
     } else if (JSON.stringify(previousValue) !== JSON.stringify(nextValue)) {
       changes[key as string] = { before: previousValue, after: nextValue };
@@ -434,6 +498,7 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
 }
 
 export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
+  supplied = storableCommand(supplied);
   if (!validWorld(world) || !validCommand(supplied)) throw new Error("invalid-command");
   const fields = supplied as Record<string, unknown>;
   if (typeof fields.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type)) throw new Error("invalid-command");
@@ -475,7 +540,9 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
         world,
         outcome: "denied" as const,
         changes: {},
-        reason: "The workflow rules did not permit this action.",
+        // Audit F-08: the engine's own reason, as the local board shows it. Refusals name records
+        // by UMRN at most, never typed text, and only a desk allowed to act on the record gets here.
+        reason: refusalReason(rawNext.rejections.at(-1)?.reason),
       };
   }
   // Refusal messages are transient (D-18). A partial referral's coded denied targets remain in audit.
@@ -491,6 +558,14 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
     reason: null,
   };
+}
+
+const REFUSAL_FALLBACK = "The workflow rules did not permit this action.";
+const REFUSAL_MAX = 500;
+function refusalReason(reason: unknown): string {
+  if (typeof reason !== "string" || !reason.trim()) return REFUSAL_FALLBACK;
+  const trimmed = reason.trim();
+  return trimmed.length > REFUSAL_MAX ? `${trimmed.slice(0, REFUSAL_MAX - 1)}…` : trimmed;
 }
 
 /**

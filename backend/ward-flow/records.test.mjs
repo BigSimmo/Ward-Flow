@@ -280,10 +280,13 @@ test(
         [2, 1, 2],
       );
 
-      // The rollback puts every record back in the workspace row, in order (011 goes first).
+      // The rollback puts every record back in the workspace row, in order (012 and 011 go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-012-foreign-key-indexes.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-011-record-access-and-sign-out.sql", import.meta.url), "utf8"),
         );
