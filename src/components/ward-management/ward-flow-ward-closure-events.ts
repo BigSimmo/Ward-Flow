@@ -1,5 +1,5 @@
 import type { AuditDecision } from "./ward-audit";
-import { WARD_CLOSURE_REASON_IDS } from "./capacity/ward-closure";
+import { WARD_CLOSURE_REASON_IDS, WARD_REOPEN_AFTER_HOURS } from "./capacity/ward-closure";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { findUnit, reject, replaceUnit, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
@@ -49,6 +49,11 @@ export function reduceWardClosureEvent(
       }
       if (event.until !== undefined && event.until <= event.now) {
         return reject(state, event, "The expected reopening time must be later than now");
+      }
+      // Capped at the longest listed choice, not matched to each one: the panel's clock can tick
+      // between showing the choices and the tap. An early time only prompts sooner.
+      if (event.until !== undefined && event.until - event.now > Math.max(...WARD_REOPEN_AFTER_HOURS) * 60) {
+        return reject(state, event, "The expected reopening time must be within the listed choices");
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";

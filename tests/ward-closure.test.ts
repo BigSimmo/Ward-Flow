@@ -61,10 +61,12 @@ describe("CLOSE_WARD_TO_ADMISSIONS and REOPEN_WARD_TO_ADMISSIONS", () => {
     expect(wardClosedLine(unitOf(reopened, unitId))).toBeNull();
   });
 
-  it("refuses an off-list reason, a reopening time in the past, another ward acting, and reopening an open ward", () => {
+  it("refuses an off-list reason, a reopening time in the past or beyond the listed choices, another ward acting, and reopening an open ward", () => {
     const { state, unitId } = setup();
     expect(close(state, unitId, { reason: "typed words" }).rejections).toHaveLength(1);
     expect(close(state, unitId, { until: NOW }).rejections).toHaveLength(1);
+    expect(close(state, unitId, { until: NOW + 49 * 60 }).rejections).toHaveLength(1);
+    expect(close(state, unitId, { until: NOW + 48 * 60 }).rejections).toEqual([]);
     const otherWard = wardFlowReducer(state, {
       type: "CLOSE_WARD_TO_ADMISSIONS",
       role: "ward",
