@@ -55,7 +55,8 @@ describe("legal extension completion and recovery", () => {
     await user.click(trigger);
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByTestId("ward-legal-extend")).toBeNull());
-    expect(trigger).toHaveFocus();
+    // The sheet hands focus back on the next animation frame, so wait for it.
+    await waitFor(() => expect(trigger).toHaveFocus());
     await user.click(trigger);
     const input = screen.getByTestId("ward-legal-forms-renew-expiry");
     fireEvent.change(input, { target: { value: "23:59" } });
