@@ -95,10 +95,13 @@ function ClockRail({
 }) {
   const thresholds = useDueSoonThresholds();
   const marks: TimeRailMark[] = movements
-    .filter((movement) => currentLegalDueAt(movement) !== undefined)
-    .map((movement) => ({
+    .flatMap((movement) => {
+      const at = currentLegalDueAt(movement);
+      return at === undefined ? [] : [{ movement, at }];
+    })
+    .map(({ movement, at }) => ({
       id: movement.id,
-      at: movement.legalForm!.dueAt!,
+      at,
       code: movement.legalForm!.code,
       name: `Form ${movement.legalForm!.code}`,
       tone: STANDING_TONE[clockStanding(movement, now, thresholds)],

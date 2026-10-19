@@ -332,7 +332,7 @@ test.describe("native history and handover print @mockup", () => {
     for (const paper of await pages.all()) {
       const attribution = paper.getByTestId("ward-print-attribution");
       await expect(attribution).toBeVisible();
-      await expect(attribution).toContainText("Printed by Flow coordinator, Statewide, at");
+      await expect(attribution).toContainText("Prepared for printing by Flow coordinator, Statewide, at");
       await expect(attribution).toContainText("Synthetic data.");
       expect(await paper.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     }

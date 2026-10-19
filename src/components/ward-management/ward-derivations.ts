@@ -661,13 +661,9 @@ export function buildActionInbox(
   }
 
   // Only the typed expiry still in force can create current work. Ended forms remain history.
-  const breachedLegal = movements.filter((movement) => {
+  for (const movement of movements) {
     const dueAt = currentLegalDueAt(movement);
-    return dueAt !== undefined && isClockBreached(dueAt, now);
-  });
-  for (const movement of breachedLegal) {
-    const dueAt = currentLegalDueAt(movement);
-    if (dueAt === undefined) continue;
+    if (dueAt === undefined || !isClockBreached(dueAt, now)) continue;
     items.push({
       id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.legal_timing_breached.kind,

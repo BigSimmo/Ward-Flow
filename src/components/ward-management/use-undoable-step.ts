@@ -222,7 +222,17 @@ export function useUndoableStep({
   }, [token, rejections]);
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {
-    const result = record ? record() : dispatch(event);
+    let result: ReturnType<WardCommandDispatch>;
+    try {
+      result = record ? record() : dispatch(event);
+    } catch {
+      // A synchronous throw takes the same failed-outcome path as a rejected completion.
+      result = {
+        commandId: "",
+        status: "failed",
+        message: "Save is not confirmed. Review the board before trying again.",
+      };
+    }
     const completion = requireConfirmation ? confirmedWardCommand(result) : result;
     if (completion && "then" in completion) {
       void completion

@@ -80,4 +80,47 @@ describe("already-recorded command completions", () => {
       if (status !== "accepted") expect(push.mock.calls[0]![0]).not.toHaveProperty("undo");
     },
   );
+  it("turns a synchronous dispatch throw into the failed-outcome warning instead of escaping the click", () => {
+    const dispatch = vi.fn(() => {
+      throw new Error("adapter unavailable");
+    });
+    const push = vi.fn<(input: ToastInput) => string>(() => "toast");
+    function Press() {
+      const step = useUndoableStep({
+        dispatch,
+        requireConfirmation: true,
+        rejections: [],
+        now: 642,
+        routeRole: "ward",
+        toast: { push },
+      });
+      return (
+        <button
+          onClick={() =>
+            step.run(
+              {
+                type: "SET_DISCHARGE_BARRIER",
+                role: "ward",
+                now: 642,
+                actingUnitId: "U1",
+                admissionId: "A1",
+                barrier: null,
+              },
+              { success: "Discharge barrier cleared." },
+            )
+          }
+        >
+          Clear barrier
+        </button>
+      );
+    }
+    render(<Press />);
+    expect(() => fireEvent.click(screen.getByText("Clear barrier"))).not.toThrow();
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push.mock.calls[0]![0]).toMatchObject({
+      tone: "warning",
+      title: "Save is not confirmed. Review the board before trying again.",
+    });
+  });
 });

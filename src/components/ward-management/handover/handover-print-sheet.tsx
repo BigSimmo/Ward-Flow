@@ -332,7 +332,7 @@ export function HandoverPrintSheet({
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
-        <WardPrintAttribution at={preparedAt ?? now} className={styles.attribution} />
+        <WardPrintAttribution at={preparedAt ?? now} className={styles.attribution} lead="Prepared for printing by" />
       </div>
     </header>
   );

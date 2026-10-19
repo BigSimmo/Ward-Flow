@@ -185,7 +185,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       const crossed = movement.openedAt + target;
       if (!(crossed >= week.start && crossed < week.countedEnd && end > crossed)) return null;
       const waitedMinutes = Math.min(end, week.countedEnd) - movement.openedAt;
-      return { movement, waitedMinutes, stillWaiting: end >= now && isWaitingInEd(movement) };
+      return { movement, waitedMinutes, stillWaiting: isWaitingInEd(movement) };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
     .sort((a, b) => b.waitedMinutes - a.waitedMinutes);

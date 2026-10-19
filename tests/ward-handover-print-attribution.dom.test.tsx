@@ -58,7 +58,7 @@ it("prints the current desk and full place on every sheet, using the copy genera
   const stamps = () => screen.getAllByTestId("ward-print-attribution");
   expect(stamps().length).toBeGreaterThan(1);
   for (const stamp of stamps()) {
-    expect(stamp).toHaveTextContent("Printed by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
+    expect(stamp).toHaveTextContent("Prepared for printing by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
     expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)} yesterday. Synthetic data.`);
   }
   const print = vi.spyOn(window, "print").mockImplementation(() => {

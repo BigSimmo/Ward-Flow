@@ -18,7 +18,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  *
  * 🔴 **AN EXTRACTION, NOT A REDESIGN.** Three things here look questionable and NONE is repaired:
  * the two wait figures overlap rather than partition, `longestWait` has no tie-break, and `unplaced`
- * is scoped to the open population only. **They are recorded and handed on rather than fixed in
+ * is scoped to the physically waiting population only. **They are recorded and handed on rather than fixed in
  * transit — repairing behaviour inside a move is how a refactor becomes unreviewable.**
  *
  * ⚠️ **TWO POPULATIONS, AND SWAPPING THEM CHANGES CLINICAL FIGURES SILENTLY:**
@@ -28,7 +28,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  *     allDepartmentMovements   Every genuine ED-origin journey, open or closed.
  *                              A decline is a historical fact that stays true
  *                              after the movement it was made against reaches a bed — scoping
- *                              decline counts to the open population would erase precisely the
+ *                              decline counts to the physically waiting population would erase precisely the
  *                              declines belonging to the movements this department eventually
  *                              placed, which is the opposite of the truth they exist to show.
  *
@@ -54,12 +54,12 @@ export type EdWaitFigures = {
   readonly departmentMovements: readonly Movement[];
   /** Everyone still in this department awaiting an inpatient bed right now. */
   readonly onTheList: number;
-  /** Of the open population, those flagged urgent. */
+  /** Of the physically waiting population, those flagged urgent. */
   readonly urgent: number;
-  /** Of the open population, those no ward has accepted yet. */
+  /** Of the physically waiting population, those no ward has accepted yet. */
   readonly unplaced: number;
   /**
-   * The open population paired with elapsed waits, longest first. Never a second definition of who
+   * The physically waiting population paired with elapsed waits, longest first. Never a second definition of who
    * is waiting — this is the same list `onTheList` counts.
    */
   readonly waitingMovements: readonly EdWaitingEntry[];
@@ -71,7 +71,7 @@ export type EdWaitFigures = {
   readonly over24h: number;
   /** Waiting at least forty-eight hours — a SUBSET of `over24h`, not a band above it. */
   readonly over48h: number;
-  /** The longest-waiting entry, or `undefined` when nobody here has an open movement. */
+  /** The longest-waiting entry, or `undefined` when nobody is physically waiting here. */
   readonly longestWait: EdWaitingEntry | undefined;
   /** EVERY movement this department has ever originated, open or closed. See the module comment. */
   readonly allDepartmentMovements: readonly Movement[];
@@ -102,7 +102,7 @@ export function edWaitFigures(movements: readonly Movement[], edId: string, now:
     over24h: waitingMovements.filter((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES).length,
     over48h: waitingMovements.filter((entry) => entry.waitMinutes >= VERY_LONG_WAIT_MINUTES).length,
     longestWait: waitingMovements[0],
-    // Deliberately unfiltered by `isOpen` — see the module comment above for why.
+    // Deliberately not limited to the physically waiting population — see the module comment above.
     allDepartmentMovements: movements.filter((movement) => movement.originEdId === edId && isEdOriginJourney(movement)),
   };
 }
@@ -135,7 +135,7 @@ export const ED_WAIT_BANDS = [
 
 export type EdWaitBand = {
   readonly label: string;
-  /** How many of this department's open movements have waited at least `fromMinutes` and less than
+  /** How many of this department's physically waiting patients have waited at least `fromMinutes` and less than
    *  the next band's floor. A nought here is a measured answer, never a missing figure. */
   readonly count: number;
 };
