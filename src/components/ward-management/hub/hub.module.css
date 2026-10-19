@@ -315,9 +315,15 @@
   white-space: nowrap;
 }
 
-/* The figures are words now ("2 ready · 2 pulled · 3 closed · of 24 beds"), so they may wrap. */
+/* The figures are words now ("2 ready · 2 pulled · 3 closed of 24 beds"), so they wrap, but only
+   between figures, and in the text face so they fit the Beds column. */
 .resultFigures {
+  font-family: var(--wf-font);
   white-space: normal;
+}
+
+.resultFigures > span {
+  white-space: nowrap;
 }
 
 .resultPrep {
