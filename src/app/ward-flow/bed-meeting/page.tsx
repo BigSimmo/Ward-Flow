@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 
 export const metadata: Metadata = {
-  title: "Bed meeting TV - Ward Flow",
+  title: "Bed meeting TV — Ward Flow",
   description:
     "Read only, large type TV views for the state or a health service bed meeting, a ward or an ED. Synthetic data only.",
 };

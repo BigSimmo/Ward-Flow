@@ -609,6 +609,63 @@ describe("shared workspace connection", () => {
     expect(view?.status).toBe("ready");
     client.dispose();
   });
+  it("shows the workflow's own reason when the engine refuses a command (audit F-08)", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json(
+              { outcome: "denied", error: "no allocatable bed on this ward", snapshot: snapshot(1) },
+              { status: 422 },
+            )
+          : Response.json({ snapshot: snapshot(1) }),
+    });
+    await client.refresh();
+    const outcome = await client.dispatch(event);
+    expect(outcome.status).toBe("refused");
+    expect(outcome.message).toBe("No allocatable bed on this ward. Nothing was changed.");
+    expect(view?.error).toBe("No allocatable bed on this ward. Nothing was changed.");
+    client.dispose();
+  });
+  it("never sends a referral's chart files to the shared board (audit F-01)", async () => {
+    const bodies: string[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (_url, options) => {
+        if (options?.body) bodies.push(String(options.body));
+        return Response.json({ snapshot: snapshot(1) });
+      },
+    });
+    await client.refresh();
+    const chart = { name: "chart.pdf", mimeType: "application/pdf", sizeBytes: 4, base64: "JVBERg==" } as const;
+    const referral = {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now: 642,
+      intake: {
+        charts: [
+          { ...chart, kind: "medication" },
+          { ...chart, kind: "observation" },
+        ],
+      },
+    } as unknown as WardFlowEvent;
+    await client.dispatch(referral);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).not.toContain("JVBERg");
+    const sent = JSON.parse(bodies[0]!) as { event: { intake: { charts: object[] } } };
+    expect(sent.event.intake.charts).toEqual([
+      { name: "chart.pdf", mimeType: "application/pdf", sizeBytes: 4, kind: "medication" },
+      { name: "chart.pdf", mimeType: "application/pdf", sizeBytes: 4, kind: "observation" },
+    ]);
+    client.dispose();
+  });
   it("lists the account's roles to choose from, then works as the one chosen", async () => {
     let view: SharedView | undefined;
     let stored: string | null = null;
@@ -1162,6 +1219,39 @@ describe("shared workspace traffic", () => {
     expect(view?.snapshot?.now).toBe(700);
     expect(view?.snapshot?.payload).toBe(held?.payload);
     client.dispose();
+  });
+
+  it("names its access context on polls, and leaves it out once a minute for a full read (audit F-04)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const urls: string[] = [];
+      const accessContext = "b".repeat(64);
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: () => {},
+        fetch: async (url) => {
+          urls.push(String(url));
+          return String(url).includes("context=")
+            ? Response.json({ notModified: true, revision: 3, now: 700 })
+            : Response.json({ snapshot: { ...snapshot(3), accessContext } });
+        },
+      });
+      await client.refresh();
+      await client.refresh();
+      vi.advanceTimersByTime(61_000);
+      await client.refresh();
+      await client.refresh();
+      expect(urls).toEqual([
+        "https://example.test/v1/workspace",
+        `https://example.test/v1/workspace?since=3&context=${accessContext}`,
+        "https://example.test/v1/workspace?since=3",
+        `https://example.test/v1/workspace?since=3&context=${accessContext}`,
+      ]);
+      client.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("refuses a not-modified answer for a revision it does not hold", async () => {

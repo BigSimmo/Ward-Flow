@@ -16,6 +16,13 @@ describe("v10 pass 2 shell", () => {
     expect(resolveWardScreenTitle("/ward-flow/reports/chronology/")).toBe("Patient chronology");
   });
 
+  it("titles the ward index All wards: a route prefix matches whole path segments only", () => {
+    expect(resolveWardScreenTitle("/ward-flow/wards")).toBe("All wards");
+    expect(resolveWardScreenTitle("/ward-flow/wards/")).toBe("All wards");
+    expect(resolveWardScreenTitle("/ward-flow/ward")).toBe("Ward");
+    expect(resolveWardScreenTitle("/ward-flow/ward/not-a-seeded-unit")).toBe("Ward");
+  });
+
   it("puts New referral in the header on every statistics route, never Export the figures", () => {
     for (const route of [
       "/ward-flow/statistics",

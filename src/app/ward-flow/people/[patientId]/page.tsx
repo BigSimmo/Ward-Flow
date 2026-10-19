@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   // `person-screen.tsx` sets the same string client-side, because this route is also reached by
   // client-side navigation that this static export cannot see. The route segment, the file and the
   // `PatientId` type stay named for the person — D-1 does not authorise renaming those.
-  title: "Patient - Ward Flow",
+  title: "Patient — Ward Flow",
   description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
 };
 

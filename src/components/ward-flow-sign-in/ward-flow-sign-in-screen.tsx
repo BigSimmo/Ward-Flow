@@ -158,7 +158,7 @@ export function WardFlowSignInScreen() {
   }, [role]);
 
   // v6 (7 Oct 2026): the role list's number keys and the Preview button's Enter hint are real.
-  // Digits pick a role unless the reader is typing; Enter previews only when no control has focus,
+  // Digits pick a role only while its picker has focus; Enter previews only when no control has focus,
   // so it never steals a focused button's own Enter.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -166,7 +166,7 @@ export function WardFlowSignInScreen() {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
       const index = Number(event.key) - 1;
-      if (/^[1-9]$/.test(event.key) && SIGN_IN_ROLES[index]) {
+      if (document.getElementById(roleGroupId)?.contains(target) && /^[1-9]$/.test(event.key) && SIGN_IN_ROLES[index]) {
         event.preventDefault();
         chooseRole(SIGN_IN_ROLES[index].id);
         return;
@@ -178,7 +178,7 @@ export function WardFlowSignInScreen() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [chooseRole, pressSignIn]);
+  }, [chooseRole, pressSignIn, roleGroupId]);
 
   return (
     <main id="main-content" className={styles.page}>

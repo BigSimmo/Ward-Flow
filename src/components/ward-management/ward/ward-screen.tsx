@@ -2,6 +2,8 @@
 
 import { Bell, ChevronDown, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
+import type { LegalStatus } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -329,7 +331,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");
   const [placedBed, setPlacedBed] = useState<number | null>(null);
-  const boardCheckRef = useRef<(BoardCheck & { outcome?: WardCommandOutcome }) | null>(null);
+  // Each settled place or undo waits here for the effect below, so two in flight both get their answer.
+  const boardChecksRef = useRef<(BoardCheck & { outcome?: WardCommandOutcome })[]>([]);
   const [boardToken, setBoardToken] = useState(0);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
@@ -430,8 +433,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
   function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
-    completeCommand("board", record, (outcome) => {
-      boardCheckRef.current = { ...check, outcome };
+    // Keyed by bed: a repeat tap on the same bed is suppressed, a move of another bed is not.
+    completeCommand(`board:${check.bed}`, record, (outcome) => {
+      boardChecksRef.current.push({ ...check, outcome });
       if (!outcome || outcome.status === "accepted") onAccepted?.();
       setBoardToken((token) => token + 1);
     });
@@ -530,105 +534,108 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Board feedback follows this command, including its Undo.
   useEffect(() => {
-    const check = boardCheckRef.current;
-    if (boardToken === 0 || check === null) return;
-    boardCheckRef.current = null;
-    if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
-    const failure = wardCommandFailure(check.outcome);
-    if (failure && check.outcome?.status !== "refused") {
-      setBoardSay(failure);
-      setToastMessage(failure);
-      return;
-    }
-    const refused = check.outcome
-      ? check.outcome.status === "refused"
-        ? { reason: check.outcome.message ?? "The action was refused." }
-        : undefined
-      : rejections.length > check.prior
-        ? rejections[rejections.length - 1]
-        : undefined;
-    if (refused) {
-      const said = `Not recorded: ${refused.reason}. Nothing was changed.`;
-      setBoardSay(said);
-      if (toast) toast.push({ tone: "warning", title: said });
-      return;
-    }
-    setBoardSay(check.success);
-    setPlacedBed(check.undo ? check.bed : null);
-    if (!toast) {
-      setToastMessage(check.success);
-      return;
-    }
-    const undo = check.undo;
-    if (!undo) {
-      toast.push({ tone: "info", title: check.success });
-      return;
-    }
-    const recordSeq =
-      undo.kind === "movement"
-        ? wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId)
-        : undefined;
-    const undoLimit =
-      roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type) ??
-      (check.outcome && undo.kind === "movement" && recordSeq === undefined
-        ? "No Undo record is available for this step."
-        : undefined);
-    toast.push({
-      tone: "success",
-      title: check.success,
-      ...(undoLimit
-        ? { body: `Undo: ${undoLimit}` }
-        : {
-            undo: {
-              durationMs: UNDO_TOAST_MS,
-              onUndo: () => {
-                if (
-                  (check.outcome?.isCurrent && !check.outcome.isCurrent()) ||
-                  (check.outcome?.canUndo && !check.outcome.canUndo())
-                ) {
-                  setToastMessage("Undo is unavailable. Review the current board before trying again.");
-                  return false;
-                }
-                return runBoardCommand(
-                  () => {
-                    // Literal types, one per kind, so the override-surface guard reads each one.
-                    const at = nowRef.current;
-                    if (undo.kind === "stay")
-                      return dispatch({
-                        type: "UNDO_PLACE_IN_BED",
-                        role: "ward",
-                        now: at,
-                        admissionId: undo.admissionId,
-                        actingUnitId: undo.unitId,
-                      });
-                    else if (undo.kind === "movement")
-                      return dispatch({
-                        type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                        role: "ward",
-                        now: at,
-                        movementId: undo.movementId,
-                        recordSeq,
-                        actingUnitId: undo.unitId,
-                      });
-                    else
-                      return dispatch({
-                        type: "UNDO_REFERRAL_DECISION",
-                        role: "ward",
-                        now: at,
-                        referralId: undo.referralId,
-                        actingUnitId: undo.unitId,
-                      });
-                  },
-                  {
-                    prior: rejectionCountRef.current,
-                    bed: check.bed,
-                    success: "Undone. The bed and the person are back where they were.",
-                  },
-                );
+    if (boardToken === 0) return;
+    for (const check of boardChecksRef.current.splice(0)) reportBoardCheck(check);
+    function reportBoardCheck(check: BoardCheck & { outcome?: WardCommandOutcome }) {
+      if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
+      const notRecorded =
+        check.outcome !== undefined && check.outcome.status !== "accepted" && check.outcome.status !== "failed";
+      const failure = wardCommandFailure(check.outcome);
+      if (failure && !notRecorded) {
+        setBoardSay(failure);
+        setToastMessage(failure);
+        return;
+      }
+      const refused = check.outcome
+        ? notRecorded
+          ? { reason: check.outcome.message ?? "The action was refused." }
+          : undefined
+        : rejections.length > check.prior
+          ? rejections[rejections.length - 1]
+          : undefined;
+      if (refused) {
+        const said = `Not recorded: ${refused.reason.replace(/\.$/, "")}. Nothing was changed.`;
+        setBoardSay(said);
+        if (toast) toast.push({ tone: "warning", title: said });
+        return;
+      }
+      setBoardSay(check.success);
+      setPlacedBed(check.undo ? check.bed : null);
+      if (!toast) {
+        setToastMessage(check.success);
+        return;
+      }
+      const undo = check.undo;
+      if (!undo) {
+        toast.push({ tone: "info", title: check.success });
+        return;
+      }
+      const recordSeq =
+        undo.kind === "movement"
+          ? wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId)
+          : undefined;
+      const undoLimit =
+        roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type) ??
+        (check.outcome && undo.kind === "movement" && recordSeq === undefined
+          ? "No Undo record is available for this step."
+          : undefined);
+      toast.push({
+        tone: "success",
+        title: check.success,
+        ...(undoLimit
+          ? { body: `Undo: ${undoLimit}` }
+          : {
+              undo: {
+                durationMs: UNDO_TOAST_MS,
+                onUndo: () => {
+                  if (
+                    (check.outcome?.isCurrent && !check.outcome.isCurrent()) ||
+                    (check.outcome?.canUndo && !check.outcome.canUndo())
+                  ) {
+                    setToastMessage("Undo is unavailable. Review the current board before trying again.");
+                    return false;
+                  }
+                  return runBoardCommand(
+                    () => {
+                      // Literal types, one per kind, so the override-surface guard reads each one.
+                      const at = nowRef.current;
+                      if (undo.kind === "stay")
+                        return dispatch({
+                          type: "UNDO_PLACE_IN_BED",
+                          role: "ward",
+                          now: at,
+                          admissionId: undo.admissionId,
+                          actingUnitId: undo.unitId,
+                        });
+                      else if (undo.kind === "movement")
+                        return dispatch({
+                          type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                          role: "ward",
+                          now: at,
+                          movementId: undo.movementId,
+                          recordSeq,
+                          actingUnitId: undo.unitId,
+                        });
+                      else
+                        return dispatch({
+                          type: "UNDO_REFERRAL_DECISION",
+                          role: "ward",
+                          now: at,
+                          referralId: undo.referralId,
+                          actingUnitId: undo.unitId,
+                        });
+                    },
+                    {
+                      prior: rejectionCountRef.current,
+                      bed: check.bed,
+                      success: "Undone. The bed and the person are back where they were.",
+                    },
+                  );
+                },
               },
-            },
-          }),
-    });
+            }),
+      });
+    }
     // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardToken, rejections]);
@@ -1241,9 +1248,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       return "Not recorded";
     })();
 
-    const legalBasisText = stayMovement?.legalStatus ?? targetBed?.legalStatus ?? targetBed?.legalStatusLabel ?? "";
-    const involuntaryBedNeeded =
-      /involuntary|form 6a|form 1a|order/i.test(legalBasisText) && !/^voluntary/i.test(legalBasisText);
+    // The engine's own rule: every status but Voluntary (or none recorded) needs an authorised bed.
+    // The bed's status is typed as text but always holds a recorded status; the rule only tests "Voluntary".
+    const recordedStatus = (stayMovement?.legalStatus ?? targetBed?.legalStatus) as LegalStatus | undefined;
+    const involuntaryBedNeeded = requiresAuthorisedDestination(recordedStatus);
     const secureBedNeeded = Boolean(stayMovement ? stayMovement.security === "Secure" : false);
     const highAcuityNursingNeeded = Boolean(
       stayAdmission?.highAcuity || stayAdmission?.specialling || targetBed?.highAcuity || targetBed?.isSpecialling,
@@ -1369,6 +1377,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       return;
     }
     const pick = boardPick;
+    // Main (29215abf): the pick is released once sent, so another bed can be moved while this one
+    // waits; its answer still arrives through the queued board check.
+    setBoardPick(null);
     if (pick.kind === "stay") {
       const check: BoardCheck = {
         prior: rejections.length,
@@ -1388,7 +1399,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             actingUnitId: boardUnitId,
           }),
         check,
-        () => setBoardPick((current) => (current === pick ? null : current)),
       );
     } else if (pick.kind === "movement") {
       // v10 pass 3: a coordinator-sent person, accepted in principle into this numbered bed.
@@ -1411,7 +1421,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bedNumber,
           }),
         check,
-        () => setBoardPick((current) => (current === pick ? null : current)),
       );
     } else {
       const check: BoardCheck = {
@@ -1434,7 +1443,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bedNumber,
           }),
         check,
-        () => setBoardPick((current) => (current === pick ? null : current)),
       );
     }
   }
@@ -2207,7 +2215,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         id="tabBtn-board"
         aria-selected={activeTab === "board"}
         aria-controls="tab-attn"
-        aria-label="Bed board (pick up and place)"
+        aria-label={
+          boardWaiting.length > 0
+            ? `Bed board (pick up and place), ${boardWaiting.length} waiting to be placed`
+            : "Bed board (pick up and place)"
+        }
         data-testid="ward-tab-board"
         onClick={() => {
           selectActiveTab("board");
@@ -2215,7 +2227,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       >
         <span>Bed board</span>
         {boardWaiting.length > 0 ? (
-          <span className={styles.tabBadge} aria-label={`${boardWaiting.length} waiting to be placed`}>
+          <span className={styles.tabBadge} aria-hidden="true">
             {boardWaiting.length}
           </span>
         ) : null}
@@ -2231,13 +2243,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         id="tabBtn-return"
         aria-selected={activeTab === "return"}
         aria-controls="tab-return"
-        aria-label="Decisions (Ward record)"
+        aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
         onClick={() => {
           selectActiveTab("return");
         }}
       >
         <span>Decisions</span>
-        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-label={decisionsDueLabel}>
+        <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
       </button>

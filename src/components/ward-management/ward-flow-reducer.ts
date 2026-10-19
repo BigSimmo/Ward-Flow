@@ -2311,7 +2311,7 @@ export function reduceClinicalEvent(
       const merge =
         event.baseConfiguration === undefined
           ? { status: "merged" as const, configuration: requested }
-          : mergeConfiguration(state.configuration, requested, event.baseConfiguration);
+          : mergeConfiguration(state.configuration, requested, event.baseConfiguration, event.replaceAll === true);
       if (merge.status !== "merged") {
         decision.reasonCode = merge.status === "conflict" ? "revision" : "invalid-payload";
         return reject(

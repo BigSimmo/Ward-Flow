@@ -31,6 +31,19 @@ function temporaryDirectory(prefix: string) {
   return directory;
 }
 
+/**
+ * Admission tests stub the browser with PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH so they never launch one.
+ * A container that exports its download-disabled browser root (PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+ * with PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD) makes the runner check that root's Chromium revision before the
+ * stub and before lease admission, so the outcome would depend on the host image. Dropping both
+ * inherited variables keeps the child on the stubbed browser; the revision check has its own tests.
+ */
+function withoutContainerBrowserRoot(environment: NodeJS.ProcessEnv) {
+  delete environment.PLAYWRIGHT_BROWSERS_PATH;
+  delete environment.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD;
+  return environment;
+}
+
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const filePath = path.join(directory, entry.name);
@@ -398,6 +411,7 @@ describe("repository-wide heavyweight lock", () => {
       // rejects this invocation first.
       PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: process.execPath,
     };
+    withoutContainerBrowserRoot(childEnvironment);
     delete childEnvironment[testRunLockInternals.tokenEnvironmentKey];
     delete childEnvironment[testRunLockInternals.pathEnvironmentKey];
 
@@ -444,6 +458,7 @@ describe("repository-wide heavyweight lock", () => {
       [testRunLockInternals.tokenEnvironmentKey]: "mismatched-token",
       [testRunLockInternals.pathEnvironmentKey]: path.join(baseDirectory, "unrelated-lease-path"),
     };
+    withoutContainerBrowserRoot(childEnvironment);
 
     const result = spawnSync(
       process.execPath,

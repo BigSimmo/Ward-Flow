@@ -9,6 +9,7 @@ import { isOpen, isArrivalLate } from "@/components/ward-management/ward-derivat
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { edById } from "@/components/ward-management/ward-sites";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
@@ -16,12 +17,53 @@ export type BoardCheck = {
   prior: number;
   bed: number;
   success: string;
+  /** The command's answer; in shared mode the local refusal list never grows (audit F-02). */
+  outcome?: WardCommandOutcome;
   /** What Undo reverses; absent for an undo itself. */
   undo?:
     | { kind: "stay"; admissionId: string; unitId: string }
     | { kind: "referral"; referralId: string; unitId: string }
     | { kind: "movement"; movementId: string; unitId: string };
 };
+
+/**
+ * Audit F-02 (19 Oct 2026): calls `after` once the command has an answer. On this device that is at
+ * once; in shared mode it is the server's reply, so a refusal is never reported as done.
+ */
+export function afterCommand(
+  result: ReturnType<WardCommandDispatch>,
+  after: (outcome: WardCommandOutcome | undefined) => void,
+): void {
+  if (result && "then" in result) void result.then(after, () => after({ commandId: "", status: "failed" }));
+  else after(result ?? undefined);
+}
+
+/** Why a command was refused, so nothing changed; null when accepted, unanswered or only unconfirmed. */
+export function commandNotRecorded(outcome: WardCommandOutcome | undefined): string | null {
+  if (!outcome || outcome.status === "accepted" || outcome.status === "failed") return null;
+  return (outcome.message ?? "The change was refused").replace(/\.$/, "");
+}
+
+/** The board's own wording (ward-board.tsx, use-undoable-step.ts) for a save with no confirmed answer. */
+const SAVE_NOT_CONFIRMED = "Save is not confirmed. Review the board before trying again.";
+
+/** A failed save may still have reached the server, so it is never reported as "Nothing was changed". */
+export function commandUnconfirmed(outcome: WardCommandOutcome | undefined): string | null {
+  return outcome?.status === "failed" ? (outcome.message ?? SAVE_NOT_CONFIRMED) : null;
+}
+
+/** Shows `success` only once the command is accepted; otherwise says it was not recorded. */
+export function toastAfterCommand(
+  result: ReturnType<WardCommandDispatch>,
+  success: string,
+  show: (text: string) => void,
+): void {
+  afterCommand(result, (outcome) => {
+    const unconfirmed = commandUnconfirmed(outcome);
+    const refused = commandNotRecorded(outcome);
+    show(unconfirmed ?? (refused === null ? success : `Not recorded: ${refused}. Nothing was changed.`));
+  });
+}
 
 /** The undo event for what the Bed board placed or moved (v10 pass 2 and 3). */
 export function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Instant): WardFlowEvent {

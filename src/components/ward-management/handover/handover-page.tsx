@@ -1,5 +1,6 @@
 "use client";
 
+import { useCharacterShortcutsPreference } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -266,7 +267,7 @@ export function HandoverPage() {
   const [takenAt, setTakenAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
   const [copied, setCopied] = useState(false);
-  const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useState(true);
+  const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useCharacterShortcutsPreference();
   const shortcutScopeRef = useRef<HTMLElement | null>(null);
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
   const signOffRef = useRef<HTMLDivElement | null>(null);
@@ -927,7 +928,12 @@ export function HandoverPage() {
         </>
       }
       bar={
-        <div className={styles.heroTools} data-testid="ward-handover-kpi-strip" aria-label="Handover counts">
+        <div
+          className={styles.heroTools}
+          data-testid="ward-handover-kpi-strip"
+          role="group"
+          aria-label="Handover counts"
+        >
           {(["act", "due", "bed", "mov"] as const).map((id) => (
             <button
               key={id}
@@ -995,7 +1001,7 @@ export function HandoverPage() {
         </div>
       }
       footAside={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} finding a ward`}>
+        <span className={styles.gap}>
           <span>
             <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
           </span>
@@ -1047,7 +1053,10 @@ export function HandoverPage() {
               checked={singleKeyShortcutsEnabled}
               onChange={(event) => setSingleKeyShortcutsEnabled(event.target.checked)}
             />
-            <p>Letter shortcuts work while focus is in this handover. Escape stays available.</p>
+            <p>
+              This browser setting applies across Ward Flow. Letter shortcuts work while focus is in this handover.
+              Escape and Ctrl/Cmd+K stay available.
+            </p>
             <dl className={styles.keys}>
               {KEYS.map(([keys, text]) => (
                 <div key={keys}>

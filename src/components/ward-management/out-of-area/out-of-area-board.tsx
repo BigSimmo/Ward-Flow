@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
@@ -318,7 +319,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         selectionOriginRef.current?.focus();
         return;
       }
-      if (isPhone || isTyping(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (
+        !areCharacterShortcutsEnabled() ||
+        isPhone ||
+        isTyping(event.target) ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      )
+        return;
       if (event.key === "/") {
         event.preventDefault();
         searchRef.current?.focus();

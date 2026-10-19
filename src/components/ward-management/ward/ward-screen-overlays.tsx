@@ -245,7 +245,12 @@ export function WardScreenBedDrawer({
   const completeCommand = useWardCommandCompletion();
   function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
     completeCommand(`bed:${selectedBed}`, record, (outcome) => {
-      setToastMessage(wardCommandFailure(outcome) ?? success);
+      // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
+      if (outcome?.status === "refused")
+        setToastMessage(
+          `Not recorded: ${(outcome.message ?? "The change was refused").replace(/\.$/, "")}. Nothing was changed.`,
+        );
+      else setToastMessage(wardCommandFailure(outcome) ?? success);
     });
   }
   return selectedBed !== null

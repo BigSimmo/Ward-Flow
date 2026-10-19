@@ -1027,14 +1027,23 @@ export function createWorkspaceStore(
     /**
      * The 3 second poll. When the workspace is still at `knownRevision`, returns only the revision
      * and the world clock (read from two small fields, so the whole record is not sent or checked);
-     * otherwise the full snapshot, as `read` does.
+     * otherwise the full snapshot, as `read` does. A member desk also names its `knownContext`, and
+     * gets the cheap answer only while that still matches; its browser reads in full every minute,
+     * because what a desk may see also changes with time (hand-off windows).
      */
-    async poll(actorId, knownRevision, view) {
+    async poll(actorId, knownRevision, view, knownContext = null) {
+      const at = clock();
       // Re-resolve scoped access immediately before reading. A role or one of its covers may have
       // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
-      if (view?.membershipId || view?.recentGrant)
+      // Audit F-04: a member desk whose access is unchanged (same role, place, cover and openings,
+      // as this request resolved them) may take the cheap answer too. Nothing is sent with it, so
+      // a role ending mid-request discloses nothing; the desk's next full read is refused.
+      const scoped = !!(view?.membershipId || view?.recentGrant);
+      if (
+        scoped &&
+        (view.recentGrant || typeof knownContext !== "string" || accessContext(at, view).accessContext !== knownContext)
+      )
         return { notModified: false, snapshot: await scopedRead(actorId, view) };
-      const at = clock();
       const { rows } = await pool.query(
         "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
@@ -1481,11 +1490,18 @@ export function createWorkspaceStore(
       ) {
         event = { ...event, sendingTeamName: view.access.scope.teamName };
       }
+      const supplied = event;
+      event = engine.storableCommand(event);
       if (!engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
-      const fingerprint = createHash("sha256")
-        .update(JSON.stringify(canonical({ expectedRevision, event })))
-        .digest("hex");
+      const fingerprintOf = (value) =>
+        createHash("sha256")
+          .update(JSON.stringify(canonical({ expectedRevision, event: value })))
+          .digest("hex");
+      const fingerprint = fingerprintOf(event);
+      // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
+      // an older tab retrying that same command still matches its receipt.
+      const legacyFingerprint = supplied === event ? fingerprint : fingerprintOf(supplied);
       let queued = false;
       const response = await transaction(async (client, at) => {
         queued = false;
@@ -1496,7 +1512,7 @@ export function createWorkspaceStore(
         );
         if (previous.rowCount) {
           const receipt = previous.rows[0];
-          if (receipt.fingerprint !== fingerprint)
+          if (receipt.fingerprint !== fingerprint && receipt.fingerprint !== legacyFingerprint)
             return {
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },

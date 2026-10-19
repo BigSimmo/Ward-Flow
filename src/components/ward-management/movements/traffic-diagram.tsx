@@ -239,7 +239,7 @@ export function TrafficDiagram({
           </div>
         </div>
         <div className={styles.diagramFoot}>
-          <div className={styles.legend} aria-label="Corridor key">
+          <div className={styles.legend} role="group" aria-label="Corridor key">
             <span>
               <i data-kind="accepted" aria-hidden="true" /> Accepted
             </span>

@@ -28,6 +28,8 @@ import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 /** The transport booking state and handlers `PatientNowScreen` passes to its dispatch section. */
 export type PatientTransportSectionContext = {
   bookingRejection: Rejection | undefined;
+  transportPending: boolean;
+  transportSaveError: string | undefined;
   displayCadNumber: string | undefined;
   displayEscort: boolean | undefined;
   displayEta: string | undefined;
@@ -44,32 +46,34 @@ export type PatientTransportSectionContext = {
   openTransportForm: () => void;
   setShowTransportForm: Dispatch<SetStateAction<boolean>>;
   setTransportCadDraft: Dispatch<SetStateAction<string>>;
-  setTransportEscortDraft: Dispatch<SetStateAction<boolean>>;
+  setTransportEscortDraft: Dispatch<SetStateAction<boolean | undefined>>;
   setTransportEtaDraft: Dispatch<SetStateAction<string>>;
-  setTransportFormErrors: Dispatch<SetStateAction<{ cad?: string; eta?: string; legal?: string }>>;
+  setTransportFormErrors: Dispatch<
+    SetStateAction<{ cad?: string; eta?: string; legal?: string; provider?: string; escort?: string }>
+  >;
   setTransportLegalChanging: Dispatch<SetStateAction<boolean>>;
   setTransportLegalDraft: Dispatch<SetStateAction<"voluntary" | "involuntary" | undefined>>;
   setTransportLegalReason: Dispatch<
     SetStateAction<"" | "paper_sighted" | "treating_team_confirmed" | "urgent_to_follow">
   >;
-  setTransportProviderDraft: Dispatch<
-    SetStateAction<"Ambulance service" | "Patient transport service" | "Ward escort">
-  >;
+  setTransportProviderDraft: Dispatch<SetStateAction<TransportProvider | "">>;
   showTransportForm: boolean;
   transportCadDraft: string;
-  transportEscortDraft: boolean;
+  transportEscortDraft: boolean | undefined;
   transportEtaDraft: string;
-  transportFormErrors: { cad?: string; eta?: string; legal?: string };
+  transportFormErrors: { cad?: string; eta?: string; legal?: string; provider?: string; escort?: string };
   transportLegalChanging: boolean;
   transportLegalChoice: "voluntary" | "involuntary" | undefined;
   transportLegalClash: boolean;
   transportLegalReason: "" | "paper_sighted" | "treating_team_confirmed" | "urgent_to_follow";
-  transportProviderDraft: "Ambulance service" | "Patient transport service" | "Ward escort";
+  transportProviderDraft: TransportProvider | "";
 };
 
 export function renderTransportSection(ctx: PatientTransportSectionContext) {
   const {
     bookingRejection,
+    transportPending,
+    transportSaveError,
     displayCadNumber,
     displayEscort,
     displayEta,
@@ -133,26 +137,37 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
             >
               {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
             </span>
-            {!showTransportForm && (
+            {!showTransportForm && !isTransportBooked && (
               <button
                 type="button"
-                className={isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn}
+                className={styles.transportActionBtn}
                 onClick={openTransportForm}
                 data-testid="ward-patient-book-transport-btn"
               >
-                {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                Mark as Booked
               </button>
             )}
           </div>
         )}
       </div>
 
-      {liveMovement && bookingRejection && <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>}
-      {/* Form for logging/updating transport */}
+      {isTransportBooked && (
+        <p className={styles.transportEmptyText}>
+          {liveMovement.transport?.collectedAt !== undefined
+            ? "Booking details cannot be edited after collection. Ask the flow coordinator to review any transport changes."
+            : "Booking details cannot be edited here. Ask the flow coordinator or booking team to cancel the active job before recording a new booking."}
+        </p>
+      )}
+      {(transportSaveError || bookingRejection) && (
+        <p role="alert">Booking was not recorded: {transportSaveError ?? bookingRejection?.reason}</p>
+      )}
+      {transportPending && <p role="status">Saving transport booking…</p>}
+      {/* Form for logging a new transport booking */}
       {liveMovement && showTransportForm && (
         <form
           className={styles.transportForm}
           onSubmit={handleSaveTransportBooking}
+          aria-busy={transportPending}
           data-testid="ward-patient-transport-form"
         >
           <div className={styles.transportFormGrid}>
@@ -161,6 +176,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 CAD (dispatch) number <span aria-hidden="true">*</span>
               </label>
               <input
+                disabled={transportPending}
                 id="transport-cad"
                 type="text"
                 className={styles.transportInput}
@@ -188,6 +204,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 Quoted ETA by Transport Company <span aria-hidden="true">*</span>
               </label>
               <input
+                disabled={transportPending}
                 id="transport-eta"
                 type="text"
                 className={styles.transportInput}
@@ -227,6 +244,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                   return (
                     <Button
                       key={preset.label}
+                      disabled={transportPending}
                       type="button"
                       variant={active ? "pri" : "sec"}
                       size="sm"
@@ -263,18 +281,31 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 Transport Provider
               </label>
               <select
+                disabled={transportPending}
                 id="transport-provider"
                 className={styles.transportSelect}
                 value={transportProviderDraft}
-                onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
+                onChange={(e) => {
+                  setTransportProviderDraft(e.target.value as TransportProvider | "");
+                  setTransportFormErrors((errors) => ({ ...errors, provider: undefined }));
+                }}
+                aria-required="true"
+                aria-invalid={transportFormErrors.provider ? "true" : undefined}
+                aria-describedby={transportFormErrors.provider ? "transport-provider-error" : undefined}
                 data-testid="ward-patient-select-provider"
               >
+                <option value="">Choose provider</option>
                 {TRANSPORT_PROVIDERS.map((p) => (
                   <option key={p} value={p}>
                     {p}
                   </option>
                 ))}
               </select>
+              {transportFormErrors.provider && (
+                <span id="transport-provider-error" className={styles.transportFieldNote}>
+                  {transportFormErrors.provider}
+                </span>
+              )}
             </div>
 
             <div className={styles.transportFormField} data-testid="ward-patient-transport-legal">
@@ -284,6 +315,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                     Transport legal status
                   </label>
                   <select
+                    disabled={transportPending}
                     id="transport-legal"
                     className={styles.transportSelect}
                     value={transportLegalChoice ?? ""}
@@ -306,6 +338,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                       variant="ghost"
                       size="sm"
                       onClick={() => setTransportLegalChanging(true)}
+                      disabled={transportPending}
                       data-testid="ward-patient-change-legal"
                     >
                       Change
@@ -327,6 +360,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 Reason
               </label>
               <select
+                disabled={transportPending}
                 id="transport-legal-reason"
                 className={styles.transportSelect}
                 value={transportLegalReason}
@@ -350,21 +384,45 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
             </span>
           ) : null}
 
-          <div className={styles.transportCheckboxRow}>
-            <input
+          <div className={styles.transportFormField}>
+            <label htmlFor="transport-escort" className={styles.transportFormLabel}>
+              Clinical escort required for transfer
+            </label>
+            <select
               id="transport-escort"
-              type="checkbox"
-              checked={transportEscortDraft}
-              onChange={(e) => setTransportEscortDraft(e.target.checked)}
-              data-testid="ward-patient-checkbox-escort"
-            />
-            <label htmlFor="transport-escort">Clinical escort required for transfer</label>
+              className={styles.transportSelect}
+              disabled={transportPending}
+              value={transportEscortDraft === undefined ? "" : transportEscortDraft ? "yes" : "no"}
+              onChange={(e) => {
+                setTransportEscortDraft(e.target.value === "" ? undefined : e.target.value === "yes");
+                setTransportFormErrors((errors) => ({ ...errors, escort: undefined }));
+              }}
+              aria-required="true"
+              aria-invalid={transportFormErrors.escort ? "true" : undefined}
+              aria-describedby={transportFormErrors.escort ? "transport-escort-error" : undefined}
+              data-testid="ward-patient-select-escort"
+            >
+              <option value="">Choose yes or no</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+            {transportFormErrors.escort && (
+              <span id="transport-escort-error" className={styles.transportFieldNote}>
+                {transportFormErrors.escort}
+              </span>
+            )}
           </div>
 
           <div className={styles.transportFormActions}>
             {/* Audit A4-5: the shared Button carries its own colours, so Save is visible in the
                   sheet, which renders outside this page's token scope. */}
-            <Button type="button" variant="sec" size="sm" onClick={() => setShowTransportForm(false)}>
+            <Button
+              type="button"
+              variant="sec"
+              size="sm"
+              disabled={transportPending}
+              onClick={() => setShowTransportForm(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -373,6 +431,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               size="sm"
               data-testid="ward-patient-confirm-transport-btn"
               {...gate("BOOK_TRANSPORT").buttonProps}
+              disabled={transportPending || gate("BOOK_TRANSPORT").buttonProps.disabled}
             >
               Save transport booking
             </Button>

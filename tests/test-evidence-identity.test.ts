@@ -45,4 +45,27 @@ describe("test outcome input identity", () => {
     expect(fullGateInputIdentity(options)).not.toBe(before);
     expect(() => fullGateInputIdentity({ ...options, dependencyIdentity: null })).toThrow(/unavailable/);
   });
+  it("invalidates full checkpoints when the engine fuzz effort or seed window changes", () => {
+    const options = {
+      root: "/unused-fixture-root",
+      dependencyIdentity: "unchanged-fixture-dependencies",
+      population: ["tests/ward-engine-safety.test.ts"],
+      args: ["run"],
+      env: {
+        WARD_ENGINE_FUZZ_SEQUENCES: "1",
+        WARD_ENGINE_FUZZ_STEPS: "1",
+        WARD_ENGINE_FUZZ_FIRST_SEED: "1",
+      },
+    };
+    const reduced = fullGateInputIdentity(options);
+    expect(fullGateInputIdentity({ ...options, env: {} })).not.toBe(reduced);
+    for (const [name, value] of [
+      ["WARD_ENGINE_FUZZ_SEQUENCES", "16"],
+      ["WARD_ENGINE_FUZZ_STEPS", "100"],
+      ["WARD_ENGINE_FUZZ_FIRST_SEED", "101"],
+    ] as const) {
+      expect(fullGateInputIdentity({ ...options, env: { ...options.env, [name]: value } }), name).not.toBe(reduced);
+    }
+    expect(fullGateInputIdentity(options)).toBe(reduced);
+  });
 });

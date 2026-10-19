@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
@@ -31,7 +32,7 @@ import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/war
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
-import { Dot, durMinutes, useIsPhone } from "@/components/wf";
+import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { applyAppearance } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
@@ -408,7 +409,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       if (isTypingTarget(event.target)) return;
       if (openDrawerForShortcut(event)) return;
 
-      if (event.key !== "[") return;
+      if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTabletLandscape) {
         moreTriggerRef.current = null;
@@ -827,15 +828,15 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                         </span>
                       </span>
                       <span className={styles.alertFacts}>
-                        <span
-                          className={styles.alertHospitalCodes}
-                          aria-label={
-                            svc.hospitalCodes && svc.hospitalCodes.length > 0
-                              ? `Hospital codes: ${svc.hospitalCodes.join(", ")}`
-                              : undefined
-                          }
-                        >
-                          {bedAlertSiteLabel(svc)}
+                        <span className={styles.alertHospitalCodes}>
+                          {svc.hospitalCodes && svc.hospitalCodes.length > 0 ? (
+                            <>
+                              <span aria-hidden="true">{bedAlertSiteLabel(svc)}</span>
+                              <SrOnly>{`Hospital codes: ${svc.hospitalCodes.join(", ")}`}</SrOnly>
+                            </>
+                          ) : (
+                            bedAlertSiteLabel(svc)
+                          )}
                         </span>
                         <span className={styles.alertBeds}>
                           {svc.freeBeds} of {svc.totalBeds} free

@@ -668,7 +668,14 @@ export type WardFlowEvent =
    * (`ward-configuration.ts`) — so an invalid draft is refused with a reason naming the field,
    * never partially applied.
    */
-  | { type: "SET_CONFIGURATION"; role: WardFlowRole; now: Instant; payload: unknown; baseConfiguration?: unknown }
+  | {
+      type: "SET_CONFIGURATION";
+      role: WardFlowRole;
+      now: Instant;
+      payload: unknown;
+      baseConfiguration?: unknown;
+      replaceAll?: boolean;
+    }
   /**
    * ADD A PATIENT. The owner's flow: search for somebody, and if nobody comes up, add them.
    *

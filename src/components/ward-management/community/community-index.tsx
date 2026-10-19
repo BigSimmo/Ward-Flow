@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -279,7 +280,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
      * own field owns "/" on this page, which is what its "/" hint promises.
      */
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (!areCharacterShortcutsEnabled() || event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey)
+        return;
       if (document.activeElement === searchInputRef.current) return;
       const target = event.target as HTMLElement | null;
       if (

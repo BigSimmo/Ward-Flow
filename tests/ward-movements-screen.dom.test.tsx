@@ -222,9 +222,16 @@ describe("the Movements screen", () => {
       const row = findRecordRow(board, movement.id);
       const originEd = edById(movement.originEdId);
       const expected = departmentLabel(movement.originEdId, originEd?.name);
-      const origin = within(row).getByLabelText(expected, { exact: true });
+      // The short code is what the eye reads; the full name is the screen-reader text beside it
+      // (a name on a plain span does not reach assistive technology, audit UI-1).
+      const origin = within(row).getByTitle(expected, { exact: true });
       expect(origin, `origin department wrong for ${movement.id}`).toHaveAttribute("title", expected);
-      expect(origin).toHaveTextContent(originEd ? `${originEd.siteCode} ED` : expected);
+      if (originEd) {
+        expect(origin.querySelector('[aria-hidden="true"]')).toHaveTextContent(`${originEd.siteCode} ED`);
+        expect(within(origin).getByText(expected, { exact: true })).not.toHaveAttribute("aria-hidden");
+      } else {
+        expect(origin).toHaveTextContent(expected);
+      }
     }
   });
 

@@ -4,6 +4,7 @@ import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, UserRound, X 
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, StatusGlyph } from "@/components/wf";
 import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
+import { useWardDataMode } from "../ward-shared-access";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -210,6 +211,8 @@ export function DocumentationPanel({
   onChange: Dispatch<SetStateAction<DocumentationDraft>>;
 }) {
   const id = useId();
+  // Audit F-01: the shared board keeps each file's name, type and size, never the file itself.
+  const shared = useWardDataMode()?.shared === true;
   function changeChart(kind: ReferralChart["kind"], chart?: ReferralChart) {
     onChange((current) => ({
       ...current,
@@ -352,7 +355,9 @@ export function DocumentationPanel({
           )}
           <p className={styles.bodyMeta}>
             <Lock aria-hidden="true" />
-            Synthetic documents only, kept for this session
+            {shared
+              ? "Synthetic documents only. The shared board keeps the file name and size, not the file"
+              : "Synthetic documents only, kept for this session"}
           </p>
         </div>
       </section>
@@ -451,19 +456,29 @@ export function UseMyDetailsButton({
   );
 }
 
+function documentLabel(kind: ReferralChart["kind"]) {
+  return kind === "medication"
+    ? "Medication chart"
+    : kind === "observation"
+      ? "Observation chart"
+      : "Additional document";
+}
+
 export function ReferralDocumentLinks({ charts }: { charts: ReferralChart[] }) {
   return (
     <ul className={styles.documentLinks}>
       {charts.map((chart) => (
         <li key={chart.kind}>
-          <a download={chart.name} href={`data:${chart.mimeType};base64,${chart.base64}`}>
-            {chart.kind === "medication"
-              ? "Medication chart"
-              : chart.kind === "observation"
-                ? "Observation chart"
-                : "Additional document"}{" "}
-            · {chart.name}
-          </a>
+          {chart.base64 === undefined ? (
+            // A shared-board referral carries the file's name only (audit F-01).
+            <span>
+              {documentLabel(chart.kind)} · {chart.name} (file not shared)
+            </span>
+          ) : (
+            <a download={chart.name} href={`data:${chart.mimeType};base64,${chart.base64}`}>
+              {documentLabel(chart.kind)} · {chart.name}
+            </a>
+          )}
         </li>
       ))}
     </ul>

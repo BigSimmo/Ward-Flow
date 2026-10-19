@@ -193,9 +193,18 @@ it is limited to the documented, exact GitHub connector-gap operation in
 | `npm run check:coverage-inventory`        | Verify the declared executable-file population against produced LCOV.                    |
 | `npm run docs:maintain:check`             | Read-only document, index, organisation and reference-pack integrity aggregate.          |
 
-Local gates always execute: the receipt store and gate arbiter were retired on 18 October 2026, so
+Local readiness always invokes its selected gates: the cross-gate receipt store and gate arbiter
+were retired on 18 October 2026, so
 `run-heavy.mjs` and `run-vitest.mjs` never skip a run on an earlier result. Report reused evidence only
 when you reuse an exact earlier run of the same inputs, with its time and scope.
+
+The full unit gate separately checkpoints complete batches. Reuse requires matching source,
+dependencies, command and environment, including all three `WARD_ENGINE_FUZZ_*` settings. Each batch
+must retain its process outcome as well as assertion results; older checkpoints without that evidence
+are refused. A normal exit 1 is valid evidence of assertion failures, not permission to ignore a
+launch failure, signal, unhandled error or disagreement between the process and its assertion report.
+A test file that fails outside its tests (an import crash) is a failing file; it is never accepted as
+a listed expected red.
 
 Playwright keeps an internal JSON report even with a caller-selected display reporter. Explicitly
 requested projects must each execute a test across the reports; listing a project in configuration
@@ -246,7 +255,15 @@ The active Ward CI restores the Next build cache into the runner temporary direc
 critical-job build artifact to PR shards. Local keep-root/cache reuse still rebuilds the app and is
 not evidence that tests or builds can be skipped.
 
-Blocking tests run with zero retries. CI publishes list, JUnit, and JSON reports. Failed-test classification parses JUnit test cases and uses exact spec/title matches; a job name is never enough to classify a failure as a known flake.
+Blocking tests run with zero retries. The browser wrapper selects list and JSON reporters;
+the reporter defaults in `playwright.config.ts` do not establish that JUnit is produced by that wrapper.
+Default reports and traces stay under a unique `test-results/<run-id>-<uuid>/` directory after the
+temporary build is removed. A later invocation, including the CI CSRF check, uses a separate directory. At startup the runner keeps only the newest five such run directories,
+counting the current one, and never removes anything else under `test-results/`.
+Each report must also be configured with every requested project, including each name of a variadic
+`--project a b` selection. An optional local sharded diagnostic rerun writes to its own directory and
+cannot erase the original failure. A job name is never enough to establish which tests executed or why
+they failed.
 
 The former `verify:phone-chrome` command is retired in this repository. For phone changes select the
 affected current Ward journey or the dedicated release-gate phone project. Browser emulation does
@@ -255,16 +272,17 @@ not establish physical Safari or installed-PWA acceptance.
 ### Playwright project cadence
 
 `playwright.config.ts` declares ten always-present projects plus the conditional
-`chromium-mockups-known` project. Declaring a project is not proof CI executes it.
+`chromium-mockups-known` and `ward-shared-mode` projects. Declaring a project is not proof CI executes it.
 
-| Project                                                       | Execution in the dedicated Ward Flow repository                                                                        |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `release-gate-desktop`, `release-gate-phone`                  | `test:e2e:release-gate`: desktop Chromium and phone WebKit, in the browser-scoped `release-gate` job.                  |
-| `chromium-mockups`                                            | `test:e2e:ward-journeys`: required Ward journeys in three file groups when the planner selects browser work.           |
-| `chromium-mockups-known`                                      | Conditional local/fold project when `WARD_JOURNEY_KNOWN_FAILURES` is set; not a separate CI matrix.                    |
-| `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                    |
-| `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                       |
-| `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows. |
+| Project                                                       | Execution in the dedicated Ward Flow repository                                                                                                                                                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `release-gate-desktop`, `release-gate-phone`                  | `test:e2e:release-gate`: desktop Chromium and phone WebKit, in the browser-scoped `release-gate` job.                                                                                                                                 |
+| `chromium-mockups`                                            | `test:e2e:ward-journeys`: required Ward journeys in three file groups when the planner selects browser work.                                                                                                                          |
+| `chromium-mockups-known`                                      | Conditional local/fold project when `WARD_JOURNEY_KNOWN_FAILURES` is set; not a separate CI matrix.                                                                                                                                   |
+| `ward-shared-mode`                                            | Conditional: shared mode against a local backend and PostgreSQL, only through `node tests/support/ward-shared-mode-run.mjs` (needs `WARD_E2E_DATABASE_URL`); CI runs it in the static job step "Run the shared-mode browser journey". |
+| `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                                                                                                                                   |
+| `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                                                                                                                                      |
+| `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows.                                                                                                                |
 
 The responsive projects select only `tests/ui-ward-responsive-audit.spec.ts` and require `@mockup`.
 Run a selected project through `npm run test:e2e -- tests/ui-ward-responsive-audit.spec.ts --project=firefox-ward-responsive`
@@ -435,7 +453,8 @@ evidence-based verdict rather than disguising a public-network failure as a loca
 Blocking Playwright tests run with zero retries. The flake ledger and quarantine tooling were
 retired on 18 October 2026; `tests/flake-ledger.json` is no longer read. A repeatable failure on
 the same commit must be fixed or reported. Legacy tag filters in command aliases do not restore
-that policy.
+that policy. Report and investigate failures on the same revision: a diagnostic rerun supplies
+additional evidence and does not erase the initial failure. See [checks and evidence](agents/checks-and-evidence.md).
 
 <!-- docs-script-refs:historical-start -->
 

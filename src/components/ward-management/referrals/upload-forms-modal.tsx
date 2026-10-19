@@ -1,12 +1,13 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { useWardModalFocus } from "../ward-modal-focus";
+import type { WardCommandOutcome } from "../ward-shared-client";
 import styles from "./upload-forms-modal.module.css";
 
 export interface UploadFormsModalProps {
@@ -38,10 +39,23 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   const [fileAttached, setFileAttached] = useState<boolean>(false);
   const [simulatedSize, setSimulatedSize] = useState<number>(0);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const pending = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const dismiss = () => {
+    if (!pending.current) onClose();
+  };
 
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useWardModalFocus(true, dialogRef, onClose);
+  useWardModalFocus(true, dialogRef, dismiss);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
@@ -54,17 +68,32 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fileAttached || !fileName.trim() || simulatedSize <= 0) return;
-    dispatch({
-      type: "UPLOAD_PATIENT_FORM",
-      role,
-      now,
-      movementId: movement.id,
-      formName,
-      fileName,
-      sizeBytes: simulatedSize,
-    });
-    onClose();
+    if (!fileAttached || !fileName.trim() || simulatedSize <= 0 || pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    setSaveError(null);
+    const finish = (outcome?: WardCommandOutcome) => {
+      if (!mounted.current) return;
+      pending.current = false;
+      setSaving(false);
+      if (outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true)) onClose();
+      else setSaveError(outcome?.message ?? "Save is not confirmed. Review the board before trying again.");
+    };
+    try {
+      const result = dispatch({
+        type: "UPLOAD_PATIENT_FORM",
+        role,
+        now,
+        movementId: movement.id,
+        formName,
+        fileName,
+        sizeBytes: simulatedSize,
+      });
+      if (result && "then" in result) void result.then(finish, () => finish());
+      else finish(result || undefined);
+    } catch {
+      finish();
+    }
   }
 
   return (
@@ -82,7 +111,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         padding: "1rem",
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) dismiss();
       }}
     >
       <div
@@ -117,7 +146,13 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               Record document details
             </h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className={styles.closeButton}>
+          <button
+            type="button"
+            onClick={dismiss}
+            disabled={saving}
+            aria-label="Close dialog"
+            className={styles.closeButton}
+          >
             <X aria-hidden="true" size={20} />
           </button>
         </div>
@@ -150,6 +185,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </label>
             <select
               id={`${baseId}-form-type-select`}
+              disabled={saving}
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               style={{
@@ -193,6 +229,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               <input
                 id={`${baseId}-ward-document-metadata-file`}
                 type="file"
+                disabled={saving}
                 accept=".pdf,.png,.jpg,.jpeg"
                 onChange={handleFileSelect}
                 onFocus={() => setIsInputFocused(true)}
@@ -217,11 +254,13 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </div>
           </div>
 
+          {saveError ? <p role="alert">{saveError}</p> : null}
           {/* Action Buttons */}
           <div className={styles.actions}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={dismiss}
+              disabled={saving}
               style={{
                 minHeight: "48px",
                 padding: "0.625rem 1.25rem",
@@ -238,8 +277,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </button>
             <button
               type="submit"
-              aria-disabled={!fileAttached || simulatedSize <= 0 ? "true" : undefined}
-              onClick={!fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
+              aria-busy={saving || undefined}
+              aria-disabled={saving || !fileAttached || simulatedSize <= 0 ? "true" : undefined}
+              onClick={saving || !fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
               aria-describedby={
                 !fileAttached || simulatedSize <= 0 ? `${baseId}-upload-forms-file-requirement` : undefined
               }
@@ -252,15 +292,15 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 padding: "0.625rem 1.5rem",
                 borderRadius: "0.5rem",
                 border: "none",
-                backgroundColor: "var(--ward-accent, #0284c7)",
-                color: "#ffffff",
+                backgroundColor: "var(--wf-pri-1)",
+                color: "var(--wf-on-pri)",
                 fontSize: "0.9375rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
               }}
             >
-              Record document details
+              {saving ? "Saving…" : "Record document details"}
             </button>
           </div>
         </form>

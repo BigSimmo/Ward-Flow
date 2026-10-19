@@ -1247,7 +1247,7 @@ export function WardHomeTab({
 
   const bedKeyBlock = (
     <div className={styles.bedKey}>
-      <span className={styles.keyItems} aria-label="Symbol key">
+      <span className={styles.keyItems} role="group" aria-label="Symbol key">
         <span>
           <StatusGlyph tone="danger" size={9} />
           Act now
