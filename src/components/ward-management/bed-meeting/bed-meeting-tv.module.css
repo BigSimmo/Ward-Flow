@@ -35,8 +35,11 @@
   }
 }
 
+/* The controls wrap under the title on a narrow screen, so Leave TV view, the one way back to the
+   app while the TV hides the menus (DA-23), is never pushed off the edge. */
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--tv-gap);
@@ -66,6 +69,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--wf-s-2);
 }
