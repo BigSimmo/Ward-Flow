@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
 }));
 // The Go to a desk drawer reads the route; jsdom has no App Router.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/settings",
+  usePathname: () => "/ward-flow/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -113,7 +113,7 @@ describe("the settings screen", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Profile and shift/ }));
     const link = within(screen.getByTestId("ward-settings-handover")).getByRole("link", { name: /handover/i });
-    expect(link.getAttribute("href")).toBe("/mockups/ward-flow/handover");
+    expect(link.getAttribute("href")).toBe("/ward-flow/handover");
     expect(link.getAttribute("href")).not.toMatch(/\.html$/);
   });
 

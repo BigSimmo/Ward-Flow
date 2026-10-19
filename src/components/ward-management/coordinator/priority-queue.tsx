@@ -170,7 +170,7 @@ export function PriorityQueue({
   totalMovements,
   serviceScope,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
-  delaysHref = "/mockups/ward-flow/delays",
+  delaysHref = "/ward-flow/delays",
   highlight,
   onClearHighlight,
   rowCap,

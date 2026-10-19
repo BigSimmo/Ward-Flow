@@ -64,7 +64,7 @@ import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
-const OUT_OF_AREA_HREF = "/mockups/ward-flow/out-of-area";
+const OUT_OF_AREA_HREF = "/ward-flow/out-of-area";
 
 /** "Joondalup Health Campus Emergency Department" reads "Joondalup ED" beside the ED wait field. */
 function shortDepartmentName(name: string): string {

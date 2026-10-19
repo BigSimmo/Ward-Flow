@@ -283,7 +283,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
        * and by nothing else.
        *
        * ⚠️ **THIS SWITCHER IS NOT THE WAY IN. IT IS THE WAY ACROSS — AND THERE IS NOW A WAY IN.**
-       * `/mockups/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
+       * `/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
        * team a referral can name, alphabetically, links each one, and `ward-nav.ts` carries it as
        * the `community` entry so the index is itself reachable from the rail. So a reader who is
        * not already on a team page reaches any team in two clicks, and this switcher is the

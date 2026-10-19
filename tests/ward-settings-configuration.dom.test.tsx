@@ -135,8 +135,9 @@ describe("settings screen configuration draft", () => {
     expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
   });
 
-  it("refuses an older save's Undo after a later save without overwriting either rule", () => {
+  it("undoes only an older save's own rule after a later save, never replacing the newer rule", () => {
     renderSettings();
+    const edTargetBefore = screen.getByTestId("probe-ed-target").textContent;
     fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
     fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
@@ -146,8 +147,11 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
     fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("585");
-    fireEvent.click(within(firstToast).getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent("720");
+    // Main's three-way merge (#419): the stale Undo reverts the first save's field only; the
+    // later save's rule is kept rather than replaced by the older snapshot.
+    fireEvent.click(within(firstToast).getByRole("button", { name: "Undo" }));
+    expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(edTargetBefore!);
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("585");
   });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
@@ -106,6 +107,7 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 };
 
 export function CapacityScreen() {
+  const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
     useWardFlowSelect(
@@ -525,7 +527,7 @@ export function CapacityScreen() {
     <aside className={styles.secondary} aria-label="Network summary and ward detail">
       {selectedRow ? (
         <CapacityWardSidebar
-          key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
+          key={`${worldGeneration}:${recordActorKey}:${selectedRow.unit.id}`}
           row={selectedRow}
           now={now}
           onBack={clearWard}
@@ -1012,7 +1014,7 @@ export function CapacityScreen() {
                     </FilterChip>
                   );
                 })}
-                <Link className={styles.highlightLink} href="/mockups/ward-flow/discharges">
+                <Link className={styles.highlightLink} href="/ward-flow/discharges">
                   Discharge board
                 </Link>
               </div>

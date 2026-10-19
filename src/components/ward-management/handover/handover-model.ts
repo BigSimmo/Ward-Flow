@@ -97,7 +97,7 @@ export function handoverSignedAt(
   const to = handoverAt(id, now);
   let signed: Instant | null = null;
   for (const record of signOffs) {
-    if (record.at >= from && record.at <= to && (signed === null || record.at > signed)) signed = record.at;
+    if (record.at >= from && record.at < to && (signed === null || record.at > signed)) signed = record.at;
   }
   return signed;
 }

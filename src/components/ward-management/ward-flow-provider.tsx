@@ -36,6 +36,7 @@ import {
   selectDischargeRecord,
   safeCounter,
   validRecordActor,
+  newDischargeRequestNamespace,
   type DischargeOpenHandle,
   type DischargeRecord,
   type RecordRead,
@@ -586,7 +587,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
  * RUNS TWICE AND THE TWO RUNS ARE ON DIFFERENT MACHINES.**
  *
  * Found 2026-09-06 by opening a ward page and reading the console. React reported *"Hydration
- * failed because the server rendered text…"* on `/mockups/ward-flow/board/rph-adult-secure`.
+ * failed because the server rendered text…"* on `/ward-flow/board/rph-adult-secure`.
  * Measured, not inferred — the same URL, fetched server-side and compared with the live DOM:
  *
  *     server HTML   As at <!-- -->01:17
@@ -1281,7 +1282,11 @@ function WardFlowWorld({
         openDischargeRecord: (actor, admissionId) => {
           if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
             throw new Error("Record request allocation unavailable");
-          const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
+          const handle = {
+            generation: state.worldGeneration,
+            requestId: openRequestSequence.current++,
+            requestNamespace: newDischargeRequestNamespace(),
+          };
           const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
           dispatch({
             ...declaredActor,
@@ -1290,6 +1295,7 @@ function WardFlowWorld({
             admissionId,
             expectedGeneration: handle.generation,
             requestId: handle.requestId,
+            requestNamespace: handle.requestNamespace,
           });
           return handle;
         },

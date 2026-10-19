@@ -17,7 +17,7 @@ import {
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/delays",
+  usePathname: () => "/ward-flow/delays",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
@@ -44,7 +44,7 @@ function HistoryClosingReferral() {
 }
 
 function openTypedReferral() {
-  window.history.replaceState({ __NA: true, wardDrawer: "referral" }, "", "/mockups/ward-flow/delays");
+  window.history.replaceState({ __NA: true, wardDrawer: "referral" }, "", "/ward-flow/delays");
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <HistoryClosingReferral />
@@ -223,7 +223,7 @@ describe("useDirtyStateGuard", () => {
     );
 
     const link = document.createElement("a");
-    link.href = "/mockups/ward-flow/movements";
+    link.href = "/ward-flow/movements";
     document.body.appendChild(link);
 
     const clickEvent = new MouseEvent("click", {
@@ -251,7 +251,7 @@ describe("useDirtyStateGuard", () => {
     );
 
     const link = document.createElement("a");
-    link.href = "/mockups/ward-flow/capacity";
+    link.href = "/ward-flow/capacity";
     document.body.appendChild(link);
 
     const clickEvent = new MouseEvent("click", {
@@ -280,7 +280,7 @@ describe("useDirtyStateGuard", () => {
 
     // 1. Modified click (metaKey)
     const navLink = document.createElement("a");
-    navLink.href = "/mockups/ward-flow/settings";
+    navLink.href = "/ward-flow/settings";
     document.body.appendChild(navLink);
 
     const metaClick = new MouseEvent("click", {
@@ -294,7 +294,7 @@ describe("useDirtyStateGuard", () => {
 
     // 2. target="_blank"
     const blankLink = document.createElement("a");
-    blankLink.href = "/mockups/ward-flow/external";
+    blankLink.href = "/ward-flow/external";
     blankLink.target = "_blank";
     document.body.appendChild(blankLink);
 
@@ -333,7 +333,7 @@ describe("useDirtyStateGuard", () => {
     });
 
     const link = document.createElement("a");
-    link.href = "/mockups/ward-flow/board";
+    link.href = "/ward-flow/board";
     document.body.appendChild(link);
 
     dispatchGuardedLink(link, new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
@@ -391,7 +391,7 @@ describe("useDirtyStateGuard", () => {
   });
 
   it("intercepts popstate when dirty, undoes back/forward traversal, and suppresses the compensating popstate", () => {
-    window.history.replaceState({ __NA: true }, "", "/mockups/ward-flow/board");
+    window.history.replaceState({ __NA: true }, "", "/ward-flow/board");
     const index = window.history.state.__wfHistoryIndex as number;
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const pushStateSpy = vi.spyOn(window.history, "pushState");
@@ -453,7 +453,7 @@ describe("useDirtyStateGuard", () => {
   );
 
   it("does not prompt again if the sole dirty draft changes before a compensating traversal", () => {
-    window.history.replaceState({ __NA: true }, "", "/mockups/ward-flow/board");
+    window.history.replaceState({ __NA: true }, "", "/ward-flow/board");
     const index = window.history.state.__wfHistoryIndex as number;
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     vi.spyOn(window.history, "go").mockImplementation(() => undefined);

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/handover",
+  usePathname: () => "/ward-flow/handover",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 function renderAt(search: string) {
-  window.history.replaceState({}, "", `/mockups/ward-flow/handover${search}`);
+  window.history.replaceState({}, "", `/ward-flow/handover${search}`);
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <HandoverPage />

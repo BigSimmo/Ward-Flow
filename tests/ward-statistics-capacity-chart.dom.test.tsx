@@ -36,10 +36,7 @@ describe("current-capacity explorer", () => {
     });
     fireEvent.click(bar);
     const details = within(screen.getByTestId("capacity-details"));
-    expect(details.getByRole("link", { name: /Alpha/ })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/statistics/ward/Alpha",
-    );
+    expect(details.getByRole("link", { name: /Alpha/ })).toHaveAttribute("href", "/ward-flow/statistics/ward/Alpha");
     expect(details.getByRole("link", { name: /Beta/ })).toBeInTheDocument();
     fireEvent.click(bar);
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();

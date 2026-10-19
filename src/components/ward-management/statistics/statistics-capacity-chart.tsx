@@ -487,7 +487,7 @@ export function StatisticsCapacityChart({
               {selected.units.map((unit) => {
                 const capacity = unitCapacity(unit, bedReleases);
                 return (
-                  <Link key={unit.id} href={`/mockups/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
+                  <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
                     <span>{unit.name}</span>
                     <strong>{capacity.available} ready</strong>
                     <Icon icon={ChevronRight} size={14} />

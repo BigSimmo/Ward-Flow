@@ -31,26 +31,26 @@ Historically, the source monorepo held **two products that shared one Next.js ap
 Ward Flow borrows the app frame (Next.js, the request proxy, a developer access gate, a handful
 of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 
-| Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                                 |
-| ------------------------------------------------------------ | -----: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                                    |
-| Ward Flow routes `src/app/mockups/ward-flow/`                |     57 | **<!-- fact:ward-route-count -->50<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->52<!-- /fact --> total routes** incl. `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
-| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                           |
-| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                              |
-| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                                   |
-| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                                                                                                                                                                                    |
-| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                                                                                                                                                                                          |
-| `supabase/migrations/`                                       |    234 | none mention Ward Flow                                                                                                                                                                                               |
+| Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                         |
+| ------------------------------------------------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                            |
+| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->50<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->52<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                   |
+| Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                      |
+| Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                           |
+| PsychSift `src/` (all, incl. Ward)                           |  1,765 | —                                                                                                                                                                                                            |
+| PsychSift tests (non-Ward)                                   | ~1,085 | 769 unit + 46 browser specs                                                                                                                                                                                  |
+| `supabase/migrations/`                                       |    234 | none mention Ward Flow                                                                                                                                                                                       |
 
 ### How the pieces fit
 
 ```
-Browser request /mockups/ward-flow/...
+Browser request /ward-flow/...
   └─ src/proxy.ts ── marks it a Ward Flow path, strips spoofed headers, lets it past the
   │                  production mockup block (developer-gated prefix)
   └─ src/app/layout.tsx ── sees the Ward Flow header, SKIPS the Supabase AuthProvider
   └─ src/app/mockups/layout.tsx ── 404 unless mockups enabled or developer-gated
-  └─ src/app/mockups/ward-flow/layout.tsx
+  └─ src/app/ward-flow/layout.tsx
         WardFlowProvider          (the engine: useReducer + sessionStorage + clock)
           WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
           WardGround → {page}     (one of 50 routes → one screen component or redirect)
@@ -234,11 +234,11 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (50 `page.tsx` under `src/app/mockups/ward-flow/`, 52 total including sign-in and digest)
+### 3.1 Routes (50 `page.tsx` under `src/app/ward-flow/`, 52 total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
-| URL under `/mockups/ward-flow`                                                           | Screen (folder)                                                           |
+| URL under `/ward-flow`                                                                   | Screen (folder)                                                           |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/` (home) and `/command` (redirect alias)                                               | `CoordinatorScreen` (coordinator)                                         |
 | `/alerts`                                                                                | `AlertsScreen` (alerts)                                                   |
@@ -275,7 +275,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
 | `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Six redirect stubs** under `/mockups/ward-flow/` keep old links and aliases working: `/command` → `/mockups/ward-flow`, `/constellation` → `/network`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/mockups/ward-flow/`, `/mockups/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/mockups/ward-flow`.
+**Six redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command` → `/ward-flow`, `/constellation` → `/network`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries
@@ -379,7 +379,7 @@ node scripts/run-vitest.mjs <affected-files>   # focused tests: changed files + 
 node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit
 ```
 
-Screens are at `<printed URL>/mockups/ward-flow`. Never assume a port.
+Screens are at `<printed URL>/ward-flow`. Never assume a port.
 
 ### 5.2 Fold gates (once, when folding)
 
@@ -506,19 +506,20 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 
 ### 7.2 The frame
 
-- **`src/proxy.ts`** (no `middleware.ts`): blocks `/mockups` in production except the
-  developer-gated prefixes, which include `/mockups/ward-flow` and `/mockups/ward-flow-sign-in`;
-  sets the Ward Flow offline header after stripping any client copy.
+- **`src/proxy.ts`** (no `middleware.ts`): blocks every `/mockups` path in production (the
+  developer-gated list is empty since Ward Flow moved to `/ward-flow` on 19 October 2026),
+  forwards the old `/mockups/ward-flow` addresses permanently, and sets the Ward Flow offline header
+  after stripping any client copy.
 - **`src/app/layout.tsx`:** with that header, the Supabase auth providers are **not mounted**.
 - **`src/app/mockups/layout.tsx`:** 404 unless mockups are enabled
-  (`mockupsEnabled()` in `src/lib/env.ts:475`) or the path is developer-gated.
+  (`mockupsEnabled()`) or the path is developer-gated; no Ward Flow route sits under it any more.
 - **Access:** open. The developer-key gate (`ward-flow-access-gate.tsx`) was removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.
   Ward Flow never uses Supabase auth or `isDemoMode()`.
-- **Neighbour routes:** `src/app/mockups/ward-flow-sign-in` and `ward-flow-digest` sit beside
+- **Neighbour routes:** `src/app/ward-flow-sign-in` and `ward-flow-digest` sit beside
   (not inside) `ward-flow`, so they get no rail or provider.
-- **Config:** `next.config.ts` adds `noindex` to all `/mockups`; `tsconfig.json` has one alias
-  `@/*`; ESLint's mockup exemptions cover `src/app/mockups/ward-flow/**` but **not**
-  `src/components/ward-management/**`, which is held to production lint rules.
+- **Config:** `next.config.ts` adds `noindex` to all `/mockups` and to `/ward-flow`; `tsconfig.json`
+  has one alias `@/*`; ESLint's mockup exemptions cover neither `src/app/ward-flow/**` nor
+  `src/components/ward-management/**`, which are held to production lint rules.
 - **Server side:** zero Ward Flow references in `src/app/api/**` and `supabase/migrations/**`.
 
 ---

@@ -164,7 +164,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     for (const unit of allUnits()) {
       expect(screen.getByTestId(`ward-index-link-${unit.id}`), `missing a card/link for ${unit.id}`).toHaveAttribute(
         "href",
-        `/mockups/ward-flow/ward/${unit.id}`,
+        `/ward-flow/ward/${unit.id}`,
       );
     }
   });

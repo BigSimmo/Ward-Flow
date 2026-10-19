@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   defaultChromiumHeadlessShellPath,
   newestPreinstalledChromiumHeadlessShell,
@@ -11,6 +11,23 @@ import {
   resolvePlaywrightBrowserExecutable,
 } from "../scripts/playwright-browser-preflight.mjs";
 
+// Loading the actual project definitions must not start or require a local server.
+vi.mock("../scripts/playwright-base-url", () => ({
+  getPlaywrightBaseUrl: () => "http://127.0.0.1:3000",
+}));
+
+async function configuredProjects(knownFailuresFile = "") {
+  vi.resetModules();
+  vi.stubEnv("WARD_JOURNEY_KNOWN_FAILURES", knownFailuresFile);
+  vi.stubEnv("PORT", process.env.PORT ?? "");
+  try {
+    const { default: config } = await import("../playwright.config");
+    return config.projects ?? [];
+  } finally {
+    vi.unstubAllEnvs();
+  }
+}
+
 describe("playwright browser preflight", () => {
   it("maps the known-failures journeys project to Chromium (it only exists when the list is set)", () => {
     expect(
@@ -18,17 +35,36 @@ describe("playwright browser preflight", () => {
     ).toEqual([playwrightProjectNames.chromiumMockups, playwrightProjectNames.chromiumMockupsKnown]);
   });
 
-  it("defaults to every configured project when no project is requested", () => {
-    const configuredProjects = [
-      playwrightProjectNames.chromium,
-      playwrightProjectNames.chromiumMockups,
-      playwrightProjectNames.firefox,
-      playwrightProjectNames.webkit,
-      playwrightProjectNames.firefoxWardResponsive,
-      playwrightProjectNames.webkitWardResponsive,
-    ];
-    expect(requestedPlaywrightBrowserProjects([])).toEqual(configuredProjects);
-    expect(requestedPlaywrightBrowserProjects(["tests/ui-smoke.spec.ts"])).toEqual(configuredProjects);
+  it("defaults to every actual configured project and maps each to its configured browser", async () => {
+    const projects = await configuredProjects();
+    const names = projects.map((project) => project.name);
+    expect(names.length).toBeGreaterThan(0);
+    expect(requestedPlaywrightBrowserProjects([], { NODE_ENV: "test" })).toEqual(names);
+    expect(requestedPlaywrightBrowserProjects(["tests/ui-smoke.spec.ts"], { NODE_ENV: "test" })).toEqual(names);
+    for (const project of projects) {
+      const result = playwrightBrowserPreflight([`--project=${project.name}`], { NODE_ENV: "test" });
+      expect(
+        result.checked.map((entry) => entry.family),
+        project.name,
+      ).toEqual([project.use?.defaultBrowserType]);
+      expect(result.missing?.some((entry: { family: string }) => entry.family === "unknown") ?? false).toBe(false);
+    }
+  });
+
+  it("includes the conditional known-failures project only when the actual config creates it", async () => {
+    const root = mkdtempSync(join(tmpdir(), "pw-known-project-"));
+    const list = join(root, "known.txt");
+    try {
+      for (const text of ["# no known failures\n", "tests/example.spec.ts:1 | synthetic known journey\n"]) {
+        writeFileSync(list, text);
+        const projects = await configuredProjects(list);
+        expect(requestedPlaywrightBrowserProjects([], { NODE_ENV: "test", WARD_JOURNEY_KNOWN_FAILURES: list })).toEqual(
+          projects.map((project) => project.name),
+        );
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 
   it("uses the selected config's projects when no project flag is present", () => {
@@ -63,6 +99,13 @@ describe("playwright browser preflight", () => {
       expect(result.checked.map((entry) => entry.family)).toEqual([family]);
       expect(result.missing?.some((entry: { family: string }) => entry.family === "unknown") ?? false).toBe(false);
     }
+  });
+
+  it.each(["mobile-webkit", "mobile-pwa-standalone"])("accepts explicit %s selection as WebKit", (project) => {
+    const result = playwrightBrowserPreflight([`--project=${project}`], { NODE_ENV: "test" });
+    expect(result.projects).toEqual([project]);
+    expect(result.checked.map((entry) => entry.family)).toEqual(["webkit"]);
+    expect(result.missing?.some((entry: { family: string }) => entry.family === "unknown") ?? false).toBe(false);
   });
 
   it("derives the headless-shell binary Playwright launches by default", () => {

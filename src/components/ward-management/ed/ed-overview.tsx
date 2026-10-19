@@ -213,7 +213,7 @@ export function EdOverview({
             return (
               <li key={department.id}>
                 <Link
-                  href={`/mockups/ward-flow/ed/${department.id}`}
+                  href={`/ward-flow/ed/${department.id}`}
                   className={cx(styles.tile, isCurrent && styles.current)}
                   data-ed={department.id}
                   data-service={department.service}

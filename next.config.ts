@@ -110,6 +110,17 @@ const nextConfig: NextConfig = {
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
+        // Ward Flow left /mockups on 19 October 2026 and keeps the same header there: a synthetic
+        // demonstration that must never be indexed. The root layout's robots metadata says the
+        // same in the page itself.
+        source: "/ward-flow/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/ward-flow-sign-in",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
         // The root-level design mockups in public/ (mockup.html, capacity-table-mockup.html,
         // referral-board-mockup.html) are served as static files in production too. They stay
         // retrievable for sharing but must never be indexed (12 October 2026 review, A4-7).
@@ -120,7 +131,7 @@ const nextConfig: NextConfig = {
         // PWA plan item 7: the service worker and the manifest are always revalidated, so a new
         // version reaches an installed app on its next load rather than after a day of HTTP cache.
         // No Service-Worker-Allowed header: the worker sits at the root, so it may already control
-        // its /mockups/ward-flow scope.
+        // its /ward-flow scope.
         source: "/ward-flow-push-sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache" }],
       },

@@ -1,12 +1,12 @@
 # Ward Flow
 
-_Updated 2026-10-17 - focused test example uses the maintained runner; Documentation owns._
+_Updated 2026-10-19 - describe scope-selected PR checks; Documentation owns._
 
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.** Never enter real patient information.
 
-[Open the hosted prototype](https://ward-flow-production.up.railway.app/mockups/ward-flow).
+[Open the hosted prototype](https://ward-flow-production.up.railway.app/ward-flow).
 
 ## Quick start
 
@@ -17,7 +17,7 @@ npm ci            # installs dependencies and the Git hooks
 npm run ensure    # starts or reuses the dev server and prints its URL
 ```
 
-Open the printed URL plus `/mockups/ward-flow`. No credentials are needed: by default the app runs on synthetic, browser-local state. See [local first run](docs/ward-flow/LOCAL-FIRST-RUN.md) for the details.
+Open the printed URL plus `/ward-flow`. No credentials are needed: by default the app runs on synthetic, browser-local state. See [local first run](docs/ward-flow/LOCAL-FIRST-RUN.md) for the details.
 
 The shared backend has its own packages. Install them once before `npm run test:backend` (which builds the backend engine, then runs its tests):
 
@@ -43,14 +43,14 @@ npm ci --prefix backend/ward-flow
 ## How it fits together
 
 - **Framework:** Next.js 16 with React 19 and TypeScript. Styling is CSS Modules.
-- **Screens:** routes live under [`src/app/mockups/ward-flow/`](src/app/mockups/ward-flow/). Screen components and the workflow engine live under [`src/components/ward-management/`](src/components/ward-management/).
+- **Screens:** routes live under [`src/app/ward-flow/`](src/app/ward-flow/). Screen components and the workflow engine live under [`src/components/ward-management/`](src/components/ward-management/).
 - **State:** one reducer holds the ward flow (referrals, movements, beds, transport, delays). Screens dispatch actions to it, and the synthetic seed data lives beside it.
 - **Shared workspace (optional):** [`backend/ward-flow/`](backend/ward-flow/README.md) saves the shared state to Ward Flow's own synthetic-only database. The current provider is in [DATABASE.md](docs/ward-flow/DATABASE.md). Ward Flow must never connect to PsychSift's Supabase or Railway resources.
 - **Tests:** Vitest unit and DOM tests in [`tests/`](tests/), Playwright journeys in `tests/*.spec.ts`.
 
 ## Continuous integration and deploys
 
-- Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml): static checks, eight unit shards, browser journeys, the release gate, a secret scan and a production build. `Ward Flow required` is the single check that sums them up.
+- Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml). Its scope plan selects executable static checks, eight unit shards, browser journeys, the release gate and a production build; documentation checks and a secret scan still run for narrower changes. See [scope by change](docs/ward-flow/PUBLIC-CI.md#scope-by-change). `Ward Flow required` checks the selected results and permitted skips.
 - Dependabot opens grouped dependency updates each Monday.
 - Railway deploys `main` automatically through its GitHub integration. Build, start and health check settings are recorded in [hosting](docs/hosting.md). A green CI run does not prove a deploy; check the hosted app directly.
 

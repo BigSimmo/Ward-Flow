@@ -398,7 +398,7 @@ describe("the coordinator's mode workspaces say pull", () => {
   /*
    * 🔴 **RETIRED 2026-09-05, DELIBERATELY, AND RECORDED IN `diff-integrity.json` — NOT DELETED
    * QUIETLY.** This case rendered `<WardModeWorkspace mode="exceptions" />`. MERGE 01 folded the
-   * exceptions inbox into `DelaysScreen` and turned `/mockups/ward-flow/exceptions` into a
+   * exceptions inbox into `DelaysScreen` and turned `/ward-flow/exceptions` into a
    * redirect, so it asserted two strings on a screen no coordinator can open.
    *
    * **Its two halves ended in different places, and only one of them survived the fold.**

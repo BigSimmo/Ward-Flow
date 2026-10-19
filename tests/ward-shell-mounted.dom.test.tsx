@@ -1,7 +1,7 @@
 // tests/ward-shell-mounted.dom.test.tsx
 //
 // Task 6 of docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, as re-scoped by
-// the 2026-09-04 ruling: `WardGround` mounts once, in `src/app/mockups/ward-flow/layout.tsx`
+// the 2026-09-04 ruling: `WardGround` mounts once, in `src/app/ward-flow/layout.tsx`
 // (the only ancestor of every route's `<main>` — `ClinicalRail` is a SIBLING of `<main>` at all
 // of its call sites and could never reach it).
 //
@@ -53,7 +53,7 @@ import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
-const pathnameState = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/ward/rph-adult-secure" }));
+const pathnameState = vi.hoisted(() => ({ pathname: "/ward-flow/ward/rph-adult-secure" }));
 
 // `useRouter` added for Task 8 (`WardBar` mount, third addendum): `WardBar` calls it directly
 // (the Service selector's own click handlers, `openMovement`) even though this suite never
@@ -65,7 +65,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 /**
- * `WardFlowMockupLayout` (`src/app/mockups/ward-flow/layout.tsx`) mounts `WardBar` ahead of
+ * `WardFlowMockupLayout` (`src/app/ward-flow/layout.tsx`) mounts `WardBar` ahead of
  * `WardGround`, Task 8 (its own third addendum), and nothing at all between `WardGround` and the
  * route's own content — reproduced here, not the layout's `WardRail`/flex-row wrapper, which this
  * file's own assertions do not touch.
@@ -87,19 +87,19 @@ function renderShellChrome(children: ReactNode) {
 }
 
 /**
- * `/mockups/ward-flow/ward/rph-adult-secure` — one of the three route shapes `wardPlaceFor`
+ * `/ward-flow/ward/rph-adult-secure` — one of the three route shapes `wardPlaceFor`
  * resolves a place for. `unitId="rph-adult-secure"` is the same fixture id
  * tests/ward-landmarks.test.ts and tests/ward-nav.test.ts already use, and `unitById` resolves
  * it to the real name "Dabakarn" (ward-sites.ts) — never a literal typed here.
  */
 function renderWardRoute() {
-  pathnameState.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+  pathnameState.pathname = "/ward-flow/ward/rph-adult-secure";
   return render(renderShellChrome(<WardScreen unitId="rph-adult-secure" />));
 }
 
-/** `/mockups/ward-flow` — the coordinator's own route, one of the seven with no place. */
+/** `/ward-flow` — the coordinator's own route, one of the seven with no place. */
 function renderCoordinatorRoute() {
-  pathnameState.pathname = "/mockups/ward-flow";
+  pathnameState.pathname = "/ward-flow";
   return render(renderShellChrome(<CoordinatorScreen />));
 }
 

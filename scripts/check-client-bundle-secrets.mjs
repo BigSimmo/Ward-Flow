@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Guardrail: verifies that client-facing code and bundles under src/ do not contain
-// exposed API keys, private tokens, passwords, or raw database connection credentials.
+// Guardrail: scans tracked source files under src/ for known credential patterns.
+// This does not inspect built bundles or prove the absence of all exposed secrets.
 //
 // Usage:
 //   node scripts/check-client-bundle-secrets.mjs
 //   node scripts/check-client-bundle-secrets.mjs --strict
 
 import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 const strict = process.argv.includes("--strict") || true;
 
@@ -24,20 +24,22 @@ const SECRET_PATTERNS = [
   { name: "Private RSA/PEM Key Block", regex: /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/g },
 ];
 
-// Tracked client-facing files under src/
-const files = execSync("git ls-files src", { encoding: "utf8" })
-  .split("\n")
-  .map((s) => s.trim())
+// Eligible tracked source files; these can include server code as well as client code.
+const files = execFileSync("git", ["ls-files", "-z", "--", "src"], { encoding: "utf8" })
+  .split("\0")
   .filter((f) => f && /\.(tsx?|jsx?|json|css|mjs)$/.test(f))
   .filter((f) => !/\.test\.(tsx?|jsx?|mjs)$/.test(f));
 
 const violations = [];
+const unreadable = [];
+let audited = 0;
 
 for (const file of files) {
   let text;
   try {
     text = readFileSync(file, "utf8");
   } catch {
+    unreadable.push(file);
     continue;
   }
 
@@ -45,6 +47,7 @@ for (const file of files) {
   if (file.includes("synthetic-data-guard") || file.includes("secret-guard")) {
     continue;
   }
+  audited += 1;
 
   const lines = text.split("\n");
   lines.forEach((line, index) => {
@@ -66,13 +69,16 @@ for (const file of files) {
   });
 }
 
-if (violations.length === 0) {
+if (violations.length === 0 && unreadable.length === 0) {
   console.log(
-    `[check-client-bundle-secrets] Clean: ${files.length} client files audited. Zero exposed secrets or credentials found.`,
+    `[check-client-bundle-secrets] Clean: ${audited} tracked source files scanned for known credential patterns; ${files.length - audited} synthetic guard files excluded. No pattern matches found. Built bundles were not scanned.`,
   );
   process.exit(0);
 } else {
-  console.error(`[check-client-bundle-secrets] FAILED: ${violations.length} secret exposures found:`);
+  console.error(
+    `[check-client-bundle-secrets] FAILED: ${violations.length} credential-pattern matches; ${unreadable.length} tracked source files unreadable:`,
+  );
+  for (const file of unreadable) console.error(`  - ${file} [unable to read tracked source]`);
   for (const v of violations) {
     console.error(`  - ${v.file}:${v.line} [${v.rule}] (value redacted)`);
   }

@@ -81,9 +81,9 @@ import { describe, expect, it } from "vitest";
  */
 
 const WARD_MANAGEMENT_DIR = "src/components/ward-management";
-const MOCKUPS_APP_DIR = "src/app/mockups/ward-flow";
+const MOCKUPS_APP_DIR = "src/app/ward-flow";
 const SIGN_IN_COMPONENT_DIR = "src/components/ward-flow-sign-in";
-const SIGN_IN_APP_DIR = "src/app/mockups/ward-flow-sign-in";
+const SIGN_IN_APP_DIR = "src/app/ward-flow-sign-in";
 const DIGEST_APP_DIR = "src/app/mockups/ward-flow-digest";
 const DRAWINGS_DIR = "design/third-edition-mockups";
 const TEST_DIR = "tests";

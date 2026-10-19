@@ -10,7 +10,7 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import * as handoverModel from "@/components/ward-management/handover/handover-model";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/handover",
+  usePathname: () => "/ward-flow/handover",
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

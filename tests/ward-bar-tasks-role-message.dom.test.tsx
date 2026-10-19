@@ -18,7 +18,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const route = { pathname: "/mockups/ward-flow/ward/rph-adult-secure" };
+const route = { pathname: "/ward-flow/ward/rph-adult-secure" };
 
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -90,7 +90,7 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
   // Device audit, 11 Oct 2026 (stable shell): Tasks follows the signed-in person (the bed
   // coordinator), not the route, so a ward page now shows the coordinator's own list.
   it("shows the signed-in coordinator's own list on a ward route, not the ward reader message", async () => {
-    route.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    route.pathname = "/ward-flow/ward/rph-adult-secure";
     mockContext = freshContext(); // full seeded movements — real coordinator work exists
     const sheet = await openTasksDrawer();
     expect(within(sheet).queryByText("Tasks is the bed coordinator's list.")).toBeNull();
@@ -98,7 +98,7 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
   });
 
   it("keeps the coordinator's genuine empty state when a coordinator's own inbox is clear", async () => {
-    route.pathname = "/mockups/ward-flow";
+    route.pathname = "/ward-flow";
     // No movements, no stays and no planned admissions: the carer, PSP and MHAS rows (9 Oct 2026)
     // come from discharged stays as well as movements, and an overdue booking is a row too, so all
     // three are cleared for buildActionInbox to be [].

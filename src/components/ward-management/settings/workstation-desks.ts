@@ -21,8 +21,8 @@ import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs"
 
 export const COORDINATOR_DESK_ID = "coordinator";
 export const OFFICER_DESK_ID = "officer";
-const COORDINATOR_HREF = "/mockups/ward-flow";
-const OFFICER_HREF = "/mockups/ward-flow/transport/officer";
+const COORDINATOR_HREF = "/ward-flow";
+const OFFICER_HREF = "/ward-flow/transport/officer";
 
 export type DeskRole = "coordinator" | "ward" | "ed" | "community" | "officer";
 

@@ -186,7 +186,7 @@ export function MovementsPhoneNav({
           <div className={flow.phList}>{transportFeed(() => setPhoneSheet(null))}</div>
         )}
         <Link
-          href="/mockups/ward-flow/transport/officer"
+          href="/ward-flow/transport/officer"
           className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
         >
           <Truck size={16} aria-hidden="true" />

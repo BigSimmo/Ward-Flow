@@ -56,7 +56,7 @@ describe("the statistics section list", () => {
    * ⚠️ **THIS LIST IS A RULING, NOT A COUNT, AND IT WENT FROM FOUR TO FIVE ON 2026-09-08 BY THE
    * OWNER'S INSTRUCTION.** The community section was added because the hub indexed four kinds of
    * place while the network has five; a team had a page all along at
-   * `/mockups/ward-flow/community/[teamId]`, but nothing in the statistics hub reached it.
+   * `/ward-flow/community/[teamId]`, but nothing in the statistics hub reached it.
    *
    * The order is the assertion. A section appended anywhere but the end reorders the hub index for
    * every reader, and `toEqual` on the array is the only thing that notices — a length check or a
@@ -143,9 +143,9 @@ describe("the statistics section list", () => {
 
 describe("the section hrefs resolve to routes that exist", () => {
   it("puts the hub, the overview and the comparisons hrefs at the routes this plan built", () => {
-    expect(STATISTICS_HOME_HREF).toBe("/mockups/ward-flow/statistics");
-    expect(STATISTICS_OVERVIEW_HREF).toBe("/mockups/ward-flow/statistics/overview");
-    expect(STATISTICS_COMPARE_HREF).toBe("/mockups/ward-flow/statistics/compare");
+    expect(STATISTICS_HOME_HREF).toBe("/ward-flow/statistics");
+    expect(STATISTICS_OVERVIEW_HREF).toBe("/ward-flow/statistics/overview");
+    expect(STATISTICS_COMPARE_HREF).toBe("/ward-flow/statistics/compare");
   });
 
   it("has a page.tsx on disk for the hub and for both static section routes", () => {
@@ -155,10 +155,7 @@ describe("the section hrefs resolve to routes that exist", () => {
   });
 
   it("has a page.tsx on disk for both per-unit dynamic routes", () => {
-    for (const routePath of [
-      "/mockups/ward-flow/statistics/ward/[unitId]",
-      "/mockups/ward-flow/statistics/ed/[edId]",
-    ]) {
+    for (const routePath of ["/ward-flow/statistics/ward/[unitId]", "/ward-flow/statistics/ed/[edId]"]) {
       expect({ routePath, exists: existsSync(routeFile(routePath)) }).toEqual({ routePath, exists: true });
     }
   });
@@ -166,7 +163,7 @@ describe("the section hrefs resolve to routes that exist", () => {
   /** Task 4's own dynamic route, checked the same way as the two above rather than folded into
    *  their loop — that loop's own title says "per-unit", and a health service is not a unit. */
   it("has a page.tsx on disk for the per-service dynamic route", () => {
-    const routePath = "/mockups/ward-flow/statistics/service/[serviceId]";
+    const routePath = "/ward-flow/statistics/service/[serviceId]";
     expect({ routePath, exists: existsSync(routeFile(routePath)) }).toEqual({ routePath, exists: true });
   });
 
@@ -180,7 +177,7 @@ describe("the section hrefs resolve to routes that exist", () => {
     const perService = statisticsSectionById("service");
     // A literal, not `${STATISTICS_HOME_HREF}#${STATISTICS_SERVICE_CHOOSER_ID}` — an expectation
     // rebuilt from the same constants the source composes agrees with any value they produce.
-    expect(perService?.href).toBe("/mockups/ward-flow/statistics#choose-a-health-service");
+    expect(perService?.href).toBe("/ward-flow/statistics#choose-a-health-service");
     expect(perService?.href).toBe(STATISTICS_SERVICE_CHOOSER_HREF);
     expect(STATISTICS_SERVICE_CHOOSER_ID).toBe("choose-a-health-service");
     expect(existsSync(routeFile(STATISTICS_HOME_HREF))).toBe(true);
@@ -196,7 +193,7 @@ describe("the section hrefs resolve to routes that exist", () => {
     const perUnit = statisticsSectionById("units");
     // A literal, not `${STATISTICS_COMPARE_HREF}#${STATISTICS_UNIT_CHOOSER_ID}` — an expectation
     // rebuilt from the same constants the source composes agrees with any value they produce.
-    expect(perUnit?.href).toBe("/mockups/ward-flow/statistics/compare#choose-a-unit");
+    expect(perUnit?.href).toBe("/ward-flow/statistics/compare#choose-a-unit");
     expect(perUnit?.href).toBe(STATISTICS_UNIT_CHOOSER_HREF);
     expect(STATISTICS_UNIT_CHOOSER_ID).toBe("choose-a-unit");
     expect(existsSync(routeFile(STATISTICS_COMPARE_HREF))).toBe(true);
@@ -243,8 +240,8 @@ describe("the per-unit route paths are written as literals, for the route scan",
   );
 
   it("contains both whole route paths as literal text", () => {
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`");
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/ed/${encodeURIComponent(edId)}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ed/${encodeURIComponent(edId)}`");
   });
 
   it("never rebuilds either path from the home-href constant", () => {
@@ -268,9 +265,9 @@ describe("the per-unit route paths are written as literals, for the route scan",
    * page linked every ward on it.
    */
   it("writes the community route out in full, and the function agrees with the literal", () => {
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/community/${encodeURIComponent(teamId)}`");
-    expect(communityStatisticsHref("a-team")).toBe("/mockups/ward-flow/statistics/community/a-team");
-    expect(existsSync(routeFile("/mockups/ward-flow/statistics/community/[teamId]"))).toBe(true);
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/community/${encodeURIComponent(teamId)}`");
+    expect(communityStatisticsHref("a-team")).toBe("/ward-flow/statistics/community/a-team");
+    expect(existsSync(routeFile("/ward-flow/statistics/community/[teamId]"))).toBe(true);
   });
 
   /**
@@ -285,10 +282,10 @@ describe("the per-unit route paths are written as literals, for the route scan",
 
   /** The literal and the function must not be able to disagree — a typo in one is the whole risk. */
   it("returns exactly the path the literal spells", () => {
-    expect(wardStatisticsHref("a-ward")).toBe("/mockups/ward-flow/statistics/ward/a-ward");
-    expect(edStatisticsHref("an-ed")).toBe("/mockups/ward-flow/statistics/ed/an-ed");
-    expect(existsSync(routeFile("/mockups/ward-flow/statistics/ward/[unitId]"))).toBe(true);
-    expect(existsSync(routeFile("/mockups/ward-flow/statistics/ed/[edId]"))).toBe(true);
+    expect(wardStatisticsHref("a-ward")).toBe("/ward-flow/statistics/ward/a-ward");
+    expect(edStatisticsHref("an-ed")).toBe("/ward-flow/statistics/ed/an-ed");
+    expect(existsSync(routeFile("/ward-flow/statistics/ward/[unitId]"))).toBe(true);
+    expect(existsSync(routeFile("/ward-flow/statistics/ed/[edId]"))).toBe(true);
   });
 
   /**
@@ -299,11 +296,11 @@ describe("the per-unit route paths are written as literals, for the route scan",
    * scan's own character class), which is why the BUILT match this literal produces matters here.
    */
   it("contains the per-service route path as literal text, and never rebuilds it from the home-href constant", () => {
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`");
     expect(SECTIONS_SOURCE).not.toContain("${STATISTICS_HOME_HREF}/service");
     expect(FACADE_SOURCE).not.toContain("${STATISTICS_HOME_HREF}/service");
-    expect(serviceStatisticsHref("a-service")).toBe("/mockups/ward-flow/statistics/service/a-service");
-    expect(existsSync(routeFile("/mockups/ward-flow/statistics/service/[serviceId]"))).toBe(true);
+    expect(serviceStatisticsHref("a-service")).toBe("/ward-flow/statistics/service/a-service");
+    expect(existsSync(routeFile("/ward-flow/statistics/service/[serviceId]"))).toBe(true);
   });
 });
 
@@ -321,8 +318,8 @@ describe("statisticsSectionById", () => {
 
 describe("the per-unit href builders", () => {
   it("builds the ward and department detail routes", () => {
-    expect(wardStatisticsHref("rph-adult-secure")).toBe("/mockups/ward-flow/statistics/ward/rph-adult-secure");
-    expect(edStatisticsHref("peel-ed")).toBe("/mockups/ward-flow/statistics/ed/peel-ed");
+    expect(wardStatisticsHref("rph-adult-secure")).toBe("/ward-flow/statistics/ward/rph-adult-secure");
+    expect(edStatisticsHref("peel-ed")).toBe("/ward-flow/statistics/ed/peel-ed");
   });
 
   /**
@@ -333,8 +330,8 @@ describe("the per-unit href builders", () => {
    */
   it("encodes an id that needs escaping, so the route's decode returns the id it started with", () => {
     const awkward = "ward with spaces/and-a-slash?";
-    const wardTail = wardStatisticsHref(awkward).replace("/mockups/ward-flow/statistics/ward/", "");
-    const edTail = edStatisticsHref(awkward).replace("/mockups/ward-flow/statistics/ed/", "");
+    const wardTail = wardStatisticsHref(awkward).replace("/ward-flow/statistics/ward/", "");
+    const edTail = edStatisticsHref(awkward).replace("/ward-flow/statistics/ed/", "");
 
     expect(wardTail).not.toContain("/");
     expect(edTail).not.toContain("/");
@@ -345,7 +342,7 @@ describe("the per-unit href builders", () => {
 
 describe("the per-service href builder", () => {
   it("builds the health-service detail route", () => {
-    expect(serviceStatisticsHref("East Metro")).toBe("/mockups/ward-flow/statistics/service/East%20Metro");
+    expect(serviceStatisticsHref("East Metro")).toBe("/ward-flow/statistics/service/East%20Metro");
   });
 
   /**
@@ -357,7 +354,7 @@ describe("the per-service href builder", () => {
    */
   it("encodes the space every health-service name carries, so the route's decode returns the name it started with", () => {
     for (const service of ["North Metro", "South Metro", "East Metro", "WACHS", "Private"]) {
-      const tail = serviceStatisticsHref(service).replace("/mockups/ward-flow/statistics/service/", "");
+      const tail = serviceStatisticsHref(service).replace("/ward-flow/statistics/service/", "");
       expect(tail, `${service} produced a slash in its own encoded segment`).not.toContain("/");
       expect(decodeURIComponent(tail)).toBe(service);
     }
@@ -432,7 +429,7 @@ describe("the ward screen's claim that wardStatistics has no consumer in the app
  * well. That distinction is the entire point: a `toBe` on the constant passes either way.
  *
  * Ward Lead is building a repository-wide invariant that walks every route directory under
- * `src/app/mockups/ward-flow` and makes this check for all of them. This is the same rule, applied
+ * `src/app/ward-flow` and makes this check for all of them. This is the same rule, applied
  * by hand to this module ahead of it.
  */
 describe("every statistics route path is written as a literal, where the scan can see it", () => {
@@ -467,19 +464,19 @@ describe("every statistics route path is written as a literal, where the scan ca
     // route path quoted in a doc comment is source text too, and would satisfy a looser check while
     // the constant beside it went back to being composed.
     for (const declaration of [
-      'export const STATISTICS_HOME_HREF = "/mockups/ward-flow/statistics";',
-      'export const STATISTICS_OVERVIEW_HREF = "/mockups/ward-flow/statistics/overview";',
-      'export const STATISTICS_COMPARE_HREF = "/mockups/ward-flow/statistics/compare";',
+      'export const STATISTICS_HOME_HREF = "/ward-flow/statistics";',
+      'export const STATISTICS_OVERVIEW_HREF = "/ward-flow/statistics/overview";',
+      'export const STATISTICS_COMPARE_HREF = "/ward-flow/statistics/compare";',
     ]) {
       expect(SECTIONS_SOURCE).toContain(declaration);
     }
 
     // The three dynamic builders and the two choosers write their path into the template literal
     // itself.
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`");
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/ed/${encodeURIComponent(edId)}`");
-    expect(FACADE_SOURCE).toContain("`/mockups/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`");
-    expect(SECTIONS_SOURCE).toContain("`/mockups/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ed/${encodeURIComponent(edId)}`");
+    expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`");
+    expect(SECTIONS_SOURCE).toContain("`/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`");
     // The fourth section's own chooser fragment — deliberately built FROM `STATISTICS_HOME_HREF`,
     // unlike the two dynamic-route builders above. Its whole point is to sit on the hub page
     // itself, so composing it from that same constant is the correct form here, not the composition
@@ -810,7 +807,7 @@ describe("the corrected comment claims on the statistics surface", () => {
  * an outdated prohibition — rather than leaving a silently stale "four" behind.
  */
 describe("the statistics route page's prop-passing prohibition names every override prop", () => {
-  const ROUTE_PAGE = join(process.cwd(), "src", "app", "mockups", "ward-flow", "statistics", "page.tsx");
+  const ROUTE_PAGE = join(process.cwd(), "src", "app", "ward-flow", "statistics", "page.tsx");
   const SCREEN_FILE = join(
     process.cwd(),
     "src",

@@ -92,7 +92,7 @@ const DATA_LAYER = new Map([
  * it actually means — no WARD FLOW file outside the data layer states a name the data layer owns —
  * rather than to allowlist eleven innocent lines and leave the scope wrong.
  */
-const WARD_DIRS = ["src/components/ward-management", "src/app/mockups/ward-flow"];
+const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow"];
 
 function walk(dir: string): string[] {
   const found: string[] = [];

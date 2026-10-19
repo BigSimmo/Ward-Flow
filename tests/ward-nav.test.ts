@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -103,8 +103,8 @@ import { WARD_NAV_ICONS } from "../src/components/ward-management/ward-nav-icons
 import { raiseReferralHref } from "../src/components/ward-management/shell/ward-facade";
 
 const REPO_ROOT = path.resolve(__dirname, "..");
-const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow");
-const ROUTE_PREFIX = "/mockups/ward-flow";
+const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "ward-flow");
+const ROUTE_PREFIX = "/ward-flow";
 
 type WardFlowRoute = { route: string; dynamic: boolean };
 
@@ -133,8 +133,8 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Converts a dynamic route like `/mockups/ward-flow/ward/[unitId]` into a matcher for any one
- *  concrete instance, e.g. `/mockups/ward-flow/ward/rph-adult-secure`. */
+/** Converts a dynamic route like `/ward-flow/ward/[unitId]` into a matcher for any one
+ *  concrete instance, e.g. `/ward-flow/ward/rph-adult-secure`. */
 function routeToPattern(route: string): RegExp {
   const pattern = route
     .split("/")
@@ -149,7 +149,7 @@ const dynamicRoutes = wardFlowRoutes.filter((entry) => entry.dynamic).map((entry
 const dynamicPatterns = wardFlowRoutes.filter((entry) => entry.dynamic).map((entry) => routeToPattern(entry.route));
 
 describe("Ward Flow route enumeration (sanity check on the scan itself)", () => {
-  it("finds every known page.tsx under src/app/mockups/ward-flow, both static and dynamic", () => {
+  it("finds every known page.tsx under src/app/ward-flow, both static and dynamic", () => {
     // 22 page.tsx files measured on the merged tree: 18 static + 4 dynamic. Both branches added a
     // route independently and both moved this number to 21 for different routes — Phase 8 for the
     // out-of-area ledger, the ward board branch for board/[unitId] — so 22 is the merged truth and
@@ -192,7 +192,7 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
      * separate branches. **Taking either side would have been wrong, and bumping the previous
      * literal by one would have been wrong for whichever route was not the one you were thinking
      * about.** Counted on disk at the moment of the merge with both routes present:
-     * `find src/app/mockups/ward-flow -name page.tsx | wc -l` = 35. Renderable 29 + redirect-only 6.
+     * `find src/app/ward-flow -name page.tsx | wc -l` = 35. Renderable 29 + redirect-only 6.
      *
      * ⚠️ **This exact collision was written down in the assignment register hours before it
      * happened**, precisely because the obvious repair is the wrong one and the person resolving it
@@ -202,18 +202,18 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
      *
      * **Both sides' own reasoning is preserved below, because both are true and both routes exist.**
      */
-    // 34, not 33: Task 4 (2026-09-06) added `/mockups/ward-flow/statistics/service/[serviceId]`
+    // 34, not 33: Task 4 (2026-09-06) added `/ward-flow/statistics/service/[serviceId]`
     // (`StatisticsServiceScreen`), the health-service detail route — the fourth statistics section,
     // one dynamic route serving all five `HEALTH_SERVICES`. Counted by hand on disk immediately
-    // before this change (`find src/app/mockups/ward-flow -name page.tsx | wc -l` = 33) rather than
+    // before this change (`find src/app/ward-flow -name page.tsx | wc -l` = 33) rather than
     // by incrementing the previous literal, per this file's own standing rule that a bumped literal
     // is the repair that is wrong for whichever other branch is adding a route at the same time.
     // 34, not 33, as of 2026-09-06: `/hub` (`HubScreen`) — the master search hub, built from the
     // owner-approved mockup. One route ADDED, none removed or redirected: 33 + 1 = 34.
-    // 36, not 35, as of 2026-09-08: `/mockups/ward-flow/statistics/community/[teamId]`
+    // 36, not 35, as of 2026-09-08: `/ward-flow/statistics/community/[teamId]`
     // (`StatisticsCommunityScreen`), the fifth statistics section — the hub indexed four kinds of
     // place while the network has five. COUNTED ON DISK at the moment of the change
-    // (`find src/app/mockups/ward-flow -name page.tsx | wc -l` = 36), not incremented, per the
+    // (`find src/app/ward-flow -name page.tsx | wc -l` = 36), not incremented, per the
     // paragraph above: a bumped literal is the repair that is wrong for whichever other branch is
     // adding a route at the same time. Renderable 30 + redirect-only 6.
     /*
@@ -226,7 +226,7 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
      * it; only re-deriving does. **Count on disk at the moment of the merge — never pick a side, never
      * increment.** Incrementing is right only if exactly two lanes collided, and nothing in a diff says
      * how many did. Counted here with everything present:
-     * `find src/app/mockups/ward-flow -name page.tsx | wc -l` = 40, renderable 34 + redirect-only 6.
+     * `find src/app/ward-flow -name page.tsx | wc -l` = 40, renderable 34 + redirect-only 6.
      *
      * 🔴 **AND THIS TIME THE TWO SIDES DISAGREED, WHICH IS NOT THE SAFER CASE.** The earlier
      * collisions were dangerous because both hunks said the SAME number, so they did not look like a
@@ -236,7 +236,7 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
      * same merge independently an hour later and arrived at 40 by the only method that works.
      *
      * ⚠️ **AND THE POPULATION IS WRITTEN HERE BECAUSE THE WALK COMMAND DOES NOT SAY WHAT IT COUNTS.**
-     * It counts the ward-flow SUBTREE. 🔴 **`/mockups/ward-flow-sign-in` is a SIBLING directory, not a
+     * It counts the ward-flow SUBTREE. 🔴 **`/ward-flow-sign-in` is a SIBLING directory, not a
      * child, so it is OUTSIDE this figure** — measured, not assumed: the walk returns zero paths
      * containing `sign-in`, and that directory holds one more `page.tsx` of its own. **40 is right for
      * "routes under the ward-flow subtree" and wrong for "ward screens".**
@@ -288,7 +288,7 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
  * wrong.** A source scan can see that a route is REFERENCED. It cannot see that every instance
  * the route serves is REACHABLE, and the difference is not academic: a link built inside a
  * `.map()` may iterate the whole collection or a context-derived subset of three, and the two are
- * textually identical. `ward-role-switcher.tsx` builds `/mockups/ward-flow/ward/${unit.id}` over
+ * textually identical. `ward-role-switcher.tsx` builds `/ward-flow/ward/${unit.id}` over
  * `wardCandidates`, which is EMPTY unless a movement is focused and is otherwise that movement's
  * accepted unit or its referred units — nought to three. So `ward/[unitId]` HAS a link builder
  * while twenty-two of its twenty-three wards have no route in at all. A guard reading that
@@ -325,7 +325,7 @@ const sourceFiles = collectSourceFiles(SRC_ROOT);
  *  literal `\b` becoming 0x08 four times. */
 const HREF_QUOTE = "[\"'`]";
 /** One concrete path segment: `rph-adult-secure`, `peel-ed`. Deliberately cannot start with `[`,
- *  which is what keeps a prose mention of `/mockups/ward-flow/ward/[unitId]` out of the results. */
+ *  which is what keeps a prose mention of `/ward-flow/ward/[unitId]` out of the results. */
 const CONCRETE_SEGMENT = "[A-Za-z0-9][A-Za-z0-9._-]*";
 /** A template hole: `${unit.id}`. */
 const BUILT_SEGMENT = "\\$\\{[^}]*\\}";
@@ -367,7 +367,7 @@ function scanDynamicRoute(route: string): DynamicRouteScan {
    * The unescaped prefix, used to ask whether a matched segment is really a SIBLING STATIC ROUTE
    * rather than an instance of this dynamic one.
    *
-   * ⚠️ ADDED 2026-09-02, and a real route exposed it. `/mockups/ward-flow/people/new` is a static
+   * ⚠️ ADDED 2026-09-02, and a real route exposed it. `/ward-flow/people/new` is a static
    * page — the screen for adding a person who is not in the system yet — but to a source scan the
    * segment `new` is indistinguishable from a patient id, so the href counted as one patient
    * "reachable without state". Nobody is reachable through it: it serves no instance at all.
@@ -387,7 +387,7 @@ function scanDynamicRoute(route: string): DynamicRouteScan {
    * absence is real. This repository's standing rule is that Next 16 differs from training data,
    * so "I know how Next works" is exactly the reasoning it forbids.
    *
-   * So it was MEASURED instead: on 2026-09-02, `/mockups/ward-flow/people/new` was loaded in a
+   * So it was MEASURED instead: on 2026-09-02, `/ward-flow/people/new` was loaded in a
    * browser against the running dev server and rendered the ADD-A-PATIENT FORM — page title
    * "Add a patient — Ward Flow" — not a patient page with `new` read as an id. The static route
    * wins here, so a concatenated path that is a real static route on disk genuinely cannot reach
@@ -435,20 +435,20 @@ const dynamicRouteScans = new Map(dynamicRoutes.map((route) => [route, scanDynam
  * comments did when Phase 7 seeded the twenty-third.
  */
 const WARD_DYNAMIC_ROUTE_INSTANCES: ReadonlyMap<string, () => number> = new Map([
-  ["/mockups/ward-flow/ward/[unitId]", () => allUnits().length],
-  ["/mockups/ward-flow/ward/[unitId]/answer", () => allUnits().length],
-  ["/mockups/ward-flow/board/[unitId]", () => allUnits().length],
-  ["/mockups/ward-flow/ed/[edId]", () => allEmergencyDepartments().length],
-  ["/mockups/ward-flow/movements/[movementId]", () => wardMovements.length],
-  ["/mockups/ward-flow/people/[patientId]", () => wardPatients.length],
-  ["/mockups/ward-flow/community/[teamId]", () => COMMUNITY_TEAM_PAGES.length],
-  ["/mockups/ward-flow/statistics/ward/[unitId]", () => allUnits().length],
-  ["/mockups/ward-flow/statistics/ed/[edId]", () => allEmergencyDepartments().length],
-  ["/mockups/ward-flow/statistics/service/[serviceId]", () => HEALTH_SERVICES.length],
+  ["/ward-flow/ward/[unitId]", () => allUnits().length],
+  ["/ward-flow/ward/[unitId]/answer", () => allUnits().length],
+  ["/ward-flow/board/[unitId]", () => allUnits().length],
+  ["/ward-flow/ed/[edId]", () => allEmergencyDepartments().length],
+  ["/ward-flow/movements/[movementId]", () => wardMovements.length],
+  ["/ward-flow/people/[patientId]", () => wardPatients.length],
+  ["/ward-flow/community/[teamId]", () => COMMUNITY_TEAM_PAGES.length],
+  ["/ward-flow/statistics/ward/[unitId]", () => allUnits().length],
+  ["/ward-flow/statistics/ed/[edId]", () => allEmergencyDepartments().length],
+  ["/ward-flow/statistics/service/[serviceId]", () => HEALTH_SERVICES.length],
   // The statistics view of a team, distinct from the operational `/community/[teamId]` above. Same
   // instance count, and deliberately the same source for it — two entries computing one population
   // by two routes is how the two figures come to disagree.
-  ["/mockups/ward-flow/statistics/community/[teamId]", () => COMMUNITY_TEAM_PAGES.length],
+  ["/ward-flow/statistics/community/[teamId]", () => COMMUNITY_TEAM_PAGES.length],
 ]);
 
 /**
@@ -478,10 +478,10 @@ const WARD_INDEX_COVERED_UNITS = allUnits().length;
 
 const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   [
-    "/mockups/ward-flow/ward/[unitId]",
+    "/ward-flow/ward/[unitId]",
     // REWRITTEN when /wards landed, and the number in it did NOT move — read this before
     // changing it. The scan measures CONCRETE hrefs: literal quoted paths. The ward index builds
-    // its hrefs (`/mockups/ward-flow/ward/${unit.id}`) inside a map, so the scan classifies it as
+    // its hrefs (`/ward-flow/ward/${unit.id}`) inside a map, so the scan classifies it as
     // a BUILT site and counts nought new instances from it. That is this scan working exactly as
     // its own header demands — it says, in full, that a link built inside a `.map()` may iterate
     // the whole collection or a context-derived subset of three and the two are textually
@@ -494,7 +494,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     // pins the linked set against `allUnits()` exactly and fails on a single missing ward.
     "1 of 22 instances reachable without state — ward-nav.ts's one seeded example (rph-adult-secure), " +
       "carried as exampleOnly, is still the only CONCRETE ward href in the source, and this scan counts " +
-      "concrete hrefs only. The navigation itself no longer orphans anything: /mockups/ward-flow/wards " +
+      "concrete hrefs only. The navigation itself no longer orphans anything: /ward-flow/wards " +
       "(WardIndex) lists every ward in the network, grouped by health service, and links each one — " +
       `${WARD_INDEX_COVERED_UNITS} of ${WARD_INDEX_COVERED_UNITS}, established by rendering that page and ` +
       "counting its links rather than by this scan, in " +
@@ -502,7 +502,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "also links every ward, through the facade's unitHref inside a map, so this scan counts nought from it.",
   ],
   [
-    "/mockups/ward-flow/community/[teamId]",
+    "/ward-flow/community/[teamId]",
     // REWRITTEN when /community landed, and the number in it did NOT move — read this before
     // changing it. It now records a limit of the SCAN rather than a gap in the navigation, exactly
     // like the ward entry above and the two statistics entries below. The community team index
@@ -521,7 +521,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     // team page ceased to exist and COMMUNITY_TEAM_PAGES went from 65 to 64. The leading 0 is
     // unchanged and unchanged for the same reason as before: the index builds its hrefs in a map.
     "0 of 64 instances reachable without state — and this is a limit of a source scan, not an orphan " +
-      "in the navigation any more. /mockups/ward-flow/community (CommunityIndex) is the front door: " +
+      "in the navigation any more. /ward-flow/community (CommunityIndex) is the front door: " +
       "it lists every team a referral can name, alphabetically, and links each one, and ward-nav.ts " +
       "carries it as the `community` entry so the index is itself reachable from the rail. Its hrefs " +
       "are built inside a map (communityTeamHref in community-screen.tsx), which this scan counts as " +
@@ -531,7 +531,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "builds team hrefs, but only from a team page you already reached.",
   ],
   [
-    "/mockups/ward-flow/board/[unitId]",
+    "/ward-flow/board/[unitId]",
     "1 of 22 instances reachable without state — ward-nav.ts's one seeded example (rph-adult-secure). " +
       "The board's Change ward disclosure maps every unit in the live provider through wardBoardHref, so " +
       "once that one concrete board is open the remaining boards are linked from it. This source scan sees " +
@@ -539,14 +539,14 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "call, so the mechanical without-state figure remains one rather than claiming those links are concrete.",
   ],
   [
-    "/mockups/ward-flow/ward/[unitId]/answer",
+    "/ward-flow/ward/[unitId]/answer",
     "0 of 22 instances reachable without state — the answer view is reached from a ward's own overview, " +
       "and its link is built from the selected unit. The source scan records the builder but cannot count " +
       "the instances produced through that dynamic path. Rendering proves the component mounts; the " +
       "overview link and browser journey provide separate reachability evidence.",
   ],
   [
-    "/mockups/ward-flow/ed/[edId]",
+    "/ward-flow/ed/[edId]",
     "1 of 10 instances reachable without state — ward-nav.ts's one seeded example (peel-ed), which " +
       "the /ed redirect backstop now also opens (26 Sept 2026: it used to name fremantle-ed, which is " +
       "not a seeded ED, so it counted a department that does not exist). " +
@@ -557,7 +557,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "widening the navigation.",
   ],
   [
-    "/mockups/ward-flow/people/[patientId]",
+    "/ward-flow/people/[patientId]",
     // Denominator moved 18 → 40 → 43 with the sample-data / seed growth; the leading 0 is unchanged
     // and still means the same thing: a source scan finds no concrete `/people/<id>` href, because
     // the only route in builds links after a search query, never as a static list of everybody.
@@ -568,7 +568,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "figure was 0 of 12 for a different and worse reason — there was nowhere for them to point.",
   ],
   [
-    "/mockups/ward-flow/statistics/ward/[unitId]",
+    "/ward-flow/statistics/ward/[unitId]",
     "0 of 22 instances reachable without state — and unlike every other entry here, this one records " +
       "a limit of the SCAN rather than a gap in the navigation. The comparisons page " +
       "(statistics-compare-screen.tsx) links every ward in the network, one row each, built inside a " +
@@ -578,14 +578,14 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "the linked set against allUnits() exactly and goes red on a single missing ward.",
   ],
   [
-    "/mockups/ward-flow/statistics/ed/[edId]",
+    "/ward-flow/statistics/ed/[edId]",
     "0 of 10 instances reachable without state — the same scan limit as the ward detail route above, " +
       "and established the same way. The comparisons page lists every emergency department and links " +
       "each one; tests/ward-statistics-sections.dom.test.tsx pins that set against " +
       "allEmergencyDepartments() exactly.",
   ],
   [
-    "/mockups/ward-flow/statistics/service/[serviceId]",
+    "/ward-flow/statistics/service/[serviceId]",
     // Task 4, 2026-09-06. A different flavour of scan limit from the two entries above: those two
     // register as BUILT sites because their chooser calls the href builder inside a `.map()` written
     // as a template literal at the CALL site. This route's own chooser (the statistics hub,
@@ -593,7 +593,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     // a `.map()` — no template literal at that call site at all — so the hub itself registers as
     // NEITHER concrete nor built. What DOES register is `serviceStatisticsHref`'s own definition in
     // shell/ward-facade.ts, whose body is the template literal
-    // `` `/mockups/ward-flow/statistics/service/${encodeURIComponent(serviceId)}` `` — a real built
+    // `` `/ward-flow/statistics/service/${encodeURIComponent(serviceId)}` `` — a real built
     // site by the same mechanism `wardStatisticsHref`'s and `edStatisticsHref`'s own definitions
     // already are for their routes.
     //
@@ -616,7 +616,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "exactly.",
   ],
   [
-    "/mockups/ward-flow/statistics/community/[teamId]",
+    "/ward-flow/statistics/community/[teamId]",
     // 2026-09-08, the fifth statistics section. Same scan limit as the health-service entry above
     // and NOT the same reason, which is why this rationale is written out rather than pointed at
     // that one: the hub's chooser calls `communityStatisticsHref(team.id)` as a plain function call
@@ -644,7 +644,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "the linked set against COMMUNITY_TEAM_PAGES exactly.",
   ],
   [
-    "/mockups/ward-flow/movements/[movementId]",
+    "/ward-flow/movements/[movementId]",
     // Total movements 50 -> 61: the 2026-09-17 sample-data addition (WF-021..WF-031, eleven rows
     // giving WACHS and Private a movement at every stage plus one East Metro handover_ready).
     // 61 → 60: WF-024 removed (40-60 range), 17 Sept
@@ -673,17 +673,17 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // Written out in full rather than counted. A fifth dynamic route arriving here should cost
     // somebody a decision about how its instances are reached, not a number.
     expect([...dynamicRoutes].sort()).toEqual([
-      "/mockups/ward-flow/board/[unitId]",
-      "/mockups/ward-flow/community/[teamId]",
-      "/mockups/ward-flow/ed/[edId]",
-      "/mockups/ward-flow/movements/[movementId]",
-      "/mockups/ward-flow/people/[patientId]",
-      "/mockups/ward-flow/statistics/community/[teamId]",
-      "/mockups/ward-flow/statistics/ed/[edId]",
-      "/mockups/ward-flow/statistics/service/[serviceId]",
-      "/mockups/ward-flow/statistics/ward/[unitId]",
-      "/mockups/ward-flow/ward/[unitId]",
-      "/mockups/ward-flow/ward/[unitId]/answer",
+      "/ward-flow/board/[unitId]",
+      "/ward-flow/community/[teamId]",
+      "/ward-flow/ed/[edId]",
+      "/ward-flow/movements/[movementId]",
+      "/ward-flow/people/[patientId]",
+      "/ward-flow/statistics/community/[teamId]",
+      "/ward-flow/statistics/ed/[edId]",
+      "/ward-flow/statistics/service/[serviceId]",
+      "/ward-flow/statistics/ward/[unitId]",
+      "/ward-flow/ward/[unitId]",
+      "/ward-flow/ward/[unitId]/answer",
     ]);
 
     // 436 .ts/.tsx files under src/ once PsychSift was removed (25 September 2026; 1306 before it).
@@ -694,7 +694,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     expect(sourceFiles.length).toBeGreaterThan(340);
 
     // Positive pins: the scan reads file CONTENT, and tells a concrete href from a built one.
-    const board = dynamicRouteScans.get("/mockups/ward-flow/board/[unitId]");
+    const board = dynamicRouteScans.get("/ward-flow/board/[unitId]");
     expect(board?.concreteSites).toEqual(["src/components/ward-management/ward-nav.ts"]);
     expect([...(board?.concreteInstances ?? [])]).toEqual(["rph-adult-secure"]);
     // TWO source-visible builders. The ward screen writes the template directly for its per-unit
@@ -717,7 +717,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
-    const ward = dynamicRouteScans.get("/mockups/ward-flow/ward/[unitId]");
+    const ward = dynamicRouteScans.get("/ward-flow/ward/[unitId]");
     // Three builders now, and the list stays exact rather than becoming a `toContain`: the ward
     // index (Phase 8) builds one href per unit over the whole network, the role switcher builds
     // nought to three over a selection, and the Delays screen once built one per LAPSED BED PULL.
@@ -778,7 +778,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     ]);
 
     // NEGATIVE pin, and the reason this query is narrow enough to mean anything at all.
-    // `ward-flow-events.ts` and `ward-flow-reducer.ts` both mention `/mockups/ward-flow/ward/[unitId]`
+    // `ward-flow-events.ts` and `ward-flow-reducer.ts` both mention `/ward-flow/ward/[unitId]`
     // in prose, wrapped in markdown backticks — so each sits between exactly the quote characters a
     // real href sits between, and only the leading `[` of the placeholder segment separates the two.
     // A pattern loose enough to admit them would report almost every route as linked while proving
@@ -890,7 +890,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
 
   // Direction 1: every WARD_NAV href must be a real route (static or one instance of a dynamic
   // route). This is the direction a purely "does every link work" check would already cover.
-  it("every WARD_NAV href resolves to a real route under src/app/mockups/ward-flow/", () => {
+  it("every WARD_NAV href resolves to a real route under src/app/ward-flow/", () => {
     const unresolved = WARD_NAV.filter(
       (item) => !staticRoutes.includes(item.href) && !dynamicPatterns.some((pattern) => pattern.test(item.href)),
     ).map((item) => item.href);
@@ -914,7 +914,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
   //
   // SEVEN, NOT EIGHT, as of MERGE 01 (owner-approved 2026-09-05): `queue` ("Priority queue") and
   // `exceptions` ("Exceptions") were two entries for the same waiting patients; both are now one
-  // entry, `queue` relabelled "Delays" and pointed at `/mockups/ward-flow/delays`. See
+  // entry, `queue` relabelled "Delays" and pointed at `/ward-flow/delays`. See
   // ward-nav.ts's own comment on `WARD_VIEWS` for the full reasoning.
   // SIX, NOT SEVEN, as of MERGE 03 (owner-approved 2026-09-05): `movements` and `transport` were
   // two entries asking "where is everyone right now" two different ways; both are now one entry,
@@ -1036,7 +1036,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
     // trap `tests/route-reachability.test.ts` records in its own words, having once passed while
     // the real link it guarded had been mutated away.
     const rootPage = stripSourceComments(
-      readFileSync(path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow", "page.tsx"), "utf8"),
+      readFileSync(path.join(REPO_ROOT, "src", "app", "ward-flow", "page.tsx"), "utf8"),
     );
     expect(
       rootPage,
@@ -1065,11 +1065,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
       .map((item) => item.href)
       .sort();
     expect(exampleOnlyHrefs).toEqual(
-      [
-        "/mockups/ward-flow/board/rph-adult-secure",
-        "/mockups/ward-flow/ed/peel-ed",
-        "/mockups/ward-flow/ward/rph-adult-secure",
-      ].sort(),
+      ["/ward-flow/board/rph-adult-secure", "/ward-flow/ed/peel-ed", "/ward-flow/ward/rph-adult-secure"].sort(),
     );
   });
 
@@ -1103,11 +1099,11 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
       'WARD_NAV no longer holds id "search" — a clinician who followed a referral link naming ' +
         "nobody needs the person search as the way back.",
     ).toBeDefined();
-    expect(search?.href, "the patient search href must resolve to a real route").toBe("/mockups/ward-flow/search");
+    expect(search?.href, "the patient search href must resolve to a real route").toBe("/ward-flow/search");
   });
 
   it("puts BOTH the referral board and the intake form in the rail, and neither replaces the other", () => {
-    const board = WARD_NAV.find((item) => item.href === "/mockups/ward-flow/referrals");
+    const board = WARD_NAV.find((item) => item.href === "/ward-flow/referrals");
     expect(board, "the referral board must be a WARD_NAV destination, not an unlisted exemption").toBeDefined();
     expect(board?.group).toBe("board");
     expect(board?.label).toBe("Referrals");
@@ -1134,7 +1130,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
     // makes removing the entry part of the same change rather than a later tidy-up.
     expect(WARD_NAV_INTENTIONALLY_UNLISTED.has(WARD_REFERRAL_INTAKE_HREF)).toBe(false);
 
-    expect(WARD_REFERRAL_INTAKE_HREF).toBe("/mockups/ward-flow/referrals/new");
+    expect(WARD_REFERRAL_INTAKE_HREF).toBe("/ward-flow/referrals/new");
     expect(staticRoutes, "the intake route the constant names must exist on disk").toContain(WARD_REFERRAL_INTAKE_HREF);
   });
 
@@ -1147,13 +1143,11 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
    * is what needs the assertion.
    */
   it("puts the out-of-area ledger in the coordinator's boards", () => {
-    const board = WARD_NAV.find((item) => item.href === "/mockups/ward-flow/out-of-area");
+    const board = WARD_NAV.find((item) => item.href === "/ward-flow/out-of-area");
     expect(board, "the out-of-area ledger must be a WARD_NAV destination, not an unlisted exemption").toBeDefined();
     expect(board?.group).toBe("board");
     expect(board?.label).toBe("Out of area");
-    expect(staticRoutes, "the route the nav entry names must exist on disk").toContain(
-      "/mockups/ward-flow/out-of-area",
-    );
+    expect(staticRoutes, "the route the nav entry names must exist on disk").toContain("/ward-flow/out-of-area");
   });
 
   it("groups every item as either a role screen or a specialist board", () => {
@@ -1233,12 +1227,12 @@ describe("The Ward Flow rail's aria-label is honest for a sandboxed prototype (D
     // Non-vacuity: the one legitimate exit must still be there, or this test would also pass on a
     // sidebar with no links at all. The href is now a named constant shared by the rail and the
     // drawer, so both its value and its use are asserted.
-    expect(WARD_DEVELOPER_HUB_HREF).toBe("/mockups/ward-flow");
+    expect(WARD_DEVELOPER_HUB_HREF).toBe("/ward-flow");
     expect(source).toContain("WARD_DEVELOPER_HUB_HREF");
     // Comments are stripped before this one: a mutation proved on 2026-09-04 that splitting the
     // real literal into a concatenation (`"/mockups/" + "ward-flow"`, same runtime value) and
     // leaving a `//` comment with the whole literal satisfied the unstripped check.
-    expect(strippedSource).toContain('"/mockups/ward-flow"');
+    expect(strippedSource).toContain('"/ward-flow"');
   });
 });
 
@@ -1405,7 +1399,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 27, not 30: /queue, /exceptions and /escalation joined redirectOnlyRoutes above on
     // 2026-09-06 rather than keeping renders of components no visit to those routes reaches. Three
     // entries removed, none added: 30 - 3 = 27.
-    // 28, not 27: Task 4 (2026-09-06) added `/mockups/ward-flow/statistics/service/[serviceId]`
+    // 28, not 27: Task 4 (2026-09-06) added `/ward-flow/statistics/service/[serviceId]`
     // (`StatisticsServiceScreen`), the fourth statistics section. One entry added, none removed:
     // 27 + 1 = 28. Moved in both files together, per the paragraph above.
     // 28, not 27: the Master Search Hub (`/hub`, `HubScreen`) — owner-approved 2026-09-06, built
@@ -1415,7 +1409,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // that lets two of them stay right while the third quietly does not — which is exactly what
     // happened here: the first two were updated for this route and this one was missed, and only
     // running the file found it. Whoever adds route 29 should expect all three to move together.
-    // 30, not 29, as of 2026-09-08: `/mockups/ward-flow/statistics/community/[teamId]`
+    // 30, not 29, as of 2026-09-08: `/ward-flow/statistics/community/[teamId]`
     // (`StatisticsCommunityScreen`). One entry added, none removed: 29 + 1 = 30. This is the third
     // of the three tallies the paragraph above warns move together, and all three were moved in the
     // same edit for exactly the reason recorded there.
@@ -1440,7 +1434,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
  * ⚠️ **RE-DERIVED, Task 8, 2026-09-11.** Until this task, every route rendered `ClinicalRail`
  * itself (with `WardModeNavigation` nested inside it), so wrapping ONLY `entry.render()` in
  * `WardFlowProvider` was enough to see the landmark each screen carried on its own. The rail is
- * now mounted once, in `src/app/mockups/ward-flow/layout.tsx`, NOT by any of these 30 screen
+ * now mounted once, in `src/app/ward-flow/layout.tsx`, NOT by any of these 30 screen
  * components — so a route's own D8 landmark is real only once its layout is part of what gets
  * rendered. `WardRail` is added to the fixture below for exactly that reason: it is the layout's
  * actual current source of the "Ward Flow views" nav (`ward-rail.tsx`'s own header explains why
@@ -1475,7 +1469,7 @@ describe("Every Ward Flow route carries the 'Ward Flow views' in-page nav (D8)",
   }
 });
 /* ------------------------------------------------------------------------------------------ *
- * The ward index (`/mockups/ward-flow/wards`).
+ * The ward index (`/ward-flow/wards`).
  *
  * This is where the 23-of-23 claim is actually established. The source scan above cannot make it:
  * the index builds its hrefs inside a `.map()`, and that scan deliberately refuses to read a
@@ -1749,56 +1743,56 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
    */
   const THIRD_EDITION_MOCKUP_ROUTES: readonly string[] = [
     WARD_HOME_HREF, // Command
-    "/mockups/ward-flow/delays", // Delays
-    "/mockups/ward-flow/capacity", // Capacity
-    "/mockups/ward-flow/wards", // All wards
-    "/mockups/ward-flow/ward/[unitId]", // Ward
-    "/mockups/ward-flow/ward/[unitId]/answer", // Ward answer
-    "/mockups/ward-flow/board/[unitId]", // Bed board
-    "/mockups/ward-flow/ed/[edId]", // Emergency department
-    "/mockups/ward-flow/movements", // Movements overview
-    "/mockups/ward-flow/movements/[movementId]", // Movement
-    "/mockups/ward-flow/community/[teamId]", // Community team
-    "/mockups/ward-flow/statistics", // Statistics
-    "/mockups/ward-flow/statistics/ward/[unitId]", // Ward statistics
-    "/mockups/ward-flow/statistics/community/[teamId]", // Community team statistics
-    "/mockups/ward-flow/statistics/ed/[edId]", // ED statistics
-    "/mockups/ward-flow/statistics/service/[serviceId]", // Service statistics
-    "/mockups/ward-flow/search", // Patient search
-    "/mockups/ward-flow/people/[patientId]", // Patient
-    "/mockups/ward-flow/hub", // Search hub
+    "/ward-flow/delays", // Delays
+    "/ward-flow/capacity", // Capacity
+    "/ward-flow/wards", // All wards
+    "/ward-flow/ward/[unitId]", // Ward
+    "/ward-flow/ward/[unitId]/answer", // Ward answer
+    "/ward-flow/board/[unitId]", // Bed board
+    "/ward-flow/ed/[edId]", // Emergency department
+    "/ward-flow/movements", // Movements overview
+    "/ward-flow/movements/[movementId]", // Movement
+    "/ward-flow/community/[teamId]", // Community team
+    "/ward-flow/statistics", // Statistics
+    "/ward-flow/statistics/ward/[unitId]", // Ward statistics
+    "/ward-flow/statistics/community/[teamId]", // Community team statistics
+    "/ward-flow/statistics/ed/[edId]", // ED statistics
+    "/ward-flow/statistics/service/[serviceId]", // Service statistics
+    "/ward-flow/search", // Patient search
+    "/ward-flow/people/[patientId]", // Patient
+    "/ward-flow/hub", // Search hub
     WARD_REFERRAL_INTAKE_HREF, // Raise a referral
   ];
 
   /** The four routes whose primary "lives in a panel, or is the form's own Send" (brief, verbatim). */
   const NONE_IN_BAR_ROUTES: readonly string[] = [
-    "/mockups/ward-flow/search",
-    "/mockups/ward-flow/people/[patientId]",
-    "/mockups/ward-flow/hub",
+    "/ward-flow/search",
+    "/ward-flow/people/[patientId]",
+    "/ward-flow/hub",
     WARD_REFERRAL_INTAKE_HREF,
   ];
 
   const REFERRAL_MENU_ROUTES: readonly string[] = [
     WARD_HOME_HREF,
-    "/mockups/ward-flow/delays",
-    "/mockups/ward-flow/capacity",
-    "/mockups/ward-flow/wards",
-    "/mockups/ward-flow/ward/[unitId]",
-    "/mockups/ward-flow/ward/[unitId]/answer",
-    "/mockups/ward-flow/board/[unitId]",
-    "/mockups/ward-flow/ed/[edId]",
+    "/ward-flow/delays",
+    "/ward-flow/capacity",
+    "/ward-flow/wards",
+    "/ward-flow/ward/[unitId]",
+    "/ward-flow/ward/[unitId]/answer",
+    "/ward-flow/board/[unitId]",
+    "/ward-flow/ed/[edId]",
     // v10 (10 Oct 2026): New referral is the one header primary on every page, Statistics included;
     // Export the figures moved into the statistics hero.
-    "/mockups/ward-flow/statistics",
-    "/mockups/ward-flow/statistics/community/[teamId]",
-    "/mockups/ward-flow/statistics/ed/[edId]",
-    "/mockups/ward-flow/statistics/service/[serviceId]",
-    "/mockups/ward-flow/statistics/ward/[unitId]",
+    "/ward-flow/statistics",
+    "/ward-flow/statistics/community/[teamId]",
+    "/ward-flow/statistics/ed/[edId]",
+    "/ward-flow/statistics/service/[serviceId]",
+    "/ward-flow/statistics/ward/[unitId]",
     // Device audit, 11 Oct 2026 (stable shell): movements and a team page keep New referral too;
     // Record a decision and Contact a team live on those pages, not in the header.
-    "/mockups/ward-flow/movements",
-    "/mockups/ward-flow/movements/[movementId]",
-    "/mockups/ward-flow/community/[teamId]",
+    "/ward-flow/movements",
+    "/ward-flow/movements/[movementId]",
+    "/ward-flow/community/[teamId]",
   ];
 
   // Catcher item 4 — the anti-vacuity floor itself. An empty WARD_PRIMARY_ACTIONS and an empty
@@ -1945,17 +1939,17 @@ describe("resolveWardPrimaryAction — D-16's pathname-to-action lookup", () => 
 
   it("resolves a concrete instance of every dynamic WARD_PRIMARY_ACTIONS route to its own action", () => {
     const concreteInstances: Array<[string, string]> = [
-      ["/mockups/ward-flow/ward/[unitId]", "/mockups/ward-flow/ward/rph-adult-secure"],
-      ["/mockups/ward-flow/ward/[unitId]/answer", "/mockups/ward-flow/ward/rph-adult-secure/answer"],
-      ["/mockups/ward-flow/board/[unitId]", "/mockups/ward-flow/board/rph-adult-secure"],
-      ["/mockups/ward-flow/ed/[edId]", "/mockups/ward-flow/ed/peel-ed"],
-      ["/mockups/ward-flow/movements/[movementId]", "/mockups/ward-flow/movements/mv-0001"],
-      ["/mockups/ward-flow/community/[teamId]", "/mockups/ward-flow/community/some-team"],
-      ["/mockups/ward-flow/people/[patientId]", "/mockups/ward-flow/people/pt-0001"],
-      ["/mockups/ward-flow/statistics/ward/[unitId]", "/mockups/ward-flow/statistics/ward/rph-adult-secure"],
-      ["/mockups/ward-flow/statistics/community/[teamId]", "/mockups/ward-flow/statistics/community/some-team"],
-      ["/mockups/ward-flow/statistics/ed/[edId]", "/mockups/ward-flow/statistics/ed/peel-ed"],
-      ["/mockups/ward-flow/statistics/service/[serviceId]", "/mockups/ward-flow/statistics/service/North%20Metro"],
+      ["/ward-flow/ward/[unitId]", "/ward-flow/ward/rph-adult-secure"],
+      ["/ward-flow/ward/[unitId]/answer", "/ward-flow/ward/rph-adult-secure/answer"],
+      ["/ward-flow/board/[unitId]", "/ward-flow/board/rph-adult-secure"],
+      ["/ward-flow/ed/[edId]", "/ward-flow/ed/peel-ed"],
+      ["/ward-flow/movements/[movementId]", "/ward-flow/movements/mv-0001"],
+      ["/ward-flow/community/[teamId]", "/ward-flow/community/some-team"],
+      ["/ward-flow/people/[patientId]", "/ward-flow/people/pt-0001"],
+      ["/ward-flow/statistics/ward/[unitId]", "/ward-flow/statistics/ward/rph-adult-secure"],
+      ["/ward-flow/statistics/community/[teamId]", "/ward-flow/statistics/community/some-team"],
+      ["/ward-flow/statistics/ed/[edId]", "/ward-flow/statistics/ed/peel-ed"],
+      ["/ward-flow/statistics/service/[serviceId]", "/ward-flow/statistics/service/North%20Metro"],
     ];
     // Anti-vacuity: every dynamic WARD_PRIMARY_ACTIONS route has a concrete instance listed above,
     // and vice versa — a route added to the list with no fixture here would otherwise pass this
@@ -1976,23 +1970,23 @@ describe("resolveWardPrimaryAction — D-16's pathname-to-action lookup", () => 
     // real path segment — a lookup that matched it by accident would also match "[anything]" the
     // app never navigates to. This pathname does not equal any LISTED route exactly (that would be
     // "board/[unitId]"), so it can only resolve — or fail to — through the dynamic matcher.
-    expect(resolveWardPrimaryAction("/mockups/ward-flow/board/[teamId]")).toBeUndefined();
+    expect(resolveWardPrimaryAction("/ward-flow/board/[teamId]")).toBeUndefined();
     // One segment short of the dynamic route (no id at all) must not match either.
-    expect(resolveWardPrimaryAction("/mockups/ward-flow/ward")).toBeUndefined();
+    expect(resolveWardPrimaryAction("/ward-flow/ward")).toBeUndefined();
     // One segment too many must not match — this is what stops `ward/[unitId]` swallowing a route
     // that happens to start with the same prefix, e.g. a hypothetical nested detail page.
-    expect(resolveWardPrimaryAction("/mockups/ward-flow/ward/rph-adult-secure/extra")).toBeUndefined();
+    expect(resolveWardPrimaryAction("/ward-flow/ward/rph-adult-secure/extra")).toBeUndefined();
   });
 
   it("returns undefined for a route this list does not cover at all — the same absence as an explicit none", () => {
     // Handover is a real Ward Flow route, and deliberately NOT one of the primary-action
     // routes WARD_PRIMARY_ACTIONS covers (this list's own header comment names it explicitly).
-    expect(resolveWardPrimaryAction("/mockups/ward-flow/handover")).toBeUndefined();
+    expect(resolveWardPrimaryAction("/ward-flow/handover")).toBeUndefined();
     expect(resolveWardPrimaryAction("/not/a/real/ward-flow/route/at/all")).toBeUndefined();
   });
 
   it("tolerates a single trailing slash, matching wardPlaceFor's own tolerance", () => {
-    expect(resolveWardPrimaryAction("/mockups/ward-flow/statistics/")).toEqual({
+    expect(resolveWardPrimaryAction("/ward-flow/statistics/")).toEqual({
       kind: "new-referral",
       label: "New referral",
       menu: WARD_NEW_REFERRAL_MENU,

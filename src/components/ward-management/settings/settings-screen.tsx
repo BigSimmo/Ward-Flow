@@ -45,12 +45,14 @@ import {
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   defaultWardConfiguration,
+  mergeConfiguration,
   validateConfiguration,
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { clearReferralDraftSession } from "@/components/ward-management/referrals/referral-draft-lifecycle";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
@@ -97,6 +99,8 @@ import {
 } from "@/components/wf";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
@@ -169,23 +173,20 @@ export function SettingsScreen() {
   const railOpen = useRailOpenStore();
   const {
     movements,
-    rejections,
     configuration,
     eventLog = [],
     readAuditEvents,
     patients,
     shared,
-  } = useWardFlowSelect(
-    "movements",
-    "rejections",
-    "configuration",
-    "eventLog",
-    "readAuditEvents",
-    "patients",
-    "shared",
-  );
+  } = useWardFlowSelect("movements", "configuration", "eventLog", "readAuditEvents", "patients", "shared");
   const now = useWardFlowClock();
-  const raise = useWardRaise("coordinator");
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
+  const configurationGate = useRoleGate()("SET_CONFIGURATION");
+  const [auditActor] = useWardRecordActors();
+  const configurationBlockReason = configurationGate.allowed
+    ? undefined
+    : (configurationGate.reason ?? "Coordination rules can only be changed by a coordinator.");
   const thresholds = publishedThresholds(movements, now, configuration);
 
   /**
@@ -194,6 +195,23 @@ export function SettingsScreen() {
    * everything that reads it, stays put until Save dispatches `SET_CONFIGURATION`.
    */
   const [draft, setDraft] = useState<WardConfiguration>(configuration);
+  const [draftBase, setDraftBase] = useState<WardConfiguration>(configuration);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [configurationFailure, setConfigurationFailure] = useState<string | null>(null);
+  const latestConfiguration = useRef(configuration);
+  useEffect(() => {
+    latestConfiguration.current = configuration;
+  }, [configuration]);
+  // A clean form follows incoming settings. Dirty forms keep their original baseline so the
+  // engine can merge unrelated edits and refuse an actual conflict rather than overwrite it.
+  useEffect(() => {
+    if (ruleDiffs(draftBase, draft).length === 0 && configuration !== draftBase) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- external workspace settings changed
+      setDraft(configuration);
+      setDraftBase(configuration);
+    }
+  }, [configuration, draft, draftBase]);
   const [chosenTab, setTab] = useState<SettingsTab | null>(null);
   // The Access tab is for the desks that give access or cover, with the role-access flag on. An
   // Access admin desk opens on it, because giving roles is all that desk does.
@@ -302,14 +320,9 @@ export function SettingsScreen() {
     else document.documentElement.removeAttribute("data-high-contrast");
   }, [reducedMotion, highContrast]);
 
-  /** The most recent refusal of this screen's own save, read fresh every render. */
-  const configurationRejection = [...rejections]
-    .reverse()
-    .find((rejection) => rejection.attempted === "SET_CONFIGURATION");
-
   const saved = fullRules(configuration);
   const rules = fullRules(draft);
-  const diffs = useMemo(() => ruleDiffs(configuration, draft), [configuration, draft]);
+  const diffs = useMemo(() => ruleDiffs(draftBase, draft), [draftBase, draft]);
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
   useDirtyStateGuard({ isDirty: hasUnsavedRules });
@@ -321,14 +334,20 @@ export function SettingsScreen() {
     publishedThresholds(movements, now, draft).find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
 
   // Recent rule saves, newest first, from the audit trail every save writes to.
-  const auditRead = readAuditEvents({ role: "coordinator" });
+  const auditRead = readAuditEvents(auditActor ?? { role: "demo" });
   const ruleChanges =
     auditRead.status === "allowed" ? auditRead.value.filter(isConfigurationEvent).slice(-5).reverse() : [];
   const lastAccepted = ruleChanges.find((change) => change.outcome === "accepted" && change.at !== null);
 
-  const setRule = (patch: Partial<WardConfiguration>) => setDraft((current) => ({ ...current, ...patch }));
+  const setRule = (patch: Partial<WardConfiguration>) => {
+    if (configurationGate.allowed && !savingRef.current) setDraft((current) => ({ ...current, ...patch }));
+  };
 
   const handleSurge = (choice: "standard" | "surge") => {
+    if (!configurationGate.allowed) {
+      showToast(configurationBlockReason!, "warning");
+      return;
+    }
     if ((choice === "surge") === isSurge) return;
     if (choice === "surge") {
       setRule({
@@ -348,96 +367,103 @@ export function SettingsScreen() {
     }
   };
 
-  const currentConfiguration = useRef(configuration);
-  useEffect(() => {
-    currentConfiguration.current = configuration;
-  }, [configuration]);
-  const configurationVersion = useRef(0);
-  const configurationPending = useRef(false);
-
-  /** Local and shared commands report their own outcome; a changed snapshot is not an acknowledgement. */
+  /** Complete only this command: another desk's incoming save cannot confirm ours. */
   const saveConfiguration = (
-    next: WardConfiguration,
-    onAccepted: (version: number, outcome: WardCommandOutcome) => void,
+    requested: WardConfiguration,
+    base: WardConfiguration,
+    onAccepted: (applied: WardConfiguration, outcome: WardCommandOutcome) => void,
   ) => {
-    if (configurationPending.current) {
-      showToast("A rule change is still awaiting confirmation.", "warning");
+    if (!configurationGate.allowed) {
+      setConfigurationFailure(configurationBlockReason!);
+      showToast(configurationBlockReason!, "warning");
       return;
     }
-    configurationPending.current = true;
-    const finish = (outcome: WardCommandOutcome | void) => {
-      configurationPending.current = false;
-      if (!outcome || outcome.status !== "accepted" || outcome.isCurrent?.() === false) {
-        showToast(
-          outcome?.status === "refused"
-            ? `Not recorded: ${outcome.message ?? "The rule change was refused."}`
-            : (outcome?.message ?? "Save is not confirmed. Review the rules before trying again."),
-          "warning",
-        );
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    setConfigurationFailure(null);
+    const finish = (outcome: void | WardCommandOutcome) => {
+      savingRef.current = false;
+      setSaving(false);
+      if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) {
+        const message = outcome?.message ?? "The rule change was not confirmed. Your draft is still available.";
+        setConfigurationFailure(message);
+        showToast(message, "warning");
         return;
       }
-      currentConfiguration.current = next;
-      onAccepted(++configurationVersion.current, outcome);
+      const merged = mergeConfiguration(latestConfiguration.current, requested, base);
+      const applied = merged.status === "merged" ? merged.configuration : requested;
+      setDraft(applied);
+      setDraftBase(applied);
+      onAccepted(applied, outcome);
     };
     try {
-      const completion = raise("SET_CONFIGURATION", { payload: next });
-      if (completion && "then" in completion) void completion.then(finish, () => finish());
-      else finish(completion);
+      const completion = raise("SET_CONFIGURATION", { payload: requested, baseConfiguration: base });
+      if (completion && typeof (completion as Promise<WardCommandOutcome>).then === "function") {
+        void (completion as Promise<WardCommandOutcome>).then(finish, () => finish(undefined));
+      } else finish(completion as void | WardCommandOutcome);
     } catch {
-      finish();
+      finish(undefined);
     }
-  };
-
-  const canUndoConfiguration = (expected: WardConfiguration, version: number, outcome: WardCommandOutcome) => {
-    if (
-      configurationVersion.current !== version ||
-      ruleDiffs(expected, currentConfiguration.current).length > 0 ||
-      outcome.isCurrent?.() === false ||
-      outcome.canUndo?.() === false
-    ) {
-      showToast("Rules changed since this save. Review them before making another change.", "warning");
-      return false;
-    }
-    return true;
   };
 
   const handleSave = () => {
     if (!hasUnsavedRules) return;
-    const before = configuration;
-    const submitted = draft;
-    const count = unsavedCount;
-    saveConfiguration(submitted, (version, outcome) => {
-      const changed = ruleDiffs(before, submitted);
+    const before = draftBase;
+    const requested = draft;
+    saveConfiguration(requested, before, (applied, outcome) => {
+      setPhoneSheet(null);
+      const changed = ruleDiffs(before, requested);
       toast?.push({
         tone: "success",
-        title:
-          changed.length > 0
-            ? `${changed.join(", ")}, saved and recorded.`
-            : count === 1
-              ? "Rule saved and recorded."
-              : `${count} rules saved and recorded.`,
+        title: `${changed.join(", ")}, saved and recorded.`,
         undo: {
           durationMs: UNDO_TOAST_MS,
           onUndo: () => {
-            if (!canUndoConfiguration(submitted, version, outcome)) return;
-            saveConfiguration(before, () => {
-              setDraft({ ...before });
-              showToast("Rules back as they were. Recorded in the audit.");
-            });
+            if (savingRef.current) {
+              showToast("Wait for the current rule change before undoing.", "warning");
+              return false;
+            }
+            if (outcome.isCurrent?.() === false) {
+              showToast("The workspace changed. This rule change can no longer be undone.", "warning");
+              return undefined;
+            }
+            const inverse = mergeConfiguration(applied, before, requested);
+            if (inverse.status !== "merged") {
+              showToast("The saved rules changed. Review the current settings before undoing.", "warning");
+              return undefined;
+            }
+            saveConfiguration(inverse.configuration, applied, () =>
+              showToast("Rules back as they were. Recorded in the audit."),
+            );
+
+            return undefined;
           },
         },
       });
     });
-    setPhoneSheet(null);
   };
 
   const handleDiscard = () => {
+    if (savingRef.current) return;
     const kept = draft;
+    const keptBase = draftBase;
     setDraft({ ...configuration });
+    setDraftBase(configuration);
+    setConfigurationFailure(null);
     toast?.push({
       tone: "info",
       title: "Draft discarded.",
-      undo: { durationMs: UNDO_TOAST_MS, onUndo: () => setDraft(kept) },
+      undo: {
+        durationMs: UNDO_TOAST_MS,
+        onUndo: () => {
+          if (savingRef.current) return false;
+          setDraft(kept);
+          setDraftBase(keptBase);
+
+          return undefined;
+        },
+      },
     });
   };
 
@@ -475,6 +501,12 @@ export function SettingsScreen() {
   };
 
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!configurationGate.allowed) {
+      showToast(configurationBlockReason!, "warning");
+      event.target.value = "";
+      return;
+    }
+    if (savingRef.current) return;
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -485,6 +517,7 @@ export function SettingsScreen() {
     const reader = new FileReader();
 
     reader.onload = (loaded) => {
+      if (savingRef.current) return;
       try {
         const parsed: unknown = JSON.parse(loaded.target?.result as string);
         const payload =
@@ -507,6 +540,8 @@ export function SettingsScreen() {
   };
 
   const handleClearSession = () => {
+    // Fence old form owners before clearing storage, including callbacks from mounted sheets.
+    clearReferralDraftSession();
     try {
       const keys: string[] = [];
       for (let i = 0; i < window.sessionStorage.length; i++) {
@@ -529,29 +564,42 @@ export function SettingsScreen() {
       configuration,
       // The draft as it stands, unsaved edits included, so Undo gives those back too.
       draft,
+      draftBase,
       buzz: audioBuzz,
       appearance,
       glare,
       railOpen,
     };
     const defaults = defaultWardConfiguration();
-    setIsResetModalOpen(false);
-    saveConfiguration(defaults, (version, outcome) => {
-      setDraft({ ...defaults });
+    saveConfiguration(defaults, before.configuration, (applied, outcome) => {
       setAudioBuzz(true);
       setAudioBuzzPreference(true);
       applyAppearance("auto");
       applyGlare(false);
       setRailOpenPreference(true);
+      setIsResetModalOpen(false);
       toast?.push({
         tone: "success",
         title: "Defaults restored and recorded.",
         undo: {
           durationMs: UNDO_TOAST_MS,
           onUndo: () => {
-            if (!canUndoConfiguration(defaults, version, outcome)) return;
-            saveConfiguration(before.configuration, () => {
+            if (savingRef.current) {
+              showToast("Wait for the current rule change before undoing.", "warning");
+              return false;
+            }
+            if (outcome.isCurrent?.() === false) {
+              showToast("The workspace changed. This restore can no longer be undone.", "warning");
+              return undefined;
+            }
+            const inverse = mergeConfiguration(applied, before.configuration, defaults);
+            if (inverse.status !== "merged") {
+              showToast("The saved rules changed. Review the current settings before undoing.", "warning");
+              return undefined;
+            }
+            saveConfiguration(inverse.configuration, applied, () => {
               setDraft({ ...before.draft });
+              setDraftBase(before.draftBase);
               setAudioBuzz(before.buzz);
               setAudioBuzzPreference(before.buzz);
               applyAppearance(before.appearance);
@@ -559,6 +607,8 @@ export function SettingsScreen() {
               setRailOpenPreference(before.railOpen);
               showToast("Settings back as they were. Recorded in the audit.");
             });
+
+            return undefined;
           },
         },
       });
@@ -713,6 +763,7 @@ export function SettingsScreen() {
   const rulesContent = (
     <>
       <ScopeLine kind="save" />
+      {configurationBlockReason ? <p role="status">{configurationBlockReason}</p> : null}
       <div className={styles.columns}>
         <div className={styles.column}>
           <Card aria-labelledby="timings-title" data-setting="surge">
@@ -725,6 +776,7 @@ export function SettingsScreen() {
                 <Segmented
                   className={styles.pillSeg}
                   label="Timing set"
+                  unavailable={!configurationGate.allowed}
                   items={[
                     { id: "standard", label: "Standard" },
                     { id: "surge", label: "Surge" },
@@ -735,6 +787,7 @@ export function SettingsScreen() {
               }
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="ed-target"
               title="ED wait target"
               sub="Access measure only"
@@ -763,6 +816,7 @@ export function SettingsScreen() {
               usedBy="Home, ED, Movements"
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="wards-asked"
               title="Wards asked at once"
               sub="Per referral"
@@ -782,6 +836,7 @@ export function SettingsScreen() {
               usedBy="Home, Referrals, Placement"
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="pull-hold"
               title="Pull hold"
               sub="Before a held bed returns"
@@ -801,6 +856,7 @@ export function SettingsScreen() {
               usedBy="Home, ED, Referrals"
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="morning-count"
               testId="setting-morning-rollup-row"
               title="Morning count"
@@ -842,6 +898,7 @@ export function SettingsScreen() {
               meta="Your defaults, not legal limits"
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="second-warning"
               testId="setting-due-soon-row"
               title="Early warning"
@@ -874,6 +931,7 @@ export function SettingsScreen() {
               usedBy="Home, every legal due time"
             />
             <RuleRow
+              unavailableReason={configurationBlockReason}
               setting="first-warning"
               testId="setting-due-soon-urgent-row"
               title="Final warning"
@@ -922,6 +980,7 @@ export function SettingsScreen() {
           onPreview={onPreview}
           ruleChanges={ruleChanges}
           now={now}
+          unavailableReason={configurationBlockReason}
         />
       </div>
     </>
@@ -1020,6 +1079,7 @@ export function SettingsScreen() {
   const dataContent = (
     <>
       <DataPane
+        shared={!!shared?.enabled}
         reference={reference}
         onReferenceChange={setReference}
         movementCount={movements.length}
@@ -1029,7 +1089,9 @@ export function SettingsScreen() {
         onCopyDiagnostics={handleCopyDiagnostics}
         onImport={handleImport}
         onClearSession={handleClearSession}
+        restoreUnavailable={configurationBlockReason}
         onRestore={() => {
+          if (!configurationGate.allowed) return;
           // On a phone the Data sheet closes first, so the restore dialog is the only layer.
           setPhoneSheet(null);
           setIsResetModalOpen(true);
@@ -1054,7 +1116,14 @@ export function SettingsScreen() {
           Review
         </button>
       ) : null}
-      <Button variant="ghost" size="sm" className={styles.pill} onClick={handleDiscard} data-testid="btn-discard-draft">
+      <Button
+        variant="ghost"
+        size="sm"
+        className={styles.pill}
+        onClick={handleDiscard}
+        disabled={saving}
+        data-testid="btn-discard-draft"
+      >
         Discard
       </Button>
       <Button
@@ -1063,9 +1132,10 @@ export function SettingsScreen() {
         icon={Check}
         className={styles.pill}
         onClick={handleSave}
+        disabledReason={configurationBlockReason ?? (saving ? "Saving the rule change." : undefined)}
         data-testid="btn-save-draft"
       >
-        {unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
+        {saving ? "Saving…" : unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
       </Button>
     </div>
   ) : null;
@@ -1076,6 +1146,7 @@ export function SettingsScreen() {
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
         onConfirm={handleConfirmReset}
+        pending={saving}
       />
       {isOperatorModalOpen ? (
         <OperatorSwitcherModal
@@ -1095,10 +1166,10 @@ export function SettingsScreen() {
     </>
   );
 
-  const refusedLine = configurationRejection ? (
+  const refusedLine = configurationFailure ? (
     <p className={styles.refused} role="alert" data-testid="ward-settings-configuration-refused">
       <StatusGlyph tone="danger" size={10} />
-      <strong>Rule change refused.</strong> {configurationRejection.reason}
+      <strong>Rule change not saved.</strong> {configurationFailure}
     </p>
   ) : null;
 
@@ -1258,11 +1329,17 @@ export function SettingsScreen() {
                 <StatusGlyph tone="info" size={9} />
                 {diffs.join(", ")}
               </span>
-              <Button variant="sec" onClick={handleDiscard} data-testid="btn-discard-draft">
+              <Button variant="sec" onClick={handleDiscard} disabled={saving} data-testid="btn-discard-draft">
                 Discard
               </Button>
-              <Button variant="pri" icon={Check} onClick={handleSave} data-testid="btn-save-draft">
-                {unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
+              <Button
+                variant="pri"
+                icon={Check}
+                onClick={handleSave}
+                disabledReason={configurationBlockReason ?? (saving ? "Saving the rule change." : undefined)}
+                data-testid="btn-save-draft"
+              >
+                {saving ? "Saving…" : unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
               </Button>
             </div>
           ) : null}
@@ -1281,7 +1358,8 @@ export function SettingsScreen() {
             primary={
               sheetTab === "rules" && hasUnsavedRules
                 ? {
-                    label: unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`,
+                    label: saving ? "Saving…" : unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`,
+                    disabledReason: configurationBlockReason ?? (saving ? "Saving the rule change." : undefined),
                     onAction: handleSave,
                   }
                 : { label: "Done", onAction: () => setPhoneSheet(null) }

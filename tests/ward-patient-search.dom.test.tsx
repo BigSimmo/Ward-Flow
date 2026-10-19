@@ -104,13 +104,13 @@ describe("PatientSearchPage", () => {
     const results = screen.getByTestId("ward-patient-search-results-console");
     expect(search.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const add = screen.getByTestId("ward-patient-search-add");
-    expect(add).toHaveAttribute("href", "/mockups/ward-flow/people/new");
+    expect(add).toHaveAttribute("href", "/ward-flow/people/new");
     fireEvent.change(search, { target: { value: "UM999999" } });
     // The href is unchanged by what was typed — no query string, and nothing in the attribute
     // that names the record.
-    expect(add).toHaveAttribute("href", "/mockups/ward-flow/people/new");
+    expect(add).toHaveAttribute("href", "/ward-flow/people/new");
     const emptyStateAdd = screen.getByTestId("ward-patient-search-people-empty-add");
-    expect(emptyStateAdd).toHaveAttribute("href", "/mockups/ward-flow/people/new");
+    expect(emptyStateAdd).toHaveAttribute("href", "/ward-flow/people/new");
     // Clicking either link hands the same typed text to the add-patient form through the channel,
     // unassigned to a field — `takeHandedOffPatientQuery` both proves the write happened and
     // clears it, the same read `AddPatientForm`'s own mount performs.

@@ -2,6 +2,7 @@
 import ts from "typescript";
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { isBuiltin } from "node:module";
 
 export function referencedTestChanges({ root, population, changed }) {
   const blocked = new Set();
@@ -32,10 +33,56 @@ export function referencedTestChanges({ root, population, changed }) {
       return;
     }
     if (source.parseDiagnostics.length) uncertain = true;
-    function resolve(specifier) {
+    // Deliberately bounded static resolution: only uniquely named local const literals,
+    // with no other same-name occurrences beyond direct module-load arguments.
+    // Checking the entire file first rejects writes and shadowed bindings even
+    // when they occur after a load or inside a nested/destructured scope.
+    const constantModules = new Map();
+    function collectConstants(node) {
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isVariableDeclarationList(node.parent) &&
+        ts.isVariableStatement(node.parent.parent) &&
+        (ts.isSourceFile(node.parent.parent.parent) || ts.isBlock(node.parent.parent.parent)) &&
+        node.parent.flags & ts.NodeFlags.Const &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        ts.isStringLiteralLike(node.initializer)
+      )
+        constantModules.set(node.name.text, node);
+      ts.forEachChild(node, collectConstants);
+    }
+    collectConstants(source);
+    function checkConstantUses(node) {
+      if (ts.isIdentifier(node) && constantModules.has(node.text)) {
+        const declaration = constantModules.get(node.text);
+        const parent = node.parent;
+        const declarationScope = declaration.parent.parent.parent;
+        let inScope = false;
+        for (let ancestor = parent; ancestor; ancestor = ancestor.parent) {
+          if (ancestor === declarationScope) {
+            inScope = true;
+            break;
+          }
+        }
+        const moduleArgument =
+          inScope &&
+          node.pos >= declaration.end &&
+          ts.isCallExpression(parent) &&
+          parent.arguments.length === 1 &&
+          parent.arguments[0] === node &&
+          (parent.expression.kind === ts.SyntaxKind.ImportKeyword ||
+            (ts.isIdentifier(parent.expression) && parent.expression.text === "require"));
+        if (node !== declaration.name && !moduleArgument) constantModules.delete(node.text);
+      }
+      ts.forEachChild(node, checkConstantUses);
+    }
+    checkConstantUses(source);
+    function resolve(specifier, requireResolution = false) {
       const result = ts.resolveModuleName(specifier, file, parsed.options, ts.sys).resolvedModule;
       if (!result) {
-        if (specifier.startsWith(".") || specifier.startsWith("@/")) uncertain = true;
+        if (specifier.startsWith(".") || specifier.startsWith("@/") || (requireResolution && !isBuiltin(specifier)))
+          uncertain = true;
         return;
       }
       if (result.isExternalLibraryImport || result.resolvedFileName.endsWith(".d.ts")) return;
@@ -77,6 +124,13 @@ export function referencedTestChanges({ root, population, changed }) {
       ) {
         const argument = node.arguments[0];
         if (node.arguments.length === 1 && argument && ts.isStringLiteralLike(argument)) resolve(argument.text);
+        else if (
+          node.arguments.length === 1 &&
+          argument &&
+          ts.isIdentifier(argument) &&
+          constantModules.has(argument.text)
+        )
+          resolve(constantModules.get(argument.text).initializer.text, true);
         else uncertain = true;
       }
       ts.forEachChild(node, walk);

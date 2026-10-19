@@ -132,7 +132,7 @@ describe("every statistics section page carries the disclaimer", () => {
       within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" })).getByRole("link", {
         name: "Summary",
       });
-    expect(back.getAttribute("href")).toBe("/mockups/ward-flow/statistics");
+    expect(back.getAttribute("href")).toBe("/ward-flow/statistics");
   });
 
   /**

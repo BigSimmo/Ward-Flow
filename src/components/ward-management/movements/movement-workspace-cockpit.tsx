@@ -588,11 +588,7 @@ export function MovementWorkspaceCockpit({
     <div className={styles.cockpitRoot} data-testid="ward-patient-workspace">
       {/* 0. Header Breadcrumb */}
       <header className={styles.workspaceHeader}>
-        <ContextualBackLink
-          fallbackHref="/mockups/ward-flow"
-          aria-label="Back to Ward Flow"
-          className={styles.backLink}
-        >
+        <ContextualBackLink fallbackHref="/ward-flow" aria-label="Back to Ward Flow" className={styles.backLink}>
           <ArrowLeft size={16} aria-hidden="true" />
         </ContextualBackLink>
         <div>

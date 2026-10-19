@@ -158,7 +158,7 @@ export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; cla
   return (
     <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>
       <ContextualBackLink
-        fallbackHref="/mockups/ward-flow"
+        fallbackHref="/ward-flow"
         className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
         aria-label="Back to previous page"
         data-testid="ward-patient-back-button"

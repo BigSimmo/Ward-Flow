@@ -27,7 +27,11 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
+import { format, resolveConfig } from "prettier";
+
+const PROJECT_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PACK = "docs/ward-flow/reference-data/entities.json";
 const OUT = "src/components/ward-management/reference/ward-reference-teams.ts";
 
@@ -134,11 +138,18 @@ export const REFERENCE_TEAM_CAVEAT =
 `;
 }
 
-function main() {
-  const root = process.cwd();
+export async function generate() {
+  const pack = JSON.parse(readFileSync(resolve(PROJECT_ROOT, PACK), "utf8"));
+  const out = resolve(PROJECT_ROOT, OUT);
+  const config = (await resolveConfig(out)) ?? {};
+  return format(render(buildReferenceTeams(pack)), { ...config, filepath: out });
+}
+
+async function main() {
+  const root = PROJECT_ROOT;
   const pack = JSON.parse(readFileSync(resolve(root, PACK), "utf8"));
   const teams = buildReferenceTeams(pack);
-  writeFileSync(resolve(root, OUT), render(teams), "utf8");
+  writeFileSync(resolve(root, OUT), await generate(), "utf8");
   const withPhone = teams.filter((t) => t.publishedPhone !== null).length;
   const withEmail = teams.filter((t) => t.referralEmail !== null).length;
   const withHours = teams.filter((t) => t.publishedHours !== null).length;
@@ -150,6 +161,6 @@ function main() {
   console.log("    matches by exact name against COMMUNITY_TEAM_PAGES.");
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("build-reference-teams.mjs")) {
-  main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  await main();
 }

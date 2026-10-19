@@ -16,7 +16,7 @@ const PUSH_SERVICE_HOSTS = Object.freeze([
   "push.apple.com",
   "notify.windows.com",
 ]);
-export const ALERTS_PATH = "/mockups/ward-flow/alerts";
+export const ALERTS_PATH = "/ward-flow/alerts";
 const PUSH_TOPIC = "wardflowactnow";
 const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 10;
 

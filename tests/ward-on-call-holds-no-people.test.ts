@@ -47,7 +47,7 @@ import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
  */
 
 const ON_CALL_DIR = join(process.cwd(), "src/components/ward-management/on-call");
-const ON_CALL_ROUTE = join(process.cwd(), "src/app/mockups/ward-flow/on-call");
+const ON_CALL_ROUTE = join(process.cwd(), "src/app/ward-flow/on-call");
 
 /**
  * Anything shaped like a way of reaching a person.

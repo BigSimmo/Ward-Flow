@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { proxy, shouldBlockProductionMockups } from "../src/proxy";
+import { movedRouteTarget, proxy, shouldBlockProductionMockups } from "../src/proxy";
 import { DEVELOPER_GATED_PATH_PREFIXES } from "@/lib/developer-area/headers";
 
 // The proxy owns the per-request nonce CSP (see src/proxy.ts). CI's verify:ui
@@ -106,7 +106,7 @@ describe("production mockup boundary", () => {
   // no coverage here at all — a dropped prefix would fail closed (404), but
   // nothing would catch it.
   it("lets the Ward Flow subtree through the blanket block, and keeps a look-alike prefix blocked", () => {
-    for (const path of ["/mockups/ward-flow", "/mockups/ward-flow/constellation"]) {
+    for (const path of ["/ward-flow", "/ward-flow/constellation"]) {
       expect(shouldBlockProductionMockups(path, { NODE_ENV: "production" }), path).toBe(false);
     }
     expect(shouldBlockProductionMockups("/mockups/ward-flow-archive", { NODE_ENV: "production" })).toBe(true);
@@ -114,29 +114,38 @@ describe("production mockup boundary", () => {
 });
 
 describe("developer-area header (x-developer-area)", () => {
-  it("sets the header only for developer-gated paths, and strips a client-supplied copy elsewhere", async () => {
-    const wardFlowSignInRequest = requestFor("/mockups/ward-flow-sign-in");
-    const wardFlowSignInResponse = await proxy(wardFlowSignInRequest);
-    expect(wardFlowSignInResponse.headers.get("x-middleware-request-x-developer-area")).toBe("1");
-    expect(wardFlowSignInResponse.headers.get("x-middleware-request-x-developer-area-path")).toBe(
-      "/mockups/ward-flow-sign-in",
-    );
-
-    // A path that merely starts with the same characters is not a prefix match.
-    const lookAlikeResponse = await proxy(requestFor("/mockups/ward-flow-archive"));
-    expect(lookAlikeResponse.headers.get("x-middleware-request-x-developer-area")).toBeNull();
+  it("sets the header for no path now that nothing under /mockups is public, and strips a client-supplied copy", async () => {
+    const wardFlowSignInResponse = await proxy(requestFor("/ward-flow-sign-in"));
+    expect(wardFlowSignInResponse.headers.get("x-middleware-request-x-developer-area")).toBeNull();
 
     const otherRequest = requestFor("/documents/some-id");
     otherRequest.headers.set("x-developer-area", "1");
-    otherRequest.headers.set("x-developer-area-path", "/mockups/ward-flow-sign-in");
+    otherRequest.headers.set("x-developer-area-path", "/ward-flow-sign-in");
     const otherResponse = await proxy(otherRequest);
     // Spoofed header must not survive into the forwarded request.
     expect(otherResponse.headers.get("x-middleware-request-x-developer-area")).toBeNull();
     expect(otherResponse.headers.get("x-middleware-request-x-developer-area-path")).toBeNull();
   });
 
+  it("forwards Ward Flow's old /mockups addresses permanently, query intact, and leaves the digest alone", async () => {
+    expect(movedRouteTarget("/mockups/ward-flow")).toBe("/ward-flow");
+    expect(movedRouteTarget("/mockups/ward-flow/ward/rph-adult-secure")).toBe("/ward-flow/ward/rph-adult-secure");
+    expect(movedRouteTarget("/mockups/ward-flow-sign-in")).toBe("/ward-flow-sign-in");
+    // One hop for the retired constellation screen, not two.
+    expect(movedRouteTarget("/mockups/ward-flow/constellation")).toBe("/ward-flow/network");
+    expect(movedRouteTarget("/mockups/ward-flow-digest")).toBeNull();
+    expect(movedRouteTarget("/mockups/ward-flow-archive")).toBeNull();
+    expect(movedRouteTarget("/ward-flow/capacity")).toBeNull();
+
+    const response = await proxy(requestFor("/mockups/ward-flow/referrals?view=open"));
+    expect(response.status).toBe(308);
+    expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/ward-flow/referrals");
+    expect(new URL(response.headers.get("location") ?? "").search).toBe("?view=open");
+    expect(response.headers.get("content-security-policy")).toBeTruthy();
+  });
+
   it("sets the trusted offline marker only for Ward Flow and strips a spoofed copy elsewhere", async () => {
-    const wardResponse = await proxy(requestFor("/mockups/ward-flow/capacity"));
+    const wardResponse = await proxy(requestFor("/ward-flow/capacity"));
     expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBe("1");
 
     const clinicalRequest = requestFor("/documents/some-id");
@@ -162,10 +171,10 @@ describe("developer-area header (x-developer-area)", () => {
 
 describe("static compatibility redirects", () => {
   it("forwards retired constellation deep-links to the network destination", async () => {
-    const response = await proxy(requestFor("/mockups/ward-flow/constellation"));
+    const response = await proxy(requestFor("/ward-flow/constellation"));
     expect(response.status).toBe(307);
     const location = new URL(response.headers.get("location")!);
-    expect(location.pathname).toBe("/mockups/ward-flow/network");
+    expect(location.pathname).toBe("/ward-flow/network");
   });
 });
 
