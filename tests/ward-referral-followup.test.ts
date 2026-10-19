@@ -74,7 +74,7 @@ describe("MARK_REFERRAL_OPENED", () => {
     expect(copyOf(again, f.referralId, f.unitId).openedAt).toBe(NOW);
   });
 
-  it("refuses a ward opening another ward's copy, and any other role", () => {
+  it("refuses a ward opening another ward's copy and a desk outside the list, and lets the coordinator record it", () => {
     const f = fixture();
     const other = wardFlowReducer(f.state, {
       type: "MARK_REFERRAL_OPENED",
@@ -93,8 +93,18 @@ describe("MARK_REFERRAL_OPENED", () => {
       unitId: f.unitId,
       actingUnitId: f.unitId,
     });
-    expect(coordinator.rejections).toHaveLength(1);
-    expect(copyOf(coordinator, f.referralId, f.unitId).openedAt).toBeUndefined();
+    expect(coordinator.rejections).toEqual([]);
+    expect(copyOf(coordinator, f.referralId, f.unitId).openedAt).toBe(NOW);
+    const ed = wardFlowReducer(f.state, {
+      type: "MARK_REFERRAL_OPENED",
+      role: "ed",
+      now: NOW,
+      referralId: f.referralId,
+      unitId: f.unitId,
+      actingUnitId: f.unitId,
+    });
+    expect(ed.rejections).toHaveLength(1);
+    expect(copyOf(ed, f.referralId, f.unitId).openedAt).toBeUndefined();
   });
 });
 
