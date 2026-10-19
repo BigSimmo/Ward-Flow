@@ -30,16 +30,16 @@ import { collectWardModuleGraph } from "./helpers/ward-module-graph";
  * and a guard whose scope moves on its own is a guard nobody can reason about. So the list is
  * literal, its length is pinned, and every entry carries the sentence that put it there:
  *
- * - **`ward/ward-screen.tsx`** — route `/mockups/ward-flow/ward/[unitId]`. It says what it is on
+ * - **`ward/ward-screen.tsx`** — route `/ward-flow/ward/[unitId]`. It says what it is on
  *   itself: "This is {unit.name}'s own view. Every figure and referral below belongs to this ward
  *   — never another one." That sentence IS the FD-23 rule, rendered.
- * - **`board/ward-board.tsx`** — route `/mockups/ward-flow/board/[unitId]`, "one ward's beds on a
+ * - **`board/ward-board.tsx`** — route `/ward-flow/board/[unitId]`, "one ward's beds on a
  *   screen". Scoped to a single unit and read by that unit's staff.
  * - **`board/ward-daily-sheet.tsx`** — the printed sheet the ward board renders, "the page a charge
  *   nurse carries into the morning meeting". It has no route of its own and is reached only through
  *   the board, but it is listed as an entry point in its own right because it is the surface that
  *   goes on PAPER: a leak here leaves the building.
- * - **`community/community-screen.tsx`** — the live team page, route `/mockups/ward-flow/community/[teamId]`,
+ * - **`community/community-screen.tsx`** — the live team page, route `/ward-flow/community/[teamId]`,
  *   where a team accepts and declines its own referrals. Owner ruling 2026-09-04: a community team
  *   may NOT see that a patient was referred anywhere else, the restriction FD-23 already gives a
  *   ward. It takes its referrals from `useCommunityScopedReferrals()` (`ward-flow-provider.tsx`) as

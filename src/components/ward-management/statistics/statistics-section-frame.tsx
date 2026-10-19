@@ -62,7 +62,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  * child this frame's own layout logic depended on — `.main`'s own `grid-column: 2` in
  * `statistics-sections.module.css` places it explicitly, so removing the sibling leaves the empty
  * first column collapsing to zero width rather than leaving `.main` stranded in it. The
- * third-edition shell (`shell/ward-rail.tsx`) now mounts once, in `src/app/mockups/ward-flow/
+ * third-edition shell (`shell/ward-rail.tsx`) now mounts once, in `src/app/ward-flow/
  * layout.tsx`, in its place.
  */
 export function StatisticsSectionFrame({

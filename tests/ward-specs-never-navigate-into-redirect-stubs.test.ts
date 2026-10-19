@@ -7,15 +7,15 @@ import { describe, expect, it } from "vitest";
  * 🔴 **A WHOLE WARD JOURNEY WALKED INTO A REDIRECT AND NOTHING NOTICED FOR THREE DAYS.**
  *
  * MERGE 03 (owner-approved 2026-09-05) folded the live transport tracker into `MovementsScreen`, and
- * `src/app/mockups/ward-flow/transport/page.tsx` became a bookmark backstop that calls
- * `redirect("/mockups/ward-flow/movements")`. `tests/ui-ward-roles.spec.ts` went on navigating to
- * `/mockups/ward-flow/transport` and then waiting for `ward-live-tracker` — a test id the redirect
+ * `src/app/ward-flow/transport/page.tsx` became a bookmark backstop that calls
+ * `redirect("/ward-flow/movements")`. `tests/ui-ward-roles.spec.ts` went on navigating to
+ * `/ward-flow/transport` and then waiting for `ward-live-tracker` — a test id the redirect
  * TARGET never renders, because the only file that declares it (`tracker/live-tracker.tsx`) is
  * imported by nothing and is itself a deletion candidate.
  *
  * ⚠️ **THERE WAS ALREADY A GUARD FOR THIS EXACT SHAPE AND IT COULD NOT SEE IT.**
  * `ward-links-never-point-at-redirect-stubs.test.ts` derives its stubs from the route files — the
- * right property, done well — but walks `src/app/mockups/ward-flow` and
+ * right property, done well — but walks `src/app/ward-flow` and
  * `src/components/ward-management` for the LINKS. It does not walk `tests/`. So an in-app link into
  * a stub is caught, and a spec's own `page.goto` into one is invisible. **The population a guard
  * walks is the thing to check, not its assertion.** This file is that guard's missing half, and
@@ -26,7 +26,7 @@ import { describe, expect, it } from "vitest";
  * ## The property, and why it is not simply "never navigate to a stub"
  *
  * A stub navigation is not by itself a defect. `ui-ward-management.spec.ts:375` navigates to
- * `/mockups/ward-flow/queue` ON PURPOSE and says so in its own comment: it asserts only on the
+ * `/ward-flow/queue` ON PURPOSE and says so in its own comment: it asserts only on the
  * shared `ClinicalRail` chrome, which `DelaysScreen` — the redirect target — mounts just as well.
  * That test is correct and must stay green. A guard that reddened it would be reddening correct
  * work, and guards that do that get widened until they mean nothing.
@@ -84,9 +84,9 @@ import { describe, expect, it } from "vitest";
  */
 
 const ROOT = process.cwd();
-const WARD_ROUTES = join(ROOT, "src", "app", "mockups", "ward-flow");
+const WARD_ROUTES = join(ROOT, "src", "app", "ward-flow");
 const TESTS_ROOT = join(ROOT, "tests");
-const WARD_ROUTE_PREFIX = "/mockups/ward-flow";
+const WARD_ROUTE_PREFIX = "/ward-flow";
 
 const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
 
@@ -171,7 +171,7 @@ function importsOf(file: string): string[] {
  *
  * ⚠️ **THE LAYOUTS ON THE PATH ARE SEEDED ALONGSIDE THE PAGE, AND OMITTING THEM WOULD INVENT
  * VIOLATIONS.** Ward chrome — the rail, the phone header, the brand link — is rendered by
- * `mockups/ward-flow/layout.tsx`, not by any screen. A closure seeded from `page.tsx` alone would
+ * `ward-flow/layout.tsx`, not by any screen. A closure seeded from `page.tsx` alone would
  * declare every chrome handle unrenderable on every route, which is exactly the
  * reddens-on-everything failure this guard must not have.
  *
@@ -364,7 +364,7 @@ function linkDestinations(): Map<string, string> {
   const constants = new Map<string, string>();
   for (const file of sources) {
     for (const match of stripComments(readFileSync(file, "utf8")).matchAll(
-      /(?:export\s+)?const\s+([A-Z0-9_]+)(?::[^=]+)?\s*=\s*["'`](\/mockups\/ward-flow[^"'`]*)["'`]/gu,
+      /(?:export\s+)?const\s+([A-Z0-9_]+)(?::[^=]+)?\s*=\s*["'`](\/ward-flow[^"'`]*)["'`]/gu,
     )) {
       constants.set(match[1], match[2]);
     }
@@ -390,7 +390,7 @@ function linkDestinations(): Map<string, string> {
       if (object.length > 600 || object.indexOf("{", 1) !== -1) continue;
       const label = /\blabel:\s*["'`]([^"'`]+)["'`]/u.exec(object);
       if (!label) continue;
-      const literal = /\bhref:\s*["'`](\/mockups\/ward-flow[^"'`]*)["'`]/u.exec(object);
+      const literal = /\bhref:\s*["'`](\/ward-flow[^"'`]*)["'`]/u.exec(object);
       const reference = /\bhref:\s*([A-Z0-9_]+)\s*[,}]/u.exec(object);
       const href = literal?.[1] ?? (reference ? constants.get(reference[1]) : undefined);
       if (href) byLabel.set(label[1], href);
@@ -399,7 +399,7 @@ function linkDestinations(): Map<string, string> {
   return byLabel;
 }
 
-const NAVIGATION = /page\.goto\(\s*["'`](\/mockups\/ward-flow[^"'`$]*)["'`]/gu;
+const NAVIGATION = /page\.goto\(\s*["'`](\/ward-flow[^"'`$]*)["'`]/gu;
 /** `await page.getByRole("link", { name: "Delays", exact: true }).click()` — a navigation too. */
 const LINK_CLICK = /getByRole\(\s*["'`]link["'`]\s*,\s*\{[^}]*?name:\s*["'`]([^"'`]+)["'`][^}]*\}\s*\)/gu;
 /** `getByTestId("x")`, `[data-testid="x"]`, and the `^=` prefix form specs use for row families. */
@@ -626,16 +626,16 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
   it("strips a real comment, and does not eat a URL or a prose mention of redirect(", () => {
     // A commented-out navigation is not a navigation. If this arm broke, the guard would invent
     // violations out of retired code somebody deliberately left as a record.
-    expect(stripComments('// await page.goto("/mockups/ward-flow/transport");').trim()).toBe("");
+    expect(stripComments('// await page.goto("/ward-flow/transport");').trim()).toBe("");
 
     // The defect direction: a URL on the same line as a real navigation. A stripper that reads
     // `https://` as a line comment deletes the goto that follows it and reports a clean estate.
-    const withUrl = 'const docs = "https://www.health.wa.gov.au/x"; await page.goto("/mockups/ward-flow/queue");';
+    const withUrl = 'const docs = "https://www.health.wa.gov.au/x"; await page.goto("/ward-flow/queue");';
     expect(
       stripComments(withUrl),
       "a URL is being read as a line comment again, so a navigation after it on the same line is " +
         "deleted before this guard sees it",
-    ).toContain("/mockups/ward-flow/queue");
+    ).toContain("/ward-flow/queue");
 
     // And the reason route files must be stripped too: `movements/page.tsx` and `ward-nav.ts`
     // both discuss redirect() in prose while redirecting nothing.
@@ -682,7 +682,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     // Anti-vacuity, and it is the control that matters most: if `renderableTestIds` returned an
     // empty set for everything, EVERY awaited id would look unrenderable and this guard would
     // redden on the whole estate — as useless as one that reddens on nothing.
-    const movements = renderableTestIds("/mockups/ward-flow/movements");
+    const movements = renderableTestIds("/ward-flow/movements");
     expect(
       movements.size,
       "the import closure found no test ids on Movements at all — the walk has broken, and every " +
@@ -699,7 +699,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
      * on a panel or table id would be accused of a defect it does not have.
      */
     expect(
-      renderableTestIds("/mockups/ward-flow/capacity"),
+      renderableTestIds("/ward-flow/capacity"),
       "an id supplied through a `testId` prop is no longer being collected, so this guard will " +
         "report false defects against every panel and table handle in the estate",
     ).toContain("ward-capacity-gap-table");
@@ -727,7 +727,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     const spec = (testId: string) =>
       [
         'test("t", async ({ page }) => {',
-        '  await page.goto("/mockups/ward-flow/transport", { waitUntil: "domcontentloaded" });',
+        '  await page.goto("/ward-flow/transport", { waitUntil: "domcontentloaded" });',
         `  await expect(page.getByTestId("${testId}")).toBeVisible();`,
         "});",
       ].join("\n");
@@ -755,7 +755,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     ).toBeGreaterThan(15);
 
     // The plain case.
-    expect(destinations.get("Delays")).toBe("/mockups/ward-flow/delays");
+    expect(destinations.get("Delays")).toBe("/ward-flow/delays");
 
     /*
      * 🔴 **THE REGRESSION CONTROL FOR A MIS-PAIRING THAT WOULD HAVE INVENTED A FINDING.** The first
@@ -768,7 +768,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
       destinations.get("New referral"),
       "a link label has been paired with a neighbouring entry's href again — the object walk or the " +
         "href-constant resolution has regressed, and this guard will accuse the wrong route",
-    ).toBe("/mockups/ward-flow/referrals/new");
+    ).toBe("/ward-flow/referrals/new");
   });
 
   it("treats a click into a stub as a navigation, and only when it lands in one", () => {
@@ -785,8 +785,8 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
         "});",
       ].join("\n");
     const destinations = new Map([
-      ["Retired screen", "/mockups/ward-flow/transport"], // a stub
-      ["Movements", "/mockups/ward-flow/movements"], // a live route
+      ["Retired screen", "/ward-flow/transport"], // a stub
+      ["Movements", "/ward-flow/movements"], // a live route
     ]);
 
     expect(
@@ -812,7 +812,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     const spec = (name: string) =>
       [
         'test("t", async ({ page }) => {',
-        '  await page.goto("/mockups/ward-flow/transport", { waitUntil: "domcontentloaded" });',
+        '  await page.goto("/ward-flow/transport", { waitUntil: "domcontentloaded" });',
         `  await expect(page.getByRole("region", { name: "${name}" })).toBeVisible();`,
         "});",
       ].join("\n");
@@ -839,7 +839,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
      */
     const filtered = [
       'test("t", async ({ page }) => {',
-      '  await page.goto("/mockups/ward-flow/queue", { waitUntil: "domcontentloaded" });',
+      '  await page.goto("/ward-flow/queue", { waitUntil: "domcontentloaded" });',
       '  const header = page.locator("header").filter({ has: page.getByRole("heading", { name: "Priority queue" }) });',
       '  await expect(header.getByText("Ward Flow", { exact: true })).toBeHidden();',
       "});",
@@ -852,7 +852,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
 
     const negated = [
       'test("t", async ({ page }) => {',
-      '  await page.goto("/mockups/ward-flow/transport", { waitUntil: "domcontentloaded" });',
+      '  await page.goto("/ward-flow/transport", { waitUntil: "domcontentloaded" });',
       '  await expect(page.getByTestId("ward-live-tracker")).toBeHidden();',
       "});",
     ].join("\n");

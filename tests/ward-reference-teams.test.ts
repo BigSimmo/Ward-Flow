@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { execFileSync, spawnSync } from "node:child_process";
+import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+
+import { removePathSync } from "../scripts/retryable-fs.mjs";
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import {
@@ -6,6 +12,106 @@ import {
   REFERENCE_TEAM_NAMES,
   referenceTeamDetail,
 } from "@/components/ward-management/reference/ward-reference-teams";
+
+const roots: string[] = [];
+afterEach(() => {
+  for (const root of roots.splice(0)) removePathSync(root, { recursive: true });
+});
+
+function referenceCheckFixture() {
+  const root = mkdtempSync(path.join(os.tmpdir(), "ward-reference-check-"));
+  roots.push(root);
+  for (const dir of [
+    "scripts/ward-flow",
+    "docs/ward-flow/reference-data",
+    "src/components/ward-management/reference",
+  ]) {
+    mkdirSync(path.join(root, dir), { recursive: true });
+  }
+  for (const name of [
+    "check-ward-reference",
+    "build-reference-registry",
+    "build-reference-distances",
+    "build-reference-teams",
+  ]) {
+    const file = `scripts/ward-flow/${name}.mjs`;
+    copyFileSync(path.resolve(file), path.join(root, file));
+  }
+  symlinkSync(path.resolve("node_modules"), path.join(root, "node_modules"), "junction");
+  const packPath = path.join(root, "docs/ward-flow/reference-data/entities.json");
+  writeFileSync(
+    packPath,
+    JSON.stringify({
+      entities: [
+        {
+          entity_kind: "community_service",
+          team_id: "synthetic-team",
+          name: "Synthetic team",
+          published_phone: "synthetic phone",
+        },
+      ],
+    }),
+  );
+  writeFileSync(path.join(root, "docs/ward-flow/reference-data/distances.json"), JSON.stringify({ distances: [] }));
+  execFileSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `
+    import { writeFileSync } from "node:fs";
+    for (const name of ["registry", "distances", "teams"]) {
+      const { generate } = await import("./scripts/ward-flow/build-reference-" + name + ".mjs");
+      writeFileSync("src/components/ward-management/reference/ward-reference-" + name + ".ts", await generate());
+    }
+  `,
+    ],
+    { cwd: root, timeout: 15_000 },
+  );
+  return {
+    packPath,
+    teamsPath: path.join(root, "src/components/ward-management/reference/ward-reference-teams.ts"),
+    check: () =>
+      spawnSync(process.execPath, ["scripts/ward-flow/check-ward-reference.mjs"], {
+        cwd: root,
+        encoding: "utf8",
+        timeout: 15_000,
+      }),
+  };
+}
+
+it.each(["generated contact edit", "source contact edit", "missing teams file"])(
+  "fails the reference check for %s while registry and distances still match",
+  (change) => {
+    const fixture = referenceCheckFixture();
+    const matching = fixture.check();
+    expect(matching.status, matching.stderr || matching.stdout).toBe(0);
+    expect(matching.stdout).toContain("all match the reference pack");
+    expect(matching.stdout).toContain("operational_use_approved: false");
+    const teams = readFileSync(fixture.teamsPath, "utf8");
+    expect(teams).toContain("synthetic phone");
+    if (change === "generated contact edit") {
+      writeFileSync(fixture.teamsPath, teams.replace("synthetic phone", "changed synthetic phone"));
+    } else if (change === "source contact edit") {
+      const pack = JSON.parse(readFileSync(fixture.packPath, "utf8"));
+      pack.entities[0].published_phone = "changed synthetic phone";
+      writeFileSync(fixture.packPath, JSON.stringify(pack));
+    } else {
+      unlinkSync(fixture.teamsPath);
+    }
+    const result = fixture.check();
+    expect(result.status, result.stderr || result.stdout).toBe(1);
+    expect(result.stdout).toContain(
+      `ward-reference-teams.ts ${change === "missing teams file" ? "is missing" : "has drifted"}`,
+    );
+    expect(result.stdout).toContain("npm run ward:reference:build");
+    if (change !== "missing teams file") {
+      expect(readFileSync(fixture.teamsPath, "utf8")).toBe(
+        change === "generated contact edit" ? teams.replace("synthetic phone", "changed synthetic phone") : teams,
+      );
+    }
+  },
+);
 
 /**
  * THE REGISTER'S PUBLISHED CONTACT DETAIL, AND THE BOUNDARY IT KEEPS.

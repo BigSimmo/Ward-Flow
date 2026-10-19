@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { Button } from "@/components/wf";
 import { WardChip } from "@/components/ward-management/ward-chip";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -52,6 +54,8 @@ function NetworkRow({
   onSelect: () => void;
 }) {
   const { refreshRequests } = useWardFlowSelect("refreshRequests");
+  const requestDisabledReason =
+    useEffectiveWardAccess().role === "coordinator" ? undefined : "Only the coordinator can request ward updates.";
   // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
   // A request stays outstanding until the ward next confirms its capacity. Timestamps are whole minutes, so a
   // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
@@ -403,20 +407,30 @@ function NetworkRow({
         `refreshRequests` and touches nothing else — it records that somebody asked.
       */}
       <td>
-        <button
-          type="button"
-          className={styles.refreshButton}
-          data-testid={`ward-capacity-refresh-${row.unit.id}`}
-          // Once a request is on record the button says so and stops dispatching another one.
-          disabled={asked}
-          title={asked ? "An update has already been requested from this ward." : undefined}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestRefresh();
-          }}
-        >
-          {asked ? "Update requested" : "Request update"}
-        </button>
+        {requestDisabledReason ? (
+          <Button
+            className={styles.refreshButton}
+            data-testid={`ward-capacity-refresh-${row.unit.id}`}
+            disabledReason={requestDisabledReason}
+          >
+            Request update
+          </Button>
+        ) : (
+          <button
+            type="button"
+            className={styles.refreshButton}
+            data-testid={`ward-capacity-refresh-${row.unit.id}`}
+            // Once a request is on record the button says so and stops dispatching another one.
+            disabled={asked}
+            title={asked ? "An update has already been requested from this ward." : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestRefresh();
+            }}
+          >
+            {asked ? "Update requested" : "Request update"}
+          </button>
+        )}
       </td>
     </tr>
   );

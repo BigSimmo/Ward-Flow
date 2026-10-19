@@ -969,6 +969,8 @@ describe("referrals fixture — the awkward cases (seed rule 4)", () => {
  */
 describe("Referral privacy — structural", () => {
   const ALLOWED_REFERRAL_FIELDS = [
+    // Opaque command correlation for the approved journey correction; no patient content.
+    "submissionId",
     "turnaroundPriority",
     // Owner-requested confirmed drawer dossier, 7 October 2026. No patient identity is copied.
     "intake",
@@ -1300,6 +1302,7 @@ describe("Referral privacy — structural", () => {
     // (partly-decided) referral would show. TYPE-CHECKED half of the guard — see this describe
     // block's own doc comment for why a runtime companion follows.
     const canonical: Required<Referral> = {
+      submissionId: "11111111-1111-4111-8111-111111111111",
       intake: {
         catchment: { teamName: "Inner City Clinic", confirmed: true },
         reasonForReferral: "Synthetic referral",

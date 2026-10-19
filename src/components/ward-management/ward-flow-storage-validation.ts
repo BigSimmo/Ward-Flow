@@ -1,3 +1,5 @@
+import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { isPatientRegistrationScope } from "./ward-patient-registration";
 import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -32,6 +34,7 @@ import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
+import { numberedBedKind } from "./ward-bed-designation";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -189,6 +192,9 @@ const patient = z.catchall(
     // v10 pass 2: `addedAt` is the one other non-text field, a finite instant when present.
     // Optional, so a save made before it existed loads unchanged; no storage version bump.
     addedAt: z.optional(finite),
+    registrationScope: z.optional(
+      z.strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: text }),
+    ),
   }),
   // Every other patient field stays plain text.
   text,
@@ -367,6 +373,7 @@ const referralDestination = z.discriminatedUnion("kind", [
 ]);
 const referral = z.looseObject({
   id,
+  submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
   turnaroundPriority: z.optional(turnaroundPriority),
   ageBand: text,
   homeRegion: text,
@@ -445,11 +452,14 @@ const auditEvent = z
   .check(
     z.refine(
       (row) =>
-        row.action !== "RECORD_ADMISSION_CARE" ||
-        (row.details.kind === "care" &&
-          (row.details.recorded === undefined ||
-            row.details.recorded === null ||
-            validCareChange(row.details.recorded))),
+        (row.action !== "OPEN_DISCHARGE_RECORD" ||
+          row.details.requestNamespace === undefined ||
+          validDischargeRequestNamespace(row.details.requestNamespace)) &&
+        (row.action !== "RECORD_ADMISSION_CARE" ||
+          (row.details.kind === "care" &&
+            (row.details.recorded === undefined ||
+              row.details.recorded === null ||
+              validCareChange(row.details.recorded)))),
     ),
   );
 
@@ -563,6 +573,15 @@ const undoRecord = z.discriminatedUnion("kind", [
     unitId: text,
     beforeBed: z.nullable(bed),
     afterBed: bed,
+    bedKindChange: z.optional(
+      z.looseObject({
+        before: z.nullable(z.enum(["locked", "open"])),
+        after: z.enum(["locked", "open"]),
+        lockedBefore: counter,
+        lockedAfter: counter,
+        capacityRevision: counter,
+      }),
+    ),
   }),
   z
     .looseObject({
@@ -651,6 +670,13 @@ type StoredState = z.infer<typeof storedState>;
 // Pass 3: links between rows. Ids are already unique within each collection.
 function consistent(state: StoredState, value: RecordValue): boolean {
   if (validateConfiguration(value.configuration) === null) return false;
+  for (const patient of state.patients)
+    if (patient.registrationScope !== undefined && !isPatientRegistrationScope(patient.registrationScope, state.units))
+      return false;
+  const submissionIds = state.referrals.flatMap((referral) =>
+    referral.submissionId === undefined ? [] : [referral.submissionId],
+  );
+  if (new Set(submissionIds).size !== submissionIds.length) return false;
   const runtimeSequences: [readonly { id: string }[], RegExp, number][] = [
     [state.patients, /^PT-A(\d+)$/, state.patientSequence],
     [state.admissions, /^AD-ARR-(\d+)$/, state.admissionSequence],
@@ -863,6 +889,28 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   for (const row of state.undoRecords ?? []) {
     if (row.kind === "bed-placement") {
       if (!admissionIds.has(row.admissionId) || !unitIds.has(row.unitId)) return false;
+      const ward = stateUnitById.get(row.unitId)!;
+      if (row.bedKindChange) {
+        const change = row.bedKindChange;
+        const priorKind =
+          change.before ??
+          (row.beforeBed === null
+            ? ward.lockedBeds === 0
+              ? "open"
+              : ward.lockedBeds === ward.beds
+                ? "locked"
+                : undefined
+            : numberedBedKind(ward, row.beforeBed));
+        if (
+          priorKind === undefined ||
+          change.after !== numberedBedKind(ward, row.afterBed) ||
+          change.lockedBefore > ward.lockedBeds ||
+          change.lockedAfter > ward.lockedBeds ||
+          change.lockedAfter !==
+            change.lockedBefore + Number(priorKind === "locked") - Number(change.after === "locked")
+        )
+          return false;
+      }
       continue;
     }
     if (row.unitId !== null && !unitIds.has(row.unitId)) return false;

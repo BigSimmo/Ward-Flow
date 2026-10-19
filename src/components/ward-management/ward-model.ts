@@ -1368,6 +1368,8 @@ export type WardReferralDestination = Extract<ReferralDestination, { kind: "psyc
 export type WardAddressing = ReferralAddressing & { destination: WardReferralDestination };
 
 export type Referral = {
+  /** Opaque submission correlation across JSON snapshots. */
+  submissionId?: string;
   turnaroundPriority?: TurnaroundPriority;
   /** Confirmed drawer submission; typed text and chart bytes stay in memory under D-18. */
   intake?: import("./referrals/referral-submission").ReferralIntakeDetails;

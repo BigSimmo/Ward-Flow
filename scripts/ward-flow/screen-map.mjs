@@ -23,12 +23,12 @@ import { PAIRS, ROUTE_COMPONENTS, SUPERSEDED } from "./screen-pairs.mjs";
 const ROOT = process.cwd();
 const MOCKUPS = join(ROOT, "design", "third-edition-mockups");
 const ROUTE_SOURCES = [
-  { root: join(ROOT, "src", "app", "mockups", "ward-flow"), prefix: "", file: "page.tsx" },
+  { root: join(ROOT, "src", "app", "ward-flow"), prefix: "", file: "page.tsx" },
   // These two commissioned references live beside the Ward Flow page tree. Keep their public
   // paths explicit so the roster cannot imply they are children of the operational route root.
   {
-    root: join(ROOT, "src", "app", "mockups", "ward-flow-sign-in"),
-    prefix: "/mockups/ward-flow-sign-in",
+    root: join(ROOT, "src", "app", "ward-flow-sign-in"),
+    prefix: "/ward-flow-sign-in",
     file: "page.tsx",
   },
   {

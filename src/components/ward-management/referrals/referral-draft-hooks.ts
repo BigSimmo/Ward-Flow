@@ -10,17 +10,6 @@ import {
   discardReferralDraft,
 } from "./referral-draft-cache";
 
-/** A submission token suppresses repeats and invalidates its completion when the drawer closes. */
-export function useReferralSubmissionGuard<T>() {
-  const pending = useRef<T | null>(null);
-  useEffect(() => {
-    return () => {
-      pending.current = null;
-    };
-  }, []);
-  return pending;
-}
-
 /** Select only the named synthetic subject; a different person's memory draft retains its owner. */
 export function useReferralDraftRecovery<T extends { activePatientKey: string }>(
   scenario: string,

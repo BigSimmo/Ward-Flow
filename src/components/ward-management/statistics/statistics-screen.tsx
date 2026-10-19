@@ -556,7 +556,7 @@ export function StatisticsScreen({
                   title="Referrals today"
                   data-testid="ward-statistics-referrals-for-bed"
                   action={
-                    <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
+                    <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
                       Open referrals
                     </Link>
                   }
@@ -778,7 +778,7 @@ export function StatisticsScreen({
                     ) : undefined
                   }
                 >
-                  <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
+                  <Link href="/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
                     Compare wards
                   </Link>
                 </CardFoot>

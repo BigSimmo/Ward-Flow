@@ -19,8 +19,8 @@ import { WARD_DEVELOPER_HUB_HREF } from "@/components/ward-management/ward-nav";
 
 export const PHONE_PUSH_WORKER_URL = "/ward-flow-push-sw.js";
 /**
- * No trailing slash (F-11): scope matching is a plain prefix, so `/mockups/ward-flow/` left Home
- * (`/mockups/ward-flow`) uncontrolled. The worker itself ignores sibling paths such as
+ * No trailing slash (F-11): scope matching is a plain prefix, so `/ward-flow/` left Home
+ * (`/ward-flow`) uncontrolled. The worker itself ignores sibling paths such as
  * `/mockups/ward-flow-digest` that this prefix also covers.
  */
 export const PHONE_PUSH_SCOPE = WARD_DEVELOPER_HUB_HREF;

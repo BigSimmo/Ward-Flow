@@ -1,7 +1,7 @@
 /*
  * Ward Flow service worker: phone alerts (feature 4) and the offline fallback (PWA plan, Oct 2026).
  * Registered on every Ward Flow load (shell/ward-pwa-registration.tsx) and by the phone alerts
- * switch (shell/ward-phone-push.ts), both with scope /mockups/ward-flow, so Home is covered too.
+ * switch (shell/ward-phone-push.ts), both with scope /ward-flow, so Home is covered too.
  *
  * Push: shows the notification the Ward Flow server sent and opens Ward Flow when it is tapped. It
  * shows only the server's generic words (a count, a site and "Synthetic demo data"), and opens only
@@ -14,7 +14,7 @@
  * other request. A page is always fetched from the network; only when that fails is the offline
  * page shown in its place.
  */
-const WARD_FLOW_PATH = "/mockups/ward-flow";
+const WARD_FLOW_PATH = "/ward-flow";
 const ALERTS_PATH = `${WARD_FLOW_PATH}/alerts`;
 const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.

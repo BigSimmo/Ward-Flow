@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Fails if `src/components/ward-management/reference/ward-reference-registry.ts` has drifted from
- * the pack it is generated from.
+ * Fails if the generated reference registry, distances or teams have drifted from their source pack.
  *
  * ⚠️ WHY A GENERATED FILE IS COMMITTED AT ALL, rather than the app reading the JSON at runtime.
  * `docs/ward-flow/reference-data/` is 2MB, most of it catchment assertions Ward Flow does not use.
@@ -20,12 +19,14 @@ import { fileURLToPath } from "node:url";
 
 import { generate as generateDistances } from "./build-reference-distances.mjs";
 import { generate } from "./build-reference-registry.mjs";
+import { generate as generateTeams } from "./build-reference-teams.mjs";
 
 const PROJECT_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const REL = "src/components/ward-management/reference/ward-reference-registry.ts";
 const DIST_REL = "src/components/ward-management/reference/ward-reference-distances.ts";
+const TEAMS_REL = "src/components/ward-management/reference/ward-reference-teams.ts";
 
-/** Both generated files are checked, because either can drift on its own. */
+/** Each generated file is checked, because any one can drift on its own. */
 async function checkDistances() {
   let committedDistances;
   try {
@@ -42,7 +43,24 @@ async function checkDistances() {
   }
 }
 
+async function checkTeams() {
+  let committedTeams;
+  try {
+    committedTeams = readFileSync(join(PROJECT_ROOT, TEAMS_REL), "utf8");
+  } catch {
+    console.log(`🔴 ${TEAMS_REL} is missing.\n\n   Run: npm run ward:reference:build\n`);
+    process.exit(1);
+  }
+  const expectedTeams = await generateTeams();
+  if (committedTeams.replace(/\r\n/g, "\n") !== expectedTeams.replace(/\r\n/g, "\n")) {
+    console.log(`🔴 ${TEAMS_REL} has drifted from docs/ward-flow/reference-data/entities.json.\n`);
+    console.log("   Run: npm run ward:reference:build\n");
+    process.exit(1);
+  }
+}
+
 await checkDistances();
+await checkTeams();
 
 let committed;
 try {
@@ -55,8 +73,8 @@ try {
 const expected = await generate();
 
 if (committed.replace(/\r\n/g, "\n") === expected.replace(/\r\n/g, "\n")) {
-  console.log(`${REL} and ${DIST_REL} both match the reference pack.\n`);
-  console.log("⚠️  This proves the committed names still equal the pack's. It says NOTHING about");
+  console.log(`${REL}, ${DIST_REL} and ${TEAMS_REL} all match the reference pack.\n`);
+  console.log("⚠️  This proves the committed records still equal the pack's. It says NOTHING about");
   console.log("    whether the pack itself is current, or whether any WA service has approved a");
   console.log("    record in it — every row is still operational_use_approved: false.\n");
   process.exit(0);

@@ -36,7 +36,7 @@ import { describe, expect, it } from "vitest";
  */
 
 const ROOT = process.cwd();
-const WARD_ROUTES = join(ROOT, "src", "app", "mockups", "ward-flow");
+const WARD_ROUTES = join(ROOT, "src", "app", "ward-flow");
 const WARD_COMPONENTS = join(ROOT, "src", "components", "ward-management");
 
 function walk(dir: string, keep: (path: string) => boolean): string[] {
@@ -160,7 +160,7 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * THIRD-EDITION SHELL.** These three entries are the honest record of a retirement, not of a
    * neglect, and the distinction matters because the two look identical from here.
    *
-   * `src/app/mockups/ward-flow/layout.tsx` used to mount `WardChromeHeader` (which renders
+   * `src/app/ward-flow/layout.tsx` used to mount `WardChromeHeader` (which renders
    * `WardChromeSearch` and `WardStatsToggle`/`WardStatsPanel`) alongside `shell/ward-bar.tsx`. Both
    * render `WardGlobalSearch`, so every one of the thirty-six ward routes carried two search boxes
    * and two task controls — measured by rendering all thirty-six, not inferred. That fold was
@@ -187,7 +187,7 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    */
   /*
    * ✅ **`ward-standing-strip.tsx` CAME BACK AS FLOATING DYNAMIC ISLAND HUD — 2026-09-30.**
-   * Mounted in `src/app/mockups/ward-flow/layout.tsx` so the Dynamic Island HUD floats site-wide.
+   * Mounted in `src/app/ward-flow/layout.tsx` so the Dynamic Island HUD floats site-wide.
    */
   {
     module: "src/components/ward-management/movements/traffic-diagram.tsx",
@@ -200,7 +200,7 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    */
   /*
    * ✅ **THE THIRD-EDITION SHELL — REMOVED, Task 8, 2026-09-11.** `WardRail`, `WardBar` and
-   * `WardLiveRegion` mounted in `src/app/mockups/ward-flow/layout.tsx`, exactly as the paragraph
+   * `WardLiveRegion` mounted in `src/app/ward-flow/layout.tsx`, exactly as the paragraph
    * this replaces predicted: "the moment plan §1.3 item 1.2 lands... `layout.tsx` becomes the
    * route-reachable seed... and the 'holds no stale declaration' assertion below will find them
    * reachable on its own and name these exact three lines to delete." It did, and this is that

@@ -1,4 +1,5 @@
 // @ts-check
+import { createHash } from "node:crypto";
 
 /**
  * How a shared workspace is kept from migration 10: each referral, bed (ward), movement, patient,
@@ -12,8 +13,9 @@
  *
  * - A list whose entries are all objects with a unique text `id` keeps one row per entry, keyed by
  *   that id (`item`).
- * - Any other list keeps one row per position (`index`). Lists like this only ever grow at the end,
- *   so two desks adding to one at once land in different rows.
+ * - Any other list keeps one row per position (`index`), except the bounded undo history: its
+ *   internal keys name undo subjects, so evicting its oldest receipt does not change every row.
+ *   It keeps kind `index` and its explicit order, which older readers and rollback SQL understand.
  * - A map (a plain object) keeps one row per key (`entry`).
  * - Anything else (numbers, text) stays on the workspace row, and `$revisions` on that row records
  *   the workspace revision at which each of those last changed, so a clash check can see a reset
@@ -48,6 +50,35 @@ function kindOf(value) {
 
 export const partKey = (collection, recordId) => `${collection}/${recordId}`;
 
+/** An undo subject, matching ward-undo.ts's replacement rule without changing domain records. */
+function undoRecordId(value) {
+  if (!isPlainObject(value)) return null;
+  const subject =
+    value.kind === "step" && typeof value.undoType === "string" && typeof value.subjectId === "string"
+      ? [value.kind, value.undoType, value.subjectId]
+      : value.kind === "bed-placement" && typeof value.admissionId === "string"
+        ? [value.kind, value.admissionId]
+        : value.kind === "referral-decision" && typeof value.referralId === "string"
+          ? [value.kind, value.referralId]
+          : null;
+  // Subject ids can themselves approach the storage key's 200-character limit.
+  return subject ? `undo:${createHash("sha256").update(JSON.stringify(subject)).digest("hex")}` : null;
+}
+
+/** Unknown/duplicate shapes retain ordinary index storage rather than dropping a list entry. */
+function undoRecordIds(values) {
+  const ids = values.map(undoRecordId);
+  return ids.every((id) => id !== null) && new Set(ids).size === ids.length ? ids : null;
+}
+
+/** Recognise numeric keys written by migration 10 or an older backend, preserving their revisions. */
+function storedParts(stored) {
+  const undo = stored.filter((row) => row.collection === "undoRecords" && row.kind === "index");
+  const ids = undoRecordIds(undo.map((row) => row.body));
+  const undoKeys = new Map(undo.map((row, index) => [row, ids?.[index] ?? row.record_id]));
+  return new Map(stored.map((row) => [partKey(row.collection, undoKeys.get(row) ?? row.record_id), row]));
+}
+
 /**
  * Splits a world into its workspace row (`core`) and its rows (`parts`, keyed by `partKey`).
  * Never changes `world`.
@@ -63,12 +94,13 @@ export function splitWorld(world) {
       continue;
     }
     state[collection] = { [MARKER]: kind };
+    const undoIds = collection === "undoRecords" && kind === "index" ? undoRecordIds(value) : null;
     if (kind === "entry")
       for (const [recordId, body] of Object.entries(value))
         parts.set(partKey(collection, recordId), { collection, recordId, kind, ordinal: 0, body });
     else
       value.forEach((body, ordinal) => {
-        const recordId = kind === "item" ? body.id : String(ordinal);
+        const recordId = kind === "item" ? body.id : (undoIds?.[ordinal] ?? String(ordinal));
         parts.set(partKey(collection, recordId), { collection, recordId, kind, ordinal, body });
       });
   }
@@ -179,7 +211,7 @@ export function planSave(stored, world, revision, storedCore = null) {
       ]),
     ),
   };
-  const current = new Map(stored.map((row) => [partKey(row.collection, row.record_id), row]));
+  const current = storedParts(stored);
   /** @type {Map<string, Part[]>} */
   const lists = new Map();
   for (const part of parts.values())
@@ -193,7 +225,7 @@ export function planSave(stored, world, revision, storedCore = null) {
   for (const [key, part] of parts) {
     const row = current.get(key);
     const changed = !row || row.kind !== part.kind || !same(row.body, part.body);
-    if (changed || row.ordinal !== part.ordinal)
+    if (changed || row.ordinal !== part.ordinal || row.record_id !== part.recordId)
       upserts.push({ ...part, revision: changed ? revision : Number(row.revision) });
   }
   const deletes = [...current.values()]
@@ -222,7 +254,7 @@ function namedValues(value, found = new Set()) {
  */
 export function conflicts({ stored, core, before, after, event, expectedRevision, priorRevision }) {
   if (expectedRevision >= priorRevision) return false;
-  const revisions = new Map(stored.map((row) => [partKey(row.collection, row.record_id), Number(row.revision)]));
+  const revisions = new Map([...storedParts(stored)].map(([key, row]) => [key, Number(row.revision)]));
   const whole = wholeFields(core);
   const revisionOf = (part) =>
     whole.has(part.collection) ? priorRevision : (revisions.get(partKey(part.collection, part.recordId)) ?? 0);

@@ -1064,8 +1064,8 @@ export function coordinatorWorksReferral(referral: Referral): boolean {
   //    patient disappears in order to announce that one record is contradictory. That trade is wrong
   //    at any blast radius — behind an error boundary it costs a panel instead of a page, and a panel
   //    of missing patients is still a worse failure than one visible row a coordinator can question.
-  //    (Boundaries exist now — `src/app/mockups/ward-flow/error.tsx` and its nearer sibling
-  //    `src/app/mockups/ward-flow/statistics/error.tsx` — but neither shrinks the blast radius this
+  //    (Boundaries exist now — `src/app/ward-flow/error.tsx` and its nearer sibling
+  //    `src/app/ward-flow/statistics/error.tsx` — but neither shrinks the blast radius this
   //    argument describes. Both render inside `ward-flow/layout.tsx`, so both replace the entire
   //    page, navigation rail included: the statistics boundary's own doc comment says plainly "It
   //    does NOT keep more of the screen alive than the parent would" and that reasoning about a

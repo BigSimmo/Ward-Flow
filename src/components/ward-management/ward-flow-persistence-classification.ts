@@ -411,6 +411,10 @@ type WardFlowReviewedStringOrUnknownKey =
   | "eventId"
   | "edId"
   | "payload"
+  // SET_CONFIGURATION validates its original baseline through the same numeric-only schema.
+  | "baseConfiguration"
+  // OPEN_DISCHARGE_RECORD bounds this correlation field to an opaque UUID before acceptance.
+  | "requestNamespace"
   | "legalFormCode"
   | "patientId"
   | "noticeId"

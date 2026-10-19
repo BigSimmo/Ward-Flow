@@ -176,9 +176,9 @@ export function recommendCanonicalLocation(relPath) {
       namingConvention: "src/components/ward-management/<domain>/<kebab-name>.tsx",
       suggestedPath: `src/components/ward-management/${base}`,
       rationale:
-        "Ward Flow screens, domain components, reducers, and CSS modules live under `src/components/ward-management/<domain>/` (or routes under `src/app/mockups/ward-flow/<route>/page.tsx`).",
+        "Ward Flow screens, domain components, reducers, and CSS modules live under `src/components/ward-management/<domain>/` (or routes under `src/app/ward-flow/<route>/page.tsx`).",
       registryGuidance:
-        "Files under `src/components/ward-management/**` and `src/app/mockups/ward-flow/**` are automatically admitted by rules `ward-modules` and `ward-routes` in `docs/ward-flow/organisation/registry.json`.",
+        "Files under `src/components/ward-management/**` and `src/app/ward-flow/**` are automatically admitted by rules `ward-modules` and `ward-routes` in `docs/ward-flow/organisation/registry.json`.",
     };
   }
 

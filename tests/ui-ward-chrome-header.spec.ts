@@ -6,7 +6,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
 
 /**
  * BROWSER COVERAGE OF THE WARD FLOW SHELL BAR (`WardBar`, `shell/ward-bar.tsx`, mounted with
- * `WardRail` in `src/app/mockups/ward-flow/layout.tsx` above every ward route).
+ * `WardRail` in `src/app/ward-flow/layout.tsx` above every ward route).
  *
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * 🔴 **THIS FILE CHANGED OWNER ON 2026-09-11. IT DID NOT CHANGE CONTRACT.**
@@ -61,7 +61,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * change as this rewrite:
  *
  *   1. The search results popup was clipped and unclickable at every width. At 1440x900 on
- *      `/mockups/ward-flow/delays` with a query typed, the popup ran from y=108 to y=492 while its
+ *      `/ward-flow/delays` with a query typed, the popup ran from y=108 to y=492 while its
  *      scroll-container ancestor was only 114.5px tall — 377px of the popup was clipped, and
  *      `document.elementFromPoint` at the popup's own centre resolved to the sidebar, not the
  *      popup. 12 results existed; 0 were reachable by mouse. Asserted below as an actual
@@ -89,7 +89,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-smoke` flake that reintroducing 44px caused) — asserted with `toBeGreaterThanOrEqual` so a
  * legitimately taller control never reddens this file.
  *
- * FIXTURE: `/mockups/ward-flow/delays` is the exact route the original audit measured faults 1-3
+ * FIXTURE: `/ward-flow/delays` is the exact route the original audit measured faults 1-3
  * against. The click test searches "Halloway", the family name on PT-001 (Talia Halloway,
  * `ward-patients-seed.ts`). A single letter "a" now ranks word-start names ahead of a buried
  * match and keeps six people, so Talia is no longer in that short list. The family name still
@@ -99,8 +99,8 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-ward-*.spec.ts`) or ARIA role/name, never a CSS Module class name, because those are hashed.
  */
 
-const DELAYS_ROUTE = "/mockups/ward-flow/delays";
-const PUBLISHED_CHECKS_ROUTE = "/mockups/ward-flow/movements";
+const DELAYS_ROUTE = "/ward-flow/delays";
+const PUBLISHED_CHECKS_ROUTE = "/ward-flow/movements";
 
 /**
  * A spread of route SHAPES, not a sample of pages: the coordinator home (no place), the audit's
@@ -111,13 +111,13 @@ const PUBLISHED_CHECKS_ROUTE = "/mockups/ward-flow/movements";
  * differs.
  */
 const COUNTED_ROUTES = [
-  "/mockups/ward-flow",
+  "/ward-flow",
   DELAYS_ROUTE,
-  "/mockups/ward-flow/ward/rph-adult-secure",
+  "/ward-flow/ward/rph-adult-secure",
   // A form route. Was `/referrals/new` until 8 Oct 2026, when that route became the Referrals board
   // with the referral slide-out open; the add-a-person form is the remaining full-page form.
-  "/mockups/ward-flow/people/new",
-  "/mockups/ward-flow/statistics/overview",
+  "/ward-flow/people/new",
+  "/ward-flow/statistics/overview",
   PUBLISHED_CHECKS_ROUTE,
 ] as const;
 
@@ -170,6 +170,8 @@ async function gotoWardChrome(page: Page, path: string = DELAYS_ROUTE): Promise<
     "React's streamed content is still staged, so the whole screen is duplicated in the document",
   ).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty();
+  await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
 }
 
 function searchInput(page: Page): Locator {
@@ -278,7 +280,7 @@ test.describe("@mockup Ward shell bar", () => {
   // swaps the registers rail for the person panel, so that swap is what must leave the shell alone.
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    await page.goto("/ward-flow/delays", { waitUntil: "networkidle" });
     // The hero registers its band after hydration. Reading the unhydrated glass
     // colour compared initial loading with a ready page, rather than the panel swap.
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
@@ -654,8 +656,8 @@ test.describe("@mockup Ward shell bar", () => {
  */
 const UNWIRED_PRIMARY_KINDS: ReadonlySet<string> = new Set(["record-decision", "contact-team", "export-figures"]);
 const FORMER_UNWIRED_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
-  ["/mockups/ward-flow/movements", "Record a decision", "Movements"],
-  [`/mockups/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
+  ["/ward-flow/movements", "Record a decision", "Movements"],
+  [`/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
 ];
 
 test.describe("@mockup Ward shell bar — item 43: the unwired primary action's popover", () => {
@@ -724,7 +726,7 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   // One Alerts queue (D-61): the bed coordinator's dock carries Alerts, which opens the Alerts
   // screen. Every queue row there must still be reachable on a short phone.
   await page.getByTestId("ward-phone-menu-alerts").click();
-  await expect(page).toHaveURL(/\/mockups\/ward-flow\/alerts(?:[?#]|$)/u);
+  await expect(page).toHaveURL(/\/ward-flow\/alerts(?:[?#]|$)/u);
   await expect(
     page.locator('div[hidden][id^="S:"]'),
     "React's streamed content is still staged, so the queue is duplicated in the document",
@@ -744,7 +746,7 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
-  await gotoWardChrome(page, "/mockups/ward-flow/delays");
+  await gotoWardChrome(page, "/ward-flow/delays");
   const toolsTrigger = page.getByTestId(PHONE_MENU[0]);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools", exact: true });

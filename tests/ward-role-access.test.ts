@@ -46,7 +46,7 @@ import {
  */
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-const BASE = "/mockups/ward-flow";
+const BASE = "/ward-flow";
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
 const unitId = state.units[0].id;
@@ -73,7 +73,7 @@ describe("the access table", () => {
   });
 
   it("opens a service's statistics only to that service or the whole network", () => {
-    const path = "/mockups/ward-flow/statistics/service/" + encodeURIComponent("North Metro");
+    const path = "/ward-flow/statistics/service/" + encodeURIComponent("North Metro");
     expect(screenForPath(path)).toMatchObject({ screen: "statistics", serviceId: "North Metro" });
     const north = { role: "executive", scope: { kind: "service", service: "North Metro" } } as const;
     const south = { role: "executive", scope: { kind: "service", service: "South Metro" } } as const;
@@ -110,7 +110,7 @@ describe("the access table", () => {
 
 /** Every page the app has, with a sample id in each dynamic segment. */
 function appRoutes(): string[] {
-  const root = join(process.cwd(), "src/app/mockups/ward-flow");
+  const root = join(process.cwd(), "src/app/ward-flow");
   const found: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {

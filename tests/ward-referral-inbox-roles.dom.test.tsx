@@ -14,7 +14,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * B1 (site review, 12 Oct 2026): the referral inbox answers as the route's own role. The route is
  * the role (`ward-chrome-role.ts`), so each case mocks the path it is on.
  */
-let pathname = "/mockups/ward-flow/referrals";
+let pathname = "/ward-flow/referrals";
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -77,7 +77,7 @@ function setup(source: "psychiatric_ward" | "community", gender: ReferralGender 
 
 describe("the referral inbox answers as the route's role (B1)", () => {
   beforeEach(() => {
-    pathname = "/mockups/ward-flow/referrals";
+    pathname = "/ward-flow/referrals";
   });
 
   it("gives the coordinator a working Accept for a transfer from another hospital, recorded as the coordinator", () => {
@@ -89,7 +89,7 @@ describe("the referral inbox answers as the route's role (B1)", () => {
   });
 
   it("greys the receiving ward's Accept for that transfer, with the reason", () => {
-    pathname = `/mockups/ward-flow/ward/${ELSEWHERE.id}`;
+    pathname = `/ward-flow/ward/${ELSEWHERE.id}`;
     const inbox = setup("psychiatric_ward");
     const accept = inbox.getByRole("button", { name: "Accept referral" });
     expect(accept).not.toBeDisabled();
@@ -100,14 +100,14 @@ describe("the referral inbox answers as the route's role (B1)", () => {
   });
 
   it("lets the ward answer its own referral, recorded as the ward", () => {
-    pathname = `/mockups/ward-flow/ward/${ELSEWHERE.id}`;
+    pathname = `/ward-flow/ward/${ELSEWHERE.id}`;
     const inbox = setup("community");
     fireEvent.click(inbox.getByRole("button", { name: "Accept referral" }));
     expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Ward manager");
   });
 
   it("greys every answer on another ward's route and on a role with no ward seat", () => {
-    pathname = `/mockups/ward-flow/ward/${OTHER_WARD.id}`;
+    pathname = `/ward-flow/ward/${OTHER_WARD.id}`;
     const inbox = setup("community");
     expect(inbox.getByRole("button", { name: "Accept referral" })).toHaveAccessibleDescription(
       `${ELSEWHERE.name} or coordinator only`,

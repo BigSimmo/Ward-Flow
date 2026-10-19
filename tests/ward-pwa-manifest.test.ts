@@ -15,7 +15,7 @@ describe("web app manifest", () => {
   const app = manifest();
 
   it("opens Ward Flow Home directly, and stays the same installed app", () => {
-    expect(app.start_url).toBe("/mockups/ward-flow");
+    expect(app.start_url).toBe("/ward-flow");
     expect(app.id).toBe("/");
     expect(app.scope).toBe("/");
   });
@@ -28,9 +28,9 @@ describe("web app manifest", () => {
   it("offers the three Ward Flow shortcuts, each with an icon the icon route makes", () => {
     const variants = new Set(iconParams().map(({ variant }) => `/icons/${variant}`));
     expect(app.shortcuts?.map(({ name, url }) => [name, url])).toEqual([
-      ["New referral", "/mockups/ward-flow/referrals/new"],
-      ["Alerts", "/mockups/ward-flow/alerts"],
-      ["Referrals", "/mockups/ward-flow/referrals"],
+      ["New referral", "/ward-flow/referrals/new"],
+      ["Alerts", "/ward-flow/alerts"],
+      ["Referrals", "/ward-flow/referrals"],
     ]);
     for (const shortcut of app.shortcuts ?? []) {
       expect(shortcut.short_name, shortcut.name).toBe(shortcut.name);
@@ -115,13 +115,13 @@ describe("proxy matcher (PWA plan item 7)", () => {
   it("still runs on every page, the worker script and the offline page", () => {
     for (const path of [
       "/",
-      "/mockups/ward-flow",
-      "/mockups/ward-flow/referrals",
+      "/ward-flow",
+      "/ward-flow/referrals",
       "/ward-flow-push-sw.js",
       "/ward-flow-offline.html",
       "/icons-elsewhere",
       "/apple-icon-page",
-      "/mockups/ward-flow/icons/thing",
+      "/ward-flow/icons/thing",
     ]) {
       expect(runsProxy(path), path).toBe(true);
     }

@@ -35,14 +35,14 @@
  */
 
 /** The statistics home page — the hub that indexes the sections below. */
-export const STATISTICS_HOME_HREF = "/mockups/ward-flow/statistics";
+export const STATISTICS_HOME_HREF = "/ward-flow/statistics";
 
 /**
  * ⚠️ **THE FULL PATH IS WRITTEN OUT, NEVER COMPOSED — and that is a reachability requirement rather
  * than a style preference.** The repository's route scan reads SOURCE TEXT: it can see a literal
  * route path and cannot see one assembled at runtime, however correct the resulting string is. Both
  * of these were composed from `STATISTICS_HOME_HREF` until 2026-09-01, and on that day the strings
- * "/mockups/ward-flow/statistics/overview" and "/mockups/ward-flow/statistics/compare" appeared
+ * "/ward-flow/statistics/overview" and "/ward-flow/statistics/compare" appeared
  * NOWHERE in `src` — only in this module's own test. Two real, linked, working routes were invisible
  * to the scan, and nothing anywhere went red about it.
  *
@@ -51,19 +51,19 @@ export const STATISTICS_HOME_HREF = "/mockups/ward-flow/statistics";
  * them because it is a route in its own right and is linked as one.
  *
  * Ward Lead is building an invariant test that walks every route directory under
- * `src/app/mockups/ward-flow` and asserts its literal prefix appears in `src` source text. These
+ * `src/app/ward-flow` and asserts its literal prefix appears in `src` source text. These
  * three sites were written out by hand ahead of it; if that test later flags something here, the
  * two are the same finding.
  */
-export const STATISTICS_OVERVIEW_HREF = "/mockups/ward-flow/statistics/overview";
+export const STATISTICS_OVERVIEW_HREF = "/ward-flow/statistics/overview";
 
-export const STATISTICS_COMPARE_HREF = "/mockups/ward-flow/statistics/compare";
+export const STATISTICS_COMPARE_HREF = "/ward-flow/statistics/compare";
 
 /** The four index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on one page. */
-export const STATISTICS_SERVICES_HREF = "/mockups/ward-flow/statistics/services";
-export const STATISTICS_WARDS_HREF = "/mockups/ward-flow/statistics/wards";
-export const STATISTICS_EDS_HREF = "/mockups/ward-flow/statistics/eds";
-export const STATISTICS_TEAMS_HREF = "/mockups/ward-flow/statistics/teams";
+export const STATISTICS_SERVICES_HREF = "/ward-flow/statistics/services";
+export const STATISTICS_WARDS_HREF = "/ward-flow/statistics/wards";
+export const STATISTICS_EDS_HREF = "/ward-flow/statistics/eds";
+export const STATISTICS_TEAMS_HREF = "/ward-flow/statistics/teams";
 
 /**
  * The id of the unit chooser on the comparisons page. The third section's `href` points at it, and
@@ -81,7 +81,7 @@ export const STATISTICS_UNIT_CHOOSER_ID = "choose-a-unit";
  * comparison exists and had to scroll to find the list — and a test asserting the bare href had
  * blessed it. A constant is what makes the correct link the cheap one to write.
  */
-export const STATISTICS_UNIT_CHOOSER_HREF = `/mockups/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`;
+export const STATISTICS_UNIT_CHOOSER_HREF = `/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`;
 
 /**
  * The id of the health-service chooser on the statistics hub, and the link to it — the fourth

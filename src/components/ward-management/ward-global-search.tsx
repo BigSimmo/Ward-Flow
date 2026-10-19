@@ -92,11 +92,11 @@ export { SearchResultIcon } from "./ward-global-search-icon";
  *
  * ⚠️ QUEUED REFERRALS ARE DELIBERATELY NOT A THIRD RESULT KIND HERE. `searchPatients` in
  * `ward-derivations.ts` also returns referral hits, and this control could call it — but a
- * referral has no page of its own (`/mockups/ward-flow/referrals` is a board, not a per-record
+ * referral has no page of its own (`/ward-flow/referrals` is a board, not a per-record
  * route), so a referral row here would have nowhere honest to send a click. The brief for this
  * control requires every result to carry its record to a real destination; a kind with no
  * destination is not a smaller version of that requirement, it is a different one this file does
- * not attempt. The existing `/mockups/ward-flow/search` console remains the place a referral is
+ * not attempt. The existing `/ward-flow/search` console remains the place a referral is
  * found.
  *
  * NAVIGATION: every real link is a `next/link` `<Link>`, so a plain click, a middle click and a
@@ -171,13 +171,13 @@ export type WardGlobalSearchProps = {
 /**
  * A SHORT LIST, NOT A CATALOGUE. This is chrome that sits above every screen's own content, not a
  * replacement for the dedicated search console — a coordinator wanting the full result set already
- * has `/mockups/ward-flow/search` for that. Applied per kind so a query that matches many movements
+ * has `/ward-flow/search` for that. Applied per kind so a query that matches many movements
  * cannot crowd every person result off the bottom of a short popup.
  */
 const MAX_RESULTS_PER_GROUP = 6;
 
 /** The full search console, linked from the palette footer. No query travels in the URL. */
-const PATIENT_SEARCH_HREF = "/mockups/ward-flow/search";
+const PATIENT_SEARCH_HREF = "/ward-flow/search";
 
 /**
  * THE KIND CHIPS ALONG THE TOP OF THE PALETTE. "All" keeps the short list per kind; a single kind
@@ -326,6 +326,7 @@ export function WardGlobalSearch({
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
+  const preparing = wardFlow?.sessionAdopted === false;
 
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
@@ -971,9 +972,9 @@ export function WardGlobalSearch({
                     onClick={() => {
                       // Ask before the desk or persona changes, so cancelling leaves everything as it was.
                       if (!confirmLeave()) return;
-                      setDeskRole("coordinator", "/mockups/ward-flow");
+                      setDeskRole("coordinator", "/ward-flow");
                       dispatchPersonaSyncForRole("coordinator");
-                      select("/mockups/ward-flow", true);
+                      select("/ward-flow", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Coordinator desk</span>
@@ -987,9 +988,9 @@ export function WardGlobalSearch({
                     onClick={() => {
                       // Ask before the desk or persona changes, so cancelling leaves everything as it was.
                       if (!confirmLeave()) return;
-                      setDeskRole("ward", "/mockups/ward-flow/wards");
+                      setDeskRole("ward", "/ward-flow/wards");
                       dispatchPersonaSyncForRole("ward");
-                      select("/mockups/ward-flow/wards", true);
+                      select("/ward-flow/wards", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Ward desk</span>
@@ -1003,9 +1004,9 @@ export function WardGlobalSearch({
                     onClick={() => {
                       // Ask before the desk or persona changes, so cancelling leaves everything as it was.
                       if (!confirmLeave()) return;
-                      setDeskRole("ed", "/mockups/ward-flow/ed");
+                      setDeskRole("ed", "/ward-flow/ed");
                       dispatchPersonaSyncForRole("ed");
-                      select("/mockups/ward-flow/ed", true);
+                      select("/ward-flow/ed", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to ED desk</span>
@@ -1019,9 +1020,9 @@ export function WardGlobalSearch({
                     onClick={() => {
                       // Ask before the desk or persona changes, so cancelling leaves everything as it was.
                       if (!confirmLeave()) return;
-                      setDeskRole("officer", "/mockups/ward-flow/transport/officer");
+                      setDeskRole("officer", "/ward-flow/transport/officer");
                       dispatchPersonaSyncForRole("officer");
-                      select("/mockups/ward-flow/transport/officer", true);
+                      select("/ward-flow/transport/officer", true);
                     }}
                   >
                     <span className={styles.commandLabel}>Switch to Transport desk</span>
@@ -1032,7 +1033,7 @@ export function WardGlobalSearch({
                     className={styles.commandBtn}
                     disabled={!resultsCurrent}
                     data-testid="ward-global-search-cmd-handover"
-                    onClick={() => select("/mockups/ward-flow/handover")}
+                    onClick={() => select("/ward-flow/handover")}
                   >
                     <span className={styles.commandLabel}>Open Handover sheet</span>
                     <kbd className={styles.hintKbd}>/handover</kbd>
@@ -1185,7 +1186,8 @@ export function WardGlobalSearch({
           aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
-          placeholder={placeholder}
+          placeholder={preparing ? "Preparing search…" : placeholder}
+          disabled={preparing}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -1246,18 +1248,26 @@ export function WardGlobalSearch({
         ) : null}
       </div>
       <span className={styles.guidance} id={hintId}>
-        Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
+        {preparing ? (
+          "Preparing workspace. Search will be available shortly."
+        ) : (
+          <>
+            Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
+          </>
+        )}
       </span>
       {/* Announced for a screen-reader user, the same reason `PatientTypeahead` announces its own
           count: the list changes under someone who cannot see it change. */}
       <p className="sr-only" role="status" aria-live="polite">
-        {refusal
-          ? refusal.sentence
-          : trimmed.length === 0
-            ? ""
-            : resultCount === 0
-              ? "No matches."
-              : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
+        {preparing
+          ? "Preparing workspace. Search will be available shortly."
+          : refusal
+            ? refusal.sentence
+            : trimmed.length === 0
+              ? ""
+              : resultCount === 0
+                ? "No matches."
+                : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
       </p>
       {palette && typeof document !== "undefined" ? createPortal(palette, document.body) : null}
     </div>

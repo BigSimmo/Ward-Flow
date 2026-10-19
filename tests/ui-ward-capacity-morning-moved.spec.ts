@@ -55,7 +55,7 @@ import { expect, test, type Page } from "playwright/test";
 
 async function gotoCapacity(page: Page) {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/mockups/ward-flow/capacity", { waitUntil: "domcontentloaded" });
+  await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
 }

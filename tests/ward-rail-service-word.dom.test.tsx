@@ -27,7 +27,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -55,7 +55,7 @@ function seededBedAlerts() {
 }
 
 beforeEach(() => {
-  route.pathname = "/mockups/ward-flow";
+  route.pathname = "/ward-flow";
   // Same jsdom rAF guard `tests/ward-shell-third-edition.dom.test.tsx` carries — the rail always
   // mounts a `<Sheet>` for "More pages", whose open-focus controller schedules via rAF even closed.
   if (typeof window.requestAnimationFrame !== "function") {
@@ -84,11 +84,11 @@ describe("the rail's chosen-service word (item 52)", () => {
     const navigation = screen.getByRole("dialog", { name: "Menu" });
     expect(within(navigation).getByRole("link", { name: /Statistics/i })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/statistics",
+      "/ward-flow/statistics",
     );
     expect(within(navigation).getByRole("link", { name: "Legal forms" })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/legal-forms",
+      "/ward-flow/legal-forms",
     );
   });
 

@@ -9,8 +9,8 @@
   "include": [
     "next-env.typecheck.d.ts",
     "**/*.d.ts",
-    "src/app/mockups/ward-flow/**/*",
-    "src/app/mockups/ward-flow-sign-in/**/*",
+    "src/app/ward-flow/**/*",
+    "src/app/ward-flow-sign-in/**/*",
     "src/app/mockups/ward-flow-digest/**/*",
     "src/components/ward-management/**/*",
     "src/lib/**/ward*",

@@ -1,3 +1,4 @@
+import { isPatientRegistrationScope, registrationIsInScope } from "./ward-patient-registration";
 /**
  * **THE WHOLE SAVED WORKSPACE, SCOPED TO ONE ROLE AT ONE PLACE (role access plan PR 2, server half).**
  *
@@ -475,6 +476,13 @@ export function commandScopeRefusal(
   if (accessIsWholeNetwork(access)) return null;
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
+  if (
+    command.type === "ADD_PATIENT" &&
+    command.registrationScope !== undefined &&
+    (!isPatientRegistrationScope(command.registrationScope, state.units) ||
+      !registrationIsInScope(command.registrationScope, access, places))
+  )
+    return outside;
   const { state: scopedWithoutGrants } = scopeWardFlowState(state, access, { ...options, grants: undefined });
   const { breakGlassPatientIds } = options.grants?.length
     ? scopeWardFlowState(state, access, options)

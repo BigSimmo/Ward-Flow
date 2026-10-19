@@ -7,7 +7,7 @@ Current source and the accepted Ward app govern behaviour and appearance.
 ### Current Ward Flow wiring & pre-commit summary
 
 - **Buttons:** Every non-submit `<button>` must specify `type="button"` and wire an `onClick` handler (enforced by the local `require-button-wiring` ESLint rule). Controls that are unavailable for a stated reason use `aria-disabled="true"` + `ignoreUnavailableActivation` (`src/components/ui-primitives.tsx`) + an accessible explanation (`title` / `aria-describedby`), or the prototype-wide D4 notice (`"Not wired in this prototype."`). Never combine native `disabled` with `aria-disabled="true"`.
-- **Routes & navigation:** Ward Flow routes live under `src/app/mockups/ward-flow/` and must be reachable from real navigation (checked by `tests/ward-dead-end-routes.test.ts` and `npm run sitemap:check`). Regenerate route and script maps with `npm run docs:update` when routes or scripts change.
+- **Routes & navigation:** Ward Flow routes live under `src/app/ward-flow/` and must be reachable from real navigation (checked by `tests/ward-dead-end-routes.test.ts` and `npm run sitemap:check`). Regenerate route and script maps with `npm run docs:update` when routes or scripts change.
 - **Pre-commit hook (`.githooks/pre-commit`):** Runs `node scripts/pre-commit-checks.mjs` and `node scripts/check-staged-docs.mjs` against a disposable staged index snapshot. It **never** auto-runs `npm run docs:update` or rewrites working-tree files; if generated docs or indexes drift from staged inputs, the hook fails and prints the exact generator command to run and stage.
 
 **Historical catalogue — preserved on 8 October 2026.** The source below mixes earlier

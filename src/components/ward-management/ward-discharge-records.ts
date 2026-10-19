@@ -1,3 +1,4 @@
+import type { AuditEvent } from "./ward-audit";
 import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
 import { criteriaEligibility, communityDischargeCriteria, type CriteriaEligibility } from "./ward-discharge-criteria";
@@ -11,7 +12,7 @@ export type WardRecordActor =
   | { role: "community"; actingTeamId?: string }
   | { role: "ed" | "officer" | "demo" };
 export type RecordRead<T> = { status: "allowed"; value: T } | { status: "denied" };
-export type DischargeOpenHandle = Readonly<{ generation: number; requestId: number }>;
+export type DischargeOpenHandle = Readonly<{ generation: number; requestId: number; requestNamespace?: string }>;
 export type DischargeIdentity =
   | { kind: "linked"; patient: Pick<Patient, "id" | "givenName" | "familyName" | "umrn"> }
   | { kind: "legacy-anonymous" }
@@ -214,6 +215,29 @@ export function selectDischargeRecords(
   return { status: "allowed", value };
 }
 
+/** New clients namespace local counters; legacy absent namespaces retain their replay identity. */
+export const validDischargeRequestNamespace = (value: unknown): value is string =>
+  typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+/** getRandomValues remains available for local HTTP device previews without randomUUID. */
+export function newDischargeRequestNamespace(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+export function isDischargeOpenReceipt(entry: AuditEvent, handle: DischargeOpenHandle): boolean {
+  return (
+    entry.category === "record-access" &&
+    entry.generation === handle.generation &&
+    entry.details.requestId === handle.requestId &&
+    entry.details.requestNamespace === handle.requestNamespace
+  );
+}
+
 export function readOpenedDischargeRecord(
   state: WardFlowState,
   actor: WardRecordActor,
@@ -224,16 +248,12 @@ export function readOpenedDischargeRecord(
     !handle ||
     !safeCounter(handle.generation) ||
     !safeCounter(handle.requestId) ||
+    (handle.requestNamespace !== undefined && !validDischargeRequestNamespace(handle.requestNamespace)) ||
     handle.generation !== state.worldGeneration ||
     !validRecordActor(actor)
   )
     return { status: "denied" };
-  const receipt = state.auditEvents.find(
-    (entry) =>
-      entry.category === "record-access" &&
-      entry.generation === handle.generation &&
-      entry.details.requestId === handle.requestId,
-  );
+  const receipt = state.auditEvents.find((entry) => isDischargeOpenReceipt(entry, handle));
   if (
     !receipt ||
     receipt.outcome !== "accepted" ||

@@ -17,13 +17,13 @@ import { allUnits, unitById, wardSites } from "@/components/ward-management/ward
  * Task 7 (Phase 7, "The front door"). One journey: a referral is raised at PHONE WIDTH in the
  * referral slide-out (`ward-bar-referral-sheet`, the one place a referral is written since 8 October
  * 2026, when the full-page intake form was retired), appears on the coordinator's board
- * (`/mockups/ward-flow/referrals`), is matched against the whole network, and is accepted — and
+ * (`/ward-flow/referrals`), is matched against the whole network, and is accepted — and
  * the board reflects every one of those steps on the very next render, with **no `page.goto()`
  * anywhere after the first navigation**.
  *
  * The no-reload rule is the whole point, and it is the same one `ui-ward-discharges.spec.ts`
  * states for its own journey: a `goto` is a full page load that re-mounts `WardFlowProvider`
- * (mounted once in `src/app/mockups/ward-flow/layout.tsx`, above every ward route) and resets
+ * (mounted once in `src/app/ward-flow/layout.tsx`, above every ward route) and resets
  * every referral back to the seed fixture. Every assertion below would then pass whether or not
  * the slide-out's `RECEIVE_REFERRAL` ever reached the coordinator's board at all. Because
  * "I did not call `goto`" is a claim about the test rather than about the browser, the journey
@@ -549,7 +549,7 @@ async function openNewReferralFromBoard(page: Page) {
  * WENT WITH IT.** It used to open `ClinicalRail`'s fixed phone bar (`getByRole("button", { name:
  * "Open Ward Flow menu" })`) and click inside the drawer that opened, scoping to the dialog
  * because the CSS-hidden desktop rail carried the same destination. **No `<ClinicalRail>` is
- * mounted anywhere in `src/` any more** — `src/app/mockups/ward-flow/layout.tsx` mounts
+ * mounted anywhere in `src/` any more** — `src/app/ward-flow/layout.tsx` mounts
  * `shell/ward-rail.tsx` once instead — and the third-edition rail has no phone drawer at all:
  * below 1000px it reflows to a wrapping row of the same links, always visible, never behind a
  * menu button (standard §7.7, `ward-rail.module.css`'s own `max-width: 1000px` block). Left
@@ -640,20 +640,20 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
   test.describe.configure({ timeout: 60_000 });
 
   test("the New referral route is the Referrals board with the referral slide-out open over it", async ({ page }) => {
-    await page.goto("/mockups/ward-flow/referrals/new?refer=community", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals/new?refer=community", { waitUntil: "load" });
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("ward-referral-refer-to-community")).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("ward-referral-board-screen")).toBeAttached();
   });
 
   test("the header's New referral link opens the slide-out in place, without leaving the board", async ({ page }) => {
-    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals", { waitUntil: "load" });
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
     await page.getByTestId("ward-bar-primary-action").click();
     await page.getByTestId("ward-bar-primary-menu-ward").click();
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
-    await expect(page).toHaveURL(/\/mockups\/ward-flow\/referrals$/);
+    await expect(page).toHaveURL(/\/ward-flow\/referrals$/);
     await expectNoReloadSince(page, "board -> referral slide-out");
   });
 
@@ -747,7 +747,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // than slept on. Relaxing every locator below to `.first()`/`.last()` would have made the
     // journey pass, and would have left it silently asserting against whichever copy came first —
     // possibly the inert server-rendered one, which no click ever reaches.
-    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await expect(
       page.locator('div[hidden][id^="S:"]'),
@@ -1045,7 +1045,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     const { homeRegion, unit, band } = FAR_PLACEMENT!;
 
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await expect(
       page.locator('div[hidden][id^="S:"]'),
@@ -1387,7 +1387,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
   }) => {
     // Option A (9 Oct 2026): the cards are the phone's queue, so this is measured at phone width.
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals", { waitUntil: "load" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1469,7 +1469,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
   }) => {
     for (const width of [641, 700, 760, 820]) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+      await page.goto("/ward-flow/referrals", { waitUntil: "load" });
       // The same staging-copy wait the two journey tests above already use (see the comment before
       // their own `page.goto` for why `load`/`networkidle` alone are not enough: React 19 defers
       // the swap out of the streamed `<div hidden id="S:...">` staging container past both). This
@@ -1583,7 +1583,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 test.describe("@mockup Referral board — what survives onto paper", () => {
   test("prints every queued referral's identifier, not just the answers given about it", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await page.goto("/ward-flow/referrals", { waitUntil: "load" });
 
     const firstQueued = referralQueueOrder(referrals)[0];
     expect(firstQueued, "no queued referral in the fixture — this test would prove nothing").toBeDefined();

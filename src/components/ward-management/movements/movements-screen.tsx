@@ -842,7 +842,7 @@ export function MovementsScreen() {
                     />
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
-                      href="/mockups/ward-flow/transport/officer"
+                      href="/ward-flow/transport/officer"
                       className={buttonClass({ variant: "onHero", size: "sm" })}
                     >
                       <Truck size={14} aria-hidden="true" />

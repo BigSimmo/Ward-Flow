@@ -51,57 +51,57 @@
   },
   "screens": {
     "Core": {
-      "Home": "/mockups/ward-flow",
-      "Sign in": "/mockups/ward-flow-sign-in",
-      "Settings": "/mockups/ward-flow/settings"
+      "Home": "/ward-flow",
+      "Sign in": "/ward-flow-sign-in",
+      "Settings": "/ward-flow/settings"
     },
     "Patients": {
-      "Patients": "/mockups/ward-flow/search",
-      "Patient": "/mockups/ward-flow/people/WF-009",
-      "Add patient": "/mockups/ward-flow/people/new",
-      "New referral": "/mockups/ward-flow/referrals/new",
-      "Referrals": "/mockups/ward-flow/referrals",
-      "Legal forms": "/mockups/ward-flow/legal-forms"
+      "Patients": "/ward-flow/search",
+      "Patient": "/ward-flow/people/WF-009",
+      "Add patient": "/ward-flow/people/new",
+      "New referral": "/ward-flow/referrals/new",
+      "Referrals": "/ward-flow/referrals",
+      "Legal forms": "/ward-flow/legal-forms"
     },
     "Wards and capacity": {
-      "Wards": "/mockups/ward-flow/wards",
-      "Ward": "/mockups/ward-flow/ward/arm-adult-open",
-      "Ward answer": "/mockups/ward-flow/ward/arm-adult-open/answer",
-      "Ward board": "/mockups/ward-flow/board/arm-adult-open",
-      "Capacity": "/mockups/ward-flow/capacity",
-      "Places": "/mockups/ward-flow/hub",
-      "Network": "/mockups/ward-flow/network",
-      "Emergency": "/mockups/ward-flow/ed",
-      "Emergency department": "/mockups/ward-flow/ed/peel-ed"
+      "Wards": "/ward-flow/wards",
+      "Ward": "/ward-flow/ward/arm-adult-open",
+      "Ward answer": "/ward-flow/ward/arm-adult-open/answer",
+      "Ward board": "/ward-flow/board/arm-adult-open",
+      "Capacity": "/ward-flow/capacity",
+      "Places": "/ward-flow/hub",
+      "Network": "/ward-flow/network",
+      "Emergency": "/ward-flow/ed",
+      "Emergency department": "/ward-flow/ed/peel-ed"
     },
     "Oversight": {
-      "Alerts": "/mockups/ward-flow/alerts",
-      "Delays": "/mockups/ward-flow/delays",
-      "Discharges": "/mockups/ward-flow/discharges",
-      "Governance": "/mockups/ward-flow/governance",
-      "Handover": "/mockups/ward-flow/handover",
-      "On call": "/mockups/ward-flow/on-call",
-      "Movements": "/mockups/ward-flow/movements",
-      "Movement": "/mockups/ward-flow/movements/WF-001"
+      "Alerts": "/ward-flow/alerts",
+      "Delays": "/ward-flow/delays",
+      "Discharges": "/ward-flow/discharges",
+      "Governance": "/ward-flow/governance",
+      "Handover": "/ward-flow/handover",
+      "On call": "/ward-flow/on-call",
+      "Movements": "/ward-flow/movements",
+      "Movement": "/ward-flow/movements/WF-001"
     },
     "Community, transport and stats": {
-      "Community": "/mockups/ward-flow/community",
-      "Community team": "/mockups/ward-flow/community/bentley",
-      "Out of area": "/mockups/ward-flow/out-of-area",
-      "Transport": "/mockups/ward-flow/transport",
-      "Transport officer": "/mockups/ward-flow/transport/officer",
-      "Statistics": "/mockups/ward-flow/statistics",
-      "Statistics overview": "/mockups/ward-flow/statistics/overview",
-      "Statistics service": "/mockups/ward-flow/statistics/service/East%20Metro",
-      "Statistics ward": "/mockups/ward-flow/statistics/ward/arm-adult-open",
-      "Statistics compare": "/mockups/ward-flow/statistics/compare"
+      "Community": "/ward-flow/community",
+      "Community team": "/ward-flow/community/bentley",
+      "Out of area": "/ward-flow/out-of-area",
+      "Transport": "/ward-flow/transport",
+      "Transport officer": "/ward-flow/transport/officer",
+      "Statistics": "/ward-flow/statistics",
+      "Statistics overview": "/ward-flow/statistics/overview",
+      "Statistics service": "/ward-flow/statistics/service/East%20Metro",
+      "Statistics ward": "/ward-flow/statistics/ward/arm-adult-open",
+      "Statistics compare": "/ward-flow/statistics/compare"
     }
   },
   "aliases": {
-    "/mockups/ward-flow/queue": "Delays",
-    "/mockups/ward-flow/command": "Home",
-    "/mockups/ward-flow/constellation": "Network",
-    "/mockups/ward-flow/exceptions": "Delays",
-    "/mockups/ward-flow/escalation": "Delays"
+    "/ward-flow/queue": "Delays",
+    "/ward-flow/command": "Home",
+    "/ward-flow/constellation": "Network",
+    "/ward-flow/exceptions": "Delays",
+    "/ward-flow/escalation": "Delays"
   }
 }

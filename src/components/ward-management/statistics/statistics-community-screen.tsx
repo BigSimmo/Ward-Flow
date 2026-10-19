@@ -60,7 +60,7 @@ import detail from "./statistics-detail.module.css";
 /**
  * ONE COMMUNITY TEAM, IN FIGURES — and deliberately NOT a second copy of its operational page.
  *
- * 🔴 **`/mockups/ward-flow/community/[teamId]` ALREADY SHOWS THIS TEAM'S LISTS.** This page carries
+ * 🔴 **`/ward-flow/community/[teamId]` ALREADY SHOWS THIS TEAM'S LISTS.** This page carries
  * COUNTS and a CROSS-TEAM COMPARISON — the question the operational hub cannot answer, because it
  * only ever shows one team — and links to that hub for the work. The two short lists here (who is
  * due out, and follow-up for those discharged) are read from the same `communityHubLists`, never

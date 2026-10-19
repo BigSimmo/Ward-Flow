@@ -1,5 +1,5 @@
 /**
- * The Master Search Hub (`/mockups/ward-flow/hub`, `HubScreen`) — one place to search every ward,
+ * The Master Search Hub (`/ward-flow/hub`, `HubScreen`) — one place to search every ward,
  * emergency department and community team, with a preview pane. Built against the owner-approved
  * mockup at `scratchpad/fix-hub/fixhub_master_search.html` (its own footer records exactly what in
  * it is real fixture data and what is invented for the prototype).
@@ -46,7 +46,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -746,7 +746,7 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
      *
      * 🔴 AND IT PRINTED IT TWICE. `ward-rail.tsx` mounts `WardReconciliationLine` unconditionally
      * from the layout that wraps every ward route, and that component had the identical defect, so
-     * /mockups/ward-flow/hub carried two agreeing sentences derived from no checks at all.
+     * /ward-flow/hub carried two agreeing sentences derived from no checks at all.
      *
      * WHERE THE OWNER'S WORDING IS STILL PINNED: `tests/ward-hub-reconciliation-line.test.ts`
      * exercises `hubReconciliationLine(0)`, `(1)` and `(2)` directly, so the reconciled branch and
@@ -782,8 +782,8 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
 
 /**
  * 🔴 **THE PLAN'S TASK 2 SAID "TWO LINKS ON EVERY ROW", AND THAT IS WRONG.** Only WARD and ED rows
- * resolve to a statistics page: `/mockups/ward-flow/statistics/ward/[unitId]` resolves against
- * `units.find`, and `/mockups/ward-flow/statistics/ed/[edId]` resolves against `edById` — both real
+ * resolve to a statistics page: `/ward-flow/statistics/ward/[unitId]` resolves against
+ * `units.find`, and `/ward-flow/statistics/ed/[edId]` resolves against `edById` — both real
  * ids this hub's own entries already carry. A COMMUNITY row has no such id. `hubEntries()` builds
  * its community entries from `HOME_REGIONS`/`COMMUNITY_TEAMS`, a region-keyed placeholder
  * vocabulary; `/statistics/community/[teamId]` resolves against `communityTeamById`, built from

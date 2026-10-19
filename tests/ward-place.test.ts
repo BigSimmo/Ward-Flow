@@ -28,7 +28,7 @@ describe("wardPlaceFor", () => {
 
   it("resolves a ward route to that unit's name, sourced from the passed-in live units", () => {
     const unit = allUnits()[0];
-    expect(wardPlaceFor(`/mockups/ward-flow/ward/${unit.id}`, allUnits())).toEqual({
+    expect(wardPlaceFor(`/ward-flow/ward/${unit.id}`, allUnits())).toEqual({
       kind: "ward",
       name: unit.name,
     });
@@ -37,7 +37,7 @@ describe("wardPlaceFor", () => {
   it("resolves an ED route to that department's short name, sourced from ward-sites.ts", () => {
     // Short name since the 12 Oct 2026 site review: the full name clipped in the header.
     const department = allEmergencyDepartments()[0];
-    expect(wardPlaceFor(`/mockups/ward-flow/ed/${department.id}`, allUnits())).toEqual({
+    expect(wardPlaceFor(`/ward-flow/ed/${department.id}`, allUnits())).toEqual({
       kind: "ed",
       name: edShortName(department),
     });
@@ -45,16 +45,16 @@ describe("wardPlaceFor", () => {
 
   it("keeps Ward Answer in its live ward context and rejects an unknown ward", () => {
     const unit = { ...allUnits()[0], name: "Live renamed ward" };
-    expect(wardPlaceFor(`/mockups/ward-flow/ward/${unit.id}/answer`, [unit])).toEqual({
+    expect(wardPlaceFor(`/ward-flow/ward/${unit.id}/answer`, [unit])).toEqual({
       kind: "ward",
       name: unit.name,
     });
-    expect(wardPlaceFor("/mockups/ward-flow/ward/no-such-unit/answer", [unit])).toBeUndefined();
+    expect(wardPlaceFor("/ward-flow/ward/no-such-unit/answer", [unit])).toBeUndefined();
   });
 
   it("resolves a community team route to that team's name, sourced from community-derivations.ts", () => {
     const team = COMMUNITY_TEAM_PAGES[0];
-    expect(wardPlaceFor(`/mockups/ward-flow/community/${team.id}`, allUnits())).toEqual({
+    expect(wardPlaceFor(`/ward-flow/community/${team.id}`, allUnits())).toEqual({
       kind: "team",
       name: team.name,
     });
@@ -63,30 +63,30 @@ describe("wardPlaceFor", () => {
   it("returns undefined for a route that has no place at all", () => {
     // Seven of the ten approved prototypes have no place — a network-wide board and a patient's
     // own screen stand in for that whole class here.
-    expect(wardPlaceFor("/mockups/ward-flow/search", allUnits())).toBeUndefined();
-    expect(wardPlaceFor("/mockups/ward-flow/people/some-patient-id", allUnits())).toBeUndefined();
-    expect(wardPlaceFor("/mockups/ward-flow", allUnits())).toBeUndefined();
+    expect(wardPlaceFor("/ward-flow/search", allUnits())).toBeUndefined();
+    expect(wardPlaceFor("/ward-flow/people/some-patient-id", allUnits())).toBeUndefined();
+    expect(wardPlaceFor("/ward-flow", allUnits())).toBeUndefined();
   });
 
   it("returns undefined for an unresolvable ward id, never substituting a different ward", () => {
     // The same conservative-failure shape `person-screen.tsx` uses for an unknown patient: a
     // route naming an id nothing holds gets no place, not the first unit in the list.
-    const place = wardPlaceFor("/mockups/ward-flow/ward/no-such-unit-id", allUnits());
+    const place = wardPlaceFor("/ward-flow/ward/no-such-unit-id", allUnits());
     expect(place).toBeUndefined();
   });
 
   it("returns undefined for an unresolvable ED id, never substituting a different department", () => {
-    const place = wardPlaceFor("/mockups/ward-flow/ed/no-such-ed-id", allUnits());
+    const place = wardPlaceFor("/ward-flow/ed/no-such-ed-id", allUnits());
     expect(place).toBeUndefined();
   });
 
   it("returns undefined for an unresolvable community team id, never substituting a different team", () => {
-    const place = wardPlaceFor("/mockups/ward-flow/community/no-such-team-id", allUnits());
+    const place = wardPlaceFor("/ward-flow/community/no-such-team-id", allUnits());
     expect(place).toBeUndefined();
   });
 
   it("returns undefined for the community index route, which lists every team rather than naming one", () => {
-    expect(wardPlaceFor("/mockups/ward-flow/community", allUnits())).toBeUndefined();
+    expect(wardPlaceFor("/ward-flow/community", allUnits())).toBeUndefined();
   });
 
   it("resolves a ward route from the PASSED-IN units, not the static ward-sites.ts fixture", () => {
@@ -98,7 +98,7 @@ describe("wardPlaceFor", () => {
     // indistinguishable from one actually read.
     const fixtureUnit = allUnits()[0];
     const renamedUnit: Unit = { ...fixtureUnit, name: "Renamed For Test — Not The Fixture Name" };
-    const place = wardPlaceFor(`/mockups/ward-flow/ward/${fixtureUnit.id}`, [renamedUnit]);
+    const place = wardPlaceFor(`/ward-flow/ward/${fixtureUnit.id}`, [renamedUnit]);
     expect(place).toEqual({ kind: "ward", name: "Renamed For Test — Not The Fixture Name" });
     expect(place?.name).not.toBe(fixtureUnit.name);
   });

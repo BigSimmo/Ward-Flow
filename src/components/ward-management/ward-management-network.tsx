@@ -572,7 +572,7 @@ export function WardNetworkWorkspace() {
         hidden={view !== "overview"}
         data-testid="ward-network-overview"
       >
-        {isPhone ? <ReadyAgainstWaitingPhone groups={groups} wardsHref="/mockups/ward-flow/wards" /> : null}
+        {isPhone ? <ReadyAgainstWaitingPhone groups={groups} wardsHref="/ward-flow/wards" /> : null}
         <PressureStrip
           now={now}
           movements={movements}

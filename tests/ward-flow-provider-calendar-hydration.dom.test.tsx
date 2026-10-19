@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
-import WardFlowMockupLayout from "@/app/mockups/ward-flow/layout";
+import WardFlowMockupLayout from "@/app/ward-flow/layout";
 import { formatSheetMoment, demoDayZero } from "@/components/ward-management/ward-clock";
 import {
   WARD_FLOW_DEMO_STORAGE_KEY,

@@ -850,7 +850,7 @@ describe("never-launched versus failed", () => {
 describe("Ward Flow / origin:main push guard", () => {
   it("correctly classifies Ward Flow files vs clinical KB files", () => {
     expect(isWardFlowFile("src/components/ward-management/search/patient-search.tsx")).toBe(true);
-    expect(isWardFlowFile("src/app/mockups/ward-flow/page.tsx")).toBe(true);
+    expect(isWardFlowFile("src/app/ward-flow/page.tsx")).toBe(true);
     expect(isWardFlowFile("docs/ward-flow/README.md")).toBe(true);
     expect(isWardFlowFile("scripts/ward-flow/screen-map.mjs")).toBe(true);
     expect(isWardFlowFile("scripts/run-ward-tests.mjs")).toBe(true);

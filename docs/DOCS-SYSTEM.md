@@ -2,7 +2,7 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-15 - generated facts, retired terms and the 8-gate documentation verification pipeline; Documentation owns._
+_Updated 2026-10-19 - distinguish staged generator checks, scoped CI and advisory freshness; Documentation owns._
 
 ## Principles
 
@@ -34,7 +34,8 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 
 ## Generated documentation & manifests
 
-Never hand-edit generated files. Run `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`) to regenerate all derived Ward Flow and repository indexes, recompute `pack_manifest.json` digests, and run every documentation and organisation gate in one pass (`npm run docs:maintain:check` runs the read-only verification pass, and `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>` classifies any existing or proposed file path against `docs/ward-flow/organisation/registry.json`):
+Never hand-edit generated files. In `scripts-index.md`, only the headline counts are generated;
+the descriptions and command map are curated and editable. Run `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`) to regenerate all derived Ward Flow and repository indexes, recompute `pack_manifest.json` digests, and run every documentation and organisation gate in one pass (`npm run docs:maintain:check` runs the read-only verification pass, and `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>` classifies any existing or proposed file path against `docs/ward-flow/organisation/registry.json`):
 
 | Generated file                                                                                          | Write / refresh command                                                                                  | Check command                                            |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
@@ -54,7 +55,7 @@ Never hand-edit generated files. Run `npm run docs:maintain` (`node scripts/ward
 3. **Architecture & codebase index (`npm run docs:check-index`):** executes `node scripts/check-codebase-index-coverage.mjs` to verify `docs/codebase-index.md` matches current `src/` directories.
 4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to verify `docs/scripts-index.md` matches `scripts/` and `package.json`.
 5. **Ward Flow relative doc links, including history:** run `node scripts/ward-flow/check-doc-links.mjs` directly (no `--file`) to check `docs/ward-flow/` with archived sections. `npm run docs:check-links` excludes marked history sections.
-6. **Staged / stale generator drift (`node scripts/check-stale-docs.mjs` & `node scripts/check-staged-docs.mjs`):** verifies in `.githooks/pre-commit` and CI that generated Ward Flow indexes and manifests match their inputs without mutating the working tree.
+6. **Staged generator checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot, selecting generators from staged paths without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; the general site-map, inventory and codebase-index checks are advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. CI directly checks the reference pack and scope-selected owner-rulings, rules and organisation outputs; it does not run every generator check. Separately, `node scripts/check-stale-docs.mjs` reports documents that are both old and unreferenced. That report is advisory and does not detect generated-file drift.
 7. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
 8. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
 

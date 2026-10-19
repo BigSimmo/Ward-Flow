@@ -69,7 +69,7 @@ describe("openWardReferralFor", () => {
 
 describe("A2-5: a referred row links to its referral and counts as No bed yet", () => {
   it("links to the Referrals board with that referral open", () => {
-    expect(referralBoardHref("RF-X")).toBe(`/mockups/ward-flow/referrals?referral=${encodeRecordAddress("RF-X")}`);
+    expect(referralBoardHref("RF-X")).toBe(`/ward-flow/referrals?referral=${encodeRecordAddress("RF-X")}`);
     expect(referralBoardHref("RF-X")).not.toContain("RF-X");
   });
 

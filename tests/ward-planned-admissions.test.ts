@@ -930,7 +930,7 @@ describe("review follow-up: callers beyond Alerts count the overdue booking", ()
     });
     const planned = search.tasks.find((result) => result.task.id === "planned-arrival-PA-SEED-03")!;
     // A planned row opens Capacity, never a movement page.
-    expect(planned.href).toBe("/mockups/ward-flow/capacity");
+    expect(planned.href).toBe("/ward-flow/capacity");
   });
 });
 

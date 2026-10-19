@@ -1,3 +1,4 @@
+import { reducePatientRegistration } from "./ward-patient-registration-reducer";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -41,6 +42,8 @@ import {
   dischargeIdentity,
   dischargeMovement,
   readOpenedDischargeRecord,
+  isDischargeOpenReceipt,
+  validDischargeRequestNamespace,
   safeCounter,
   selectDischargeRecord,
   uniqueRecord,
@@ -119,6 +122,7 @@ import {
   defaultWardConfiguration,
   describeInvalidConfiguration,
   validateConfiguration,
+  mergeConfiguration,
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
 import {
@@ -145,7 +149,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { activeCommunityTreatmentOrder, GENDERS } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
@@ -1596,17 +1600,23 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   ) as WardRecordActor;
   if (!validRecordActor(actor)) return deny("scope");
   if (event.type === "OPEN_DISCHARGE_RECORD") {
-    if (!safeCounter(event.requestId)) return deny("invalid-payload");
-    const previous = state.auditEvents.find(
-      (entry) =>
-        entry.category === "record-access" &&
-        entry.generation === state.worldGeneration &&
-        entry.details.requestId === event.requestId,
+    if (
+      !safeCounter(event.requestId) ||
+      (event.requestNamespace !== undefined && !validDischargeRequestNamespace(event.requestNamespace))
+    )
+      return deny("invalid-payload");
+    const previous = state.auditEvents.find((entry) =>
+      isDischargeOpenReceipt(entry, {
+        generation: state.worldGeneration,
+        requestId: event.requestId,
+        requestNamespace: event.requestNamespace,
+      }),
     );
     if (previous) {
       const read = readOpenedDischargeRecord(state, actor, event.admissionId, {
         generation: event.expectedGeneration,
         requestId: event.requestId,
+        ...(event.requestNamespace === undefined ? {} : { requestNamespace: event.requestNamespace }),
       });
       return read.status === "allowed" ? state : deny("missing-or-inaccessible");
     }
@@ -2257,43 +2267,8 @@ export function reduceClinicalEvent(
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.
-    case "ADD_PATIENT": {
-      // Adding a patient links to nothing (no movement, referral, unit or admission): somebody
-      // searched, nobody came up, and this is the person who did not exist yet.
-      //
-      // `event.gender` is optional; membership-checked rather than trusted from the type.
-      if (event.gender !== undefined && !GENDERS.includes(event.gender)) {
-        return reject(state, event, "ADD_PATIENT gender must be chosen from GENDERS");
-      }
-      // Defensive uniqueness check: Reject duplicate UMRNs to prevent split clinical records
-      const existingPatient = state.patients.find(
-        (p) => p.umrn.trim().toLowerCase() === event.umrn.trim().toLowerCase(),
-      );
-      if (existingPatient) {
-        return reject(
-          state,
-          event,
-          `ADD_PATIENT UMRN collision: ${event.umrn.trim()} already belongs to patient ${existingPatient.id}`,
-        );
-      }
-      // Optional suburb: blank/whitespace means "not yet recorded" (key absent), never store "".
-      const suburb =
-        typeof event.suburb === "string" && event.suburb.trim().length > 0 ? event.suburb.trim() : undefined;
-      const patient: Patient = {
-        id: `PT-A${String(state.patientSequence + 1).padStart(2, "0")}`,
-        umrn: event.umrn,
-        givenName: event.givenName,
-        familyName: event.familyName,
-        dateOfBirth: event.dateOfBirth,
-        // Spread in only when supplied: "not yet recorded" is the key absent, never
-        // present-and-`undefined`.
-        ...(event.gender === undefined ? {} : { gender: event.gender }),
-        ...(suburb === undefined ? {} : { suburb }),
-        // v10 pass 2: when the record was added, so Add patient can count "Added today".
-        addedAt: event.now,
-      };
-      return { ...state, patients: [...state.patients, patient], patientSequence: state.patientSequence + 1 };
-    }
+    case "ADD_PATIENT":
+      return reducePatientRegistration(state, event, reject);
 
     case "RESET_SCENARIO":
       return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR);
@@ -2325,9 +2300,23 @@ export function reduceClinicalEvent(
         decision.reasonCode = "invalid-payload";
         return reject(state, event, describeInvalidConfiguration(event.payload));
       }
+      const merge =
+        event.baseConfiguration === undefined
+          ? { status: "merged" as const, configuration: requested }
+          : mergeConfiguration(state.configuration, requested, event.baseConfiguration);
+      if (merge.status !== "merged") {
+        decision.reasonCode = merge.status === "conflict" ? "revision" : "invalid-payload";
+        return reject(
+          state,
+          event,
+          merge.status === "conflict"
+            ? `Configuration changed while this draft was open: ${merge.fields.join(", ")}. Review the latest settings.`
+            : "Configuration draft or its baseline is invalid; review the latest settings.",
+        );
+      }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return { ...state, configuration: requested };
+      return { ...state, configuration: merge.configuration };
     }
     case "RAISE_REFERRAL":
     case "CORRECT_LEGAL_FORM_RECEIPT":

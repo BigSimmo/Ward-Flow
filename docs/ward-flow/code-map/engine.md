@@ -1,5 +1,46 @@
 # Engine: reducer, events, state and persistence
 
+## Bed and shared-save integrity — 19 October 2026
+
+`ward-bed-designation.ts` supplies the numbered bed's kind to bed moves and numbered
+reservation pulls. `ward-movement-bed-hold.ts` resolves the same movement/referral numbered
+reservation for pull and arrival. Moves update the stay's kind and free-kind count together; mixed-ward
+stays without a recorded prior kind or number are refused rather than assigned invented
+history. `ward-undo.ts` carries an optional compatible bed-move snapshot, validated by
+`ward-flow-storage-validation.ts`; Undo checks capacity revision and current facts before
+restoring the earlier kind and count. Generic step Undo checks numbered occupancy and
+reservations before restoring a departed stay.
+
+`backend/ward-flow/records.mjs` uses stable internal subject keys for bounded Undo history,
+so evicting an old receipt does not create conflicts between unrelated commands. Existing
+numeric keys are recognised without changing their content revisions; index markers and
+ordinal ordering remain readable by older readers and rollback SQL. Regression coverage:
+`tests/ward-bed-move-integrity.test.ts`, `tests/ward-departure-undo-integrity.test.ts` and
+`backend/ward-flow/records.test.mjs`. These local contracts do not establish hosted save
+or database readiness.
+
+## Journey integrity — 18 October 2026
+
+`RECEIVE_REFERRAL` carries an optional opaque `submissionId` through shared validation and the
+reducer into its referral record. Drawer completion uses that identity and the explicit command
+outcome, rather than intake object identity. Definitive acceptance retires the owned recovery
+draft even when the resulting record is outside the returned scope.
+
+`ward-patient-registration.ts` validates a bounded source-place association for an unlinked
+registered patient. The shared write boundary checks that place against the authenticated desk;
+normal encounter/handoff scope replaces the bridge once the patient is linked. Executive,
+administrative and transport roles gain no patient identity through this bridge.
+`ward-patient-registration-reducer.ts` holds the registration mutation separately so scope and
+matching types do not depend on the reducer or bed-release model.
+
+`SET_CONFIGURATION.baseConfiguration` enables a three-way atomic merge: untouched fields retain
+newer values, conflicting changed fields refuse the operation, and the composed configuration
+must still validate. Legacy commands retain their existing contract. Discharge opens add an
+opaque `requestNamespace` to numeric request IDs and audit receipts, retaining legacy replay,
+actor, admission and world-generation safeguards. Local HTTP previews can allocate namespaces
+without `crypto.randomUUID`. Shared schemas, storage validation and focused journey/domain tests
+cover these additive fields. No database migration or live provider verification is implied.
+
 ## Synthetic form recovery — 17 October 2026
 
 `ward-session-drafts.ts` owns D-67's opt-in, versioned session draft envelopes, account and
@@ -42,7 +83,8 @@ through `ward-shared-client.ts` (polling, pending commands, conflict and retry s
 adopts committed server snapshots without reading/writing demo browser storage; only local view
 drafts remain browser-owned. `ward-shared-state-validation.ts` adds an explicit shared repatriation
 schema without changing the browser persistence fence. Existing reducer workflow roles describe
-the action's operational perspective; the authenticated shared role is coordinator.
+the action's operational perspective; the authenticated shared role and place scope bound which
+records and operations the account may access.
 
 `backend/ward-flow/engine.ts` bundles the domain engine for the shared backend. `postgres.mjs`
 executes versioned shared commands, receipts and audit in one transaction. From migration 10,
