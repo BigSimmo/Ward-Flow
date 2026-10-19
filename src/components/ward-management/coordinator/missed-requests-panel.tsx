@@ -8,6 +8,7 @@ import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -23,6 +24,7 @@ import styles from "./missed-requests-panel.module.css";
  */
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
+  const enabled = useWardFeatureFlag("missed-requests-check");
   const { movements, referrals, patients } = useWardFlowSelect("movements", "referrals", "patients");
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
@@ -34,7 +36,7 @@ export function MissedRequestsPanel() {
     [movements, referrals, patients, now],
   );
 
-  if (access.role !== "coordinator") return null;
+  if (!enabled || access.role !== "coordinator") return null;
 
   const who = (subject: Parameters<typeof patientOf>[0]) => {
     const person = patientOf(subject);

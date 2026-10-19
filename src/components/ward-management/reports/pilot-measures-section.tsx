@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from "react";
 import { BedDouble, ClipboardCheck, Clock, Route, Truck, UserX } from "lucide-react";
 
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -103,10 +104,12 @@ export function PilotMeasuresSection({
   isPhone: boolean;
 }) {
   const small = useSmallNumber();
+  const enabled = useWardFeatureFlag("pilot-measures");
   const measures = useMemo(
     () => pilotMeasures({ movements, referrals, patients, now }, week),
     [movements, referrals, patients, now, week],
   );
+  if (!enabled) return null;
   const held = durationFigures(measures.requestToBedHeld, "beds held");
   const travel = durationFigures(measures.transport.collectedToArrived, "arrivals by transport");
   const { requests, holds, transport, completeness } = measures;

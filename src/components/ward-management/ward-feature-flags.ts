@@ -101,6 +101,24 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: false, production: false },
     removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
+  "pilot-measures": {
+    label: "Pilot measures",
+    description:
+      "The weekly report adds the pilot's agreed measures: request to bed held, missed and doubled requests, held beds, transport and complete records.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
+  },
+  "missed-requests-check": {
+    label: "Daily missed request check",
+    description:
+      "Delays shows coordinators a daily check of bed requests with no ward asked, accepted ED referrals with no bed request, the same person twice and one bed held twice.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the two-hour window and the four rules with the pilot sponsor.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;
