@@ -84,6 +84,9 @@ describe("phone script budget", () => {
     { "/a": Infinity },
     { "//elsewhere/a": 5 },
     { "/a?changed=1": 5 },
+    { "": 5 },
+    { "/\\example.test/a": 5 },
+    { "/ward-flow/movements/../../ward-flow": 5 },
   ])("rejects invalid budgets: %j", (budgets) => {
     expect(() => validateBudgets(budgets)).toThrow();
   });
@@ -100,6 +103,10 @@ describe("phone script budget", () => {
     { "/a": 1, "/extra": 1 },
   ])("rejects incomplete or invalid measurements: %j", (measured) => {
     expect(() => overBudget(measured, { "/a": 5 })).toThrow();
+  });
+
+  it("accepts a measurement exactly at its budget", () => {
+    expect(overBudget({ "/a": 5 }, { "/a": 5 })).toEqual([]);
   });
 
   it("counts the queried script once and retains fractional KB when comparing budgets", async () => {

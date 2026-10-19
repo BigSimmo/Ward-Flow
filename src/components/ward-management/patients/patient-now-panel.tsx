@@ -267,7 +267,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                 label="Journey since this movement opened"
                 stages={patientJourneyStages(liveMovement, now)}
                 formatDuration={dur}
-                note={false}
+                // The note names the stages too short to label on the bar ("Short stages: In ED 18m").
               />
             </section>
           ) : null}

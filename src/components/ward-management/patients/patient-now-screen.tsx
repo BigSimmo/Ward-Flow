@@ -312,6 +312,12 @@ export function PatientNowScreen({
     setExpandedStageIndex(null);
     setFocusedStageIndex(currentStageIndex);
   }
+  // The open stage card belongs to the tab it was opened on; another tab starts with it closed.
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
+    setExpandedStageIndex(null);
+  }
 
   // If the ID is completely unknown to the system, render the governed missing state
   if (!resolved) {
@@ -561,7 +567,8 @@ export function PatientNowScreen({
     mode === "find" || mode === "held"
       ? originName
       : mode === "transit"
-        ? `On the way to ${acceptingUnit?.name ?? "the receiving ward"}`
+        ? // Handover ready is still in the ED, awaiting collection: only Moving is on the way.
+          `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
         : mode === "leave"
           ? `On leave from ${stayUnit?.name ?? "the ward"}`
           : mode === "awol"
