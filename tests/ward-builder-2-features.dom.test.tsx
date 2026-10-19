@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/people/WF-009",
+  usePathname: () => "/ward-flow/people/WF-009",
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

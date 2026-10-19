@@ -67,7 +67,7 @@ describe("the ward screen's handover link", () => {
         `${unit.name}'s handover link carries scope ${JSON.stringify(scope)}, not its own ward — a ` +
           "coordinator would print another ward's sheet",
       ).toBe(expected);
-      expect(href, "the link does not point at the one handover page").toContain("/mockups/ward-flow/handover");
+      expect(href, "the link does not point at the one handover page").toContain("/ward-flow/handover");
 
       // 🔴 And it must round-trip back to THIS ward, not merely look right as a string.
       expect(parseHandoverScope(scope ?? "")).toEqual({ kind: "ward", id: unit.id });

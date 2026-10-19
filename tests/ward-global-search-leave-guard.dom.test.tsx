@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -48,11 +48,11 @@ function openCommands() {
 }
 
 const COMMANDS = [
-  ["ward-global-search-cmd-desk-coordinator", "/mockups/ward-flow"],
-  ["ward-global-search-cmd-desk-ward", "/mockups/ward-flow/wards"],
-  ["ward-global-search-cmd-desk-ed", "/mockups/ward-flow/ed"],
-  ["ward-global-search-cmd-desk-officer", "/mockups/ward-flow/transport/officer"],
-  ["ward-global-search-cmd-handover", "/mockups/ward-flow/handover"],
+  ["ward-global-search-cmd-desk-coordinator", "/ward-flow"],
+  ["ward-global-search-cmd-desk-ward", "/ward-flow/wards"],
+  ["ward-global-search-cmd-desk-ed", "/ward-flow/ed"],
+  ["ward-global-search-cmd-desk-officer", "/ward-flow/transport/officer"],
+  ["ward-global-search-cmd-handover", "/ward-flow/handover"],
 ] as const;
 
 describe("global search quick commands respect the unsaved-changes guard", () => {

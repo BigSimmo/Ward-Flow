@@ -37,7 +37,7 @@ import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
-const REFERRAL_BEDS_HREF = "/mockups/ward-flow/hub";
+const REFERRAL_BEDS_HREF = "/ward-flow/hub";
 
 /** D4: the exact words for a control that is shown for review but not connected. */
 export const NOT_WIRED = "Not wired in this prototype.";

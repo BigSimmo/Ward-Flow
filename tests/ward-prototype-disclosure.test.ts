@@ -7,9 +7,9 @@ import ts from "typescript";
 /**
  * 🔴 **EVERY WARD SCREEN MUST SAY ITS DATA IS INVENTED, AND THREE OF THEM DID NOT.**
  *
- * Found 2026-09-06 by walking the running app rather than by reading code. `/mockups/ward-flow/capacity`
+ * Found 2026-09-06 by walking the running app rather than by reading code. `/ward-flow/capacity`
  * showed 303 beds, 43 waiting patients and twenty-three named Perth hospitals with **nothing on the
- * page saying any of it is fictional**; `/mockups/ward-flow/movements` showed fifty patient journeys
+ * page saying any of it is fictional**; `/ward-flow/movements` showed fifty patient journeys
  * with the same silence. Twenty-four other ward screens carried the badge.
  *
  * ⚠️ **THE CAUSE IS THAT IT IS OPT-IN PER SCREEN.** There is no shared component and no layout
@@ -48,7 +48,7 @@ import ts from "typescript";
  * CI — a local `vitest run --dir tests` is the ONLY thing that ever executes this guard.**
  */
 
-const ROUTES_DIR = "src/app/mockups/ward-flow";
+const ROUTES_DIR = "src/app/ward-flow";
 const COMPONENTS_DIR = "src/components/ward-management";
 
 /** Mirrors `componentRenderedBy` in `ward-route-component-binding.test.ts` — the same question, so

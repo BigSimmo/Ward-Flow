@@ -25,7 +25,7 @@ const REPO_ROOT = path.resolve(__dirname, "..");
 const SCREEN_FILES = [
   "src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
   "src/components/ward-flow-sign-in/ward-flow-sign-in-data.ts",
-  "src/app/mockups/ward-flow-sign-in/page.tsx",
+  "src/app/ward-flow-sign-in/page.tsx",
 ].map((relative) => path.join(REPO_ROOT, relative));
 
 /** Strips `/* block *\/` and `// line` comments so a credential term can be discussed in prose

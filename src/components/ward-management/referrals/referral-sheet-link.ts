@@ -5,14 +5,14 @@ import { recordIdFromParam } from "@/components/ward-management/shell/ward-recor
 
 /**
  * The referral slide-out is the one place a referral is written (Josh, 8 Oct 2026, option B). The
- * full-page form at `/mockups/ward-flow/referrals/new` is retired: that route now shows the
+ * full-page form at `/ward-flow/referrals/new` is retired: that route now shows the
  * Referrals board with the slide-out open, and any link to it opens the slide-out in place.
  *
  * This module turns such a link into what the slide-out opens with. It reads the same query
  * `raiseReferralHref` (`shell/ward-facade.ts`) writes, and nothing else. `teamId` is read only as
  * a key into the community team pages, and only the team's NAME reaches the slide-out.
  */
-export const REFERRAL_SHEET_PATH = "/mockups/ward-flow/referrals/new";
+export const REFERRAL_SHEET_PATH = "/ward-flow/referrals/new";
 
 /** Where the referral goes. The slide-out's first choice. */
 type ReferralSheetDestination = "ward" | "community" | "ed";

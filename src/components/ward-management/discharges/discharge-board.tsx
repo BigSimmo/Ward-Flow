@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import {
   ChevronDown,
   ChevronRight,
@@ -47,7 +48,6 @@ import {
   GROUP_DESCRIPTIONS,
   unitLabel,
   healthServiceLabel,
-  RECORD_ACTOR,
   WORK_STATUS_LABELS,
   WORK_ORDER,
   kpiCardLabel,
@@ -91,9 +91,11 @@ export { DischargeGroupSection } from "./discharge-board-parts";
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
 export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: string } = {}) {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
-  // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
-  // This board has one fixed coordinator actor; it does not offer a role switch.
-  return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} initialAdmissionId={initialAdmissionId} />;
+  const actors = useWardRecordActors();
+  // Clear receipts synchronously when generation, role or place changes.
+  return (
+    <DischargeWorkspace key={`${worldGeneration}:${JSON.stringify(actors)}`} initialAdmissionId={initialAdmissionId} />
+  );
 }
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
@@ -839,7 +841,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               </header>
               <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
                 {activeRecord ? (
-                  <DischargeRecordDetail s={s} activeRecord={activeRecord} />
+                  <DischargeRecordDetail key={activeRecord.id} s={s} activeRecord={activeRecord} />
                 ) : detailRelease ? (
                   <DischargeReleaseDetail s={s} detailRelease={detailRelease} />
                 ) : selected || openError ? (
@@ -873,7 +875,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     </label>
                   ) : null}
                   <Link
-                    href={`/mockups/ward-flow/ward/${selectedUnitId}`}
+                    href={`/ward-flow/ward/${selectedUnitId}`}
                     className={buttonClass({ size: "sm", variant: "sec" })}
                   >
                     Open ward
@@ -892,7 +894,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         offerDeparture(
                           {
                             success: `Recorded: ${who} has left the ward.`,
-                            undo: (at) => ({ type: "UNDO_DEPARTURE", role: "coordinator", now: at, admissionId }),
+                            undo: (at) => ({
+                              type: "UNDO_DEPARTURE",
+                              role: s.releaseActor.role,
+                              now: at,
+                              admissionId,
+                              ...(s.releaseActor.role === "ward" ? { actingUnitId: s.releaseActor.actingUnitId } : {}),
+                            }),
                             undone: `Undone. ${who} is back in their bed.`,
                           },
                           { completion },
@@ -910,7 +918,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       onClick={() =>
                         dispatch({
                           type: "CLEAR_BED_RELEASE_BLOCK",
-                          role: "coordinator",
+                          role: s.releaseActor.role,
                           now,
                           releaseId: detailRelease.id,
                           actingUnitId: detailRelease.unitId,

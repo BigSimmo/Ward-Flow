@@ -244,7 +244,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             {row.placementReview.map((movement) => (
                               <li key={movement.id} className={styles.ward}>
                                 <Link
-                                  href="/mockups/ward-flow"
+                                  href="/ward-flow"
                                   data-testid={`step-down-placement-review-${movement.id}`}
                                   onClick={() => {
                                     setFocusMovementId(movement.id);

@@ -6,7 +6,7 @@ import { StatisticsSampleFigures } from "@/components/ward-management/statistics
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { setStatisticsSamples } from "@/components/ward-management/statistics/statistics-samples";
 
-const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/statistics/ward/rph-adult-secure" }));
+const route = vi.hoisted(() => ({ pathname: "/ward-flow/statistics/ward/rph-adult-secure" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname, useRouter: () => ({ push: vi.fn() }) }));
 
 function Workspace() {
@@ -21,7 +21,7 @@ function Workspace() {
 
 beforeEach(() => {
   setStatisticsSamples(false);
-  route.pathname = "/mockups/ward-flow/statistics/ward/rph-adult-secure";
+  route.pathname = "/ward-flow/statistics/ward/rph-adult-secure";
 });
 afterEach(() => {
   cleanup();
@@ -61,7 +61,7 @@ describe("optional sample statistics", () => {
     const view = render(<Workspace />);
     fireEvent.click(screen.getByRole("switch", { name: "Samples" }));
     view.unmount();
-    route.pathname = "/mockups/ward-flow/statistics/ed/rph-ed";
+    route.pathname = "/ward-flow/statistics/ed/rph-ed";
     render(<Workspace />);
     expect(screen.getByRole("switch", { name: "Samples" })).toHaveAttribute("aria-checked", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
@@ -71,7 +71,7 @@ describe("optional sample statistics", () => {
   });
 
   it("does not fabricate a sample profile for an unknown ward", () => {
-    route.pathname = "/mockups/ward-flow/statistics/ward/not-a-ward";
+    route.pathname = "/ward-flow/statistics/ward/not-a-ward";
     setStatisticsSamples(true);
     render(<Workspace />);
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();

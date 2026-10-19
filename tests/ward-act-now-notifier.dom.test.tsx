@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const navigation = vi.hoisted(() => ({ pathname: "/mockups/ward-flow", push: vi.fn() }));
+const navigation = vi.hoisted(() => ({ pathname: "/ward-flow", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.pathname,
   useRouter: () => ({ push: navigation.push }),
@@ -79,14 +79,14 @@ afterEach(() => {
 
 describe("act-now notifier", () => {
   it("notifies the coordinator's route of a new act-now alert, once, with no patient name", async () => {
-    await renderAt("/mockups/ward-flow");
+    await renderAt("/ward-flow");
     expect(shown).toHaveLength(1);
     expect(shown[0]).toMatch(/^Ward Flow: act now: .*Synthetic demo data\.$/);
   });
 
   // Device audit (11 Oct 2026): Tasks is the signed-in person's list on every page
   // (`WARD_SHELL_ROLE`), so a ward or community page no longer silences the coordinator's alerts.
-  it.each(["/mockups/ward-flow/ward/rph-adult-secure", "/mockups/ward-flow/community"])(
+  it.each(["/ward-flow/ward/rph-adult-secure", "/ward-flow/community"])(
     "notifies on %s too, because the signed-in coordinator's Tasks follow them there",
     async (pathname) => {
       await renderAt(pathname);

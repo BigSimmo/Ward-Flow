@@ -1,8 +1,8 @@
 // Shared between `src/proxy.ts` and the Server Component it signals to
 // (`src/app/mockups/layout.tsx`). The former `DeveloperAreaGate` sign-in gate was
-// removed with the developer key on 28 September 2026 (owner decision): the
-// "gated" prefixes below are now publicly exempt from the production mockup
-// block, not guarded by a sign-in. Pure string constants only
+// removed with the developer key on 28 September 2026 (owner decision): any
+// "gated" prefix below is publicly exempt from the production mockup block, not
+// guarded by a sign-in, and since Ward Flow left /mockups the list is empty. Pure string constants only
 // — no side effects, no stateful singletons — so this is safe to import from a
 // Proxy file per its "no shared modules/globals" guidance.
 //
@@ -28,31 +28,27 @@ export const WARD_FLOW_OFFLINE_HEADER = "x-ward-flow-offline";
 
 /** Ward Flow remains inside the repository for shared Next.js/design tooling,
  * but it is a standalone synthetic prototype rather than a Clinical KB surface. */
-export const WARD_FLOW_PATH_PREFIX = "/mockups/ward-flow";
+export const WARD_FLOW_PATH_PREFIX = "/ward-flow";
 
 export function isWardFlowPath(pathname: string): boolean {
   return pathname === WARD_FLOW_PATH_PREFIX || pathname.startsWith(`${WARD_FLOW_PATH_PREFIX}/`);
 }
 
-/** Exact prefixes only. A path that merely begins with the same characters —
- *  `/mockups/care-plan-archive`, say — is not a match and stays behind the
- *  blanket production block, because `isDeveloperGatedPath` requires either an
- *  exact hit or a following `/`. Add a prefix here one subtree at a time; never
- *  widen this to `/mockups`.
+/** Subtrees under `/mockups` that stay public in production, as exact prefixes. Empty since
+ *  19 October 2026: Ward Flow and its sign-in screen moved out of `/mockups` to `/ward-flow` and
+ *  `/ward-flow-sign-in` (rollout readiness review item 3.2), so production no longer depends on
+ *  this list, and every `/mockups/**` path is blocked there. The old addresses redirect in
+ *  `src/proxy.ts`.
  *
- *  ⚠️ `/mockups/ward-flow-sign-in` is listed SEPARATELY for exactly that reason: it is a sibling
- *  of the ward-flow subtree, not a child, so the `/mockups/ward-flow` entry does not cover it —
- *  the next character is a hyphen, not a slash. It cannot simply move under `/mockups/ward-flow/`
- *  either, because that segment's layout mounts the rail, bar and provider around every nested
- *  route with no per-route opt-out, and a sign-in screen is specified to have none of them. Any
- *  future `/mockups/ward-flow-*` sibling needs its own line here; a new directory INSIDE
- *  `/mockups/ward-flow/` does not.
+ *  If a subtree ever has to be added back, match exact-or-slash only (`isDeveloperGatedPath`),
+ *  so a look-alike such as `/mockups/care-plan-archive` stays blocked, and never widen it to
+ *  `/mockups`.
  *
  *  🔴 Keep this note ABOVE the array and never inside it. `readDeveloperGatedPrefixes` in
  *  `scripts/check-mockup-retirement.mjs` extracts every quoted or backticked span between the
  *  brackets, so a comment placed among the entries turns each of its code spans into a phantom
  *  prefix — measured 2026-09-12, when doing so reddened two retirement gates at once. */
-export const DEVELOPER_GATED_PATH_PREFIXES = ["/mockups/ward-flow", "/mockups/ward-flow-sign-in"] as const;
+export const DEVELOPER_GATED_PATH_PREFIXES = [] as readonly string[];
 
 /**
  * Whether a pathname is inside one of the gated subtrees. Exact-or-slash, so a

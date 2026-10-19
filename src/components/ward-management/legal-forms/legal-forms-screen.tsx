@@ -135,6 +135,13 @@ const GAP_ACTION: Record<RecordGap, string> = {
   examination: "Record exam",
 };
 
+// A form save whose confirmation never arrived: the sheet keeps its draft and says why.
+const UNCONFIRMED_SAVE = {
+  commandId: "",
+  status: "failed",
+  message: "Save is not confirmed. Review the board before trying again.",
+} as const;
+
 function sameHighlight(a: Highlight, b: Highlight): boolean {
   if (a === null || b === null) return a === b;
   if (a.kind !== b.kind) return false;
@@ -1070,11 +1077,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", {
-              movementId,
-              formCode,
-              writtenAt,
-            });
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", { movementId, formCode, writtenAt });
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {
@@ -1086,12 +1089,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
               );
               return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
             };
-            const unconfirmed = () =>
-              accepted({
-                commandId: "",
-                status: "failed",
-                message: "Save is not confirmed. Review the board before trying again.",
-              });
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
             return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
@@ -1107,21 +1105,20 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
           onExtendForm={(movement, dueAt) => {
             if (!extendGate.allowed) return false;
             if (!openMovements.some((candidate) => candidate.id === movement.id)) return false;
-            runStep(
-              {
-                type: "RECORD_LEGAL_FORM_EXPIRY",
-                role: routeRole,
-                now,
-                movementId: movement.id,
-                dueAt,
-              },
-              {
-                success: `Form ${movement.legalForm?.code ?? ""} extended`,
-                undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
-                undone: "Form extension undone.",
-              },
-            );
-            return true;
+            const completion = raise("RECORD_LEGAL_FORM_EXPIRY", { movementId: movement.id, dueAt });
+            const accepted = (outcome: Awaited<typeof completion>) => {
+              offerStep(
+                {
+                  success: `Form ${movement.legalForm?.code ?? ""} extended`,
+                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+                  undone: "Form extension undone.",
+                },
+                { completion: outcome },
+              );
+              return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
+            };
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
+            return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
         <TellSheet

@@ -165,7 +165,7 @@ describe("A1-18: offline, an in-app link stays on this page and says why", () =>
     return render(
       <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
         <WardOfflineLinks />
-        <a href="/mockups/ward-flow/elsewhere">Elsewhere</a>
+        <a href="/ward-flow/elsewhere">Elsewhere</a>
       </ToastProvider>,
     );
   }

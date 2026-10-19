@@ -3,7 +3,7 @@
  * The ground the Board's panels float on (`.shell`, consumed by `WardGround`), and the one
  * header region (`.header`/`.place`, consumed by `WardShellHeader`) — two components, one
  * stylesheet, per the 2026-09-04 ruling that split `ward-shell.tsx`: `WardGround` mounts in
- * `src/app/mockups/ward-flow/layout.tsx` (the only thing that is an ancestor of every route's
+ * `src/app/ward-flow/layout.tsx` (the only thing that is an ancestor of every route's
  * `<main>`) and `WardShellHeader` mounts in `ClinicalRail` (`ward-management-navigation.tsx`),
  * and neither could reach its own mount point while bundled with the other's job.
  *

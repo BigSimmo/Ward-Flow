@@ -205,3 +205,26 @@ export function describeInvalidConfiguration(payload: unknown): string {
   }
   return "invalid configuration payload";
 }
+
+/** Three-way atomic merge: only the draft's edited fields replace current values. */
+export function mergeConfiguration(
+  current: WardConfiguration,
+  requested: unknown,
+  base: unknown,
+):
+  | { status: "merged"; configuration: WardConfiguration }
+  | { status: "conflict"; fields: (keyof WardConfiguration)[] }
+  | { status: "invalid" } {
+  const draft = validateConfiguration(requested);
+  const original = validateConfiguration(base);
+  if (!draft || !original) return { status: "invalid" };
+  const configuration = { ...current };
+  const fields: (keyof WardConfiguration)[] = [];
+  for (const key of CONFIGURATION_KEYS) {
+    if (draft[key] === original[key]) continue;
+    if (current[key] !== original[key] && current[key] !== draft[key]) fields.push(key);
+    configuration[key] = draft[key];
+  }
+  if (fields.length) return { status: "conflict", fields };
+  return validateConfiguration(configuration) ? { status: "merged", configuration } : { status: "invalid" };
+}

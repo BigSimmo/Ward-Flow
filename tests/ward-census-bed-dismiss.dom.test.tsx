@@ -40,7 +40,7 @@ beforeEach(() => {
   navigation.navigate = undefined;
   navigation.back.mockReset();
   window.sessionStorage.clear();
-  window.history.replaceState(null, "", "/mockups/ward-flow/search");
+  window.history.replaceState(null, "", "/ward-flow/search");
 });
 afterEach(cleanup);
 
@@ -93,7 +93,7 @@ it("Escape returns from the Census-linked bed to its Ward bed link with no linge
       setWardOpen(true);
     };
     navigation.back.mockImplementation(() => {
-      window.history.replaceState(null, "", "/mockups/ward-flow/search");
+      window.history.replaceState(null, "", "/ward-flow/search");
       setWardOpen(false);
     });
     if (wardOpen) return <WardScreen unitId={row.unitId!} />;

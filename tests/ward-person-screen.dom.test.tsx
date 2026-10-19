@@ -344,7 +344,7 @@ describe("a person's own screen", () => {
     // D-39: the value is the address code, which the intake decodes back to the person.
     expect(href).toContain(`patientId=${encodeURIComponent(encodeRecordAddress(someone.id))}`);
     expect(href).not.toContain(someone.id);
-    expect(href).toContain("/mockups/ward-flow/referrals/new");
+    expect(href).toContain("/ward-flow/referrals/new");
   });
 
   it("says the referral IS recorded against this person, and promises no history", () => {
@@ -409,7 +409,7 @@ describe("a person's own screen", () => {
     /*
      * 🔴 THE BUG THIS EXISTS FOR. `person.sexOrGender` was renamed to `person.sex` (owner ruling
      * 2026-09-09/2026-09-10) without touching the label reading it, so
-     * `/mockups/ward-flow/people/PT-007` rendered "Sex / gender — Non-binary" while their `gender` was
+     * `/ward-flow/people/PT-007` rendered "Sex / gender — Non-binary" while their `gender` was
      * (correctly, deliberately) unrecorded. The rename's diff touched only `ward-patients.ts` and the
      * seed — this screen was untouched, which is exactly why nothing caught it: no test here asserted
      * the label at all.

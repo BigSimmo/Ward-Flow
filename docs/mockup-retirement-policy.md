@@ -4,7 +4,7 @@
 > This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
 > For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md).
 >
-> **Ward Flow production routing note:** In `BigSimmo/Ward-Flow`, `/mockups/ward-flow` and `/mockups/ward-flow-sign-in` are publicly reachable demonstration routes in production via [`src/proxy.ts`](../src/proxy.ts) without `DeveloperAreaGate`. The inherited PsychSift RAG/mockup retirement rules below are historical context only.
+> **Ward Flow production routing note:** In `BigSimmo/Ward-Flow`, `/ward-flow` and `/ward-flow-sign-in` are publicly reachable demonstration routes in production. They left `/mockups` on 19 October 2026, so no `/mockups` route is exempt from the production block any more, and [`src/proxy.ts`](../src/proxy.ts) redirects the old `/mockups/ward-flow` addresses. The inherited PsychSift RAG/mockup retirement rules below are historical context only.
 
 <!-- docs-script-refs:historical-start -->
 
@@ -47,7 +47,7 @@ A `-v2`, `-final`, `-refined` or `-perfected` suffix is not evidence of anything
 ### 3. A third of the surface is not design scratch
 
 `/mockups/development`, `/mockups/caring-contacts`, `/mockups/care-plan` and
-`/mockups/ward-flow` are **live in production** behind an administrator gate
+`/ward-flow` are **live in production** behind an administrator gate
 (`shouldBlockProductionMockups` in `src/proxy.ts` exempts them so `DeveloperAreaGate` runs
 instead of a 404), and `/mockups/development` is linked from production Settings. With their
 implementation modules that is ~199 files and ~45,000 lines — and 82 of those modules have no

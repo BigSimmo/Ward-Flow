@@ -25,7 +25,7 @@ import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
  * ward's Raise referral does, so no ward desk borrows the ED or community role to refer.
  */
 
-const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useSearchParams: () => new URLSearchParams(),
@@ -181,13 +181,13 @@ function expectNoSendingWard() {
 
 describe("the New referral sheet on a ward page", () => {
   it("sends in the ward's own name, with no ED or community choice", async () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     await walkToConfirm();
     await sendAndExpectFromSendingWard();
   }, 60_000);
 
   it("never counts a kept choice of the sending ward toward the ward limit", async () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     await walkToWards();
     await waitFor(() => expect(readKeptReferralDraft<KeptWards>()?.selectedUnitIds).toHaveLength(1));
     const draft = readKeptReferralDraft<KeptWards>()!;
@@ -199,7 +199,7 @@ describe("the New referral sheet on a ward page", () => {
   }, 60_000);
 
   it("warns about a patient not in the ward's beds and asks why, never blocking", () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OFF_WARD_UMRN);
     expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
       `Not in a bed on ${sendingWard.name}`,
@@ -214,7 +214,7 @@ describe("the New referral sheet on a ward page", () => {
   });
 
   it("sends a patient not in the ward's beds with the reason in the referral", async () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     await walkToConfirm(OFF_WARD_UMRN, NOT_ON_SENDING_WARD_REASONS[0]);
     await sendAndExpectFromSendingWard();
     expect(screen.getByTestId("reasons")).toHaveTextContent(
@@ -223,7 +223,7 @@ describe("the New referral sheet on a ward page", () => {
   }, 60_000);
 
   it("stops a patient who already holds a bed on another ward, which the bed pull would refuse", () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OTHER_WARD_UMRN);
     expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
       `They already hold a bed on ${heldBedWard.name}`,
@@ -239,7 +239,7 @@ describe("the New referral sheet on a ward page", () => {
   });
 
   it("needs the reason for referral when the ward gives another reason, within the length left", () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OFF_WARD_UMRN);
     fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
       target: { value: NOT_ON_SENDING_WARD_OTHER },
@@ -257,7 +257,7 @@ describe("the New referral sheet on a ward page", () => {
   });
 
   it("keeps the ward's reason in a kept draft, and asks again on another ward's page", async () => {
-    route.pathname = `/mockups/ward-flow/ward/${SENDING}`;
+    route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OFF_WARD_UMRN);
     fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
       target: { value: NOT_ON_SENDING_WARD_REASONS[1] },
@@ -274,20 +274,20 @@ describe("the New referral sheet on a ward page", () => {
     renderSheet();
     expect(screen.getByLabelText("Why is the ward referring them?")).toHaveValue(NOT_ON_SENDING_WARD_REASONS[1]);
     cleanup();
-    route.pathname = `/mockups/ward-flow/ward/${otherWard.id}`;
+    route.pathname = `/ward-flow/ward/${otherWard.id}`;
     keepReferralDraft(draft);
     renderSheet();
     expect(screen.getByLabelText("Why is the ward referring them?")).toHaveValue("");
   });
 
   it("says why it cannot send from a ward page that names no ward", () => {
-    route.pathname = "/mockups/ward-flow/ward/not-a-ward";
+    route.pathname = "/ward-flow/ward/not-a-ward";
     startReferral(ON_WARD_UMRN);
     expectNoSendingWard();
   });
 
   it("never sends from the ward a statistics page is about", () => {
-    route.pathname = `/mockups/ward-flow/statistics/ward/${SENDING}`;
+    route.pathname = `/ward-flow/statistics/ward/${SENDING}`;
     startReferral(ON_WARD_UMRN);
     expectNoSendingWard();
   });
@@ -297,7 +297,7 @@ describe("the New referral sheet on a ward page", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [SENDING] } });
     });
-    route.pathname = "/mockups/ward-flow/referrals/new";
+    route.pathname = "/ward-flow/referrals/new";
     await walkToConfirm();
     await sendAndExpectFromSendingWard();
   }, 60_000);
@@ -307,7 +307,7 @@ describe("the New referral sheet on a ward page", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [SENDING, otherWard.id] } });
     });
-    route.pathname = "/mockups/ward-flow/referrals/new";
+    route.pathname = "/ward-flow/referrals/new";
     startReferral(ON_WARD_UMRN);
     expectNoSendingWard();
   });

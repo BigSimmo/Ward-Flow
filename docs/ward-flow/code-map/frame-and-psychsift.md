@@ -7,7 +7,7 @@
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). This part covers two
 things only: (1) every file outside `src/components/ward-management/**` and
-`src/app/mockups/ward-flow*/**` that Ward Flow code imports, file by file, plus the request/frame
+`src/app/ward-flow*/**` that Ward Flow code imports, file by file, plus the request/frame
 path that gets Ward Flow onto the screen; and (2) the rest of PsychSift, at module level only (folder
 and file counts, no per-file detail) — module level because a separate cleanup thread is retiring
 PsychSift from this branch, and that thread's own tracer results are the right source for anything
@@ -72,7 +72,7 @@ files.
 - **`src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx`** (535 lines) — the sign-in
   mockup screen. This is a sibling of `ward-flow/`, not a child of it (see the prefix note at
   `src/lib/developer-area/headers.ts:40-46`), so it never gets the rail, the provider, or any Ward
-  chrome. Imported once, by `src/app/mockups/ward-flow-sign-in/page.tsx`. Imports `react`,
+  chrome. Imported once, by `src/app/ward-flow-sign-in/page.tsx`. Imports `react`,
   `lucide-react`, `@/components/clinical-dashboard/use-theme.ts` (158 lines) and `@/lib/theme.ts`
   (71 lines) — theming code shared with the rest of PsychSift, nothing Ward-specific.
 
@@ -80,7 +80,7 @@ files.
 19.2.8 (85 imports), `next` ^16.3.3 (37 bare `next` imports, all `import type { Metadata } from
 "next"` in `page.tsx` files — type-only, no runtime code — plus 49 `next/link` and 22
 `next/navigation`), `lucide-react` ^1.34.0 (27 imports). No other npm package is imported anywhere in
-`src/components/ward-management/**` or `src/app/mockups/ward-flow*/**` (package.json:347, 349,
+`src/components/ward-management/**` or `src/app/ward-flow*/**` (package.json:347, 349,
 356-357).
 
 ### 1.2 The request/frame path
@@ -109,7 +109,7 @@ files.
 - **`src/app/mockups/error.tsx`** (154 lines) — "THE MOCKUPS BOUNDARY", per its own doc comment.
   Added to close a gap Ward's own nearer boundary (`ward-flow/error.tsx`) documented but could not
   fix itself: Next.js's `error.tsx` never wraps the `layout.tsx` sitting beside it in the same route
-  segment, so nothing placed anywhere inside `mockups/ward-flow/` could ever catch a throw out of
+  segment, so nothing placed anywhere inside `ward-flow/` could ever catch a throw out of
   `ward-flow/layout.tsx` itself (`DeveloperAreaGate`, `WardFlowProvider`, or the reducer's
   `useReducer` initialiser `seedWardFlowStateAt`). Sitting one segment further up, at `mockups/`,
   this file treats `ward-flow/layout.tsx` as a nested layout and does wrap it, so those three throws
@@ -128,10 +128,10 @@ files.
   `ward-flow/statistics/error.tsx` for the 5 statistics routes).
 - **`src/lib/developer-area/headers.ts`** (74 lines) — the constants shared between `proxy.ts` and
   every Server Component gate: `WARD_FLOW_OFFLINE_HEADER`, `WARD_FLOW_PATH_PREFIX` =
-  `/mockups/ward-flow`, `isWardFlowPath()`, `DEVELOPER_GATED_PATH_PREFIXES` (lines 52-58: `
-/mockups/development`, `/mockups/caring-contacts`, `/mockups/care-plan`, `/mockups/ward-flow`,
-  `/mockups/ward-flow-sign-in` — the last two are separate entries, not one, because
-  `/mockups/ward-flow-sign-in` is a sibling of `/mockups/ward-flow` and the prefix match is
+  `/ward-flow`, `isWardFlowPath()`, `DEVELOPER_GATED_PATH_PREFIXES` (lines 52-58: `
+/mockups/development`, `/mockups/caring-contacts`, `/mockups/care-plan`, `/ward-flow`,
+  `/ward-flow-sign-in` — the last two are separate entries, not one, because
+  `/ward-flow-sign-in` is a sibling of `/ward-flow` and the prefix match is
   exact-or-following-slash, explained at lines 40-51), and `isDeveloperGatedPath()`.
   **`/mockups/ward-flow-digest` is not in this list.** Its `route.ts` reads
   `design/third-edition-mockups/ward-flow-digest.html` off disk with `node:fs/promises` and `node:path`
@@ -144,7 +144,7 @@ files.
   imported by Ward Flow code; they serve PsychSift's own developer/on-call tooling.
 - **`src/lib/env.ts`** `mockupsEnabled()` (line 475) — `true` outside production; in production,
   `true` only if `NEXT_PUBLIC_MOCKUPS_ENABLED === "true"`. This is the one non-developer-gated way
-  mockup routes (including a bare `/mockups/ward-flow` with no developer cookie) could become
+  mockup routes (including a bare `/ward-flow` with no developer cookie) could become
   reachable in production, by that env flag.
 - **`src/app/globals.css`** (5,505 lines) — imported once, at `src/app/layout.tsx:16`, so every Ward
   Flow page gets the whole sheet: the v2 design tokens Ward's own `ward-tokens.module.css` aliases
@@ -156,7 +156,7 @@ files.
   `@source not "../components/**/*mockup*"` (lines 5-6), which exclude `src/app/mockups/**` and
   mockup-named component folders from Tailwind's utility scan for this sheet;
   `src/components/ward-management/` is not named `*mockup*`, so this specific exclusion never
-  touched it, but its routes under `src/app/mockups/ward-flow*/` are excluded and need re-including
+  touched it, but its routes under `src/app/ward-flow*/` are excluded and need re-including
   (next bullet).
 - **`src/app/mockups/mockups.css`** (62 lines) — re-includes the excluded utility vocabulary for
   every mockup route via `@source "../../components"` (line 10), which is what actually makes
@@ -173,8 +173,9 @@ files.
   artefacts here intentionally reference removed/renamed symbols"), so nothing under
   `docs/ward-flow/` is type-checked by the main project.
 - **`eslint.config.mjs`** — `MOCKUP_IGNORES` (line 35) = `["src/app/mockups/**", "**/*-mockups/**",
-"**/*-mockups.tsx", "**/*-mockup.tsx"]`. This exempts `src/app/mockups/ward-flow/**` (matches the
-  first glob) from four local rules: `require-lucide-icon-aria` (lines 59-66),
+"**/*-mockups.tsx", "**/*-mockup.tsx"]` when this was written; it is now the last three only, and
+  since 19 October 2026 the screens live in `src/app/ward-flow/**`, outside `/mockups`, so they are
+  held to every local rule. The rules it exempts mockups from: `require-lucide-icon-aria` (lines 59-66),
   `require-button-wiring` + `no-hardcoded-hex` (lines 73-81), `require-z-index-ladder` (lines
   90-97), and the mockup-import boundary rule (lines 103-120, `no-restricted-imports` forbidding
   production code from importing anything path-matched as mockup). `src/components/ward-management/`
@@ -192,14 +193,14 @@ these:
   `src/lib/developer-area/headers.ts`, `src/lib/env.ts` (`mockupsEnabled`), `src/app/globals.css`,
   `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`. Ward Flow has no request path independent
   of these; none of its 41 `page.tsx` routes (`git ls-files
-'src/app/mockups/ward-flow/**/page.tsx' | wc -l`, this tip) render without them.
+'src/app/ward-flow/**/page.tsx' | wc -l`, this tip) render without them.
 - **`src/components/ui-primitives.tsx`** and its two underlying files
   (`primitive-recipes/{recipes,feedback}.ts(x)`) — 18 Ward files import from the barrel; deleting
   it breaks compilation across most of the screen folders.
 - **`src/lib/client-store-factory.ts`** — the rail, service selector and sidebar-collapsed state all
   depend on it.
-- **`src/components/developer-area/ward-flow-access-gate.tsx`** — removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key. The proxy still lets
-  `/mockups/ward-flow` past the mockups-layout 404 through the developer-area header.
+- **`src/components/developer-area/ward-flow-access-gate.tsx`** — removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key. Since 19 October 2026
+  Ward Flow lives at `/ward-flow`, outside the `/mockups` layout and its production 404.
 - **`src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx`** — the sign-in route has
   nothing else to render.
 - **Former PsychSift dependency, now gone:** the barrel used to re-export
@@ -299,22 +300,19 @@ Findings from that trace worth knowing before any Ward Flow task:
 
 ## Pitfalls in this area
 
-1. **`/mockups/ward-flow-digest` is not developer-gated.** `DEVELOPER_GATED_PATH_PREFIXES`
-   (`src/lib/developer-area/headers.ts:52-58`) lists `/mockups/ward-flow` and
-   `/mockups/ward-flow-sign-in` but not `/mockups/ward-flow-digest`, even though the digest route
-   sits right beside the other two and serves a real file
-   (`design/third-edition-mockups/ward-flow-digest.html`) from `src/app/mockups/ward-flow-digest/route.ts`.
-   `shouldBlockProductionMockups` (`src/proxy.ts:350-373`) therefore 404s it in any real production
-   deploy; it only serves in dev/test. A future editor adding a fourth Ward-adjacent
-   `/mockups/ward-flow-*` route must add its own line to the prefixes array by hand — the comment at
-   `headers.ts:40-51` explains why a sibling can't just fall under the `/mockups/ward-flow` prefix,
-   and a second comment there (48-51) warns not to place any note _inside_ the array itself, because
+1. **`/mockups/ward-flow-digest` is a mockup, not a screen.** Ward Flow and its sign-in moved out
+   of `/mockups` to `/ward-flow` and `/ward-flow-sign-in` on 19 October 2026, and
+   `DEVELOPER_GATED_PATH_PREFIXES` (`src/lib/developer-area/headers.ts`) is now empty. The digest
+   route (`src/app/mockups/ward-flow-digest/route.ts`, serving
+   `design/third-edition-mockups/ward-flow-digest.html`) stayed behind as a design reference, so
+   `shouldBlockProductionMockups` (`src/proxy.ts`) 404s it in production; it only serves in
+   dev/test. `src/proxy.ts` forwards the old `/mockups/ward-flow` and `/mockups/ward-flow-sign-in`
+   addresses permanently (`movedRouteTarget`). Don't place a note _inside_ the prefixes array:
    `scripts/check-mockup-retirement.mjs`'s `readDeveloperGatedPrefixes` extracts every quoted span
    between the brackets and would turn a comment's own code spans into phantom prefixes.
-2. **ESLint's mockup exemption does not cover the engine.** `MOCKUP_IGNORES`
-   (`eslint.config.mjs:35`) matches `src/app/mockups/ward-flow/**` but nothing under
-   `src/components/ward-management/**`, so the 315-file engine and screen tree is linted as full
-   production code (hex-token, z-index-ladder, button-wiring and lucide-icon-aria rules all apply)
+2. **ESLint's mockup exemption covers no Ward file.** `MOCKUP_IGNORES` (`eslint.config.mjs`)
+   matches neither `src/app/ward-flow/**` nor `src/components/ward-management/**`, so the routes
+   and the engine and screen tree are linted as full production code (hex-token, z-index-ladder, button-wiring and lucide-icon-aria rules all apply)
    even though it is a synthetic, never-deployed prototype. Do not assume a Ward file can skip these
    rules because it "is a mockup".
 3. **The `ui-primitives` barrel is `export *`.** 18 Ward files import from it. It now re-exports
@@ -331,7 +329,7 @@ Findings from that trace worth knowing before any Ward Flow task:
    module-scope array elsewhere does not fix it and could make it worse.
 5. **A Ward-specific CSS token lives inside the 5,505-line shared `globals.css`, not in any Ward
    file.** `--spacing-ward-phone-bar` (`src/app/globals.css:134`) will not turn up in a file search
-   scoped to `ward-management/` or `mockups/ward-flow/`; a grep across `globals.css` itself is
+   scoped to `ward-management/` or `ward-flow/`; a grep across `globals.css` itself is
    needed. Two of its five consuming CSS modules belong to chrome the overview map already records
    as retired.
 6. **Tailwind utilities written inside `ward-management/` compile only because of one `@source`

@@ -15,7 +15,7 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  * THE REFERRAL SLIDE-OUT READS THE QUERY CONTRACT.
  *
  * The full-page intake form was retired on 8 Oct 2026: the referral slide-out is the one place a
- * referral is written, and any link to `/mockups/ward-flow/referrals/new` opens it in place. The
+ * referral is written, and any link to `/ward-flow/referrals/new` opens it in place. The
  * contract is still `RaiseReferralTarget` in `shell/ward-facade.ts`, built by `raiseReferralHref`
  * and by nothing else; `referrals/referral-sheet-link.ts` reads it.
  *
@@ -135,10 +135,10 @@ describe("a link → the request it carries", () => {
   });
 
   it("returns null for every other path, so ordinary links still navigate", () => {
-    expect(referralSheetRequestFromHref("/mockups/ward-flow/referrals", BASE)).toBeNull();
-    expect(referralSheetRequestFromHref("/mockups/ward-flow/referrals/new-thing", BASE)).toBeNull();
-    expect(referralSheetRequestFromHref("/mockups/ward-flow/people/new", BASE)).toBeNull();
-    expect(referralSheetRequestFromHref("/mockups/ward-flow", BASE)).toBeNull();
+    expect(referralSheetRequestFromHref("/ward-flow/referrals", BASE)).toBeNull();
+    expect(referralSheetRequestFromHref("/ward-flow/referrals/new-thing", BASE)).toBeNull();
+    expect(referralSheetRequestFromHref("/ward-flow/people/new", BASE)).toBeNull();
+    expect(referralSheetRequestFromHref("/ward-flow", BASE)).toBeNull();
   });
 
   it("returns null for another origin, even on the same path", () => {

@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 

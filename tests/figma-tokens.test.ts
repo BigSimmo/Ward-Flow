@@ -148,10 +148,10 @@ describe("Figma import validation", () => {
 
 function fixtureExists(route: string): boolean {
   const segments = route.split("/").filter(Boolean).map(decodeURIComponent);
-  if (segments[2] === "ward" || segments[2] === "board") return Boolean(unitById(segments[3]));
-  if (segments[2] === "statistics" && segments[3] === "ward") return Boolean(unitById(segments[4]));
-  if (segments[2] === "statistics" && segments[3] === "service")
-    return (HEALTH_SERVICES as readonly string[]).includes(segments[4]);
+  if (segments[1] === "ward" || segments[1] === "board") return Boolean(unitById(segments[2]));
+  if (segments[1] === "statistics" && segments[2] === "ward") return Boolean(unitById(segments[3]));
+  if (segments[1] === "statistics" && segments[2] === "service")
+    return (HEALTH_SERVICES as readonly string[]).includes(segments[3]);
   return true;
 }
 
@@ -161,9 +161,9 @@ describe("Figma mapped fixture identity", () => {
     for (const route of routes) expect(fixtureExists(route), route).toBe(true);
   });
   it("rejects existing dynamic pages with missing records", () => {
-    expect(fixtureExists("/mockups/ward-flow/ward/ahs-moodjar")).toBe(false);
-    expect(fixtureExists("/mockups/ward-flow/statistics/service/East")).toBe(false);
-    expect(fixtureExists("/mockups/ward-flow/ward/rph-adult-secure")).toBe(true);
-    expect(fixtureExists("/mockups/ward-flow/statistics/service/East%20Metro")).toBe(true);
+    expect(fixtureExists("/ward-flow/ward/ahs-moodjar")).toBe(false);
+    expect(fixtureExists("/ward-flow/statistics/service/East")).toBe(false);
+    expect(fixtureExists("/ward-flow/ward/rph-adult-secure")).toBe(true);
+    expect(fixtureExists("/ward-flow/statistics/service/East%20Metro")).toBe(true);
   });
 });

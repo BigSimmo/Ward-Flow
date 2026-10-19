@@ -69,5 +69,5 @@ it("logs the person a patient or movement page shows, and nothing on other pages
     patientId: "PT-0042",
     surface: "patient",
   });
-  expect(recordViewFor(screenForPath("/mockups/ward-flow/capacity"), movements)).toBeUndefined();
+  expect(recordViewFor(screenForPath("/ward-flow/capacity"), movements)).toBeUndefined();
 });

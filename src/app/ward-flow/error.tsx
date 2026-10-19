@@ -4,7 +4,7 @@ import { WardFlowErrorPanel } from "./ward-flow-error-panel";
 
 /**
  * THE WARD FLOW BOUNDARY. Before this file existed there was none anywhere under
- * `mockups/ward-flow/`, so every throw below fell through to `src/app/error.tsx` — the application
+ * `ward-flow/`, so every throw below fell through to `src/app/error.tsx` — the application
  * shell's boundary, which replaces the whole document with the host app's generic panel. One wrong
  * record took the ward away and said nothing about which record it was.
  *

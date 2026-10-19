@@ -67,8 +67,8 @@ test.describe.configure({ timeout: 60_000 });
 
 for (const [route, screenId, destination = route] of ROUTES) {
   test(`axe: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
-    const expectedUrl = new URL(`/mockups/ward-flow${destination}`, testInfo.project.use.baseURL).href;
-    const response = await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "load" });
+    const expectedUrl = new URL(`/ward-flow${destination}`, testInfo.project.use.baseURL).href;
+    const response = await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
     expect(response, "route navigation must return an HTTP response").not.toBeNull();
     expect(response!.ok(), `route returned HTTP ${response!.status()}`).toBe(true);
     await expect(page).toHaveURL(expectedUrl);

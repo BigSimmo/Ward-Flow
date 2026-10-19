@@ -22,7 +22,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * THE HEALTH-SERVICE CHOOSER ON THE STATISTICS HUB, JUDGED FROM THE RENDERED DOM.
  *
- * `tests/ward-nav.test.ts` proves the fourth dynamic route (`/mockups/ward-flow/statistics/service/
+ * `tests/ward-nav.test.ts` proves the fourth dynamic route (`/ward-flow/statistics/service/
  * [serviceId]`) is REFERENCED — its own `WARD_DYNAMIC_ROUTE_ORPHANS` entry records why a source-text
  * scan can see that much and no further: the chooser below calls `serviceStatisticsHref(service)` as
  * a plain function call inside a `.map()`, which is neither a concrete quoted href nor a template
@@ -37,7 +37,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * read as having closed it.
  */
 
-const SERVICE_ROUTE_PREFIX = "/mockups/ward-flow/statistics/service";
+const SERVICE_ROUTE_PREFIX = "/ward-flow/statistics/service";
 
 function renderHubMain(): HTMLElement {
   // v6: the hub entry's fragment opens the "Open a unit" finder on this chooser's own tab, so

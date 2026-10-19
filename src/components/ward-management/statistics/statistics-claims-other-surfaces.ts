@@ -54,13 +54,13 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     rendered: "className={thirdEditionStyles.backLink}",
     claim: "The back link resolves through the one constant that names the statistics hub route.",
     sourceFile: SECTIONS,
-    evidence: 'export const STATISTICS_HOME_HREF = "/mockups/ward-flow/statistics";',
+    evidence: 'export const STATISTICS_HOME_HREF = "/ward-flow/statistics";',
     falsifiedBy: {
       change:
         "The constant naming the statistics hub route is removed, so the back link cannot resolve through it. (The " +
         "'named once' half is an absence: a second hard-coded copy of the path elsewhere would leave this line " +
         "untouched.)",
-      find: 'export const STATISTICS_HOME_HREF = "/mockups/ward-flow/statistics";',
+      find: 'export const STATISTICS_HOME_HREF = "/ward-flow/statistics";',
       replaceWith: "",
     },
   },
@@ -226,13 +226,13 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
      * still built from the unit id. Read before repointing, as this file's own failure message
      * demands: the helper in its new home is byte-identical apart from its doc comment. */
     sourceFile: WARD_FACADE,
-    evidence: "return `/mockups/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
+    evidence: "return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
     falsifiedBy: {
       change:
         "Per-ward detail stops being one dynamic route built from the unit id and becomes a per-ward lookup table. " +
         "(The 'a SINGLE href helper' half is an absence — a second helper added beside this one would leave this " +
         "line untouched.)",
-      find: "return `/mockups/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
+      find: "return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
       replaceWith: "return WARD_STATISTICS_HREFS[unitId];",
     },
   },
@@ -247,12 +247,12 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     claim: "Per-department detail is a second dynamic route, built by its own href helper.",
     /* REPOINTED 2026-09-10 with its ward sibling above, and for the same reason. */
     sourceFile: WARD_FACADE,
-    evidence: "return `/mockups/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
+    evidence: "return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
     falsifiedBy: {
       change:
         "Per-department detail stops being one dynamic route built from the department id and becomes a " +
         "per-department lookup table. (Same absence caveat as the ward helper above.)",
-      find: "return `/mockups/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
+      find: "return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
       replaceWith: "return ED_STATISTICS_HREFS[edId];",
     },
   },
@@ -929,12 +929,12 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
       "The community index route is registered in `ward-nav.ts`'s `WARD_NAV` list and linked from the root rail, " +
       "so the team pages it lists are reachable rather than reachable only by typing an address.",
     sourceFile: WARD_NAV,
-    evidence: 'id: "community", href: "/mockups/ward-flow/community",',
+    evidence: 'id: "community", href: "/ward-flow/community",',
     falsifiedBy: {
       change:
         "The `community` entry is removed from `WARD_NAV` (or its href changes), so the root rail no longer " +
         "links this index and the claim becomes false again.",
-      find: 'id: "community", href: "/mockups/ward-flow/community",',
+      find: 'id: "community", href: "/ward-flow/community",',
       replaceWith: "",
     },
   },

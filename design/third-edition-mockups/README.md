@@ -79,7 +79,7 @@ them:
   `settings-third-edition.html` is Gemini's rebuild, not this file.** Confirmed by git date — the
   Gemini rebuild commit for `settings-third-edition.html` (`f0e5ea88f9`, 16 September 2026) is newer
   than the previously approved version (`1ef9ed3975`, 12 September), and `settings-third-edition.html`
-  is the file already routed at `/mockups/ward-flow/settings` and indexed as the built Settings
+  is the file already routed at `/ward-flow/settings` and indexed as the built Settings
   drawing (see `SCREEN-VERIFICATION.md`). `settings-perfected-third-edition.html` was not updated by
   the same 17 September commits and stays reference only. The Settings screen's headings (Domain 3 and
   Domain 5) were brought in line with `settings-third-edition.html` in `460c5a4e9c`. Detail:

@@ -385,7 +385,7 @@ export function ReferralPatientStep({
               </span>
               <Link
                 className={styles.btn}
-                href={alreadyOpenHref ?? "/mockups/ward-flow/referrals"}
+                href={alreadyOpenHref ?? "/ward-flow/referrals"}
                 data-own-leave-guard="true"
                 onClick={(event) => {
                   if (dirty) {
