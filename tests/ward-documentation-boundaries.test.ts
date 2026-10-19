@@ -62,10 +62,10 @@ test("nested native instructions included, dependencies excluded", () => {
 
 test("ownership parser recognises exact root dotfiles and rejects malformed claims", () => {
   const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
-  const body = source.slice(
-    source.indexOf("function signOutEntries("),
-    source.indexOf("function signOutEntriesForCheckout("),
-  );
+  const between = (start: string, end: string) => source.slice(source.indexOf(start), source.indexOf(end));
+  const body =
+    between("function releasedBranches(", "/** Verify the checkout itself") +
+    between("function signOutEntries(", "function signOutEntriesForCheckout(");
   const parse = vm.runInNewContext(body + "; signOutEntries");
   const claim = (file: string) =>
     `- 2026-10-02 | fixture | codex/fixture | D:/fixture | ${file}, repo=BigSimmo/Ward-Flow`;
