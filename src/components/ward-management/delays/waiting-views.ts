@@ -55,11 +55,12 @@ export function isFormDue(row: Pick<BoardRow, "dueIn">, thresholds: DueSoonThres
 
 /**
  * For handover, read with the Handover sheet's own rules (`isActNow`, `isDueBy`) against the next
- * handover still to come. The sheet can also follow the shared act-now list, so a snoozed alert may
- * leave it there while this view still counts the journey from its recorded times.
+ * handover still to come. `actNow` is whether the shared act-now list (`activeActNowItems`, the one
+ * the sheet, Alerts and Tasks read) holds this journey, so the view and the sheet's Act now agree;
+ * without it the row falls back to its own recorded times, as the sheet's rows do.
  */
-export function isForHandover(movement: Movement, now: Instant): boolean {
-  const row = toHandoverRow(movement, [], [], []);
+export function isForHandover(movement: Movement, now: Instant, actNow?: boolean): boolean {
+  const row = { ...toHandoverRow(movement, [], [], []), actNow };
   return isActNow(row, now) || isDueBy(row, now, handoverCutoff(defaultHandoverShift(now), now));
 }
 

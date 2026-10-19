@@ -15,6 +15,7 @@ import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-rea
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -229,7 +230,23 @@ export function DelaysBoard({
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
-  const rows = useMemo(() => boardRows(groups, now), [groups, now]);
+  // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
+  const {
+    referrals: allReferrals,
+    movements: allMovements,
+    configuration,
+    inboxSnoozes,
+  } = useWardFlowSelect("referrals", "movements", "configuration", "inboxSnoozes");
+  const actNowIds = useMemo(
+    () =>
+      new Set(
+        activeActNowItems({ movements: allMovements, units, configuration, inboxSnoozes }, now).map(
+          (item) => item.movementId,
+        ),
+      ),
+    [allMovements, units, configuration, inboxSnoozes, now],
+  );
+  const rows = useMemo(() => boardRows(groups, now, actNowIds), [groups, now, actNowIds]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const catchments = useMemo(() => boardCatchments(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
@@ -385,7 +402,6 @@ export function DelaysBoard({
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
-  const { referrals: allReferrals } = useWardFlowSelect("referrals");
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (

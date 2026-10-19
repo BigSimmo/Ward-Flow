@@ -93,7 +93,8 @@ export type BoardRow = {
   forHandover: boolean;
 };
 
-export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow[] {
+/** `actNowIds`: journeys on the shared act-now list, for the For handover view (`waiting-views.ts`). */
+export function boardRows(groups: readonly DelayGroup[], now: Instant, actNowIds?: ReadonlySet<string>): BoardRow[] {
   return groups.flatMap((group) =>
     group.movements.map((movement) => {
       const waited = Math.max(0, now - movement.openedAt);
@@ -119,7 +120,7 @@ export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow
         dueIn: legalDeadlineMinutes(movement, now),
         origin: edHealthService(movement.originEdId) ?? "unrecorded",
         locked: movement.security === "Secure",
-        forHandover: isForHandover(movement, now),
+        forHandover: isForHandover(movement, now, actNowIds?.has(movement.id)),
       };
     }),
   );

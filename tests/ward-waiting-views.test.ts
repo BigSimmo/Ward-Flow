@@ -23,6 +23,7 @@ import {
   isDueBy,
   toHandoverRow,
 } from "@/components/ward-management/handover/handover-model";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -83,6 +84,32 @@ describe("For handover", () => {
         isActNow(sheet, NOW_ANCHOR) || isDueBy(sheet, NOW_ANCHOR, cutoff),
       );
     }
+  });
+
+  it("follows the shared act-now list, as the Handover sheet's Act now does", () => {
+    const actNowIds = new Set(
+      activeActNowItems(
+        {
+          movements: state.movements,
+          units: UNITS,
+          configuration: state.configuration,
+          inboxSnoozes: state.inboxSnoozes,
+        },
+        NOW_ANCHOR,
+      ).map((item) => item.movementId),
+    );
+    const cutoff = handoverCutoff(defaultHandoverShift(NOW_ANCHOR), NOW_ANCHOR);
+    const rows = boardRows(delayGroups(state.movements, UNITS, NOW_ANCHOR, T), NOW_ANCHOR, actNowIds);
+    for (const candidate of rows) {
+      const sheet = {
+        ...toHandoverRow(candidate.movement, UNITS, [], []),
+        actNow: actNowIds.has(candidate.movement.id),
+      };
+      expect(candidate.forHandover).toBe(isActNow(sheet, NOW_ANCHOR) || isDueBy(sheet, NOW_ANCHOR, cutoff));
+    }
+    // A journey on the list for a reason the row's own times cannot show still counts.
+    const quiet = ROWS.find(({ movement }) => !isForHandover(movement, NOW_ANCHOR))!.movement;
+    expect(isForHandover(quiet, NOW_ANCHOR, true)).toBe(true);
   });
 
   it("counts a recorded form due before the next handover, and not one due after it", () => {
