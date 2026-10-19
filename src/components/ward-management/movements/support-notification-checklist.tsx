@@ -6,7 +6,7 @@ import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
-import { formatInstant, formatInstantWithDay, type Instant } from "../ward-clock";
+import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay, type Instant } from "../ward-clock";
 import { wardChromeRole } from "../ward-chrome-role";
 import type { WardFlowRole } from "../ward-flow-events";
 import { canDispatch } from "../ward-role-permissions";
@@ -50,7 +50,10 @@ const TOLD_AGO_MINUTES = [15, 30, 60] as const;
 
 export function toldAgo(now: Instant, minutes: number): { time: string; day: ToldDay } {
   const at = (now - minutes) as Instant;
-  return { time: formatInstant(at), day: String(Math.floor(now / 1440) - Math.floor(at / 1440)) as ToldDay };
+  return {
+    time: formatInstant(at),
+    day: String(Math.floor(now / MINUTES_PER_DAY) - Math.floor(at / MINUTES_PER_DAY)) as ToldDay,
+  };
 }
 
 function recordTone(record: SupportNotificationRecord | undefined): WfTone {
@@ -292,7 +295,7 @@ export function SupportNotificationChecklist({
                               setTimeError(null);
                             }}
                           >
-                            {minutes === 60 ? "1 h ago" : `${minutes} min ago`}
+                            {`${minutes} min ago`}
                           </Button>
                         ))}
                       </div>
