@@ -164,6 +164,39 @@ describe("signOutConflicts (clash guard)", () => {
     ).toHaveLength(1);
   });
 
+  it("keeps a takeover note whole when it contains commas", () => {
+    const log = [
+      "Open sign-outs only",
+      "- 2026-09-27 | Other | ward/other | D:/w/other | script-budget.json",
+      "- 2026-09-27 | Me | ward/mine | D:/w/mine | script-budget.json (approved takeover by Josh: value-only raise, decision card 11:40Z), docs/a.md",
+    ].join("\n");
+    expect([...approvedTakeoverFiles(log, "ward/mine", "D:/w/mine")]).toEqual(["script-budget.json"]);
+    expect(signOutConflicts(["script-budget.json"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+    expect(unsignedWardFiles(["docs/a.md"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+  });
+
+  it("still reads every path after an unclosed bracket", () => {
+    const log = [
+      "Open sign-outs only",
+      "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md (note, docs/b.md",
+    ].join("\n");
+    expect(signOutConflicts(["docs/b.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "docs/b.md", owner: "Other", branch: "ward/other" },
+    ]);
+  });
+
+  it("releases only the named files when a RELEASED line has a files= field", () => {
+    const claim = "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md, docs/a.md";
+    const partial = "RELEASED 2026-09-27 | Other | ward/other | files=docs/a.md | handed back";
+    const log = ["Open sign-outs only", claim, partial].join("\n");
+    expect(signOutConflicts(["docs/a.md"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+    expect(signOutConflicts(["AGENTS.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "AGENTS.md", owner: "Other", branch: "ward/other" },
+    ]);
+    const all = `${log}\nRELEASED 2026-09-27 | Other | ward/other | files=AGENTS.md | done`;
+    expect(signOutConflicts(["AGENTS.md", "docs/a.md"], all, "ward/mine", "D:/w/mine")).toEqual([]);
+  });
+
   it("reuses a scoped approval already recorded in an older owner description", () => {
     const log = [
       "Open sign-outs only",

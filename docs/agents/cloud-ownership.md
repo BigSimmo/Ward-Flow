@@ -27,10 +27,16 @@ Use `./LICENSE` or `./Dockerfile` for an extensionless root filename; the checke
 
 Run `node scripts/ward-flow/sign-out-check.mjs <exact-files>` with that same `WARD_SIGNOUT_FILE` before claiming/editing files. It checks available local branch history and the supplied log; it cannot discover other hosts. An overlap requires the other owner's release or Josh's already-applicable exact-file takeover authority. Sign out new files as the task scope grows. Pass the same environment to formatting, admission and commit commands; a readable empty log does not supply your claims.
 
-At handoff, preserve the checkpoint, log path and exact outstanding ownership. The existing `RELEASED` record clears **all earlier claims for every named branch in this repository scope**, regardless of the owner field or files mentioned in its reason. It does not release individual files. Use it only when every affected claim can be released; the receiving session then validates the current branch/files and appends the complete set of claims still needed by the coordinating group. For a partial handoff, keep unrelated claims active and obtain the existing exact-file takeover authority if ownership overlaps; do not use a branch-wide release to imply a partial transfer. Use this format for a complete branch handoff:
+At handoff, preserve the checkpoint, log path and exact outstanding ownership. A plain `RELEASED` record clears **all earlier claims for every named branch in this repository scope**, regardless of the owner field or files mentioned in its reason. Use it only when every affected claim can be released; the receiving session then validates the current branch/files and appends the complete set of claims still needed by the coordinating group. Use this format for a complete branch handoff:
 
 ```text
 RELEASED <date> | <owner> | <task-branch> | <handoff/integration reason>; repo=BigSimmo/Ward-Flow
+```
+
+To hand back only some files, add a `files=` field naming the exact paths. It closes those paths in the branch's earlier claims and keeps the rest active; files named only in the reason are not released. Obtain the existing exact-file takeover authority if ownership overlaps.
+
+```text
+RELEASED <date> | <owner> | <task-branch> | files=<path>, <path> | <reason>; repo=BigSimmo/Ward-Flow
 ```
 
 An ordinary task-local commit or PR does not integrate another host's changes, prove deployment or authorise provider use. Recheck overlapping work at the authorised integration boundary. Never set `SKIP_SIGNOUT_GUARD=1` for concurrent Cloud work or bare-publication admission.
