@@ -535,15 +535,9 @@ export function commandScopeRefusal(
       !(access.role === "coordinator" && target === COORDINATOR_DESK_ACKNOWLEDGER_ID)
     )
       return outside;
-  // On this explicit continuation the ED is the referral's source, not the acting desk.
-  // The reducer verifies its actual site and the live acceptance; the target and acting ward
-  // above remain scoped, as does the referral id through the writable-record check.
-  const continuingAcceptedReferral =
-    command.type === "RAISE_REFERRAL" &&
-    typeof command.referralId === "string" &&
-    typeof command.acceptedUnitId === "string" &&
-    command.actingUnitId === command.acceptedUnitId;
-  for (const from of [command.actingPlaceId, ...(continuingAcceptedReferral ? [] : [command.edId])])
+  // The named ED is always in scope, including on an accepted referral's continuation: the
+  // accepting ward does not get past the ED check because it accepted (owner, 19 Oct 2026).
+  for (const from of [command.actingPlaceId, command.edId])
     if (typeof from === "string" && !actsFrom(from)) return outside;
   if (typeof command.actingTeamId === "string" && !teamIsOwn(access, command.actingTeamId, places)) return outside;
   return null;

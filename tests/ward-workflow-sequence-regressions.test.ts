@@ -247,11 +247,22 @@ describe("accepted direct referral continuation", () => {
     expect(pulled.movements.find((m) => m.id === movement.id)?.stage).toBe("pulled");
   });
 
-  it("scopes the accepting ward, while allowing the real source ED outside that ward", () => {
+  it("scopes the accepting ward and never lets it past the ED scope check", () => {
     const { state, event, unit } = acceptedDirectReferral();
     const options = { now, places: wardPlaceLookup(state.units) };
     const access = { role: "ward" as const, scope: { kind: "ward" as const, unitIds: [unit.id] } };
-    expect(commandScopeRefusal(state, access, event as unknown as Record<string, unknown>, options)).toBeNull();
+    // The source ED is outside this ward's scope, so the accepting ward is refused (owner, 19 Oct).
+    expect(commandScopeRefusal(state, access, event as unknown as Record<string, unknown>, options)).toContain(
+      "outside",
+    );
+    expect(
+      commandScopeRefusal(
+        state,
+        access,
+        { ...(event as unknown as Record<string, unknown>), edId: undefined },
+        options,
+      ),
+    ).toBeNull();
     expect(commandScopeRefusal(state, access, { ...event, acceptedUnitId: "outside-unit" }, options)).toContain(
       "outside",
     );
