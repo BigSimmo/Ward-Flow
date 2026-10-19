@@ -91,6 +91,14 @@ describe("common questions", () => {
     expect(answer!.rows.every((row) => row.formCode === "1A")).toBe(true);
   });
 
+  it("cuts an answer at the caller's limit like any other group, and still counts every row", () => {
+    const full = answerQuestion("no bed yet", census)!;
+    if (full.rows.length < 3) throw new Error("fixture drifted: fewer than three people without a bed");
+    const cut = answerQuestion("no bed yet", census, 2)!;
+    expect(cut.rows.map((row) => row.key)).toEqual(full.rows.slice(0, 2).map((row) => row.key));
+    expect(cut.total).toBe(full.rows.length);
+  });
+
   it("gives no answer without a census, so a screen outside the provider shows none", () => {
     expect(answerQuestion("over 24 hours", null)).toBeUndefined();
   });

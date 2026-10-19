@@ -65,7 +65,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { dischargeHref, movementHref } from "./ward-facade";
+import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -333,6 +333,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const alertsQueueForDesk = wardTasksAreActionableForRole(shellRole);
   const oneAlertsQueue = alertsScreenOpen && alertsQueueForDesk;
   const onAlertsScreen = oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
+  const onPatientsPage = pathname.replace(/\/+$/u, "") === patientSearchHref();
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
@@ -1130,27 +1131,31 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       </div>
 
       <div className={styles.centerGroup}>
-        <div
-          className={styles.searchWrap}
-          data-sheet-inert-skip={headerLiveOverSheet ? "" : undefined}
-          onFocusCapture={() =>
-            setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
-          }
-        >
-          <WardGlobalSearch
-            movements={movements}
-            patients={patients}
-            referrals={referrals}
-            units={units}
-            // shell-4: the same active list the Tasks badge counts, so "3 of N" agrees with it.
-            tasks={tasksActiveItems}
-            aboveSheets={headerLiveOverSheet}
-            onSeeAllTasks={() => openPopover("tasks")}
-            plannedAdmissions={plannedAdmissions}
-            now={now}
-            placeholder="Search"
-          />
-        </div>
+        {/* The Patients page has its own search box, which filters its list in place, so the header
+            search steps aside there and the screen keeps one search (simpler screens review, A5). */}
+        {onPatientsPage ? null : (
+          <div
+            className={styles.searchWrap}
+            data-sheet-inert-skip={headerLiveOverSheet ? "" : undefined}
+            onFocusCapture={() =>
+              setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
+            }
+          >
+            <WardGlobalSearch
+              movements={movements}
+              patients={patients}
+              referrals={referrals}
+              units={units}
+              // shell-4: the same active list the Tasks badge counts, so "3 of N" agrees with it.
+              tasks={tasksActiveItems}
+              aboveSheets={headerLiveOverSheet}
+              onSeeAllTasks={() => openPopover("tasks")}
+              plannedAdmissions={plannedAdmissions}
+              now={now}
+              placeholder="Search"
+            />
+          </div>
+        )}
       </div>
 
       <WardBarDrawerTriggers

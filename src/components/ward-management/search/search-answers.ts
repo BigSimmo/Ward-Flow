@@ -111,17 +111,24 @@ export function questionFor(query: string): SearchQuestion | undefined {
   return QUESTIONS.find((question) => question.phrases.test(text)) ?? formQuestion(text);
 }
 
-export type SearchAnswer = { question: SearchQuestion; rows: CensusRow[] };
+/** `rows` holds at most the caller's limit; `total` counts every row that answers the question. */
+export type SearchAnswer = { question: SearchQuestion; rows: CensusRow[]; total: number };
 
 /**
- * The census rows that answer a query, longest wait first. An answer with nobody in it is still an
- * answer ("Waiting over 24 hours · 0"), so `rows` may be empty while `question` is set.
+ * The census rows that answer a query, longest wait first, cut at `limit` like every other search
+ * group. An answer with nobody in it is still an answer ("Waiting over 24 hours · 0"), so `rows`
+ * may be empty while `question` is set.
  */
-export function answerQuestion(query: string, census: Census | null | undefined): SearchAnswer | undefined {
+export function answerQuestion(
+  query: string,
+  census: Census | null | undefined,
+  limit = Number.POSITIVE_INFINITY,
+): SearchAnswer | undefined {
   if (!census) return undefined;
   const question = questionFor(query);
   if (!question) return undefined;
-  return { question, rows: sortCensusRows(census.rows.filter(question.test), "wait", () => false) };
+  const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false);
+  return { question, rows: rows.slice(0, limit), total: rows.length };
 }
 
 /** One person's census row, by patient record id, for the preview's "where now" and "next" lines. */

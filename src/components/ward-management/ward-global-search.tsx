@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
-  Fragment,
   useDeferredValue,
   useEffect,
   useId,
@@ -397,9 +396,15 @@ export function WardGlobalSearch({
     [open, admissions, censusDayZero, now, movements, referrals, units, patients, plannedAdmissions, configuration],
   );
   const answer = useMemo(
-    () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census)),
+    () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census, FULL_RESULTS_PER_GROUP)),
     [trimmed, refusal, census],
   );
+
+  // Groups cut at the full limit: the engine's, plus the answer group when more rows answer it.
+  const truncatedGroups = useMemo(() => {
+    const engine = smartResults?.truncatedGroups ?? [];
+    return answer && answer.total > answer.rows.length ? [...engine, "answers"] : engine;
+  }, [smartResults, answer]);
 
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
   const allGroups = useMemo(
@@ -771,6 +776,11 @@ export function WardGlobalSearch({
   }
 
   const resultCount = isStart ? 0 : options.length;
+  // The listbox the field controls: the active row's group, else the first group shown.
+  const controlledGroupKey =
+    options.length === 0
+      ? undefined
+      : (groups.find((group) => activeIndex >= 0 && group.items.includes(options[activeIndex]))?.key ?? groups[0]?.key);
 
   const palette = showPopup ? (
     <>
@@ -820,8 +830,7 @@ export function WardGlobalSearch({
                   {filter.label}
                   <span className={styles.kindCount}>
                     {refusal ? 0 : count}
-                    {!refusal &&
-                    smartResults?.truncatedGroups.some((key) => filter.key === "all" || filter.groups.includes(key))
+                    {!refusal && truncatedGroups.some((key) => filter.key === "all" || filter.groups.includes(key))
                       ? "+"
                       : ""}
                   </span>
@@ -853,16 +862,19 @@ export function WardGlobalSearch({
                 </p>
               </div>
             ) : (
-              <ul id={listId} role="listbox" aria-label="Search results" className={styles.list}>
+              /* Design audit DA-05: a listbox may hold only options, so each group is its own listbox,
+                 named by its heading, and the group's "See all" and "Show all" buttons sit beside it
+                 rather than inside it. The field's aria-controls follows the group being browsed. */
+              <div id={listId} className={styles.list}>
                 {groups.map((group) => (
-                  <Fragment key={group.key}>
-                    <li role="presentation" className={styles.groupItem}>
+                  <div key={group.key} className={styles.groupItem}>
+                    <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
-                        <span>{group.heading}</span>
+                        <span id={`${listId}-${group.key}-heading`}>{group.heading}</span>
                         {isStart ? null : (
                           <span className={styles.groupCount}>
                             {fullGroupCounts.get(group.key) ?? group.items.length}
-                            {smartResults?.truncatedGroups.includes(group.key) ? "+" : ""}
+                            {truncatedGroups.includes(group.key) ? "+" : ""}
                           </span>
                         )}
                         {group.key === "needs" && onSeeAllTasks ? (
@@ -891,90 +903,99 @@ export function WardGlobalSearch({
                               onClick={() => chooseKind(kind.key)}
                               data-testid={`ward-global-search-show-all-${group.key}`}
                             >
-                              {smartResults?.truncatedGroups.includes(group.key) ? "Show first" : "Show all"} {full}
+                              {truncatedGroups.includes(group.key) ? "Show first" : "Show all"} {full}
                             </button>
                           );
                         })()}
                       </span>
-                      {smartResults?.truncatedGroups.includes(group.key) ? (
+                      {truncatedGroups.includes(group.key) ? (
                         <p className={styles.emptyDescription}>
                           First {fullGroupCounts.get(group.key)} matches. Refine your search to see other matches.
                         </p>
                       ) : null}
-                    </li>
-                    {group.items.map((item) => {
-                      const index = options.indexOf(item);
-                      return (
-                        <li
-                          key={`${group.key}-${item.kind}-${item.id}`}
-                          role="presentation"
-                          className={styles.optionItem}
-                        >
-                          <Link
-                            id={`${id}-opt-${index}`}
-                            href={item.href}
-                            role="option"
-                            aria-selected={resultsCurrent && activeIndex === index}
-                            aria-disabled={!resultsCurrent || undefined}
-                            tabIndex={-1}
-                            // Stale rows stay mounted to avoid the popup flash, but never open a
-                            // result for text that is no longer in the field. The footer link is
-                            // not a result, so it keeps working.
-                            onClick={(event) => {
-                              if (resultsCurrent) {
-                                onOptionClick(event, item.href);
-                                return;
-                              }
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            onAuxClick={(event) => {
-                              if (!resultsCurrent) {
+                    </div>
+                    <ul
+                      id={`${listId}-${group.key}`}
+                      role="listbox"
+                      aria-labelledby={`${listId}-${group.key}-heading`}
+                      className={styles.groupList}
+                    >
+                      {group.items.map((item) => {
+                        const index = options.indexOf(item);
+                        return (
+                          <li
+                            key={`${group.key}-${item.kind}-${item.id}`}
+                            role="presentation"
+                            className={styles.optionItem}
+                          >
+                            <Link
+                              id={`${id}-opt-${index}`}
+                              href={item.href}
+                              role="option"
+                              aria-selected={resultsCurrent && activeIndex === index}
+                              aria-disabled={!resultsCurrent || undefined}
+                              tabIndex={-1}
+                              // Stale rows stay mounted to avoid the popup flash, but never open a
+                              // result for text that is no longer in the field. The footer link is
+                              // not a result, so it keeps working.
+                              onClick={(event) => {
+                                if (resultsCurrent) {
+                                  onOptionClick(event, item.href);
+                                  return;
+                                }
                                 event.preventDefault();
                                 event.stopPropagation();
-                              }
-                            }}
-                            onMouseEnter={() => setHoverIndex(index)}
-                            className={styles.option}
-                            data-active={(resultsCurrent && activeIndex === index) || undefined}
-                            data-previewed={previewIndex === index || undefined}
-                            data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
-                          >
-                            <span className={styles.itemIconBox} aria-hidden="true">
-                              {item.tone ? (
-                                <StatusGlyph tone={item.tone} />
-                              ) : (
-                                <SearchResultIcon kind={item.kind} id={item.id} />
-                              )}
-                            </span>
-                            <span className={styles.resultContent}>
-                              <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
-                              <span className={styles.resultMeta}>
-                                {item.umrn ? (
-                                  <>
-                                    <span className={styles.umrn}>{item.umrn}</span>
-                                    {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
-                                  </>
-                                ) : item.readyBeds !== undefined && !item.meta ? (
-                                  <span>
-                                    {item.siteName} · {item.readyBeds} ready
-                                  </span>
-                                ) : item.meta ? (
-                                  <span>{item.meta}</span>
-                                ) : null}
+                              }}
+                              onAuxClick={(event) => {
+                                if (!resultsCurrent) {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                }
+                              }}
+                              onMouseEnter={() => setHoverIndex(index)}
+                              className={styles.option}
+                              data-active={(resultsCurrent && activeIndex === index) || undefined}
+                              data-previewed={previewIndex === index || undefined}
+                              data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
+                            >
+                              <span className={styles.itemIconBox} aria-hidden="true">
+                                {item.tone ? (
+                                  <StatusGlyph tone={item.tone} />
+                                ) : (
+                                  <SearchResultIcon kind={item.kind} id={item.id} />
+                                )}
                               </span>
-                            </span>
-                            <span className={styles.resultKind}>{item.kindLabel}</span>
-                            <span className={styles.actionHint} aria-hidden="true">
-                              <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </Fragment>
+                              <span className={styles.resultContent}>
+                                <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
+                                <span className={styles.resultMeta}>
+                                  {item.umrn ? (
+                                    <>
+                                      <span className={styles.umrn}>{item.umrn}</span>
+                                      {item.dateOfBirth ? (
+                                        <span>born {formatDateOfBirth(item.dateOfBirth)}</span>
+                                      ) : null}
+                                    </>
+                                  ) : item.readyBeds !== undefined && !item.meta ? (
+                                    <span>
+                                      {item.siteName} · {item.readyBeds} ready
+                                    </span>
+                                  ) : item.meta ? (
+                                    <span>{item.meta}</span>
+                                  ) : null}
+                                </span>
+                              </span>
+                              <span className={styles.resultKind}>{item.kindLabel}</span>
+                              <span className={styles.actionHint} aria-hidden="true">
+                                <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
+                              </span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
 
             {showQuickCommands && !refusal ? (
@@ -1205,6 +1226,16 @@ export function WardGlobalSearch({
       ref={rootRef}
       data-testid="ward-global-search"
       data-open={showPopup || undefined}
+      // Focus moving anywhere outside the field, its Clear and Cancel buttons and the palette closes
+      // the palette, so a keyboard user is never left with a scrim over the control they moved on to
+      // (design audit DA-04, WCAG 2.4.11). Checked here rather than on the input because Cancel and
+      // the palette's own buttons can hold focus too; the portalled palette's blurs bubble here
+      // through React. A blur with no next target (a row unmounting) leaves the palette as it is.
+      onBlur={(event) => {
+        const next = event.relatedTarget as Node | null;
+        if (!next || rootRef.current?.contains(next) || paletteRef.current?.contains(next)) return;
+        close();
+      }}
       // The compact bar lays the open field over itself at the bar's measured height.
       style={
         barBox.height > 0
@@ -1233,7 +1264,7 @@ export function WardGlobalSearch({
           enterKeyHint="search"
           spellCheck={false}
           aria-haspopup="listbox"
-          aria-controls={showPopup && options.length > 0 ? listId : undefined}
+          aria-controls={showPopup && controlledGroupKey ? `${listId}-${controlledGroupKey}` : undefined}
           aria-activedescendant={resultsCurrent && activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
           aria-autocomplete="list"
           aria-describedby={hintId}
@@ -1247,13 +1278,6 @@ export function WardGlobalSearch({
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          onBlur={(event) => {
-            // Tabbing on to the next header control closes the palette, so a keyboard user is never
-            // left with a scrim over the page they moved on to.
-            const next = event.relatedTarget as Node | null;
-            if (next && (rootRef.current?.contains(next) || paletteRef.current?.contains(next))) return;
-            if (next) close();
-          }}
           onKeyDown={onKeyDown}
           data-testid="ward-global-search-input"
         />

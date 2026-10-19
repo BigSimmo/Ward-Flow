@@ -87,6 +87,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
               thresholds: dueSoonThresholdsOf(configuration),
               dayZero,
             }),
+            MENU_RESULTS_FULL,
           );
     const viewHrefs = new Set(results.views.map((view) => view.href));
     const lower = needle.toLowerCase();
@@ -109,7 +110,9 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
               : group,
           )
           .filter((group) => group.items.length > 0);
-    return { needle, refusal, pages, groups, truncatedGroups: results.truncatedGroups };
+    const truncatedGroups =
+      answer && answer.total > answer.rows.length ? [...results.truncatedGroups, "answers"] : results.truncatedGroups;
+    return { needle, refusal, pages, groups, truncatedGroups };
   }, [
     needle,
     isPending,

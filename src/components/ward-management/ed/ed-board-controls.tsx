@@ -477,6 +477,7 @@ export function EdActionsMenu({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>();
   const anchor = useRef<HTMLButtonElement>(null);
+  const groupId = useId();
   const groups: { name: string; items: ReactNode[] }[] = [
     { name: "Review & disposition", items: [] },
     { name: "Transfer & handover", items: [] },
@@ -564,13 +565,22 @@ export function EdActionsMenu({
           <button type="button" role="menuitem" onClick={onEditPlan}>
             Edit plan
           </button>
+          {/* Design audit DA-05: a menu may hold only menu items or groups, so each group is a
+              labelled group, not a section with a heading. */}
           {groups.map(
-            (group) =>
+            (group, index) =>
               group.items.length > 0 && (
-                <section key={group.name} className={styles.menuGroup}>
-                  <h3>{group.name}</h3>
+                <div
+                  key={group.name}
+                  role="group"
+                  aria-labelledby={`${groupId}-group-${index}`}
+                  className={styles.menuGroup}
+                >
+                  <span role="presentation" id={`${groupId}-group-${index}`} className={styles.menuGroupLabel}>
+                    {group.name}
+                  </span>
                   {group.items}
-                </section>
+                </div>
               ),
           )}
           {other}
