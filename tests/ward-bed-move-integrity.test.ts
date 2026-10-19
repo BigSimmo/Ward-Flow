@@ -128,6 +128,47 @@ describe("numbered bed designation integrity", () => {
     expect(moved.units === confirmed.units).toBe(true);
   });
 
+  // Codex P2 (PR #423): a same-kind move's Undo leaves capacity untouched, so a later resource
+  // update (here CONFIRM_CAPACITY) must not refuse it.
+  it.each(["open", "locked"] as const)(
+    "lets a %s-to-same-kind move be undone after a later capacity confirmation",
+    (kind) => {
+      const { state, current, occupiedLocked } = bench();
+      const stay = current.find((row) => row.bedKind === kind && row.state === "occupied")!;
+      const target = kind === "locked" ? occupiedLocked + 1 : Math.max(...current.map((row) => row.bedNumber!)) + 1;
+      const moved = send(state, {
+        type: "PLACE_IN_BED",
+        role: "ward",
+        admissionId: stay.id,
+        actingUnitId: UNIT,
+        bedNumber: target,
+      } as WardFlowEvent);
+      const unit = moved.units.find((row) => row.id === UNIT)!;
+      const confirmed = send(moved, {
+        type: "CONFIRM_CAPACITY",
+        role: "ward",
+        unitId: UNIT,
+        actingUnitId: UNIT,
+        value: Math.max(0, unit.allocatable.value - 1),
+        expectedRevision: unit.allocatable.revision ?? 0,
+      } as WardFlowEvent);
+      const stored = JSON.parse(JSON.stringify({ ...confirmed, rejections: [] })) as WardFlowState;
+      expect(isValidStoredWardFlowState(stored)).toBe(true);
+      const undone = send(stored, {
+        type: "UNDO_PLACE_IN_BED",
+        role: "ward",
+        admissionId: stay.id,
+        actingUnitId: UNIT,
+      } as WardFlowEvent);
+      expect(isDeepStrictEqual(undone.admissions, state.admissions)).toBe(true);
+      // The later confirmation survives: Undo neither rewrites nor re-revisions the ward row.
+      expect(undone.units).toEqual(stored.units);
+      expect(undone.undoRecords?.some((row) => row.kind === "bed-placement" && row.admissionId === stay.id)).toBe(
+        false,
+      );
+    },
+  );
+
   it("preserves an unknown historical kind on Undo of a single-kind seeded stay", () => {
     const state = seedWardFlowStateAt(0);
     const stay = state.admissions.find((row) => row.unitId === "scgh-adult-open" && row.state === "occupied")!;

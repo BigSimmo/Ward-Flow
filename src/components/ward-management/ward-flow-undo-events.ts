@@ -121,11 +121,15 @@ export function reduceUndoEvent(
       const unit = findUnit(state, admission.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
       const kindChange = record.bedKindChange;
+      // A same-kind move (equal locked counts) is undone without touching the ward row, so a later
+      // resource update such as CONFIRM_CAPACITY cannot be overwritten and must not block it.
+      const capacityChanged = kindChange !== undefined && kindChange.lockedBefore !== kindChange.lockedAfter;
       if (
         kindChange &&
         (admission.bedKind !== kindChange.after ||
-          unit.allocatableLocked !== kindChange.lockedAfter ||
-          (unit.allocatable.revision ?? 0) !== kindChange.capacityRevision)
+          (capacityChanged &&
+            (unit.allocatableLocked !== kindChange.lockedAfter ||
+              (unit.allocatable.revision ?? 0) !== kindChange.capacityRevision)))
       )
         return reject(state, event, "The stay or ward capacity has changed since the bed move, so it cannot be undone");
       if (record.beforeBed !== null) {
@@ -149,7 +153,7 @@ export function reduceUndoEvent(
       decision.reasonCode = "none";
       return {
         ...replaceAdmission(state, admission.id, restored),
-        ...(kindChange && kindChange.lockedBefore !== kindChange.lockedAfter
+        ...(capacityChanged
           ? {
               units: state.units.map((row) =>
                 row.id === unit.id ? { ...unit, allocatableLocked: kindChange.lockedBefore } : row,
