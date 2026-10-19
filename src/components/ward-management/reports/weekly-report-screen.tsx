@@ -32,6 +32,7 @@ import {
   phoneBodyStyles as phone,
 } from "@/components/ward-management/statistics/statistics-phone-parts";
 
+import { PilotMeasuresSection } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type ReasonCount, type ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
 
@@ -307,6 +308,14 @@ export function WeeklyReportScreen() {
                 </PhoneList>
               )}
             </PhoneGroup>
+            <PilotMeasuresSection
+              movements={movements}
+              referrals={referrals}
+              patients={patients}
+              now={now}
+              week={week}
+              isPhone
+            />
             <p className={styles.disclosure}>
               Counts only stays, movements and decisions held in this prototype. People who left before it started are
               not held, so earlier weeks read low.
@@ -463,6 +472,15 @@ export function WeeklyReportScreen() {
                 </div>
               )}
             </StatCard>
+
+            <PilotMeasuresSection
+              movements={movements}
+              referrals={referrals}
+              patients={patients}
+              now={now}
+              week={week}
+              isPhone={false}
+            />
 
             <p className={styles.disclosure}>
               Counts only stays, movements and decisions held in this prototype. People who left before it started are

@@ -11,6 +11,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { MissedRequestsPanel } from "@/components/ward-management/coordinator/missed-requests-panel";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -233,6 +234,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           {notice}
         </div>
       ) : null}
+      <MissedRequestsPanel />
     </>
   );
 

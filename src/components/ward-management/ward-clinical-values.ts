@@ -317,6 +317,14 @@ export const CLINICAL_VALUES = {
     unit: "minutes",
     source: "D-22 (26 Sep 2026), labelled default",
   },
+  missedRequestWindow: {
+    status: "synthetic",
+    name: "Bed request with no ward asked counted as missed after",
+    group: "Arrivals and answers",
+    value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    source: "Product brief success measure 2 (25 Sep 2026), proposed definition; no decision recorded",
+  },
   wardAnswerTarget: {
     ...SIGNED_BY_JOSH,
     name: "Decision target, ward answers a referral within",
