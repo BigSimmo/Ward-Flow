@@ -336,7 +336,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <span className={styles.v6HeroFact}>
                   <StatusGlyph tone="danger" size={9} />
                   {/* The wait itself is the "since opened" chip beside it, so this names the tier's limit. */}
-                  Overdue · over {tierOverdueAfterMinutes(urgencyTier) / 60}h
+                  Overdue · {tierOverdueAfterMinutes(urgencyTier) / 60}h limit
                 </span>
               ) : null}
               {liveMovement.specialling ? (
