@@ -41,6 +41,7 @@ import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { edPressure } from "@/components/ward-management/ward-pressure";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
 import { ShiftConfirmationsCard } from "./shift-confirmations-card";
@@ -57,10 +58,12 @@ import {
 } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { GapRow, GapWord, ReadyNowSection } from "./capacity-gap-rows";
 import { formatGap, isConfirmationFresh, phoneGap, totalsSentence } from "./capacity-gap-words";
 import { NetworkServiceGroupRows } from "./capacity-network-rows";
 import { CapacityTabs, CapacityWardSidebar } from "./capacity-ward-sidebar";
+import { ReadyByRoadTime } from "./capacity-road-time";
 
 export { ReadyNowSection } from "./capacity-gap-rows";
 export { rowSentence, totalsSentence } from "./capacity-gap-words";
@@ -251,6 +254,8 @@ export function CapacityScreen() {
     () => networkRows.find((row) => row.unit.id === selectedUnitId),
     [networkRows, selectedUnitId],
   );
+  // Road-time list: measured from the department under most pressure until another is chosen.
+  const roadTimeFromEdId = useMemo(() => edPressure(now, movements)[0]?.ed.id, [now, movements]);
   const totalLockedReady = useMemo(() => networkRows.reduce((sum, row) => sum + row.lockedReady, 0), [networkRows]);
   const totalOpenReady = netTotals.ready - totalLockedReady;
   const totalPulled = useMemo(() => networkRows.reduce((sum, row) => sum + row.pulled, 0), [networkRows]);
@@ -658,6 +663,15 @@ export function CapacityScreen() {
             scopedOpenReady={scopedOpenReady}
             scopedPendingPreparation={scopedPendingPreparation}
           />
+          {/* The phone rail is hidden on every tab, so the phone shows this list on Overview instead. */}
+          {isPhone ? null : (
+            <ReadyByRoadTime
+              rows={scopedNetworkRows}
+              defaultEdId={roadTimeFromEdId}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={selectWard}
+            />
+          )}
         </>
       )}
     </aside>
@@ -980,6 +994,15 @@ export function CapacityScreen() {
             />
           ) : null}
           {isPhone && phoneTab === "overview" ? <ShiftConfirmationsCard units={scopedUnits} now={now} /> : null}
+          {isPhone && phoneTab === "overview" ? (
+            <ReadyByRoadTime
+              rows={scopedNetworkRows}
+              defaultEdId={roadTimeFromEdId}
+              selectedUnitId={undefined}
+              onSelectUnit={selectWard}
+              wardHref={unitHref}
+            />
+          ) : null}
 
           <div className={styles.capacityGrid}>
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>

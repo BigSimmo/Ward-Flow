@@ -1,0 +1,26 @@
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.item {
+  display: inline-flex;
+  gap: var(--wf-s-1);
+  align-items: baseline;
+}
+
+.sep {
+  color: var(--wf-ink-3);
+}
+
+.code {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}

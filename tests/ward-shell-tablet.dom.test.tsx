@@ -78,7 +78,9 @@ afterEach(() => {
 });
 
 describe("tablet landscape (1001px to 1200px)", () => {
-  it("draws the icon rail even when the stored preference is open, with Today and Where, then More", async () => {
+  // B1 (Josh, 19 Oct 2026): every desktop shape shows the role's own menu, then More. The tablet
+  // icon rail used to show the Today and Where groups instead.
+  it("draws the icon rail even when the stored preference is open, with the role's menu, then More", async () => {
     const media = mockViewport(["(min-width: 1001px)", TABLET_LANDSCAPE_RAIL_QUERY]);
     window.localStorage.setItem("ward-flow-rail", "open");
     try {
@@ -90,14 +92,13 @@ describe("tablet landscape (1001px to 1200px)", () => {
       const groups = Array.from(views.querySelectorAll(":scope > section")).map((section) =>
         section.getAttribute("aria-label"),
       );
-      expect(groups).toEqual(RAIL_GROUPS.slice(0, 2).map((group) => group.label));
-      expect(groups).toEqual(["Today", "Where"]);
+      expect(groups).toEqual(["Bed coordinator menu"]);
 
       const more = within(rail).getByTestId("ward-rail-tablet-more");
       expect(more).toHaveAccessibleName("More pages");
       fireEvent.click(more);
       const sheet = await screen.findByTestId("ward-rail-more-pages");
-      // The full sidebar: every group, Work and Checks included.
+      // Everything else: every group, Work and Checks included.
       for (const group of RAIL_GROUPS) {
         expect(within(sheet).getByRole("region", { name: group.label })).toBeInTheDocument();
       }
@@ -120,7 +121,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
     }
   });
 
-  it("leaves desktop above 1200px on the stored preference with every group", async () => {
+  it("leaves desktop above 1200px on the stored preference with the role's menu and More", async () => {
     const media = mockViewport(["(min-width: 1001px)"]);
     window.localStorage.setItem("ward-flow-rail", "open");
     try {
@@ -129,8 +130,10 @@ describe("tablet landscape (1001px to 1200px)", () => {
       expect(rail).not.toHaveAttribute("data-tablet");
       expect(rail).toHaveAttribute("data-rail", "open");
       expect(within(rail).queryByTestId("ward-rail-tablet-more")).toBeNull();
+      expect(within(rail).getByTestId("ward-rail-more")).toHaveAccessibleName("More pages");
       const views = within(rail).getByRole("navigation", { name: "Ward Flow views" });
-      expect(views.querySelectorAll(":scope > section")).toHaveLength(RAIL_GROUPS.length);
+      // B1: one section, the role's own menu; the other groups are one tap away under More.
+      expect(views.querySelectorAll(":scope > section")).toHaveLength(1);
     } finally {
       media.mockRestore();
     }

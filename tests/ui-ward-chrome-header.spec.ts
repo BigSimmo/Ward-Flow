@@ -713,8 +713,8 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await expect(bar.getByTestId("ward-tools-service-now")).toHaveCount(0);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools" });
-  // Tools review (15 Oct 2026): Service now sits at the top of the one sheet, All figures below it.
-  await expect(tools.getByTestId("ward-tools-service-now")).toBeVisible();
+  // Simplification A5 (19 Oct 2026): Tools no longer repeats the headline figures; All figures stays.
+  await expect(tools.getByTestId("ward-tools-service-now")).toHaveCount(0);
   const figures = tools.getByTestId("ward-tools-toggle-figures");
   await figures.click();
   await expect(figures).toHaveAttribute("aria-expanded", "true");

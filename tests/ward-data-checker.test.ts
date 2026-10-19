@@ -15,8 +15,6 @@
  * The fixture uses the app's OWN `unitCapacity` and `bedIsOccupied`, exactly as the script does, so
  * these tests cannot pass against a second, drifting copy of the arithmetic.
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -24,13 +22,7 @@ import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { TRAVEL_BANDS } from "@/components/ward-management/ward-travel-bands";
 
-import {
-  checkWardData,
-  closestMatch,
-  formatReport,
-  navReferences,
-  readTextParsedFacts,
-} from "../scripts/check-ward-data.mjs";
+import { checkWardData, closestMatch, formatReport, navReferences } from "../scripts/check-ward-data.mjs";
 
 const SITES_FILE = "src/components/ward-management/ward-sites.ts";
 const SEED_FILE = "src/components/ward-management/ward-admissions-seed.ts";
@@ -98,7 +90,6 @@ function consistentData(overrides: AnyRecord = {}) {
     travelBands: { "Perth Metropolitan": { RPH: "under_an_hour" } },
     travelBandNames: [...TRAVEL_BANDS],
     serviceOrder: ["East Metro"],
-    columnServices: { left: ["East Metro"], right: [] },
     unitReferences: [
       {
         unitId: "rph-adult-secure",
@@ -354,15 +345,15 @@ describe("check 5 — every region has a community mental health team", () => {
 });
 
 describe("check 6 — a health service used by a hospital reaches every screen list", () => {
-  it("names both lists, what each one silently drops, and that nothing else warns", () => {
+  it("names the list, what it silently drops, and that nothing else warns", () => {
     // The real scenario: a hospital is added (or moved) into a health service nobody added to the
-    // two hand-written display lists. Two things are then true and both are reported — the new
-    // service reaches no screen, and the old one is now an empty column.
+    // hand-written display list. Two things are then true and both are reported — the new
+    // service reaches no screen, and the old one is now an empty group.
     const data = consistentData();
     (data.sites as AnyRecord[])[0].service = "Central Metro";
     const found = messages(data);
     const message = found.find((entry) => entry.includes('Health service "Central Metro"')) ?? "";
-    expect(found.some((entry) => entry.includes('empty column headed "EAST METRO"'))).toBe(true);
+    expect(found.some((entry) => entry.includes('empty "East Metro" group'))).toBe(true);
 
     expect(message).toContain('Health service "Central Metro"');
     expect(message).toContain('1 hospital uses the health service "Central Metro"');
@@ -371,38 +362,17 @@ describe("check 6 — a health service used by a hospital reaches every screen l
     expect(message).toContain(
       "the ED screen's ward table and the coordinator flow diagram will skip these wards entirely",
     );
-    expect(message).toContain("columnServices in src/components/ward-management/ward-management-network.tsx");
-    expect(message).toContain("the network map will never draw a column for these wards");
     expect(message).toContain("the app compiles and runs perfectly with these wards invisible");
-    expect(message).toContain('add "Central Metro" to both lists');
+    expect(message).toContain('add "Central Metro" to that list');
   });
 
-  it("names only the list that is actually missing it", () => {
-    const data = consistentData();
-    data.columnServices = { left: [], right: [] };
-    const found = messages(data);
-    const message = found.find((entry) => entry.includes('Health service "East Metro"')) ?? "";
-    expect(message).toContain("columnServices in src/components/ward-management/ward-management-network.tsx");
-    expect(message).not.toContain("wardServiceOrder in");
-    expect(message).toContain('add "East Metro" to that list');
-  });
-
-  it("says when a listed service has no hospitals, because the map draws an empty column for it", () => {
+  it("says when a listed service has no hospitals, because the ED screen shows an empty group for it", () => {
     const data = consistentData();
     data.serviceOrder = ["East Metro", "WACHS"];
-    data.columnServices = { left: ["East Metro", "WACHS"], right: [] };
     const message = onlyMessage(data);
     expect(message).toContain('Health service "WACHS"');
     expect(message).toContain("no hospital in src/components/ward-management/ward-sites.ts belongs to it");
-    expect(message).toContain('empty column headed "WACHS"');
-  });
-
-  it("says when the network map lists the same service twice", () => {
-    const data = consistentData();
-    data.columnServices = { left: ["East Metro"], right: ["East Metro"] };
-    const message = onlyMessage(data);
-    expect(message).toContain("appears more than once in columnServices");
-    expect(message).toContain("draw two columns for the same wards");
+    expect(message).toContain('empty "WACHS" group');
   });
 });
 
@@ -513,60 +483,7 @@ describe("check 9 (added) — the network's own ids and nesting are coherent", (
   });
 });
 
-describe("reading the one fact that cannot be imported", () => {
-  /**
-   * `columnServices` is a module-local constant inside a React component file, so it is read as
-   * TEXT. A text parse can silently stop matching after an ordinary refactor, and a parser that
-   * then returned "nothing found" would turn check 6 into a check that cannot fail. This asserts
-   * it reports instead.
-   *
-   * (Until item 41, 2026-09-17, this function also text-parsed the morning tour's ward and
-   * department and fed them into check 7. That source retired with the tour; removing its own
-   * "cannot find" test here is part of the same deliberate guard removal.)
-   */
-  it("reports loudly when it cannot find columnServices, rather than reporting nothing to check", () => {
-    const { columnServices, readingProblems } = readTextParsedFacts(() => "// the file was refactored\n");
-    expect(columnServices).toEqual({ left: [], right: [] });
-    const text = readingProblems.map((entry: { text: string }) => entry.text).join("\n---\n");
-    expect(text).toContain("could not read the columnServices list out of this file, so it could NOT check it");
-    expect(text).toContain("treat that as unchecked rather than correct");
-  });
-
-  /**
-   * COLUMN SERVICES IS CURRENTLY UNCHECKED, RECORDED RATHER THAN HIDDEN.
-   *
-   * At the ward board fold (2026-08-29) this checker met Phase 8's rewritten network screen for the
-   * first time. `columnServices` still has `left:` and `right:` keys, but they are no longer literal
-   * arrays:
-   *
-   *   left:  LEFT_COLUMN_SERVICES
-   *   right: wardServiceOrder.filter((service) => !LEFT_COLUMN_SERVICES.includes(service))
-   *
-   * The right-hand side is computed at runtime, and a text parser cannot resolve it. So reteaching
-   * the parser is NOT mechanical: it would mean reimplementing that filter in the checker, where it
-   * could silently diverge from the screen it is meant to be checking.
-   *
-   * The rule applied here, and it is the whole point: the checker is NOT loosened to make this pass.
-   * It reports "nothing is checking the columnServices list, so treat that as unchecked rather than
-   * correct" — an honest failure — and this test now pins that exact state so the gap is visible in
-   * the suite rather than absent from it.
-   *
-   * TO CLOSE IT: give `HealthService` a runtime array (it is the only multi-value union in
-   * ward-model.ts without one) and derive both columns from it. Then this fact stops needing to be
-   * text-parsed at all, and this test goes back to asserting no reading problems.
-   */
-  it("reads the real files, and records columnServices as unchecked", () => {
-    const read = (file: string) => readFileSync(resolve(process.cwd(), file), "utf8");
-    const { readingProblems } = readTextParsedFacts(read);
-
-    // Exactly one known reading problem, named, so a SECOND one cannot hide behind it.
-    expect(readingProblems).toHaveLength(1);
-    const text = readingProblems.map((entry: { text: string }) => entry.text).join(" | ");
-    expect(text).toContain("ward-management-network.tsx");
-    expect(text).toContain("could NOT check it");
-    expect(text).toContain("treat that as unchecked rather than correct");
-  });
-
+describe("reading the nav links the checks walk", () => {
   it("turns nav links into the ward and department references the checks walk", () => {
     const { unitReferences, edReferences } = navReferences([
       { id: "ward", href: "/ward-flow/ward/rph-adult-secure", label: "Ward — Ward 2K" },

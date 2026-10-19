@@ -62,7 +62,8 @@ import {
   durMinutes,
 } from "@/components/wf";
 
-import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
+import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { ReferralMatchView } from "./referral-match-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
@@ -887,7 +888,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
                     <div className={a.panelWho}>
                       <h2 className={a.panelName}>
-                        {selectedPatientInfo.displayName}
+                        {/* "Surname, First", as the queue beside it (simplification A8, 19 Oct 2026). */}
+                        {selectedPatientInfo.formalName}
                         <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>

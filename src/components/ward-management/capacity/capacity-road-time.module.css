@@ -1,0 +1,108 @@
+/* Ready beds by road time (`capacity-road-time.tsx`). Moved from the retired Network overview. */
+
+.card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.from {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 4px var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.rowSelected {
+  background: var(--wf-hover);
+}
+
+.rank {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.unitName,
+.unitMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unitName {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.unitMeta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.drive {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.driveTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.caveat {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

@@ -148,6 +148,100 @@
   border-bottom: 0;
 }
 
+/* Desktop details as two compact lines (Home placement redesign, Josh 19 Oct 2026):
+   "Male · Adult · Open · Form 4C", then "Waiting 3d 16h (target 1h)". Each fact keeps a
+   screen-reader label; the dots between them are drawn, not read. */
+.factLines {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.factLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  line-height: var(--wf-lh-16);
+}
+
+.inlineFact {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.inlineFact dd {
+  margin: 0;
+}
+
+.inlineFact + .inlineFact::before {
+  content: "·";
+  margin-inline: 0.375rem;
+  color: var(--wf-ink-3);
+}
+
+.waitLine {
+  gap: 0.3125rem;
+  color: var(--wf-ink-2);
+}
+
+/* Overdue: the glyph and the word carry it; the tone only adds to them. */
+.waitLine[data-urgent="true"] {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+
+.waitOverdue {
+  font-weight: 600;
+}
+
+/* "Accepted destination: X" and its desk link on one row; the link wraps under it when narrow. */
+.subjectHeader .destRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem 0.75rem;
+  min-width: 0;
+}
+
+/* The destination's words wrap inside their own column, so a long ward name never pushes the
+   link onto a second row. */
+.subjectHeader .destRow .destLine {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.subjectHeader .destRow .wardDeskLink {
+  flex: 0 0 auto;
+  /* The link is a flex box, which trims the spaces around its hidden ward name; the gap puts the
+     space back between "Open" and "desk". */
+  column-gap: 0.25em;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+}
+
+/* The next step leads, under the patient's name, with a hairline between it and the details. */
+.subjectHeader .nextStepLead {
+  display: grid;
+  gap: 0.375rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 0.0625rem solid var(--wf-line);
+}
+
+.subjectHeader .nextStepLead h4,
+.subjectHeader .nextStepLead p {
+  margin: 0;
+}
+
+/* The tier targets, once, at the panel foot (desktop). */
+.footNote {
+  padding-top: 0.5rem;
+  border-top: 0.0625rem solid var(--wf-line);
+}
+
 /* The legal record in full under the grid, and the tier-target caveat where a target drives it. */
 .legalLine,
 .targetNote {
@@ -1286,7 +1380,6 @@
 }
 
 .checksClearWarn {
-  font-family: var(--wf-mono);
   font-weight: 600;
 }
 

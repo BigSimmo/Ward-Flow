@@ -37,20 +37,16 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     }
   });
 
-  it("keeps the Delays system 'Record hold' control honest: it says it is not wired and records nothing", () => {
+  it("offers no Delays system 'Record hold' control while recording is not connected (simplification A5)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
     );
 
-    const systemTab = screen.getByRole("tab", { name: /System/i });
-    fireEvent.click(systemTab);
+    fireEvent.click(screen.getByRole("tab", { name: /System/i }));
 
-    const recordBtn = screen.getByRole("button", { name: /Record a service-wide or facility delay/i });
-    expect(recordBtn).toHaveAccessibleName(/Not wired in this prototype\./);
-
-    fireEvent.click(recordBtn);
+    expect(screen.queryByRole("button", { name: /Record a service-wide or facility delay/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Service-wide hold recorded/i)).not.toBeInTheDocument();
   });
 

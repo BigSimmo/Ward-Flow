@@ -30,7 +30,6 @@ const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/hub/hub-screen.tsx": 2,
   "src/components/ward-management/movements/movement-drawer.tsx": 2,
   "src/components/ward-management/movements/support-notification-checklist.tsx": 1,
-  "src/components/ward-management/network/network-overview.tsx": 1,
   "src/components/ward-management/officer/officer-screen.tsx": 1,
   "src/components/ward-management/patients/patient-now-screen.tsx": 10,
   "src/components/ward-management/patients/patient-transit-operations.tsx": 16,

@@ -151,9 +151,10 @@ Back to [the code map index](README.md).
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
 - **`flow-diagram.module.css`** (336 lines) — styles for `FlowDiagram` only.
-- **`flow-diagram.tsx`** (741 lines) — exports `hubStatusText` (a pure label function, line 114) and
-  `FlowDiagram` (line 207), the live bed-pipeline diagram (referred → accepted → placed) with hub
-  status text per unit.
+- **`flow-diagram.tsx`** — `FlowDiagram`, the bed-pipeline diagram (referred → accepted → placed).
+  No route draws it since the v6 Home (#113); only tests render it, and it re-exports `hubStatusText`.
+- **`flow-status.ts`** — `hubStatusText`, the hub's one-line status, used by `home-bedflow.tsx`.
+  Kept apart so Home's first load skips the diagram.
 - **`pressure-strip.tsx`** (247 lines) — `PressureStrip`, the horizontal ED-pressure scroller at the
   top of the coordinator screen; reads `ed/ed-home-derivations.ts` directly rather than through a
   coordinator-local selector.
@@ -459,7 +460,16 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - Tests that read the screen's source read every one of these files through
   `tests/helpers/community-screen-sources.ts`.
 
-## `search/` — 11 files, 9,679 lines
+## `search/` — 13 files
+
+- **Header search additions (19 October 2026):** `search-answers.ts` answers a fixed list of common
+  questions ("over 24 hours", "no bed yet", "past expected discharge", "Form 1A") from the Patients
+  page census and gives the preview each person's "where now" and next step; `search-places.ts`
+  reads bed questions ("Graylands bed 4") and "free beds". `ward-smart-search.ts` also lists queued
+  referrals (opening `referralBoardHref`) and near spellings ("Did you mean?") when a name finds
+  nobody. No AI, no scoring, no typed text in storage or the address. Voluntary/involuntary are
+  deliberately not answered (see the `search-answers.ts` header). Tests:
+  `ward-search-answers.test.ts` and the provider block in `ward-global-search.dom.test.tsx`.
 
 - **Route:** `/search` (`patient-search.tsx` → `PatientSearchPage`).
 - **Mockup:** `patient-search-third-edition.html` (SCREEN-MAP.md row for `search/`). Two further

@@ -1,0 +1,54 @@
+/*
+ * C1 (phone simplification, 19 Oct 2026): the pinned Board, Needs you and Lists row also holds the
+ * folded Filter button. The switch takes the space left; the button keeps its own width. Phone only
+ * (the row renders on a phone alone); its sticky band comes from `.phonePanes` in ed.module.css.
+ */
+.paneRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.paneRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Each option starts from its own width and shares what is left, so a label never runs into the
+   next one beside the Filter button. */
+.paneRow > div :global([role="radiogroup"]) > * {
+  flex: 1 1 auto;
+}
+
+/* In the Filter sheet the board chips wrap as phone pills: a 48px tap, a hairline edge, and a 2px
+   accent ring when pressed (the pressed state is also aria-pressed, never colour alone). The
+   attribute selectors outrank the board's own two-class chip rules. */
+.sheetChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+
+.sheetChips > button[type="button"] {
+  flex: none;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.sheetChips > button[type="button"][aria-pressed="true"] {
+  padding: 0 calc(var(--wf-s-4) - 1px);
+  border: 2px solid var(--wf-accent);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}

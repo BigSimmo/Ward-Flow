@@ -38,7 +38,11 @@ import {
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
-import { hubStatusText } from "./flow-diagram";
+// Loads the shared coordinator styles here, ahead of home.module.css and shortlist-panel.module.css,
+// as flow-diagram.tsx did while this card imported it. The Placement panel's own overrides depend on
+// coming later in the cascade; left to the lazy panel, these base rules arrived last and won.
+import "./coordinator.module.css";
+import { hubStatusText } from "./flow-status";
 import { fitGroups } from "./home-fit";
 import styles from "./home.module.css";
 
@@ -340,7 +344,7 @@ export function HomeBedflow({
               same three groups Placement lists. Words neutral; the glyphs carry the tone. */}
           <div className={styles.forLine}>
             <span className="sr-only">For</span>
-            <strong className={styles.forName}>{who.displayName}</strong>
+            <strong className={styles.forName}>{who.formalName}</strong>
             <span className={styles.forFits}>
               <span className={styles.forCount}>
                 <StatusGlyph tone="success" size={9} />

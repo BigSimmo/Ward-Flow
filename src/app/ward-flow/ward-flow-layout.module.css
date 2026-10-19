@@ -81,6 +81,43 @@
   scroll-padding-top: calc(var(--wf-header-height) + 5rem);
 }
 
+/* DA-23 (design audit, Josh, 19 Oct 2026): the bed meeting TV opens clean, with no rail, top bar or
+   phone dock, rather than only after a Full screen tap. It keys on the TV screen itself
+   (`data-wf-tv-clean`, bed-meeting-tv.tsx), so the switched-off notice keeps the app's menus. The
+   banners stay, the TV keeps its own prototype line, and its Leave TV view link goes back to the app.
+   The header height goes to zero so the pinned banners rest at the top, and the dock's reserved
+   space under the page is given back.
+   On a phone the "needs a larger screen" card (`data-phone-desktop-only`, shown up to 48rem) keeps
+   the TV mounted but hidden, so the menus stay until "Show anyway" removes that card. */
+.shellRow:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) {
+  --wf-header-height: 0px;
+}
+
+.shellRow:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) > [data-testid="ward-rail"],
+.shellRow > .shellContent:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) > [data-testid="ward-bar"] {
+  display: none;
+}
+
+.shellRow > .shellContent:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) {
+  padding-bottom: 0;
+}
+
+/* Above 48rem the card is never shown, so it never holds the menus back there. */
+@media not all and (max-width: 48rem) {
+  .shellRow:has([data-wf-tv-clean]) {
+    --wf-header-height: 0px;
+  }
+
+  .shellRow:has([data-wf-tv-clean]) > [data-testid="ward-rail"],
+  .shellRow > .shellContent:has([data-wf-tv-clean]) > [data-testid="ward-bar"] {
+    display: none;
+  }
+
+  .shellRow > .shellContent:has([data-wf-tv-clean]) {
+    padding-bottom: 0;
+  }
+}
+
 /*
  * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
  * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row
@@ -171,6 +208,14 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    /* WCAG 2.4.11: the column is the scroller here, so the html rule above has no effect. Keep a
+       focused control or a jump target clear of the pinned header and the pinned view row under
+       it (Ward views, Home queue tools, Delays and Referrals switches: up to 6.5rem tall). */
+    scroll-padding-top: calc(var(--wf-header-height) + 6.5rem);
+  }
+
+  .shellContent:has([data-testid="ward-offline-banner"]) {
+    scroll-padding-top: calc(var(--wf-header-height) + 11.5rem);
   }
 }
 

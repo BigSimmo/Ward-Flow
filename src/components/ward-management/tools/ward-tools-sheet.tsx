@@ -32,6 +32,7 @@ import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { useAccessNavFilter, useCanOpenHref } from "../shell/ward-access";
 import { WARD_BED_MEETING_TV_HREF } from "../ward-nav";
 import { bedSummaryText } from "./ward-bed-summary";
 import { WardBedFinder } from "./ward-bed-finder";
@@ -39,7 +40,6 @@ import { WardToolsContacts } from "./ward-tools-contacts";
 import { WardDemoPanel } from "./ward-demo-panel";
 import { WardFormTimes } from "./ward-form-times";
 import { NetworkFigures } from "./ward-network-figures";
-import { WardServiceNow } from "./ward-service-now";
 import styles from "./ward-tools-sheet.module.css";
 
 const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver), {
@@ -101,6 +101,10 @@ function LinkRow({
   detail: string;
   onNavigate: () => void;
 }) {
+  // DA-09 (design audit, 19 Oct 2026): a row is offered only to a desk that may open its page, by
+  // the same role table the menu reads, so no Tools row ends at "Not part of your role".
+  const canOpen = useCanOpenHref();
+  if (!canOpen(href)) return null;
   return (
     <Link href={href} className={styles.row} onClick={onNavigate}>
       <RowText icon={icon} name={name} detail={detail} />
@@ -192,9 +196,9 @@ function BedSummary() {
 
 /**
  * The Tools sheet, rebuilt from the 15 Oct 2026 Tools review (`/mnt/project-files/reviews/
- * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Service now (the
- * network figures at a glance, with All figures below), then Do now, Look up, Print and share, More
- * pages and Demo at the foot. Appearance, Settings, the Digest and the repeated shortcut grids are
+ * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Do now, Look up
+ * (All figures first), Print and share, More pages and Demo at the foot. The "Service now" figures
+ * block left on 19 Oct 2026 (simplification A5): every page already leads with its own figures. Appearance, Settings, the Digest and the repeated shortcut grids are
  * gone because the rail already carries them. Phone uses the same sheet; Bed meeting TV stays
  * desktop only and shows while its `bed-meeting-tv` flag is on.
  */
@@ -207,6 +211,10 @@ export function WardToolsSheet({
   onRequestHandled,
 }: WardToolsSheetProps) {
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
+  // DA-09: a ward desk updates its own ward's beds; the statewide list is not part of that desk.
+  const accessNav = useAccessNavFilter();
+  const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
+  const canOpen = useCanOpenHref();
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
@@ -264,17 +272,6 @@ export function WardToolsSheet({
         </span>
       </div>
 
-      <Group title="Service now">
-        <WardServiceNow />
-        {tool(
-          "figures",
-          BarChart3,
-          "All figures",
-          "Beds, flow and waits across the network",
-          <NetworkFigures onNavigate={onNavigate} />,
-        )}
-      </Group>
-
       <Group title="Do now">
         <button type="button" className={styles.row} onClick={() => onNewReferral()}>
           <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
@@ -287,13 +284,15 @@ export function WardToolsSheet({
           detail="Choose the patient, then the reason"
           onNavigate={onNavigate}
         />
-        <LinkRow
-          href={`${root}/wards`}
-          icon={BedSingle}
-          name="Update a bed"
-          detail="Open, close or hold a bed"
-          onNavigate={onNavigate}
-        />
+        {updateBedHref ? (
+          <LinkRow
+            href={updateBedHref}
+            icon={BedSingle}
+            name="Update a bed"
+            detail="Open, close or hold a bed"
+            onNavigate={onNavigate}
+          />
+        ) : null}
         <LinkRow
           href={handoverHref()}
           icon={FileText}
@@ -310,7 +309,16 @@ export function WardToolsSheet({
         )}
       </Group>
 
+      {/* Simplification A5 (Josh, 19 Oct 2026): Tools no longer repeats the headline figures every
+          page already shows. The full figures stay one row away, under Look up. */}
       <Group title="Look up">
+        {tool(
+          "figures",
+          BarChart3,
+          "All figures",
+          "Beds, flow and waits across the network",
+          <NetworkFigures onNavigate={onNavigate} />,
+        )}
         {tool(
           "catchment",
           MapIcon,
@@ -392,22 +400,24 @@ export function WardToolsSheet({
         />
       </Group>
 
-      <Group title="More pages">
-        <LinkRow
-          href={`${root}/legal-forms`}
-          icon={Scale}
-          name="Legal forms"
-          detail="Every open move that carries a form"
-          onNavigate={onNavigate}
-        />
-        <LinkRow
-          href={`${root}/out-of-area`}
-          icon={MapPinned}
-          name="Out of area"
-          detail="Who is in a bed far from home"
-          onNavigate={onNavigate}
-        />
-      </Group>
+      {[`${root}/legal-forms`, `${root}/out-of-area`].some(canOpen) ? (
+        <Group title="More pages">
+          <LinkRow
+            href={`${root}/legal-forms`}
+            icon={Scale}
+            name="Legal forms"
+            detail="Every open move that carries a form"
+            onNavigate={onNavigate}
+          />
+          <LinkRow
+            href={`${root}/out-of-area`}
+            icon={MapPinned}
+            name="Out of area"
+            detail="Who is in a bed far from home"
+            onNavigate={onNavigate}
+          />
+        </Group>
+      ) : null}
 
       <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
         <div className={styles.card}>

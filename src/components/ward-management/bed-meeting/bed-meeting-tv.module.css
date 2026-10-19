@@ -23,6 +23,14 @@
   container-type: inline-size;
 }
 
+/* DA-22 (design audit): on a ward TV the lists and labels reach 24 px at 1080p, the usual minimum for
+ * reading across a room, and every seeded ward still fits one screen. The bed meeting and ED views
+ * keep the smaller sizes: they have more to show, and at 24 px they would scroll. */
+.tv[data-view="ward"] {
+  --tv-small: clamp(var(--wf-fs-14), 1.25vw, 2rem);
+  --tv-row: clamp(var(--wf-fs-15), 1.3vw, 2.25rem);
+}
+
 .tv:fullscreen {
   overflow-y: auto;
 }
@@ -35,8 +43,11 @@
   }
 }
 
+/* The controls wrap under the title on a narrow screen, so Leave TV view, the one way back to the
+   app while the TV hides the menus (DA-23), is never pushed off the edge. */
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--tv-gap);
@@ -66,6 +77,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--wf-s-2);
 }

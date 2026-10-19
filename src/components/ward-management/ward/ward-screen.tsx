@@ -118,7 +118,7 @@ import {
   wardHandoverHref,
 } from "./ward-screen-helpers";
 import { WardAnswerView, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
-import { WardScreenTopBar } from "./ward-screen-top-bar";
+import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "./ward-screen-overlays";
@@ -827,11 +827,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // A1-8 (audit round 2): an accept from the Ward flow list offers Undo on its toast, as the Ward
   // answer view and the Bed board already do. Set by the accept, read once by the check below.
   const acceptUndoRef = useRef<{ movementId: string; unitId: string } | null>(null);
+  // Design audit DA-11: a pull says it worked, and focus stays with the arrival it changed.
+  const pulledRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (checkToken === 0) return;
     const acceptUndo = acceptUndoRef.current;
     acceptUndoRef.current = null;
+    const pulledId = pulledRef.current;
+    pulledRef.current = null;
     if (rejections.length > priorRejectionCountRef.current) {
       const newest = rejections[rejections.length - 1];
       setLastActionRejection(
@@ -843,6 +847,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       );
     } else {
       setLastActionRejection(undefined);
+      if (pulledId !== null) {
+        toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
+        // The Pull a bed button has gone, so focus would fall to the page. Keep it on the arrival.
+        const row = document.getElementById(`ward-arrival-${pulledId}`);
+        if (row && (document.activeElement === null || document.activeElement === document.body)) {
+          if (!row.hasAttribute("tabindex")) row.setAttribute("tabindex", "-1");
+          row.focus({ preventScroll: true });
+        }
+      }
       if (acceptUndo && toast) {
         const success = "Accepted in principle.";
         const undoLimit = roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE");
@@ -1469,6 +1482,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const targetUnit = units.find((u) => u.id === unitId);
     if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
+    pulledRef.current = movementId;
     raise("PULL_PATIENT", {
       movementId,
       unitId,
@@ -1504,6 +1518,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         overrideReason,
       });
     } else {
+      pulledRef.current = movementId;
       raise("PULL_PATIENT", {
         movementId,
         unitId: wardUnitId,
@@ -2101,6 +2116,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         role="tab"
         id="tabBtn-attn"
         aria-selected={activeTab !== "return" && activeTab !== "board"}
+        tabIndex={activeTab !== "return" && activeTab !== "board" ? 0 : -1}
         aria-controls={
           activeTab === "coming"
             ? "tab-coming"
@@ -2110,12 +2126,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 ? "tab-beds"
                 : "tab-attn"
         }
-        aria-label="Home (Worth Your Attention)"
+        // Simplification A8 (19 Oct 2026): "Ward home", as the bed board names this tab, so "Home"
+        // means only the app's front page.
+        aria-label="Ward home (Worth Your Attention)"
         onClick={() => {
           selectActiveTab("attn");
         }}
       >
-        <span>Home</span>
+        <span>Ward home</span>
       </button>
     </li>
   );
@@ -2127,6 +2145,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         role="tab"
         id="tabBtn-board"
         aria-selected={activeTab === "board"}
+        tabIndex={activeTab === "board" ? 0 : -1}
         aria-controls="tab-attn"
         aria-label={
           boardWaiting.length > 0
@@ -2155,6 +2174,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         role="tab"
         id="tabBtn-return"
         aria-selected={activeTab === "return"}
+        tabIndex={activeTab === "return" ? 0 : -1}
         aria-controls="tab-return"
         aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
         onClick={() => {
@@ -2243,7 +2263,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           /* Phone (v10): the three views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
           <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
-            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
+            <ul
+              className={styles.tabList}
+              role="tablist"
+              id="mainTabList"
+              aria-label="Ward views"
+              onKeyDown={moveBetweenWardTabs}
+            >
               {tabHome}
               {tabDecisions}
               {tabBoard}

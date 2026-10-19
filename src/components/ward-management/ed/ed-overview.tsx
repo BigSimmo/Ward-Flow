@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Plus, Tv } from "lucide-react";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import {
@@ -64,7 +65,7 @@ function serviceShort(service: string): string {
 
 /**
  * The department's hero (v6 Emergency mockup) and the strip of every emergency department under it.
- * Each tile is a link to that department; the current one carries `aria-current="page"`. A tile's
+ * Each tile the desk may open is a link to that department; the current one carries `aria-current="page"`. A tile's
  * triangle means people there are past the access target; the count beside it says how many wait.
  */
 export function EdOverview({
@@ -81,9 +82,14 @@ export function EdOverview({
 }: Props) {
   const isPhone = useIsPhone();
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
+  // DA-09: an ED desk opens only its own department and not the TV, so those links follow the role filter.
+  const canOpen = useCanOpenHref();
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
+  // Simplification A1 (Josh, 19 Oct 2026): three figures on every size, the same three the phone has
+  // always shown. "Over 8h" is left to the board's own wait column.
+  const heroChips = chips.filter((chip) => chip.id !== "severe");
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
   const raiseButton = (
     <button
@@ -123,16 +129,16 @@ export function EdOverview({
               Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · updating
             </>
           }
-          figures={chips
-            .filter((chip) => chip.id !== "severe")
-            .map((chip) => ({
-              id: chip.id,
-              value: chip.value,
-              label: chip.label,
-              tone: chip.value > 0 ? chip.tone : undefined,
-              pressed: highlight === chip.id,
-              onPress: () => onHighlight(highlight === chip.id ? null : chip.id),
-            }))}
+          // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the board scrolls.
+          condensed={`${onBoard} on the psychiatry board · longest ${checkValue("longest") ?? "—"}`}
+          figures={heroChips.map((chip) => ({
+            id: chip.id,
+            value: chip.value,
+            label: chip.label,
+            tone: chip.value > 0 ? chip.tone : undefined,
+            pressed: highlight === chip.id,
+            onPress: () => onHighlight(highlight === chip.id ? null : chip.id),
+          }))}
           actions={
             <>
               {highlight && highlightNote ? (
@@ -162,7 +168,7 @@ export function EdOverview({
           }
           bar={
             <div className={styles.chips} role="group" aria-label="Highlight people on the board">
-              {chips.map((chip) => (
+              {heroChips.map((chip) => (
                 <HeroStat
                   key={chip.id}
                   inline
@@ -190,7 +196,7 @@ export function EdOverview({
           aside={
             <>
               {/* This department's own TV screen, behind the `bed-meeting-tv` flag. */}
-              {tvViewsOn ? (
+              {tvViewsOn && canOpen(bedMeetingTvHref({ ed: departmentId })) ? (
                 <Link
                   href={bedMeetingTvHref({ ed: departmentId })}
                   className={buttonClass({ variant: "onHero", size: "sm" })}
@@ -210,38 +216,48 @@ export function EdOverview({
         <ul className={styles.list}>
           {departments.map((department) => {
             const isCurrent = department.id === departmentId;
+            const href = `/ward-flow/ed/${department.id}`;
+            const tile = {
+              className: cx(styles.tile, isCurrent && styles.current),
+              "data-ed": department.id,
+              "data-service": department.service,
+              title: `${department.name} (${department.service})`,
+            };
+            const body = (
+              <>
+                <span className={styles.tileTop}>
+                  <strong className={styles.code}>{department.code}</strong>
+                  <span className={styles.service}>{serviceShort(department.service)}</span>
+                </span>
+                <span className={styles.waiting}>
+                  <b>{department.waiting}</b>
+                  <small>waiting</small>
+                </span>
+                <span className={styles.longest}>
+                  {department.waiting === 0 ? (
+                    <span className={styles.quiet}>No one waiting</span>
+                  ) : (
+                    <>
+                      {department.breaches > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
+                      <span className={styles.mono}>{department.longest}</span> max
+                      {department.breaches > 0 ? (
+                        <span className={styles.srOnly}>, {department.breaches} over target</span>
+                      ) : null}
+                    </>
+                  )}
+                </span>
+              </>
+            );
             return (
               <li key={department.id}>
-                <Link
-                  href={`/ward-flow/ed/${department.id}`}
-                  className={cx(styles.tile, isCurrent && styles.current)}
-                  data-ed={department.id}
-                  data-service={department.service}
-                  aria-current={isCurrent ? "page" : undefined}
-                  title={`${department.name} (${department.service})`}
-                >
-                  <span className={styles.tileTop}>
-                    <strong className={styles.code}>{department.code}</strong>
-                    <span className={styles.service}>{serviceShort(department.service)}</span>
-                  </span>
-                  <span className={styles.waiting}>
-                    <b>{department.waiting}</b>
-                    <small>waiting</small>
-                  </span>
-                  <span className={styles.longest}>
-                    {department.waiting === 0 ? (
-                      <span className={styles.quiet}>No one waiting</span>
-                    ) : (
-                      <>
-                        {department.breaches > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
-                        <span className={styles.mono}>{department.longest}</span> max
-                        {department.breaches > 0 ? (
-                          <span className={styles.srOnly}>, {department.breaches} over target</span>
-                        ) : null}
-                      </>
-                    )}
-                  </span>
-                </Link>
+                {/* DA-09: a department this desk cannot open keeps its figures but is not a link. */}
+                {canOpen(href) ? (
+                  <Link href={href} aria-current={isCurrent ? "page" : undefined} {...tile}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div {...tile}>{body}</div>
+                )}
               </li>
             );
           })}

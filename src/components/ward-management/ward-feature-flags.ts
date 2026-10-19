@@ -134,6 +134,22 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
   },
+  "pilot-measures": {
+    label: "Pilot measures",
+    description: "The weekly report adds the pilot's agreed measures.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
+  },
+  "missed-requests-check": {
+    label: "Daily missed request check",
+    description: "Delays shows coordinators a daily check for missed or doubled bed requests.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the window and the rules with the pilot sponsor.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;

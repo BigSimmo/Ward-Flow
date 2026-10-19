@@ -20,10 +20,11 @@ function renderEd() {
 const rows = () => screen.getAllByTestId(/^ward-ed-patient-/u).filter((row) => row.tagName === "TR");
 
 describe("ED page — hero chips and board filters highlight, never hide", () => {
-  it("has four hero chips, each a pressed toggle", () => {
+  it("has three hero chips, each a pressed toggle", () => {
     renderEd();
     const chips = within(screen.getByRole("group", { name: "Highlight people on the board" })).getAllByRole("button");
-    expect(chips).toHaveLength(4);
+    // Three figures, as on the phone: the "severe" chip left the hero (simplification A1, 19 Oct 2026).
+    expect(chips).toHaveLength(3);
     for (const chip of chips) expect(chip).toHaveAttribute("aria-pressed", "false");
   });
 
