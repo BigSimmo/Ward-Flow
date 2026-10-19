@@ -516,7 +516,7 @@ function movementDisplayNames(
   return names;
 }
 
-export type ReferralSearchResult = {
+type ReferralSearchResult = {
   referral: Referral;
   /** "Family, Given" through the resolver, or its honest not-recorded wording. */
   formalName: string;
