@@ -26,6 +26,7 @@ import {
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
+import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
 import { isFixedOnlyDischargeCriteriaRecord } from "./ward-discharge-criteria";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -239,6 +240,16 @@ const unit = z
       ),
     ),
     arrivalCapacityConflicts: z.optional(z.array(z.looseObject({ movementId: text, at: finite }))),
+    isClosed: z.optional(bool),
+    // Smart features idea 7: a chosen reason, never typed text.
+    admissionsClosure: z.optional(
+      z.looseObject({
+        reason: z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
+        at: finite,
+        by: text,
+        until: z.optional(finite),
+      }),
+    ),
   })
   // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the older feed
   // empty count and does not rewrite the separately recorded locked count. Each count is bounded

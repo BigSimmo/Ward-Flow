@@ -156,6 +156,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   MARK_REFERRAL_OPENED: { category: "patient", plainWording: "Referral opened by the ward" },
   REQUEST_REFERRAL_INFORMATION: { category: "patient", plainWording: "Ward asked for more information on a referral" },
   MARK_REFERRAL_INFORMATION_MET: { category: "patient", plainWording: "Information a ward asked for was provided" },
+  CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
+  REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },

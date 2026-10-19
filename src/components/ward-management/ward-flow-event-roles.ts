@@ -290,6 +290,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   MARK_REFERRAL_OPENED: ["ward"],
   REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
   MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+  // Smart features idea 7: the ward for itself (reducer checks the acting unit), or the coordinator.
+  CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
+  REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*

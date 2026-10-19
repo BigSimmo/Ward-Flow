@@ -34,7 +34,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // FLAG_REFERRAL_TURNAROUND_PRIORITY.
       // Smart features ideas 3 and 4 (19 Oct 2026) add MARK_REFERRAL_OPENED,
       // REQUEST_REFERRAL_INFORMATION and MARK_REFERRAL_INFORMATION_MET.
-      expect(allEventTypes.length).toBe(136);
+      // Smart features idea 7 (19 Oct 2026) adds CLOSE_WARD_TO_ADMISSIONS and REOPEN_WARD_TO_ADMISSIONS.
+      expect(allEventTypes.length).toBe(138);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

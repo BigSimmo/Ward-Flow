@@ -280,6 +280,8 @@ describe("who may raise which event", () => {
     MARK_REFERRAL_OPENED: ["ward"],
     REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
     MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+    CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
+    REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
     CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
     RECORD_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],

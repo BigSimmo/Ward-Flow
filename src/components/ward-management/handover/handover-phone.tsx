@@ -46,6 +46,7 @@ import {
   type HandoverWard,
   type RowGroup,
 } from "./handover-model";
+import { wardClosedLine } from "../capacity/ward-closure";
 import styles from "./handover-phone.module.css";
 
 export type HandoverPhoneProps = {
@@ -333,6 +334,7 @@ function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number
     <div className={styles.wardRow}>
       <span className={styles.phoneWardName}>
         <b>{ward.name}</b>
+        {wardClosedLine(ward.unit) ? <span className={styles.wardSub}>{wardClosedLine(ward.unit)}</span> : null}
         <span className={styles.wardSub}>
           <span className={styles.trunc}>
             <b>{ward.pendingPreparation}</b> being made ready · <b>{ward.holds}</b> held · <b>{incoming}</b> incoming

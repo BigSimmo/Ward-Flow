@@ -242,6 +242,12 @@ export function candidateEvents(
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
         .flatMap((unit) => movementIds.map((movementId) => ({ type, role, now, movementId, unitId: unit.id })));
+    // Smart features idea 7: one ward only, so the sweep never closes the whole network and starves
+    // the pulls it also needs to reach. Reopening follows once that ward has been closed.
+    case "CLOSE_WARD_TO_ADMISSIONS":
+      return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
+    case "REOPEN_WARD_TO_ADMISSIONS":
+      return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
     // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
     // which ward copy exists and is still waiting.
     case "MARK_REFERRAL_OPENED":

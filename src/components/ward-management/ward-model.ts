@@ -1,5 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -221,6 +222,15 @@ export type EmergencyDepartment = {
   name: string;
 };
 
+/** A whole ward closed to new admissions; see `Unit.admissionsClosure`. */
+export type WardAdmissionsClosure = {
+  reason: WardClosureReason;
+  at: Instant;
+  /** The role label of whoever closed it, as history records it. */
+  by: string;
+  until?: Instant;
+};
+
 export type Unit = {
   id: string;
   siteCode: string;
@@ -267,6 +277,12 @@ export type Unit = {
   beds: number;
   /** Whether the ward is closed to new allocations while retaining its physical bed count. */
   isClosed?: boolean;
+  /**
+   * Smart features idea 7 (19 Oct 2026): why and since when, set with `isClosed` by
+   * `CLOSE_WARD_TO_ADMISSIONS` and cleared by `REOPEN_WARD_TO_ADMISSIONS`. `until` is the expected
+   * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
+   */
+  admissionsClosure?: WardAdmissionsClosure;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */

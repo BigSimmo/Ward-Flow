@@ -117,6 +117,14 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: true, production: false },
     removeWhen: "Josh agrees the list of items with ward and ED leads.",
   },
+  "ward-closure-mode": {
+    label: "Ward closure",
+    description: "Close a whole ward to admissions with a reason, then reopen it.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the closure reasons with the coordinators.",
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;

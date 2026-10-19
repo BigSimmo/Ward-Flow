@@ -9,6 +9,7 @@ import type {
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -762,6 +763,30 @@ export type WardFlowEvent =
       referralId: string;
       unitId: string;
       need: ReferralInformationNeed;
+    }
+  | {
+      /**
+       * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets
+       * `Unit.isClosed` and `Unit.admissionsClosure`. `reason` is chosen from `WARD_CLOSURE_REASONS`,
+       * never typed; `until` is an expected reopening that only prompts. Existing holds and
+       * acceptances stand. The ward for itself, or the coordinator for any ward.
+       */
+      type: "CLOSE_WARD_TO_ADMISSIONS";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      reason: WardClosureReason;
+      until?: Instant;
+    }
+  | {
+      /** Smart features idea 7: a person reopens a closed ward to admissions. Never automatic. */
+      type: "REOPEN_WARD_TO_ADMISSIONS";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      actingUnitId?: string;
     }
   | {
       type: "CHANGE_URGENCY";
