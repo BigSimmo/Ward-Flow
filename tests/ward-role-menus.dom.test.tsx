@@ -22,6 +22,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
+import { EdOverview } from "@/components/ward-management/ed/ed-overview";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -174,6 +175,52 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
     expect(ed("/ward-flow/capacity")).toBe(false);
     expect(ed("/ward-flow/bed-meeting")).toBe(false);
     expect(ed("/ward-flow/ed/peel-ed")).toBe(true);
+  });
+
+  it("offers an ED desk no TV link and no links to other departments, but keeps their figures", () => {
+    const department = (id: string, code: string) => ({
+      id,
+      name: `${code} Emergency Department`,
+      code,
+      service: "East Metro",
+      waiting: 2,
+      longest: "3h",
+      breaches: 0,
+    });
+    const overview = (
+      <EdOverview
+        departmentId="peel-ed"
+        departments={[department("peel-ed", "PEEL"), department("rph-ed", "RPH")]}
+        onBoard={2}
+        chips={[]}
+        highlight={null}
+        onHighlight={() => {}}
+        checks={[]}
+        onRaiseReferral={() => {}}
+      />
+    );
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", true));
+    try {
+      atDesk(ED_DESK);
+      const { unmount } = render(wrap(overview));
+      const strip = screen.getByRole("navigation", { name: "Emergency departments" });
+      expect(
+        within(strip)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      ).toEqual(["/ward-flow/ed/peel-ed"]);
+      expect(within(strip).getByText("RPH")).toBeInTheDocument();
+      expect(screen.queryByTestId("ward-ed-open-tv")).toBeNull();
+      unmount();
+
+      atDesk(null);
+      render(wrap(overview));
+      const coordinatorStrip = screen.getByRole("navigation", { name: "Emergency departments" });
+      expect(within(coordinatorStrip).getAllByRole("link")).toHaveLength(2);
+      expect(screen.getByTestId("ward-ed-open-tv")).toBeInTheDocument();
+    } finally {
+      act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
+    }
   });
 });
 
