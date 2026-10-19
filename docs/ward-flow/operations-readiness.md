@@ -1,5 +1,7 @@
 # Ward Flow operations verification
 
+_Updated 2026-10-19 - conflict fixture and isolated recovery boundaries checked against source; Documentation owns._
+
 This record supports the existing [audit receipt](../superpowers/plans/2026-10-16-audit-resolution-results.md)
 and [task ledger](../ward-flow-task-ledger.md). It records acceptance evidence and recovery steps,
 not a second issue tracker. The [database page](DATABASE.md) identifies the approved synthetic-only
@@ -37,9 +39,11 @@ Owner role: application maintainer, with the synthetic test-account owner.
 3. Sign in through the actual signed-in site. Confirm the expected working role and scope and
    authenticated readiness. Make one agreed reversible change to an invented record through the
    real UI. Wait for its accepted outcome before reporting success; reload and confirm persistence.
-4. Using the same isolated synthetic scenario, retain a command's original revision, accept a
-   separate write, then submit the stale command to `/v1/workspace/commands`. Require HTTP 409
-   and no duplicate mutation. Do not count a refusal of an invalid command as a conflict test.
+4. Using the same isolated synthetic scenario, retain a valid command's original revision, accept
+   a separate write that changes a record the retained command changes or names, then submit the
+   stale command to `/v1/workspace/commands`. Require HTTP 409 and no duplicate mutation. From
+   migration 10, a stale command touching only unchanged records can succeed; it is not a conflict
+   fixture. Do not count a refusal of an invalid command as a conflict test.
    Re-read before retrying uncertain writes.
 5. For temporary access, use an existing dedicated synthetic test membership/cover grant. End
    only that grant through the normal access-admin workflow and require the next read/poll to
@@ -74,8 +78,13 @@ established by the evidence above; do not invent a provider retention schedule o
    sequence values and deterministic content digests with the captured snapshot, and validate
    the restored domain payload using the matching engine. Check the migration ledger and command
    retry/audit continuity. An unrelated local seed is not proof that the hosted backup is usable.
-5. Check synthetic authenticated read/save/reload/conflict against an isolated backend using that
-   restored target. Measure the recovery duration and recovered timestamp, then compare them with
+5. For a bounded database rehearsal, use the `postgres` adapter against the isolated restored
+   PostgreSQL database while retaining the original approved Supabase Auth target and dedicated
+   synthetic accounts. The current Supabase database and Auth adapters reject a new project target;
+   a new Supabase database/Auth project needs separately approved configuration/code support before
+   authenticated acceptance there. Check synthetic authenticated read/save/reload/conflict against
+   the supported isolated backend and record which scope was tested. Measure the recovery duration
+   and recovered timestamp, then compare them with
    the owner's objectives. Do not infer RPO from a backup schedule or RTO from a local import alone.
 6. Preserve the backup and sanitised receipt. Stop owned rehearsal services. Deleting a Ward Flow
    backup, branch or worktree needs the repository owner's explicit approval.

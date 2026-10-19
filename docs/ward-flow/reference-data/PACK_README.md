@@ -27,10 +27,10 @@
 ## Runtime compilation & fixture boundary
 
 - **Reference code generators (`npm run ward:reference:build`, drift-checked by `npm run check:ward-reference`):**
-  - `scripts/ward-flow/build-reference-registry.mjs` compiles `entities.json` into `src/components/ward-management/reference/ward-reference-registry.ts` (`src/lib/ward-flow/ward-reference-registry.ts`) with **zero numeric capacity fields**.
-  - `scripts/ward-flow/build-reference-distances.mjs` compiles the **468 verified site-pair entries** in `distances.json` (`wa_site_distances_km.json`) into `src/components/ward-management/reference/ward-reference-distances.ts` (`src/lib/ward-flow/ward-reference-distances.ts`).
+  - `scripts/ward-flow/build-reference-registry.mjs` compiles `entities.json` into `src/components/ward-management/reference/ward-reference-registry.ts` with **zero numeric capacity fields**.
+  - `scripts/ward-flow/build-reference-distances.mjs` compiles the **468 verified site-pair entries** in `distances.json` (`wa_site_distances_km.json`) into `src/components/ward-management/reference/ward-reference-distances.ts`.
   - `scripts/ward-flow/build-reference-teams.mjs` compiles published community-service contact details from `entities.json` into `src/components/ward-management/reference/ward-reference-teams.ts`.
 - **Runtime imports & site/unit counts:**
-  - The generated modules are imported by the Ward Flow runtime (`src/components/ward-management/` / `src/lib/ward-flow/`).
-  - `ward-sites.ts` (`src/components/ward-management/ward-sites.ts` / `src/lib/ward-flow/ward-sites.ts`) includes **10 public EDs** (including specialist EDs `KEMH` and `PCH`) and a default `STANDARD_WARD_SITES` network of **23 inpatient units and 304 synthetic/sample beds**. Reference-pack capacity assertions are not imported into the runtime fixture.
+  - The generated modules are imported by the Ward Flow runtime (`src/components/ward-management/`).
+  - `ward-sites.ts` (`src/components/ward-management/ward-sites.ts`) includes **10 public EDs** (including specialist EDs `KEMH` and `PCH`) and a default `STANDARD_WARD_SITES` network of **23 inpatient units and 304 synthetic/sample beds**. Reference-pack capacity assertions are not imported into the runtime fixture.
   - All runtime bed counts remain synthetic/sample figures, and regional travel bands in `ward-travel-bands.ts` retain `TRAVEL_BANDS_ARE_INVENTED = true`.

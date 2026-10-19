@@ -1,5 +1,7 @@
 # Ward Flow database: the one source of truth
 
+_Updated 2026-10-19 - schema map extended to migration 11; Documentation owns._
+
 **Current database and sign-in: Supabase** (decision [D-55](decisions.md), 15 October 2026).
 
 - Project `zakzoemeedfepxcstsou` (Sydney, `ap-southeast-2`), dedicated to Ward Flow and holding
@@ -10,6 +12,9 @@
   membership of its own kind in that table, requests for access have their own
   `ward_flow.access_requests` table, and each phone alert device in `ward_flow.push_subscriptions`
   records the membership that turned it on.
+- Migration 11 adds append-only record access history and break glass protection, plus
+  server-side session sign-outs. The backend accepts schema versions 5 through 11; these
+  capabilities require 11 and its runtime grants. See the backend setup guides for rollback limits.
 - Plain PostgreSQL (`postgres`) is kept behind the same seam as a fallback. It shares the SQL,
   migrations and runtime-role checks that the Supabase adapter builds on. It is not in use.
 - **Azure is retired.** The Azure Functions host, Blob session vault, Azure PostgreSQL and Entra
@@ -57,17 +62,17 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 
 ## Where the provider is chosen
 
-| What                                          | Where                                                                                                                             |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Provider names, defaults and settings readers | `backend/ward-flow/config.mjs` (`DEFAULT_DATABASE_PROVIDER`, `DEFAULT_AUTH_PROVIDER`, `DATABASE_PROVIDERS`, `AUTH_PROVIDERS`)     |
-| Adapters for those names                      | `backend/ward-flow/providers.mjs` (`DATABASE_ADAPTERS`, `AUTH_ADAPTERS`)                                                          |
-| Supabase adapter                              | `backend/ward-flow/supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`, `migrate-supabase.mjs`, `infra/supabase-*` |
-| Plain PostgreSQL adapter                      | `backend/ward-flow/postgres-config.mjs`, `portable-postgres.mjs`, `migrate-postgres.mjs`, `infra/postgres-*`                      |
-| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations/001` to `010`                                         |
-| Browser sign-in                               | `src/components/ward-management/use-ward-supabase-shared.ts`, selected by `selectWardAuthProvider` in `ward-shared-access.tsx`    |
-| Browser security policy                       | `src/lib/security-headers.ts` (`resolveWardAuthProvider`, `resolveSharedWorkspaceOrigins`)                                        |
-| Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                           |
-| Tests that cover every registered provider    | `backend/ward-flow/provider-routing.test.mjs`, `tests/ward-auth-provider-parity.test.ts`, `tests/security-headers.test.ts`        |
+| What                                          | Where                                                                                                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Provider names, defaults and settings readers | `backend/ward-flow/config.mjs` (`DEFAULT_DATABASE_PROVIDER`, `DEFAULT_AUTH_PROVIDER`, `DATABASE_PROVIDERS`, `AUTH_PROVIDERS`)                                                         |
+| Adapters for those names                      | `backend/ward-flow/providers.mjs` (`DATABASE_ADAPTERS`, `AUTH_ADAPTERS`)                                                                                                              |
+| Supabase adapter                              | `backend/ward-flow/supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`, `migrate-supabase.mjs`, `infra/supabase-*`                                                     |
+| Plain PostgreSQL adapter                      | `backend/ward-flow/postgres-config.mjs`, `portable-postgres.mjs`, `migrate-postgres.mjs`, `infra/postgres-*`                                                                          |
+| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations.mjs`, `migrations/001` through <!-- fact:latest-migration -->011-record-access-and-sign-out<!-- /fact --> |
+| Browser sign-in                               | `src/components/ward-management/use-ward-supabase-shared.ts`, selected by `selectWardAuthProvider` in `ward-shared-access.tsx`                                                        |
+| Browser security policy                       | `src/lib/security-headers.ts` (`resolveWardAuthProvider`, `resolveSharedWorkspaceOrigins`)                                                                                            |
+| Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                                                                               |
+| Tests that cover every registered provider    | `backend/ward-flow/provider-routing.test.mjs`, `tests/ward-auth-provider-parity.test.ts`, `tests/security-headers.test.ts`                                                            |
 
 ## Settings
 
