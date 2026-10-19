@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  bedStripWord,
   useWalkRound,
   WalkRoundRowMarks,
   WardWalkRound,
@@ -21,6 +22,7 @@ const beds: WalkRoundBed[] = [
     number: "02",
     name: "Tom R.",
     note: "Accommodation",
+    stateWord: "Barrier",
     changeKey: "occupied|barrier",
     glyph: "warning",
     days: "23d",
@@ -31,6 +33,7 @@ const beds: WalkRoundBed[] = [
     number: "01",
     name: "Mia K.",
     note: "Expected out today",
+    stateWord: "Due out",
     changeKey: "occupied|due",
     glyph: "info",
     days: "12d",
@@ -41,6 +44,7 @@ const beds: WalkRoundBed[] = [
     number: "03",
     name: "Free to offer",
     note: "Free to offer",
+    stateWord: "Free",
     changeKey: "ready",
     glyph: null,
     days: "",
@@ -94,7 +98,7 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     expect(screen.getByRole("region", { name: "Bed 02, 2 of 3" })).toBeTruthy();
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
-    expect(screen.getByRole("button", { name: "Walk from bed 01, reviewed" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Walk from bed 01, Due out, reviewed" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
     expect(screen.getByText("List bed 02")).toBeTruthy();
@@ -113,7 +117,7 @@ describe("phone walk round (item 23, option D)", () => {
   it("opens the bed's existing panel to update it", () => {
     const onOpenBed = vi.fn();
     render(<Harness onOpenBed={onOpenBed} />);
-    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 02" }));
+    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 02, Barrier" }));
     fireEvent.click(screen.getByRole("button", { name: "Update this bed" }));
     expect(onOpenBed).toHaveBeenCalledWith(2);
   });
@@ -129,7 +133,7 @@ describe("phone walk round (item 23, option D)", () => {
     );
     rerender(<Harness bedList={moved} />);
     expect(screen.getAllByText("Changed")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 01" }));
+    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 01, Due out" }));
     expect(screen.getByText("Changed this round")).toBeTruthy();
   });
 
@@ -169,5 +173,39 @@ describe("phone walk round (item 23, option D)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
     expect(announce).toHaveBeenLastCalledWith("Walk round finished. Every bed reviewed.");
+  });
+});
+
+// C3 (phone simplification, 19 Oct 2026): the bed strip shows a word under each number, so the edge
+// colour never carries the meaning alone. Each word comes from the bed's existing state.
+describe("the bed strip word (C3)", () => {
+  const none = { free: false, preparing: false, awayAtEd: false, leaving: false };
+  const occupied = { status: "occupied" } as const;
+
+  it("shows the word under the number", () => {
+    render(<Harness />);
+    const strip = screen.getByRole("group", { name: "Beds in bed order" });
+    expect([...strip.querySelectorAll("button")].map((button) => button.textContent)).toEqual([
+      "01Due out",
+      "02Barrier",
+      "03Free",
+    ]);
+  });
+
+  it.each([
+    ["Free", occupied, { ...none, free: true }],
+    ["Preparing", { status: "ready" }, { ...none, preparing: true }],
+    ["Closed", { status: "closed" }, none],
+    ["Absent", { status: "leave", statusText: "Absent without leave" }, none],
+    ["Leave", { status: "leave", statusText: "On leave" }, none],
+    ["Held up", { ...occupied, blockReason: "Awaiting a bed elsewhere" }, none],
+    ["At ED", occupied, { ...none, awayAtEd: true }],
+    ["Past date", { ...occupied, pastDate: true }, none],
+    ["Barrier", { ...occupied, dischargeBarrier: "Accommodation" }, none],
+    ["Held", { status: "incoming" }, none],
+    ["Due out", occupied, { ...none, leaving: true }],
+    ["Occupied", occupied, none],
+  ] as const)("reads %s", (word, bed, flags) => {
+    expect(bedStripWord(bed as Parameters<typeof bedStripWord>[0], flags)).toBe(word);
   });
 });

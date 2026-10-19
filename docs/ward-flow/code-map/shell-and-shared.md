@@ -63,12 +63,12 @@ The compact footer still identifies synthetic data. Bed, admission, decline and 
 continue to use the existing derivations, including unavailable values rather than invented history.
 
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
-sheet with Change view at the top, then Service now (`ward-service-now.tsx`, the coordinator's
-standing figures across the network, with All figures from `ward-network-figures.tsx` below), Do now,
-Look up (catchment, contacts from the On-call directory, Form times), Print and share, More pages, and
-one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
+sheet with Change view at the top, then Do now, Look up (All figures from `ward-network-figures.tsx`
+first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
+and one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry
-them. The sheet loads on demand through the existing drawer shell.
+them. The sheet loads on demand through the existing drawer shell. Simpler screens (Josh, 19 Oct 2026)
+removed the Service now panel and `ward-service-now.tsx`: those figures repeated what each page shows.
 
 The directory includes wards, ED teams, community, switchboards, bed flow coordinators, transport,
 and executive/escalation roles. Approved community contact mappings retain their published
@@ -398,11 +398,13 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   `ward-service-bed-alerts.ts`. 1 importer (`layout.tsx`).
 - **`shell/ward-rail.module.css`** (2,827 lines) — the largest stylesheet in this part; must keep
   its `max-width: 1000px` breakpoint exactly matched to `ward-flow-layout.module.css`'s own.
-- **`shell/ward-broadcast-banner.tsx`** (121 lines) — `WardBroadcastBanner`: renders the single
+- **`shell/ward-broadcast-banner.tsx`** (223 lines) — `WardBroadcastBanner`: renders the single
   active WA-wide broadcast alert (`getActiveBroadcastAlert`, `alerts/ward-broadcast-model.ts`) with
   a severity badge, time-remaining, acknowledgement count and an "Acknowledge" button that dispatches
   `ACKNOWLEDGE_BROADCAST_ALERT`; renders nothing when there is no active alert. 1 importer
-  (`layout.tsx`).
+  (`layout.tsx`). Its body (answers, counts, actions) lives in
+  `shell/ward-broadcast-banner-body.tsx` (399 lines), a server-rendered `next/dynamic` chunk preloaded
+  when idle, so the shared shell's first load does not carry it.
 - **`shell/ward-broadcast-banner.module.css`** (193 lines) — its styles.
 - **`shell/ward-live-region.tsx`** (105 lines) — the shell's one polite `aria-live` region.
   `announceToWardShell(text)` is the module-level store every announcement in the shell goes

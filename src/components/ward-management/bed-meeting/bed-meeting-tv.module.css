@@ -23,6 +23,14 @@
   container-type: inline-size;
 }
 
+/* DA-22 (design audit): on a ward TV the lists and labels reach 24 px at 1080p, the usual minimum for
+ * reading across a room, and every seeded ward still fits one screen. The bed meeting and ED views
+ * keep the smaller sizes: they have more to show, and at 24 px they would scroll. */
+.tv[data-view="ward"] {
+  --tv-small: clamp(var(--wf-fs-14), 1.25vw, 2rem);
+  --tv-row: clamp(var(--wf-fs-15), 1.3vw, 2.25rem);
+}
+
 .tv:fullscreen {
   overflow-y: auto;
 }

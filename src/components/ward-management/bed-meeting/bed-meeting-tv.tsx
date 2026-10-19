@@ -34,6 +34,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -184,6 +185,10 @@ function Footer({ scope, scenario, now }: { scope: string; scenario: string; now
 }
 
 /** People waiting somewhere, longest first: initials, where, stage and wait. */
+/** The ED TV shows one row fewer than the other lists: under its tiles, a full list of two-line rows
+ *  ran past a 1080p screen (design audit follow-up, 19 Oct 2026). The rest are counted, not lost. */
+const ED_TV_PEOPLE_ROWS = TV_ROW_LIMIT - 1;
+
 function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number; noun: string }) {
   return (
     <>
@@ -679,7 +684,11 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           {sheet.people.length === 0 ? (
             <Empty>Nobody waiting for a mental health bed.</Empty>
           ) : (
-            <JourneyList rows={sheet.people} more={sheet.morePeople} noun="waiting" />
+            <JourneyList
+              rows={sheet.people.slice(0, ED_TV_PEOPLE_ROWS)}
+              more={sheet.morePeople + Math.max(0, sheet.people.length - ED_TV_PEOPLE_ROWS)}
+              noun="waiting"
+            />
           )}
         </Panel>
 
@@ -883,6 +892,8 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   // The screen element only exists while the flag is on, so watch it again once it appears.
   const onView = useOnView(root, enabled);
   useScreenWakeLock(enabled && onView);
+  // DA-07 (design audit): with no connection the TV stops claiming it updates on its own.
+  const online = useOnlineStatus();
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
@@ -993,7 +1004,8 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} · updates on its own
+            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} ·{" "}
+            {online ? "updates on its own" : "offline, not updating"}
           </p>
         </div>
         <div className={styles.actions}>

@@ -643,7 +643,7 @@ drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rathe
 one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
 these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
 **Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
-bed derivations (Service now, All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
+bed derivations (All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
 demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
 `ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
 `ward-bar-figures-telemetry.dom.test.tsx`.

@@ -672,9 +672,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
         );
       } else if (id === "tools") {
-        announceToWardShell(
-          "Tools opened. Service now, quick actions, look ups, print and share, and demo controls are here.",
-        );
+        announceToWardShell("Tools opened. Quick actions, look ups, print and share, and demo controls are here.");
       } else if (id === "referral") {
         announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
       }

@@ -122,6 +122,11 @@ const DELAYS_HREF = "/ward-flow/delays";
 
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
 const PHONE_QUEUE_ROWS = 20;
+/**
+ * Desktop Home scrolls once, so the queue shows its top 10 and a "Show all (N)" button reveals the
+ * rest in place (Home placement redesign, Josh 19 Oct 2026). A hero highlight shows every row.
+ */
+const DESKTOP_QUEUE_ROWS = 10;
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
 const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
@@ -674,7 +679,7 @@ export function CoordinatorScreen() {
   // sheet over a scrim on tablet portrait and the patient sheet on a phone (CSS by `data-layout`).
   const placementNode =
     hasPanelSubject || previewMovement ? (
-      <div className={styles.side} data-preview={previewMovement ? "true" : undefined}>
+      <div className={`${styles.side} ${styles.placementCol}`} data-preview={previewMovement ? "true" : undefined}>
         {hasPanelSubject ? (
           <div
             className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
@@ -979,7 +984,13 @@ export function CoordinatorScreen() {
                   delaysHref={DELAYS_HREF}
                   highlight={highlight}
                   onClearHighlight={() => setHighlight(undefined)}
-                  rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                  rowCap={
+                    isPhone
+                      ? PHONE_QUEUE_ROWS
+                      : layout === "desktop" && highlight === undefined
+                        ? DESKTOP_QUEUE_ROWS
+                        : undefined
+                  }
                   phone={isPhone}
                   pinnedIds={actNowMovementIds}
                 />
