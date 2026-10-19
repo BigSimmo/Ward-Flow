@@ -78,6 +78,8 @@ const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", sig
 const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-16" } as const;
 /** Josh signed the shared site's session limit for the prototype on 17 Oct 2026 (D-65). */
 const SIGNED_BY_JOSH_17_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-17" } as const;
+/** Josh signed the missed bed request window for the prototype at 07:02 AWST on 20 Oct 2026. */
+const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-20" } as const;
 
 /**
  * Every clinical value, keyed for typed reads (`CLINICAL_VALUES.tierOneOverdue.value`). The order
@@ -318,12 +320,13 @@ export const CLINICAL_VALUES = {
     source: "D-22 (26 Sep 2026), labelled default",
   },
   missedRequestWindow: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_20_OCT,
     name: "Bed request with no ward asked counted as missed after",
     group: "Arrivals and answers",
     value: 2 * MINUTES_PER_HOUR,
     unit: "minutes",
-    source: "Product brief success measure 2 (25 Sep 2026), proposed definition; no decision recorded",
+    source:
+      "Product brief success measure 2 (25 Sep 2026); signed off by owner Josh, 07:02 AWST 20 Oct 2026, prototype",
   },
   wardAnswerTarget: {
     ...SIGNED_BY_JOSH,
