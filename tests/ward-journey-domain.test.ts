@@ -6,6 +6,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
+import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
 import {
   readOpenedDischargeRecord,
   newDischargeRequestNamespace,
@@ -163,6 +164,28 @@ describe("journey domain integrity", () => {
     expect(wardFlowReducer(next, { ...event, submissionId: "typed text" }).referrals).toHaveLength(
       next.referrals.length,
     );
+  });
+
+  it("lets a built-in regional community desk register and see its patient, matching team names by key", () => {
+    const state = seedWardFlowState();
+    const access: WardAccess = { role: "community", scope: { kind: "team", teamName: COMMUNITY_TEAMS.Peel } };
+    const respelt: WardAccess = {
+      role: "community",
+      scope: { kind: "team", teamName: COMMUNITY_TEAMS.Peel.toUpperCase() },
+    };
+    const other: WardAccess = { role: "community", scope: { kind: "team", teamName: COMMUNITY_TEAMS.Kimberley } };
+    const options = { now: NOW_ANCHOR, places: wardPlaceLookup(state.units) };
+    const event = register(access);
+    expect(commandScopeRefusal(state, access, event, options)).toBeNull();
+    const next = wardFlowReducer(state, event);
+    expect(next.rejections).toEqual(state.rejections);
+    const patient = next.patients.at(-1)!;
+    expect(scopeWardFlowState(next, access, options).state.patients.some((p) => p.id === patient.id)).toBe(true);
+    expect(scopeWardFlowState(next, respelt, options).state.patients.some((p) => p.id === patient.id)).toBe(true);
+    expect(scopeWardFlowState(next, other, options).state.patients.some((p) => p.id === patient.id)).toBe(false);
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify({ ...next, rejections: [] })))).toBe(true);
+    const unknown = wardFlowReducer(state, { ...event, registrationScope: { kind: "team", placeId: "Invented team" } });
+    expect(unknown.patients).toEqual(state.patients);
   });
 
   it("does not reveal legacy orphan patients or invent a multiward source", () => {

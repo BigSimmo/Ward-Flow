@@ -1,5 +1,6 @@
 import { communityTeamOptions } from "./referrals/referral-destination-options";
 import { HEALTH_SERVICES, type Unit } from "./ward-model";
+import { COMMUNITY_TEAMS } from "./ward-teams";
 import type { WardAccess, WardAccessScope, PlaceLookup } from "./ward-role-access";
 import { unitInScope, edInScope } from "./ward-role-access";
 import { edById, siteByCode } from "./ward-sites";
@@ -34,6 +35,22 @@ export function patientRegistrationScope(
   }
 }
 
+/** Team names arrive with differing case and punctuation, so compare them by a canonical key. */
+function teamKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+let knownTeamKeys: ReadonlySet<string> | undefined;
+
+/** Referral clinic teams and the built-in regional community desks can both register patients. */
+function isKnownTeam(name: string): boolean {
+  knownTeamKeys ??= new Set([...communityTeamOptions(), ...Object.values(COMMUNITY_TEAMS)].map(teamKey));
+  return knownTeamKeys.has(teamKey(name));
+}
+
 export function isPatientRegistrationScope(
   value: unknown,
   units: readonly Pick<Unit, "id">[],
@@ -53,7 +70,7 @@ export function isPatientRegistrationScope(
     case "ward":
       return units.some((unit) => unit.id === scope.placeId);
     case "team":
-      return communityTeamOptions().includes(scope.placeId);
+      return isKnownTeam(scope.placeId);
     case "site":
       return !!siteByCode(scope.placeId);
     case "service":
@@ -77,7 +94,7 @@ export function registrationIsInScope(
     case "ed":
       return edInScope(scope, registration.placeId, places);
     case "team":
-      return scope.kind === "team" && scope.teamName === registration.placeId;
+      return scope.kind === "team" && teamKey(scope.teamName) === teamKey(registration.placeId);
     case "site":
       return scope.kind === "site"
         ? scope.siteCode === registration.placeId
