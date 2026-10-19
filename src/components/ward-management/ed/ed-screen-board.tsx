@@ -189,6 +189,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
                   No one matches this search and filter. Everyone stays below, dimmed.
                 </p>
               ) : null}
+              <TierKey />
               <ul className={styles.phoneBoardList} aria-label="Emergency department board">
                 {visiblePatients.map(renderBoardRow)}
               </ul>

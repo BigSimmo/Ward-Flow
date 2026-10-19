@@ -347,4 +347,31 @@ describe("scoped review persistence", () => {
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog")).toHaveAccessibleDescription("Updates since 23:50 yesterday · 15-minute window");
   });
+
+  it("returns focus to the header slot after reviewing the last unread update", async () => {
+    // Reviewing the only update empties the slot, so its button is gone when the sheet closes.
+    // Focus must land on the slot, not fall to the page body.
+    const seeded = seedWardFlowState();
+    const unitId = seeded.units[0]!.id;
+    const before = { ...seeded.movements[0]!, acceptedUnitId: unitId, stage: "placement_requested" as const };
+    const world = { ...seeded, movements: [before], referrals: [], bedReleases: [] };
+    const scopeKey = `ward:${unitId}`;
+    window.sessionStorage.setItem(
+      scopedStorageKey(scopeKey, "local-demo", seeded.scenario, 0),
+      JSON.stringify(
+        takeLastLookSnapshot(scopeLastLookWorld(world, scopeKey), 1430, DEFAULT_DUE_SOON_THRESHOLDS, scopeKey),
+      ),
+    );
+    render(
+      <WardFlowProvider initialNow={1445}>
+        <ScopedFixture />
+      </WardFlowProvider>,
+    );
+    const slot = screen.getByTestId(`since-last-look-ward:${unitId}`);
+    fireEvent.click(within(slot).getByRole("button"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(within(slot).queryByRole("button")).toBeNull();
+    await waitFor(() => expect(slot).toHaveFocus());
+  });
 });
