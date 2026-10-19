@@ -7,6 +7,7 @@ import {
   wardFlowReducer,
   admissionLegalStatus,
   type WardFlowState,
+  UNLINKED_CARE_REFUSAL,
 } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { CareChange } from "@/components/ward-management/ward-care-journey";
@@ -189,6 +190,23 @@ describe("planned arrival preserves checked authority and allocation gates", () 
         const wardDeparture = wardFlowReducer(revoked, wardLeaving);
         expect(wardDeparture.rejections).toEqual([]);
         expect(wardDeparture.admissions.find((a) => a.id === stay.id)?.state).toBe("departed");
+      }
+      if (!linked) {
+        // Owner, 20 Oct 2026: a revocation needs a linked patient, so the unlinked stay is told to
+        // link first, and a care record attempted on it is refused with that same instruction.
+        expect(refused.rejections.at(-1)?.reason).toMatch(/Link the patient to their record first/);
+        const unlinkedRevocation = wardFlowReducer(reload, {
+          type: "RECORD_ADMISSION_CARE",
+          role: "coordinator",
+          now: NOW + 31,
+          admissionId: stay.id,
+          patientId: "PT-SYNTHETIC-UNLINKED",
+          expectedGeneration: reload.worldGeneration,
+          expectedRevision: reload.dischargeRevisions[stay.id] ?? 0,
+          change: { kind: "legal", authority: "revocation", writtenAt: NOW + 31, paperChecked: true },
+        });
+        expect(unlinkedRevocation.admissions).toBe(reload.admissions);
+        expect(unlinkedRevocation.rejections.at(-1)?.reason).toBe(UNLINKED_CARE_REFUSAL);
       }
       const invalid = structuredClone(reload);
       invalid.admissions.at(-1)!.plannedLegalStatus = "Invented" as never;

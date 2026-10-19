@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import { DischargeCareJourney } from "@/components/ward-management/discharges/discharge-care-journey";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-function Workspace({ role = "coordinator" }: { role?: "coordinator" | "ward" }) {
+function Workspace({ role = "coordinator", unlinked = false }: { role?: "coordinator" | "ward"; unlinked?: boolean }) {
   const { admissions, openDischargeRecord, readDischargeRecord, dayZero, dispatch, rejections } = useWardFlow();
   const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
   const admission = admissions.find((a) => a.state === "occupied" && a.patientId)!;
@@ -26,7 +26,12 @@ function Workspace({ role = "coordinator" }: { role?: "coordinator" | "ward" }) 
       </button>
       <output data-testid="global-rejection-count">{rejections.length}</output>
       <output data-testid="appointment-time">{local}</output>
-      {read.status === "allowed" && <DischargeCareJourney record={read.value} actor={actor} />}
+      {read.status === "allowed" && (
+        <DischargeCareJourney
+          record={unlinked ? { ...read.value, identity: { kind: "unresolved-link" } } : read.value}
+          actor={actor}
+        />
+      )}
     </>
   );
 }
@@ -39,6 +44,17 @@ function start(role?: "coordinator" | "ward") {
   fireEvent.click(screen.getByRole("button", { name: "Open care record" }));
 }
 describe("care journey controls use the actual guarded provider", () => {
+  it("tells the user to link the patient before any revocation or care step can be recorded", () => {
+    // Owner, 20 Oct 2026: care records (a revocation included) need a linked patient.
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Workspace unlinked />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open care record" }));
+    expect(screen.getByTestId("care-journey-link-first")).toHaveTextContent(/Link the patient to their record first/);
+    expect(screen.queryByRole("button", { name: "Record community legal transition" })).not.toBeInTheDocument();
+  });
   it("records a chosen clinician and appointment then an actual contact outcome", () => {
     start();
     fireEvent.change(screen.getByRole("combobox", { name: "Responsible clinician" }), {

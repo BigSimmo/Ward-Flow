@@ -1429,6 +1429,10 @@ type ProtectedRecordEvent = Extract<
   }
 >;
 
+/** Shown when a care step, such as a revocation, is attempted on a stay with no linked patient. */
+export const UNLINKED_CARE_REFUSAL =
+  "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
+
 function protectedRefusal(
   state: WardFlowState,
   event: ProtectedRecordEvent,
@@ -1639,6 +1643,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   if (!unit || !admission || !uniqueRecord(state.units, admission.unitId)) return deny("missing-or-inaccessible");
   if (admission.unitId !== unit.id) return deny("scope");
   const identity = dischargeIdentity(state, admission);
+  // A care record (a revocation included) needs a linked patient (owner, 20 Oct 2026): say so plainly.
+  if (identity.kind !== "linked" && event.type === "RECORD_ADMISSION_CARE")
+    return deny("identity-link", "denied", UNLINKED_CARE_REFUSAL);
   if (identity.kind !== "linked" || identity.patient.id !== event.patientId) return deny("identity-link");
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");

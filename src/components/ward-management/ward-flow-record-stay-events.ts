@@ -143,10 +143,14 @@ export function reduceRecordedStayEvent(
           if (
             !recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)
           ) {
+            // A revocation is a care record on a linked patient only (owner, 20 Oct 2026), so an
+            // unlinked stay is told to link first rather than to record something it cannot.
             return reject(
               state,
               event,
-              `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
+              admission.patientId
+                ? `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`
+                : `cannot record leaving for admission ${admission.id}: the booking is involuntary. Link the patient to their record first, then record the revocation or community treatment order before discharge to the community or left-against-advice`,
             );
           }
         }
