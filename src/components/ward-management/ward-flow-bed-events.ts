@@ -2,6 +2,7 @@ import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { isDischargeBarrier } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
+import { numberedBedKind } from "./ward-bed-designation";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import {
   BED_PREPARATION_NOTES,
@@ -91,11 +92,42 @@ export function reduceBedEvent(
       if (bedRefusal) return reject(state, event, bedRefusal);
       const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
       if (heldRefusal) return reject(state, event, heldRefusal);
+      const targetKind = numberedBedKind(unit, event.bedNumber)!;
+      const priorKind =
+        admission.bedKind ??
+        (admission.bedNumber === undefined
+          ? unit.lockedBeds === 0
+            ? "open"
+            : unit.lockedBeds === unit.beds
+              ? "locked"
+              : undefined
+          : numberedBedKind(unit, admission.bedNumber));
+      if (priorKind === undefined)
+        return reject(
+          state,
+          event,
+          "This mixed-ward stay has no recorded current bed or bed kind; its capacity change cannot be determined safely.",
+        );
+      const lockedDelta = Number(priorKind === "locked") - Number(targetKind === "locked");
+      const lockedAfter = unit.allocatableLocked + lockedDelta;
+      if (lockedAfter < 0 || lockedAfter > Math.min(unit.lockedBeds, unit.allocatable.value))
+        return reject(state, event, "The ward's free bed-kind counts do not support this bed move.");
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      const placed = replaceAdmission(state, admission.id, { ...admission, bedNumber: event.bedNumber });
+      const placed = replaceAdmission(state, admission.id, {
+        ...admission,
+        bedNumber: event.bedNumber,
+        bedKind: targetKind,
+      });
       return {
         ...placed,
+        ...(lockedDelta === 0
+          ? {}
+          : {
+              units: placed.units.map((row) =>
+                row.id === unit.id ? { ...unit, allocatableLocked: lockedAfter } : row,
+              ),
+            }),
         undoRecords: withUndoRecord(state.undoRecords, {
           kind: "bed-placement",
           admissionId: admission.id,
@@ -104,6 +136,13 @@ export function reduceBedEvent(
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
           afterBed: event.bedNumber,
+          bedKindChange: {
+            before: admission.bedKind ?? null,
+            after: targetKind,
+            lockedBefore: unit.allocatableLocked,
+            lockedAfter,
+            capacityRevision: (unit.allocatable.revision ?? 0) + (lockedDelta === 0 ? 0 : 1),
+          },
         }),
       };
     }

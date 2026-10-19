@@ -178,6 +178,151 @@ test("a save against an older revision clashes only with someone else's change t
   );
 });
 
+test("independent undoable saves do not clash when the undo history rolls over, including legacy index rows", async () => {
+  const engine = await import("./dist/engine.mjs");
+  for (const count of [1, 50]) {
+    for (const legacy of [false, true]) {
+      const base = engine.seedWorld(at);
+      const firstStay = base.state.admissions.find((stay) => stay.state === "occupied");
+      const secondStay = base.state.admissions.find(
+        (stay) => stay.state === "occupied" && stay.unitId !== firstStay.unitId,
+      );
+      assert.ok(firstStay && secondStay);
+      // Valid synthetic history: the persistence boundary must not turn evicting an old undo
+      // receipt into a change to every other subject's receipt.
+      const history = base.state.admissions
+        .filter((stay) => ![firstStay.id, secondStay.id].includes(stay.id))
+        .map((stay) => ({
+          kind: "bed-placement",
+          admissionId: stay.id,
+          unitId: stay.unitId,
+          at: 600,
+          role: "ward",
+          beforeBed: null,
+          afterBed: 1,
+        }));
+      assert.ok(history.length >= count, "the seed supplies enough distinct real stay subjects");
+      base.state.undoRecords = history.slice(0, count);
+      assert.ok(engine.validWorld(base));
+      const place = (stay, bedNumber) => ({
+        type: "PLACE_IN_BED",
+        role: "ward",
+        admissionId: stay.id,
+        actingUnitId: stay.unitId,
+        bedNumber,
+      });
+      const firstEvent = place(firstStay, 1);
+      const secondEvent = place(secondStay, 1);
+      const initial = planSave([], base, 1);
+      let rows = stored([], initial);
+      if (legacy)
+        rows = rows.map((row) => (row.collection === "undoRecords" ? { ...row, record_id: String(row.ordinal) } : row));
+      assert.deepEqual(assembleWorld(initial.core, rows), base);
+      const first = engine.applyCommand(base, firstEvent, at);
+      assert.equal(first.outcome, "accepted");
+      assert.ok(engine.validWorld(first.world));
+      const saved = planSave(rows, first.world, 2, initial.core);
+      const now = stored(rows, saved);
+      assert.deepEqual(assembleWorld(saved.core, now), first.world);
+      const second = engine.applyCommand(first.world, secondEvent, at);
+      assert.equal(second.outcome, "accepted");
+      assert.equal(
+        conflicts({
+          stored: now,
+          core: saved.core,
+          before: first.world,
+          after: second.world,
+          event: secondEvent,
+          expectedRevision: 1,
+          priorRevision: 2,
+        }),
+        false,
+        `independent subjects, history=${count}, legacy=${legacy}`,
+      );
+      const secondSaved = planSave(now, second.world, 3, saved.core);
+      assert.deepEqual(assembleWorld(secondSaved.core, stored(now, secondSaved)), second.world);
+      // A change to the same subject must still clash, even if it only restores an earlier value.
+      const sameSubject = engine.applyCommand(first.world, place(firstStay, 2), at);
+      assert.equal(sameSubject.outcome, "accepted");
+      assert.equal(
+        conflicts({
+          stored: now,
+          core: saved.core,
+          before: first.world,
+          after: sameSubject.world,
+          event: place(firstStay, 2),
+          expectedRevision: 1,
+          priorRevision: 2,
+        }),
+        true,
+      );
+      // Conversion of old numeric keys keeps every unchanged receipt's content revision.
+      for (const row of now.filter((row) => row.collection === "undoRecords"))
+        assert.equal(row.revision, row.body.admissionId === firstStay.id ? 2 : 1);
+    }
+  }
+});
+
+test("all undo receipt kinds retain order and same-subject conflicts with old numeric storage keys", () => {
+  const receipts = [
+    { kind: "bed-placement", admissionId: "stay", at: 1 },
+    { kind: "referral-decision", referralId: "referral", at: 1 },
+    { kind: "step", undoType: "UNDO_REFER_TO_UNITS", subjectId: "movement", at: 1 },
+  ];
+  const base = { version: 1, state: { worldGeneration: 1, undoRecords: receipts } };
+  const original = structuredClone(base);
+  const initial = planSave([], base, 1);
+  const rows = stored([], initial);
+  assert.deepEqual(base, original, "storage identity never mutates domain undo receipts");
+  assert.equal(initial.core.state.undoRecords.$records, "index", "old readers still order these by ordinal");
+  assert.ok(rows.every((row) => row.record_id.length <= 200));
+  for (let index = 0; index < receipts.length; index++) {
+    const changed = {
+      ...base,
+      state: { ...base.state, undoRecords: receipts.map((row, at) => (at === index ? { ...row, at: 2 } : row)) },
+    };
+    const saved = planSave(rows, changed, 2, initial.core);
+    const legacy = stored(rows, saved).map((row) => ({ ...row, record_id: String(row.ordinal) }));
+    assert.deepEqual(assembleWorld(saved.core, legacy), changed);
+    const next = {
+      ...changed,
+      state: {
+        ...changed.state,
+        undoRecords: changed.state.undoRecords.map((row, at) => (at === index ? { ...row, at: 3 } : row)),
+      },
+    };
+    assert.equal(
+      conflicts({
+        stored: legacy,
+        core: saved.core,
+        before: changed,
+        after: next,
+        event: {},
+        expectedRevision: 1,
+        priorRevision: 2,
+      }),
+      true,
+      receipts[index].kind,
+    );
+    const converted = planSave(legacy, changed, 3, saved.core);
+    const convertedRows = stored(legacy, converted);
+    assert.deepEqual(assembleWorld(converted.core, convertedRows), changed);
+    assert.deepEqual(
+      convertedRows.map((row) => row.revision),
+      stored(rows, saved).map((row) => row.revision),
+    );
+  }
+  // Unrecognised or duplicated shapes must never collapse into one stored row.
+  for (const undoRecords of [
+    [receipts[0], receipts[0]],
+    [{ kind: "unknown" }, receipts[0]],
+  ]) {
+    const world = { version: 1, state: { undoRecords } };
+    const plan = planSave([], world, 1);
+    assert.deepEqual(assembleWorld(plan.core, stored([], plan)), world);
+  }
+});
+
 test("a reset or a clock change someone else made since clashes; new records from two desks do not", async () => {
   const engine = await import("./dist/engine.mjs");
   const base = engine.seedWorld(at);

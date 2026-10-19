@@ -47,6 +47,14 @@ export type BedPlacementUndo = {
   /** The bed number before the placement; `null` when none was recorded. */
   beforeBed: number | null;
   afterBed: number;
+  /** Absent on older saves. Null preserves a seed's unrecorded historical bed kind on Undo. */
+  bedKindChange?: {
+    before: "locked" | "open" | null;
+    after: "locked" | "open";
+    lockedBefore: number;
+    lockedAfter: number;
+    capacityRevision: number;
+  };
 };
 
 /**
