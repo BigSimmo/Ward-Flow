@@ -1,8 +1,9 @@
 /*
  * Home (direction A, owner 10 Oct 2026). One hero band, a compact ED strip, then three equal
- * columns: priority queue, State bedflow and Placement. On a desktop the columns sit flush at one
- * height, about a window tall, and each scrolls inside itself. v6 tokens only; colour is a glyph or
- * a dot, never a fill.
+ * columns: priority queue, State bedflow and Placement. On a desktop the page scrolls once: the
+ * columns grow to fit, the ED strip wraps and Placement holds in view while the queue scrolls
+ * (Home placement redesign, Josh 19 Oct 2026). Tablets keep columns that scroll inside themselves.
+ * v6 tokens only; colour is a glyph or a dot, never a fill.
  *
  * `.screen` composes the older ward token layers because the shortlist panel inside it still
  * reads them (`coordinator.module.css`, `shortlist-panel.module.css`).
@@ -361,6 +362,35 @@
     padding-bottom: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  /* Desktop: one page scroll (Home placement redesign, Josh 19 Oct 2026). The columns grow to fit
+     their content instead of scrolling inside a window-tall box; the queue shows its top 10 behind
+     "Show all". Placement is sticky under the top bar, so it stays in view while the queue and
+     State bedflow scroll past; it scrolls inside itself only when it is taller than the window. */
+  .grid[data-layout="desktop"] {
+    grid-template-rows: none;
+    align-items: start;
+    height: auto;
+  }
+
+  .grid[data-layout="desktop"] .queueList,
+  .grid[data-layout="desktop"] .flowBody {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .grid[data-layout="desktop"] > .placementCol {
+    position: sticky;
+    top: var(--ward-sticky-top, 4.5rem);
+    align-self: start;
+    min-height: 0;
+  }
+
+  /* The most the pinned panel may be: the shell's rail budget, which leaves room for the top bar
+     and the page's prototype footer, so the panel's heading never slides under the top bar. */
+  .grid[data-layout="desktop"] > .placementCol .shortlistRegion {
+    max-height: var(--ward-rail-height, calc(100dvh - 6rem));
   }
 }
 
@@ -1432,8 +1462,8 @@ button.registerRow:hover {
 }
 
 /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
-   wraps, when the screen is too narrow for every department (desktop and both tablets). The
-   scrollbar exposes overflow without obscuring the last tile or its focus indicator. */
+   wraps, when the screen is too narrow for every department (both tablets). The scrollbar exposes
+   overflow without obscuring the last tile or its focus indicator. */
 @media (min-width: 48.0625rem) {
   .edGrid {
     grid-auto-flow: column;
@@ -1447,6 +1477,27 @@ button.registerRow:hover {
 
   .edCell:last-child {
     border-right: 0;
+  }
+}
+
+/* Desktop (above the tablet-landscape range): the ED tiles wrap onto more rows instead of
+   scrolling sideways, so every department is in view and the page keeps one scroll (Home
+   placement redesign, Josh 19 Oct 2026). Each tile draws its right and bottom hairlines; the
+   grid's negative end margins push the outer ones under the card's clipped edge. */
+@media (min-width: 75.0625rem) {
+  .edGrid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    grid-auto-columns: auto;
+    margin: 0 -1px -1px 0;
+    padding-inline: 0;
+    overflow-x: visible;
+  }
+
+  .edCell,
+  .edCell:last-child {
+    border-right: 1px solid var(--wf-line);
+    border-bottom: 1px solid var(--wf-line);
   }
 }
 

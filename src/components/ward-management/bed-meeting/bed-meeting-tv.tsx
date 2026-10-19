@@ -185,6 +185,10 @@ function Footer({ scope, scenario, now }: { scope: string; scenario: string; now
 }
 
 /** People waiting somewhere, longest first: initials, where, stage and wait. */
+/** The ED TV shows one row fewer than the other lists: under its tiles, a full list of two-line rows
+ *  ran past a 1080p screen (design audit follow-up, 19 Oct 2026). The rest are counted, not lost. */
+const ED_TV_PEOPLE_ROWS = TV_ROW_LIMIT - 1;
+
 function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number; noun: string }) {
   return (
     <>
@@ -680,7 +684,11 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           {sheet.people.length === 0 ? (
             <Empty>Nobody waiting for a mental health bed.</Empty>
           ) : (
-            <JourneyList rows={sheet.people} more={sheet.morePeople} noun="waiting" />
+            <JourneyList
+              rows={sheet.people.slice(0, ED_TV_PEOPLE_ROWS)}
+              more={sheet.morePeople + Math.max(0, sheet.people.length - ED_TV_PEOPLE_ROWS)}
+              noun="waiting"
+            />
           )}
         </Panel>
 

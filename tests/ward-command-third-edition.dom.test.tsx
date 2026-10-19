@@ -9,6 +9,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * Task C1: the Command screen's third-edition restyle carries no structural change (no panel
@@ -52,11 +53,15 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const NOW = NOW_ANCHOR;
 
 function renderCoordinator() {
-  return render(
+  const result = render(
     <WardFlowProvider initialNow={NOW}>
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
+  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+  showWholeHomeQueue();
+  return result;
 }
 
 describe("Command third-edition restyle — panel order and heading pins", () => {

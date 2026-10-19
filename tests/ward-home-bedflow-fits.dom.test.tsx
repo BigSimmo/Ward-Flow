@@ -12,6 +12,7 @@ import {
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * Owner, 8 Oct 2026: with a patient selected, State bedflow lists every ward that patient fits at
@@ -59,6 +60,9 @@ describe("State bedflow's fitting wards for the selected patient", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+    showWholeHomeQueue();
     fireEvent.click(screen.getByTestId(`ward-queue-row-${MOVEMENT_ID}`));
 
     const bedflow = screen.getByRole("region", { name: "State Bedflow" });
@@ -100,6 +104,9 @@ describe("State bedflow's fitting wards for the selected patient", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+    showWholeHomeQueue();
     fireEvent.click(screen.getByTestId(`ward-queue-row-${movement.id}`));
     const bedflow = screen.getByRole("region", { name: "State Bedflow" });
 
