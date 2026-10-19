@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   CircleAlert,
   FileCheck2,
+  Info,
   Hospital,
   ShieldCheck,
   Truck,
@@ -82,6 +83,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import {
   candidateReason,
   eligibility,
+  gateMark,
   type EligibilityVerdict,
   type GateResult,
 } from "@/components/ward-management/ward-eligibility";
@@ -424,8 +426,15 @@ export function MovementWorkspaceCockpit({
               {verdict ? (
                 <ul className={styles.gateList}>
                   {verdict.gates.map((gate) => (
-                    <li key={gate.gate} className={styles.gateItem} data-pass={gate.pass ? "true" : "false"}>
-                      {gate.pass ? (
+                    <li
+                      key={gate.gate}
+                      className={styles.gateItem}
+                      data-pass={gate.pass ? "true" : "false"}
+                      data-mark={gateMark(gate)}
+                    >
+                      {gateMark(gate) === "info" ? (
+                        <Info size={15} aria-hidden="true" />
+                      ) : gate.pass ? (
                         <CheckCircle2 className={styles.gatePass} size={15} aria-hidden="true" />
                       ) : (
                         <CircleAlert className={styles.gateFail} size={15} aria-hidden="true" />

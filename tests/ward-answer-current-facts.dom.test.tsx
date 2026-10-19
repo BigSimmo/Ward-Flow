@@ -108,7 +108,9 @@ describe("Ward answer current facts", () => {
       // The ward screen shows wardFacingGateDetail, not raw gate.detail: the gender_designation gate is
       // replaced by a fixed sentence so a bed verdict never reveals sex or gender (Opus gender review round 2).
       expect(rows[index]).toHaveTextContent(wardFacingGateDetail(gate));
-      expect(rows[index]).toHaveTextContent(gate.pass ? "Pass" : "Does not pass");
+      // Acuity and specialling are information only (review 18 Oct 2026, item 3), never a "Pass".
+      expect(rows[index]).toHaveTextContent(gate.info ? "For information" : gate.pass ? "Pass" : "Does not pass");
+      if (gate.info) expect(rows[index]).not.toHaveTextContent(/\bPass\b/);
     });
 
     const accept = screen.getByTestId(`ward-accept-${MOVEMENT.id}`);

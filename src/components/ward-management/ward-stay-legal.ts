@@ -2,6 +2,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import { legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
 
 /**
  * A STAY'S LEGAL STATUS, READ ONE WAY (audit A3-1/A3-18, 13 Oct 2026). The movement that brought
@@ -27,9 +28,9 @@ export function stayLegalStatus(admission: Admission, source: StayLegalSource): 
   return resolveSubjectPatient(admission, source).patient?.legalStatus;
 }
 
-/** On an order: a recorded status that is not voluntary. Not recorded is not assumed either way. */
+/** On an order: a recorded status that is not voluntary (`legalStatusIsOnOrder`). Not recorded is not assumed either way. */
 export function isOnOrder(status: string | undefined): boolean {
-  return status !== undefined && status.trim() !== "" && !/^voluntary\b/i.test(status.trim());
+  return legalStatusIsOnOrder(status);
 }
 
 /**

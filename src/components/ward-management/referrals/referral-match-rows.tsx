@@ -20,6 +20,7 @@ import {
   type TravelBandGroup,
   type TravelBandGroupCounts,
 } from "@/components/ward-management/ward-referrals";
+import { checkedGates, gateMark } from "@/components/ward-management/ward-eligibility";
 import styles from "./referrals.module.css";
 import { GATE_LABELS, OVERRIDE_REASON_UNCHOSEN } from "./referral-match-model";
 
@@ -129,8 +130,9 @@ export function MatchRow({
     candidate.verdict.gates.some((gate) => gate.gate === "gender_designation" && !gate.pass) &&
     candidate.verdict.gates.filter((gate) => !gate.pass).length === 1;
   const accepts = candidateAccepts(candidate) || genderPlacementPending;
-  const totalGates = candidate.verdict.gates.length;
-  const passingGates = candidate.verdict.gates.filter((gate) => gate.pass).length;
+  // Information-only gates (acuity, specialling) are listed but never counted as criteria met.
+  const totalGates = checkedGates(candidate.verdict.gates).length;
+  const passingGates = checkedGates(candidate.verdict.gates).filter((gate) => gate.pass).length;
 
   return (
     <li
@@ -173,12 +175,13 @@ export function MatchRow({
           {candidate.verdict.gates.map((gate) => (
             <div
               key={gate.gate}
-              className={gate.pass ? styles.criteriaPass : styles.criteriaFail}
+              className={gateMark(gate) === "info" ? undefined : gate.pass ? styles.criteriaPass : styles.criteriaFail}
               role="listitem"
               data-testid={`ward-referral-match-criteria-item-${unit.id}-${gate.gate}`}
+              data-mark={gateMark(gate)}
             >
               <span className={styles.criteriaGlyph} aria-hidden="true">
-                {gate.pass ? "✓" : "✕"}
+                {gateMark(gate) === "info" ? "i" : gate.pass ? "✓" : "✕"}
               </span>
               <span className={styles.criteriaName}>{GATE_LABELS[gate.gate] ?? gate.gate}</span>
               <span className={styles.criteriaDetail}>{gate.detail}</span>

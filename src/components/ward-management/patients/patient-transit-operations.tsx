@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
-import { candidateReason, eligibility } from "../ward-eligibility";
+import { candidateReason, checkedGates, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
 import { legalFormName } from "../ward-legal-forms";
 import {
@@ -358,18 +358,19 @@ export function PatientTransitOperations({
                 <summary>
                   Eligibility breakdown{" "}
                   <span>
-                    {verdict.gates.filter((g) => g.pass).length}/{verdict.gates.length} checks
+                    {checkedGates(verdict.gates).filter((g) => g.pass).length}/{checkedGates(verdict.gates).length}{" "}
+                    checks
                   </span>
                 </summary>
                 <ul className={styles.gates}>
                   {verdict.gates.map((g) => (
-                    <li key={g.gate} data-pass={g.pass}>
-                      <span aria-hidden="true">{g.pass ? "✓" : "!"}</span>
+                    <li key={g.gate} data-pass={g.pass} data-mark={gateMark(g)}>
+                      <span aria-hidden="true">{gateMark(g) === "info" ? "i" : g.pass ? "✓" : "!"}</span>
                       <div>
                         <strong>{g.gate.replace(/_/g, " ")}</strong>
                         <p>{g.detail}</p>
                       </div>
-                      <span>{g.pass ? "Pass" : "Review"}</span>
+                      <span>{gateMark(g) === "info" ? "For information" : g.pass ? "Pass" : "Review"}</span>
                     </li>
                   ))}
                 </ul>
@@ -517,8 +518,8 @@ export function PatientTransitOperations({
               <summary>Receiving ward safety checks</summary>
               <ul className={styles.gates}>
                 {eligibility(movement, destination, now).gates.map((g) => (
-                  <li key={g.gate} data-pass={g.pass}>
-                    <span>{g.pass ? "✓" : "!"}</span>
+                  <li key={g.gate} data-pass={g.pass} data-mark={gateMark(g)}>
+                    <span>{gateMark(g) === "info" ? "i" : g.pass ? "✓" : "!"}</span>
                     <p>{g.detail}</p>
                   </li>
                 ))}

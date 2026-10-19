@@ -26,7 +26,7 @@ import {
   stageCopy,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
-import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { checkedGates, eligibility } from "@/components/ward-management/ward-eligibility";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -1360,11 +1360,12 @@ export function WardHomeTab({
                           >
                             {(() => {
                               const verdict = eligibility(movement, unit, now);
-                              const pass = verdict.gates.filter((gate) => gate.pass).length;
+                              const checked = checkedGates(verdict.gates);
+                              const pass = checked.filter((gate) => gate.pass).length;
                               return [
                                 `Waiting ${durMinutes(Math.max(0, now - movement.openedAt))}`,
                                 edById(movement.originEdId) ? `Now at ${edById(movement.originEdId)?.name}` : undefined,
-                                `${pass} of ${verdict.gates.length} gates pass`,
+                                `${pass} of ${checked.length} gates pass`,
                               ]
                                 .filter(Boolean)
                                 .join(" · ");
