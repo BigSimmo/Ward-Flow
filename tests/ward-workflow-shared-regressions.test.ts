@@ -8,17 +8,16 @@ import { applyFirstAccepted, RECEIVE_REFERRAL_CANDIDATE } from "./helpers/ward-l
 const at = new Date("2026-10-19T10:00:00Z");
 
 describe("command-owned opaque completion metadata", () => {
-  it("identifies only a newly created referral across serialization and returns no private dossier", () => {
+  it("returns no completion fields for a referral-creating command and no private dossier", () => {
     const world = seedWorld(at);
     const event = { ...RECEIVE_REFERRAL_CANDIDATE, type: "RECEIVE_REFERRAL", role: "community", now: 642 } as const;
     const result = applyCommand(world, event, at);
     expect(result.outcome).toBe("accepted");
     if (result.outcome !== "accepted") throw new Error("fixture refused");
-    const id = result.world.state.referrals.at(-1)!.id;
-    expect(result.completion).toEqual({ createdReferralId: id });
+    expect(result.completion).toEqual({});
     const cloned = JSON.parse(JSON.stringify(result.world.state));
-    expect(commandMetadata(world.state, cloned)).toEqual({ createdReferralId: id });
-    expect(localCommandOutcome(world.state, result.world.state)).toMatchObject({ createdReferralId: id });
+    expect(commandMetadata(world.state, cloned)).toEqual({});
+    expect(localCommandOutcome(world.state, result.world.state)).not.toHaveProperty("createdReferralId");
     expect(commandMetadata(cloned, cloned)).toEqual({});
   });
 
@@ -63,7 +62,8 @@ describe("command-owned opaque completion metadata", () => {
       now: 642,
       unitId: "scgh-adult-open",
     });
-    expect(result).toMatchObject({ status: "accepted", createdReferralId: "RF-new", undoStep });
+    expect(result).toMatchObject({ status: "accepted", undoStep });
+    expect(result).not.toHaveProperty("createdReferralId");
     expect(result).not.toHaveProperty("snapshot");
     expect(result).not.toHaveProperty("privateServerField");
     client.dispose();

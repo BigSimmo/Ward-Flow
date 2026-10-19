@@ -112,7 +112,6 @@ export class SharedWorkspaceClient {
       status,
       message,
       undoRecords,
-      createdReferralId: metadata?.createdReferralId,
       undoStep: metadata?.undoStep,
     });
     this.completions.delete(commandId);
