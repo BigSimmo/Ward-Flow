@@ -511,7 +511,45 @@ button.stat:hover .statV {
 }
 
 .tableWrap {
+  --side-fade: 40px;
+
   overflow-x: auto;
+}
+
+/* DA-26 (design audit): when the table is wider than its card, fade the edge that still hides
+   columns, so it is plain that the list scrolls sideways. The fade lifts while the area has
+   keyboard focus, because the mask would also fade the focus ring on that edge. */
+.tableWrap[data-more-after]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - var(--side-fade)), transparent);
+}
+
+.tableWrap[data-more-before][data-more-after]:not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--side-fade),
+    black calc(100% - var(--side-fade)),
+    transparent
+  );
+}
+
+/* Inside the box, so the table card's overflow clip cannot hide it. */
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .tbl {
