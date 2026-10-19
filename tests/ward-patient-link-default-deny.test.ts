@@ -268,6 +268,12 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "The same engine plumbing as the reducer entry above, not a screen.",
   },
   {
+    file: "ward-flow-subject-id.ts",
+    reason:
+      "The reducer's subjectId (naming the record a rejection is filed against; COMMUNITY_TREATMENT_ORDER events name their patientId), moved out of ward-flow-reducer.ts unchanged on 19 October 2026 for the line cap. " +
+      "The same engine plumbing as the reducer entry above, not a screen.",
+  },
+  {
     file: "ward-flow-bed-events.ts",
     reason:
       "The reducer's END_COMMUNITY_TREATMENT_ORDER case (checking an event's patientId against state.patients), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
@@ -417,7 +423,9 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // unchanged. No new reader: the same reducer reads moved, each slice named beside its entry.
     // 44 → 46 on 2026-10-18: the line cap split ward-flow-record-events.ts into two more slices
     // unchanged. No new reader, as above.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(46);
+    // 46 → 47 on 2026-10-19: the line cap moved the reducer's subjectId into ward-flow-subject-id.ts
+    // unchanged. No new reader, as above.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(47);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
