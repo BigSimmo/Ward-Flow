@@ -207,15 +207,18 @@ export function PatientHistoryTab({
               <History size={14} aria-hidden="true" />
               Presentations
             </span>
-            <span className={styles.cellValue}>
-              {record.presentations.length}
+            <span className={styles.cellValue}>{record.presentations.length}</span>
+            {/* Josh, 25 Sept 2026: the example label stays, as plain words rather than a chip that reads
+                like a control. */}
+            <span className={styles.cellSub}>
               {record.presentations.length > 0 ? (
-                <span className={legacy.tag} data-testid="pn-history-example-label">
-                  Example history
-                </span>
-              ) : null}
+                <>
+                  <span data-testid="pn-history-example-label">Example history</span>, linked to this record
+                </>
+              ) : (
+                "Linked to this record"
+              )}
             </span>
-            <span className={styles.cellSub}>Linked to this record</span>
           </div>
           <div className={styles.cell}>
             <span className={styles.cellLabel}>
@@ -234,7 +237,11 @@ export function PatientHistoryTab({
             </span>
             <span className={styles.cellValue}>{events.length}</span>
             <span className={styles.cellSub}>
-              {movement ? `${movement.stageChanges.length} stage changes` : "No linked movement"}
+              {movement
+                ? movement.stageChanges.length === 0
+                  ? "Stage times not recorded"
+                  : `${movement.stageChanges.length} ${movement.stageChanges.length === 1 ? "stage change" : "stage changes"}`
+                : "No linked movement"}
             </span>
           </div>
         </div>
