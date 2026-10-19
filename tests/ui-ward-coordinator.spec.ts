@@ -484,6 +484,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const worstEdId = (await worst.getAttribute("data-testid"))?.replace("ward-ed-", "");
     const worstWaiting = Number(await worst.getAttribute("data-waiting"));
     const queue = page.getByRole("region", { name: "Priority queue" });
+    // Home shows the top 10 first; open the whole queue so the counts compare every row.
+    await queue.getByTestId("ward-queue-show-all").click();
+    await expect(queue.getByTestId("ward-queue-show-all")).toHaveAttribute("aria-expanded", "true");
     const before = await queue.locator('[data-testid^="ward-queue-row-"]').count();
     await worst.click();
     await expect(queue).toContainText("Filtered to");
