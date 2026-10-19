@@ -132,7 +132,8 @@ describe("two active bed requests for one person (audit F-19)", () => {
     const named = resolveSubjectPatient({ patientId: person }, state);
     expect(named.patient?.id).toBe(person);
     expect(subject.displayName).toBe(named.formalName);
-    expect(subject.patientHref).toBe(row!.href);
+    expect(subject.patientHref).toContain("/ward-flow/people/");
+    expect(row!.href).toBe("/ward-flow/referrals");
     expect(alertActionFor(row!, subject)).toEqual({
       kind: "link",
       label: "Open referrals",

@@ -12,7 +12,7 @@
  * act now is the red subset of the same active list, so the figures cannot drift apart again.
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
-import { Copy } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -28,7 +28,6 @@ import {
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
-import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 
 /**
@@ -98,13 +97,14 @@ export function duplicateBedRequestInboxItems(source: Pick<TaskSource, "referral
       id: `${INBOX_CATEGORIES.duplicate_bed_request.idPrefix}${personId}`,
       kind: INBOX_CATEGORIES.duplicate_bed_request.kind,
       tone: "warning",
-      icon: Copy,
+      icon: CircleAlert,
       title: "More than one active bed request",
       detail: `${named} are all waiting for a bed answer. Check each is still needed.`,
       owner: DUPLICATE_OWNER,
       movementId: "",
       personId,
-      href: patientHref(personId),
+      // Every list opens the Referrals board, where a request can be withdrawn; Alerts links the person.
+      href: "/ward-flow/referrals",
       since,
     };
   });
