@@ -142,10 +142,7 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.sendPending).toBe(false);
     expect(state.submissionAwaitingRecord).toBe(true);
     expect(state.footStatus.first).toContain("Referral saved");
-    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute(
-      "href",
-      "/ward-flow/referrals",
-    );
+    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute("href", "/ward-flow/referrals");
     expect(screen.getByRole("button", { name: "Close" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Confirm and send" })).not.toBeInTheDocument();
     act(() => state.confirmAndSend({ preventDefault() {} } as React.FormEvent));
