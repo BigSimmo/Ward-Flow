@@ -552,8 +552,9 @@ test.describe("@mockup Ward scroll geometry", () => {
     });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", "light");
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);
-    await page.locator('nav a[href="/ward-flow/wards"]').first().click();
-    await expect(page).toHaveURL(/\/wards$/);
+    // B1 (19 Oct 2026): Capacity is on the coordinator's own rail menu; Wards is now under More.
+    await page.locator('nav a[href="/ward-flow/capacity"]').first().click();
+    await expect(page).toHaveURL(/\/capacity$/);
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(0);
     await page.goBack();
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
@@ -588,7 +589,18 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       for (const offset of [0, 12, 80, 500]) {
         await scrollColumn(page, offset);
         await expect(bar).toHaveCSS("height", "56px");
-        await expect(strip).toHaveCSS("top", `${56 + collar}px`);
+        // C1 (19 Oct 2026): once a hero scrolls away its one-line summary pins under the header,
+        // and the page's own pinned row moves down by the line's height so it is never covered.
+        await expect
+          .poll(() =>
+            strip.evaluate((element, base) => {
+              const line = document.querySelector<HTMLElement>('[data-testid="wf-hero-condensed"][data-shown="true"]');
+              const expected = `${base + (line?.offsetHeight ?? 0)}px`;
+              const top = getComputedStyle(element).top;
+              return top === expected ? "aligned" : `${top}, expected ${expected}`;
+            }, 56 + collar),
+          )
+          .toBe("aligned");
       }
       if (collar) await expect(strip).not.toHaveCSS("box-shadow", "none");
       if (route === "/search") {

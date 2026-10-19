@@ -13,7 +13,9 @@
 
 import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { announceToWardShell } from "../shell/ward-live-region";
+import type { BedItem } from "./ward-beds-matrix";
 import styles from "./ward-walk-round.module.css";
 
 export type WalkRoundBed = {
@@ -22,12 +24,41 @@ export type WalkRoundBed = {
   number: string;
   name: string;
   note: string;
+  /**
+   * C3 (phone simplification, 19 Oct 2026): one word under the number in the bed strip ("Free",
+   * "Due out", "Held"), from the bed's own state, so the strip's edge colour never carries the
+   * meaning alone.
+   */
+  stateWord: string;
   /** What the bed's state is, without any time in it, so a ticking countdown is not a change. */
   changeKey: string;
   glyph: WfTone | null;
   days: string;
   accessibleName: string;
 };
+
+/**
+ * C3 (phone simplification, 19 Oct 2026): the one word under the number in the bed strip. It reads
+ * the same state as the bed tile's note, in the order of `bedGlyphTone`, so the word names what the
+ * strip's edge colour shows. No new state: each word is an existing bed state or tile note.
+ */
+export function bedStripWord(
+  bed: Pick<BedItem, "status" | "statusText" | "blockReason" | "pastDate" | "dischargeBarrier">,
+  flags: { free: boolean; preparing: boolean; awayAtEd: boolean; leaving: boolean },
+): string {
+  if (flags.free) return "Free";
+  if (flags.preparing) return "Preparing";
+  if (bed.status === "closed") return BED_STATE_LABELS.closed;
+  if (bed.status === "leave" && bed.statusText === "Absent without leave") return "Absent";
+  if (bed.blockReason) return "Held up";
+  if (flags.awayAtEd) return "At ED";
+  if (bed.pastDate) return "Past date";
+  if (bed.dischargeBarrier) return "Barrier";
+  if (bed.status === "incoming") return "Held";
+  if (flags.leaving) return "Due out";
+  if (bed.status === "leave") return "Leave";
+  return BED_STATE_LABELS.occupied;
+}
 
 export type WalkRoundMark = { reviewed: boolean; changed: boolean };
 
@@ -160,12 +191,13 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
                 data-reviewed={isReviewed ? "true" : undefined}
                 data-tone={bed.glyph ?? undefined}
                 aria-current={bed.bedNumber === walking ? "true" : undefined}
-                aria-label={`Walk from bed ${bed.number}${isReviewed ? ", reviewed" : ""}`}
+                aria-label={`Walk from bed ${bed.number}, ${bed.stateWord}${isReviewed ? ", reviewed" : ""}`}
                 onClick={() => {
                   setWalking(bed.bedNumber);
                 }}
               >
-                {bed.number}
+                <span className={styles.stripNo}>{bed.number}</span>
+                <span className={styles.stripWord}>{bed.stateWord}</span>
               </button>
             );
           })}

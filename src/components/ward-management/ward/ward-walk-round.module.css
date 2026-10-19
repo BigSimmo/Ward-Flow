@@ -43,10 +43,15 @@
 }
 
 .stripBed {
+  display: inline-flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   min-width: var(--wf-row-touch, 52px);
   min-height: var(--wf-row-touch, 52px);
-  padding: 0 var(--wf-s-2);
+  padding: var(--wf-s-1) var(--wf-s-2);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
@@ -54,6 +59,22 @@
   font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-1);
+}
+
+/* C3 (phone simplification, 19 Oct 2026): the number, then one word for the bed's state, so the
+   edge colour is never the only signal. */
+.stripNo {
+  line-height: 1;
+}
+
+.stripWord {
+  font: 500 var(--wf-fs-11) / 1 var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.stripBed[data-reviewed="true"] .stripWord {
+  color: var(--wf-ink-3);
 }
 
 .stripBed[data-tone="danger"] {

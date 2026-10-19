@@ -131,3 +131,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Smart features idea 9: "15 min ago" style shortcuts beneath the time told. */
+.agoChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+}

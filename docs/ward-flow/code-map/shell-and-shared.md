@@ -1,5 +1,12 @@
 # Routes, shell, navigation and shared UI
 
+## Smart defaults — 19 October 2026
+
+`shell/use-device-choice.ts` remembers one page-layout choice per device (`ward_flow_choice_*` keys),
+only from the page's own list of allowed values; a store that refuses writes keeps the choice for the
+page only. All EDs uses it for its order and layout; it never stores a filter, a name or typed text.
+`tests/ward-smart-defaults.dom.test.tsx` covers it with the desk-scoped form defaults.
+
 ## Confirmed usability fixes — 19 October 2026
 
 `shell/ward-character-shortcuts.ts` stores the browser's single-character shortcut preference.
@@ -63,12 +70,12 @@ The compact footer still identifies synthetic data. Bed, admission, decline and 
 continue to use the existing derivations, including unavailable values rather than invented history.
 
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
-sheet with Change view at the top, then Service now (`ward-service-now.tsx`, the coordinator's
-standing figures across the network, with All figures from `ward-network-figures.tsx` below), Do now,
-Look up (catchment, contacts from the On-call directory, Form times), Print and share, More pages, and
-one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
+sheet with Change view at the top, then Do now, Look up (All figures from `ward-network-figures.tsx`
+first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
+and one Demo panel (`ward-demo-panel.tsx`) at the foot. Both Board time pills open that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry
-them. The sheet loads on demand through the existing drawer shell.
+them. The sheet loads on demand through the existing drawer shell. Simpler screens (Josh, 19 Oct 2026)
+removed the Service now panel and `ward-service-now.tsx`: those figures repeated what each page shows.
 
 The directory includes wards, ED teams, community, switchboards, bed flow coordinators, transport,
 and executive/escalation roles. Approved community contact mappings retain their published
