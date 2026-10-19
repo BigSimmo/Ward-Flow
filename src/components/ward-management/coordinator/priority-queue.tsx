@@ -139,8 +139,9 @@ type PriorityQueueProps = {
   highlight?: QueueHighlight;
   onClearHighlight?: () => void;
   /**
-   * Phone only: render the first `rowCap` patient rows with a "Show all" button for the rest, so
-   * nothing is lost and the cards below the queue stay reachable (v10 Home phone, direction A).
+   * Render the first `rowCap` patient rows with a "Show all" button for the rest, so nothing is
+   * lost and the cards below the queue stay reachable: 20 on a phone (v10 Home phone, direction
+   * A), 10 on desktop Home, where the page scrolls once (Home placement redesign, Josh 19 Oct 2026).
    */
   rowCap?: number;
   /** Phone (v10 Home, direction A): the switch reads "ED" and "Referrals". */
@@ -207,7 +208,12 @@ export function PriorityQueue({
     highlight === "overdue" ? isOverdue(movement) : highlight === "tier1" ? movement.urgency === 1 : true;
   const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
   const capped = rowCap !== undefined && rows.length > rowCap;
-  const shownRows = capped && !showAllRows ? rows.slice(0, rowCap) : rows;
+  // Desktop keeps the chosen patient's row in view even when it sits below the cap: it shows in its
+  // own place in the order, after the top rows, so nothing is re-sorted. The phone is unchanged.
+  const shownRows =
+    capped && !showAllRows
+      ? rows.filter((movement, index) => index < rowCap || (!phone && movement.id === selectedId))
+      : rows;
 
   const headCount =
     activeTab === "referrals"
@@ -464,7 +470,7 @@ export function PriorityQueue({
             onClick={() => setShowAllRows((value) => !value)}
             data-testid="ward-queue-show-all"
           >
-            {showAllRows ? `Show top ${rowCap}` : `Show all ${rows.length}`}
+            {showAllRows ? `Show top ${rowCap}` : phone ? `Show all ${rows.length}` : `Show all (${rows.length})`}
           </button>
         ) : null}
       </div>

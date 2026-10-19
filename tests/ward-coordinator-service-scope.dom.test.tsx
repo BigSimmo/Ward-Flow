@@ -22,6 +22,7 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
+import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
@@ -80,6 +81,9 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+    showWholeHomeQueue();
 
     for (const movement of MEMBER_OPEN) {
       expect(
@@ -195,6 +199,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    showWholeHomeQueue();
     fireEvent.click(screen.getByTestId(`ward-queue-row-${target.id}`));
     const withServiceCandidateIds = screen
       .getAllByTestId(new RegExp("^ward-shortlist-candidate-"))
@@ -216,6 +221,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    showWholeHomeQueue();
     fireEvent.click(screen.getByTestId(`ward-queue-row-${target.id}`));
     const withAllCandidateIds = screen
       .getAllByTestId(new RegExp("^ward-shortlist-candidate-"))
@@ -240,6 +246,9 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     expect(screen.queryByTestId("ward-pressure-strip-service-foot")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-diagram-service-foot")).not.toBeInTheDocument();
 
+    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
+    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+    showWholeHomeQueue();
     for (const movement of OPEN) {
       expect(screen.getByTestId(`ward-queue-row-${movement.id}`)).toBeInTheDocument();
     }
