@@ -84,9 +84,11 @@ export function MissedRequestsPanel() {
                   <span className={styles.since}> · for {splitDuration(Math.max(0, now - item.since))}</span>
                 </span>
                 <span className={styles.links}>
-                  {item.referralId !== undefined ? (
-                    <Link href={referralBoardHref(item.referralId)}>{referralWho(item.referralId)}</Link>
-                  ) : null}
+                  {item.referralIds.map((referralId) => (
+                    <Link key={referralId} href={referralBoardHref(referralId)}>
+                      {referralWho(referralId)}
+                    </Link>
+                  ))}
                   {item.movementIds.map((movementId) => (
                     <Link key={movementId} href={movementHref(movementId)}>
                       {who({ movementId })}

@@ -60,6 +60,52 @@ describe("missedRequestCheck", () => {
     expect(items[0]).toMatchObject({ kind: "two_requests", movementIds: ["MV-a", "MV-b"] });
   });
 
+  it("counts a referral still waiting on a ward or ED as an open request, once", () => {
+    const f = fixture();
+    const personId = f.state.patients[0]!.id;
+    const unitId = f.state.units[0]!.id;
+    const template = f.state.referrals[0]!;
+    const referral = (id: string, raisedAt: number, state: "queued" | "accepted", withdrawnAt?: number): Referral => ({
+      ...template,
+      id,
+      patientId: personId,
+      raisedAt,
+      destinations: [
+        {
+          destination: { kind: "psychiatric_ward", unitId },
+          state,
+          ...(withdrawnAt === undefined ? {} : { withdrawnAt }),
+        } as Referral["destinations"][number],
+      ],
+    });
+
+    // Two referrals waiting on wards, and no bed request at all.
+    const twoReferrals = f.check([], [referral("RF-1", NOW - 60, "queued"), referral("RF-2", NOW - 30, "queued")]);
+    expect(twoReferrals).toEqual([
+      {
+        kind: "two_requests",
+        key: `two_requests:${personId}`,
+        movementIds: [],
+        referralIds: ["RF-1", "RF-2"],
+        since: NOW - 30,
+      },
+    ]);
+
+    // A referral with an open bed request raised from it is that bed request, not a second request.
+    const raised = f.check(
+      [f.movement("MV-a", { referralId: "RF-1", referredUnitIds: [unitId] })],
+      [referral("RF-1", NOW - 60, "queued")],
+    );
+    expect(raised).toEqual([]);
+
+    // Answered or withdrawn referrals are not open.
+    const settled = f.check(
+      [f.movement("MV-a", { patientId: personId, referredUnitIds: [unitId] })],
+      [referral("RF-2", NOW - 60, "accepted"), referral("RF-3", NOW - 60, "queued", NOW - 5)],
+    );
+    expect(settled).toEqual([]);
+  });
+
   it("lists one numbered bed held for two open requests", () => {
     const f = fixture();
     const unitId = f.state.units[0]!.id;

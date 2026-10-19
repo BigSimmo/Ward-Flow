@@ -3,6 +3,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 
 /**
  * THE DAILY "NOBODY MISSED" CHECK — the coordinator's morning list for the pilot's second measure
@@ -17,7 +18,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
  *   - `no_ward_asked`: an open bed request with no ward asked, older than `missedRequestWindow`.
  *   - `no_bed_request`: an ED accepted a referral for a bed, and no bed request was raised from it
  *     within the window.
- *   - `two_requests`: the same recorded person has two open bed requests.
+ *   - `two_requests`: the same recorded person has two open requests (`openRequestsByPerson`).
  *   - `bed_held_twice`: one numbered bed at one ward is held for two open requests.
  */
 
@@ -29,8 +30,8 @@ export type MissedRequestItem = {
   key: string;
   /** The bed requests involved, oldest first. Empty for `no_bed_request`. */
   movementIds: Movement["id"][];
-  /** The referral involved, for `no_bed_request`. */
-  referralId?: Referral["id"];
+  /** The referrals involved: the one for `no_bed_request`, any still-open ones for `two_requests`. */
+  referralIds: Referral["id"][];
   /** When the item became due, for "for how long" wording. */
   since: Instant;
 };
@@ -38,7 +39,7 @@ export type MissedRequestItem = {
 export const MISSED_REQUEST_LABELS: Record<MissedRequestKind, string> = {
   no_ward_asked: "No ward asked yet",
   no_bed_request: "Accepted by an ED, no bed request raised",
-  two_requests: "Same person, two open bed requests",
+  two_requests: "Same person, two open requests",
   bed_held_twice: "One bed held for two people",
 };
 
@@ -66,6 +67,61 @@ function isOpen(movement: Movement): boolean {
   return movement.closure === undefined && OPEN_STAGES.has(movement.stage);
 }
 
+/** One open request for a person: a bed request, or a referral still waiting on a ward or an ED. */
+export type OpenRequest =
+  | { kind: "movement"; id: Movement["id"]; openedAt: Instant }
+  | { kind: "referral"; id: Referral["id"]; openedAt: Instant };
+
+/**
+ * EVERY OPEN REQUEST, BY RECORDED PERSON — the one matcher for "the same person twice", shared by
+ * this check and the coordinator's duplicate bed request warning so both screens agree.
+ *
+ * An open request is either
+ *   - an open bed request (no closure, stage `placement_requested` to `handover_ready`), or
+ *   - a referral with a psychiatric ward or ED destination still awaiting an answer
+ *     (`isAwaitingAnswer`: queued and not withdrawn), unless an open bed request was raised from it,
+ *     in which case it is counted once, as that bed request.
+ * The person is the recorded person the shared resolver finds. A request it cannot link is left
+ * out: never matched by name, date of birth or record number. Each list is oldest first.
+ */
+export function openRequestsByPerson(records: {
+  movements: readonly Movement[];
+  referrals: readonly Referral[];
+  patients: readonly Patient[];
+}): Map<string, OpenRequest[]> {
+  const open = records.movements.filter(isOpen);
+  const raisedFromOpen = new Set(open.map((movement) => movement.referralId).filter((id) => id !== undefined));
+  const requests: { subject: Movement | Referral; request: OpenRequest }[] = [
+    ...open.map((movement) => ({
+      subject: movement,
+      request: { kind: "movement" as const, id: movement.id, openedAt: movement.openedAt },
+    })),
+    ...records.referrals
+      .filter(
+        (referral) =>
+          !raisedFromOpen.has(referral.id) &&
+          referral.destinations.some(
+            (addressing) =>
+              (addressing.destination.kind === "psychiatric_ward" ||
+                addressing.destination.kind === "emergency_department") &&
+              isAwaitingAnswer(addressing),
+          ),
+      )
+      .map((referral) => ({
+        subject: referral,
+        request: { kind: "referral" as const, id: referral.id, openedAt: referral.raisedAt },
+      })),
+  ];
+  const byPerson = new Map<string, OpenRequest[]>();
+  for (const { subject, request } of requests) {
+    const personId = resolveSubjectPatient(subject, records).patient?.id;
+    if (personId === undefined) continue;
+    byPerson.set(personId, [...(byPerson.get(personId) ?? []), request]);
+  }
+  for (const group of byPerson.values()) group.sort((a, b) => a.openedAt - b.openedAt);
+  return byPerson;
+}
+
 export function missedRequestCheck(input: {
   movements: readonly Movement[];
   referrals: readonly Referral[];
@@ -90,6 +146,7 @@ export function missedRequestCheck(input: {
         kind: "no_ward_asked",
         key: `no_ward_asked:${movement.id}`,
         movementIds: [movement.id],
+        referralIds: [],
         since: due,
       });
     }
@@ -112,25 +169,20 @@ export function missedRequestCheck(input: {
         kind: "no_bed_request",
         key: `no_bed_request:${referral.id}`,
         movementIds: [],
-        referralId: referral.id,
+        referralIds: [referral.id],
         since: due,
       });
     }
   }
 
-  const byPerson = new Map<string, Movement[]>();
-  for (const movement of open) {
-    const personId = movementPersonId(movement, records);
-    if (personId === undefined) continue;
-    byPerson.set(personId, [...(byPerson.get(personId) ?? []), movement]);
-  }
-  for (const [personId, group] of byPerson) {
+  for (const [personId, group] of openRequestsByPerson(records)) {
     if (group.length < 2) continue;
     items.push({
       kind: "two_requests",
       key: `two_requests:${personId}`,
-      movementIds: group.map((movement) => movement.id),
-      since: group[1].openedAt,
+      movementIds: group.flatMap((request) => (request.kind === "movement" ? [request.id] : [])),
+      referralIds: group.flatMap((request) => (request.kind === "referral" ? [request.id] : [])),
+      since: group[1]!.openedAt,
     });
   }
 
@@ -147,6 +199,7 @@ export function missedRequestCheck(input: {
       kind: "bed_held_twice",
       key: `bed_held_twice:${bed}`,
       movementIds: group.map((movement) => movement.id),
+      referralIds: [],
       since: Math.max(...group.map((movement) => movement.openedAt)) as Instant,
     });
   }
