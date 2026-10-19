@@ -5,7 +5,14 @@
 > `test-batch.mjs`, `run-slot.mjs`, `review-server.mjs`), mutation runs (`mutate.mjs`, `mutation-run.mjs`),
 > `ci-change-scope.mjs`, `playwright-pr-shards.mjs`, `check-ward-citations.mjs`, the PR branch-sync,
 > merge-audit, flake-ledger, base-freshness and worktree-report scripts, and their npm commands.
-> Entries below that describe them are history. Ward CI selection is `scripts/ward-ci-public/plan.mjs`.
+> Also retired: the one-off visual and data audits (`adversarial-visual-audit.mjs`, `audit-lessons.mjs`,
+> `audit-on-call-elevation.mjs`, `audit-out-of-area-elevation.mjs`, `audit-statistics-screens.mjs`,
+> the `audit/` folder, `inspect-targets.mjs`, `table-sweep.mjs`, `test-drawer.mjs`,
+> `token-collision-scan.mjs`, `verify-movement-horizon.mjs`, the two `capture-patient-*` scripts),
+> `check-drawing-rules.mjs`, `check-live-state.mjs`, `contact-sheet.mjs`, `role-map.py` and the
+> dependency-drift and dependency-report scripts. All remain in Git history at main commit `0a469c6`.
+> Entries below that describe them are history. `serve-mockups.mjs` and `audit-all-screens-visual.mjs`
+> are kept. Ward CI selection is `scripts/ward-ci-public/plan.mjs`.
 
 Current doc-link checks: `npm run docs:check-links` checks every tracked Markdown file with
 `--file`, so paired historical sections are excluded. Run `node scripts/ward-flow/check-doc-links.mjs`
