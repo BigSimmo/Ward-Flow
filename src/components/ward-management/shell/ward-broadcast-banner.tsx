@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -129,7 +129,7 @@ function ControlledBroadcastBanner({
           ) : null}
           {onClear ? (
             <Button size="sm" variant="ghost" onClick={onClear}>
-              Stand Down â€” Resolved
+              Stand Down — Resolved
             </Button>
           ) : null}
         </div>
