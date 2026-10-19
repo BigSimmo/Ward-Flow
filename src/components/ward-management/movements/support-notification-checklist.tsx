@@ -49,10 +49,10 @@ const DAY_ITEMS: { id: ToldDay; label: string }[] = [
 const TOLD_AGO_MINUTES = [15, 30, 60] as const;
 
 export function toldAgo(now: Instant, minutes: number): { time: string; day: ToldDay } {
-  const at = (now - minutes) as Instant;
+  const toldAt = (now - minutes) as Instant;
   return {
-    time: formatInstant(at),
-    day: String(Math.floor(now / MINUTES_PER_DAY) - Math.floor(at / MINUTES_PER_DAY)) as ToldDay,
+    time: formatInstant(toldAt),
+    day: String(Math.floor(now / MINUTES_PER_DAY) - Math.floor(toldAt / MINUTES_PER_DAY)) as ToldDay,
   };
 }
 
