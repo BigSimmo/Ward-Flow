@@ -45,7 +45,7 @@ export function commandNotRecorded(outcome: WardCommandOutcome | undefined): str
 }
 
 /** The board's own wording (ward-board.tsx, use-undoable-step.ts) for a save with no confirmed answer. */
-export const SAVE_NOT_CONFIRMED = "Save is not confirmed. Review the board before trying again.";
+const SAVE_NOT_CONFIRMED = "Save is not confirmed. Review the board before trying again.";
 
 /** A failed save may still have reached the server, so it is never reported as "Nothing was changed". */
 export function commandUnconfirmed(outcome: WardCommandOutcome | undefined): string | null {
