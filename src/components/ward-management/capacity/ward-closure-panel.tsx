@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 
-import { Button, Field, Select, StatusGlyph } from "@/components/wf";
+import { Button, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
 import { movementHref } from "../shell/ward-facade";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
@@ -44,6 +44,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   const { movements, referrals } = useWardFlowSelect("movements", "referrals");
   const [reason, setReason] = useState<WardClosureReason | "">("");
   const [reopenAfter, setReopenAfter] = useState("");
+  const reasonId = useId();
   const mayAct = actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === unit.id);
   const refusal = mayAct ? undefined : "Only this ward or the coordinator can close or reopen it.";
   const actingUnitId = actor.role === "ward" ? actor.actingUnitId : undefined;
@@ -89,7 +90,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         <Button
           size="sm"
           variant="sec"
-          disabledReason={closeRefusal}
+          aria-disabled={closeRefusal !== undefined ? "true" : undefined}
+          aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
           onClick={() => {
             if (closeRefusal || reason === "") return;
             raise("CLOSE_WARD_TO_ADMISSIONS", {
@@ -105,6 +107,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         >
           Close ward to admissions
         </Button>
+        {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
+        {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
       </section>
     );
   }
@@ -150,7 +154,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       <Button
         size="sm"
         variant="sec"
-        disabledReason={refusal}
+        aria-disabled={refusal !== undefined ? "true" : undefined}
+        aria-describedby={refusal ? `${reasonId}-reopen` : undefined}
         onClick={() => {
           if (refusal) return;
           raise("REOPEN_WARD_TO_ADMISSIONS", {
@@ -162,6 +167,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       >
         Reopen to admissions
       </Button>
+      {refusal ? <DisabledReason id={`${reasonId}-reopen`}>{refusal}</DisabledReason> : null}
     </section>
   );
 }
