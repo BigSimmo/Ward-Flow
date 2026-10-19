@@ -62,7 +62,7 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
-  it("defaults new features on for development and demo, and graduates ready top25-* flags to production", () => {
+  it("defaults new features on for development and demo, and keeps only signed off flags on in production", () => {
     for (const environment of ["development", "demo"] as const) {
       const resolved = resolveWardFeatureFlags({ environment, server: {}, device: {} });
       expect(flag(resolved, "bed-meeting-tv")).toMatchObject({ on: true, source: "default" });
@@ -74,9 +74,7 @@ describe("resolveWardFeatureFlags", () => {
     expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
     const onInProduction = production.filter((entry) => entry.on).map((entry) => entry.name);
-    expect(onInProduction).toEqual(
-      WARD_FEATURE_FLAG_NAMES.filter((name) => name.startsWith("top25-") || name === "role-access"),
-    );
+    expect(onInProduction).toEqual(["role-access", "top25-criteria-led-discharge"]);
     expect(flag(production, "awol-bed-hold-review").on).toBe(false);
   });
 

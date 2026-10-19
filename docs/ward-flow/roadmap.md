@@ -28,7 +28,7 @@ milestones. Preserve the latest accepted appearance and current `AGENTS.md` repo
 
 Steps 1–2 and local backend contract work can run in parallel with exact file
 ownership. Shared-user acceptance requires 3–5; clinical piloting requires 4–6.
-The [remediation checkpoint](reports/remediation-2026-10-08.md),
+The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)),
 [`docs/superpowers/plans/2026-10-16-audit-resolution-results.md`](../superpowers/plans/2026-10-16-audit-resolution-results.md), and
 [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record evidence and
 remaining decisions. Historical proposals below do not mark current tasks complete.

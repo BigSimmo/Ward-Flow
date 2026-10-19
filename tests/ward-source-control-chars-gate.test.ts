@@ -109,10 +109,10 @@ describe("the ward source-control-character gate is reachable and still guards",
     const scanned = match ? Number(match[1]) : 0;
     expect(
       scanned,
-      `the gate scanned only ${scanned} file(s) under docs/ward-flow. There are roughly 715 tracked ` +
-        "files there (minus a handful of explicitly skipped binaries, oversized captures and .log " +
+      `the gate scanned only ${scanned} file(s) under docs/ward-flow. There are roughly 415 tracked ` +
+        "files there after the 18 October 2026 archive move (minus a handful of explicitly skipped binaries, oversized captures and .log " +
         "captures — see the script's SKIP_BINARY_EXTENSIONS / LOG_SKIP_REASON), so a count anywhere " +
         "near zero means the root that caused the 2026-09-12 incident has gone blind again.",
-    ).toBeGreaterThan(500);
+    ).toBeGreaterThan(250);
   });
 });

@@ -70,7 +70,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
@@ -313,8 +313,7 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/ward-flow-shell-tokens.module.css`** (456 lines) — the third-edition token layer:
   every CSS custom property the sixteen third-edition screens and the shell components paint with,
   copied verbatim from the approved drawing's own `:root` block. Lives under `src/app/`, **not**
-  under `src/components/ward-management/`, specifically so `tests/ward-raw-colour.test.ts` (which
-  walks only the latter, recursively, forbidding any literal hex/`rgb()`/`hsl()`) does not have to
+  under `src/components/ward-management/`, originally so the raw-colour scan of the latter (retired 18 October 2026) did not have to
   make an exception for it — this file's whole job is to declare that raw colour once. Composed
   directly by ~39 files (`grep`, this map): every third-edition screen module, plus
   `shell/ward-bar.module.css`, `shell/ward-rail.module.css`,
@@ -479,8 +478,7 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   measured `scrollWidth` check (this is a Server Component with no access to that measurement
   itself). 15 importers.
 - **`ward-table/ward-table.module.css`** (289 lines) — the canonical `.table` block;
-  `tests/ward-table-single-source.test.ts` asserts no other stylesheet under `ward-management/`
-  re-declares it. `ed`, `ward-management-modes` and `ward-management-network` are deliberately NOT
+  other stylesheets under `ward-management/` compose it rather than re-declaring it. `ed`, `ward-management-modes` and `ward-management-network` are deliberately NOT
   migrated onto it — their tables use different token layers, border modes and sticky headers by
   design, not by drift.
 

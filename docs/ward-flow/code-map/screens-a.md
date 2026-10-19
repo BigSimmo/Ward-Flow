@@ -66,7 +66,7 @@ follow-up opens the existing scoped `DischargeCareJourney`; referral-only review
 clinician and contact-outcome recording remain incomplete. Fake EHR editors and digital
 signature claims are removed. Search service, collected transport and actual bed-hold
 labels use recorded source facts. Follow-up preview/profile consistency is included in
-the [remediation receipt](../reports/remediation-2026-10-08.md).
+the remediation receipt (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 PR #130's current Home uses controlled Exceptions/Declines/New events hero panels,
 the shared `useSinceLastLook` hook, and the existing eligibility projection for fitting
@@ -84,7 +84,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
@@ -241,8 +241,7 @@ baseline.
   surface, third-edition headings, service sentence, cancel-unavailable), `ward-bed-release.dom.test.tsx`,
   `ward-release-day.test.ts` / `ward-release-day-chooser.dom.test.tsx`,
   `ward-notification-center.dom.test.tsx`, `ward-suburb-team-panel.dom.test.tsx`,
-  `ward-override-control.dom.test.tsx`, `ward-answer-current-facts.dom.test.tsx`,
-  `ward-drawing-match-r2-12.test.ts`.
+  `ward-override-control.dom.test.tsx`, `ward-answer-current-facts.dom.test.tsx`.
 
 ### Files
 
@@ -319,7 +318,7 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   this module), `ward-ed-to-community-referral.test.ts`, `ward-parallel-referral-cap-ui.dom.test.tsx`,
   `ward-document-metadata.dom.test.tsx`,
   `ward-governance-enumerations.dom.test.tsx`, `ward-facade-agrees-with-screens.test.ts`,
-  `ward-owner-decisions-2026-09-16.test.ts`, `ward-referrals-print.test.ts`.
+  `ward-owner-decisions-2026-09-16.test.ts`.
 
 ### Files
 
@@ -456,10 +455,10 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **Tests:** 17 files: `ward-patient-search.dom.test.tsx`, `ward-patient-typeahead.dom.test.tsx`,
   `ward-search-preview.dom.test.tsx`, `ward-search-access-record.test.ts`,
   `ward-search-refusals.test.ts`, `ward-patient-typed-text-not-in-url.dom.test.tsx`,
-  `ward-print-ink-specificity.test.ts`, `ward-add-patient.dom.test.tsx`,
+  `ward-add-patient.dom.test.tsx`,
   `ward-referral-sending-team-display.test.ts`, plus shared `ward-nav.test.ts`,
-  `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`, `ward-primitives-shared.test.ts`,
-  `ward-management-print-coverage.test.ts`, `ward-governance-enumerations.dom.test.tsx`, and two
+  `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`,
+  `ward-governance-enumerations.dom.test.tsx`, and two
   non-ward guard tests (`guard-push.test.ts`, `pre-commit-ward-flow-main-guard.test.ts`) that
   happen to reference a path string in this folder rather than its behaviour.
 - **Reachability note:** `record-preview.tsx` is imported by `patient-search.tsx` but confirm
@@ -542,11 +541,11 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `ward-statistics-*` specs by area (community × 7, ed × 6, ward × 6, service × 3, sections × 4,
   claims/derivations/absence/demonstration, discharge-date coverage/populations, null-referral-id,
   empty-bed spread/exclusion, grid-tracks-fit, number-agreement, today-counts, ready-not-yet-gone),
-  `statistics-v4-primitives-tokens.test.ts`, `ward-composes-targets.test.ts`,
+  `ward-composes-targets.test.ts`,
   `ward-declined-by-all-precedence.test.ts`, `ward-pending-preparation-populations.test.ts`,
   `ward-screen-verification-lib.test.ts`, `ward-length-of-stay-population.dom.test.tsx`, plus
   shared `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx`, `ward-landmarks.test.ts`,
-  `ward-primitives-shared.test.ts`, `ward-browser-build-css.test.ts`.
+  `ward-browser-build-css.test.ts`.
 
 ### Files
 

@@ -90,7 +90,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   destination and applicable authority before any push.
 - Do not merge other task branches into your branch or rebase your branch. An already-authorised
   merge of current main into a task branch follows the narrower exception in
-  [AGENTS.md Git safety](../../AGENTS.md#git-safety). Preserve its ownership, confirmation and
+  [AGENTS.md hard rules](../../AGENTS.md#hard-rules). Preserve its ownership, confirmation and
   auto-merge restrictions; this exception does not grant general integration or history-rewrite authority.
 - The pre-commit checks inspect a disposable staged snapshot. Unrelated unstaged or untracked
   files do not by themselves block an owned commit. Preserve peers' files. If a real ownership
@@ -114,12 +114,6 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   changes; do not rebase, force or reset unclear work.
 - Historical fold incidents: `archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim).
 
-- **Review server when visual review is needed** (the steward): `node scripts/ward-flow/review-server.mjs --dist
-.next-playwright/<run-id>/dist [--port 3700]` serves a finished journeys build with the same offline
-  mockup environment as the journeys, and writes `REVIEW SERVER | port | commit` to
-  `ward-flow-logs/gate-running.md` while it runs. Keep that run's build folder for review with
-  `PLAYWRIGHT_BUILD_ROOT_ID=<id> PLAYWRIGHT_KEEP_BUILD_ROOT=true`, but never reuse it for a test run.
-
 ## 5. Testing
 
 **While editing.**
@@ -128,12 +122,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   stage, use `npm run verify:pr-local -- --base <actual-base>` in this dedicated repository. Its shared
   classifier selects the full unit population and production Ward journeys for source, tooling,
   unknown, deleted or renamed inputs; a related-test pass cannot supply that broader verdict.
-  The legacy `ready-check.mjs` executes selected static/policy/backend compatibility checks on an
-  exact merged snapshot only. Its broad READY route is retired with exit 75; it neither approves
-  source-code or queued READY nor accepts later FULL/browser receipts. Existing compatibility
-  checks still require verified Ward Flow destinations and this worktree's locked dependencies;
-  remote-less scratch fixtures require `WARD_FOLD_TEST_FIXTURE=1`. Reuse only still-valid evidence
-  for its actual scope at integration.
+  Reuse only still-valid evidence for its actual scope at integration.
 - No mutation proofs unless your brief names one. This overrides the per-task mutation lines in the
   16 and 17 September plans.
 - "focused-test capacity is full" is a shared lock held by someone else. Wait and retry. It is never a
@@ -162,15 +151,11 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   rename, add the explicit rename record. Missing exact targets block acceptance; empty wildcard
   locations may remain registered for future work. Keep representative system mappings and checkpoint
   regressions in `tests/ward-organisation-core.test.ts` when changing organisation behaviour.
-- Preview STATIC, FOCUSED or FULL with `node scripts/ward-flow/select-fold-gate.mjs --head <batch>`.
-  The default comparison base is the local `origin/main` ref; `--base <ref>` chooses an explicit
-  reviewed base. The selector never fetches a remote. Missing refs fail without selecting a gate.
-  The selector is a plan, not executed acceptance. Use the normal local readiness command above
-  against the actual candidate inputs. The full offline suite runs when FULL is selected or a
-  separately authorised full check is required. Read its summary: files handed in must equal files
-  that ran. Related tests and selected journeys provide focused diagnosis; they do not approve
-  broad source work through the retired READY route. Reuse matching executed evidence only for
-  its verified scope; a compatibility ready-check pass is not a FULL/browser verdict.
+- Use the normal local readiness command above against the actual candidate inputs; its
+  `--dry-run` output is a plan, not executed acceptance. The full offline suite runs when that plan
+  selects it or a separately authorised full check is required. Read its summary: files handed in
+  must equal files that ran. Related tests and selected journeys provide focused diagnosis only.
+  Reuse matching executed evidence only for its verified scope.
 - For FULL, follow [`full-gate-recheck.md`](full-gate-recheck.md). Keep its per-chunk findings and
   receipt, resume a stopped run only against unchanged inputs, and rerun only the changed failing
   test files when its bounded recheck conditions hold. Source or shared-helper changes need a new
@@ -179,8 +164,8 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   on changed Ward Flow files when selected, and generator checks when their inputs changed:
   `node scripts/ward-flow/<name>.mjs --check` for `screen-map`, `mockup-manifest`, `owner-rulings-index`,
   `screen-verification` and `rules-index`.
-- Browser journeys use `select-journeys.mjs`; NONE skips, a list runs those specs, and ALL runs
-  `npm run test:e2e:ward-journeys` (the `chromium-mockups` project).
+- Browser journeys run with `npm run test:e2e:ward-journeys` (the `chromium-mockups` project) when
+  the changed interface needs them; CI selects them through `scripts/ward-ci-public/plan.mjs`.
 
 ## 6. Owner rules that fail builds or reviews
 

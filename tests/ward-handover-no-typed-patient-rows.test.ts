@@ -22,7 +22,10 @@ import { describe, expect, it } from "vitest";
  * split across lines by Prettier still matches.
  */
 
-const HANDOVER_PAGE = resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx");
+/** The page and the files split out of it on 18 October 2026, scanned as one text. */
+const HANDOVER_PAGE_FILES = ["handover-page.tsx", "handover-page-parts.tsx", "handover-scope-rules.ts"].map((file) =>
+  resolve(process.cwd(), "src/components/ward-management/handover", file),
+);
 
 /** The six people the old table invented. `O'Connor` matches either a literal apostrophe or the
  *  `&apos;` entity the JSX actually used, so the guard still catches a verbatim copy-back of the
@@ -37,7 +40,9 @@ const INVENTED_PATIENTS: ReadonlyArray<{ name: string; pattern: RegExp }> = [
 ];
 
 describe("handover-page.tsx never types a patient row for Stranded Delayed Egress", () => {
-  const collapsed = readFileSync(HANDOVER_PAGE, "utf8").replace(/\s+/g, " ");
+  const collapsed = HANDOVER_PAGE_FILES.map((file) => readFileSync(file, "utf8"))
+    .join("\n")
+    .replace(/\s+/g, " ");
 
   it.each(INVENTED_PATIENTS)("never types the invented patient $name", ({ pattern }) => {
     expect(collapsed).not.toMatch(pattern);

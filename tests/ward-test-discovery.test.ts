@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
  * Playwright journeys are a separate runner and population and are deliberately out of scope.
  *
  * The distinction that makes this correct, and it was measured: IMPORTS, not MENTIONS.
- * `tests/dependency-drift-check.test.ts` and `tests/viewport-fill-contract.test.ts` both name
+ * `tests/pre-commit-checks.test.ts` and `tests/viewport-fill-contract.test.ts` both name
  * `src/components/ward-management` as a string (a path fixture / contract assertion) with zero
  * imports -- they are not ward guards and must not be flagged.
  *
@@ -24,8 +24,7 @@ import { describe, expect, it } from "vitest";
  * POPULATION rule -- the one that yields 273 files, published in
  * `docs/ward-flow/NEW-CHAT-PROMPTS-2026-09-05.md` -- says "EXECUTABLE, not MENTION", where a
  * comment is what does not count and an executable STRING does. This file says "IMPORTS, not
- * MENTIONS", where a string does not count at all. `dependency-drift-check.test.ts` is the worked
- * example sitting in both: excluded here, included there, correctly by each. The two rules answer
+ * MENTIONS", where a string does not count at all. The two rules answer
  * different questions -- *"is this file named honestly for what it imports?"* versus *"must this
  * file run to know Ward Flow is healthy?"* -- so neither is a definition of the other, and a
  * reader who carries the phrase across from one to the other gets it exactly backwards.
@@ -166,7 +165,7 @@ describe("ward test discovery vs. the tests/ward-* naming convention", () => {
     // A false positive here is as believable as a false negative: a matcher that counts string
     // mentions as well as imports would flag these two contract/path-fixture tests, which import
     // nothing from ward-management.
-    expect(importerRelPaths).not.toContain("dependency-drift-check.test.ts");
+    expect(importerRelPaths).not.toContain("pre-commit-checks.test.ts");
     expect(importerRelPaths).not.toContain("viewport-fill-contract.test.ts");
   });
 

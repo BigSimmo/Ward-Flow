@@ -56,7 +56,7 @@ export function renderEdBoardTableRow(
     unavailableFacts,
     withdrawUnavailableFact,
   } = facts;
-  const { accessTarget, isBoardRowDim, isTabletPortrait, edWaitStepsOn, setPhoneSheetReason, setPhoneSheetFor } = ctx;
+  const { accessTarget, isBoardRowDim, isTabletPortrait, setPhoneSheetReason, setPhoneSheetFor } = ctx;
   const overTarget = minutesInDepartment > accessTarget;
   const waitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
   const openSheet = () => {
@@ -219,7 +219,7 @@ export function renderEdBoardTableRow(
           {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
         </span>
-        {edWaitStepsOn && edWaitStep(minutesInDepartment) ? (
+        {edWaitStep(minutesInDepartment) ? (
           <span className={styles.a2Sub} data-testid={`ward-ed-wait-step-${movement.id}`}>
             {edWaitStep(minutesInDepartment)?.label}
           </span>

@@ -1,6 +1,6 @@
 # Ward Flow — status
 
-Last updated: **17 October 2026** (verified on `main` through commit `e025da04`, PR #392). **Current baseline (17 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `e025da04` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–17 October remediation, clinical workflow, and architecture wave across PRs #283–#392). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the [8 October remediation receipt](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82). Local checks, hosted CI, and deployment each require separate evidence.
+Last updated: **17 October 2026** (verified on `main` through commit `e025da04`, PR #392). **Current baseline (17 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `e025da04` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–17 October remediation, clinical workflow, and architecture wave across PRs #283–#392). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the 8 October remediation receipt (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82). Local checks, hosted CI, and deployment each require separate evidence.
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
@@ -67,7 +67,7 @@ from end-to-end application verification.
 
 ## Remaining work and local remediation
 
-The [remediation checkpoint](reports/remediation-2026-10-08.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record actual fixes
+The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record actual fixes
 and checks against stable task IDs. Confirmed source defects are fixed locally; publication, deployment and hosted validation remain separate.
 
 - **Shared synthetic operation hardening:** while opt-in shared state/event sync (`use-ward-supabase-shared.ts` via the configured backend's `/v1/workspace*` routes) is wired for synthetic demonstration, production-grade staff sign-in, trusted service/role membership, and multi-site clinical governance boundaries remain outside prototype scope.
@@ -96,7 +96,7 @@ external approval nor proof those standards are implemented.
 
 ## Where to look next
 
-Start with [the current roadmap](roadmap.md), the [remediation checkpoint](reports/remediation-2026-10-08.md)
+Start with [the current roadmap](roadmap.md), the remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md))
 and [the product entry point](README.md). Preserve the historical record below;
 reconfirm its claims against current code before reviving work.
 

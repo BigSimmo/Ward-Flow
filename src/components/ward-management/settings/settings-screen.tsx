@@ -4,7 +4,6 @@ import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -22,13 +21,10 @@ import {
   Clock,
   Database,
   Gavel,
-  History,
   KeyRound,
   Layers,
   Palette,
   Search,
-  SlidersHorizontal,
-  Timer,
   UserRound,
 } from "lucide-react";
 
@@ -46,7 +42,6 @@ import {
   setAudioBuzzPreference,
   useAudioBuzzPreference,
 } from "@/components/ward-management/shell/ward-sound-store";
-import type { AuditEvent } from "@/components/ward-management/ward-audit";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   defaultWardConfiguration,
@@ -56,29 +51,17 @@ import {
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
-  MORNING_ROLLUP_TIME_MINUTES,
   MORNING_ROLLUP_TIME_RANGE_MINUTES,
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
 import {
-  DECISION_TARGET_RANGE_MINUTES,
-  DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
-  DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  OVERDUE_AFTER_MINUTES_BY_TIER,
-  WARD_ANSWER_TARGET_MINUTES,
-  SILENT_WARD_FIRST_REMINDER_MINUTES,
-  TRANSFER_ACCEPTANCE_TARGET_MINUTES,
-  TRANSPORT_BOOKED_TARGET_MINUTES,
   UNDO_TOAST_MS,
 } from "@/components/ward-management/ward-operational-defaults";
-import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
 import {
   enableActNowNotifications,
   notificationSupport,
@@ -106,12 +89,10 @@ import {
   SrOnly,
   StatusGlyph,
   Switch,
-  buttonClass,
   cx,
   useIsPhone,
   useOptionalToast,
   type ToastInput,
-  type WfTone,
 } from "@/components/wf";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -130,12 +111,29 @@ import {
 } from "./settings-panes";
 import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
-import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
+import { NOT_WIRED, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import { publishedThresholds } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
+import {
+  PHONE_QUICK_SETTINGS,
+  clampDueSoonUrgent,
+  clock24,
+  copySettingsDiagnostics,
+  fullRules,
+  isConfigurationEvent,
+  isSurgePreset,
+  readTabFromHash,
+  ruleDiffs,
+  shortDuration,
+  wardsText,
+} from "./settings-screen-model";
+import { SettingsTargetsColumn } from "./settings-targets-column";
+
+// Moved to `settings-screen-model.ts`; re-exported so existing importers keep working.
+export { copySettingsDiagnostics, maskDiagnosticMovement, maskDiagnosticPatient } from "./settings-screen-model";
 
 /**
  * 🔴 **SETTINGS — AND THE ONE RULE THAT DECIDES WHAT IS ON IT: A CONTROL THAT WRITES STATE NOTHING
@@ -163,206 +161,6 @@ const TAB_ICONS = {
   data: Database,
   access: KeyRound,
 } as const;
-
-/** 24-hour clock time, `HH:MM`, for the morning count. */
-function clock24(minutesFromMidnight: number): string {
-  const hours = Math.floor(minutesFromMidnight / 60);
-  const mins = minutesFromMidnight % 60;
-  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
-}
-
-/** Compact duration for rule values: "45m", "4h", "1h 15m". */
-function shortDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
-
-/** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
-const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "discreet-names", "buzz"]);
-
-function wardsText(count: number): string {
-  return `${count} ${count === 1 ? "ward" : "wards"}`;
-}
-
-/**
- * The first due-time warning (`dueSoonUrgentMinutes`) must stay before the second
- * (`dueSoonMinutes`) or `validateConfiguration` refuses the save. Always adjusts the first value
- * down to one of its own steps below the second, whichever control changed.
- */
-function clampDueSoonUrgent(urgentCandidate: number, soonValue: number): number {
-  const withinOwnRange = Math.max(
-    DUE_SOON_URGENT_RANGE_MINUTES.min,
-    Math.min(DUE_SOON_URGENT_RANGE_MINUTES.max, urgentCandidate),
-  );
-  return Math.min(withinOwnRange, soonValue - DUE_SOON_URGENT_RANGE_MINUTES.step);
-}
-
-/** The six rules with optional fields filled in, so drafts compare like for like. */
-function fullRules(value: WardConfiguration) {
-  return {
-    ed: value.edAccessTargetMinutes,
-    cap: value.parallelReferralCap,
-    hold: value.pullHoldMinutes,
-    morning: value.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
-    urgent: value.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-    soon: value.dueSoonMinutes ?? DUE_SOON_MINUTES,
-    referralTarget: value.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES,
-    transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
-    transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
-  };
-}
-
-/** One phrase per rule that moved, in page order ("ED target 24h to 20h"). */
-function ruleDiffs(before: WardConfiguration, after: WardConfiguration): string[] {
-  const a = fullRules(before);
-  const b = fullRules(after);
-  const parts: string[] = [];
-  if (a.ed !== b.ed) parts.push(`ED target ${a.ed / 60}h to ${b.ed / 60}h`);
-  if (a.cap !== b.cap) parts.push(`Wards asked ${a.cap} to ${b.cap}`);
-  if (a.hold !== b.hold) parts.push(`Pull hold ${shortDuration(a.hold)} to ${shortDuration(b.hold)}`);
-  if (a.morning !== b.morning) parts.push(`Morning count ${clock24(a.morning)} to ${clock24(b.morning)}`);
-  if (a.soon !== b.soon) {
-    parts.push(`Early warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
-  }
-  if (a.urgent !== b.urgent) {
-    parts.push(`Final warning ${shortDuration(a.urgent)} to ${shortDuration(b.urgent)}`);
-  }
-  if (a.referralTarget !== b.referralTarget) {
-    parts.push(`Referral decision ${shortDuration(a.referralTarget)} to ${shortDuration(b.referralTarget)}`);
-  }
-  if (a.transferTarget !== b.transferTarget) {
-    parts.push(`Transfer acceptance ${shortDuration(a.transferTarget)} to ${shortDuration(b.transferTarget)}`);
-  }
-  if (a.transportTarget !== b.transportTarget) {
-    parts.push(`Transport booked ${shortDuration(a.transportTarget)} to ${shortDuration(b.transportTarget)}`);
-  }
-  return parts;
-}
-
-type ConfigurationAuditEvent = Extract<AuditEvent, { category: "configuration" }>;
-
-function isConfigurationEvent(event: AuditEvent): event is ConfigurationAuditEvent {
-  return event.category === "configuration";
-}
-
-const CHANGE_OUTCOME_TONE: Record<ConfigurationAuditEvent["outcome"], WfTone> = {
-  accepted: "success",
-  partial: "warning",
-  denied: "closed",
-  stale: "closed",
-};
-
-const CHANGE_OUTCOME_PREFIX: Record<ConfigurationAuditEvent["outcome"], string> = {
-  accepted: "",
-  partial: "Partly applied: ",
-  denied: "Refused: ",
-  stale: "Refused: ",
-};
-
-/** One line for a recorded rule save: the first figure that moved, and how many more did. */
-function configurationChangeText(before: WardConfiguration | null, after: WardConfiguration | null): string {
-  if (!before || !after) return "Coordination rules";
-  const parts = ruleDiffs(before, after);
-  if (parts.length === 0) return "Rules saved unchanged";
-  return parts.length === 1 ? parts[0] : `${parts[0]}, ${parts.length - 1} more`;
-}
-
-function isSurgePreset(value: WardConfiguration): boolean {
-  return (
-    value.parallelReferralCap === PARALLEL_REFERRAL_CAP_RANGE.max &&
-    value.edAccessTargetMinutes === ED_ACCESS_TARGET_RANGE_MINUTES.min &&
-    value.pullHoldMinutes === 120
-  );
-}
-
-function readTabFromHash(): SettingsTab | null {
-  if (typeof window === "undefined") return null;
-  const hash = window.location.hash.slice(1);
-  return SETTINGS_TABS.some((tab) => tab.id === hash) ? (hash as SettingsTab) : null;
-}
-
-export function maskDiagnosticPatient(patient: DiagnosticPatientInput): { id?: string } {
-  return {
-    ...(patient.id !== undefined ? { id: patient.id } : {}),
-  };
-}
-
-export function maskDiagnosticMovement(movement: DiagnosticMovementInput): {
-  id: string;
-  stage?: unknown;
-  originEdId?: unknown;
-  acceptedUnitId?: unknown;
-  admissionId?: unknown;
-  openedAt?: unknown;
-  acceptedAt?: unknown;
-  pulledAt?: unknown;
-  arrivedAt?: unknown;
-} {
-  const allowed = [
-    "stage",
-    "originEdId",
-    "acceptedUnitId",
-    "admissionId",
-    "openedAt",
-    "acceptedAt",
-    "pulledAt",
-    "arrivedAt",
-  ] as const;
-  return {
-    id: movement.id,
-    ...Object.fromEntries(allowed.flatMap((key) => (movement[key] !== undefined ? [[key, movement[key]]] : []))),
-  };
-}
-
-export type DiagnosticPatientInput = {
-  id?: string;
-  umrn?: string;
-  mrn?: string;
-  givenName?: string;
-  familyName?: string;
-  preferredName?: string;
-  displayName?: string;
-  name?: string;
-  [key: string]: unknown;
-};
-
-export type DiagnosticMovementInput = {
-  id: string;
-  patientName?: string;
-  patientUmrn?: string;
-  patientMrn?: string;
-  mrn?: string;
-  [key: string]: unknown;
-};
-
-export async function copySettingsDiagnostics(state: {
-  configuration: WardConfiguration;
-  movements?: readonly DiagnosticMovementInput[];
-  patients?: readonly DiagnosticPatientInput[];
-}): Promise<string> {
-  const maskedPatients = (state.patients ?? []).map(maskDiagnosticPatient);
-  const maskedMovements = (state.movements ?? []).map(maskDiagnosticMovement);
-
-  const payload = {
-    product: "Ward Flow Statewide Bed Coordination",
-    version: 6,
-    exportedAt: new Date().toISOString(),
-    configuration: state.configuration,
-    movementCount: (state.movements ?? []).length,
-    patientCount: (state.patients ?? []).length,
-    movements: maskedMovements,
-    patients: maskedPatients,
-  };
-
-  const text = JSON.stringify(payload, null, 2);
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    throw new Error("Clipboard is unavailable");
-  }
-  await navigator.clipboard.writeText(text);
-  return text;
-}
 
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
@@ -1074,170 +872,14 @@ export function SettingsScreen() {
           </Card>
         </div>
 
-        <div className={styles.column}>
-          <Card aria-labelledby="targets-title" data-setting="decision-targets">
-            <CardHead
-              iconPlain
-              id="targets-title"
-              icon={Timer}
-              title="Decision targets"
-              meta="Your defaults, not clinical standards"
-            />
-            {DECISION_TARGET_STEPS.map((step) => {
-              const ruleKey =
-                step.configKey === "referralDecisionTargetMinutes"
-                  ? "referralTarget"
-                  : step.configKey === "transferAcceptanceTargetMinutes"
-                    ? "transferTarget"
-                    : "transportTarget";
-              return (
-                <RuleRow
-                  key={step.step}
-                  setting={`target-${step.step}`}
-                  testId={`setting-target-${step.step}`}
-                  title={step.label}
-                  sub={
-                    step.step === "referral_decision"
-                      ? "Referral to ward answer"
-                      : step.step === "transfer_acceptance"
-                        ? "Acceptance to bed pulled"
-                        : "Bed pulled to transport booked"
-                  }
-                  value={rules[ruleKey]}
-                  saved={saved[ruleKey]}
-                  savedDisplay={shortDuration(saved[ruleKey])}
-                  display={shortDuration(rules[ruleKey])}
-                  noun={`${step.label.toLowerCase()} target`}
-                  range={{
-                    id: `setting-target-${step.step}-range`,
-                    ...DECISION_TARGET_RANGE_MINUTES,
-                    minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
-                    maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
-                  }}
-                  onChange={(minutes) => {
-                    setRule({ [step.configKey]: minutes });
-                  }}
-                  onReset={() => {
-                    setRule({ [step.configKey]: saved[ruleKey] });
-                  }}
-                  usedBy="Alerts, Tasks"
-                />
-              );
-            })}
-          </Card>
-
-          <Card aria-labelledby="more-title">
-            <CardHead
-              iconPlain
-              id="more-title"
-              icon={SlidersHorizontal}
-              title="More thresholds"
-              aside={<PreviewTag />}
-            />
-            <RuleRow
-              setting="occupancy"
-              title="Occupancy alert"
-              sub="Bed alerts dot from"
-              value={BED_ALERT_THRESHOLD_PERCENT}
-              saved={BED_ALERT_THRESHOLD_PERCENT}
-              display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
-              noun="occupancy alert"
-              range={{
-                min: 80,
-                max: 95,
-                step: 1,
-                minLabel: "80%",
-                maxLabel: "95%",
-              }}
-              onChange={() => onPreview("Occupancy alert")}
-              preview
-              previewTag={false}
-            />
-            <RuleRow
-              setting="tier-one"
-              title="Tier 1 overdue after"
-              sub="Referral queue"
-              value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-              saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-              display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
-              noun="tier 1 overdue time"
-              range={{
-                min: 30,
-                max: 240,
-                step: 30,
-                minLabel: "30m",
-                maxLabel: "4h",
-              }}
-              onChange={() => onPreview("Tier 1 overdue after")}
-              preview
-              previewTag={false}
-            />
-            <RuleRow
-              setting="ward-silent"
-              title="Ward not answering"
-              sub="First reminder after"
-              value={SILENT_WARD_FIRST_REMINDER_MINUTES}
-              saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
-              display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
-              noun="ward reminder time"
-              range={{
-                min: 30,
-                max: 240,
-                step: 30,
-                minLabel: "30m",
-                maxLabel: "4h",
-              }}
-              onChange={() => onPreview("Ward not answering")}
-              preview
-              previewTag={false}
-            />
-          </Card>
-
-          <Card
-            aria-labelledby="changes-title"
-            data-testid="ward-settings-recent-changes"
-            data-setting="recent-changes"
-          >
-            <CardHead
-              iconPlain
-              id="changes-title"
-              icon={History}
-              title="Recent changes"
-              action={
-                <Link
-                  className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-                  href="/mockups/ward-flow/governance"
-                >
-                  Full audit
-                </Link>
-              }
-            />
-            {ruleChanges.length === 0 ? (
-              <p className={styles.cardEmpty}>No rule saves this session.</p>
-            ) : (
-              <ol className={styles.changeList}>
-                {ruleChanges.map((change) => (
-                  <li key={change.id} className={styles.changeRow}>
-                    <span className={styles.changeTime}>
-                      {change.at === null ? "No time" : formatInstantWithDay(change.at, now)}
-                    </span>
-                    <StatusGlyph tone={CHANGE_OUTCOME_TONE[change.outcome]} size={9} />
-                    <span className={styles.changeText}>
-                      {CHANGE_OUTCOME_PREFIX[change.outcome]}
-                      {configurationChangeText(
-                        change.details.before,
-                        change.outcome === "accepted" ? change.details.after : change.details.requested,
-                      )}
-                    </span>
-                    <span className={styles.changeActor}>
-                      {change.actor.role ? WARD_FLOW_ROLE_LABELS[change.actor.role] : "Role not recorded"}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Card>
-        </div>
+        <SettingsTargetsColumn
+          rules={rules}
+          saved={saved}
+          setRule={setRule}
+          onPreview={onPreview}
+          ruleChanges={ruleChanges}
+          now={now}
+        />
       </div>
     </>
   );

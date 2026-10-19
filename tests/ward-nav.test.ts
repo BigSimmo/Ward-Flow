@@ -711,7 +711,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // seeded rail example. That is the failure mode a ratchet is supposed to have.
     expect(board?.builtSites).toEqual([
       "src/components/ward-management/movements/movement-drawer.tsx",
-      "src/components/ward-management/movements/movements-screen.tsx",
+      "src/components/ward-management/movements/movements-stage-row.tsx",
       "src/components/ward-management/referrals/referral-board.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
       // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
@@ -768,7 +768,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // SIX FROM 10 OCTOBER 2026: Change view (`ward-role-switcher.tsx`) no longer builds ward hrefs;
     // it opens the Switch workstation drawer, which takes `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
-      "src/components/ward-management/capacity/capacity-screen.tsx",
+      "src/components/ward-management/capacity/capacity-ward-sidebar.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/patients/patient-now-screen.tsx",

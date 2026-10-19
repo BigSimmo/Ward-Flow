@@ -18,7 +18,7 @@ indexes existing task IDs. The old PsychSift outstanding-issues source is foreig
 provenance; its current location is unverified. Ward Flow's `origin/main` is Ward Flow main.
 Historical design prescriptions do not override the latest approved Ward app.
 
-[HANDOVER-2026-08-07.md](HANDOVER-2026-08-07.md) is **superseded and must not be used to
+HANDOVER-2026-08-07.md (archived; see [ARCHIVE.md](../ARCHIVE.md)) is **superseded and must not be used to
 scope work** (`#277`). Nine open rows cite it as their Source, but four of its figures have
 since been disproved and the corrections live in those rows rather than in the document,
 which still asserts the originals. It is kept for provenance — the citations, the PR and

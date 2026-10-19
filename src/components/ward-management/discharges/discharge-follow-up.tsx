@@ -5,7 +5,6 @@ import { FOLLOW_UP_STATES, isFollowUpState, type FollowUpState } from "../ward-a
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { formatInstantWithDay } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { activeCommunityTreatmentOrder } from "../ward-patients";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import styles from "./discharges-third-edition.module.css";
@@ -14,21 +13,17 @@ export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; 
   const { dispatch, rejections, patients } = useWardFlowSelect("dispatch", "rejections", "patients");
   const now = useWardFlowClock();
   // Top 25 item 11: the seven day check on every discharge, with extra items on a CTO. Warns only.
-  const sevenDayOn = useWardFeatureFlag("top25-follow-up-7day");
   const linkedPatientId = record.identity.kind === "linked" ? record.identity.patient.id : null;
-  const check = sevenDayOn
-    ? followUpWithinWindowCheck({
-        followUp: record.followUp,
-        careJourney: record.careJourney,
-        leftAt: record.leftAt,
-        expectedDischargeAt: record.expectedDischargeAt,
-        now,
-        onCto:
-          linkedPatientId !== null &&
-          activeCommunityTreatmentOrder((patients ?? []).find((patient) => patient.id === linkedPatientId)) !==
-            undefined,
-      })
-    : null;
+  const check = followUpWithinWindowCheck({
+    followUp: record.followUp,
+    careJourney: record.careJourney,
+    leftAt: record.leftAt,
+    expectedDischargeAt: record.expectedDischargeAt,
+    now,
+    onCto:
+      linkedPatientId !== null &&
+      activeCommunityTreatmentOrder((patients ?? []).find((patient) => patient.id === linkedPatientId)) !== undefined,
+  });
   const [submittedAtCount, setSubmittedAtCount] = useState<number | null>(null);
   const refused =
     submittedAtCount !== null &&

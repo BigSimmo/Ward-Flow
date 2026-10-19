@@ -41,15 +41,15 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 
 | Area                            | Key documents                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Root & AI Entry Points**      | [`../AGENTS.md`](../AGENTS.md) · [`../PROJECT-INSTRUCTIONS-CONTINUATION.md`](../PROJECT-INSTRUCTIONS-CONTINUATION.md) · [`../CLAUDE.md`](../CLAUDE.md) · [`../GEMINI.md`](../GEMINI.md) · [`ward-flow/README.md`](ward-flow/README.md)                                                                                                                                   |
+| **Root & AI Entry Points**      | [`../AGENTS.md`](../AGENTS.md) · [`../CLAUDE.md`](../CLAUDE.md) · [`../GEMINI.md`](../GEMINI.md) · [`ward-flow/README.md`](ward-flow/README.md)                                                                                                                                                                                                                          |
 | **Builder & Coordinator Guide** | [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) · [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) · [`ward-flow/coordinator-guide-v2.md`](ward-flow/coordinator-guide-v2.md) (`ward-flow/FOR-A-BED-COORDINATOR.md`) · [`ward-flow/START-LOCAL-CHAT.md`](ward-flow/START-LOCAL-CHAT.md) (kept stub, superseded) (`ward-flow/FOR-NEW-DEVELOPERS.md`) |
-| **User Testing & Demo**         | [`ward-flow/clinician-check-questions.md`](ward-flow/clinician-check-questions.md) (`ward-flow/USER-TESTING-GUIDE.md`) · [`ward-flow/DEMO-SCRIPT.md`](ward-flow/DEMO-SCRIPT.md) (`ward-flow/DEMO-PRESENTATION-SCRIPT.md`) · [`../WARD-MOCKUPS-BRIEF.md`](../WARD-MOCKUPS-BRIEF.md)                                                                                       |
+| **User Testing & Demo**         | [`ward-flow/clinician-check-questions.md`](ward-flow/clinician-check-questions.md) (`ward-flow/USER-TESTING-GUIDE.md`) · [`ward-flow/DEMO-SCRIPT.md`](ward-flow/DEMO-SCRIPT.md) (`ward-flow/DEMO-PRESENTATION-SCRIPT.md`)                                                                                                                                                |
 | **Decisions & Task Ledger**     | [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md) · [`ward-flow/decisions.md`](ward-flow/decisions.md) · [`task-receipts.md`](task-receipts.md) · [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md) · [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                                                                                                         |
 | **Design System (v9/v10)**      | [`../design/v9/design-system-v9.md`](../design/v9/design-system-v9.md) · [`ward-flow/SCREEN-DEFINITION-OF-DONE.md`](ward-flow/SCREEN-DEFINITION-OF-DONE.md) · [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                                                                                                                     |
 | **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                                           |
 | **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                                               |
 | **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                                              |
-| **Historical Archives**         | [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md) · [`ward-flow/RULES.md`](ward-flow/RULES.md) · [`ward-flow-safety-checklist.md`](ward-flow-safety-checklist.md)                                                                                                                                                                                                 |
+| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (removed archives and how to restore them) · [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                                                            |
 
 ## Architecture
 
@@ -110,7 +110,6 @@ consumers before applying its advice; keep original incident commands/results as
 
 Every remaining tracked document in this category (architecture and design, plus the `design-system/` and `decisions/` folders), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [design-system/HANDOVER-2026-08-07.md](design-system/HANDOVER-2026-08-07.md) — Design system — handover, 7 August 2026 — Read AGENTS.md first — it is the highest-priority source of truth for rules and gates.
 - [decisions/ccz4hb-review-coverage.md](decisions/ccz4hb-review-coverage.md) — Decision: restoring automated review coverage (#CCZ4HB) — the row closed — but see the 2026-09-02 correction below, which removes the premise that decision rested on.
 
 ### Historical process & review catalogue
@@ -119,8 +118,6 @@ Every remaining tracked document in this category (architecture and design, plus
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
-- [codex-review-protocol.md](archive/codex-review-protocol.md) — historical inherited review protocol; current handling is in the [Reviews workflow](agents/git-publication.md#reviews), governed by [AGENTS.md](../AGENTS.md)
-- [branch-cleanup-guide.md](archive/branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
 
@@ -151,28 +148,18 @@ Every remaining tracked document in this category (the Ward Flow developer-gated
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [ward-flow/](ward-flow/)     | Dedicated Ward Flow product, design, governance, reference-data, code-map, and archive documentation                       |
 | [agents/](agents/)           | Agent-rule reference files `AGENTS.md` delegates to by name — the full text of rules its always-loaded core only points at |
-| [audit/](audit/)             | One kept point-in-time repository audit (the rest left with PsychSift on 26 September 2026)                                |
-| [superpowers/](superpowers/) | Historical agent-authored plans and specs                                                                                  |
+| [superpowers/](superpowers/) | October 2026 agent-authored plans, plus the older plans and specs that code or tests still cite                            |
 
 ## Point-in-time records (historical — do not update)
 
 Dated status reports, reviews, and operator decisions. They describe the repo
 as it was on that date; supersede with a new dated document rather than editing.
-
-- [audit/full-repository-audit-2026-09-02.md](audit/full-repository-audit-2026-09-02.md) — full repository audit (25 lanes, independently verified findings, closed-off sub-projects, machine evidence, Stage-5 adversarial review; audit only, nothing acted on except one-line documentation corrections). Kept past PsychSift's 26 September 2026 retirement because current security code cites its finding IDs; the other three dated repo audits and the `release-source-metadata-debt-2026-06-30.json` policy record left with PsychSift and remain on `origin/main`.
+The dated audits, reports and handovers left the live tree on 18 October 2026; see [`ARCHIVE.md`](ARCHIVE.md).
 
 ### Also catalogued (2026-09-02)
 
 Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [superpowers/plans/2026-08-14-ward-management-mockups.md](superpowers/plans/2026-08-14-ward-management-mockups.md) — Ward Management Mockup Generation Plan — Goal: Produce and validate three independent desktop visual directions for the approved synthetic WA mental-health ward-management command m…
-- [superpowers/plans/2026-08-18-ward-flow-model-and-modes.md](superpowers/plans/2026-08-18-ward-flow-model-and-modes.md) — Ward Flow model correction and missing modes — Implementation Plan — Goal: Close the four model defects that let Ward Flow propose an unlawful or impossible placement, then add the four modes the WA pathway ne…
-- [superpowers/plans/2026-08-18-ward-flow-phase-1-model.md](superpowers/plans/2026-08-18-ward-flow-phase-1-model.md) — Ward Flow Phase 1 — the model — Implementation Plan — Goal: Replace the flat hospital/patient fixture with a model that can express WA metro psychiatry patient flow correctly — sites that have e…
-- [superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md](superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md) — Ward Flow Phase 2 — the coordinator screen — Implementation Plan — Goal: Build the flow coordinator's single screen — the one surface that replaces the phone-around — and retire Constellation into it.
-- [superpowers/plans/2026-08-19-ward-flow-phase-3-role-screens.md](superpowers/plans/2026-08-19-ward-flow-phase-3-role-screens.md) — Ward Flow Phase 3 — the other three roles — Implementation Plan — Goal: Make Ward Flow move — add the emergency department, ward and transport officer screens plus the coordinator's live tracker, on top of…
-- [superpowers/plans/2026-08-25-ward-flow-phase-4-specialist-boards.md](superpowers/plans/2026-08-25-ward-flow-phase-4-specialist-boards.md) — Ward Flow Phase 4 — specialist boards, implementation plan — Goal: Build the eleven Phase 4 items — a scarcer scenario, mid-flight urgency and legal-status changes, the undo the prototype has never had…
-- [superpowers/plans/2026-08-25-ward-flow-sandbox-and-design-repair.md](superpowers/plans/2026-08-25-ward-flow-sandbox-and-design-repair.md) — Ward Flow — its own sandbox, and the design repair — Goal: Move Ward Flow into its own administrator-gated sandbox, reachable only through the developer page, and repair the navigation, landmar…
-- [superpowers/plans/2026-08-26-ward-flow-phase-5-bed-availability.md](superpowers/plans/2026-08-26-ward-flow-phase-5-bed-availability.md) — Ward Flow Phase 5 — Bed availability becomes real — Goal: wards record when their beds are actually coming free, and the coordinator's capacity figure becomes a number that can be planned agai…
 - [superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md](superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — Ward Flow — metro psychiatry patient flow, design — Status: Approved design, awaiting implementation plan.
 - [superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md](superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md) — Ward Flow Phase 4 — specialist boards, design — Date: 2026-08-25. Product owner:
 

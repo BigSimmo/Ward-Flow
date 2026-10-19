@@ -137,7 +137,7 @@ describe("installedLockParity", () => {
     const ciPath = path.resolve(".github/workflows/ci.yml");
     const ci = existsSync(ciPath) ? readFileSync(ciPath, "utf8") : null;
 
-    for (const scriptName of ["verify:cheap:internal", "verify:ui", "verify:release"]) {
+    for (const scriptName of ["verify:cheap", "verify:ui", "verify:release"]) {
       const script = packageJson.scripts[scriptName];
       const parityIndex = script.indexOf("check:installed-lock-parity");
       const firstTestIndex = Math.min(

@@ -1,281 +1,110 @@
-> **Historical source boundary — 2 October 2026.** The preserved material below
-> describes the former Database/PsychSift workflow or a completed task. Its commands,
-> hosting and appearance claims are not current Ward instructions. Use the
-> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
-
 # Ward Flow scripts inventory
 
-Curated map of `scripts/` (163 files) and the `package.json` script surface (99 entries),
-with a maintained generated count header and a historical catalogue below. The current
-command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
-with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,
-excluding marked historical sections. Neither check establishes semantic freshness.
+Curated map of `scripts/` (115 files) and the `package.json` script surface (82 entries),
+grouped by what each part protects. `package.json` is the command surface; this page says why
+each group exists. `npm run docs:check-inventory` checks the two counts above (within a small
+tolerance) and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
+still exists. Neither check proves the descriptions are current, so read the script before
+relying on it.
 
-## Active Ward Flow documentation & organisation scripts
+On 18 October 2026 the tooling layer was cut from 163 files and 99 commands to the set below.
+One-off audits, PsychSift and Database leftovers, and multi-agent coordination helpers that no
+gate used were retired: worktree reports, merge-loss and final-merge audits, gate receipts and
+the gate arbiter, PR branch sync, the flake ledger, mutation runs, fold-gate selectors, run slots
+and the review server. Their history is in Git.
 
-| Command / Script                                                                                    | Purpose                                                                                                                                                                                                                                                                                                                               |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`)       | Regenerate all derived Ward Flow and repository indexes (`OWNER-RULINGS.md`, `SCREEN-MAP.md`, `MANIFEST.json`, `SCREEN-VERIFICATION.md`, `RULES.md`, `<git-dir>/ward-organisation/ORGANISATION.md`, `scripts-index.md`, `site-map.md`), update `pack_manifest.json` SHA-256 digests, and run all 7 documentation & organisation gates |
-| `npm run docs:maintain:check` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --check`) | Verify all generated indexes, `pack_manifest.json` digests, file organisation (`registry.json`), and all 7 documentation integrity gates without writing                                                                                                                                                                              |
-| `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>`                       | Classify any existing or proposed file path against `docs/ward-flow/organisation/registry.json` and recommend the canonical folder and naming convention when unregistered                                                                                                                                                            |
-| `npm run ensure` (`node scripts/ensure-local-server.mjs`)                                           | Start or verify the local Ward Flow server and print its project-verified URL                                                                                                                                                                                                                                                         |
-| `npm run verify:pr-local` (`node scripts/verify-pr-local.mjs`)                                      | Run the public Ward Flow pre-push verification gate                                                                                                                                                                                                                                                                                   |
+## Build, run and test
 
-<!-- docs-script-refs:historical-start -->
+| Command                                                        | Script                                                                                  | Purpose                                                                                                                       |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`, `npm run start`                                 | `dev-free-port.mjs`, `local-server-startup.mjs`                                         | Start Next.js on a free port.                                                                                                 |
+| `npm run ensure`                                               | `ensure-local-server.mjs`                                                               | Start or reuse the local server and print its verified URL.                                                                   |
+| `npm run build`                                                | `run-heavy.mjs`, `guard-next-build.mjs`                                                 | Production build behind the heavy-run lock and the build guard.                                                               |
+| `npm run lint`, `npm run typecheck`                            | `run-heavy.mjs`                                                                         | ESLint and TypeScript behind the heavy-run lock.                                                                              |
+| `npm run test`, `npm run test:focused`, `npm run test:related` | `run-vitest.mjs`, `test-focused.mjs`, `ward-flow/related-tests.mjs`                     | Unit and DOM tests: the whole suite, a focused set, or the tests related to changed files.                                    |
+| `npm run test:coverage`, `npm run check:coverage-inventory`    | `check-coverage-inventory.mjs`, `coverage-contract.mjs`                                 | Coverage run, and the check that every executable file is in the coverage inventory.                                          |
+| `npm run check:ward-expected-reds`                             | `check-ward-expected-reds.mjs`, `run-ward-tests.mjs`, `ward-flow/full-gate-recheck.mjs` | The CI unit shards: run the suite and compare reds with `tests/ward-expected-reds.json`.                                      |
+| `npm run test:e2e` and the `test:e2e:*` lanes                  | `run-playwright.mjs`, `playwright-base-url.ts`, `playwright-browser-preflight.mjs`      | Playwright journeys, including the CI journey and release-gate lanes.                                                         |
+| `npm run test:backend`                                         | the `backend/ward-flow` package                                                         | Backend build and tests.                                                                                                      |
+| `npm run verify:pr-local`, `npm run verify:cheap`              | `verify-pr-local.mjs`                                                                   | Local pre-push readiness, selected from the same scope rules CI uses.                                                         |
+| `npm run test:live`                                            | `run-live-tests.mjs`                                                                    | Provider-backed live tests; refuses unless `ALLOW_PROVIDER_TESTS=true` is set for an approved run. No live tests exist today. |
+| `npm run bench`                                                | none                                                                                    | Vitest benchmarks.                                                                                                            |
 
-## Historical scripts catalogue
+Shared helpers for these runners: `owned-child.mjs` (and its Windows companion), `test-run-lock.mjs`,
+`test-environment.mjs` (offline, provider-free test environment), `test-run-selection.mjs`,
+`unit-test-population.mjs`, `test-evidence-identity.mjs`, `test-cache-path.mjs`, `retryable-fs.mjs`,
+`child-process-result.mjs`, `npm-script-invocation.mjs`, `sensitive-text.mjs`, `run-tsx.mjs`,
+`resolve-tsx-cli.mjs`, `register-server-only.mjs` and `enable-server-only-stub.mjs`. The journey
+lane also uses `ward-flow/journey-run-verdict.mjs`, `ward-flow/known-journey-failures.mjs`,
+`ward-flow/keep-journey-failures.mjs`, `ward-flow/journey-durations.json` and the screenshot tool
+`ward-flow/shots.mjs` (with `ward-flow/shot-routes.txt` and `ward-flow/local-audit-target.mjs`).
+The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-dependencies.mjs` and
+`ward-flow/gate-build-flag.mjs`.
 
-The preserved catalogue was grouped by purpose and is not an exhaustive current per-file listing.
-Every top-level `.mjs`/`.ts`/`.cjs` script is named below (the 44 the 2026-09-02 audit found
-uncatalogued were added the same day, in "Also catalogued" lists per section); the remaining files
-are fixtures, SQL, subfolder helpers, and small shared helpers grouped rather than itemised.
+## CI
 
-> The two counts in the sentence above are generated facts, not prose. Keep them in the exact
-> `(N files)` / `(N entries)` shape — tooling rewrites that sentence by regex.
+`scripts/ward-ci-public/` holds what `.github/workflows/ward-flow.yml` runs: `plan.mjs` and
+`verify-plan.mjs` (which jobs a change needs), `main-reuse.mjs` (reuse a pull request's proven
+result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
+`check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
+`install-chromium.mjs`, and `bot-author-policy.mjs` for the bot author workflow. CI also runs
+`check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
+`check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
+`ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`.
 
-Legend: **[live]** routine tooling · **[infra]** runner/guard plumbing · **[one-shot]** completed
-migration/batch helper that is a candidate for an `archive/` subfolder under `scripts/` once its
-migration has shipped (see `docs/maturity-backlog-workorders.md` L1).
+## Safety and data safeguards
 
-## Runner & guard infrastructure [infra]
+| Command or hook                                    | Script                                                                                 | Protects                                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| pre-commit hook                                    | `pre-commit-checks.mjs`, `staged-source-tree.mjs`, `check-staged-docs.mjs`             | Staged secret and patient-identifier admission, sign-out ownership, changed-line checks.  |
+| pre-push hook, `npm run guard:push`                | `guard-push.mjs`                                                                       | Push destination identity and auto-merge ownership (no override), then format and static. |
+| `npm run check:client-bundle-secrets`              | `check-client-bundle-secrets.mjs`                                                      | No API key, token or credentialed database URL in tracked client source.                  |
+| `npm run ward:governance:check`                    | `ward-flow/check-clinical-governance-gate.mjs`                                         | Synthetic fixture identifiers and the disclaimer source (runs in CI).                     |
+| `npm run check:ward-reference`                     | `ward-flow/check-ward-reference.mjs`, `ward-flow/build-reference-*.mjs`                | The generated ward reference registry still matches its source pack (runs in CI).         |
+| `npm run check:ward-legal-language`                | `ward-flow/check-ward-legal-language.mjs`                                              | No screen wording claims legal authority the app does not have (runs in CI).              |
+| `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                     |
+| `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                          |
+| `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                  |
+| `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                   |
+| `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                      |
 
-| Script                                                                                                                                                                                                                                                                  | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run-heavy.mjs`                                                                                                                                                                                                                                                         | Acquires shared/exclusive cross-worktree leases (`test-run-lock.mjs`) so focused checks can overlap safely                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `gate-arbiter.mjs`                                                                                                                                                                                                                                                      | Decides whether an expensive local gate still earns its runtime, from live CI coverage plus a rolling per-gate/per-change-class yield window (advisory; never in CI)                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `gate-receipts.mjs`                                                                                                                                                                                                                                                     | Content-addressed memoisation of `lint`/`typecheck`/Vitest so an unchanged gate is never rerun locally (never in CI)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `run-tsx.mjs`, `run-vitest.mjs`, `run-playwright.mjs`, `run-eval-safe.mjs`                                                                                                                                                                                              | Typed/test/e2e/eval entrypoint wrappers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `dev-free-port.mjs`, `ensure-local-server.mjs`                                                                                                                                                                                                                          | Project-stable localhost port selection + background server ensure                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `design-sync.mjs`, `capture-mockup-screenshots.mjs`                                                                                                                                                                                                                     | Local design-sync CSS prep (`node scripts/design-sync.mjs`) + redesign "current" PNG pack after ensure (`node scripts/capture-mockup-screenshots.mjs`)                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `check-node-engine.cjs`, `install-git-hooks.mjs`, `guard-push.mjs`, `guard-next-build.mjs`                                                                                                                                                                              | Install/preflight guards                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `setup-codex-cloud.sh`, `maintain-codex-cloud.sh`, `install-codex-cloud-command-shims.sh`, `check-codex-cloud-raw-env.sh`, `delete-codex-cloud-branch-with-pat.sh`, `check-codex-cloud-setup.mjs`, `check-github-shell-access.mjs`, `ensure-codex-cloud-git-remote.mjs` | Reproducible Codex Cloud toolchain/profile setup, profile-loading Node command shims, a pre-profile name-only credential probe (`FAIL-KNOWN`/`exit 2` only for documented `OPENAI_BASE_URL`; hard `STOP` otherwise), an operator-only non-Cloud PAT branch-deletion helper, sanitized Personal Pro capability/route acceptance, fail-closed GitHub shell control-plane acceptance (`check:github-shell-access` = offline self-test; `check:github-shell-access:live` = provider-backed identity/permission/API plus non-mutating push proof), and safe credential-free `origin` repair |
-| `ci-change-scope.mjs`, `ci-triage.mjs`, `pr-policy.mjs`, `pr-mergeability.mjs`                                                                                                                                                                                          | CI change classification + PR policy + conflict signal (self-tested via `check:ci-scope`/`check:ci-triage`/`check:pr-policy`/`check:pr-mergeability`)                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `check-pr-mergeability-workflow.mjs`                                                                                                                                                                                                                                    | PR mergeability workflow contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `check-installed-lock-parity.mjs`, `phone-chrome-plan.mjs`, `verify-phone-chrome.mjs`, `playwright-browser-preflight.mjs`                                                                                                                                               | Lock-trust preflight, change-scoped phone contracts, and Playwright browser-binary preflight before build                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `audit-merge-loss.mjs`                                                                                                                                                                                                                                                  | Advisory blob-comparison sweep for merged PRs a later merge resolution silently reverted (`audit:merge-loss`); names the PR and files and exits 0 — a deliberate revert is identical at blob level, so a positive needs human confirmation                                                                                                                                                                                                                                                                                                                                             |
-| `final-merge-audit.mjs`                                                                                                                                                                                                                                                 | Fail-closed local merge-tree audit; explicit provider mode adds PR/check/thread/tree/deployment proof                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `child-process-result.mjs`, `cli-utils.ts`, `productivity-core.mjs`                                                                                                                                                                                                     | Shared helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `test-focused.mjs`, `test-run-selection.mjs`, `test-cache-path.mjs`, `test-environment.mjs`                                                                                                                                                                             | Backs `npm run test:focused` — change-scoped selection, cache pathing, env setup; fails closed for deleted files and test infrastructure                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `primary-checkout-lease.mjs`, `test-run-lock.mjs`, `clean-worktree.mjs`, `worktree-inventory.mjs`                                                                                                                                                                       | Cross-worktree lease arbitration for the primary checkout, plus report-only registered-worktree and explicit-root fleet inventory                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `resolve-tsx-cli.mjs`, `register-server-only.mjs`, `enable-server-only-stub.mjs`                                                                                                                                                                                        | tsx CLI resolution and `server-only` import shims                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `check-format-changed.mjs`, `check-base-freshness.mjs`, `check-local-presence.mjs`                                                                                                                                                                                      | Push-time helpers behind `guard-push.mjs`: changed-file formatting, stale-base and local-presence checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `yaml-contract.mjs`, `sensitive-text.mjs`, `design-system-contract-utils.mjs`                                                                                                                                                                                           | Shared parsing/redaction/contract helpers used by the gates                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+The dependency audit is the `npm audit` step in `.github/workflows/dependency-audit.yml`, and the
+secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Neither needs a
+script here.
 
-## Verification gates [live]
+## Documents and generated indexes
 
-`verify:cheap` → `verify:pr-local` → `verify:ui` → `verify:release`. Building blocks:
-`check-runtime.ts`, `check-github-action-pins.mjs`, `check-gate-manifest.mjs`,
-`check-pr-mergeability-workflow.mjs`,
-`check-maintainability-budgets.mjs`, `check-upload-limit-parity.mjs`,
-`check-codebase-index-coverage.mjs`, `check-docs-links.mjs`,
-`check-docs-script-refs.mjs`, `check-bundle-budget.mjs`, `check-type-scale.mjs`,
-`check-icon-scale.mjs`, `check-design-system-contract.mjs`,
-`generate-design-system-adoption.mjs` (`npm run design-system:adoption:update` /
-`check:design-system-adoption`), `generate-design-sync-contract.mjs` +
-`check-design-sync-contract.mjs` (`npm run design-system:design-sync:update` /
-`check:design-sync-contract`), `adopt-visual-baselines.mjs`
-(`npm run design-system:baselines:adopt`), `check-function-grants.mjs`,
-`check-owner-scope-api.mjs`, `check-client-bundle-secrets.mjs`, `verify-pr-local.mjs`,
-`verify-release-offline.mjs`, `check-codex-cloud-setup.mjs`. `check-gate-manifest.mjs` cross-checks that every gate in the
-`verify:cheap:internal` chain also runs in CI's `static-pr` job, so the two lists can't drift.
+`npm run docs:check-links` (`check-maintained-doc-links.mjs`, `ward-flow/check-doc-links.mjs`),
+`npm run docs:check-scripts` (`check-docs-script-refs.mjs`), `npm run docs:facts` and
+`npm run docs:facts:write` (`doc-facts.mjs`), `npm run docs:check-index`
+(`check-codebase-index-coverage.mjs`), `npm run docs:check-inventory` and `npm run docs:update`
+(`update-docs-inventory.mjs`), `npm run sitemap:check` (`generate-site-map.ts`),
+`npm run docs:maintain` and `npm run docs:maintain:check`
+(`ward-flow/maintain-docs-and-organisation.mjs`, which also runs `check-stale-docs.mjs`), and
+`npm run ward:organise:check` (`ward-flow/organisation.mjs`, `ward-flow/organisation-core.mjs`).
+The pre-commit hook and CI keep the generated indexes in step: `ward-flow/owner-rulings-index.mjs`,
+`ward-flow/rules-index.mjs`, `ward-flow/screen-map.mjs`, `ward-flow/screen-pairs.mjs`,
+`ward-flow/mockup-manifest.mjs`, and `ward-flow/screen-verification.mjs` with its library.
+`ward-flow/sync-lessons.mjs` is a retired stub that only refuses; a documentation test still
+checks that refusal.
 
-Also in the gate set: `check-assets.mjs`,
-`check-hosted-migration-role.mjs` (`check:migration-role` — pins the immutable applied migration and
-the `postgres` role), `check-edge-functions.mjs`, `check-ci-env.mjs`,
-`run-gitleaks-pinned.mjs`, `rag-offline-contract.mjs` + `test-rag-offline.mjs` (offline RAG
-contract), `check-lighthouse-budget.mjs`, `measure-cls-attribution.mjs`
-(ledger `#147` — names the elements behind a CLS breach, which Lighthouse's own
-`layout-shift-elements` audit did not; CLS reproduces offline, LCP does not), and the workflow-contract
-guards `check-pr-policy-workflow.mjs` and `check-codex-autofix-workflow.mjs`.
-`audit-formatting-fixtures.ts` checks the formatting fixtures themselves.
-`setup-codex-cloud.sh`, `maintain-codex-cloud.sh`, and
-`install-codex-cloud-command-shims.sh` reproduce the provider-free Cloud runtime documented in
-`docs/codex-cloud.md`; `npm run check:codex-cloud` verifies that
-the runtime pins, install commands, offline defaults, and documentation stay aligned.
-Programme execution helpers (no retrieval/ranking behaviour change): `rag-phase-launch-check.mjs`,
-`rag-task-brief.mjs`, `check-rag-phase-receipts.mjs`, and `build-rag-plan-packages.mjs`.
+## Design and product checks
 
-Also catalogued (2026-09-02), gate and CI helpers:
+`npm run check:ward-text-size` (`ward-flow/check-text-size-floor.mjs` with its baselines and
+`ward-flow/font-size-inventory.mjs`), `npm run check:type-scale`, `npm run check:icon-scale`,
+`npm run check:explanatory-buttons`, `npm run check:design-system-contract`
+(`token-layer-divergences.mjs`), `npm run check:mockups` (`check-mockup-retirement.mjs`),
+`npm run ward:test:sync:check` (`ward-flow/design-test-sync.mjs`) and
+`npm run check:ward-errata-freshness`. Most are also asserted by unit tests, so the CI shards run
+them. `figma-tokens.mjs` syncs design tokens with Figma (see `docs/agents/figma-sync.md`).
+`check-ward-data.mjs` explains problems in the editable ward data in plain words. It has no npm
+command yet because it currently reports open data problems.
 
-- `check-clinical-hazard-controls.mjs` (`check:clinical-hazard-controls`) — validates `docs/clinical-hazard-controls.json`: hazards H1–H6 present, every control state one of the four allowed values, the two named decision records present and dated.
-- `check-coverage-inventory.mjs` (`check:coverage-inventory`) + `coverage-contract.mjs` — the post-run LCOV guard that every file in the shared coverage include globs appears in the report, and the shared contract Vitest reads the same globs from.
-- `check-dead-code-candidate.mjs` (`check:dead-code-candidate`) — refuses to call a symbol dead on "nothing imports it" (unchecked plan boxes, fixtures, dynamic references); see `docs/agents/dead-code-deletion.md`.
-- `check-diff-integrity.mjs` (`check:diff-integrity`) — refuses a diff that silently destroys committed content (test-case floors, truncation artefacts; written after `#Y30AXB`); see `docs/agents/test-deletion-guard.md`.
-- `check-mockup-retirement.mjs` (`check:mockups`) — makes the written record in `mockups/README.md`, not a reachability scan, the gate on retiring a mockup.
-- `check-repo-awareness-snapshot.ts` (`check:repo-awareness-snapshot`) + `generate-repo-awareness-snapshot.ts` (`snapshot:repo-awareness`) — `data/repo-awareness-snapshot.json` (routes, documentation catalogue coverage, review state) freshness and generation.
-- `check-privacy-readiness.mjs` (`check:privacy-readiness`, `check:privacy-readiness:release`) — validates `docs/governance/privacy-readiness.v1.json` required ids and release-blocking states.
-- `check-source-catalogue.ts` (`check:source-catalogue`) — repository source references, providers and coverage issues from `src/lib/sources/repository-providers`.
-- `check-stale-docs.mjs` (`check:stale-docs`) — advisory report of Markdown docs untouched for `--days` and linked from nowhere; refuses shallow clones.
-- `check-playwright-browser-revision.mjs` (`check:playwright-browser-revision`) — fails closed unless the pinned Chromium revision has a launchable binary on disk (`#312`).
-- `playwright-pr-shards.mjs` (no npm alias since 15 Oct 2026; run with `node`) — duration-aware shard groups for the required Chromium PR journeys.
-- `browser-test-plan.mjs` (`plan:browser`, `check:browser-test-plan`) — chooses the smallest browser gate that still covers a change.
-- `classify-visual-baseline-outcome.mjs` — decides whether a failed `test:e2e:visual` run was pixel drift (advisory) or an infrastructure failure that stays red.
-- `lighthouse-measurement-outcome.mjs`, `lighthouse-time-budget.mjs`, `live-web-vitals-inputs.mjs` — Lighthouse budget runner helpers: whether a cell produced gradeable evidence, bounded-stage timing, and validation of the dispatch-only live Web Vitals matrix.
-- `check-image-content-contract.mjs`, `trivy-image-scan.mjs`, `resolve-oci-image-digest.mjs`, `app-container-smoke.mjs` (`smoke:app-container`) — container CI: final-image hardening assertions, pinned Trivy scan + SBOM, multi-platform digest lookup for pinning base images, and a provider-free boot smoke of the built app image.
-- `check-worker-python-lock.mjs` (`check:worker-python-lock`, `check:worker-python-cloud-lock`, `check:worker-python-locks:static`), `generate-worker-python-lock.mjs` (`generate:worker-python-lock`, `generate:worker-python-cloud-lock`), `worker-python-lock-config.mjs` — the hashed `worker/python/requirements.txt` lock targets.
+## Setup and maintenance
 
-Also catalogued (2026-09-04):
-
-- `check-dependency-drift.mjs` (no npm alias since 15 Oct 2026; run with `node`) — flags a surface whose transitive import closure changed even though the files a staleness check names directly did not.
-- `check-design-drift-ratchet.mjs` (`check:design-drift-ratchet`) — ratchet guard for two design-token drift metrics (bypass-prone inline `style={{ }}` under `src/**`; design-system components with zero product importers).
-- `stamp-service-worker.mjs` (part of `build:internal`) — gives `public/sw.js` a different body on every build so the browser's byte comparison detects an update and fires `updatefound`/`activate`.
-
-use `verify:phone-chrome` before the broad UI gate. It checks installed-lock parity, then selects focused contracts and Playwright owners from the changed paths; shared foundations add `verify:ui` last. Documentation-only scopes run only documentation guards. `audit:final-merge` is local-only unless both `--providers` and `ALLOW_PROVIDER_READS=true` are supplied.
-
-## Ingestion, indexing & reindex [live]
-
-`import-documents.ts`, `reindex.ts`, `reindex-health.ts`, `check-indexing.ts`,
-`recover-ingestion-queue.ts`, `cleanup-abandoned-reindex-generations.ts`,
-`ingestion-autopilot.ts`, `backfill-smart-index.ts`.
-
-## Document intelligence & governance [live]
-
-`enrich-documents.ts`, `classify-documents.ts`, `backfill-gold-document-labels.ts`,
-`audit-source-governance.ts`, `check-document-label-coverage.ts`,
-`check-document-label-governance.ts`, `promote-public-documents-batch.ts`,
-`audit-public-document-approvals.ts`, `production-readiness.ts`, `check-supabase-project.ts`.
-The database default-ACL, drift, drift-manifest and migration-history scripts left with PsychSift's
-database files on 26 September 2026.
-
-Also catalogued (2026-09-02): `build-medication-interaction-index.ts` (`medications:interactions` /
-`check:medication-interactions` — builds `data/medication-interaction-index.json` from the catalogue
-snapshot and the curated lexicon), `build-medication-lexicon-report.ts` (`medications:lexicon-report` /
-`check:medication-lexicon-report` — renders the lexicon as the clinician-reviewable
-`docs/medication-interaction-lexicon-review.md`), `probe-corpus-image-encodings.mjs` (reports image
-encoding / stream-filter patterns across the corpus PDFs), and `inspect-shadow-extraction.ts` (reads the
-docling-vs-legacy B4 shadow-extraction measurements; see `docs/worker-deploy-runbook.md`).
-
-## RAG evaluation [live]
-
-`eval-rag.ts`, `eval-retrieval.ts`, `eval-quality.ts`,
-`eval-answer-quality.ts`, `eval-search.ts`, `eval-search-api.ts`, `eval-assertions.ts`,
-`compare-retrieval-eval.ts`, `retrieval-health.ts`, `profile-retrieval-rpcs.ts`,
-`warm-retrieval-cache.ts`, `tune-search-weights.ts`, `check-rag-fixtures.mjs`, `eval-trend.mjs`
-(trend across runs), `eval-utils.ts` (shared harness helpers),
-`probe-generation-quality.ts` (one approved cache-bypassed live answer; reports the structured
-`generation_quality_gate_reasons` added for `/issues` `#231` — provider-backed, refuses demo mode),
-`check-rag-adversarial-fixtures.mjs` + `rag-adversarial-contract.mjs` (offline, network-free
-validation of the synthetic adversarial fixture dataset and its baseline record; separate from
-`check-rag-fixtures.mjs`, which is untouched),
-`eval-rag-adversarial-offline.mjs` (packet B2: fixture validation then the offline Vitest
-adversarial harness `tests/rag-adversarial-harness.test.ts`; `npm run eval:rag:adversarial:offline`,
-routed by `ci-change-scope.mjs` to RAG-surface PRs only; fails closed on missing fixture,
-network attempt, or round-trip budget breach),
-`blind-answer-pairs.ts` (Gate E offline blinded A/B pairing over two
-`eval-answer-quality --dump-answers` artefacts — `build` emits reading-pack/verdict-sheet/
-assignment-key under `output/` or `.local/` only, `unblind` resolves recorded verdicts back to
-version labels; pure file transformation, no provider access, node-builtin imports only;
-`/issues` `#E0N0QC`; run via `node scripts/run-tsx.mjs scripts/blind-answer-pairs.ts`).
-Golden fixtures:
-`scripts/fixtures/rag-retrieval-golden.json`, `scripts/fixtures/assertion-golden.json`.
-Adversarial fixtures: `scripts/fixtures/rag-adversarial-cases.v1.json` (+ its schema) and
-`scripts/fixtures/rag-adversarial-baseline.v1.json`.
-Docling lab (isolated, outside `scripts/`): `eval/docling/` — `npm run check:docling-lab`
-(offline contract gate) and `npm run generate:docling-lab-lock` (hashed lock); the benchmark
-itself is dispatch-only (`.github/workflows/docling-lab.yml`). See `eval/docling/README.md`.
-
-Editing anything in this section is a protected-surface change — flag the task before you start.
-
-## Registry / catalogue content [live]
-
-`seed-registry-records.ts`, `embed-registry-records.ts`, `reconcile-registry-governance.ts`,
-`import-services-export.ts`, `import-differentials-export.ts`, `seed-differential-records.ts`,
-`import-medications-export.ts`, `seed-medication-records.ts`, `review-therapy.mjs`
-(`therapy:review` — report-only by default; qualified-clinician, interactive-TTY sign-off only;
-source and generated bytes roll back together on failure unless a concurrent source edit must be
-preserved, in which case generated assets return to their exact pre-review state and the CLI fails).
-Also catalogued (2026-09-02): `build-mha-act-sections.mjs` (`check:mha-act-sections` — extracts and
-curates the plain-English Mental Health Act 2014 (WA) section summaries the Forms mode cites).
-
-## Build & assets [live/infra]
-
-`build-worker.mjs`, `build-analyze.mjs`, `build-therapies-index.mjs`,
-`build-cross-mode-differentials-index.mjs`, `build-ranking-snapshot.ts`,
-`build-forms-pdf-manifest.mjs` (`check:forms-pdf-manifest` — derives each committed WA MHA form
-PDF's sha256, size, and whether opening it needs a user password; offline, fails closed),
-`generate-site-map.ts`, `generate-brand-assets.ts`, `generate-sample-documents.ts`,
-`check-sample-extraction.ts`, `optimize-public-images.mjs`.
-Also catalogued (2026-09-02): `generate-gates-figures.mjs` (`design-system:gates-figures:update`;
-part of `check:design-system-contract` — the ratchet-figures block in `docs/design-system/GATES.md`) and
-`token-layer-divergences.mjs` (`design-system:token-divergence:update`; part of
-`check:design-system-contract` — the v1/v2 token-layer divergence contract).
-
-## Maintenance & ops [live]
-
-`cleanup-storage.ts`, `purge-query-logs.ts`, `audit-tables.ts`, `supabase-recovery-status.ts`,
-`promote-query-misses.ts`, `flake-ledger.mjs`, `dependency-report.mjs`,
-`set-site-administrator.ts`, `ops-digest.mjs`, `build-clinical-review-queue.ts`,
-`verify-locality-metadata.ts`, `update-docs-inventory.mjs`.
-Also catalogued (2026-09-04), landed without `package.json` wiring yet: `check-ward-data.mjs` —
-reads the Ward Flow prototype's changeable data (bed numbers, hospitals, wards) and reports
-arithmetic that does not add up, in plain words aimed at a non-programmer editor; read-only and
-offline. `run-ward-tests.mjs` — runs a named set of Vitest files and refuses to report success
-unless every file handed in actually produced a result, closing a false-green mode where a crashed
-worker still prints an internally consistent pass count.
-
-### Review ledger, branches and skills [live]
-
-The branch-review-ledger tooling (`branch-review-ledger.mjs`, `merge-branch-review-ledger.mjs`,
-`generate-branch-review-index.mjs`) and the outstanding-issues ledger tooling (`ledger-inbox.mjs`,
-`issue-id.mjs`, `issues-report.mjs`) were retired on the Ward Flow line on 26 September 2026 at
-Josh's request; the PsychSift versions remain on `origin/main`.
-
-- `sync-open-pr-branches.mjs` (`sync:pr-branches`), `sync-pr-branches.mjs` (compatibility entry point) — anti-churn sync for stale open PR heads;
-  refuses a missing or bot `gh` identity. `sweep-merged-branches.mjs` — merged-branch sweep.
-- `reconciliation-preflight.mjs`, `reconciliation-evidence-pack.mjs` — broad chat/worktree
-  reconciliation entry point and its evidence bundle; see `docs/reconciliation-playbook.md`.
-- `list-database-skills.mjs` (`skills` / `check:skills`), `sync-skills.mjs`, `skill-create.mjs` —
-  the `.agents/skills/` catalogue.
-- Also catalogued (2026-09-02): `setup-codex-worktree.mjs` (`setup:codex-worktree` —
-  one isolated exact-lock worktree for sweeps); `worktree-cleanup.mjs` (safe orphan-worktree
-  pruning and reporting, `#6GW95D`); `retryable-fs.mjs` (Windows-safe recursive removal retries
-  shared by the worktree tools); `diagnose-codex-cloud.mjs` (`diagnose:codex-cloud`);
-  `rebuild-caring-contacts-sdd-workspace.mjs` (rebuilds the disposable `.superpowers/sdd/`
-  workspace for the Caring Contacts plans from the tracked records).
-
-### Live/staging verification [live]
-
-`soak-test.ts`, `test-cross-tenant-staging.ts` (the executable owner-boundary proof behind
-`docs/staging-tenancy-release-evidence.md`), `deployment-boot-smoke.mjs`, `run-live-tests.mjs`.
-These reach live providers — they need explicit confirmation before running.
-
-### Browser and performance capture [infra]
-
-`playwright-base-url.ts`, `classify-playwright-failures.mjs`, `capture-chrome-parity.ts`,
-`summarise-web-vitals.mjs`.
-
-## One-shot / dated — archive candidates [one-shot]
-
-Completed migration/batch helpers kept only for provenance; retire to the `scripts/archive/`
-subfolder once the underlying migration is confirmed live (work order L1).
-
-**Already archived** (in `scripts/archive/`, still runnable): `check-m13-migration.ts` /
-`check-july8-live-batch.ts` — live-DB re-verification probes via `npm run check:m13-migration` /
-`npm run check:july8-live-batch`. Their `.test.ts` companion lives in `scripts/archive/` too so it
-stays out of the `tests/**` run. `backfill-document-tags.ts` / `backfill-enrichment.ts` — completed
-one-time backfills, still invocable via `npm run tags:backfill` / `npm run enrich:backfill` (both
-repointed at the archive path). `backfill-document-covers.mjs` — completed one-time backfill for
-documents indexed before the ingestion pipeline started generating cover thumbnails directly (see
-`worker/main.ts`, `worker/python/extract_pdf_assets.py`); no npm script, invoke directly via
-`node scripts/archive/backfill-document-covers.mjs`. `tests/document-cover-thumbnails.test.ts`
-still asserts its pagination logic by reading the archived source (`ledger #194`, 2026-08-14).
-
-Ledger `#194` also named `backfill-gold-document-labels.ts` and `backfill-smart-index.ts` as
-one-shot candidates, but both are already classified as `[live]` ongoing tooling elsewhere in this
-doc (Document intelligence & governance / Ingestion, indexing & reindex) and in
-`docs/codebase-index.md` — not completed migrations. Left in `scripts/` on that basis; re-flag only
-if their live classification is deliberately revisited.
-
-**Remaining candidates** (still in `scripts/`, retire once each is confirmed retired):
-`check-retrieval-owner-migration.ts`, `backfill-source-metadata.ts`, `backfill-text-normalization.ts`,
-`backfill-visual-intelligence.ts`, `derive-unknown-status.ts`, `reindex-image-generation-metadata.ts`,
-`measure-wrapped-dose-prevalence.ts`, `decompose-indexing-v3.mjs`, `repro-coalesce-poison-race.mjs`
-(a one-off race reproducer).
-
-## Workflow planners [infra]
-
-`external-workflow.mjs` (`workflow:run/status/verify/deps/clean-state/export/handoff`) and
-`productivity-workflow.mjs` (`workflow:flightplan/triage/clinical-proof/design-sweep/rag-lab/
-operator-closeout/lifecycle`) — see `docs/archive/productivity-workflows.md`.
-
-<!-- docs-script-refs:historical-end -->
+`npm run hooks:install` (`install-git-hooks.mjs`, also run on install), `npm run setup:codex-worktree`
+(`setup-codex-worktree.mjs`, Windows Codex Desktop), `npm run check:runtime` (`check-runtime.ts`),
+`npm run check:playwright-browser-revision`, `npm run ward:reference:build`, `npm run ward:dev`
+(`ward-flow/dev-with-organisation.mjs`), `npm run format` and `npm run format:changed`
+(`check-format-changed.mjs`), and `export-task-receipt.py` for optional task receipts
+(`docs/task-receipts.md`).

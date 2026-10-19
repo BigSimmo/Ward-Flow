@@ -321,7 +321,7 @@
       "route": "/transport/officer",
       "folder": "officer",
       "component": "src/components/ward-management/officer/officer-screen.tsx",
-      "testFiles": ["tests/ward-officer-kpi-and-copy.dom.test.tsx", "tests/ward-officer-print.test.ts"],
+      "testFiles": ["tests/ward-officer-kpi-and-copy.dom.test.tsx"],
       "invariants": {
         "protectedClinicalFields": ["cadNumber", "transportStatus", "involuntaryTransportForm"],
         "primaryTestIds": ["transport-officer-screen"],

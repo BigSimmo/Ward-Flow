@@ -16,7 +16,6 @@ import {
   type DischargeBarrier,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { deriveAfternoonDischarges } from "@/components/ward-management/ward-derivations";
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
@@ -171,9 +170,6 @@ export function WardBedDossierDrawer({
     "resolvePatientIdentity",
   );
   const now = useWardFlowClock();
-  const dischargePrepOn = useWardFeatureFlag("top25-discharge-prep");
-  const cleaningReminderOn = useWardFeatureFlag("top25-cleaning-reminder");
-  const eddDriftOn = useWardFeatureFlag("top25-edd-drift");
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
@@ -234,7 +230,7 @@ export function WardBedDossierDrawer({
       : "Not yet confirmed";
 
   // Top 25 item 21: beside the discharge date when the ward has moved it several times.
-  const eddMoved = eddDriftOn ? eddMovedBadge(bedItem?.dischargeDateMoves) : null;
+  const eddMoved = eddMovedBadge(bedItem?.dischargeDateMoves);
   const expectedValue = eddMoved ? (
     <>
       {expectedPlan}{" "}
@@ -257,10 +253,9 @@ export function WardBedDossierDrawer({
 
   // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here.
   const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
-  const dueForPrep =
-    dischargePrepOn && admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
+  const dueForPrep = admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
   const barrierRow =
-    dischargePrepOn && admission && bedItem?.admissionId ? (
+    admission && bedItem?.admissionId ? (
       <Row label="Barrier">
         {onSetBarrier && stayDays !== null ? (
           <select
@@ -288,7 +283,7 @@ export function WardBedDossierDrawer({
   // Top 25 item 4: still being made ready past the set time. A question for the ward, never an
   // automatic opening: Ready below is the only way the bed is offered again.
   const staleFor =
-    cleaningReminderOn && isPreparing && typeof bedItem?.preparingReleaseId === "string"
+    isPreparing && typeof bedItem?.preparingReleaseId === "string"
       ? stalePreparingReleases(unit.id, bedReleases, now).find(
           (entry) => entry.release.id === bedItem.preparingReleaseId,
         )?.minutes

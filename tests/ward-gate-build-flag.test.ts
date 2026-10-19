@@ -5,7 +5,7 @@ import { TOOLING_TESTS } from "../scripts/check-ward-expected-reds.mjs";
 describe("touchesTooling (WARD_GATE_SKIP_TOOLING decision, R32)", () => {
   it("runs the tooling tests when scripts, hooks, package, test setup or tool config change", () => {
     for (const file of [
-      "scripts/ward-flow/run-slot.mjs",
+      "scripts/ward-flow/related-tests.mjs",
       ".githooks/pre-commit",
       "package.json",
       "package-lock.json",

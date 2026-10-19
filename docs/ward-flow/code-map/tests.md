@@ -27,7 +27,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 - `ui-ward-discharges.spec.ts` adds one real ward-to-board journey for each of eleven destinations, including the arrangement action or death exclusion, and a planning-link journey.
 - Existing permission, history, referral contract and legal-figure sweeps classify the added event. Bed-accounting/gender fixtures use a hospital transfer rather than bypass an involuntary community-discharge refusal.
 
-Evidence and limits are in the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+Evidence and limits are in the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 ## Rules-repair update — 2 October 2026
 
@@ -134,31 +134,29 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   focused iteration). It does not itself pick "changed files plus up to three importers" — that
   selection is the caller's job (see `npm run test:focused`, `scripts/test-focused.mjs`, which is
   documented in the sibling scripts-and-tooling map). What this wrapper adds over calling Vitest
-  directly: a gate-receipt cache keyed on the exact argument list (so an identical prior pass can
-  short-circuit a re-run — this is exactly why `check-ward-expected-reds.mjs` deliberately bypasses
-  it), a gate-arbiter consultation, a cross-worktree "heavy run" lock, and reporter-argument
-  validation. A coverage/watch/update/UI run is never treated as memoisable.
+  directly: a cross-worktree "heavy run" lock and reporter-argument validation. Its gate-receipt
+  cache and gate-arbiter consultation were retired on 18 October 2026, so every run executes.
 
 ## Which tests to run for a change in X
 
-| Change touches                                                            | Run (glob, relative to `tests/`)                                                                                                                                                                                                         |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ward-flow-reducer.ts` / `ward-flow-events.ts` (event union, guard order) | Wide blast radius — start with `ward-flow-reducer.test.ts`, `ward-event-permissions.test.ts`, `ward-refusal-gaps-*.test.ts`, every `ward-*-reducer.test.ts`, then widen to the full ward suite before folding                            |
-| `ward-model.ts` / `ward-derivations.ts` (shared types and selectors)      | `ward-model*.test.ts`, `ward-derivations.test.ts`, plus `grep -rl` the changed export name across `tests/ward-*` first — these two files have 125 and 71 importers respectively (per the engine map), so a narrow glob under-selects     |
-| `ward-eligibility.ts`, gender/sex placement rules                         | `ward-eligibility.test.ts`, `ward-gender-*.test.ts`, `ward-non-binary-*.test.ts`, `ward-*gender*.dom.test.tsx`, `ward-referral-matching.test.ts`, `ward-physical-facts-are-not-overridable.test.ts`                                      |
-| `ward-referrals.ts`, `ward-catchment.ts`, referral screens                | `ward-referral-*.test.ts`, `ward-referral-*.dom.test.tsx`, `ward-referrals-print.test.ts`                                                                                                                                                |
-| `ward-legal-clock.ts`, legal forms, MHA vocabulary                        | `ward-legal-*.test.ts`, `ward-*legal*.dom.test.tsx`, `ward-act-section-citation-guard.test.ts`, `ward-five-gaps.test.ts`, `ward-form-time-input.test.ts`, `ward-repeat-examination.test.ts`                                              |
-| `ward-bed-availability.ts`, bed release, morning roll-up, capacity screen | `ward-capacity-*.test.ts`, `ward-capacity-*.dom.test.tsx`, `ward-bed-*.test.ts`, `ward-morning-rollup.test.ts`, `ward-pending-preparation-populations.test.ts`                                                                           |
-| One screen folder (e.g. `community/`, `ed/`, `board/`)                    | `ward-<screen>-*.test.ts`, `ward-<screen>-*.dom.test.tsx`, and check the corresponding `ward-statistics-<screen>-*` files (statistics re-reads every domain)                                                                             |
-| `shell/` (rail, top bar, drawers)                                         | `ward-shell*.dom.test.tsx`, `ward-bar*.dom.test.tsx`, `ward-chrome-*.dom.test.tsx`, `ward-sidebar*.dom.test.tsx`, `ward-tasks-drawer.dom.test.tsx`, `ward-registers-drawer.dom.test.tsx`                                                 |
-| `ward-nav.ts`, routes, redirect stubs                                     | `ward-nav.test.ts`, `ward-*-reachability.test.ts`, `ward-no-dead-ends.dom.test.tsx`, `ward-links-never-point-at-redirect-stubs.test.ts`, `ward-route-component-binding.test.ts`, `ward-specs-never-navigate-into-redirect-stubs.test.ts` |
-| Any Ward Flow CSS module / design token                                   | The whole "Design tokens, raw colour and table/type rules" group below — these are whole-tree scans, not scoped to one file, so a targeted run cannot substitute (see the `readFileSync` pitfall)                                        |
-| A generator or its manifest (screen map, owner rulings, drawing rules)    | `ward-expected-reds-*.test.ts`, `ward-owner-decisions-*.test.ts`, `ward-screen-verification-lib.test.ts`, `ward-drawing-*.test.ts`, `ward-errata-freshness-gate.test.ts`, plus the generator's own `--check` invocation                  |
-| Anything, before folding                                                  | `node scripts/check-ward-expected-reds.mjs` (the full offline suite, both-direction manifest check) and `npm run test:e2e:ward-journeys` (13 browser specs, `chromium-mockups`)                                                          |
+| Change touches                                                            | Run (glob, relative to `tests/`)                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ward-flow-reducer.ts` / `ward-flow-events.ts` (event union, guard order) | Wide blast radius — start with `ward-flow-reducer.test.ts`, `ward-event-permissions.test.ts`, `ward-refusal-gaps-*.test.ts`, every `ward-*-reducer.test.ts`, then widen to the full ward suite before folding                        |
+| `ward-model.ts` / `ward-derivations.ts` (shared types and selectors)      | `ward-model*.test.ts`, `ward-derivations.test.ts`, plus `grep -rl` the changed export name across `tests/ward-*` first — these two files have 125 and 71 importers respectively (per the engine map), so a narrow glob under-selects |
+| `ward-eligibility.ts`, gender/sex placement rules                         | `ward-eligibility.test.ts`, `ward-gender-*.test.ts`, `ward-non-binary-*.test.ts`, `ward-*gender*.dom.test.tsx`, `ward-referral-matching.test.ts`, `ward-physical-facts-are-not-overridable.test.ts`                                  |
+| `ward-referrals.ts`, `ward-catchment.ts`, referral screens                | `ward-referral-*.test.ts`, `ward-referral-*.dom.test.tsx`                                                                                                                                                                            |
+| `ward-legal-clock.ts`, legal forms, MHA vocabulary                        | `ward-legal-*.test.ts`, `ward-*legal*.dom.test.tsx`, `ward-act-section-citation-guard.test.ts`, `ward-five-gaps.test.ts`, `ward-form-time-input.test.ts`, `ward-repeat-examination.test.ts`                                          |
+| `ward-bed-availability.ts`, bed release, morning roll-up, capacity screen | `ward-capacity-*.test.ts`, `ward-capacity-*.dom.test.tsx`, `ward-bed-*.test.ts`, `ward-morning-rollup.test.ts`, `ward-pending-preparation-populations.test.ts`                                                                       |
+| One screen folder (e.g. `community/`, `ed/`, `board/`)                    | `ward-<screen>-*.test.ts`, `ward-<screen>-*.dom.test.tsx`, and check the corresponding `ward-statistics-<screen>-*` files (statistics re-reads every domain)                                                                         |
+| `shell/` (rail, top bar, drawers)                                         | `ward-shell*.dom.test.tsx`, `ward-bar*.dom.test.tsx`, `ward-chrome-*.dom.test.tsx`, `ward-sidebar*.dom.test.tsx`, `ward-tasks-drawer.dom.test.tsx`, `ward-registers-drawer.dom.test.tsx`                                             |
+| `ward-nav.ts`, routes, redirect stubs                                     | `ward-nav.test.ts`, `ward-*-reachability.test.ts`, `ward-no-dead-ends.dom.test.tsx`, `ward-links-never-point-at-redirect-stubs.test.ts`, `ward-specs-never-navigate-into-redirect-stubs.test.ts`                                     |
+| Any Ward Flow CSS module / design token                                   | The whole "Design tokens, raw colour and table/type rules" group below — these are whole-tree scans, not scoped to one file, so a targeted run cannot substitute (see the `readFileSync` pitfall)                                    |
+| A generator or its manifest (screen map, owner rulings, drawing rules)    | `ward-expected-reds-*.test.ts`, `ward-owner-decisions-*.test.ts`, `ward-screen-verification-lib.test.ts`, `ward-drawing-*.test.ts`, `ward-errata-freshness-gate.test.ts`, plus the generator's own `--check` invocation              |
+| Anything, before folding                                                  | `node scripts/check-ward-expected-reds.mjs` (the full offline suite, both-direction manifest check) and `npm run test:e2e:ward-journeys` (13 browser specs, `chromium-mockups`)                                                      |
 
 ## The test files, by subject
 
-### Engine, reducer and cross-cutting domain rules (155 files)
+### Engine, reducer and cross-cutting domain rules (154 files)
 
 - **`tests/pressure-strip.dom.test.tsx`** (85 lines) — PressureStrip
 - **`tests/tracker-derivations.test.ts`** (79 lines) — trackerRowState
@@ -243,7 +241,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-informational-gates.test.ts`** (51 lines) — INFORMATIONAL_GATES — the second list, and what keeps it honest
 - **`tests/ward-instant-display.test.ts`** (136 lines) — nothing renders a bare clock face unless it is entitled to assert today
 - **`tests/ward-leaving-destinations.test.ts`** (80 lines) — where a patient goes when they leave a ward
-- **`tests/ward-management-print-coverage.test.ts`** (941 lines) — the specificity comparator itself, proven against the scenario that motivated it
 - **`tests/ward-model-phase3.test.ts`** (163 lines) — Phase 3 model additions
 - **`tests/ward-model.test.ts`** (271 lines) — ward model constants
 - **`tests/ward-movement-fixture-reducer-reachable.test.ts`** (422 lines) — counting discipline — the generated-id matcher, proven before it is trusted (test 35)
@@ -338,7 +335,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-shortlist-gender-placement-single-gender-ward.dom.test.tsx`** (84 lines) — ShortlistPanel: a single-gender ward offers the non-binary placement form instead of hiding as unavailable (WF-012)
 - **`tests/ward-shortlist-gender-placement.dom.test.tsx`** (103 lines) — ShortlistPanel: a non-binary placement explains itself, then succeeds once answered (WF-012)
 
-### Referrals (module and pipeline) (68 files)
+### Referrals (module and pipeline) (67 files)
 
 - **`tests/ward-ban-scope.test.ts`** (289 lines) — every retired-wording ban reads a whole page or screen
 - **`tests/ward-chrome-tap-targets.test.ts`** (90 lines) — Wave-2 chrome tap targets — rail Raise Referral and home link
@@ -393,7 +390,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-visibility.test.ts`** (3021 lines) — FD-23 — a ward cannot see where else a patient has been referred
 - **`tests/ward-referral-wait-line.test.ts`** (111 lines) — the wait figure the referral board and match view print
 - **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — T11 — the nav count drops when a referral is withdrawn
-- **`tests/ward-referrals-print.test.ts`** (262 lines) — Ward referrals — print background stays ink-on-paper under dark theme
 - **`tests/ward-referrer-withdrawal.test.ts`** (328 lines) — recording that a referrer withdrew their referral
 - **`tests/ward-seed-referral-census.test.ts`** (184 lines) — K1 — seedWardFlowState() referral census (2026-09-17 pin)
 - **`tests/ward-statistics-null-referral-id.dom.test.tsx`** (105 lines) — the statistics screen's account of a null referral id
@@ -427,7 +423,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-repeat-examination.test.ts`** (434 lines) — PATIENT_COLLECTED — refused while examinationRevokedWhileBedHeld (T9, owner answer 5, second round 2026-09-17)
 - **`tests/ward-restriction-notice.test.ts`** (35 lines) — restriction notice
 
-### Capacity, bed release and preparation (36 files)
+### Capacity, bed release and preparation (28 files)
 
 - **`tests/ward-acuity-gate.test.ts`** (441 lines) — the acuity gate discriminates, on both paths
 - **`tests/ward-audit-capacity-observation.dom.test.tsx`** (59 lines) — capacity observations on the answer screen
@@ -581,7 +577,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-console-step-back-holds-bed.dom.test.tsx`** (93 lines) — correcting a stage on a movement that is holding a bed
 - **`tests/ward-console-timeline-reasons.test.ts`** (151 lines) — the movement workspace's stage-transition reason labels
 - **`tests/ward-coordinator-closed-selection.dom.test.tsx`** (134 lines) — the coordinator screen never keeps a closed movement selected
-- **`tests/ward-management-print.test.ts`** (325 lines) — the movement workspace prints as ink on paper, not as a dark band
 - **`tests/ward-movement-absence-wording.test.ts`** (79 lines) — an id this screen cannot resolve names the record, never the network
 - **`tests/ward-movement-blocker.test.ts`** (801 lines) — Movement.blocker — free prose, and it must stay that way
 - **`tests/ward-movement-horizon-truth.test.ts`** (166 lines) — deriveMovementHorizonLanes reads the live movements it is given
@@ -604,13 +599,11 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-delays-nobody-waiting.dom.test.tsx`** (143 lines) — the delays screen when nobody is waiting
 - **`tests/ward-delays-screen.dom.test.tsx`** (780 lines) — the Delays screen
 - **`tests/ward-delays-third-edition.dom.test.tsx`** (293 lines) — Delays — the drawing's panel names (task D1)
-- **`tests/ward-delays-type-ranks.test.ts`** (121 lines) — the Delays waiting row keeps its type ranks after the 12px raise (O-16.2)
 
 #### Handover (6 files)
 
 - **`tests/ward-handover-filters.dom.test.tsx`** (287 lines) — HandoverPage — the filter control
 - **`tests/ward-handover-filters.test.ts`** (385 lines) — parseHandoverScope / handoverScopeValue round-trip
-- **`tests/ward-handover-print.test.ts`** (145 lines) — Ward shift handover — print background stays ink-on-paper under dark theme
 - **`tests/ward-handover-scope-from-url.dom.test.tsx`** (124 lines) — the handover sheet takes its scope from the URL
 - **`tests/ward-handover.dom.test.tsx`** (395 lines) — HandoverPage
 - **`tests/ward-handover.test.ts`** (182 lines) — handoverSnapshot
@@ -651,7 +644,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-console-cancel-authority-copy.dom.test.tsx`** (178 lines) — the orphaned-transport panel's cancel-authority copy
 - **`tests/ward-governance-enumerations.dom.test.tsx`** (183 lines) — the officer screen's sentence and its filter agree
 - **`tests/ward-officer-kpi-and-copy.dom.test.tsx`** (323 lines) — officer screen KPI captions match their populations
-- **`tests/ward-officer-print.test.ts`** (50 lines) — Transport officer — print keeps job content visible
 - **`tests/ward-officer-stepper.dom.test.tsx`** (90 lines) — the transport officer's job cards render a leg stepper
 - **`tests/ward-stop-transport.test.ts`** (426 lines) — stopping a collected transport — WLQ-38 (owner, 2026-09-15)
 - **`tests/ward-transport-cancel-no-rebook.test.ts`** (236 lines) — CANCEL_TRANSPORT with a bed held no longer rebooks automatically (owner answer 30)
@@ -677,7 +669,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-statistics-compare-two-tables.dom.test.tsx`** (575 lines) — the comparisons page sets wards beside wards and departments beside departments
 - **`tests/ward-statistics-demonstration.test.ts`** (308 lines) — DemonstrationSeries cannot escape statistics-demonstration.ts
 - **`tests/ward-statistics-empty-bed-spread.dom.test.tsx`** (139 lines) — the ward page says when its bed-empty average has no spread
-- **`tests/ward-statistics-grid-tracks-fit-the-container.test.ts`** (185 lines) — statistics grid tracks can always shrink to their container
 - **`tests/ward-statistics-incoherent-gap.test.ts`** (93 lines) — an impossible pull-to-arrival gap is excluded, never clamped to zero
 - **`tests/ward-statistics-number-agreement.dom.test.tsx`** (283 lines) — every ward statistic reads correctly when its count is one
 - **`tests/ward-statistics-overview-parked.dom.test.tsx`** (291 lines) — the statistics overview now carries real figures, honestly
@@ -690,8 +681,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-statistics-sections.test.ts`** (856 lines) — the statistics section list
 - **`tests/ward-statistics-service-screen.dom.test.tsx`** (220 lines) — Health-service statistics — not found
 - **`tests/ward-statistics-service-sentence.dom.test.tsx`** (114 lines) — renders no scope sentence under "All services"; renders the one required sentence, worded exactly, when a service is chosen (S3/S4, item 44)
-- **`tests/ward-statistics-v3-language.test.ts`** (291 lines) — the third-edition statistics language
-- **`tests/ward-statistics-v4-language.test.ts`** (554 lines) — the fourth-edition statistics language
 - **`tests/ward-statistics-ward-nulls.dom.test.tsx`** (146 lines) — a ward statistics page never renders an unmeasurable average as a number
 - **`tests/ward-statistics-ward-shares-agree.dom.test.tsx`** (153 lines) — the ward screen's two share-of-the-ward denominators
 - **`tests/ward-statistics.dom.test.tsx`** (1882 lines) — the statistics screen — six drawing panels, kept apart
@@ -718,10 +707,9 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 #### Management (misc root screens) (3 files)
 
 - **`tests/ward-management-role.dom.test.tsx`** (83 lines) — Ward Flow role screens unique test id contract
-- **`tests/ward-management-role.test.ts`** (27 lines) — Ward Flow role screens static test ID integrity
 - **`tests/ward-management.test.ts`** (273 lines) — Ward Flow synthetic prototype
 
-### Navigation and reachability (13 files)
+### Navigation and reachability (12 files)
 
 - **`tests/ward-community-index.dom.test.tsx`** (182 lines) — The community index's OWN reachability — the assertion that outranks the rest of this file
 - **`tests/ward-event-reachability.test.ts`** (290 lines) — every reducer event is reachable from a screen, or recorded as a known gap
@@ -732,35 +720,22 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-nav.test.ts`** (2018 lines) — Ward Flow route enumeration (sanity check on the scan itself)
 - **`tests/ward-no-dead-ends.dom.test.tsx`** (505 lines) — route registry coverage (so nothing below can pass by examining nothing)
 - **`tests/ward-primary-action.dom.test.tsx`** (225 lines) — WardBar primary action — the five kinds, D-16
-- **`tests/ward-route-component-binding.test.ts`** (182 lines) — every ward route renders the component it is pinned to
 - **`tests/ward-specs-never-navigate-into-redirect-stubs.test.ts`** (898 lines) — no ward spec navigates into a redirect stub and then waits for the screen it replaced
 - **`tests/ward-statistics-community-chooser.dom.test.tsx`** (116 lines) — The community-team chooser's OWN reachability — the fifth section's hub entry
 - **`tests/ward-statistics-service-chooser.dom.test.tsx`** (130 lines) — The health-service chooser's OWN reachability — the fourth section's own hub entry
 
-### Design tokens, raw colour and table/type rules (20 files)
+### Design tokens, raw colour and table/type rules (8 files)
 
-- **`tests/ward-capacity-network-row-de-emphasis.test.ts`** (215 lines) — the CSS-text cleaner itself — proven on a synthetic string before it is trusted on a real stylesheet
-- **`tests/ward-clinical-rail-token-bridge.test.ts`** (74 lines) — Ward coordinator token bridge (DS-P0-05)
 - **`tests/ward-css-token-references-resolve.test.ts`** (481 lines) — every var() in Ward Flow's stylesheets names a token that exists
-- **`tests/ward-design-language-canonical.test.ts`** (180 lines) — the second-edition design language lives in exactly one place
 - **`tests/ward-design-language-contract.test.ts`** (837 lines) — the Ward Flow design language holds across every Ward Flow stylesheet
 - **`tests/ward-forced-colors-tokens.test.ts`** (108 lines) — the shared ward layer carries its own high-contrast handling
-- **`tests/ward-mockup-tokens-resolve.test.ts`** (146 lines) — ward-flow standalone mockups resolve every custom property they use
-- **`tests/ward-mono-face-earns-its-place.test.ts`** (153 lines) — the monospace face earns its place in a column and nowhere else
-- **`tests/ward-print-ink-specificity.test.ts`** (180 lines) — parses every ward stylesheet with postcss and computes real cascade specificity, proving the print ink-reset wins against every competing class-plus-type colour rule, not just a sampled heading
-- **`tests/ward-raw-colour.test.ts`** (263 lines) — ward stylesheets declare colour through the --ward-* layer, never raw
 - **`tests/ward-row-severity-not-colour-alone.test.ts`** (404 lines) — a coloured row flag is never the only carrier of its information
 - **`tests/ward-status-colour-reach.test.ts`** (369 lines) — no ward rule reaches past the ward layer for a status colour
-- **`tests/ward-stylesheet-duplicate-block.test.ts`** (180 lines) — no ward stylesheet contains the same section twice
-- **`tests/ward-table-min-width.test.ts`** (521 lines) — every ward table keeps the scroll threshold it was built with
-- **`tests/ward-table-panel-inset.test.ts`** (126 lines) — a ward table's cell inset agrees with its panel header's inset
-- **`tests/ward-table-phone-swap.test.ts`** (378 lines) — every WardTable that its board's stylesheet hides on a phone is given the class that hides it
-- **`tests/ward-table-single-source.test.ts`** (309 lines) — the Ward Flow `.table` rule set is declared in exactly one file
 - **`tests/ward-text-size-ratchet-bites.test.ts`** (279 lines) — the D-3 ratchet bites
 - **`tests/ward-text-size-ratchet.test.ts`** (135 lines) — the D-3 text-size ratchet is reachable and still ratchets
 - **`tests/ward-token-layer.test.ts`** (586 lines) — the Ward Flow token layer
 
-### Truthfulness guards (screens do not show what the data does not hold) (19 files)
+### Truthfulness guards (screens do not show what the data does not hold) (18 files)
 
 - **`tests/ward-activity-consistent-across-screens.dom.test.tsx`** (139 lines) — Activity drawer is consistently wired across all screens
 - **`tests/ward-activity-count-separate.dom.test.tsx`** (134 lines) — the Activity segment count and the Notices heading are never summed
@@ -776,16 +751,14 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-no-screen-claims-a-durable-access-record.test.ts`** (165 lines) — no ward screen claims a durable record of who looked
 - **`tests/ward-one-appearance-key.test.ts`** (107 lines) — the appearance preference has exactly one key
 - **`tests/ward-place-name-detector.test.ts`** (80 lines) — the place-name detector's matching rule
-- **`tests/ward-primitives-shared.test.ts`** (401 lines) — the seven classes every screen invented now live in one place
 - **`tests/ward-provenance-sentences-carry-their-own-marker.test.ts`** (602 lines) — a sentence under a provenance heading discloses provenance by itself
 - **`tests/ward-ready-figure-preparation-qualifier.test.ts`** (184 lines) — every ward screen printing a ready-bed figure also states how many are being made ready
 - **`tests/ward-ready-has-one-arithmetic.test.ts`** (234 lines) — the ruled Ready expression has exactly the sanctioned homes
 - **`tests/ward-statistics-overview-invented.dom.test.tsx`** (129 lines) — the overview's 'What is invented, and what is real' panel
 
-### Docs and generator guards (16 files)
+### Docs and generator guards (15 files)
 
 - **`tests/ward-design-test-sync.test.ts`** (47 lines) — Ward Flow Design-to-Test Synchronization System
-- **`tests/ward-drawing-match-r2-12.test.ts`** (57 lines) — Ward screen — perfected tab order (R2-12)
 - **`tests/ward-drawing-rules.test.ts`** (78 lines) — check-drawing-rules
 - **`tests/ward-errata-freshness-gate.test.ts`** (78 lines) — the ward errata-freshness gate is reachable and still measures something
 - **`tests/ward-expected-reds-comparison.test.ts`** (138 lines) — the expected-red comparison, in both directions
@@ -819,7 +792,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-traps-numbering.test.ts`** (204 lines) — the traps file's entry numbering
 - **`tests/ward-unresolvable-reference-unreachable.test.ts`** (179 lines) — no dispatch in this application can create an unresolvable department or ward reference
 
-### Shell, chrome and shared UI primitives (58 files)
+### Shell, chrome and shared UI primitives (54 files)
 
 - **`tests/ward-activity-category-filters.dom.test.tsx`** (116 lines) — Activity category filter chips
 - **`tests/ward-alerts-css-tap-and-edge-bars.test.ts`** (63 lines) — alerts.module.css — no coloured edge bars (F3.3)
@@ -833,7 +806,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-checks-publication.dom.test.tsx`** (91 lines) — a ward screen publishes its checks upward to the shell
 - **`tests/ward-chip.dom.test.tsx`** (172 lines) — WardChip
 - **`tests/ward-chrome-header-actions.dom.test.tsx`** (169 lines) — Ward Flow chrome header — Handover link
-- **`tests/ward-chrome-owner.test.ts`** (351 lines) — Ward Flow has exactly one top-anchored phone-chrome owner
 - **`tests/ward-command-third-edition.dom.test.tsx`** (294 lines) — Command third-edition restyle — panel order and heading pins
 - **`tests/ward-community-az-rail-accessible-disabled.dom.test.tsx`** (94 lines) — Community gateway — the A-Z rail marks an empty letter accessibly-disabled, not natively
 - **`tests/ward-composes-targets.test.ts`** (370 lines) — ward-management composes: targets resolve to real files and real classes
@@ -854,7 +826,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-flow-recovery.dom.test.tsx`** (327 lines) — conservative demo recovery
 - **`tests/ward-flow-sign-in-screen.dom.test.tsx`** (124 lines) — Ward Flow sign-in screen — static credential-field guard
 - **`tests/ward-freshness.dom.test.tsx`** (54 lines) — freshness stamp
-- **`tests/ward-hub-bar-colours.test.ts`** (288 lines) — Ward Flow hub — the bed bar's segments are three different paints, in both palettes
 - **`tests/ward-movement-drawer-person.test.ts`** (122 lines) — the Movement drawer's Person line (O-16.3)
 - **`tests/ward-notification-center.dom.test.tsx`** (513 lines) — WardNotificationCenter DOM Component
 - **`tests/ward-panel.dom.test.tsx`** (80 lines) — WardPanel
@@ -870,10 +841,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-settings-not-wired-controls.dom.test.tsx`** (223 lines) — settings screen — the nine controls retired as not-wired in this prototype pass
 - **`tests/ward-settings-rail.dom.test.tsx`** (110 lines) — the settings screen's rail control
 - **`tests/ward-shell-mounted.dom.test.tsx`** (189 lines) — Task 6 — the shell is actually reached on a real route, not merely importable
-- **`tests/ward-shell-print-ancestor.test.ts`** (386 lines) — the shell is the ancestor that carries every ward route into print
 - **`tests/ward-shell-third-edition.dom.test.tsx`** (1040 lines) — assertion 1 — owner-selected rail destinations
 - **`tests/ward-shell.dom.test.tsx`** (163 lines) — Task 1 — the shell owns the ground
-- **`tests/ward-sidebar-phone-contract.test.ts`** (197 lines) — Ward Flow sidebar — phone contract
 - **`tests/ward-sidebar.dom.test.tsx`** (526 lines) — Ward Flow phone drawer
 - **`tests/ward-sign-in-shell.dom.test.tsx`** (40 lines) — Ward Flow standalone layout boundary
 - **`tests/ward-standing-strip.dom.test.tsx`** (406 lines) — the standing strip never exceeds WardFigureStrip's two-flag ceiling

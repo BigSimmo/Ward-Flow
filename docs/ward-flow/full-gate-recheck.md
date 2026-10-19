@@ -1,6 +1,6 @@
 # FULL Ward gate: checkpoints and bounded rechecks
 
-Use this only when `select-fold-gate.mjs` selects **FULL**. Use the dedicated repository boundary, exact-file ownership and current gate/run-slot process. Preserve recoverable work, diff review, type check and selected journeys; the retired Database fold lock is not a prerequisite. The check below must run through the wide gate slot.
+Use this only when the selected readiness plan needs the **FULL** Ward suite. Use the dedicated repository boundary and exact-file ownership. Preserve recoverable work, diff review, type check and selected journeys; the retired Database fold lock is not a prerequisite. Run one wide check at a time per machine.
 
 ## First FULL run
 

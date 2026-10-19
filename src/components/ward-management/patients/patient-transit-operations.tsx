@@ -28,7 +28,6 @@ import {
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
 } from "../ward-change-reasons";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -63,7 +62,6 @@ export function PatientTransitOperations({
     "configuration",
   );
   // Top 25 item 2: asking more wards than the cap warns and asks for a reason instead of refusing.
-  const referralCapOn = useWardFeatureFlag("top25-referral-cap");
   const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   const now = useWardFlowClock();
   const baseId = useId();
@@ -177,7 +175,7 @@ export function PatientTransitOperations({
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
   const wardsAskedAfterSend = movement.referredUnitIds.length + selectedTargets.length;
-  const overReferralCap = referralCapOn && wardsAskedAfterSend > configuration.parallelReferralCap;
+  const overReferralCap = wardsAskedAfterSend > configuration.parallelReferralCap;
   const needsGenderPlacement =
     genderReviewNeeded(movement.gender, movement.sex) &&
     selectedTargets.some((id) => !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(id)));

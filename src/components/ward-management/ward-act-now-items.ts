@@ -92,7 +92,7 @@ export function newActNowItems(previousIds: ReadonlySet<string>, current: readon
 }
 
 /**
- * NEEDS YOU FOR THE SIGNED IN ROLE (Top 25 item 6, flag `top25-needs-you-roles`). A task row's
+ * NEEDS YOU FOR THE SIGNED IN ROLE (Top 25 item 6). A task row's
  * `owner` is the words a person reads ("Sending team", "Nurse in charge", a ward's name), so this
  * names the roles those words mean. An owner it cannot place belongs to the coordinator only,
  * never guessed onto another role. "ED or ward" belongs to both.

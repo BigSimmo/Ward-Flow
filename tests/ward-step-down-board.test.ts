@@ -1,4 +1,4 @@
-// Top 25 item 8 (`top25-step-down-board`): step-down candidates are matched by the main
+// Top 25 item 8: step-down candidates are matched by the main
 // `eligibility()` gates, including single sex designation (D-31), legal authorisation and cohort.
 
 import { describe, expect, it } from "vitest";

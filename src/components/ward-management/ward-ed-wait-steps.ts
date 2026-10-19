@@ -6,7 +6,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 /**
- * ED LONG WAIT STEPS (Top 25 item 13, `top25-ed-wait-ladder`). Owner ruling 15 Oct 2026: one
+ * ED LONG WAIT STEPS (Top 25 item 13). Owner ruling 15 Oct 2026: one
  * threshold set. The steps are the thresholds the ED screens already use (side rail amber and red,
  * the long wait and the very long wait), so no second ladder exists. The showcase's 12 hour step and
  * 22 hour edge are not used.

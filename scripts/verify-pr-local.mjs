@@ -23,7 +23,7 @@ const common = [
 export function selectedScripts(scope, _extended = false) {
   const plan = Array.isArray(scope.entries) ? classifyChanges(scope.entries) : scope;
   const scripts = [...common];
-  if (plan.full) scripts.push("check:installed-lock-parity", "check:ci-scope");
+  if (plan.full) scripts.push("check:installed-lock-parity");
   if (plan.policy) scripts.push("check:ward-policy-contracts");
   if (scope.entries?.some(({ file }) => file.startsWith("backend/ward-flow/"))) scripts.push("test:backend");
   if (plan.unit) scripts.push("lint", "typecheck", "check:ward-expected-reds");

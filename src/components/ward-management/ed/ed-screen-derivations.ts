@@ -63,9 +63,6 @@ export function deriveEdScreen({
   now,
   accessTarget,
   thisEdId,
-  nextWardOn,
-  needsYouRolesOn,
-  stuckHandoverOn,
   boardFilter,
   patientQuery,
   patientSort,
@@ -88,9 +85,6 @@ export function deriveEdScreen({
   now: Instant;
   accessTarget: number;
   thisEdId: string;
-  nextWardOn: boolean;
-  needsYouRolesOn: boolean;
-  stuckHandoverOn: boolean;
   boardFilter: "all" | "not_reviewed" | "under_form" | "no_destination" | "discharge" | "withdrawn";
   patientQuery: string;
   patientSort: string;
@@ -320,7 +314,7 @@ export function deriveEdScreen({
   const underFormPatients = patients.filter((m) => !!m.legalForm && !isEdInitiatedWithdrawal(m));
 
   const priorityFlags: PriorityFlag[] = [];
-  // Top 25 item 3 (flag `top25-next-ward`): names the eligible wards nobody has asked yet. The
+  // Top 25 item 3: names the eligible wards nobody has asked yet. The
   // coordinator refers from the shortlist, so this only tells the department who is next.
   const nextWardsSentence = (m: Movement) => {
     const names = deriveNextWardsAfterRefusal(m, units, now)?.candidates.map((c) => c.unit.name) ?? [];
@@ -372,7 +366,7 @@ export function deriveEdScreen({
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.${nextWardOn ? nextWardsSentence(m) : ""}`,
+        why: `${m.declines.length} ${m.declines.length === 1 ? "ward has" : "wards have"} declined and no ward has been asked since.${nextWardsSentence(m)}`,
         when: "declined",
         actionLabel: "Ask another ward",
         onAction: () => setSelectedPatientId(m.id),
@@ -607,43 +601,39 @@ export function deriveEdScreen({
       ? () => setPhoneSheetFor(flag.recordId)
       : undefined,
   }));
-  // Top 25 item 6 (flag top25-needs-you-roles): one Needs you for the signed in role. The shared
+  // Top 25 item 6: one Needs you for the signed in role. The shared
   // task rows owned by the ED (`inboxItemsForRole`) for this department's people join the list,
   // once per person not already listed above.
-  if (needsYouRolesOn) {
-    const listed = new Set(needsYouFlags.map((flag) => flag.recordId));
-    const owned = inboxItemsForRole(
-      activeTaskItems(
-        {
-          movements,
-          units,
-          configuration,
-          inboxSnoozes,
-          admissions,
-          patients: registryPatients,
-          referrals,
-          // Top 25 item 12: the sending team sees its own stuck handover here too.
-          stuckHandoverMinutes: stuckHandoverOn ? configuration.transportBookedTargetMinutes : undefined,
-        },
-        now,
-      ),
-      "ed",
-    );
-    for (const item of owned) {
-      const movement = movements.find((m) => m.id === item.movementId);
-      if (!movement || movement.originEdId !== thisEdId || listed.has(movement.id)) continue;
-      listed.add(movement.id);
-      needsYouItems.push({
-        key: `task-${item.id}`,
-        actNow: item.tone === "danger",
-        kind: item.title,
-        person: resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements }).formalName,
-        when: item.owner,
-        onOpen: patients.some((patient) => patient.id === movement.id)
-          ? () => setPhoneSheetFor(movement.id)
-          : undefined,
-      });
-    }
+  const listed = new Set(needsYouFlags.map((flag) => flag.recordId));
+  const owned = inboxItemsForRole(
+    activeTaskItems(
+      {
+        movements,
+        units,
+        configuration,
+        inboxSnoozes,
+        admissions,
+        patients: registryPatients,
+        referrals,
+        // Top 25 item 12: the sending team sees its own stuck handover here too.
+        stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+      },
+      now,
+    ),
+    "ed",
+  );
+  for (const item of owned) {
+    const movement = movements.find((m) => m.id === item.movementId);
+    if (!movement || movement.originEdId !== thisEdId || listed.has(movement.id)) continue;
+    listed.add(movement.id);
+    needsYouItems.push({
+      key: `task-${item.id}`,
+      actNow: item.tone === "danger",
+      kind: item.title,
+      person: resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements }).formalName,
+      when: item.owner,
+      onOpen: patients.some((patient) => patient.id === movement.id) ? () => setPhoneSheetFor(movement.id) : undefined,
+    });
   }
   const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
 

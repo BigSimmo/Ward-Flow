@@ -109,7 +109,7 @@ export type LongStaySummary = {
 };
 
 /**
- * Long stay and delayed discharge summary (Top 25 item 20, flag `top25-long-stay-dossier`). One
+ * Long stay and delayed discharge summary (Top 25 item 20). One
  * entry per stranded flag with the days in bed, the recorded barrier and hold, and the escalation
  * point: `delayedDischargeEscalation` hours after the ward's own expected discharge date. Only the
  * date a person recorded is read; nothing here is a legal time limit. Replaces the showcase's

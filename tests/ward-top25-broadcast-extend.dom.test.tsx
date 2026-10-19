@@ -5,10 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { DEFAULT_BROADCAST_EXTENSION_MINUTES } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
-import {
-  WARD_FEATURE_FLAGS_STORAGE_KEY,
-  setWardFeatureFlagOnDevice,
-} from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
@@ -84,18 +80,11 @@ function Grab() {
 
 afterEach(() => {
   cleanup();
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-broadcast-extend", null);
-  });
-  window.localStorage.removeItem(WARD_FEATURE_FLAGS_STORAGE_KEY);
   window.sessionStorage.clear();
   flow = undefined;
 });
 
-function setUp(flagOn: boolean) {
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-broadcast-extend", flagOn);
-  });
+function setUp() {
   render(
     <WardFlowProvider initialNow={NOW}>
       <Grab />
@@ -110,17 +99,11 @@ function setUp(flagOn: boolean) {
 
 describe("the coordinator banner", () => {
   it("extends and then stands down the live alert", () => {
-    const alert = setUp(true);
+    const alert = setUp();
     fireEvent.click(screen.getByTestId("ward-broadcast-extend"));
     const current = () => flow!.broadcastAlerts.find((entry) => entry.id === alert.id)!;
     expect(current().expiresAt).toBe(alert.expiresAt + DEFAULT_BROADCAST_EXTENSION_MINUTES);
     fireEvent.click(screen.getByTestId("ward-broadcast-stand-down"));
     expect(current().status).toBe("stood_down");
-  });
-
-  it("offers neither when the flag is off", () => {
-    setUp(false);
-    expect(screen.queryByTestId("ward-broadcast-extend")).toBeNull();
-    expect(screen.queryByTestId("ward-broadcast-stand-down")).toBeNull();
   });
 });

@@ -118,7 +118,11 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
     const hubSource = readFileSync(resolve(process.cwd(), "src/components/ward-management/hub/hub-screen.tsx"), "utf8");
     expect(hubSource).toContain("useDeferredValue");
     expect(hubSource).toContain("startTransition");
-    expect(hubSource).toMatch(/memo\(/);
+    const hubRowSource = readFileSync(
+      resolve(process.cwd(), "src/components/ward-management/hub/hub-place-row.tsx"),
+      "utf8",
+    );
+    expect(hubRowSource).toMatch(/memo\(/);
 
     render(
       <WardFlowProvider>

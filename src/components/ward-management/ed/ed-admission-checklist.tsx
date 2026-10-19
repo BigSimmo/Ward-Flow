@@ -8,7 +8,7 @@ import edStyles from "./ed.module.css";
 import styles from "./ed-admission-checklist.module.css";
 
 /**
- * Admission arrival checklist (Top 25 item 14, flag `top25-admission-checklist`).
+ * Admission arrival checklist (Top 25 item 14).
  * Reads recorded facts only. The search and medication checks without recorded values are not
  * wired; this card cannot record a completion.
  */

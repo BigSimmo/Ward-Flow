@@ -1,4 +1,4 @@
-// Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): at most the referral cap of wards
+// Top 25 item 2 (owner ruling 15 Oct 2026): at most the referral cap of wards
 // asked at once, and other requests withdrawn when one ward accepts. The cap is a safety check, so
 // with a chosen reason the extra ward is asked and the reason is kept in the audit trail. Without a
 // reason the engine refuses exactly as before (the flag-off path).

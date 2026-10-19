@@ -17,7 +17,7 @@ only when a proposed action adds effects outside that authority.
 | npm printed five high vulnerabilities.                              | Five affected package nodes traced to one development-only `braces` advisory, not five independent runtime flaws.                                                               | Production-only audit returned zero; no published patched `braces` release was available. The suggested ESLint downgrade was not applied. This remains an upstream development/build-input risk. |
 
 These are observations of named revisions, not promises about future settings.
-The [incident report](reports/railway-repair-2026-10-04.md) records the initial
+The incident report (archived; see [ARCHIVE.md](../ARCHIVE.md)) records the initial
 evidence. Its pending-CI-setting section is historical: the approved correction
 was subsequently completed. The successful deployment above also incorporated
 the capacity, movements and on-call changes from `59ee806`.

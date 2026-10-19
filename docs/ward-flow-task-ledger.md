@@ -7,7 +7,7 @@
 > 🟢 **STATUS AS OF 16 OCTOBER 2026: read this first.** This file now holds the open backlog and the
 > recent reconciliation history, **§7.78 to §7.81** below. The 30 August to 13 October record (§6, §7.8 to §7.77 and the
 > 13 September master ledger) moved to
-> [the task ledger history](ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md) on
+> the task ledger history (archived; see [ARCHIVE.md](ARCHIVE.md)) on
 > 16 October 2026. Keep it for the reasoning, but do not treat its status lists as current.
 >
 > - Estate baseline reconciled on 16 October 2026 across PRs #1–#364 (`5ddeb7d5`, PR #363, which merged after #364).
@@ -34,7 +34,7 @@ to read WHY), `ward-flow-hubs-and-patient-plan.md`, `ward-flow-roadmap.md`, the 
 ## Earlier history
 
 Everything from 30 August to 13 October 2026 (the sync points, completion plans, §6 rulings and §7.8 to §7.77) is in
-[the task ledger history](ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md). It is kept for the reasoning and is not current.
+the task ledger history (archived; see [ARCHIVE.md](ARCHIVE.md)). It is kept for the reasoning and is not current.
 
 ## §7.78 — Post-Audit Remediation Baseline & Open Issues Ledger (14 October 2026)
 
@@ -218,8 +218,8 @@ Branch: [PR #284](https://github.com/BigSimmo/Ward-Flow/pull/284) (`feat/engine-
 - **A3-7 (Measure Ward Silence Per Destination)**: `src/components/ward-management/delays/delays-derivations.ts:636` — Stamped `referredAt: event.now` on `ReferralAddressing` destinations and anchored ward silence timer to oldest awaiting destination.
 - **A3-11 (Delay Inactivity Timers State Transitions)**: `src/components/ward-management/delays/delays-derivations.ts:403` — Includes `acceptedAt` and `pullRequestedAt` in `lastRecordedActivity`.
 - **A3-12 (Route Revoked-Exam Holds to Coordinator)**: `src/components/ward-management/delays/delays-derivations.ts:265` — Routes revoked examinations (`examinationRevokedWhileBedHeld`) to `"awaiting_coordinator"` rather than transport dispatch.
-- **A2-8 (Optimistic Concurrency 409 vs 503)**: `backend/ward-flow/database.mjs:71` — Maps Azure Storage precondition/revision failures to HTTP 409 Conflict.
-- **A4-8 (Tenant Token Claims Verification for Guest Accounts)**: `backend/ward-flow/auth.mjs:43` — Strictly validates `payload.tid === config.tenant` and `WardFlow.Access` scope claims.
+- **A2-8 (Optimistic Concurrency 409 vs 503)**: retired with Azure (D-55, 15 October 2026). It described `backend/ward-flow/database.mjs:71` mapping Azure Storage precondition/revision failures to HTTP 409 Conflict; that file and Azure storage are gone; the current backend is described in [DATABASE.md](ward-flow/DATABASE.md).
+- **A4-8 (Tenant Token Claims Verification for Guest Accounts)**: retired with Microsoft Entra ID (D-55, 15 October 2026). It described Entra `payload.tid === config.tenant` and `WardFlow.Access` scope checks in `backend/ward-flow/auth.mjs:43`; sign-in is now Supabase (see [DATABASE.md](ward-flow/DATABASE.md)).
 
 ---
 

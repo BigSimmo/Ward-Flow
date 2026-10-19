@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   approvedTakeoverFiles,
@@ -13,7 +12,6 @@ import {
 import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
-const freshness = path.join(repoRoot, "scripts/check-base-freshness.mjs");
 const signOut = path.join(repoRoot, "scripts/ward-flow/sign-out-check.mjs");
 
 function run(command: string, args: string[], cwd: string, env: Record<string, string | undefined> = {}) {
@@ -63,69 +61,6 @@ function fixture(origin: string, { anchored = false } = {}) {
 }
 
 describe("public startup boundary", () => {
-  it("standalone Ward-Flow hook reports stale origin/main even on a ward branch", () => {
-    const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git");
-    try {
-      const result = run(process.execPath, [freshness, "--hook"], cwd, {
-        BASE_FRESHNESS_NO_FETCH: "1",
-        STALE_BASE_THRESHOLD: "1",
-      });
-      expect(result.status, result.stderr).toBe(0);
-      const hook = JSON.parse(result.stdout.trim());
-      expect(hook.hookSpecificOutput.additionalContext).toMatch(/BEHIND origin\/main/);
-      expect(hook.hookSpecificOutput.additionalContext).not.toMatch(/Never merge or rebase origin\/main/);
-    } finally {
-      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    }
-  });
-
-  it("standalone Ward-Flow startup stays offline until fetch is explicitly requested", () => {
-    const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git");
-    try {
-      const remote = path.join(cwd, "remote.git");
-      git(cwd, "init", "--bare", "-q", remote);
-      git(cwd, "config", `url.${pathToFileURL(remote).href}.insteadOf`, "https://github.com/BigSimmo/Ward-Flow.git");
-      git(cwd, "checkout", "-q", "main");
-      git(cwd, "push", "-q", "origin", "main");
-      git(cwd, "update-ref", "refs/remotes/origin/main", "main~1");
-      git(cwd, "checkout", "-q", "ward/task");
-
-      const cachedHead = git(cwd, "rev-parse", "origin/main");
-      const offline = run(process.execPath, [freshness, "--json"], cwd, {
-        BASE_FRESHNESS_FETCH: "0",
-        BASE_FRESHNESS_NO_FETCH: "0",
-      });
-      expect(offline.status, offline.stderr).toBe(0);
-      expect(JSON.parse(offline.stdout).behind).toBe(1);
-      expect(git(cwd, "rev-parse", "origin/main")).toBe(cachedHead);
-
-      const online = run(process.execPath, [freshness, "--json", "--fetch"], cwd, {
-        BASE_FRESHNESS_FETCH: "0",
-        BASE_FRESHNESS_NO_FETCH: "0",
-      });
-      expect(online.status, online.stderr).toBe(0);
-      expect(JSON.parse(online.stdout).behind).toBe(2);
-      expect(git(cwd, "rev-parse", "origin/main")).not.toBe(cachedHead);
-    } finally {
-      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    }
-  });
-
-  it("legacy Database ward hook remains silent", () => {
-    const cwd = fixture("https://github.com/BigSimmo/Database.git");
-    try {
-      git(cwd, "branch", "codex/task-ward-flow-live-state-20260831");
-      const result = run(process.execPath, [freshness, "--hook"], cwd, {
-        BASE_FRESHNESS_NO_FETCH: "1",
-        STALE_BASE_THRESHOLD: "1",
-      });
-      expect(result.status, result.stderr).toBe(0);
-      expect(result.stdout).toBe("");
-    } finally {
-      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    }
-  });
-
   it("public sign-out check uses main and ignores Database checkout claims", (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });

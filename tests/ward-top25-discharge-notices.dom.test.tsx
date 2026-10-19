@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,10 +10,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WARD_FEATURE_FLAGS_STORAGE_KEY,
-  setWardFeatureFlagOnDevice,
-} from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -24,17 +20,10 @@ import type { SupportServiceType } from "@/components/ward-management/ward-suppo
 /** Top 25 item 1: confirming a discharge offers the support notices, honestly marked not wired. */
 afterEach(() => {
   cleanup();
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-discharge-notices", null);
-  });
-  window.localStorage.removeItem(WARD_FEATURE_FLAGS_STORAGE_KEY);
   window.history.replaceState(null, "", "/");
 });
 
-function confirmFirstRelease(flagOn: boolean) {
-  act(() => {
-    setWardFeatureFlagOnDevice("top25-discharge-notices", flagOn);
-  });
+function confirmFirstRelease() {
   const state = seedWardFlowStateAt(0);
   const unit = state.units.find((candidate) =>
     state.bedReleases.some((release) => release.unitId === candidate.id && release.state === "expected"),
@@ -50,7 +39,7 @@ function confirmFirstRelease(flagOn: boolean) {
 
 describe("discharge support notices", () => {
   it("keeps unconnected pharmacy, transport and cleaning notices explicitly not wired", () => {
-    confirmFirstRelease(true);
+    confirmFirstRelease();
     const card = screen.getByTestId("ward-discharge-notices");
     expect(card).toHaveTextContent("Discharge support notices");
     const sendButtons = within(card).getAllByRole("button", { name: "Send notice" });
@@ -91,10 +80,5 @@ describe("discharge support notices", () => {
     expect(sentButton).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(sentButton);
     expect(onSendService).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows nothing when the flag is off", () => {
-    confirmFirstRelease(false);
-    expect(screen.queryByTestId("ward-discharge-notices")).toBeNull();
   });
 });

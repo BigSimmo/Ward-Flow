@@ -1,5 +1,5 @@
 /**
- * Admission arrival checklist (Top 25 item 14, flag `top25-admission-checklist`).
+ * Admission arrival checklist (Top 25 item 14).
  *
  * Lists what the receiving ward wants settled before a patient arrives, read from the recorded
  * medical clearance, legal form receipt, transport need, contraband search and medication chart.

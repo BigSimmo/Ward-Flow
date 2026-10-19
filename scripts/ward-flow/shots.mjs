@@ -18,8 +18,7 @@
 //   --set after   shots of your branch, in ward-flow-logs/shots/<line commit>/after-<label>, then
 //              compared with the before set: prints only the screens whose pixels changed.
 // Desktop only (1440 x 900, light). Waits for hydration: the Ward rail has more than 4 links, or no
-// rail. Run it through the slot script (it is a wide run):
-//   node scripts/ward-flow/run-slot.mjs run wide "<thread>" -- node scripts/ward-flow/shots.mjs ...
+// rail.
 import { spawn, execFileSync } from "node:child_process";
 import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { createRequire } from "node:module";

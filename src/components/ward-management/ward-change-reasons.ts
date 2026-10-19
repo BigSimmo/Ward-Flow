@@ -393,7 +393,7 @@ export const OVERRIDE_REASONS = [
 export type OverrideReason = (typeof OVERRIDE_REASONS)[number];
 
 /**
- * ⚠️ PLACEHOLDER VALUES, Top 25 item 2 (`top25-referral-cap`, owner ruling 15 Oct 2026): "cap at
+ * ⚠️ PLACEHOLDER VALUES, Top 25 item 2 (owner ruling 15 Oct 2026): "cap at
  * three wards asked at once". Asking one more ward than the cap is a safety check, so it warns and
  * asks for a reason rather than refusing. The wording of each reason is NOT chosen or seen by the
  * owner, the same warning `OVERRIDE_REASONS` above carries. Written as complete sentences the

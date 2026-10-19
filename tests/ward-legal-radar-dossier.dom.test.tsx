@@ -1,16 +1,15 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { PatientDocumentsTab } from "@/components/ward-management/patients/patient-dossier-tabs";
 import type { PatientNowRecord } from "@/components/ward-management/patients/patient-now-records";
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-// Top 25 item 19 (flag top25-legal-radar): a typed paper expiry reads its time left through the one
+// Top 25 item 19: a typed paper expiry reads its time left through the one
 // shared rule. Settings warnings only (1h urgent, 3h soon), no separate 4h amber. Synthetic data only.
 const NOW = 10 * 60 + 42;
 const URGENT = CLINICAL_VALUES.dueSoonUrgent.value;
@@ -37,7 +36,6 @@ function renderTab(dueAt: number) {
 
 afterEach(() => {
   cleanup();
-  act(() => setWardFeatureFlagOnDevice("top25-legal-radar", null));
 });
 
 describe("paper legal form time left, one rule", () => {
@@ -49,8 +47,7 @@ describe("paper legal form time left, one rule", () => {
     expect(formTimeLeft(movement(NOW - 5), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("passed");
   });
 
-  it("shows time left and the warning word on the patient's forms register with the flag on", () => {
-    act(() => setWardFeatureFlagOnDevice("top25-legal-radar", true));
+  it("shows time left and the warning word on the patient's forms register", () => {
     renderTab(NOW + 120);
     const line = screen.getByTestId("dossier-paper-expiry-time-left");
     expect(line.textContent).toContain("2h 00m left");
@@ -58,7 +55,6 @@ describe("paper legal form time left, one rule", () => {
   });
 
   it("shows time left on a continued form, where the typed expiry sits on the original row", () => {
-    act(() => setWardFeatureFlagOnDevice("top25-legal-radar", true));
     const continued = movement(NOW + 120);
     continued.legalForm = {
       ...continued.legalForm!,
@@ -74,12 +70,5 @@ describe("paper legal form time left, one rule", () => {
       />,
     );
     expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toContain("2h 00m left");
-  });
-
-  it("keeps the old line with the flag off", () => {
-    act(() => setWardFeatureFlagOnDevice("top25-legal-radar", false));
-    renderTab(NOW + 120);
-    expect(screen.queryByTestId("dossier-paper-expiry-time-left")).toBeNull();
-    expect(screen.getByText(/Paper expiry typed/).textContent).not.toContain("left");
   });
 });

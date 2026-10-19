@@ -45,24 +45,20 @@ retain conservative full selection; inspect the actual planner output and requir
 - `npm run test:related -- --base <task-base> --dry-run` previews existing unit
   selection, including working-tree inputs. Fan-out caps leave work to the batch
   gate; focused results never prove the whole suite.
-- `node scripts/ward-flow/select-journeys.mjs --base <task-base> --head HEAD --json`
-  previews committed browser scope. Include pending edits before relying on that
-  selection. `npm run test:e2e:ward-journeys` runs the Ward journey lane. Inspect
-  selected journey and shared-foundation requirements in How we work. For browser
-  work, first use `npm run ensure` and its verified project URL.
-- `npm run receipts` inspects existing local receipts. Reuse only matching source,
-  dirty/untracked inputs, command/selector, lock/dependencies, toolchain, fixtures
-  and environment; artifact-dependent checks also need their artifacts. Record
-  reused versus newly executed evidence. Unknown validity requires a run or blocker.
+- `npm run test:e2e:ward-journeys` runs the Ward journey lane; CI selects journeys
+  through `scripts/ward-ci-public/plan.mjs`. For browser work, first use
+  `npm run ensure` and its verified project URL.
+- Reuse earlier evidence only when source, dirty/untracked inputs, command,
+  lock/dependencies, toolchain, fixtures and environment all match; artifact-dependent
+  checks also need their artifacts. Record reused versus newly executed evidence.
+  Unknown validity requires a run or blocker. Local gates always run; there is no
+  local receipt store.
 
 `npm run verify:pr-local -- --base <task-base> --dry-run` previews the shared classifier's
 local commands; omit `--dry-run` for the normal selected local readiness stage. Source, tooling,
 unknown, deleted or renamed inputs retain the full unit population and production Ward journeys.
-The legacy `ready-check.mjs` runs exact merged-snapshot static/policy/backend compatibility checks
-only. Its broad READY route is retired with exit 75; it cannot approve source-code or queued READY,
-or consume later FULL/browser receipts. A compatibility pass supplies only its stated scope.
-The Ward gate arbiter still runs locally when required; a declared workflow
-does not supply an observed equivalent CI verdict or authorise implicit provider reads.
+A declared workflow does not supply an observed equivalent CI verdict or authorise implicit
+provider reads.
 When browser work is selected, the local planner uses `test:e2e:ward-journeys`; `--extended`
 is retained for compatibility and does not change its coverage.
 

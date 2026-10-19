@@ -10,7 +10,7 @@ import { longStaySummaries, strandedPromptText } from "@/components/ward-managem
 import styles from "./long-stay-summary.module.css";
 
 /**
- * Long stay and delayed discharge summary (Top 25 item 20, flag `top25-long-stay-dossier`), on the
+ * Long stay and delayed discharge summary (Top 25 item 20), on the
  * handover Beds tab. One row per person the stranded prompts would name (`ward-stranded.ts`): days
  * in bed, the recorded barrier and hold, and when the delayed discharge escalation point falls
  * against the ward's own expected discharge date. Read only. `admissions` is already scoped to the

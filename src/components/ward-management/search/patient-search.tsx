@@ -2,20 +2,13 @@
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { UserPlus } from "lucide-react";
 
 import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useMediaQuery } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
-import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 import {
   isOpen,
   searchMovements,
@@ -39,32 +32,20 @@ import {
 import {
   findPatients,
   foldPatientSearchText,
-  formatDateOfBirth,
-  patientListName,
   patientAgeYears,
   type Patient,
 } from "@/components/ward-management/ward-patients";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
-import {
-  LONG_WAIT_MINUTES,
-  LONG_WAIT_TEXT,
-  WAIT_FILTER_SHORT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
-
-/** The wait bands, in hours, from Josh's named defaults (D-22, D-24): under 6, 6 to 24, over 24. */
-const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
-const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
+import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 
 import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
-import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
+import { RecordPreview, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
 import {
@@ -79,7 +60,6 @@ import {
   isQuickChipQuery,
   matchesQuickChip,
 } from "./search-filters";
-import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
@@ -109,68 +89,24 @@ import {
 import styles from "./search.module.css";
 import cs from "./census.module.css";
 import { isCommunityReferral } from "./community-referral";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  LONG_WAIT_HOURS,
+  SHORT_WAIT_HOURS,
+  countGroups,
+  getPatientPresence,
+  highlightTest,
+  matchesTier,
+  previewCardHidden,
+  resultId,
+  waitedHours,
+} from "./patient-search-model";
+import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
 
-const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
+// Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
+export { ResultsSection };
 
 const stageIsSearchable = (stage: MovementStage) => isOpen({ stage, closure: undefined } as Movement);
 const SELECTABLE_STAGES = MOVEMENT_STAGES.filter(stageIsSearchable);
-
-type ShowFacetKey = "all" | "accepted" | "waiting" | "unowned" | "under6" | "6to24" | "over24";
-
-type ShowFacet = {
-  key: ShowFacetKey;
-  label: string;
-  empty: string;
-  test: (movement: Movement, now: number) => boolean;
-};
-
-function waitedHours(movement: Movement, now: number): number {
-  return minutesUntil(now, movement.openedAt) / 60;
-}
-
-const SHOW_FACETS: readonly ShowFacet[] = [
-  { key: "all", label: "Everything", empty: "", test: () => true },
-  {
-    key: "accepted",
-    label: "Accepted",
-    empty: "No open movement here has an accepted ward.",
-    test: (movement) => Boolean(movement.acceptedUnitId),
-  },
-  {
-    key: "waiting",
-    label: "No ward yet",
-    empty: "Every open movement here has an accepted ward.",
-    test: (movement) => !movement.acceptedUnitId,
-  },
-  {
-    key: "unowned",
-    label: "No owner",
-    empty: "Every open movement here has an owner.",
-    test: (movement) => !movement.owner,
-  },
-  {
-    key: "under6",
-    label: `Under ${SHORT_WAIT_HOURS} hours`,
-    empty: `No open movement here has waited under ${SHORT_WAIT_HOURS} hours.`,
-    test: (movement, now) => waitedHours(movement, now) < SHORT_WAIT_HOURS,
-  },
-  {
-    key: "6to24",
-    label: `${SHORT_WAIT_HOURS} to ${LONG_WAIT_HOURS} hours`,
-    empty: `No open movement here has waited ${SHORT_WAIT_HOURS} to ${LONG_WAIT_HOURS} hours.`,
-    test: (movement, now) => {
-      const hours = waitedHours(movement, now);
-      return hours >= SHORT_WAIT_HOURS && hours < LONG_WAIT_HOURS;
-    },
-  },
-  {
-    key: "over24",
-    label: `Over ${LONG_WAIT_HOURS} hours`,
-    empty: `No open movement here has waited over ${LONG_WAIT_HOURS} hours.`,
-    test: (movement, now) => waitedHours(movement, now) >= LONG_WAIT_HOURS,
-  },
-];
 
 type KpiFacet = "all" | "live" | "unplaced" | "notin" | "breaches";
 
@@ -1356,439 +1292,4 @@ const PHONE_QUERY = "(max-width: 40rem)";
 /** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
 function usePhoneLayout(): boolean {
   return useMediaQuery(PHONE_QUERY);
-}
-
-function highlightTest(highlight: CensusHighlight | null): (row: CensusRow) => boolean {
-  const chip = CENSUS_HIGHLIGHTS.find((entry) => entry.id === highlight);
-  return chip ? chip.test : () => false;
-}
-
-function countGroups(rows: readonly CensusRow[]): Record<CensusGroup, number> {
-  const counts: Record<CensusGroup, number> = { wait: 0, found: 0, move: 0, ward: 0, off: 0 };
-  for (const row of rows) counts[row.group] += 1;
-  return counts;
-}
-
-/**
- * The stylesheet decides when the page is one column, from the page's own width, and hides the side
- * card then. A tap opens the drawer exactly when that card cannot be seen.
- */
-function previewCardHidden(): boolean {
-  if (typeof document === "undefined") return false;
-  const card = document.querySelector<HTMLElement>("[data-preview-card]");
-  return card !== null && getComputedStyle(card).display === "none";
-}
-
-function resultId(result: PatientSearchResult): string {
-  return result.kind === "movement" ? result.movement.id : result.referral.id;
-}
-
-/** The Tier select holds "Tier 1" to "Tier 3", the same words each row shows. */
-function matchesTier(result: PatientSearchResult, tier: string): boolean {
-  const urgency = result.kind === "movement" ? result.movement.urgency : result.referral.urgency;
-  return `Tier ${urgency}` === tier;
-}
-
-function matchesPatient(item: unknown, patientId: string): boolean {
-  if (typeof item === "object" && item !== null) {
-    return Reflect.get(item, "patientId") === patientId;
-  }
-  return false;
-}
-
-function getPatientPresence(
-  patient: Patient,
-  referrals: readonly Referral[],
-  movements: readonly Movement[],
-): { key: "live" | "community" | "scheduled" | "past"; label: string } {
-  const movement = movements.find((m) => matchesPatient(m, patient.id) && isOpen(m));
-  if (movement) return { key: "live", label: "On this board" };
-  const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
-  if (referral) {
-    if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
-      return { key: "community", label: "Community / Home" };
-    }
-    return { key: "live", label: "On this board" };
-  }
-  return { key: "past", label: "Past / Discharged" };
-}
-
-function PeopleSection({
-  people,
-  query,
-  otherMatches,
-  onPreview,
-  selectedPatientId,
-  referrals,
-  movements,
-}: {
-  people: readonly Patient[];
-  query: string;
-  otherMatches: number;
-  onPreview: (patient: Patient) => void;
-  selectedPatientId?: string | null;
-  referrals: readonly Referral[];
-  movements: readonly Movement[];
-}) {
-  return (
-    <WardPanel
-      title={people.length === 0 ? "No people" : people.length === 1 ? "1 person" : `${people.length} people`}
-      testId="ward-patient-search-people"
-    >
-      {query.length === 0 ? (
-        <p className={styles.peopleIdleNote} data-testid="ward-patient-search-people-idle">
-          Enter a name or UMRN above.
-        </p>
-      ) : people.length === 0 ? (
-        <div className={styles.peopleEmptyNote} data-testid="ward-patient-search-people-empty">
-          <p>
-            {otherMatches > 0
-              ? "No matching person. Waiting referrals or open movements were found below."
-              : "No matching person, waiting referral or open movement. Check the spelling or UMRN before adding a patient."}
-          </p>
-          <Link
-            className={styles.addPersonLink}
-            href={WARD_ADD_PERSON_HREF}
-            data-testid="ward-patient-search-people-empty-add"
-            onClick={(event) => {
-              if (isNewTabClick(event)) {
-                handOffTypedPatientQuery("", "carried");
-                return;
-              }
-              handOffTypedPatientQuery(query, "carried");
-            }}
-          >
-            Add patient
-          </Link>
-        </div>
-      ) : (
-        <ul className={styles.peopleList} data-testid="ward-patient-search-people-list">
-          {people.map((patient) => {
-            const presence = getPatientPresence(patient, referrals, movements);
-            const isSelected = selectedPatientId === patient.id;
-            return (
-              <li
-                key={patient.id}
-                className={`${styles.peopleRow} ${isSelected ? styles.selectedRow : ""}`.trim()}
-                data-testid={`ward-patient-search-person-${patient.id}`}
-              >
-                <div className={styles.personHeaderCluster}>
-                  <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
-                    {presence.key === "live"
-                      ? "● On this board"
-                      : presence.key === "community"
-                        ? "○ Not in Hosp"
-                        : "◌ Past"}
-                  </span>
-                  <span className={styles.personUmrn}>{patient.umrn}</span>
-                  <span className={styles.personName}>{patientListName(patient)}</span>
-                  <span className={styles.personDob}>DOB {formatDateOfBirth(patient.dateOfBirth)}</span>
-                  {(patient as { confidential?: boolean }).confidential && (
-                    <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${patient.id}`}>
-                      🔒 Restricted
-                    </span>
-                  )}
-                </div>
-                {onPreview ? (
-                  <button
-                    type="button"
-                    className={styles.previewButton}
-                    data-testid={`ward-patient-search-person-preview-${patient.id}`}
-                    onClick={() => onPreview(patient)}
-                  >
-                    Preview
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </WardPanel>
-  );
-}
-
-export function ResultsSection({
-  results,
-  units,
-  now,
-  viewMode = "cards",
-  onPreviewMovement,
-  selectedMovementId,
-  onPreviewReferral,
-  selectedReferralId,
-  patients = [],
-  referrals = [],
-}: {
-  results: PatientSearchResult[];
-  units: Unit[];
-  now: number;
-  viewMode?: "cards" | "dense";
-  onPreviewMovement?: (movement: Movement) => void;
-  selectedMovementId?: string | null;
-  onPreviewReferral?: (referral: Referral) => void;
-  selectedReferralId?: string | null;
-  /** For naming each movement's patient; absent, rows read "Name not recorded", never the id. */
-  patients?: Patient[];
-  referrals?: Referral[];
-}) {
-  const referralResults = results.filter((result) => result.kind === "referral");
-  // D-39: a referral row names its person by name and UMRN, never by the referral number.
-  const umrnLookup = { patients, referrals };
-  const movementResults = results.filter((result) => result.kind === "movement");
-
-  const [facetKey, setFacetKey] = useState<ShowFacetKey>("all");
-
-  const facetCounts = useMemo(() => {
-    const map = new Map<ShowFacetKey, number>();
-    for (const facet of SHOW_FACETS) {
-      map.set(facet.key, movementResults.filter((result) => facet.test(result.movement, now)).length);
-    }
-    return map;
-  }, [movementResults, now]);
-
-  const activeFacet = SHOW_FACETS.find((facet) => facet.key === facetKey) ?? SHOW_FACETS[0];
-  const shownMovementResults = useMemo(
-    () => movementResults.filter((result) => activeFacet.test(result.movement, now)),
-    [movementResults, activeFacet, now],
-  );
-
-  function onShowFacetsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const order = SHOW_FACETS.map((facet) => facet.key);
-    const current = order.indexOf(facetKey);
-    let next = -1;
-    if (event.key === "ArrowRight") next = (current + 1) % order.length;
-    if (event.key === "ArrowLeft") next = (current - 1 + order.length) % order.length;
-    if (event.key === "Home") next = 0;
-    if (event.key === "End") next = order.length - 1;
-    if (next === -1) return;
-    event.preventDefault();
-    const target = order[next];
-    if (target === undefined) return;
-    setFacetKey(target);
-    const el = event.currentTarget.querySelector<HTMLButtonElement>(`[data-show-facet-tab="${target}"]`);
-    el?.focus();
-  }
-
-  return (
-    <WardPanel
-      title={results.length === 1 ? "1 match" : `${results.length} matches`}
-      testId="ward-patient-search-results"
-    >
-      {referralResults.length > 0 && (
-        <ul className={styles.referralList} data-testid="ward-patient-search-referrals">
-          {referralResults.map(({ referral }) => {
-            const summary = buildReferralSummary(referral);
-            const isComm = isCommunityReferral(referral);
-            const presenceKey = isComm ? "community" : "live";
-            const presenceLabel = isComm ? "○ Not in Hosp" : "● On this board";
-            const isSelected = selectedReferralId === referral.id;
-            return (
-              <li
-                key={referral.id}
-                className={`${styles.referralRow} ${isSelected ? styles.selectedRow : ""}`.trim()}
-                data-testid={`ward-patient-search-referral-${referral.id}`}
-              >
-                <div className={styles.referralHeaderCluster}>
-                  <span className={`${styles.presenceTag} ${styles[presenceKey]}`}>{presenceLabel}</span>
-                  <span className={styles.referralId}>
-                    {patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}
-                  </span>
-                </div>
-                <span className={styles.referralNote}>
-                  {summary.originLine} — {summary.declineNote}
-                </span>
-                {onPreviewReferral ? (
-                  <button
-                    type="button"
-                    className={styles.previewButton}
-                    data-testid={`ward-patient-search-referral-preview-${referral.id}`}
-                    onClick={() => onPreviewReferral(referral)}
-                  >
-                    Preview
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {results.length === 0 ? (
-        <p className={styles.emptyNote} data-testid="ward-patient-search-empty">
-          No matches — no open movement or waiting referral fits the current search.
-        </p>
-      ) : movementResults.length === 0 ? (
-        <p className={styles.emptyNote} data-testid="ward-patient-search-no-movements">
-          No open movement fits the current search. The waiting referrals above have not been accepted anywhere yet.
-        </p>
-      ) : (
-        <>
-          <p className={styles.movementScopeNote} data-testid="ward-patient-search-movement-scope-note">
-            Movement filters only; people and waiting referrals are unchanged.
-          </p>
-
-          {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
-          <div
-            className={styles.showFacets}
-            role="tablist"
-            aria-label="What to show"
-            onKeyDown={onShowFacetsKeyDown}
-            data-testid="ward-patient-search-show-facets"
-          >
-            {SHOW_FACETS.map((facet) => {
-              const count = facetCounts.get(facet.key) ?? 0;
-              const selected = facet.key === facetKey;
-              return (
-                <button
-                  key={facet.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  tabIndex={selected ? 0 : -1}
-                  data-show-facet-tab={facet.key}
-                  className={selected ? styles.showFacetTabActive : styles.showFacetTab}
-                  onClick={() => setFacetKey(facet.key)}
-                >
-                  {facet.label}{" "}
-                  <span
-                    className={count === 0 ? styles.showFacetCountZero : styles.showFacetCount}
-                    data-testid={`ward-patient-search-show-facet-count-${facet.key}`}
-                  >
-                    {count === 0 ? "none" : count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {shownMovementResults.length === 0 ? (
-            <p className={styles.emptyNote} data-testid="ward-patient-search-facet-empty">
-              {activeFacet.empty}
-            </p>
-          ) : (
-            <WardTable
-              className={`${styles.table} ${viewMode === "cards" ? styles.cardsView : styles.denseCaseload}`}
-              wrapperClassName={styles.tableScroll}
-            >
-              <thead>
-                <tr>
-                  <th scope="col">Movement</th>
-                  <th scope="col">Stage</th>
-                  <th scope="col">Department</th>
-                  <th scope="col">Destination</th>
-                  <th scope="col">Open for</th>
-                  <th scope="col">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {shownMovementResults.map(({ movement }) => (
-                  <ResultRow
-                    key={movement.id}
-                    movement={movement}
-                    units={units}
-                    now={now}
-                    viewMode={viewMode}
-                    onPreview={onPreviewMovement}
-                    isSelected={selectedMovementId === movement.id}
-                    patients={patients}
-                    referrals={referrals}
-                  />
-                ))}
-              </tbody>
-            </WardTable>
-          )}
-        </>
-      )}
-    </WardPanel>
-  );
-}
-
-function ResultRow({
-  movement,
-  units,
-  now,
-  viewMode = "cards",
-  onPreview,
-  isSelected,
-  patients,
-  referrals,
-}: {
-  movement: Movement;
-  units: Unit[];
-  now: number;
-  viewMode?: "cards" | "dense";
-  onPreview?: (movement: Movement) => void;
-  isSelected?: boolean;
-  patients: Patient[];
-  referrals: Referral[];
-}) {
-  const summary = buildMovementSummary(movement, units, now);
-  const patientName = resolveSubjectPatient(movement, { patients, referrals }).displayName;
-  const rowClass =
-    `${viewMode === "cards" ? styles.patientCard : styles.denseRow} ${isSelected ? styles.selectedRow : ""}`.trim() ||
-    undefined;
-
-  return (
-    <tr className={rowClass}>
-      <td className={styles.cellIdentity}>
-        <div className={styles.movementIdCluster}>
-          <span className={`${styles.presenceTag} ${styles.live}`}>● On this board</span>
-          {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-          <span className={styles.movementIdText}>{patientName}</span>
-        </div>
-      </td>
-      <td className={styles.cellStage}>{summary.stageLabel}</td>
-      <td className={styles.cellDept}>{summary.departmentText}</td>
-      <td className={styles.cellDest}>{summary.destinationCell}</td>
-      <td className={styles.cellWait}>{summary.elapsedText}</td>
-      <td className={styles.actionsCell}>
-        {onPreview ? (
-          <button
-            type="button"
-            className={styles.previewButton}
-            data-testid={`ward-patient-search-movement-preview-${movement.id}`}
-            onClick={() => onPreview(movement)}
-          >
-            Preview
-          </button>
-        ) : null}
-        <Link className={styles.resultLink} href={movementHref(movement.id)}>
-          Open
-        </Link>
-      </td>
-    </tr>
-  );
-}
-
-function AccessRecordPanel({ entries, now }: { entries: readonly AccessEntry[]; now: number }) {
-  return (
-    <WardPanel
-      title="Access record"
-      count={entries.length === 1 ? "1 search" : `${entries.length} searches`}
-      blurb="Search terms and times. Kept for this session only."
-      testId="ward-patient-search-access-record"
-    >
-      {entries.length === 0 ? (
-        <p className={styles.accessRecordEmpty} data-testid="ward-patient-search-access-record-empty">
-          {ACCESS_RECORD_EMPTY}
-        </p>
-      ) : (
-        <ol className={styles.accessRecordList} data-testid="ward-patient-search-access-record-list">
-          {entries.map((entry, index) => (
-            <li
-              key={`${entry.words}-${entry.at}-${index}`}
-              className={styles.accessRecordItem}
-              data-testid={`ward-patient-search-access-record-row-${index}`}
-            >
-              <span className={styles.accessRecordWords}>“{entry.words}”</span>
-              <span className={styles.accessRecordMeta}>searched at {formatInstantWithDay(entry.at, now)}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </WardPanel>
-  );
 }

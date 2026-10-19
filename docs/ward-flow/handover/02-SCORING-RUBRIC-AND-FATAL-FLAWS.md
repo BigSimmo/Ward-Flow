@@ -8,7 +8,7 @@
 **Target Audience**: Sovereign UI/UX Engineers, Clinical Frontend Architects, Headless Verification Probes  
 **Execution Environment**: Gemini (Antigravity) with Native `chrome-devtools-mcp`, Vitest & Node Harnesses  
 **Prerequisites**: WCAG 2.1 AA Luminance Math, WA Mental Health Act 2014 Invariants, DOM Bounding Geometry  
-**Parent Document**: [`README.md`](README.md)
+**Parent Document**: `README.md` (archived; see [ARCHIVE.md](../../ARCHIVE.md))
 
 ---
 

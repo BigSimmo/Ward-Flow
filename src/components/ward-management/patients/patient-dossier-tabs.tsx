@@ -29,7 +29,6 @@ import { legalFormName } from "../ward-legal-forms";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { formTimeLeft } from "../legal-forms/legal-form-time-left";
 import { standingWord } from "../legal-forms/legal-forms-view";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { useDueSoonThresholds } from "../ward-flow-provider";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import legacy from "./patient-dossier-tabs.module.css";
@@ -804,11 +803,10 @@ export function PatientDocumentsTab({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  // Top 25 item 19 (flag top25-legal-radar): the typed paper expiry reads its time left through the
+  // Top 25 item 19: the typed paper expiry reads its time left through the
   // one shared rule (`formTimeLeft`, Settings due soon warnings), as on the Forms and Patient pages.
-  const legalRadarOn = useWardFeatureFlag("top25-legal-radar");
   const thresholds = useDueSoonThresholds();
-  const paperTimeLeft = legalRadarOn && movementInForce ? formTimeLeft(movement, now, thresholds) : undefined;
+  const paperTimeLeft = movementInForce ? formTimeLeft(movement, now, thresholds) : undefined;
   const files = movement?.uploadedForms ?? [];
   const rows = [
     ...record.documents.map((d, i) => ({

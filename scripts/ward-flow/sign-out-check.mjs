@@ -24,7 +24,29 @@ const {
   unsignedWardFiles,
 } = await import(pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href);
 const standaloneWardFlow = isPublicWardFlowCheckout(root);
-const LINE = standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831";
+// The line that "folded" is measured against. The legacy integration branch is absent from a fresh
+// clone, so fall back to the local view of main rather than crashing; with no line at all, the
+// branch comparison below cannot run and the check fails closed.
+const lineExists = (ref) => {
+  try {
+    git(["rev-parse", "--verify", "--quiet", `${ref}^{commit}`]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const LINE = [
+  standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831",
+  "refs/remotes/origin/main",
+  "refs/heads/main",
+].find(lineExists);
+function requireLine() {
+  if (LINE) return;
+  console.error(
+    "sign-out-check: no line to compare task branches against (origin/main, main or the legacy line); ownership cannot be established.",
+  );
+  process.exit(1);
+}
 // Inline copy of scripts/ward-flow/logs-root.mjs: tests copy this script alone into fixtures.
 const SIGN_OUT =
   process.env.WARD_SIGNOUT_FILE ||
@@ -54,6 +76,7 @@ function readSignOutText({ reportMissing = false } = {}) {
 if (process.argv[2] === "--stale") {
   const text = readSignOutText({ reportMissing: true });
   const section = scopedActiveSignOutLines(text, root);
+  requireLine();
   const gitLineTip = execFileSync("git", ["rev-parse", LINE], { encoding: "utf8" }).trim();
   const state = (branch) => {
     let tip;
@@ -115,6 +138,7 @@ if (signedOut.length) {
 
 // No branch can have changed a requested path if no task commit outside the line touched it.
 // This common case avoids opening every historical branch for a new file.
+requireLine();
 const history = git([
   "--literal-pathspecs",
   "log",

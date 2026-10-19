@@ -7,7 +7,7 @@ import type { BedRelease, Movement, Unit } from "@/components/ward-management/wa
 import styles from "./next-ward-after-refusal.module.css";
 
 /**
- * Pre-match a bed while it is being made ready (Top 25 item 15, flag `top25-prematch-cleaning`).
+ * Pre-match a bed while it is being made ready (Top 25 item 15).
  * Shown in the shortlist for the ward this patient is matched or offered to, when that ward has a
  * bed being made ready. The match can stand while the bed is cleaned, and an unresumed ED medical
  * deterioration on the patient is named beside it. Read only: the pull still waits for a ready bed

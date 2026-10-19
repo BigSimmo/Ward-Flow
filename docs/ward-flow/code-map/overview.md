@@ -316,8 +316,7 @@ without text), `ward-bar.tsx` (a small stacked-bar chart; **not** the same as `s
 ### 3.4 Styling
 
 CSS modules throughout, no CSS-in-JS. Two token layers, deliberately separate:
-`ward-tokens.module.css` (aliases PsychSift v2 tokens; raw colours banned by
-`tests/ward-raw-colour.test.ts`) and `src/app/ward-flow-shell-tokens.module.css` (the third
+`ward-tokens.module.css` (aliases PsychSift v2 tokens; raw colours kept out by convention) and `src/app/ward-flow-shell-tokens.module.css` (the third
 edition's closed palette, copied from the approved drawing, kept outside the scanned folder on
 purpose). Several screens carry a `*-third-edition.module.css` beside an older module. Largest
 stylesheets: `delays` 5,406, `ward` 5,233, `board` 4,847, `referrals` 4,802 lines.
@@ -424,20 +423,17 @@ Plus the generator checks (`screen-map`, `mockup-manifest`, `owner-rulings-index
   drawing has not changed since the look.
 - **Organisation registry** (`docs/ward-flow/organisation/registry.json`) — which of six systems
   owns each file.
-- **Mutation tooling** (`mutate.mjs`, `mutation-run.mjs`) — safe break-and-restore testing.
 
 ### 5.5 `scripts/ward-flow/` at a glance
 
 Generators: `screen-map`, `mockup-manifest`, `owner-rulings-index`, `rules-index`,
-`screen-verification`, `build-reference-*`. Checks: `check-doc-links`, `check-drawing-rules`,
-`check-errata-freshness`, `check-live-state`, `check-source-control-chars`,
+`screen-verification`, `build-reference-*`. Checks: `check-doc-links`,
+`check-errata-freshness`, `check-source-control-chars`,
 `check-text-size-floor`, `check-ward-legal-language`, `check-ward-reference`,
 `check-clinical-governance-gate`. Dev: `dev-with-organisation`, `serve-mockups`,
-`contact-sheet`, `organisation(-core)`. Visual audits (manual, Playwright): `audit-*`,
-`adversarial-visual-audit`, `inspect-targets`, `test-drawer`, `verify-movement-horizon`,
-`table-sweep`, `token-collision-scan`. Coordination: `role-map.py`, `sync-lessons`,
-`audit-lessons`. The `audit/` subfolder is explicitly not part of
-the fold gates.
+`organisation(-core)`. Visual audit (manual, Playwright): `audit-all-screens-visual`.
+Coordination: `sync-lessons`, `claim-files`, `sign-out-check`. Scripts retired on
+18 October 2026 are listed at the top of [scripts-and-tooling.md](scripts-and-tooling.md).
 
 ---
 

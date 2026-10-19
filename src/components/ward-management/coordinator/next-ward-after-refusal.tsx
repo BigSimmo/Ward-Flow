@@ -9,7 +9,7 @@ import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import styles from "./next-ward-after-refusal.module.css";
 
 /**
- * Next best ward after a refusal (Top 25 item 3, flag `top25-next-ward`). Shown in the shortlist
+ * Next best ward after a refusal (Top 25 item 3). Shown in the shortlist
  * once a ward has declined and none has accepted. It lists the wards nobody has asked yet that pass
  * every eligibility gate (`deriveNextWardsAfterRefusal`) and adds a chosen ward to the shortlist's
  * own referral selection, so the existing Refer button sends `REFER_TO_UNITS` with all of its

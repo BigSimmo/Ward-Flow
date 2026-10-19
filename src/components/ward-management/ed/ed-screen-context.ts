@@ -25,8 +25,6 @@ type EdScreenRecords = {
   now: Instant;
   readmissionIndex: ReturnType<typeof createReadmissionIndex>;
   accessTarget: number;
-  edWaitStepsOn: boolean;
-  admissionChecklistOn: boolean;
   holdLabel: string;
   department: NonNullable<ReturnType<typeof edById>>;
   site: ReturnType<typeof siteByCode>;

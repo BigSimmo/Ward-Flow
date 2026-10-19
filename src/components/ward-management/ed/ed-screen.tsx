@@ -1,6 +1,5 @@
 "use client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import { useMemo, useRef, type FormEvent } from "react";
 import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
@@ -112,20 +111,13 @@ export function EdScreen({ edId }: EdScreenProps) {
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ed");
-  // Top 25 item 6: the shared task rows the sending team owns join this department's Needs you.
-  const needsYouRolesOn = useWardFeatureFlag("top25-needs-you-roles");
-  const stuckHandoverOn = useWardFeatureFlag("top25-stuck-handover");
   const { inboxSnoozes } = useWardFlowSelect("inboxSnoozes");
-  const nextWardOn = useWardFeatureFlag("top25-next-ward");
-  const admissionChecklistOn = useWardFeatureFlag("top25-admission-checklist");
   // One index for the queue's 28 day readmission flags, built once per change of the records.
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
     [admissions, registryPatients, referrals, movements, units],
   );
   const accessTarget = configuration.edAccessTargetMinutes;
-  // Top 25 item 13: one set of long wait steps from the shared thresholds, desktop board only.
-  const edWaitStepsOn = useWardFeatureFlag("top25-ed-wait-ladder");
   // The configured pull hold; until 25 Sept 2026 the transit badges said "4h hold" whatever it was.
   const holdLabel =
     configuration.pullHoldMinutes % 60 === 0
@@ -240,9 +232,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     now,
     accessTarget,
     thisEdId,
-    nextWardOn,
-    needsYouRolesOn,
-    stuckHandoverOn,
     boardFilter: boardView.boardFilter,
     patientQuery: boardView.patientQuery,
     patientSort: boardView.patientSort,
@@ -345,8 +334,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     now,
     readmissionIndex,
     accessTarget,
-    edWaitStepsOn,
-    admissionChecklistOn,
     holdLabel,
     department,
     site,

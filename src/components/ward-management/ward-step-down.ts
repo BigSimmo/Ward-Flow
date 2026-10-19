@@ -19,7 +19,7 @@ import { boundedBedAvailability } from "@/components/ward-management/ward-ready-
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 
 /**
- * STEP-DOWN BOARD (Top 25 item 8, `top25-step-down-board`). A stay flagged for step-down care
+ * STEP-DOWN BOARD (Top 25 item 8). A stay flagged for step-down care
  * (`Admission.stepDownCandidate`, set by `SET_STEP_DOWN_CANDIDATE`) is matched to wards by the SAME
  * `eligibility()` gates the movement path uses, so single sex designation (D-31), sex mix, legal
  * authorisation, cohort, forensic and capacity freshness all apply. The showcase version matched on
@@ -72,7 +72,7 @@ export type StepDownBoardRow = {
   /** An open ward-to-ward movement for this stay that can still be referred, if there is one. */
   transferMovement: Movement | undefined;
   /**
-   * Top 25 item 16 (`top25-step-down-swap`, D-30): open incoming admission movements that pass
+   * Top 25 item 16 (D-30): open incoming admission movements that pass
    * `eligibility()` on the LIVE `fromUnit`. Owner ruling (17 Oct 2026, 10:13 PM AWST): the incoming
    * leg is offered only once a bed there is actually free, never against a modelled freed bed, and
    * there is no combined swap. A Secure movement needs a locked bed actually free. Empty when no

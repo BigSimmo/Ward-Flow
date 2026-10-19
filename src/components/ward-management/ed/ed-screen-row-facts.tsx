@@ -460,12 +460,11 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
 /** The cards under a row's actions in the person sheet: placement, checklist, journey and facts. */
 export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenContext) {
   const { movement, item, patientInfo } = row;
-  const { now, referrals, thisEdId, admissionChecklistOn, journeyEventsFor, planDrafts, setPlanDrafts, patientBay } =
-    ctx;
+  const { now, referrals, thisEdId, journeyEventsFor, planDrafts, setPlanDrafts, patientBay } = ctx;
   return (
     <>
       <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
-      {admissionChecklistOn && movement.acceptedUnitId !== undefined ? (
+      {movement.acceptedUnitId !== undefined ? (
         <EdAdmissionChecklist movement={movement} referrals={referrals} />
       ) : null}
       <section className={styles.expandedCard} aria-label={`Where ${patientInfo.displayName} is up to`}>

@@ -146,6 +146,16 @@ import {
  */
 
 const WARD_DIR = "src/components/ward-management";
+/** 18 Oct 2026: parts of `ward-model.ts` moved into these sibling files unchanged (line cap). The model
+ *  rules below govern them exactly as they govern `ward-model.ts`. */
+const MODEL_SIBLING_FILES = [
+  "ward-model-vocabulary.ts",
+  "ward-model-movement-parts.ts",
+  "ward-model-leave.ts",
+  "ward-model-referral-parts.ts",
+  "ward-model-notices.ts",
+];
+const MODEL_PATHS = [`${WARD_DIR}/ward-model.ts`, ...MODEL_SIBLING_FILES.map((file) => `${WARD_DIR}/${file}`)];
 
 /**
  * Word-level token sets. Matching is on exact tokens, never substrings: substring matching would
@@ -748,14 +758,19 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
      * this is the check that says so. A new module of this kind belongs on this list on the day
      * it is created.
      */
-    const PROVENANCE_SCANNED_FILES = [modelPath, formsPath, registerPath];
+    // 18 Oct 2026: parts of `ward-model.ts` moved into these sibling files unchanged (line cap), so
+    // they are scanned as the model.
+    const modelSiblingPaths = MODEL_SIBLING_FILES.map((file) => `${WARD_DIR}/${file}`);
+    const vocabularyPath = `${WARD_DIR}/ward-model-vocabulary.ts`;
+    const PROVENANCE_SCANNED_FILES = [modelPath, ...modelSiblingPaths, formsPath, registerPath];
 
     const numericExported = PROVENANCE_SCANNED_FILES.flatMap((path) => exportedNamesInFile(path, true));
 
     // Non-vacuity per file: each one is really being read, not silently skipped — a mistyped path
     // would otherwise contribute nothing and this whole scan would narrow without failing.
     for (const [path, sentinel] of [
-      [modelPath, "MOVEMENT_STAGES"],
+      [modelPath, "DECLINE_REASONS"],
+      [vocabularyPath, "MOVEMENT_STAGES"],
       [formsPath, "SELECTABLE_LEGAL_FORMS"],
       [registerPath, "formTitleForCode"],
     ] as const) {
@@ -843,6 +858,8 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     const reducerSources = [
       "ward-flow-reducer.ts",
       "ward-flow-record-events.ts",
+      "ward-flow-record-stay-events.ts",
+      "ward-flow-record-legal-events.ts",
       "ward-flow-undo-events.ts",
       "ward-flow-referral-send-events.ts",
       "ward-flow-referral-answer-events.ts",
@@ -1173,7 +1190,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
         .filter(
           (identifier) =>
             namesALegalDuration(identifier) ||
-            (file.path.replaceAll("\\", "/") === `${WARD_DIR}/ward-model.ts` && namesABannedModelShape(identifier)),
+            (MODEL_PATHS.includes(file.path.replaceAll("\\", "/")) && namesABannedModelShape(identifier)),
         )
         .map((identifier) => `${file.path.replaceAll("\\", "/")}: ${identifier}`),
     );

@@ -119,7 +119,7 @@ synthetic seed. D-18 still stops saving after typed free text. Privacy-safe reco
 not authentication, an authoritative shared backend or a clinical audit service.
 Arrival-capacity disagreement is recorded rather than inventing a physical vacancy;
 held arrival links are validated against actual admissions and wards. See the
-[dated remediation receipt](../reports/remediation-2026-10-08.md) for test limits.
+dated remediation receipt (archived; see [ARCHIVE.md](../../ARCHIVE.md)) for test limits.
 
 `ward-movement-bed-hold.ts` supplies the same reservation fact to search, profile,
 preview and board consumers. The identity comparison stays inside the existing
@@ -138,7 +138,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-`RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the [WA comparison and pathway report](../reports/wa-health-pathway-audit-2026-10-03.md).
+`RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the WA comparison and pathway report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
 
 Read-only baseline map below, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers the thirteen
