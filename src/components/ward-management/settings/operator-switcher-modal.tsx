@@ -204,14 +204,16 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   /**
    * B6 (Josh, 19 Oct 2026): it must be obvious the switch worked. Besides the new page and the
    * person on the rail, one short message names the desk and the role. A place name only, never a
-   * patient, so nothing personal is shown.
+   * patient, so nothing personal is shown. In the shared workspace the signed-in role stays, so the
+   * message names that role, not the desk's.
    */
   function confirmSwitch(place: string, role: string) {
     toast?.push({
       tone: "success",
       title: `Now at ${place}`,
-      body:
-        accessOn && !keepsSignedInRole
+      body: keepsSignedInRole
+        ? `Still working as ${ACCESS_ROLE_LABELS[currentAccess.role]}.`
+        : accessOn
           ? `Working as ${role}. The menu shows this desk's pages.`
           : `Working as ${role}.`,
     });

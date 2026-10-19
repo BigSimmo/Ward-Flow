@@ -27,6 +27,10 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { ROLE_MENUS, railEntries, roleMenu } from "@/components/ward-management/shell/ward-rail-entries";
@@ -280,5 +284,20 @@ describe("going to a desk says it worked (B6)", () => {
     const toast = screen.getByTestId("toast");
     expect(toast).toHaveTextContent(/^Now at /u);
     expect(toast).toHaveTextContent(/Working as /u);
+  });
+
+  it("names the signed-in role, not the desk's, in the shared workspace", () => {
+    atDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    render(
+      wrap(
+        <SharedAccessContext.Provider value={{ api: {} as SharedAccessApi, actorId: null }}>
+          <OperatorSwitcherModal isOpen onClose={() => {}} />
+        </SharedAccessContext.Provider>,
+      ),
+    );
+    fireEvent.click(screen.getAllByTestId("workstation-open-officer")[0]!);
+    const toast = screen.getByTestId("toast");
+    expect(toast).toHaveTextContent("Still working as Flow coordinator.");
+    expect(toast).not.toHaveTextContent(/Transport officer/u);
   });
 });
