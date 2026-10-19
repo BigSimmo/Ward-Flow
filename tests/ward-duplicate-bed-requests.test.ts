@@ -7,6 +7,8 @@ import {
   resolveAlertSubject,
 } from "../src/components/ward-management/alerts/alerts-model";
 import { missedRequestCheck } from "../src/components/ward-management/coordinator/missed-requests-check";
+import { referralBoardHref } from "../src/components/ward-management/ed/ed-bed-search-step";
+import { movementHref } from "../src/components/ward-management/shell/ward-facade";
 import { inboxItemsForRole, taskItems } from "../src/components/ward-management/ward-act-now-items";
 import { duplicateBedRequests } from "../src/components/ward-management/ward-duplicate-bed-requests";
 import {
@@ -129,7 +131,7 @@ describe("two active bed requests for one person (audit F-19)", () => {
     expect(inboxRowExists(state, `${PREFIX}PT-nobody`)).toBe(false);
   });
 
-  it("Alerts files it as its own kind, names the person and opens the referrals board", () => {
+  it("Alerts files it as its own kind, names the person and opens the oldest request", () => {
     const state = withRequests(openRequest("R-dup-1", NOW - 60), openRequest("R-dup-2", NOW - 30));
     const [row] = rows(state);
     expect(alertKindOf(row!.id)).toBe("duplicate");
@@ -139,11 +141,11 @@ describe("two active bed requests for one person (audit F-19)", () => {
     expect(named.patient?.id).toBe(person);
     expect(subject.displayName).toBe(named.formalName);
     expect(subject.patientHref).toContain("/ward-flow/people/");
-    expect(row!.href).toBe("/ward-flow/referrals");
+    expect(row!.href).toBe(referralBoardHref("R-dup-1"));
     expect(alertActionFor(row!, subject)).toEqual({
       kind: "link",
-      label: "Open referrals",
-      href: "/ward-flow/referrals",
+      label: "Open oldest request",
+      href: referralBoardHref("R-dup-1"),
     });
   });
 
@@ -165,7 +167,9 @@ describe("two active bed requests for one person (audit F-19)", () => {
 
     const twice = { ...once, referrals: [referral, openRequest("R-dup-2", NOW - 30)] };
     const [row] = rows(twice);
-    expect(row?.detail).toContain("WF-dup-1 and R-dup-2");
+    expect(row?.detail).toBe("WF-dup-1 and R-dup-2 are both still open. Check each is still needed.");
+    // The oldest request is a bed request, which is not on the Referrals board: the row opens it.
+    expect(row?.href).toBe(movementHref("WF-dup-1"));
     const daily = missedRequestCheck({ ...twice, now: NOW }).filter((item) => item.kind === "two_requests");
     expect(daily.map((item) => item.key)).toEqual([`two_requests:${person}`]);
     expect(daily[0]?.since).toBe(row?.since);
