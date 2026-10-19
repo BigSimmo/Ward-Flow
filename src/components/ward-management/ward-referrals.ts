@@ -184,22 +184,6 @@ export function referralState(referral: Referral): ReferralState {
 }
 
 /**
- * Audit F-19 (19 Oct 2026): success measure 2 counts "the same patient with two active bed requests
- * at once". These are the person's referrals with a bed arm still awaiting an answer. A signal for
- * a person to weigh, never a refusal: a second request can be right.
- */
-export function activeBedRequestsFor(referrals: readonly Referral[], patientId: Referral["patientId"]): Referral[] {
-  if (patientId === undefined) return [];
-  return referrals.filter(
-    (referral) =>
-      referral.patientId === patientId &&
-      referral.destinations.some(
-        (addressing) => addressing.destination.kind !== "community_team" && isAwaitingAnswer(addressing),
-      ),
-  );
-}
-
-/**
  * ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that

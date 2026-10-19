@@ -71,11 +71,7 @@ import {
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
-import {
-  activeBedRequestsFor,
-  referralSuburbIsKnown,
-  wardTransferNeedsCoordinator,
-} from "@/components/ward-management/ward-referrals";
+import { referralSuburbIsKnown, wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -188,7 +184,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
     wardReferralInbox,
     patients,
-    referrals,
   } = useWardFlowSelect(
     "movements",
     "resolvePatientIdentity",
@@ -206,7 +201,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "dayZero",
     "wardReferralInbox",
     "patients",
-    "referrals",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
@@ -1220,8 +1214,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? ({ kind: "named", name: patientRecord.suburb } as const)
         : ({ kind: "unknown", reason: "not_known" } as const);
 
-    // Audit F-19: a second active bed request for the same person is allowed, but said out loud.
-    const earlierRequests = activeBedRequestsFor(referrals, verifiedPatientId);
     const result = dispatch({
       type: "RECEIVE_REFERRAL",
       role: "ward",
@@ -1259,12 +1251,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setToastMessage(`Not recorded: ${refused}. Nothing was changed.`);
         return;
       }
-      const message =
-        earlierRequests.length > 0
-          ? `${raisedMessage} This person already had an active bed request (${earlierRequests.map((r) => r.id).join(", ")}). Check both are needed.`
-          : raisedMessage;
-      setRaisedReferral({ href: referralFormHref, message, bed: raisedFromBed });
-      setToastMessage(message);
+      setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: raisedFromBed });
+      setToastMessage(raisedMessage);
     });
   }
 
