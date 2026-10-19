@@ -86,18 +86,36 @@
    (`data-wf-tv-clean`, bed-meeting-tv.tsx), so the switched-off notice keeps the app's menus. The
    banners stay, the TV keeps its own prototype line, and its Leave TV view link goes back to the app.
    The header height goes to zero so the pinned banners rest at the top, and the dock's reserved
-   space under the page is given back. */
-.shellRow:has([data-wf-tv-clean]) {
+   space under the page is given back.
+   On a phone the "needs a larger screen" card (`data-phone-desktop-only`, shown up to 48rem) keeps
+   the TV mounted but hidden, so the menus stay until "Show anyway" removes that card. */
+.shellRow:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) {
   --wf-header-height: 0px;
 }
 
-.shellRow:has([data-wf-tv-clean]) > [data-testid="ward-rail"],
-.shellRow > .shellContent:has([data-wf-tv-clean]) > [data-testid="ward-bar"] {
+.shellRow:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) > [data-testid="ward-rail"],
+.shellRow > .shellContent:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) > [data-testid="ward-bar"] {
   display: none;
 }
 
-.shellRow > .shellContent:has([data-wf-tv-clean]) {
+.shellRow > .shellContent:has([data-wf-tv-clean]):not(:has([data-phone-desktop-only])) {
   padding-bottom: 0;
+}
+
+/* Above 48rem the card is never shown, so it never holds the menus back there. */
+@media not all and (max-width: 48rem) {
+  .shellRow:has([data-wf-tv-clean]) {
+    --wf-header-height: 0px;
+  }
+
+  .shellRow:has([data-wf-tv-clean]) > [data-testid="ward-rail"],
+  .shellRow > .shellContent:has([data-wf-tv-clean]) > [data-testid="ward-bar"] {
+    display: none;
+  }
+
+  .shellRow > .shellContent:has([data-wf-tv-clean]) {
+    padding-bottom: 0;
+  }
 }
 
 /*

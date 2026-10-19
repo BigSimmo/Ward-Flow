@@ -83,4 +83,19 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     expect(status()).toHaveTextContent("The demo was not reset. Nothing changed.");
     expect(status()).not.toHaveTextContent("Demo reset to the start");
   });
+  it("says the reset is not confirmed when a shared save fails, rather than promising nothing changed", () => {
+    function Failing({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      return (
+        <WardFlowOverride value={{ ...value, dispatch: () => ({ commandId: "c-2", status: "failed" }) }}>
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    renderPanel((child) => <Failing>{child}</Failing>);
+    fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reset demo" }));
+    expect(status()).toHaveTextContent("The reset was not confirmed.");
+    expect(status()).not.toHaveTextContent("Nothing changed");
+  });
 });

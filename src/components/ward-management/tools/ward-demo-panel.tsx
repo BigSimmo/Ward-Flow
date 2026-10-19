@@ -36,6 +36,9 @@ export function WardDemoPanel() {
   const lock = demoOn ? {} : { disabled: true, "aria-describedby": offId };
   const [message, setMessage] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  // A pending "Reset the demo?" is dropped when demo controls go off, so it can never reopen by
+  // itself when they come back (review finding on DA-10). Adjusted during render, not in an effect.
+  if (!demoOn && confirmingReset) setConfirmingReset(false);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
   const resetOn = useWardFeatureFlag("demo-reset");
@@ -57,13 +60,19 @@ export function WardDemoPanel() {
   /**
    * DA-10 (design audit, Josh, 19 Oct 2026): Reset demo asks first, and the line under it says the
    * demo was reset only when the reducer actually reloaded the network (a new world generation). A
-   * refused or unchanged reset says nothing changed.
+   * refused or unchanged reset says nothing changed. A failed shared save may already have reached
+   * the server, so it says the reset is not confirmed rather than promising nothing changed.
    */
   function resetDemo() {
     setConfirmingReset(false);
     const from = worldGeneration;
+    const notConfirmed = "The reset was not confirmed. Refresh the page and check the board before trying again.";
     const settle = (outcome: WardCommandOutcome | void) => {
       if (!outcome) return;
+      if (outcome.status === "failed") {
+        setMessage(outcome.message ?? notConfirmed);
+        return;
+      }
       const reloaded =
         outcome.status === "accepted" && (outcome.generation === undefined || outcome.generation !== from);
       setMessage(reloaded ? "Demo reset to the start of the scenario." : "The demo was not reset. Nothing changed.");
@@ -71,7 +80,7 @@ export function WardDemoPanel() {
     setMessage(null);
     const outcome = raise("RESET_SCENARIO");
     if (outcome && "then" in outcome) {
-      void outcome.then(settle, () => setMessage("The demo was not reset. Nothing changed."));
+      void outcome.then(settle, () => setMessage(notConfirmed));
     } else settle(outcome);
   }
 
