@@ -187,6 +187,29 @@ function useSheetLayout(): boolean {
 
 const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
 
+/** DA-26 (design audit): which edges of a sideways-scrolling area still hide content. */
+function useSideScroll(): [(node: HTMLDivElement | null) => void, { before: boolean; after: boolean }] {
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
+  const [edges, setEdges] = useState({ before: false, after: false });
+  useEffect(() => {
+    if (node === null || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const before = node.scrollLeft > 1;
+      const after = node.scrollLeft < node.scrollWidth - node.clientWidth - 1;
+      setEdges((current) => (current.before === before && current.after === after ? current : { before, after }));
+    };
+    // The observer reports once on observe, so the first measure needs no direct call.
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    for (const child of Array.from(node.children)) observer.observe(child);
+    node.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      observer.disconnect();
+      node.removeEventListener("scroll", measure);
+    };
+  }, [node]);
+  return [setNode, edges];
+}
 export function DelaysBoard({
   groups,
   now,
@@ -234,6 +257,7 @@ export function DelaysBoard({
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
+  const [sideScrollRef, sideScroll] = useSideScroll();
   const panelRef = useRef<HTMLElement>(null);
   const sheet = useSheetLayout();
   // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
@@ -1049,7 +1073,18 @@ export function DelaysBoard({
                   <PortraitList label="Waiting" groups={portraitGroups} onOpen={select} />
                 </div>
               ) : null}
-              <div className={styles.tableWrap} hidden={portrait}>
+              {/* DA-26 (design audit): while the table scrolls sideways it is a tab stop, so the
+                  hidden columns can be reached by keyboard, and its cut edge fades. */}
+              <div
+                ref={sideScrollRef}
+                className={styles.tableWrap}
+                hidden={portrait}
+                data-more-before={sideScroll.before || undefined}
+                data-more-after={sideScroll.after || undefined}
+                tabIndex={sideScroll.before || sideScroll.after ? 0 : undefined}
+                role={sideScroll.before || sideScroll.after ? "region" : undefined}
+                aria-label={sideScroll.before || sideScroll.after ? "Waiting list, scrolls sideways" : undefined}
+              >
                 <TierKey />
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>

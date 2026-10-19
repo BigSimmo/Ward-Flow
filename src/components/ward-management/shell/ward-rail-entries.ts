@@ -7,6 +7,9 @@ import {
   type WardNavItem,
   type WardViewItem,
 } from "@/components/ward-management/ward-nav";
+import { BedDouble, type LucideIcon } from "lucide-react";
+
+import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
 import type { WardFeatureFlag } from "@/components/ward-management/ward-feature-flags";
 
@@ -72,6 +75,104 @@ export const RAIL_GROUPS = [
     ],
   },
 ] as const;
+
+/**
+ * B1 (Josh, 19 Oct 2026): each role's own short menu, in order. Everything else stays one tap away
+ * under More, so no page is removed. Ids are rail entry ids, plus `BED_FINDER_MENU_ID`, which opens
+ * the Tools bed finder rather than a page. A label here is what the role calls that page; an id the
+ * desk cannot open is simply left out (the access filter runs first).
+ *
+ * The coordinator keeps today's page names: "Needs you" and "Beds" in the B1 table wait for B5 and
+ * B3, which rename those pages, so the menu, header and page title keep one name (shell-18).
+ * Delays stays in the coordinator's menu, because it is that desk's daily list today. B1's officer
+ * "Run sheet" has no screen yet (Movements' Run sheet button is not wired, and Movements is not part
+ * of the officer desk), so the officer gets My jobs and Alerts until one is built.
+ */
+export const BED_FINDER_MENU_ID = "bed-finder";
+
+export type RoleMenuItem = readonly [id: string, label: string];
+
+export const ROLE_MENUS: Record<WardChromeRole, readonly RoleMenuItem[]> = {
+  coordinator: [
+    ["command", "Home"],
+    ["capacity", "Capacity"],
+    ["movements", "Movements"],
+    ["delays", "Delays"],
+    ["referrals", "Referrals"],
+    ["handover", "Handover"],
+  ],
+  ward: [
+    ["wards", "My ward"],
+    ["movements", "Coming and going"],
+    ["referrals", "Referrals to answer"],
+    ["handover", "Handover"],
+  ],
+  ed: [
+    ["ed", "My ED board"],
+    ["referrals", "My referrals"],
+    ["referral-intake", "New referral"],
+    [BED_FINDER_MENU_ID, "Find a bed"],
+  ],
+  officer: [
+    ["officer", "My jobs"],
+    ["alerts", "Alerts"],
+  ],
+  // Not in the B1 table: the same idea, the desk's own place first and its daily work after it.
+  community: [
+    ["community", "My team"],
+    ["referrals", "Referrals"],
+    ["referral-intake", "New referral"],
+  ],
+  bed_manager: [
+    ["capacity", "Capacity"],
+    ["wards", "Wards"],
+    ["movements", "Movements"],
+    ["delays", "Delays"],
+    ["handover", "Handover"],
+  ],
+  executive: [["statistics", "Statistics"]],
+};
+
+/** A role menu item that opens a tool instead of a page (B1's ED "Find a bed"). */
+export type RoleMenuAction = { kind: "bed-finder"; id: typeof BED_FINDER_MENU_ID; label: string; icon: LucideIcon };
+
+export type RoleMenuItemEntry = RailEntry | RoleMenuAction;
+
+export function isRoleMenuAction(item: RoleMenuItemEntry): item is RoleMenuAction {
+  return "kind" in item && item.kind === "bed-finder";
+}
+
+export type RoleMenu = {
+  /** The role's own short menu, in its order, with the role's labels. */
+  main: RoleMenuItemEntry[];
+  /** Every other page the desk may open, in the rail's groups. */
+  more: { label: string; entries: RailEntry[] }[];
+};
+
+/**
+ * Splits `entries` (already filtered for flags and the desk's access) into the role's own menu and
+ * More. Nothing is dropped: an entry is in exactly one of the two. `rank` orders each More group.
+ */
+export function roleMenu(
+  entries: readonly RailEntry[],
+  role: WardChromeRole,
+  rank: (id: string) => number = () => 0,
+): RoleMenu {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const main: RoleMenuItemEntry[] = ROLE_MENUS[role].flatMap(([id, label]): RoleMenuItemEntry[] => {
+    if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedDouble }];
+    const entry = byId.get(id);
+    return entry ? [{ ...entry, label }] : [];
+  });
+  const inMain = new Set(main.map((item) => item.id));
+  const more = RAIL_GROUPS.map((group) => ({
+    label: group.label,
+    entries: entries
+      .filter((entry) => !inMain.has(entry.id) && group.entries.some(([id]) => id === entry.id))
+      .toSorted((left, right) => rank(left.id) - rank(right.id)),
+  })).filter((group) => group.entries.length > 0);
+  return { main, more };
+}
 
 /**
  * The rail's entries, without any whose feature flag is off. `flagOn` defaults to every flag on,

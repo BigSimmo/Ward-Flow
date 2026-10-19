@@ -124,21 +124,41 @@ afterEach(() => {
 
 /* ── 1. rail link count equals WARD_VIEWS plus the rail entries of WARD_NAV ──────────────────── */
 
+/**
+ * B1 (Josh, 19 Oct 2026): each role sees its own short menu on the rail, and every other page sits
+ * under More. These tests used to read all 21 destinations straight off the rail; they now read the
+ * coordinator's menu on the rail and the rest in the More sheet, and still require all 21, each
+ * exactly once, in the owner's groups.
+ */
+async function openMorePages() {
+  act(() => {
+    screen.getByTestId("ward-rail-more").click();
+  });
+  return screen.findByTestId("ward-rail-more-pages");
+}
+
 describe("assertion 1 — owner-selected rail destinations", () => {
-  it("renders the owner-selected groups in order, with Patients only in Work", () => {
+  it("renders the coordinator's menu on the rail and the owner-selected groups under More, with Patients only in Work", async () => {
     renderShell();
+    const menu = screen.getByTestId("ward-rail-role-menu");
+    expect(
+      within(menu)
+        .getAllByTestId("ward-rail-link")
+        .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
+    ).toEqual(["Home", "Capacity", "Movements", "Delays", "Referrals", "Handover"]);
+    const sheet = await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
     // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).
     // (22 until the Network screen was retired on 19 Oct 2026.)
     expect(links).toHaveLength(21);
     const groups = [
-      ["Today", ["Home", "Movements", "Capacity", "Delays", "Bed meeting TV"]],
+      ["Today", ["Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
-      ["Work", ["Patients", "New referral", "Referrals", "Handover", "Discharges"]],
+      ["Work", ["Patients", "New referral", "Discharges"]],
       ["Checks", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
     ] as const;
     for (const [name, labels] of groups) {
-      const groupLinks = within(screen.getByRole("region", { name })).getAllByRole("link");
+      const groupLinks = within(within(sheet).getByRole("region", { name })).getAllByRole("link");
       expect(groupLinks.map((link) => link.getAttribute("aria-label")?.split(",")[0])).toEqual(labels);
     }
     const destinations = links.map((link) => link.getAttribute("href"));
@@ -148,10 +168,11 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     expect(destinations).toContain("/ward-flow/on-call");
   });
 
-  it("leaves the bed meeting TV view off the rail while its feature flag is off", () => {
+  it("leaves the bed meeting TV view off the rail while its feature flag is off", async () => {
     act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
     try {
       renderShell();
+      await openMorePages();
       const links = screen.getAllByTestId("ward-rail-link");
       expect(links).toHaveLength(20);
       expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
@@ -160,9 +181,10 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     }
   });
 
-  it("keeps Wards active for a ward answer without restoring the removed example link", () => {
+  it("keeps Wards active for a ward answer without restoring the removed example link", async () => {
     route.pathname = "/ward-flow/ward/rph-adult-secure/answer";
     renderShell();
+    await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
     expect(links.some((link) => link.getAttribute("href") === "/ward-flow/ward/rph-adult-secure")).toBe(false);
     const wards = links.find((link) => link.getAttribute("href") === "/ward-flow/wards");
@@ -174,9 +196,10 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     [movementHref("WF-001"), "/ward-flow/movements"],
     ["/ward-flow/statistics/ward/rph-adult-secure", "/ward-flow/statistics"],
     ["/ward-flow/referrals/new", "/ward-flow/referrals/new"],
-  ])("highlights only the owning destination for %s", (pathname, href) => {
+  ])("highlights only the owning destination for %s", async (pathname, href) => {
     route.pathname = pathname;
     renderShell();
+    await openMorePages();
     const active = screen
       .getAllByTestId("ward-rail-link")
       .filter((link) => link.getAttribute("aria-current") === "page");

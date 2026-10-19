@@ -76,12 +76,13 @@ afterEach(() => {
 });
 
 describe("the rail's chosen-service word (item 52)", () => {
-  // v6 rail (7 October 2026): the control reads "All pages", in sentence case.
-  it("keeps all pages reachable from the desktop All pages control", () => {
+  // v6 rail (7 October 2026): the control read "All pages". B1 (Josh, 19 Oct 2026): the rail shows
+  // the role's own menu and the control is More, which opens every other page.
+  it("keeps all pages reachable from the desktop More control", () => {
     renderRail();
     expect(screen.getAllByRole("button", { name: "Menu" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "All pages" }));
-    const navigation = screen.getByRole("dialog", { name: "Menu" });
+    fireEvent.click(screen.getByRole("button", { name: "More pages" }));
+    const navigation = screen.getByRole("dialog", { name: "More pages" });
     expect(within(navigation).getByRole("link", { name: /Statistics/i })).toHaveAttribute(
       "href",
       "/ward-flow/statistics",
