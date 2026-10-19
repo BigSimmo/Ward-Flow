@@ -340,6 +340,7 @@ jobs:
           WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
         run: npm run test:e2e:ward-journeys
       - name: Check the API CSRF proxy boundary
+        id: csrf
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' && matrix.group == 1 }}
         env:
           WARD_GATE_BUILD: "1"
@@ -352,7 +353,7 @@ jobs:
           path: ${{ runner.temp }}/ward-next-cache
           key: ${{ steps.next-cache.outputs.cache-primary-key }}
       - name: Upload failed Ward browser evidence
-        if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
+        if: ${{ !cancelled() && (steps.journeys.outcome == 'failure' || steps.csrf.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ward-browser-failures-${{ github.run_id }}-${{ matrix.group }}

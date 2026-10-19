@@ -20,6 +20,17 @@
   align-content: start;
 }
 
+/* The side column pins under the top bar while a longer main column scrolls past. It is never capped
+   at the window: when it is the longer column the grid is as tall as it, so it simply scrolls with
+   the page and every card stays reachable. */
+@media (min-width: 1121px) {
+  .rail {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+  }
+}
+
 .twoUp {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
