@@ -38,10 +38,18 @@ export function afterCommand(
   else after(result ?? undefined);
 }
 
-/** Why a command was not recorded, or null once it was accepted or nothing answered. */
+/** Why a command was refused, so nothing changed; null when accepted, unanswered or only unconfirmed. */
 export function commandNotRecorded(outcome: WardCommandOutcome | undefined): string | null {
-  if (!outcome || outcome.status === "accepted") return null;
-  return (outcome.message ?? "The change was not confirmed saved").replace(/\.$/, "");
+  if (!outcome || outcome.status === "accepted" || outcome.status === "failed") return null;
+  return (outcome.message ?? "The change was refused").replace(/\.$/, "");
+}
+
+/** The board's own wording (ward-board.tsx, use-undoable-step.ts) for a save with no confirmed answer. */
+export const SAVE_NOT_CONFIRMED = "Save is not confirmed. Review the board before trying again.";
+
+/** A failed save may still have reached the server, so it is never reported as "Nothing was changed". */
+export function commandUnconfirmed(outcome: WardCommandOutcome | undefined): string | null {
+  return outcome?.status === "failed" ? (outcome.message ?? SAVE_NOT_CONFIRMED) : null;
 }
 
 /** Shows `success` only once the command is accepted; otherwise says it was not recorded. */
@@ -51,8 +59,9 @@ export function toastAfterCommand(
   show: (text: string) => void,
 ): void {
   afterCommand(result, (outcome) => {
+    const unconfirmed = commandUnconfirmed(outcome);
     const refused = commandNotRecorded(outcome);
-    show(refused === null ? success : `Not recorded: ${refused}. Nothing was changed.`);
+    show(unconfirmed ?? (refused === null ? success : `Not recorded: ${refused}. Nothing was changed.`));
   });
 }
 

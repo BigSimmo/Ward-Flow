@@ -87,13 +87,15 @@ describe("ward drawer quick actions report the saved outcome", () => {
     expect(screen.queryByText(/marked away at ED/u)).toBeNull();
   });
 
-  it("a change the server could not confirm is not reported as saved", async () => {
+  it("a change the server could not confirm is reported as unconfirmed, never as unchanged", async () => {
     const button = await openMarkAtEd();
     server.reply = { commandId: "cmd-2", status: "failed" };
     await act(async () => {
       fireEvent.click(button);
     });
-    expect(screen.getByText("Not recorded: The change was not confirmed saved. Nothing was changed.")).toBeVisible();
+    // A failed save may still have reached the server, so it must not say nothing changed.
+    expect(screen.getByText("Save is not confirmed. Review the board before trying again.")).toBeVisible();
+    expect(screen.queryByText(/Nothing was changed|marked away at ED/u)).toBeNull();
   });
 
   it("an accepted change still shows the success line", async () => {

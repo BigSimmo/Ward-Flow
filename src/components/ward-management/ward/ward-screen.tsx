@@ -108,6 +108,7 @@ import {
   afterCommand,
   censusBedOpenerTarget,
   commandNotRecorded,
+  commandUnconfirmed,
   ownHistoryState,
   shiftLine,
   unavailablePatientIdentity,
@@ -475,6 +476,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const check = dischargeCheckRef.current;
     if (dischargeToken === 0 || check === null) return;
     dischargeCheckRef.current = null;
+    const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
+    if (unconfirmed !== null) {
+      setToastMessage(unconfirmed);
+      return;
+    }
     const refused =
       rejections.length > check.prior
         ? rejections[rejections.length - 1]?.reason
@@ -546,8 +552,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       rejections.length > check.prior
         ? rejections[rejections.length - 1]?.reason
         : (commandNotRecorded(check.outcome) ?? undefined);
-    if (refused) {
-      const said = `Not recorded: ${refused}. Nothing was changed.`;
+    const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
+    if (refused || unconfirmed !== null) {
+      const said = unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`;
       setBoardSay(said);
       if (toast) toast.push({ tone: "warning", title: said });
       return;
@@ -1246,9 +1253,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       : `Ward referral raised from ${unit.name}.`;
     const raisedFromBed = selectedBed;
     afterCommand(result, (outcome) => {
+      const unconfirmed = commandUnconfirmed(outcome);
       const refused = commandNotRecorded(outcome);
-      if (refused !== null) {
-        setToastMessage(`Not recorded: ${refused}. Nothing was changed.`);
+      if (unconfirmed !== null || refused !== null) {
+        setToastMessage(unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`);
         return;
       }
       setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: raisedFromBed });
