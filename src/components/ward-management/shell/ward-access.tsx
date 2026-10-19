@@ -711,11 +711,13 @@ const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as con
  * signed-in shared workspace the lock also signs out, here and on the server, so the next person
  * needs the password to carry on; the local demo has no sign-in, so it stays a privacy screen.
  * The bed meeting TV is left running (Josh, 19 Oct 2026): it is read only, shows initials only and
- * is meant to stay up all day; leaving the TV page starts the clock again.
+ * is meant to stay up all day; leaving the TV page starts the clock again. With TV views switched
+ * off the page is only a notice, so it locks like any other.
  */
 export function WardIdleLock() {
   const access = useEffectiveWardAccess();
-  const onTv = (usePathname() ?? "") === WARD_BED_MEETING_TV_HREF;
+  const pathname = usePathname() ?? "";
+  const onTv = useWardFeatureFlag("bed-meeting-tv") && pathname === WARD_BED_MEETING_TV_HREF;
   const session = useContext(SharedSessionContext);
   const [locked, setLocked] = useState<false | "screen" | "signed-out">(false);
   const lockRef = useRef<HTMLDivElement | null>(null);

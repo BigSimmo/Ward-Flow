@@ -65,6 +65,20 @@ it("leaves the bed meeting TV running, and locks again once the TV page is left 
   expect(signOut).toHaveBeenCalledTimes(1);
 });
 
+it("locks on the TV page when TV views are switched off, since it shows only a notice", () => {
+  setWardFeatureFlagOnDevice("bed-meeting-tv", false);
+  route.pathname = WARD_BED_MEETING_TV_HREF;
+  try {
+    render(<WardIdleLock />);
+    act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
+    expect(
+      screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` }),
+    ).toBeVisible();
+  } finally {
+    setWardFeatureFlagOnDevice("bed-meeting-tv", null);
+  }
+});
+
 it("signs out of the shared workspace when it locks, so the next person needs the password", () => {
   const signOut = vi.fn();
   render(
