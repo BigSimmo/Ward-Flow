@@ -52,8 +52,9 @@ export function reduceReferralFollowUpEvent(
 ): WardFlowState {
   const referral = findReferral(state, event.referralId);
   if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-  const addressing = wardCopy(referral, event.unitId);
-  if (!addressing) return reject(state, event, `referral ${referral.id} was not sent to unit ${event.unitId}`);
+  const unitId = event.type === "MARK_REFERRAL_INFORMATION_MET" ? event.wardUnitId : event.unitId;
+  const addressing = wardCopy(referral, unitId);
+  if (!addressing) return reject(state, event, `referral ${referral.id} was not sent to unit ${unitId}`);
   const update = (next: ReferralAddressing) =>
     replaceReferral(state, referral.id, {
       ...referral,

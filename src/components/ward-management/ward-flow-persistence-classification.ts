@@ -401,6 +401,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "movementId"
   | "teamId"
   | "unitId"
+  // MARK_REFERRAL_INFORMATION_MET: the ward whose referral copy asked, a unit id like `unitId`.
+  | "wardUnitId"
   | "admissionId"
   | "referralId"
   | "releaseId"

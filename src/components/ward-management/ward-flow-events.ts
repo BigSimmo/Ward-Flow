@@ -762,7 +762,12 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       referralId: string;
-      unitId: string;
+      /**
+       * The ward whose copy asked, named as a referral destination rather than `unitId`: the referrer
+       * ticks off from its own place, and the shared write check treats every `unitId` as a place the
+       * sender must be in.
+       */
+      wardUnitId: string;
       need: ReferralInformationNeed;
     }
   | {

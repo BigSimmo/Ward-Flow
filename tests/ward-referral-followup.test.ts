@@ -161,7 +161,7 @@ describe("what we still need", () => {
       role: "ed",
       now: NOW + 30,
       referralId: f.referralId,
-      unitId: f.unitId,
+      wardUnitId: f.unitId,
       need: "bloods_or_ecg",
     });
     expect(met.rejections).toEqual([]);
@@ -173,7 +173,7 @@ describe("what we still need", () => {
       role: "ed",
       now: NOW + 31,
       referralId: f.referralId,
-      unitId: f.unitId,
+      wardUnitId: f.unitId,
       need: "bloods_or_ecg",
     });
     expect(again.rejections).toHaveLength(1);
@@ -182,7 +182,7 @@ describe("what we still need", () => {
       role: "ward",
       now: NOW + 30,
       referralId: f.referralId,
-      unitId: f.unitId,
+      wardUnitId: f.unitId,
       need: "bloods_or_ecg",
     });
     expect(byWard.rejections).toHaveLength(1);
