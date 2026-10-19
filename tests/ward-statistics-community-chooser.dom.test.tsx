@@ -23,7 +23,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * THE COMMUNITY-TEAM CHOOSER ON THE STATISTICS HUB, JUDGED FROM THE RENDERED DOM.
  *
  * `tests/ward-nav.test.ts` proves the fifth dynamic route
- * (`/mockups/ward-flow/statistics/community/[teamId]`) is REFERENCED, and its own
+ * (`/ward-flow/statistics/community/[teamId]`) is REFERENCED, and its own
  * `WARD_DYNAMIC_ROUTE_ORPHANS` entry records why a source-text scan can see that much and no
  * further: the chooser calls `communityStatisticsHref(team.id)` as a plain function call inside a
  * `.map()`, which is neither a concrete quoted href nor a template literal at that call site, so the
@@ -38,7 +38,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * read as having closed it.
  */
 
-const COMMUNITY_ROUTE_PREFIX = "/mockups/ward-flow/statistics/community";
+const COMMUNITY_ROUTE_PREFIX = "/ward-flow/statistics/community";
 
 function renderHubMain(): HTMLElement {
   // v6: the hub entry's fragment opens the "Open a unit" finder on this chooser's own tab, so
@@ -96,7 +96,7 @@ describe("The community-team chooser's OWN reachability — the fifth section's 
       expect(href.startsWith(`${COMMUNITY_ROUTE_PREFIX}/`)).toBe(true);
       // Not merely "starts with something plausible": the operational route is a strict prefix
       // relationship away, so it is named and excluded rather than left to the check above.
-      expect(href.startsWith("/mockups/ward-flow/community/")).toBe(false);
+      expect(href.startsWith("/ward-flow/community/")).toBe(false);
     }
   });
 

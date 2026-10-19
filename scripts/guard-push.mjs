@@ -390,7 +390,7 @@ export function isWardFlowFile(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
   return (
     normalized.startsWith("src/components/ward-management/") ||
-    normalized.startsWith("src/app/mockups/ward-flow/") ||
+    normalized.startsWith("src/app/ward-flow/") ||
     normalized.startsWith("docs/ward-flow/") ||
     normalized.startsWith("scripts/ward-flow/") ||
     normalized === "scripts/run-ward-tests.mjs" ||

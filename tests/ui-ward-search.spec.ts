@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 /**
- * FIRST BROWSER COVERAGE OF THE WARD FLOW PATIENT SEARCH (`/mockups/ward-flow/search`).
+ * FIRST BROWSER COVERAGE OF THE WARD FLOW PATIENT SEARCH (`/ward-flow/search`).
  *
  * Until this file, `PatientTypeahead` and `PatientSearchPage` had only jsdom coverage
  * (`tests/ward-patient-typeahead.dom.test.tsx`, `tests/ward-patient-search.dom.test.tsx`). jsdom
@@ -28,7 +28,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
  */
 
 async function gotoSearch(page: Page): Promise<void> {
-  await page.goto("/mockups/ward-flow/search", { waitUntil: "domcontentloaded" });
+  await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
   // The same streamed-content guard every other Ward Flow spec in this repo uses (see
   // ui-ward-discharges.spec.ts, ui-ward-roles.spec.ts): React's streaming leaves a hidden staging

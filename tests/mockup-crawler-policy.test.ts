@@ -17,8 +17,21 @@ describe("public mockup crawler policy", () => {
 
     expect(mockupRule?.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
     // A4-7 (12 October 2026): the root-level public/*.html mockups are noindexed too.
-    expect(robotsRules.map((rule) => rule.source)).toEqual(["/mockups/:path*", "/:file([^/]+\\.html)"]);
-    const htmlRule = robotsRules.find((rule) => rule.source !== "/mockups/:path*")!;
+    // Ward Flow left /mockups on 19 October 2026 and keeps the same header at its own address.
+    expect(robotsRules.map((rule) => rule.source)).toEqual([
+      "/mockups/:path*",
+      "/ward-flow/:path*",
+      "/ward-flow-sign-in",
+      "/:file([^/]+\\.html)",
+    ]);
+    for (const rule of robotsRules)
+      expect(rule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+    const wardParsed = tryToParsePath("/ward-flow/:path*");
+    const wardMatches = new RegExp(wardParsed.regexStr!);
+    expect(wardMatches.test("/ward-flow")).toBe(true);
+    expect(wardMatches.test("/ward-flow/referrals")).toBe(true);
+    expect(wardMatches.test("/ward-flow-push-sw.js")).toBe(false);
+    const htmlRule = robotsRules.find((rule) => rule.source.endsWith(".html)"))!;
     expect(htmlRule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
     const htmlParsed = tryToParsePath(htmlRule.source);
     expect(htmlParsed.error).toBeUndefined();

@@ -18,8 +18,8 @@ const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relat
 describe("A4-6: only real static assets skip the proxy", () => {
   const matches = (url: string) => unstable_doesProxyMatch({ config: proxyConfig, nextConfig: {}, url });
   it("runs the proxy for page routes ending in an image extension", () => {
-    expect(matches("/mockups/ward-flow/board.png")).toBe(true);
-    expect(matches("/mockups/ward-flow/people/logo.svg")).toBe(true);
+    expect(matches("/ward-flow/board.png")).toBe(true);
+    expect(matches("/ward-flow/people/logo.svg")).toBe(true);
     expect(matches("/report.jpg")).toBe(true);
     expect(matches("/api/health")).toBe(true);
   });

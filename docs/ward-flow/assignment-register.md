@@ -143,15 +143,15 @@ never ran — though not, as it turns out, one that ran three times. Backed up 2
 folds next rather than whoever wrote this.**
 
 `tests/ward-nav.test.ts:164` holds `expect(wardFlowRoutes.length).toBe(33)`. **Verified on master
-2026-09-06: `find src/app/mockups/ward-flow -name page.tsx | wc -l` returns 33, so the literal is
+2026-09-06: `find src/app/ward-flow -name page.tsx | wc -l` returns 33, so the literal is
 currently correct.**
 
 Two sessions are each adding one route, in the same window, on separate branches:
 
-| Route                                               | Branch           | Their literal |
-| --------------------------------------------------- | ---------------- | ------------- |
-| `/mockups/ward-flow/hub`                            | Ward Builder One | 34            |
-| `/mockups/ward-flow/statistics/service/[serviceId]` | Ward Builder Two | 34            |
+| Route                                       | Branch           | Their literal |
+| ------------------------------------------- | ---------------- | ------------- |
+| `/ward-flow/hub`                            | Ward Builder One | 34            |
+| `/ward-flow/statistics/service/[serviceId]` | Ward Builder Two | 34            |
 
 🔴 **AT THE FOLD IT IS 35. Neither side's 34 is right, and both are right alone.** Do not take
 either side of the conflict marker, and **do not bump the literal by one — that is the repair that

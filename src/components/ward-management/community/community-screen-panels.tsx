@@ -666,7 +666,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
             <div className={styles.panelBody} role="region" aria-label="Go to links" tabIndex={0}>
               <ul className={styles.linksList}>
                 <li>
-                  <Link className={styles.linksItem} href="/mockups/ward-flow/community">
+                  <Link className={styles.linksItem} href="/ward-flow/community">
                     All community teams
                   </Link>
                 </li>
@@ -676,7 +676,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
                   </Link>
                 </li>
                 <li>
-                  <Link className={styles.linksItem} href="/mockups/ward-flow/referrals">
+                  <Link className={styles.linksItem} href="/ward-flow/referrals">
                     Referrals
                   </Link>
                 </li>

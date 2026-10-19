@@ -198,12 +198,12 @@ const UNITS_FIXTURE_ALLOWLIST = new Set([
   //
   // The entry is narrowed by the companion rule below, which forbids this file — and any later
   // non-data entry — from reading a field the reducer DOES write.
-  "src/app/mockups/ward-flow/ward/[unitId]/page.tsx",
+  "src/app/ward-flow/ward/[unitId]/page.tsx",
   // The distinct Ward Answer route has the same server-only metadata need as the overview route
   // above: it reads only the immutable display name for the browser tab. Its rendered WardScreen
   // still resolves the live unit from provider state, and the mutable-field guard below applies to
   // this entry too.
-  "src/app/mockups/ward-flow/ward/[unitId]/answer/page.tsx",
+  "src/app/ward-flow/ward/[unitId]/answer/page.tsx",
   // 🔴 FIFTH AND SIXTH ENTRIES, 2026-09-17, and the SAME shape as the fourth: both read `.name`
   // only, module-scope constants baked into hand-authored narrative text, never a mutable field.
   // `patient-now-records.ts` supplies the "Patient Now" screen's canned clinical trajectories —

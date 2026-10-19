@@ -29,7 +29,7 @@ export function openWardReferralFor(
 
 /** A2-5: the Referrals board with this referral open (`ReferralBoard` reads `?referral=`). */
 export function referralBoardHref(referralId: string): string {
-  return `/mockups/ward-flow/referrals?${new URLSearchParams({ referral: encodeRecordAddress(referralId) }).toString()}`;
+  return `/ward-flow/referrals?${new URLSearchParams({ referral: encodeRecordAddress(referralId) }).toString()}`;
 }
 
 /** "Referred to Bentley Older Adult", or "Referred to 3 wards" when it went to several. */

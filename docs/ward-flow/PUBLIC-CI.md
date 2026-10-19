@@ -1,5 +1,7 @@
 # Public Ward Flow PR checks
 
+_Updated 2026-10-19 - policy scope, lint threshold and main-owned build cache; Documentation owns._
+
 The public `BigSimmo/Ward-Flow` repository retains its current application source. The `Ward Flow CI`
 workflow runs on pull requests to `main` and merge groups. It uses a read-only token, pinned actions,
 locked dependencies, and synthetic browser configuration. It does not deploy the application.
@@ -60,8 +62,9 @@ Details that keep the split sound:
 - **Route types.** The static job runs `next typegen` before `tsc -p tsconfig.json`, so route and page
   signatures are checked there. The browser builds therefore skip their own type check
   (`WARD_GATE_BUILD=1`); the deployed build still runs it.
-- **Build cache.** Browser jobs restore Next's working cache from the last run on the same PR. Next
-  validates every entry against the source, so a warm cache changes speed, not what is built.
+- **Build cache.** Browser jobs restore Next's working cache from main's saved entries; only main
+  saves new entries. Next validates every entry against the source, so a warm cache changes speed,
+  not what is built.
 - **Browser cache.** Browser jobs restore the Playwright Chromium download (`~/.cache/ms-playwright`),
   keyed by the installed Playwright version, and still install the system libraries every run. Only
   runs on `main` save it, so pull requests reuse main's copy without adding their own.
@@ -86,7 +89,7 @@ that the head already contained the previous `main`, and that a successful run o
 every unit shard, browser group, the coverage thresholds and the production build. When all of that
 holds, those jobs are skipped on `main`, the required job requires them to be skipped (not failed or
 cancelled), and the run still concludes success, so the deploy proceeds. The static checks, including
-the whole-tree lint that pull requests do not run, and the secret scan still run on every `main` commit.
+whole-tree lint, and the secret scan still run on every `main` commit.
 Anything short of the proof, including any API or git error, runs the full suite as before.
 
 A scheduled full run of `main` at 02:00 AWST (18:00 UTC) keeps a regular fresh-runner run of the whole
@@ -103,9 +106,10 @@ about ten seconds:
 
 Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
 
-The static job also runs whole-tree ESLint (errors only) on every run, pull requests included, so an
-ESLint config, rule or plugin change that breaks a file the PR did not touch fails on the PR instead
-of first on `main`.
+When executable static work is selected, the static job also runs whole-tree ESLint with
+`--max-warnings 0`, including on pull requests. An ESLint config, rule or plugin change that breaks
+a file the PR did not touch therefore fails on the PR instead of first on `main`. The changed-file
+ESLint check above remains errors-only.
 
 ## Scope by change
 
@@ -113,12 +117,13 @@ of first on `main`.
 positively recognises; anything else, including deletions, renames, workflow and configuration
 changes, runs every job.
 
-| The PR changes only                                     | Static | Unit shards | Browser groups |
-| ------------------------------------------------------- | ------ | ----------- | -------------- |
-| Ward documentation                                      | links  | skipped     | skipped        |
-| `backend/ward-flow/**` (and documentation)              | yes    | skipped     | skipped        |
-| unit test files `tests/**/*.test.ts(x)` (and the above) | yes    | yes         | skipped        |
-| anything else                                           | yes    | yes         | yes            |
+| The PR changes only                                     | Static                             | Unit shards | Browser groups |
+| ------------------------------------------------------- | ---------------------------------- | ----------- | -------------- |
+| Ward documentation                                      | links                              | skipped     | skipped        |
+| Maintained policy files (and Ward documentation)        | policy contracts and static checks | skipped     | skipped        |
+| `backend/ward-flow/**` (and documentation)              | yes                                | skipped     | skipped        |
+| unit test files `tests/**/*.test.ts(x)` (and the above) | yes                                | yes         | skipped        |
+| anything else                                           | yes                                | yes         | yes            |
 
 The narrower rows are safe because nothing in `src/`, `tests/` or `scripts/` imports the backend, and
 the browser specs import only application code and Playwright, never unit test files. Package manifest

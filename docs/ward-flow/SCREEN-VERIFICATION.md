@@ -43,7 +43,7 @@
 | `statistics-third-edition.html` | `/statistics` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | e12be81c5310 | not recorded |
 | `statistics-compare-third-edition.html` | `/statistics/compare` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | ad9ac010d659 | not recorded |
 | `statistics-service-third-edition.html` | `/statistics/service/[serviceId]` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | cc9599abd25b | not recorded |
-| `sign-in-third-edition.html` | `/mockups/ward-flow-sign-in` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 2adc096993c1 | not recorded |
+| `sign-in-third-edition.html` | `/ward-flow-sign-in` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 2adc096993c1 | not recorded |
 | `ward-answer-third-edition.html` | `/ward/[unitId]/answer` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | a653b2736376 | not recorded |
 
 ## Deviations

@@ -67,7 +67,7 @@ test.describe.configure({ timeout: 60_000 });
 
 for (const route of ROUTES) {
   test(`axe: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
-    await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "load" });
+    await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
     // The header marks itself ready once the page's code runs; scan the live page, not the
     // server-drawn copy that is still waiting for it.
     await expect(page.locator("html[data-wf-bar-ready]")).toHaveCount(1, { timeout: 30_000 });

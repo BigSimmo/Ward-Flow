@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
@@ -139,7 +139,7 @@ describe("AddPatientForm", () => {
     });
     const [target] = router.push.mock.calls[0] as [string];
     // D-39: the address carries the code for the new person, never the record number.
-    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/[0-9a-z]+$/);
+    expect(target).toMatch(/^\/ward-flow\/people\/[0-9a-z]+$/);
     expect(decodeRecordAddress(target.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 
@@ -153,7 +153,7 @@ describe("AddPatientForm", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     const [target] = router.push.mock.calls[0] as [string];
     // D-39: the address carries the code for the new person, never the record number.
-    expect(target).toMatch(/^\/mockups\/ward-flow\/people\/[0-9a-z]+$/);
+    expect(target).toMatch(/^\/ward-flow\/people\/[0-9a-z]+$/);
     expect(decodeRecordAddress(target.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 
@@ -183,7 +183,7 @@ describe("PatientSearchPage empty state", () => {
     );
   }
 
-  it("offers a real link to /mockups/ward-flow/people/new when nobody is found, and hands off what was typed in memory rather than in the link", () => {
+  it("offers a real link to /ward-flow/people/new when nobody is found, and hands off what was typed in memory rather than in the link", () => {
     renderSearch();
 
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Zzzznotarealname" } });
@@ -193,7 +193,7 @@ describe("PatientSearchPage empty state", () => {
     // ⚠️ THE TYPED TEXT IS NOT IN THIS HREF. It used to be a `?search=` query parameter — a name or
     // record number written into browser history and every proxy log between here and the server.
     // See `patient-query-handoff.ts`'s own doc comment for the ruling this closes.
-    expect(link).toHaveAttribute("href", "/mockups/ward-flow/people/new");
+    expect(link).toHaveAttribute("href", "/ward-flow/people/new");
     expect(link).toHaveTextContent("Add patient");
 
     // The raw search travels unassigned through the in-memory channel instead; the form must not
@@ -221,7 +221,7 @@ describe("PatientSearchPage empty state", () => {
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Mary Anne Halloway" } });
 
     const link = screen.getByTestId("ward-patient-search-people-empty-add");
-    expect(link).toHaveAttribute("href", "/mockups/ward-flow/people/new");
+    expect(link).toHaveAttribute("href", "/ward-flow/people/new");
     fireEvent.click(link);
     expect(takeHandedOffPatientQuery()).toEqual({ text: "Mary Anne Halloway", assignTo: "carried" });
   });
@@ -605,10 +605,7 @@ describe("AddPatientForm — Q004 registration workspace", () => {
       `Duplicate check covers all ${count} patient records.`,
     );
     expect(screen.getByTestId("ward-add-patient-duplicate-unchecked")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to patient search" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/search",
-    );
+    expect(screen.getByRole("link", { name: "Back to patient search" })).toHaveAttribute("href", "/ward-flow/search");
     expect(screen.queryByTestId("ward-add-patient-board-list")).not.toBeInTheDocument();
   });
 });

@@ -50,7 +50,7 @@ vi.mock("next/link", () => ({
  * header comment for the measurement that no Ward Flow SCREEN reads it for content.
  */
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn(), forward: vi.fn(), refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -122,147 +122,123 @@ const service = HEALTH_SERVICES[0];
  * suite in this repo already uses, pinned to `NOW_ANCHOR` for determinism.
  */
 const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => ReactElement }> = new Map([
-  ["/mockups/ward-flow", { concrete: "/mockups/ward-flow", render: () => <CoordinatorScreen /> }],
-  ["/mockups/ward-flow/alerts", { concrete: "/mockups/ward-flow/alerts", render: () => <AlertsScreen /> }],
+  ["/ward-flow", { concrete: "/ward-flow", render: () => <CoordinatorScreen /> }],
+  ["/ward-flow/alerts", { concrete: "/ward-flow/alerts", render: () => <AlertsScreen /> }],
   [
-    "/mockups/ward-flow/board/[unitId]",
-    { concrete: `/mockups/ward-flow/board/${unit.id}`, render: () => <WardBoard unitId={unit.id} /> },
+    "/ward-flow/board/[unitId]",
+    { concrete: `/ward-flow/board/${unit.id}`, render: () => <WardBoard unitId={unit.id} /> },
   ],
-  ["/mockups/ward-flow/capacity", { concrete: "/mockups/ward-flow/capacity", render: () => <CapacityScreen /> }],
+  ["/ward-flow/capacity", { concrete: "/ward-flow/capacity", render: () => <CapacityScreen /> }],
+  ["/ward-flow/bed-meeting", { concrete: "/ward-flow/bed-meeting", render: () => <BedMeetingTvScreen /> }],
+  ["/ward-flow/community", { concrete: "/ward-flow/community", render: () => <CommunityIndex /> }],
   [
-    "/mockups/ward-flow/bed-meeting",
-    { concrete: "/mockups/ward-flow/bed-meeting", render: () => <BedMeetingTvScreen /> },
+    "/ward-flow/community/[teamId]",
+    { concrete: `/ward-flow/community/${team.id}`, render: () => <CommunityScreen teamId={team.id} /> },
   ],
-  ["/mockups/ward-flow/community", { concrete: "/mockups/ward-flow/community", render: () => <CommunityIndex /> }],
+  ["/ward-flow/delays", { concrete: "/ward-flow/delays", render: () => <DelaysScreen /> }],
+  ["/ward-flow/discharges", { concrete: "/ward-flow/discharges", render: () => <DischargeBoard /> }],
+  ["/ward-flow/on-call", { concrete: "/ward-flow/on-call", render: () => <OnCallScreen /> }],
+  ["/ward-flow/ed", { concrete: "/ward-flow/ed", render: () => <EdIndex /> }],
+  ["/ward-flow/ed/[edId]", { concrete: `/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> }],
   [
-    "/mockups/ward-flow/community/[teamId]",
-    { concrete: `/mockups/ward-flow/community/${team.id}`, render: () => <CommunityScreen teamId={team.id} /> },
+    "/ward-flow/governance",
+    { concrete: "/ward-flow/governance", render: () => <WardModeWorkspace mode="governance" /> },
   ],
-  ["/mockups/ward-flow/delays", { concrete: "/mockups/ward-flow/delays", render: () => <DelaysScreen /> }],
-  ["/mockups/ward-flow/discharges", { concrete: "/mockups/ward-flow/discharges", render: () => <DischargeBoard /> }],
-  ["/mockups/ward-flow/on-call", { concrete: "/mockups/ward-flow/on-call", render: () => <OnCallScreen /> }],
-  ["/mockups/ward-flow/ed", { concrete: "/mockups/ward-flow/ed", render: () => <EdIndex /> }],
+  ["/ward-flow/handover", { concrete: "/ward-flow/handover", render: () => <HandoverPage /> }],
+  ["/ward-flow/hub", { concrete: "/ward-flow/hub", render: () => <HubScreen /> }],
+  ["/ward-flow/legal-forms", { concrete: "/ward-flow/legal-forms", render: () => <LegalFormsScreen /> }],
+  ["/ward-flow/movements", { concrete: "/ward-flow/movements", render: () => <MovementsScreen /> }],
   [
-    "/mockups/ward-flow/ed/[edId]",
-    { concrete: `/mockups/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> },
-  ],
-  [
-    "/mockups/ward-flow/governance",
-    { concrete: "/mockups/ward-flow/governance", render: () => <WardModeWorkspace mode="governance" /> },
-  ],
-  ["/mockups/ward-flow/handover", { concrete: "/mockups/ward-flow/handover", render: () => <HandoverPage /> }],
-  ["/mockups/ward-flow/hub", { concrete: "/mockups/ward-flow/hub", render: () => <HubScreen /> }],
-  [
-    "/mockups/ward-flow/legal-forms",
-    { concrete: "/mockups/ward-flow/legal-forms", render: () => <LegalFormsScreen /> },
-  ],
-  ["/mockups/ward-flow/movements", { concrete: "/mockups/ward-flow/movements", render: () => <MovementsScreen /> }],
-  [
-    "/mockups/ward-flow/movements/[movementId]",
+    "/ward-flow/movements/[movementId]",
     {
-      concrete: `/mockups/ward-flow/movements/${movement.id}`,
+      concrete: `/ward-flow/movements/${movement.id}`,
       render: () => <WardPatientWorkspace movementId={movement.id} />,
     },
   ],
+  ["/ward-flow/network", { concrete: "/ward-flow/network", render: () => <WardModeWorkspace mode="network" /> }],
+  ["/ward-flow/out-of-area", { concrete: "/ward-flow/out-of-area", render: () => <OutOfAreaBoard /> }],
   [
-    "/mockups/ward-flow/network",
-    { concrete: "/mockups/ward-flow/network", render: () => <WardModeWorkspace mode="network" /> },
+    "/ward-flow/people/[patientId]",
+    { concrete: `/ward-flow/people/${patient.id}`, render: () => <PersonScreen patientId={patient.id} /> },
   ],
-  ["/mockups/ward-flow/out-of-area", { concrete: "/mockups/ward-flow/out-of-area", render: () => <OutOfAreaBoard /> }],
+  ["/ward-flow/people/new", { concrete: "/ward-flow/people/new", render: () => <AddPatientForm /> }],
+  ["/ward-flow/referrals", { concrete: "/ward-flow/referrals", render: () => <ReferralBoard /> }],
   [
-    "/mockups/ward-flow/people/[patientId]",
-    { concrete: `/mockups/ward-flow/people/${patient.id}`, render: () => <PersonScreen patientId={patient.id} /> },
+    "/ward-flow/referrals/new",
+    { concrete: "/ward-flow/referrals/new", render: () => <ReferralBoard defaultSelectFirst /> },
   ],
-  ["/mockups/ward-flow/people/new", { concrete: "/mockups/ward-flow/people/new", render: () => <AddPatientForm /> }],
-  ["/mockups/ward-flow/referrals", { concrete: "/mockups/ward-flow/referrals", render: () => <ReferralBoard /> }],
-  [
-    "/mockups/ward-flow/referrals/new",
-    { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralBoard defaultSelectFirst /> },
-  ],
-  ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
-  ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],
+  ["/ward-flow/search", { concrete: "/ward-flow/search", render: () => <PatientSearchPage /> }],
+  ["/ward-flow/settings", { concrete: "/ward-flow/settings", render: () => <SettingsScreen /> }],
   // Read-only reports, 9 Oct 2026 (stream C).
   [
-    "/mockups/ward-flow/reports/chronology",
+    "/ward-flow/reports/chronology",
     {
-      concrete: "/mockups/ward-flow/reports/chronology",
+      concrete: "/ward-flow/reports/chronology",
       render: () => <PatientChronologyScreen initialPatientId="PT-013" />,
     },
   ],
+  ["/ward-flow/reports/downtime", { concrete: "/ward-flow/reports/downtime", render: () => <DowntimePackScreen /> }],
+  ["/ward-flow/statistics/weekly", { concrete: "/ward-flow/statistics/weekly", render: () => <WeeklyReportScreen /> }],
   [
-    "/mockups/ward-flow/reports/downtime",
-    { concrete: "/mockups/ward-flow/reports/downtime", render: () => <DowntimePackScreen /> },
+    "/ward-flow/statistics/services",
+    { concrete: "/ward-flow/statistics/services", render: () => <StatisticsServicesIndexScreen /> },
   ],
   [
-    "/mockups/ward-flow/statistics/weekly",
-    { concrete: "/mockups/ward-flow/statistics/weekly", render: () => <WeeklyReportScreen /> },
+    "/ward-flow/statistics/wards",
+    { concrete: "/ward-flow/statistics/wards", render: () => <StatisticsWardsIndexScreen /> },
+  ],
+  ["/ward-flow/statistics/eds", { concrete: "/ward-flow/statistics/eds", render: () => <StatisticsEdsIndexScreen /> }],
+  [
+    "/ward-flow/statistics/teams",
+    { concrete: "/ward-flow/statistics/teams", render: () => <StatisticsTeamsIndexScreen /> },
+  ],
+  ["/ward-flow/statistics", { concrete: "/ward-flow/statistics", render: () => <StatisticsScreen /> }],
+  [
+    "/ward-flow/statistics/compare",
+    { concrete: "/ward-flow/statistics/compare", render: () => <StatisticsCompareScreen /> },
   ],
   [
-    "/mockups/ward-flow/statistics/services",
-    { concrete: "/mockups/ward-flow/statistics/services", render: () => <StatisticsServicesIndexScreen /> },
+    "/ward-flow/statistics/ed/[edId]",
+    { concrete: `/ward-flow/statistics/ed/${ed.id}`, render: () => <StatisticsEdScreen edId={ed.id} /> },
   ],
   [
-    "/mockups/ward-flow/statistics/wards",
-    { concrete: "/mockups/ward-flow/statistics/wards", render: () => <StatisticsWardsIndexScreen /> },
+    "/ward-flow/statistics/overview",
+    { concrete: "/ward-flow/statistics/overview", render: () => <StatisticsOverviewScreen /> },
   ],
   [
-    "/mockups/ward-flow/statistics/eds",
-    { concrete: "/mockups/ward-flow/statistics/eds", render: () => <StatisticsEdsIndexScreen /> },
-  ],
-  [
-    "/mockups/ward-flow/statistics/teams",
-    { concrete: "/mockups/ward-flow/statistics/teams", render: () => <StatisticsTeamsIndexScreen /> },
-  ],
-  ["/mockups/ward-flow/statistics", { concrete: "/mockups/ward-flow/statistics", render: () => <StatisticsScreen /> }],
-  [
-    "/mockups/ward-flow/statistics/compare",
-    { concrete: "/mockups/ward-flow/statistics/compare", render: () => <StatisticsCompareScreen /> },
-  ],
-  [
-    "/mockups/ward-flow/statistics/ed/[edId]",
-    { concrete: `/mockups/ward-flow/statistics/ed/${ed.id}`, render: () => <StatisticsEdScreen edId={ed.id} /> },
-  ],
-  [
-    "/mockups/ward-flow/statistics/overview",
-    { concrete: "/mockups/ward-flow/statistics/overview", render: () => <StatisticsOverviewScreen /> },
-  ],
-  [
-    "/mockups/ward-flow/statistics/service/[serviceId]",
+    "/ward-flow/statistics/service/[serviceId]",
     {
-      concrete: `/mockups/ward-flow/statistics/service/${encodeURIComponent(service)}`,
+      concrete: `/ward-flow/statistics/service/${encodeURIComponent(service)}`,
       render: () => <StatisticsServiceScreen serviceId={service} />,
     },
   ],
   [
-    "/mockups/ward-flow/statistics/community/[teamId]",
+    "/ward-flow/statistics/community/[teamId]",
     {
-      concrete: `/mockups/ward-flow/statistics/community/${team.id}`,
+      concrete: `/ward-flow/statistics/community/${team.id}`,
       render: () => <StatisticsCommunityScreen teamId={team.id} />,
     },
   ],
   [
-    "/mockups/ward-flow/statistics/ward/[unitId]",
+    "/ward-flow/statistics/ward/[unitId]",
     {
-      concrete: `/mockups/ward-flow/statistics/ward/${unit.id}`,
+      concrete: `/ward-flow/statistics/ward/${unit.id}`,
       render: () => <StatisticsWardScreen unitId={unit.id} />,
     },
   ],
+  ["/ward-flow/transport/officer", { concrete: "/ward-flow/transport/officer", render: () => <OfficerScreen /> }],
   [
-    "/mockups/ward-flow/transport/officer",
-    { concrete: "/mockups/ward-flow/transport/officer", render: () => <OfficerScreen /> },
+    "/ward-flow/ward/[unitId]",
+    { concrete: `/ward-flow/ward/${unit.id}`, render: () => <WardScreen unitId={unit.id} /> },
   ],
   [
-    "/mockups/ward-flow/ward/[unitId]",
-    { concrete: `/mockups/ward-flow/ward/${unit.id}`, render: () => <WardScreen unitId={unit.id} /> },
-  ],
-  [
-    "/mockups/ward-flow/ward/[unitId]/answer",
+    "/ward-flow/ward/[unitId]/answer",
     {
-      concrete: `/mockups/ward-flow/ward/${unit.id}/answer`,
+      concrete: `/ward-flow/ward/${unit.id}/answer`,
       render: () => <WardScreen unitId={unit.id} presentation="answer" />,
     },
   ],
-  ["/mockups/ward-flow/wards", { concrete: "/mockups/ward-flow/wards", render: () => <WardIndex /> }],
+  ["/ward-flow/wards", { concrete: "/ward-flow/wards", render: () => <WardIndex /> }],
 ]);
 
 function renderRoute(node: ReactElement) {

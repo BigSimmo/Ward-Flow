@@ -1,5 +1,7 @@
 # Portable PostgreSQL backend
 
+_Updated 2026-10-19 - store access context and recovery boundary checked against source; Documentation owns._
+
 Ward Flow uses Supabase (decision D-55) and keeps this generic PostgreSQL adapter behind the same seam as a fallback. [DATABASE.md](../../docs/ward-flow/DATABASE.md) is the single source of truth for which provider is current and how to change it. Both presets reuse the same engine, shared HTTP paths, synthetic snapshot format, revisions, audit and command receipts. Other database engines require a separately implemented and tested store adapter.
 
 ## Administrator prerequisites
@@ -45,7 +47,7 @@ Changing selectors does not transfer data. Finish or abandon pending work, sign 
 
 ## Another database engine
 
-A new trusted server adapter must preserve `ready()`, `read(actorId)`, `command(actorId, commandId, expectedRevision, event)` and `audit()`, plus shutdown/startup cleanup through an owned resource's `end()`. Keep the existing identity verifier and reducer. Preserve optional push methods when enabled.
+A new trusted server adapter must preserve `ready()`, `viewer(actorId, { bootstrap, workingAs })`, `read(actorId, view)`, `poll(actorId, knownRevision, view)`, `command(actorId, commandId, expectedRevision, event, { revisionOnly, view })` and `audit(view)`, plus shutdown/startup cleanup through an owned resource's `end()`. The server resolves `view` on every request; retain its membership, role, scope and break glass checks, scoped payloads and access metadata, including rechecking changed access during reads and writes. Keep the existing identity verifier and reducer, and preserve the access, record-view, sign-out and optional push methods used by enabled routes.
 
 The adapter must atomically commit state, revision, immutable audit and actor-scoped command receipt, or roll back all of them. It needs workspace locking or equivalent compare-and-swap, expected revisions and payload fingerprints. Identical retries replay the same receipt; changed content under a used command ID is refused. Audit mutation and workspace reclassification must be denied in storage. The audit API returns the latest 200 prototype records in descending sequence.
 

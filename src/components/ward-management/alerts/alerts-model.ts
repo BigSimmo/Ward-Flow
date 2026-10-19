@@ -229,33 +229,33 @@ export function resolveAlertSubject(
 export type AlertAction = { kind: "link"; label: string; href: string } | { kind: "release"; label: string };
 
 export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAction {
-  const patientHref = subject.patientHref ?? "/mockups/ward-flow/movements";
+  const patientHref = subject.patientHref ?? "/ward-flow/movements";
   switch (alertKindOf(item.id)) {
     case "awol":
       return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
     case "legal":
-      return { kind: "link", label: "Open forms", href: "/mockups/ward-flow/legal-forms" };
+      return { kind: "link", label: "Open forms", href: "/ward-flow/legal-forms" };
     case "declines":
-      return { kind: "link", label: "Find a bed", href: "/mockups/ward-flow/network" };
+      return { kind: "link", label: "Find a bed", href: "/ward-flow/network" };
     case "unsuitable":
       return { kind: "link", label: "Review", href: patientHref };
     case "hold":
       return { kind: "release", label: "Release bed" };
     case "transport":
-      return { kind: "link", label: "Chase transport", href: "/mockups/ward-flow/movements" };
+      return { kind: "link", label: "Chase transport", href: "/ward-flow/movements" };
     case "planned":
-      return { kind: "link", label: "Open bookings", href: item.href ?? "/mockups/ward-flow/capacity" };
+      return { kind: "link", label: "Open bookings", href: item.href ?? "/ward-flow/capacity" };
     case "notify":
       // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
       return item.admissionId !== undefined
-        ? { kind: "link", label: "Record notifications", href: "/mockups/ward-flow/discharges" }
+        ? { kind: "link", label: "Record notifications", href: "/ward-flow/discharges" }
         : { kind: "link", label: "Record notifications", href: patientHref };
     default:
       if (item.id.includes("referral-decision")) {
-        return { kind: "link", label: "Open referral", href: "/mockups/ward-flow/referrals" };
+        return { kind: "link", label: "Open referral", href: "/ward-flow/referrals" };
       }
       if (item.id.includes("transport-booked")) {
-        return { kind: "link", label: "Book transport", href: "/mockups/ward-flow/movements" };
+        return { kind: "link", label: "Book transport", href: "/ward-flow/movements" };
       }
       return { kind: "link", label: "Open patient", href: patientHref };
   }

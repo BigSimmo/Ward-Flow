@@ -80,13 +80,13 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * Left inert rather than guessed at.
  *
  * ⚠️ **STRUCTURALLY OUTSIDE `src/components/ward-management` AND
- * `src/app/mockups/ward-flow`, DELIBERATELY.** The drawing's own header comment says this screen is
+ * `src/app/ward-flow`, DELIBERATELY.** The drawing's own header comment says this screen is
  * "deliberately outside the shell of section 5.6" — no rail, no top bar — because "a person who has
  * not signed in has no rail to stand in and no bar to read" (owner ruling, 10 September 2026).
- * `src/app/mockups/ward-flow/layout.tsx` mounts `WardRail`/`WardBarMount`/`WardFlowProvider` around
+ * `src/app/ward-flow/layout.tsx` mounts `WardRail`/`WardBarMount`/`WardFlowProvider` around
  * every route beneath it with no per-route opt-out, so the only way to honour "no rail, no bar" is
  * a route outside that subtree — this file's own route,
- * `src/app/mockups/ward-flow-sign-in/page.tsx`, and this component beside it rather than inside
+ * `src/app/ward-flow-sign-in/page.tsx`, and this component beside it rather than inside
  * `ward-management`. `tests/ward-flow-seam.test.ts` (`WARD_DIRS`) treats those two directories as
  * Ward Flow's own folders and forbids anything outside them from importing ward code; this
  * component reads no live Ward Flow state and imports nothing from either directory, by design, so

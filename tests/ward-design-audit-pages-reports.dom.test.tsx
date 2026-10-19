@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/reports/chronology",
+  usePathname: () => "/ward-flow/reports/chronology",
 }));
 
 import { ToastProvider } from "@/components/wf";

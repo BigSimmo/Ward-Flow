@@ -54,7 +54,7 @@ vi.mock("@/components/ward-management/ward-supabase-auth", async (importOriginal
   };
 });
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));

@@ -112,7 +112,7 @@
           "verdict": "matches",
           "mockupSha256": "0c6a72730be72fc76c397434c21a4bb84b85519932b50a606f788c15621b9287",
           "implementationSha256": "c4b5a8d48d2d3af1224f1fc6bbee596f142d622f0e53834806c560d399503894",
-          "notes": "Delays and Exceptions Console (/mockups/ward-flow/delays) elevated to Third Edition Sovereign standard (delays-third-edition.html): Complete removal of obsolete provenance panel per user directive; 'Delays with no named person' elevated into an active systemic and facility delays tracker (Fremantle 4W norovirus isolation, Secure Escort Fleet maintenance delay, SCGH MHU nursing ratio surge) with category filter chips and Rule D4 '+ Log systemic hold' action feedback; elevated ownerStrip with proportional meter bars, tabular figures, and urgent alert text; elevated PersonRow with urgency tier badges (T1/T2/T3), medical clearance pills, origin line, blocker row with owner tags, and quiet elapsed time; zero accidental right-hand void when no patient is chosen via columnsClosed (20rem 1fr / 28rem 1.4fr); responsive mobile sheet drawer with backdrop and Esc dismissal. Strict 12px font floor enforced across all viewports. Scored 198.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 clipping, and 59/59 passing Vitest tests."
+          "notes": "Delays and Exceptions Console (/ward-flow/delays) elevated to Third Edition Sovereign standard (delays-third-edition.html): Complete removal of obsolete provenance panel per user directive; 'Delays with no named person' elevated into an active systemic and facility delays tracker (Fremantle 4W norovirus isolation, Secure Escort Fleet maintenance delay, SCGH MHU nursing ratio surge) with category filter chips and Rule D4 '+ Log systemic hold' action feedback; elevated ownerStrip with proportional meter bars, tabular figures, and urgent alert text; elevated PersonRow with urgency tier badges (T1/T2/T3), medical clearance pills, origin line, blocker row with owner tags, and quiet elapsed time; zero accidental right-hand void when no patient is chosen via columnsClosed (20rem 1fr / 28rem 1.4fr); responsive mobile sheet drawer with backdrop and Esc dismissal. Strict 12px font floor enforced across all viewports. Scored 198.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 clipping, and 59/59 passing Vitest tests."
         }
       ]
     },
@@ -137,7 +137,7 @@
           "verdict": "matches",
           "mockupSha256": "e2cb9f881203a648b5042bae0b761cc4a7010164446aae76e1ba69cd255042e0",
           "implementationSha256": "99752a3409730a283415adfb092caf714eb9fb06dd86c1b492b1a33d87451090",
-          "notes": "Movements Screen (/mockups/ward-flow/movements) elevated to Sovereign Third Edition standard: Fixed worklist card spacing with 16px horizontal container insets (eliminating edge and scrollbar collisions); elevated card hierarchy with patient ID, wait timer progress meter, route line with arrow glyph, clinical alert pills, delay barrier callout with accent border, and primary ('Review patient') and secondary ('What is recorded') buttons; elevated top toolbar with segmented pill switches for 'Every movement' vs 'Resolved today' and Arrange controls (Stage, Transport, Longest wait); fixed Transport right now overlapping defect by enforcing flex-shrink: 0 and text truncation on corridor nodes; compacted Transport feed height to 12.5rem; expanded Shape of the day panel to primary prominence in sidebar with 5 functional tabs (Stage, Transport, Waiting, Resolved, No owner), sleek proportion meters, tabular patient counts, and direct review shortcuts. Strict 12px font floor, zero horizontal overflow, zero clipping, 48px touch targets, and design token compliance verified."
+          "notes": "Movements Screen (/ward-flow/movements) elevated to Sovereign Third Edition standard: Fixed worklist card spacing with 16px horizontal container insets (eliminating edge and scrollbar collisions); elevated card hierarchy with patient ID, wait timer progress meter, route line with arrow glyph, clinical alert pills, delay barrier callout with accent border, and primary ('Review patient') and secondary ('What is recorded') buttons; elevated top toolbar with segmented pill switches for 'Every movement' vs 'Resolved today' and Arrange controls (Stage, Transport, Longest wait); fixed Transport right now overlapping defect by enforcing flex-shrink: 0 and text truncation on corridor nodes; compacted Transport feed height to 12.5rem; expanded Shape of the day panel to primary prominence in sidebar with 5 functional tabs (Stage, Transport, Waiting, Resolved, No owner), sleek proportion meters, tabular patient counts, and direct review shortcuts. Strict 12px font floor, zero horizontal overflow, zero clipping, 48px touch targets, and design token compliance verified."
         }
       ]
     },
@@ -237,7 +237,7 @@
           "verdict": "matches",
           "mockupSha256": "611d8fd3cecb7424db7d05f847825ced6db38802e352937cee73111fbd90546f",
           "implementationSha256": "903dc7f1390d0bb2f94f84cf3f12ef80c5e83b9084d51a5de3362048ee1edeb1",
-          "notes": "Bed board (/mockups/ward-flow/board/rph-adult-secure) fully elevated to Third Edition Sovereign standard: 10-metric triage squares with perfected card proportions, uniform number baseline alignment, active status card with contained pill badge, semantic status colors; unified command header with integrated top daily sheet toggle; streamlined \"Needs you this shift\" alert banner with compact shift cards; segmented bed filters and order dropdown; elevated bed grid with stay duration badges and subtle lift; multi-category flow section with \"Going out today\" card and 2-column regional destination targets; and 5-column expandable \"The ward\"s daily sheet\" with summary statistics and elevated patient cards. Verified across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, strict 12px font floor, and passing Vitest test suites. Scored 198.5/200 on independent reviewer audit."
+          "notes": "Bed board (/ward-flow/board/rph-adult-secure) fully elevated to Third Edition Sovereign standard: 10-metric triage squares with perfected card proportions, uniform number baseline alignment, active status card with contained pill badge, semantic status colors; unified command header with integrated top daily sheet toggle; streamlined \"Needs you this shift\" alert banner with compact shift cards; segmented bed filters and order dropdown; elevated bed grid with stay duration badges and subtle lift; multi-category flow section with \"Going out today\" card and 2-column regional destination targets; and 5-column expandable \"The ward\"s daily sheet\" with summary statistics and elevated patient cards. Verified across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, strict 12px font floor, and passing Vitest test suites. Scored 198.5/200 on independent reviewer audit."
         }
       ]
     },
@@ -262,7 +262,7 @@
           "verdict": "matches",
           "mockupSha256": "d36cb73e621c18d744d3bd49848a9b7d85090ddf4a097efc75326cc15ab469ef",
           "implementationSha256": "787c652cc49473c817337dbdc4b606a8cb80ff954fc3d46f4295f3f889a37071",
-          "notes": "Emergency department board (/mockups/ward-flow/ed/peel-ed) elevated and compactified: unified \"Recent\" and \"Still to be moved\" tabs into a single-column \"Referred\" tab with stacked sub-sections (\"Still to be moved\" patients waiting to physically move and \"Recent decisions\" answered referrals). Verified in browser with active indicator, tokenized CSS styles, zero hardcoded colors, 201/201 css class tests, 41/41 ward-ed-screen DOM tests, 4/4 answered-cap tests, and verified visual capture."
+          "notes": "Emergency department board (/ward-flow/ed/peel-ed) elevated and compactified: unified \"Recent\" and \"Still to be moved\" tabs into a single-column \"Referred\" tab with stacked sub-sections (\"Still to be moved\" patients waiting to physically move and \"Recent decisions\" answered referrals). Verified in browser with active indicator, tokenized CSS styles, zero hardcoded colors, 201/201 css class tests, 41/41 ward-ed-screen DOM tests, 4/4 answered-cap tests, and verified visual capture."
         }
       ],
       "scopedVerifications": [
@@ -282,7 +282,7 @@
             " M docs/ward-flow/decisions.md",
             " M docs/ward-flow/roadmap.md"
           ],
-          "actualRoute": "/mockups/ward-flow/ed/rph-ed",
+          "actualRoute": "/ward-flow/ed/rph-ed",
           "widths": [320, 390, 768],
           "height": 844,
           "themes": ["light"],
@@ -386,7 +386,7 @@
           "verdict": "matches",
           "mockupSha256": "a260505a4727ea517d7e8d1e220dadc7f8120d3dd3940d62d962d78eb836b86f",
           "implementationSha256": "e3001856e2e0a61e7b00dc2feaade46583bc6887b8c8dc4dee0a246d2e4687b8",
-          "notes": "Patient search console (/mockups/ward-flow/search) perfected and elevated to Third Edition Gold Standard (patient-search-third-edition.html): Full alignment across all 5 user feedback targets: (1) Deduplicated header ribbon with Caseload Overview count pill, live/breach summary, and action buttons (+ Add patient, Print Caseload, Reset filters); (2) Command search console with full-width search input, / keyboard shortcut, clear button, and responsive filter ribbon hosting health service, setting, legal status, wait band, acuity tier dropdowns and quick query chips; (3) Dense Mode glanceable 2-line layout per patient eliminating all horizontal scrollbars; (4) Cards mode with animated green pulsing beacon dots for live patients, authentic WA health service dots & site acronyms (SCGH ED, RPH ED, PEEL ED, ARM ED, RGH ED, SJGM ED, FSH ED), sleek compact legal status pills (FORM 1A, FORM 4A, FORM 5A, VOLUNTARY), and right-aligned wait badges; (5) Clinical Dossier elevated with authentic Previous Presentations & History card, connected vertical audit milestone timeline with monospace timestamps, and D4-compliant prototype toasts. Scored 199.5/200 on independent audit with zero horizontal overflow across 390px, 820px, 1440px in light and dark modes, 0 console errors, and 97/97 passing Vitest tests."
+          "notes": "Patient search console (/ward-flow/search) perfected and elevated to Third Edition Gold Standard (patient-search-third-edition.html): Full alignment across all 5 user feedback targets: (1) Deduplicated header ribbon with Caseload Overview count pill, live/breach summary, and action buttons (+ Add patient, Print Caseload, Reset filters); (2) Command search console with full-width search input, / keyboard shortcut, clear button, and responsive filter ribbon hosting health service, setting, legal status, wait band, acuity tier dropdowns and quick query chips; (3) Dense Mode glanceable 2-line layout per patient eliminating all horizontal scrollbars; (4) Cards mode with animated green pulsing beacon dots for live patients, authentic WA health service dots & site acronyms (SCGH ED, RPH ED, PEEL ED, ARM ED, RGH ED, SJGM ED, FSH ED), sleek compact legal status pills (FORM 1A, FORM 4A, FORM 5A, VOLUNTARY), and right-aligned wait badges; (5) Clinical Dossier elevated with authentic Previous Presentations & History card, connected vertical audit milestone timeline with monospace timestamps, and D4-compliant prototype toasts. Scored 199.5/200 on independent audit with zero horizontal overflow across 390px, 820px, 1440px in light and dark modes, 0 console errors, and 97/97 passing Vitest tests."
         }
       ]
     },
@@ -480,7 +480,7 @@
             " M docs/ward-flow/decisions.md",
             " M docs/ward-flow/roadmap.md"
           ],
-          "actualRoute": "/mockups/ward-flow/referrals/new",
+          "actualRoute": "/ward-flow/referrals/new",
           "widths": [320, 390, 768],
           "height": 844,
           "themes": ["light"],
@@ -617,7 +617,7 @@
             " M docs/ward-flow/decisions.md",
             " M docs/ward-flow/roadmap.md"
           ],
-          "actualRoute": "/mockups/ward-flow/statistics/ward/rph-adult-secure",
+          "actualRoute": "/ward-flow/statistics/ward/rph-adult-secure",
           "widths": [320, 390, 768],
           "height": 844,
           "themes": ["light"],
@@ -759,7 +759,7 @@
           "verdict": "matches",
           "mockupSha256": "d078f13053fee59e76855efc29bd6b8ebe33d5cfdd3957e65e4b743693a03af8",
           "implementationSha256": "9290ec52764e1db351cd934d4b74b56730be7cf44c77df163fcb603c07b2ccf3",
-          "notes": "Governance - Ward Flow (/mockups/ward-flow/governance) elevated to full Third Edition Sovereign standard (governance-third-edition.html): Implemented 4 live KPI summary cards with dynamic counters (Overrides Monitored: 7, Catchment Bypasses: 3, Acuity Ceilings Bypassed: 2, Reviewed & Upheld: 4); tabbed registers including 7 authentic WA health gate exceptions in Overrides Register (OVR-101 to OVR-107), Closed Governance Decisions log (DEC-088 to DEC-091), and Session Access Records; interactive Override Detail Inspector; multi-role Endorsement Modal with focus trap and Esc dismissal; perfected Legacy facts tab with elevated Change audit cards, clickable movement links (WF-010, WF-009), semantic status badges, and Overrides register; perfected Effectiveness tab with side-by-side metric cards (Median Acceptance Time with Suppressed pill and sample basis; Average Units Contacted with 1.2 units figure and clinical target range), professional clinical governance notice replacing prototype text, and removal of raw bottom prototype disclosure; full 12px font floor, zero horizontal overflow across 390px, 820px, and 1440px viewports in light and dark themes, passing 32/32 Vitest tests."
+          "notes": "Governance - Ward Flow (/ward-flow/governance) elevated to full Third Edition Sovereign standard (governance-third-edition.html): Implemented 4 live KPI summary cards with dynamic counters (Overrides Monitored: 7, Catchment Bypasses: 3, Acuity Ceilings Bypassed: 2, Reviewed & Upheld: 4); tabbed registers including 7 authentic WA health gate exceptions in Overrides Register (OVR-101 to OVR-107), Closed Governance Decisions log (DEC-088 to DEC-091), and Session Access Records; interactive Override Detail Inspector; multi-role Endorsement Modal with focus trap and Esc dismissal; perfected Legacy facts tab with elevated Change audit cards, clickable movement links (WF-010, WF-009), semantic status badges, and Overrides register; perfected Effectiveness tab with side-by-side metric cards (Median Acceptance Time with Suppressed pill and sample basis; Average Units Contacted with 1.2 units figure and clinical target range), professional clinical governance notice replacing prototype text, and removal of raw bottom prototype disclosure; full 12px font floor, zero horizontal overflow across 390px, 820px, and 1440px viewports in light and dark themes, passing 32/32 Vitest tests."
         }
       ]
     },
@@ -822,7 +822,7 @@
           "verdict": "matches",
           "mockupSha256": "64fd15b6e141e72866bf71e087a9618ec013e1676ec13f61cd7852088cd2fce5",
           "implementationSha256": "1992892affdd65ca8c490eb24f91521ad4107439d6b436468ec309ea84d014e0",
-          "notes": "Out-of-Area Repatriation Ledger (/mockups/ward-flow/out-of-area) elevated to full Third Edition Sovereign standard (out-of-area-third-edition.html): Subheader bar with Catchment Egress badge and primary '+ Initiate Repatriation' CTA; executive 4-card KPI strip with tabular figures and semantic tone borders (Total Out-of-Area, Far Placements >35km, Repatriation Ready, Longest Out-of-Area); streamlined meaningPanel with SVG compass glyph and essential threshold disclosures; cross-catchment ledger workbench composing WardTable with compact travel band pills, PlacementStatusGlyph geometric icons, and 8+ glanceable rows at 1440px; interactive Repatriation Case Inspector featuring elegant empty vector placeholder on initial mount, Demographics & Home Catchment facts card upon row selection, and Rule D4 feedback on secondary actions ('Transfer review', 'Clinical escalation'); accessible Initiate Repatriation Modal with focus trap, Escape key dismissal, and trigger focus restoration; secondary grid organizing 'At a glance' five-group summary and provenance disclosures with strict DOM tree order preserved; strict 12px font floor enforced across all viewports; scored 199.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 text clipping, 0 mobile touch defects, and 16/16 passing Vitest tests."
+          "notes": "Out-of-Area Repatriation Ledger (/ward-flow/out-of-area) elevated to full Third Edition Sovereign standard (out-of-area-third-edition.html): Subheader bar with Catchment Egress badge and primary '+ Initiate Repatriation' CTA; executive 4-card KPI strip with tabular figures and semantic tone borders (Total Out-of-Area, Far Placements >35km, Repatriation Ready, Longest Out-of-Area); streamlined meaningPanel with SVG compass glyph and essential threshold disclosures; cross-catchment ledger workbench composing WardTable with compact travel band pills, PlacementStatusGlyph geometric icons, and 8+ glanceable rows at 1440px; interactive Repatriation Case Inspector featuring elegant empty vector placeholder on initial mount, Demographics & Home Catchment facts card upon row selection, and Rule D4 feedback on secondary actions ('Transfer review', 'Clinical escalation'); accessible Initiate Repatriation Modal with focus trap, Escape key dismissal, and trigger focus restoration; secondary grid organizing 'At a glance' five-group summary and provenance disclosures with strict DOM tree order preserved; strict 12px font floor enforced across all viewports; scored 199.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 text clipping, 0 mobile touch defects, and 16/16 passing Vitest tests."
         }
       ]
     },
@@ -857,7 +857,7 @@
           "verdict": "matches",
           "mockupSha256": "1a3551241241d7a82b6a2471607f026515ec928e7f4e1e80eb6b42bb7ac8a0d2",
           "implementationSha256": "69a7b31b2763a902b801bacbda47855fd20c75a44b9084b24fff9a906b99deb4",
-          "notes": "On-call and contacts (/mockups/ward-flow/on-call) fully elevated to Third Edition Sovereign standard (on-call-third-edition.html): Full operational header with active duty matrix indicator and Tier 3 Escalation trigger; 4-card KPI glance strip with mono figures, subtle surface depth, and hairline borders; multi-service filter pills with counts and search query typeahead; unified specialist on-call roster table composing WardTable with status pills, shift window details, and Connect action; Emergency Department Liaison table listing all 8 emergency departments, sites, and health services with Direct Connect actions; clinical directory protocol cards (Hospital Switchboard, Bed Coordination Desk, ED Liaison); accessible Escape key dismissal and focus restoration for Tier 3 escalation modal; Rule D4 toast feedback ('Not wired in this prototype.'); strict adherence to zero diallable contacts/phone numbers (tests/ward-on-call-holds-no-people.test.ts); 100% semantic CSS variables with zero raw colours; 0 horizontal overflow and 0 text clipping across 390px, 820px, and 1440px in light and dark themes; scored 199.0/200 on independent adversarial audit."
+          "notes": "On-call and contacts (/ward-flow/on-call) fully elevated to Third Edition Sovereign standard (on-call-third-edition.html): Full operational header with active duty matrix indicator and Tier 3 Escalation trigger; 4-card KPI glance strip with mono figures, subtle surface depth, and hairline borders; multi-service filter pills with counts and search query typeahead; unified specialist on-call roster table composing WardTable with status pills, shift window details, and Connect action; Emergency Department Liaison table listing all 8 emergency departments, sites, and health services with Direct Connect actions; clinical directory protocol cards (Hospital Switchboard, Bed Coordination Desk, ED Liaison); accessible Escape key dismissal and focus restoration for Tier 3 escalation modal; Rule D4 toast feedback ('Not wired in this prototype.'); strict adherence to zero diallable contacts/phone numbers (tests/ward-on-call-holds-no-people.test.ts); 100% semantic CSS variables with zero raw colours; 0 horizontal overflow and 0 text clipping across 390px, 820px, and 1440px in light and dark themes; scored 199.0/200 on independent adversarial audit."
         }
       ],
       "scopedVerifications": [
@@ -877,7 +877,7 @@
             " M docs/ward-flow/decisions.md",
             " M docs/ward-flow/roadmap.md"
           ],
-          "actualRoute": "/mockups/ward-flow/on-call",
+          "actualRoute": "/ward-flow/on-call",
           "widths": [320, 390, 768],
           "height": 844,
           "themes": ["light"],
@@ -956,7 +956,7 @@
           "verdict": "matches",
           "mockupSha256": "8fd6c0bf6ab541e47f2931ad0d66ba37141ee5b924fb1221ee62b1a9065bb148",
           "implementationSha256": "3b2d38e7dd71bc2190aa8cc3d78226dc8c2294d75ebb63267db01b51babacb09",
-          "notes": "Clinical & Operational Action Alerts Console (/mockups/ward-flow/alerts) polished, perfected, and simplified to Third Edition Sovereign standard (alerts-third-edition.html): Full clinical demographic resolution with authentic WA personas and acute facility tags (SCGH ED, Joondalup ED, FSH ED, Midland ED, Bentley); streamlined executive status pill strip (dl.summary) eliminating top-of-page vertical bloat; unified Filter & Control Toolbar card integrating 3-tier escalation tabs and 5 role filter pills with live filter count summary ('Showing X of Y alerts') and instant 'Reset filters' trigger; alert cards upgraded with high-visibility Overdue Clock Chips (overdueChip) for instantaneous glanceable breach recognition, authentic WA facility location tags, and refined secondary action links; elevated empty filter recovery state; styled collapsible audit disclosures (<details>); full multi-viewport (390px, 820px, 1440px) and dark mode verification with zero horizontal overflow (FF4) and 48px touch targets (F3.4). Scored 199.5/200 on independent adversarial audit with 26/26 passing Vitest tests."
+          "notes": "Clinical & Operational Action Alerts Console (/ward-flow/alerts) polished, perfected, and simplified to Third Edition Sovereign standard (alerts-third-edition.html): Full clinical demographic resolution with authentic WA personas and acute facility tags (SCGH ED, Joondalup ED, FSH ED, Midland ED, Bentley); streamlined executive status pill strip (dl.summary) eliminating top-of-page vertical bloat; unified Filter & Control Toolbar card integrating 3-tier escalation tabs and 5 role filter pills with live filter count summary ('Showing X of Y alerts') and instant 'Reset filters' trigger; alert cards upgraded with high-visibility Overdue Clock Chips (overdueChip) for instantaneous glanceable breach recognition, authentic WA facility location tags, and refined secondary action links; elevated empty filter recovery state; styled collapsible audit disclosures (<details>); full multi-viewport (390px, 820px, 1440px) and dark mode verification with zero horizontal overflow (FF4) and 48px touch targets (F3.4). Scored 199.5/200 on independent adversarial audit with 26/26 passing Vitest tests."
         }
       ]
     },
@@ -1069,7 +1069,7 @@
           "verdict": "matches",
           "mockupSha256": "15e97b06c838c4721144b6062c10b0a5fddbf0b7678f6d392bffc0fbe5db436f",
           "implementationSha256": "d8ae1a6fe1cfbfb6599bc31540764cc163d6bd6c96afbd5945f85595b77f7e91",
-          "notes": "Settings & coordination rules console (/mockups/ward-flow/settings) fully elevated to match authoritative Third Edition Mockup (settings-third-edition.html): Converted single enclosing frame into authentic open split console architecture (sticky categoryRail on left + independent panel cards on right) with 20px gap; redesigned executive header with WA Health context bar, Dr S. Chen operator profile card with popover and ARIA controls, Surge protocol draft toggle, unsaved draft pill with pulsing dot, Reset to baseline, and Save coordination rules; 4-card KPI summary strip with mono figures and hairline borders; category navigation rail with instant search filter, '/' badge, clear button, and live match count badges; individual panel cards with surface-2 hairline headers; all 9 unwired controls equipped with Rule D4 'Not wired (Demo)' badges and 'Not wired in this prototype.' toast notifications; Handover sheet panel updated to include 'Still open at 15:00'; strict 12px font floor, zero horizontal document overflow (FF4 passed across 390px, 820px, and 1440px in light and dark modes), 48px touch targets, zero console errors, 100% semantic CSS tokens, and 53/53 passing Vitest tests. Scored 199.0/200 on independent adversarial audit."
+          "notes": "Settings & coordination rules console (/ward-flow/settings) fully elevated to match authoritative Third Edition Mockup (settings-third-edition.html): Converted single enclosing frame into authentic open split console architecture (sticky categoryRail on left + independent panel cards on right) with 20px gap; redesigned executive header with WA Health context bar, Dr S. Chen operator profile card with popover and ARIA controls, Surge protocol draft toggle, unsaved draft pill with pulsing dot, Reset to baseline, and Save coordination rules; 4-card KPI summary strip with mono figures and hairline borders; category navigation rail with instant search filter, '/' badge, clear button, and live match count badges; individual panel cards with surface-2 hairline headers; all 9 unwired controls equipped with Rule D4 'Not wired (Demo)' badges and 'Not wired in this prototype.' toast notifications; Handover sheet panel updated to include 'Still open at 15:00'; strict 12px font floor, zero horizontal document overflow (FF4 passed across 390px, 820px, and 1440px in light and dark modes), 48px touch targets, zero console errors, 100% semantic CSS tokens, and 53/53 passing Vitest tests. Scored 199.0/200 on independent adversarial audit."
         }
       ]
     },
@@ -1138,7 +1138,7 @@
             " M docs/ward-flow/decisions.md",
             " M docs/ward-flow/roadmap.md"
           ],
-          "actualRoute": "/mockups/ward-flow/statistics/service/East%20Metro",
+          "actualRoute": "/ward-flow/statistics/service/East%20Metro",
           "widths": [320, 390, 768],
           "height": 844,
           "themes": ["light", "dark"],
@@ -1198,7 +1198,7 @@
     },
     {
       "mockup": "sign-in-third-edition.html",
-      "route": "/mockups/ward-flow-sign-in",
+      "route": "/ward-flow-sign-in",
       "verified": {
         "date": "2026-10-02",
         "who": "Codex coordinator and independent screen/source reviewers",
@@ -1289,7 +1289,7 @@
           " M docs/ward-flow/decisions.md",
           " M docs/ward-flow/roadmap.md"
         ],
-        "actualRoute": "/mockups/ward-flow/ed",
+        "actualRoute": "/ward-flow/ed",
         "widths": [320, 390, 768],
         "height": 844,
         "themes": ["light"],
@@ -1352,7 +1352,7 @@
           " M docs/ward-flow/decisions.md",
           " M docs/ward-flow/roadmap.md"
         ],
-        "actualRoute": "/mockups/ward-flow/movements/WF-001",
+        "actualRoute": "/ward-flow/movements/WF-001",
         "widths": [320, 390, 768],
         "height": 844,
         "themes": ["light"],

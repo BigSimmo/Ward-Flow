@@ -654,7 +654,7 @@ function CreateSheet({
   const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
   const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
-  const currentUnitId = /^\/mockups\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
+  const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   return (
     <Sheet
       id="ward-phone-create"

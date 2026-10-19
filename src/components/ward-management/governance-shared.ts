@@ -200,7 +200,7 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
 export type GovernanceTab = "review" | "gaps" | "audit" | "registers" | "reports";
 export type ReviewChip = "override" | "refused" | "access" | "follow-up";
 
-export const FORMS_HREF = "/mockups/ward-flow/legal-forms";
+export const FORMS_HREF = "/ward-flow/legal-forms";
 
 export const REVIEWING_ROLES = [
   "Clinical Director",

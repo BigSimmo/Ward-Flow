@@ -241,7 +241,7 @@ is no join.
   and the existence/behaviour claims of `tests/ward-person-screen.dom.test.tsx` are taken from
   `person-screen.tsx`'s own comment describing that test, not from reading the test file itself -
   UNVERIFIED against the test file's actual contents.
-- I did not audit every screen in `src/app/mockups/ward-flow/**` for local component state that
+- I did not audit every screen in `src/app/ward-flow/**` for local component state that
   might independently hold one of these values outside the reducer (out of scope per the brief's
   starting points; the doc `docs/ward-flow/archive/dated-notes/fields-with-no-producer-2026-09-01.md` states the same
   limit for its own, earlier audit).

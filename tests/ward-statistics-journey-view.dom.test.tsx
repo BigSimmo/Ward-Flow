@@ -94,7 +94,7 @@ describe("Summary, Journey view", () => {
     const links = within(waiting).getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      expect(link.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/statistics\/ed\/[^/]+$/);
+      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\/[^/]+$/);
     }
   });
 });

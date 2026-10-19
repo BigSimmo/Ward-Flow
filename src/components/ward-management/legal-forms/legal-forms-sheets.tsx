@@ -416,18 +416,37 @@ export function ExtendSheet({
   now: Instant;
   onClose: () => void;
   extendUnavailable?: string;
-  onExtendForm?: (movement: Movement, dueAt: Instant) => boolean;
+  onExtendForm?: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
 }) {
   const thresholds = useDueSoonThresholds();
   const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
   const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const submissionVersion = useRef(0);
+  const [savingFor, setSavingFor] = useState(target?.id);
+  if (savingFor !== target?.id) {
+    setSavingFor(target?.id);
+    setSaving(false);
+    setExpiryState(null);
+  }
+  useEffect(() => {
+    submissionVersion.current += 1;
+    return () => {
+      submissionVersion.current += 1;
+    };
+  }, [target?.id]);
   const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
   const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
   const extendBlockReason =
-    extendUnavailable ?? (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
+    (saving ? "Saving extension…" : undefined) ??
+    extendUnavailable ??
+    (!onExtendForm ? "Not wired in this prototype." : undefined) ??
+    (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
+    submissionVersion.current += 1;
+    setSaving(false);
     setExpiryState(null);
     onClose();
   };
@@ -452,10 +471,24 @@ export function ExtendSheet({
             title={extendBlockReason}
             onClick={() => {
               if (extendBlockReason || !target || parsedDueAt === null) return;
-              const accepted = onExtendForm ? onExtendForm(target, parsedDueAt) : true;
-              if (accepted) {
-                setExpiryState(null);
-                onClose();
+              const owner = draftSessionVersion();
+              const submission = ++submissionVersion.current;
+              setSaving(true);
+              const finish = (accepted: boolean) => {
+                if (submission !== submissionVersion.current) return;
+                setSaving(false);
+                if (owner !== draftSessionVersion()) return;
+                if (accepted) {
+                  setExpiryState(null);
+                  onClose();
+                }
+              };
+              try {
+                const result = onExtendForm?.(target, parsedDueAt) ?? false;
+                if (typeof result === "boolean") finish(result);
+                else void result.then(finish, () => finish(false));
+              } catch {
+                finish(false);
               }
             }}
           >
@@ -493,6 +526,7 @@ export function ExtendSheet({
                 inputMode="numeric"
                 autoComplete="off"
                 aria-required="true"
+                disabled={saving}
                 value={expiryValue}
                 onChange={(event) => setExpiryState({ targetId: target.id, value: event.target.value })}
               />

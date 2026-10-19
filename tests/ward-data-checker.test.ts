@@ -103,7 +103,7 @@ function consistentData(overrides: AnyRecord = {}) {
       {
         unitId: "rph-adult-secure",
         where: "Navigation menu",
-        detail: "/mockups/ward-flow/ward/rph-adult-secure",
+        detail: "/ward-flow/ward/rph-adult-secure",
         label: "Ward — Ward 2K",
         file: "src/components/ward-management/ward-nav.ts",
       },
@@ -112,7 +112,7 @@ function consistentData(overrides: AnyRecord = {}) {
       {
         edId: "rph-ed",
         where: "Navigation menu",
-        detail: "/mockups/ward-flow/ed/rph-ed",
+        detail: "/ward-flow/ed/rph-ed",
         file: "src/components/ward-management/ward-nav.ts",
       },
     ],
@@ -569,10 +569,10 @@ describe("reading the one fact that cannot be imported", () => {
 
   it("turns nav links into the ward and department references the checks walk", () => {
     const { unitReferences, edReferences } = navReferences([
-      { id: "ward", href: "/mockups/ward-flow/ward/rph-adult-secure", label: "Ward — Ward 2K" },
-      { id: "board", href: "/mockups/ward-flow/board/rph-adult-secure", label: "Ward board — Ward 2K" },
-      { id: "ed", href: "/mockups/ward-flow/ed/peel-ed", label: "Emergency department" },
-      { id: "handover", href: "/mockups/ward-flow/handover", label: "Handover" },
+      { id: "ward", href: "/ward-flow/ward/rph-adult-secure", label: "Ward — Ward 2K" },
+      { id: "board", href: "/ward-flow/board/rph-adult-secure", label: "Ward board — Ward 2K" },
+      { id: "ed", href: "/ward-flow/ed/peel-ed", label: "Emergency department" },
+      { id: "handover", href: "/ward-flow/handover", label: "Handover" },
     ]);
     expect(unitReferences.map((entry: { unitId: string }) => entry.unitId)).toEqual([
       "rph-adult-secure",

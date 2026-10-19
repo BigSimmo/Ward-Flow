@@ -123,12 +123,12 @@ describe("scoped browser auth", () => {
     const result = consumeRecoveryFragment(
       {
         hash: "#access_token=secret&refresh_token=refresh&expires_in=3600&type=recovery",
-        pathname: "/mockups/ward-flow",
+        pathname: "/ward-flow",
         search: "?view=test",
       },
       replace,
     );
-    expect(replace).toHaveBeenCalledWith("/mockups/ward-flow?view=test");
+    expect(replace).toHaveBeenCalledWith("/ward-flow?view=test");
     expect(result?.recovery).toBe(true);
     expect(result?.access_token).toBe("secret");
   });
@@ -138,13 +138,13 @@ describe("scoped browser auth", () => {
       consumeRecoveryFragment(
         {
           hash: "#type=recovery&error=access_denied&access_token=synthetic&refresh_token=synthetic&expires_in=3600",
-          pathname: "/mockups/ward-flow",
+          pathname: "/ward-flow",
           search: "",
         },
         replace,
       ),
     ).toThrow(/invalid or expired/);
-    expect(replace).toHaveBeenCalledWith("/mockups/ward-flow");
+    expect(replace).toHaveBeenCalledWith("/ward-flow");
   });
 });
 

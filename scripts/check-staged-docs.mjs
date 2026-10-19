@@ -10,7 +10,7 @@ export function selectedDocChecks(files, wardIndexes = false) {
     ? [
         [
           "scripts/ward-flow/screen-map.mjs",
-          /^(?:docs\/ward-flow\/mockups\/|src\/app\/mockups\/ward-flow\/|docs\/ward-flow\/SCREEN-MAP\.md$|scripts\/ward-flow\/(?:screen-pairs|screen-map)\.mjs$)/u,
+          /^(?:design\/third-edition-mockups\/|src\/app\/ward-flow\/|docs\/ward-flow\/SCREEN-MAP\.md$|scripts\/ward-flow\/(?:screen-pairs|screen-map)\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/rules-index.mjs",
@@ -22,11 +22,11 @@ export function selectedDocChecks(files, wardIndexes = false) {
         ],
         [
           "scripts/ward-flow/mockup-manifest.mjs",
-          /^(?:docs\/ward-flow\/mockups\/|scripts\/ward-flow\/mockup-manifest\.mjs$)/u,
+          /^(?:design\/third-edition-mockups\/|scripts\/ward-flow\/mockup-manifest\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/screen-verification.mjs",
-          /^(?:docs\/ward-flow\/(?:screen-verification\.json|SCREEN-VERIFICATION\.md)$|scripts\/ward-flow\/(?:screen-pairs|screen-verification|screen-verification-lib)\.mjs$|docs\/ward-flow\/mockups\/MANIFEST\.json$)/u,
+          /^(?:docs\/ward-flow\/(?:screen-verification\.json|SCREEN-VERIFICATION\.md)$|scripts\/ward-flow\/(?:screen-pairs|screen-verification|screen-verification-lib)\.mjs$|design\/third-edition-mockups\/MANIFEST\.json$)/u,
         ],
       ]
     : [

@@ -10,6 +10,17 @@ updates:
       time: "06:00"
       timezone: Australia/Perth
     open-pull-requests-limit: 5
+    # axe 4.14 turns on label-content-name-mismatch, which flags about 30 existing components whose
+    # aria-label leaves out their visible text. Held at 4.13 until those labels are fixed (October 2026).
+    ignore:
+      - dependency-name: "@axe-core/playwright"
+        versions: [">=4.14.0"]
+      - dependency-name: "axe-core"
+        versions: [">=4.14.0"]
+      # TypeScript 7.0 ships no compiler API and typescript-eslint does not support it yet.
+      # Revisit at TypeScript 7.1.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
     groups:
       root-minor-and-patch:
         update-types: [minor, patch]

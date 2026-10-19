@@ -532,7 +532,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </Button>
                 {isPhone ? null : (
                   <Link
-                    href="/mockups/ward-flow/referrals"
+                    href="/ward-flow/referrals"
                     className={buttonClass({ variant: "onHero" })}
                     data-testid="community-action-referral-board"
                   >
@@ -541,7 +541,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </Link>
                 )}
                 <Link
-                  href="/mockups/ward-flow/referrals/new"
+                  href="/ward-flow/referrals/new"
                   className={buttonClass({ variant: "light" })}
                   data-testid="community-action-raise-referral"
                 >
@@ -962,11 +962,11 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   Actions
                 </h3>
                 <div className={styles.guideActions}>
-                  <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
+                  <Link href="/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={Plus} size={16} />
                     Raise referral
                   </Link>
-                  <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
+                  <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={ArrowRight} size={16} />
                     Open referrals
                   </Link>

@@ -26,8 +26,8 @@ import { describe, expect, it, vi } from "vitest";
  * patient's department on every route.
  */
 
-const COORDINATOR_ROUTE = "/mockups/ward-flow";
-const WARD_ROUTE = "/mockups/ward-flow/ward/rph-adult-secure";
+const COORDINATOR_ROUTE = "/ward-flow";
+const WARD_ROUTE = "/ward-flow/ward/rph-adult-secure";
 
 const route = { pathname: COORDINATOR_ROUTE };
 vi.mock("next/navigation", () => ({
@@ -134,7 +134,7 @@ describe("ward role switcher — other wards are named to coordinators only (own
     }
     const links = within(focus).getAllByRole("link");
     expect(links).toHaveLength(1);
-    expect(links[0]?.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/ed\//);
+    expect(links[0]?.getAttribute("href")).toMatch(/^\/ward-flow\/ed\//);
   });
 
   it("on the coordinator route, the count and the named wards survive exactly as the 2026-09-03 ruling left them", () => {

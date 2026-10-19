@@ -111,7 +111,7 @@ After an expected deployment becomes active, make a small HTTPS smoke check:
 
 ```powershell
 curl.exe --max-time 20 --silent --show-error --write-out "\nHTTP %{http_code}; TLS %{ssl_verify_result}\n" https://ward-flow-production.up.railway.app/api/health
-curl.exe --max-time 20 --silent --show-error --output NUL --write-out "HTTP %{http_code}; TLS %{ssl_verify_result}\n" https://ward-flow-production.up.railway.app/mockups/ward-flow/wards
+curl.exe --max-time 20 --silent --show-error --output NUL --write-out "HTTP %{http_code}; TLS %{ssl_verify_result}\n" https://ward-flow-production.up.railway.app/ward-flow/wards
 ```
 
 Use the affected route for the task; the wards route is an example. The health

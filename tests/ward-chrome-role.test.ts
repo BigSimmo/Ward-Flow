@@ -23,17 +23,17 @@ const officerNotice: Notice = {
 
 describe("route-derived Ward Flow chrome roles", () => {
   it("identifies the transport officer route and label", () => {
-    expect(wardChromeRole("/mockups/ward-flow/transport/officer")).toBe("officer");
-    expect(wardChromeRole("/mockups/ward-flow/transport/officer/")).toBe("officer");
+    expect(wardChromeRole("/ward-flow/transport/officer")).toBe("officer");
+    expect(wardChromeRole("/ward-flow/transport/officer/")).toBe("officer");
     expect(CHROME_ROLE_LABELS.officer).toBe("Transport officer");
     expect(orderRoleScreensForRole(WARD_NAV, "officer")[0]?.id).toBe("officer");
   });
 
   it("keeps coordinator, ward and ED route behavior", () => {
-    expect(wardChromeRole("/mockups/ward-flow")).toBe("coordinator");
-    expect(wardChromeRole("/mockups/ward-flow/ward/fre-adult-open")).toBe("ward");
-    expect(wardChromeRole("/mockups/ward-flow/board/fre-adult-open")).toBe("ward");
-    expect(wardChromeRole("/mockups/ward-flow/ed/fre-ed")).toBe("ed");
+    expect(wardChromeRole("/ward-flow")).toBe("coordinator");
+    expect(wardChromeRole("/ward-flow/ward/fre-adult-open")).toBe("ward");
+    expect(wardChromeRole("/ward-flow/board/fre-adult-open")).toBe("ward");
+    expect(wardChromeRole("/ward-flow/ed/fre-ed")).toBe("ed");
   });
 });
 
@@ -74,11 +74,11 @@ describe("Ward Flow Tasks role boundary", () => {
 
 describe("28 day readmission flag audience (Josh, 9 Oct 2026)", () => {
   it("shows the flag to the coordinator route only", () => {
-    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/referrals"))).toBe(true);
+    expect(canSeeReadmissionFlag(wardChromeRole("/ward-flow/referrals"))).toBe(true);
     expect(canSeeReadmissionFlag(wardChromeRole(""))).toBe(true);
     for (const role of ["ward", "ed", "officer", "community", "bed_manager", "executive"] as const)
       expect(canSeeReadmissionFlag(role)).toBe(false);
-    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/ed/scgh"))).toBe(false);
-    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/ward/fre-adult-open"))).toBe(false);
+    expect(canSeeReadmissionFlag(wardChromeRole("/ward-flow/ed/scgh"))).toBe(false);
+    expect(canSeeReadmissionFlag(wardChromeRole("/ward-flow/ward/fre-adult-open"))).toBe(false);
   });
 });

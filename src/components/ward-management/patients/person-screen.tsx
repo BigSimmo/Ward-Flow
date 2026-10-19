@@ -18,7 +18,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
  *
  * The owner's flow is *search for a patient, and if nobody comes up, add them, then refer from
  * their own screen.* The last step had nowhere to happen: `/patients/[patientId]`
- * (since moved to `/mockups/ward-flow/movements/[movementId]`) looked a `Movement` up by id, so the
+ * (since moved to `/ward-flow/movements/[movementId]`) looked a `Movement` up by id, so the
  * route named after people was about requests, and every one of its seven inbound links passed a
  * movement id (checked, not assumed — the variable is called `patient` in several of them, which is
  * where the confusion lives). Clicking a person in search results did nothing at all, because there
@@ -249,7 +249,7 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
           <section className={styles.missing} data-testid="ward-person-missing">
             <h1 className={styles.pageTitle}>No such person</h1>
             <p>No patient record was found for this address. Search by name or record number.</p>
-            <Link className={styles.secondaryButton} href="/mockups/ward-flow/search">
+            <Link className={styles.secondaryButton} href="/ward-flow/search">
               Back to search
             </Link>
           </section>

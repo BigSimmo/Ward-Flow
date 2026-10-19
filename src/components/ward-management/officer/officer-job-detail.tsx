@@ -11,7 +11,10 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
-import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
+import {
+  referenceDistance,
+  REFERENCE_DISTANCE_CAVEAT,
+} from "@/components/ward-management/reference/ward-reference-distances";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   DIVERSION_REASONS,
@@ -281,6 +284,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <dd className={styles.mono}>{transport.cadNumber ?? "Not recorded"}</dd>
         </div>
       </dl>
+      {roadRoute ? <p className={styles.muted}>{REFERENCE_DISTANCE_CAVEAT}</p> : null}
       <section className={styles.phCard} aria-label="Steps">
         <h3 className={styles.phCardHead}>
           Steps <span className={styles.mono}>{Math.max(0, legIndex)} of 4</span>

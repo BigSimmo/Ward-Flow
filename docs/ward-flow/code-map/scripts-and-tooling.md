@@ -349,20 +349,20 @@ line.
   that Ward Flow's implementation tree and its journeys carry no literal "mockup" in their paths,
   so every name-based rule needs this explicit ward arm to see them at all.
 - **`scripts/production-readiness.ts`** (538 lines) — One-line mention (~line 277): the
-  `DeveloperAreaGate` production-gating comment lists `/mockups/ward-flow/**` alongside the other
-  three gated mockup surfaces, and states the exact double-flag pairing that is allowed to bypass
+  `DeveloperAreaGate` production-gating comment listed `/mockups/ward-flow/**` alongside the other
+  three gated mockup surfaces (Ward Flow left `/mockups` on 19 October 2026), and states the exact double-flag pairing that is allowed to bypass
   it for the isolated Playwright production build.
 - **`scripts/generate-site-map.ts`** (786 lines) — Generates `docs/site-map.md`. Two Ward Flow
-  entries: a redirect-map row for `/mockups/ward-flow/constellation` → `/network`, and a
-  known-caveats line documenting that `/mockups/ward-flow` is one of four developer-gated mockup
-  subtrees that survive in production (404 elsewhere) behind `DeveloperAreaGate`.
+  entries: a redirect-map row for `/ward-flow/constellation` → `/network`, and a
+  known-caveats line describing the developer-gated `/mockups` subtrees that survive in production
+  (none since Ward Flow moved to `/ward-flow` on 19 October 2026).
 - **`scripts/issues-report.mjs`** (403 lines) — `/issues` ledger reporting tool. `--ward` filters
   the outstanding-issues report to rows `isWardFlowRow` recognises (matching `/^ward flow\b/i` in
   the summary, or explicit flags); `--core` is the complement. The two flags are mutually exclusive
   (throws if both given).
 - **`scripts/playwright-pr-shards.mjs`** (350 lines) — PR-required Playwright shard assignment.
   One-line comment (~line 132) records that `ui-ward-{management,coordinator,roles}.spec.ts` moved
-  OUT of the required PR shards once Ward Flow moved behind the `/mockups/ward-flow` developer
+  OUT of the required PR shards once Ward Flow moved behind the `/ward-flow` developer
   gate; it now runs only under the advisory `chromium-mockups` project.
 - **`scripts/list-database-skills.mjs`** (507 lines) — One-line reference to
   `docs/archive/ward-management-mode-map.md` in a list of catalogued skill docs; not Ward-Flow-specific
@@ -378,7 +378,7 @@ line.
   (mockup-route retirement safety, off-scale Tailwind text utilities, dead-code candidate
   detection) that each use Ward Flow as a worked example or an explicit exclusion inside otherwise
   repo-wide logic — e.g. `/mockups/ward-flow` is cited as one of the live-in-production gated
-  mockup surfaces a naive retirement policy would wrongly delete, and `check-type-scale.mjs`'s own
+  mockup surfaces (as it was before 19 October 2026) a naive retirement policy would wrongly delete, and `check-type-scale.mjs`'s own
   comment names the Ward Flow 12px floor as the reason its off-scale findings on ward CSS are
   grandfathered rather than enforced there.
 - **`scripts/check-docs-links.mjs`** (626 lines) — npm: `docs:check-links`. The **repository-wide**
@@ -415,7 +415,7 @@ adversarial RAG fixture title). None of the three are Ward Flow tooling.
 
 Also outside scope by name but not by content: **`scripts/audit-officer-200.mjs`** (154 lines) and
 **`scripts/audit-third-edition-200.mjs`** (240 lines) _are_ genuine, undocumented Ward Flow
-Playwright audits (200-point checklists against `/mockups/ward-flow/transport/officer` and the 16
+Playwright audits (200-point checklists against `/ward-flow/transport/officer` and the 16
 third-edition screens respectively, using `stableProjectPort`/`WARD_FLOW_URL`) — they did not
 surface from the `ward` grep because their filenames and most of their content name screens and
 test IDs rather than the word "ward" itself. ⚠️ Both hardcode `ARTIFACT_DIR` to a path outside this
@@ -431,7 +431,7 @@ is staged.
 - **Lines 19–59: generated-index re-check.** `ward_flow_index_check(script, pattern)` runs
   `node <script> --check` and blocks the commit if it disagrees, only when a staged file matches
   that script's pattern:
-  - `screen-map.mjs` ← `design/third-edition-mockups/**`, `src/app/mockups/ward-flow/**`,
+  - `screen-map.mjs` ← `design/third-edition-mockups/**`, `src/app/ward-flow/**`,
     `docs/ward-flow/SCREEN-MAP.md`, `scripts/ward-flow/screen-pairs.mjs`
   - `rules-index.mjs` ← `docs/ward-flow/RULES.md`
   - `owner-rulings-index.mjs` ← `docs/ward-flow/(archive/dated-notes/)?owner-*.md`,

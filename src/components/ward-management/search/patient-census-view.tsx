@@ -825,14 +825,14 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         Movement
       </Link>
     ) : row.kind === "referral" ? (
-      <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals">
+      <Link className={buttonClass({ size: "sm" })} href="/ward-flow/referrals">
         Referral
       </Link>
     ) : row.kind === "admission" && row.unitId && row.bedNumber !== undefined ? (
       <Link
         className={buttonClass({ size: "sm" })}
         data-census-bed-link={row.key}
-        href={`/mockups/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
+        href={`/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
         onClick={() => {
           window.sessionStorage.setItem("wardflow:census-bed-opener", row.key);
           // ward-screen.tsx returns to Census on close only for this exact unit and bed.
@@ -843,7 +843,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         Ward bed
       </Link>
     ) : quiet ? (
-      <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
+      <Link className={buttonClass({ size: "sm" })} href="/ward-flow/referrals/new">
         New referral
       </Link>
     ) : null;

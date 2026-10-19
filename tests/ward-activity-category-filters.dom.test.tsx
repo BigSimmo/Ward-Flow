@@ -7,7 +7,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const WARD_PATHNAME = "/mockups/ward-flow/ward/rph-adult-secure";
+const WARD_PATHNAME = "/ward-flow/ward/rph-adult-secure";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => WARD_PATHNAME,

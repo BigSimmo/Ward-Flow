@@ -36,7 +36,7 @@ export const BROADCAST_TARGET_SCOPES: readonly BroadcastTargetScope[] = [
 
 /**
  * The one non-unit sender ACKNOWLEDGE_BROADCAST_ALERT accepts. `WardBroadcastBanner` is mounted
- * with no `currentUnitId` at its only real call site (`src/app/mockups/ward-flow/layout.tsx`), so
+ * with no `currentUnitId` at its only real call site (`src/app/ward-flow/layout.tsx`), so
  * its acknowledgement falls back to this id rather than a real ward/ED unit — the coordinator
  * desk acknowledging on behalf of no specific unit. Every other unrecognised unitId is refused.
  */

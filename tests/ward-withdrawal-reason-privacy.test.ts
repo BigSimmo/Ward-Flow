@@ -17,7 +17,7 @@ import { namesRealPlace } from "./helpers/ward-place-names";
  *     reason: `withdrawn — placed at ${acceptedUnit.name}`
  *
  * and the ward page renders `entry.reason` verbatim. So on the seeded fixture, at
- * `/mockups/ward-flow/ward/fsh-adult-secure`, FSH was told **"Referral withdrawn once RGH Adult
+ * `/ward-flow/ward/fsh-adult-secure`, FSH was told **"Referral withdrawn once RGH Adult
  * Secure confirmed the bed"** — the losing ward, reading the winner's name, out of the very field
  * that exists to record its own loss. Two sessions found it independently and both confirmed it on
  * screen rather than inferring it.

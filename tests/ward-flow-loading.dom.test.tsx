@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import WardFlowLoading from "@/app/mockups/ward-flow/loading";
+import WardFlowLoading from "@/app/ward-flow/loading";
 
 describe("Ward Flow route loading state", () => {
   it("announces the page is loading and keeps the main landmark the skip link targets", () => {

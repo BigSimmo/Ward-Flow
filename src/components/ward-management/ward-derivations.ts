@@ -783,7 +783,7 @@ export function buildActionInbox(
       // The reducer reads the same start for snoozes and owners (`inboxRowSince`).
       since: planned.expectedArrivalAt,
       // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
-      href: "/mockups/ward-flow/capacity",
+      href: "/ward-flow/capacity",
       ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
     });
   }

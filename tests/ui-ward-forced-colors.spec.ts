@@ -113,13 +113,13 @@ async function open(page: Page, path: string): Promise<void> {
  * match the claim it is taken to support.
  */
 test("@mockup forced colours is actually active, or nothing below means anything", async ({ page }) => {
-  await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
+  await open(page, "/ward-flow/ward/rph-adult-secure");
   const active = await page.evaluate(() => window.matchMedia("(forced-colors: active)").matches);
   expect(active, "forced-colors emulation did not apply; the assertions in this file are vacuous").toBe(true);
 });
 
 test("@mockup a panel's border survives forced colours", async ({ page }) => {
-  await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
+  await open(page, "/ward-flow/ward/rph-adult-secure");
   const panel = await measure(page, '[data-ward-primitive="panel"]', "border");
 
   expect(panel.found, "no panel on this screen — the assertion below would be vacuous").toBeGreaterThan(0);
@@ -131,7 +131,7 @@ test("@mockup a panel's border survives forced colours", async ({ page }) => {
 });
 
 test("@mockup a chip's border survives forced colours, and its words carry the state either way", async ({ page }) => {
-  await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
+  await open(page, "/ward-flow/ward/rph-adult-secure");
   const chip = await measure(page, '[data-ward-primitive="chip"]', "border");
 
   expect(chip.found, "no chip on this screen — the assertion below would be vacuous").toBeGreaterThan(0);
@@ -172,7 +172,7 @@ test("@mockup a chip's border survives forced colours, and its words carry the s
  * the message says which colours, so the fix arrives with evidence attached.
  */
 test("@mockup a panel's outline and its header rule agree under forced colours", async ({ page }) => {
-  await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
+  await open(page, "/ward-flow/ward/rph-adult-secure");
 
   const pair = await page.evaluate(() => {
     const panel = document.querySelector('[data-ward-primitive="panel"]');
@@ -320,7 +320,7 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
 
   // Control, in ordinary colours: the injection must actually reach the border.
   await page.emulateMedia({ forcedColors: "none" });
-  await page.goto("/mockups/ward-flow/ward/rph-adult-secure", { waitUntil: "load" });
+  await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
   const control = await probe();
@@ -332,7 +332,7 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
   ).toBe(true);
 
   // The real question.
-  await open(page, "/mockups/ward-flow/ward/rph-adult-secure");
+  await open(page, "/ward-flow/ward/rph-adult-secure");
   const forced = await probe();
   expect(forced, "no panel found in the forced-colors run").not.toBeNull();
 
@@ -391,7 +391,7 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
  */
 test("@mockup printing the patient search keeps every census row on the sheet", async ({ page }) => {
   await page.setViewportSize({ width: 794, height: 1123 }); // A4 portrait at 96dpi
-  await page.goto("/mockups/ward-flow/search", { waitUntil: "load" });
+  await page.goto("/ward-flow/search", { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
@@ -469,7 +469,7 @@ test("@mockup a figure's value is readable under forced colours", async ({ page 
   // so the contrast property this test protects is checked there instead. "Midland" is a real
   // catchment-table clinic name (`ward-movements.ts` raises referrals against it by that exact
   // name), so its slug is a genuine, routable team page rather than an invented id.
-  await open(page, "/mockups/ward-flow/community/midland");
+  await open(page, "/ward-flow/community/midland");
   const figure = await measure(page, '[data-ward-primitive="figure"]', "text");
 
   expect(figure.found, "no figure on this screen — the assertion below would be vacuous").toBeGreaterThan(0);

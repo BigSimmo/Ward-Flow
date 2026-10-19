@@ -49,84 +49,84 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   {
     key: "handover",
     title: "Handover",
-    href: "/mockups/ward-flow/handover",
+    href: "/ward-flow/handover",
     keywords: ["handover", "shift", "shift handover", "nursing", "notes"],
     description: "Handover notes",
   },
   {
     key: "capacity",
     title: "Capacity",
-    href: "/mockups/ward-flow/capacity",
+    href: "/ward-flow/capacity",
     keywords: ["capacity", "bed map", "beds", "occupancy", "capacity bed map"],
     description: "Beds and occupancy",
   },
   {
     key: "delays",
     title: "Delays",
-    href: "/mockups/ward-flow/delays",
+    href: "/ward-flow/delays",
     keywords: ["delays", "transfer delays", "past due", "wait"],
     description: "Transfer delays",
   },
   {
     key: "movements",
     title: "Movements",
-    href: "/mockups/ward-flow/movements",
+    href: "/ward-flow/movements",
     keywords: ["movements", "horizon", "intake", "transfers"],
     description: "Open movements",
   },
   {
     key: "escalation",
     title: "Delays",
-    href: "/mockups/ward-flow/escalation",
+    href: "/ward-flow/escalation",
     keywords: ["escalation", "desk", "escalation desk", "priority", "alerts"],
     description: "Same as Delays",
   },
   {
     key: "statistics",
     title: "Statistics",
-    href: "/mockups/ward-flow/statistics",
+    href: "/ward-flow/statistics",
     keywords: ["statistics", "stats", "reports", "metrics", "system statistics"],
     description: "Figures for this demo",
   },
   {
     key: "on-call",
     title: "On-call",
-    href: "/mockups/ward-flow/on-call",
+    href: "/ward-flow/on-call",
     keywords: ["on-call", "roster", "specialist", "doctors"],
     description: "Contacts — no roster in this prototype",
   },
   {
     key: "hub",
     title: "Places",
-    href: "/mockups/ward-flow/hub",
+    href: "/ward-flow/hub",
     keywords: ["hub", "facilities", "facilities hub", "site overview"],
     description: "Wards, ED and teams",
   },
   {
     key: "settings",
     title: "Settings",
-    href: "/mockups/ward-flow/settings",
+    href: "/ward-flow/settings",
     keywords: ["settings", "configuration", "preferences", "system settings"],
     description: "This browser",
   },
   {
     key: "legal-forms",
     title: "Forms",
-    href: "/mockups/ward-flow/legal-forms",
+    href: "/ward-flow/legal-forms",
     keywords: ["legal-forms", "legal forms", "forms", "mha", "mental health act", "mental health act forms"],
     description: "Recorded forms (demo)",
   },
   {
     key: "referrals",
     title: "Referrals",
-    href: "/mockups/ward-flow/referrals",
+    href: "/ward-flow/referrals",
     keywords: ["referrals", "intake", "board", "queue"],
     description: "Waiting for a bed",
   },
   {
     key: "community",
     title: "Community",
-    href: "/mockups/ward-flow/community",
+    href: "/ward-flow/community",
     keywords: ["community", "teams", "directory", "clinics"],
     description: "Community teams",
   },
@@ -235,7 +235,7 @@ function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]):
     })
     .map((ed) => ({
       ed,
-      href: `/mockups/ward-flow/ed/${ed.id}`,
+      href: `/ward-flow/ed/${ed.id}`,
     }));
 }
 
@@ -300,7 +300,7 @@ function searchLegalForms(
     .map((form) => ({
       form,
       title: legalFormName(form),
-      href: "/mockups/ward-flow/legal-forms",
+      href: "/ward-flow/legal-forms",
     }));
 }
 
