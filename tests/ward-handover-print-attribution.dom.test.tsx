@@ -17,6 +17,60 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+function renderSheet(initial: Instant | null) {
+  function Sheet() {
+    const [preparedAt, setPreparedAt] = useState<Instant | null>(initial);
+    return (
+      <HandoverPrintSheet
+        groups={[]}
+        columns={[]}
+        ctx={{ now: NOW_ANCHOR, cutoff: NOW_ANCHOR, readyBeds: () => 0 }}
+        wards={[]}
+        held={[]}
+        outsideAct={[]}
+        isHighlighted={() => false}
+        anyHighlight={false}
+        scopeLabel="Whole network"
+        shiftLabel="Day"
+        densityLabel="Standard"
+        sheetDate="Friday"
+        options={DEFAULT_PRINT_OPTIONS}
+        onOptionsChange={() => {}}
+        controls={null}
+        highlightControls={null}
+        onOpenPatient={() => {}}
+        onBack={() => {}}
+        onPrintPrepared={setPreparedAt}
+        preparedAt={preparedAt}
+        now={NOW_ANCHOR}
+      />
+    );
+  }
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <Sheet />
+    </WardFlowProvider>,
+  );
+}
+
+it("labels a sheet nobody has prepared yet as a preview, then as prepared once Print is pressed", () => {
+  setWardFeatureFlagOnDevice("role-access", true);
+  setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+  renderSheet(null);
+  const stamps = () => screen.getAllByTestId("ward-print-attribution");
+  for (const stamp of stamps()) {
+    expect(stamp).toHaveTextContent(/^Preview opened by /);
+    expect(stamp).not.toHaveTextContent("Prepared for printing");
+  }
+  expect(document.body).toHaveTextContent("no copy prepared yet");
+  expect(document.body).not.toHaveTextContent(/Copy prepared \d/);
+  const print = vi.spyOn(window, "print").mockImplementation(() => {
+    for (const stamp of stamps()) expect(stamp).toHaveTextContent(/^Prepared for printing by /);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
+  expect(print).toHaveBeenCalledOnce();
+});
+
 it("prints the current desk and full place on every sheet, using the copy generation time", () => {
   setWardFeatureFlagOnDevice("role-access", true);
   setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });

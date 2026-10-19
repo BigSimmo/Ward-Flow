@@ -328,18 +328,26 @@ export function HandoverPrintSheet({
         <div className={styles.meta}>{meta}</div>
       </div>
       <div className={styles.stamp}>
-        Prepared {prepared} {sheetDate} AWST
+        {/* Until a copy is prepared (onPrintPrepared), the open sheet is a preview, never a prepared copy. */}
+        {preparedAt === null ? "Preview" : "Prepared"} {prepared} {sheetDate} AWST
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
-        <WardPrintAttribution at={preparedAt ?? now} className={styles.attribution} lead="Prepared for printing by" />
+        <WardPrintAttribution
+          at={preparedAt ?? now}
+          className={styles.attribution}
+          lead={preparedAt === null ? "Preview opened by" : "Prepared for printing by"}
+        />
       </div>
     </header>
   );
 
   const footer = (
     <footer className={styles.pf}>
-      <span>Copy prepared {prepared}. Check the live board before acting.</span>
+      <span>
+        {preparedAt === null ? `Preview at ${prepared}; no copy prepared yet.` : `Copy prepared ${prepared}.`} Check the
+        live board before acting.
+      </span>
       <span className={styles.spacer} />
       <span>Form times as typed, not legally checked</span>
       <span>Ward Flow prototype</span>
