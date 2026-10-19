@@ -287,7 +287,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   FLAG_REFERRAL_TURNAROUND_PRIORITY: ["coordinator"],
   // Smart features ideas 3 and 4 (19 Oct 2026). Only the ward itself opens its copy; asking for
   // information is the ward's (or the coordinator's for it); the referrer side ticks items off.
-  MARK_REFERRAL_OPENED: ["ward"],
+  MARK_REFERRAL_OPENED: ["ward", "coordinator"],
   REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
   MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],

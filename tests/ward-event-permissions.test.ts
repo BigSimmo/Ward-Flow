@@ -277,7 +277,7 @@ describe("who may raise which event", () => {
     FLAG_REFERRAL_TURNAROUND_PRIORITY: ["coordinator"],
     // Smart features ideas 3 and 4 (19 Oct 2026): a ward's receipt on its own copy, a ward asking
     // for fixed-list items before deciding, and the referrer side ticking them off.
-    MARK_REFERRAL_OPENED: ["ward"],
+    MARK_REFERRAL_OPENED: ["ward", "coordinator"],
     REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
     MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],

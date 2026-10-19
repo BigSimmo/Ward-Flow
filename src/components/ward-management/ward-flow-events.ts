@@ -730,7 +730,9 @@ export type WardFlowEvent =
       /**
        * Smart features idea 3 (19 Oct 2026): the addressed ward opened this referral. Stamps
        * `ReferralAddressing.openedAt` once, so the sender sees "Opened by <ward>". A receipt, not an
-       * answer: no state moves and the decision clock keeps running. Ward only, for its own copy.
+       * answer: no state moves and the decision clock keeps running. Raised for one ward's own copy:
+       * by that ward, or by the coordinator on its behalf (every action is the coordinator's, Josh
+       * 10 Oct 2026). Screens raise it only when the ward itself shows the referral.
        */
       type: "MARK_REFERRAL_OPENED";
       role: WardFlowRole;
