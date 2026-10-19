@@ -197,6 +197,15 @@ describe("signOutConflicts (clash guard)", () => {
     expect(signOutConflicts(["AGENTS.md", "docs/a.md"], all, "ward/mine", "D:/w/mine")).toEqual([]);
   });
 
+  it("releases nothing when a RELEASED line has an empty files= field", () => {
+    const claim = "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md";
+    const empty = "RELEASED 2026-09-27 | Other | ward/other | files= | slip";
+    const log = ["Open sign-outs only", claim, empty].join("\n");
+    expect(signOutConflicts(["AGENTS.md"], log, "ward/mine", "D:/w/mine")).toEqual([
+      { file: "AGENTS.md", owner: "Other", branch: "ward/other" },
+    ]);
+  });
+
   it("reuses a scoped approval already recorded in an older owner description", () => {
     const log = [
       "Open sign-outs only",

@@ -287,13 +287,14 @@ function releasedBranches(line) {
     .filter(Boolean);
 }
 
-/** Files named by a RELEASED line's `files=a, b` field; none means the whole branch is released. */
+/** Files named by a RELEASED line's `files=a, b` field, or null without one (the whole branch is released).
+ * A `files=` field naming nothing releases nothing, so a slip cannot clear every claim. */
 function releasedFiles(line) {
   const field = line
     .split("|")
     .map((part) => part.trim())
     .find((part) => /^files\s*=/i.test(part));
-  if (!field) return [];
+  if (!field) return null;
   return field
     .replace(/^files\s*=\s*/i, "")
     .split(/[,;]\s*/)
@@ -394,7 +395,7 @@ function signOutEntries(signOutText) {
       for (const branch of releasedBranches(line)) {
         for (let index = entries.length - 1; index >= 0; index -= 1) {
           if (entries[index].branch !== branch) continue;
-          if (files.length === 0) {
+          if (files === null) {
             entries.splice(index, 1);
             continue;
           }

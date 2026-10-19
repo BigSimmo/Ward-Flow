@@ -33,7 +33,7 @@ At handoff, preserve the checkpoint, log path and exact outstanding ownership. A
 RELEASED <date> | <owner> | <task-branch> | <handoff/integration reason>; repo=BigSimmo/Ward-Flow
 ```
 
-To hand back only some files, add a `files=` field naming the exact paths. It closes those paths in the branch's earlier claims and keeps the rest active; files named only in the reason are not released. Obtain the existing exact-file takeover authority if ownership overlaps.
+To hand back only some files, add a `files=` field naming the exact paths. It closes those paths in the branch's earlier claims and keeps the rest active; files named only in the reason are not released. It matches claimed paths exactly, so a directory claim such as `docs/**` stays whole until a plain RELEASED line; an empty `files=` releases nothing. Obtain the existing exact-file takeover authority if ownership overlaps.
 
 ```text
 RELEASED <date> | <owner> | <task-branch> | files=<path>, <path> | <reason>; repo=BigSimmo/Ward-Flow
