@@ -236,7 +236,8 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "legal":
       return { kind: "link", label: "Open forms", href: "/ward-flow/legal-forms" };
     case "declines":
-      return { kind: "link", label: "Find a bed", href: "/ward-flow/network" };
+      // Home's placement panel, since the Network screen was retired (19 Oct 2026).
+      return { kind: "link", label: "Find a bed", href: "/ward-flow" };
     case "unsuitable":
       return { kind: "link", label: "Review", href: patientHref };
     case "hold":

@@ -242,7 +242,7 @@ of "Fold gates in order" below.
   services.
 - **`scripts/ward-flow/table-sweep.mjs`** (125 lines) — Walks the import graph transitively (not
   just one level — an earlier, shallower version missed two table-rendering files reached only
-  through `ward-management-modes` → `ward-management-network`) from each screen's `page.tsx` to
+  through `ward-management-modes` → the since-retired `ward-management-network`) from each screen's `page.tsx` to
   report which screens render a table and which implementation. Uses `<th[ >]`, not `<th[^>]*>`,
   because the latter also matches `<thead>` and once produced a false accessibility finding across
   ten files.
@@ -320,10 +320,9 @@ line.
   commit, then blob, then tree — checking only `^{commit}` once reported 24 false "unresolved SHA"
   findings against 0 real defects. Copyable into any worktree with zero dependencies.
 - **`scripts/check-ward-data.mjs`** (976 lines) — Read-only, offline. Imports real values from the
-  TypeScript modules themselves (re-running under `tsx`) rather than duplicating their arithmetic,
-  except one module-local React constant it must text-parse (`columnServices` in
-  `ward-management-network.tsx`) — that parse fails loudly rather than silently reporting nothing
-  to check. Every failure message names the file to edit and the values as written, because its
+  TypeScript modules themselves (re-running under `tsx`) rather than duplicating their arithmetic.
+  (Its text parse of the Network map's `columnServices` went with the Network screen on
+  19 October 2026.) Every failure message names the file to edit and the values as written, because its
   audience is a psychiatrist editing bed numbers, not a developer reading a stack trace. Not
   npm-wired; documented usage is `node scripts/check-ward-data.mjs`.
 - **`scripts/run-ward-tests.mjs`** (537 lines) — Usage: `node scripts/run-ward-tests.mjs [files...]`
@@ -353,7 +352,7 @@ line.
   three gated mockup surfaces (Ward Flow left `/mockups` on 19 October 2026), and states the exact double-flag pairing that is allowed to bypass
   it for the isolated Playwright production build.
 - **`scripts/generate-site-map.ts`** (786 lines) — Generates `docs/site-map.md`. Two Ward Flow
-  entries: a redirect-map row for `/ward-flow/constellation` → `/network`, and a
+  entries: redirect-map rows for `/ward-flow/constellation` and `/ward-flow/network` → `/ward-flow`, and a
   known-caveats line describing the developer-gated `/mockups` subtrees that survive in production
   (none since Ward Flow moved to `/ward-flow` on 19 October 2026).
 - **`scripts/issues-report.mjs`** (403 lines) — `/issues` ledger reporting tool. `--ward` filters

@@ -35,7 +35,6 @@ export const RAIL_GROUPS = [
       ["movements", "Movements"],
       ["capacity", "Capacity"],
       ["delays", "Delays"],
-      ["network", "Network"],
       // Behind the `bed-meeting-tv` feature flag (15 Oct 2026).
       ["bed-meeting", "Bed meeting TV"],
     ],

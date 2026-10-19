@@ -15,8 +15,6 @@ vi.mock("next/link", () => ({
 
 import { FlowDiagram } from "@/components/ward-management/coordinator/flow-diagram";
 import { dayOf } from "@/components/ward-management/ward-clock";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -59,38 +57,7 @@ function todayCount(unitId: string, state: "confirmed" | "expected"): number {
  * unit's figure is read at runtime rather than hard-coded, now that neither WR-008 nor WR-001
  * (the two hand-authored releases this suite used to pin) still exists.
  */
-describe("network view and coordinator flow diagram never show the raw potential figure", () => {
-  it("network view shows Confirmed/Expected from capacityBreakdown(), not unitCapacity()'s potential", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardModeWorkspace mode="network" />
-      </WardFlowProvider>,
-    );
-
-    // The defect this suite exists to catch: the word this view (and its legend) used to show
-    // for a figure that is no longer computed anywhere on this branch.
-    expect(screen.queryByText("Potential")).not.toBeInTheDocument();
-
-    // The network card's chips carry no visible label text of their own (only a `data-state`
-    // attribute and a `title` tooltip — see `BedStateChips`), so the figure is read from the
-    // chip matching each state rather than from a rendered word.
-    const armConfirmed = todayCount("arm-adult-open", "confirmed");
-    const armExpected = todayCount("arm-adult-open", "expected");
-    const dischargedUnitCard = screen.getByTestId("ward-network-card-arm-adult-open");
-    expect(dischargedUnitCard.querySelector('[data-state="confirmed"]')).toHaveTextContent(String(armConfirmed));
-    expect(dischargedUnitCard.querySelector('[data-state="expected"]')).toHaveTextContent(String(armExpected));
-    expect(dischargedUnitCard.getAttribute("aria-label")).not.toMatch(/potential/i);
-    expect(dischargedUnitCard.getAttribute("aria-label")).toMatch(
-      new RegExp(`${armConfirmed} confirmed, ${armExpected} expected`),
-    );
-
-    const rphConfirmed = todayCount("rph-adult-secure", "confirmed");
-    const rphExpected = todayCount("rph-adult-secure", "expected");
-    const confirmedUnitCard = screen.getByTestId("ward-network-card-rph-adult-secure");
-    expect(confirmedUnitCard.querySelector('[data-state="confirmed"]')).toHaveTextContent(String(rphConfirmed));
-    expect(confirmedUnitCard.querySelector('[data-state="expected"]')).toHaveTextContent(String(rphExpected));
-  });
-
+describe("coordinator flow diagram never shows the raw potential figure", () => {
   it("coordinator flow diagram shows Confirmed/Expected from capacityBreakdown(), not unitCapacity()'s potential", () => {
     render(
       <FlowDiagram
