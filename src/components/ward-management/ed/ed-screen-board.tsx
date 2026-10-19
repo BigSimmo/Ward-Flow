@@ -9,6 +9,7 @@ import { EdNeedsYou } from "./ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
+import { TierKey } from "../tier-key";
 
 export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
   const {
@@ -223,6 +224,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
                     No one matches this search and filter. Everyone stays below, dimmed.
                   </p>
                 ) : null}
+                <TierKey />
                 <table
                   className={styles.a2Table}
                   data-columns={isTabletPortrait ? "priority" : "all"}

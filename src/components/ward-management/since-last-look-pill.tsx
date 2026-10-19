@@ -45,6 +45,12 @@ function ScopedReview({
   const trigger = useRef<HTMLButtonElement>(null);
   const count = sinceLastLookCount(changes);
   const open = review !== null;
+  // Simplification A4 (Josh, 19 Oct 2026): "0 updates since 10:28" was the loudest thing in the
+  // header and said nothing. With nothing new the slot keeps its place, so the header never jumps
+  // when an update arrives, but shows no button until there is something to review.
+  if (count === 0 && !open) {
+    return <span className={styles.slot} data-testid={`since-last-look-${scopeKey}`} data-empty="true" />;
+  }
   return (
     <span className={styles.slot} data-testid={`since-last-look-${scopeKey}`}>
       <Button

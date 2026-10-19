@@ -183,9 +183,8 @@ describe("scoped Ward and ED last-look sheets", () => {
     const ed = within(screen.getByTestId(`since-last-look-ed:${movement.originEdId}`));
     expect(ward.getByRole("button")).toHaveTextContent("1 update");
     expect(ed.getByRole("button")).toHaveTextContent("1 update");
-    expect(within(screen.getByTestId("since-last-look-ward:unrelated")).getByRole("button")).toHaveTextContent(
-      "0 updates",
-    );
+    // Nothing new for this ward: the slot stays, with no "0 updates" button (simplification A4).
+    expect(within(screen.getByTestId("since-last-look-ward:unrelated")).queryByRole("button")).toBeNull();
     const trigger = ward.getByRole("button");
     trigger.focus();
     fireEvent.click(trigger);
@@ -325,13 +324,25 @@ describe("scoped review persistence", () => {
   });
 
   it("names yesterday in both the header and review description when its window crosses midnight", () => {
+    // A look taken at 23:50 yesterday, before the fixture's movement was accepted, so the pill has
+    // one update to show (it shows nothing when nothing changed, simplification A4).
+    const seeded = seedWardFlowState();
+    const unitId = seeded.units[0]!.id;
+    const before = { ...seeded.movements[0]!, acceptedUnitId: unitId, stage: "placement_requested" as const };
+    const world = { ...seeded, movements: [before], referrals: [], bedReleases: [] };
+    const scopeKey = `ward:${unitId}`;
+    window.sessionStorage.setItem(
+      scopedStorageKey(scopeKey, "local-demo", seeded.scenario, 0),
+      JSON.stringify(
+        takeLastLookSnapshot(scopeLastLookWorld(world, scopeKey), 1430, DEFAULT_DUE_SOON_THRESHOLDS, scopeKey),
+      ),
+    );
     render(
       <WardFlowProvider initialNow={1445}>
         <ScopedFixture />
       </WardFlowProvider>,
     );
-    const state = seedWardFlowState();
-    const trigger = within(screen.getByTestId(`since-last-look-ward:${state.units[0]!.id}`)).getByRole("button");
+    const trigger = within(screen.getByTestId(`since-last-look-ward:${unitId}`)).getByRole("button");
     expect(trigger).toHaveTextContent("since 23:50 yesterday");
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog")).toHaveAccessibleDescription("Updates since 23:50 yesterday · 15-minute window");

@@ -74,17 +74,10 @@ export const HubPlaceRow = memo(function HubPlaceRow({
           {wardFigures === undefined ? null : (
             <>
               <BedStrip bar counts={wardFigures} wardName={entry.name} />
-              <span
-                className={styles.resultFigures}
-                title={`${wardFigures.ready} ready, ${wardFigures.pulled} pulled, ${wardFigures.closed} closed, of ${entry.beds ?? 0} beds`}
-              >
-                <span aria-hidden="true">
-                  {wardFigures.ready}/{wardFigures.pulled}/{wardFigures.closed} of {entry.beds ?? 0}
-                </span>
-                <SrOnly>
-                  {wardFigures.ready} ready, {wardFigures.pulled} pulled, {wardFigures.closed} closed, of{" "}
-                  {entry.beds ?? 0} beds
-                </SrOnly>
+              {/* Simplification A6 (Josh, 19 Oct 2026): words, not "2/2/3 of 24". */}
+              <span className={styles.resultFigures}>
+                {wardFigures.ready} ready · {wardFigures.pulled} pulled · {wardFigures.closed} closed · of{" "}
+                {entry.beds ?? 0} beds
               </span>
               {entry.pendingPreparation === undefined || entry.pendingPreparation === 0 ? null : (
                 <span className={styles.resultPrep}>{entry.pendingPreparation} being made ready</span>

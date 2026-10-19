@@ -339,7 +339,7 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
   // A referral with no single linked patient says so plainly.
   const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
-  const patientLabel = patientInfo.patient ? patientInfo.displayName : "Not recorded";
+  const patientLabel = patientInfo.patient ? patientInfo.formalName : "Not recorded";
 
   return (
     <div
@@ -1229,9 +1229,10 @@ export function ShortlistPanel({
           <div className={shortlistStyles.subjectWho}>
             <h3 className={`${styles.shortlistMovementId} ${shortlistStyles.subjectId}`}>
               <small>Patient</small>
-              {/* Owner, 26 Sept 2026: the patient's name, never a PT or WF number. */}
+              {/* Owner, 26 Sept 2026: the patient's name, never a PT or WF number. Written "Surname,
+                  First" as the queue beside it writes it (simplification A8, 19 Oct 2026). */}
               <Link href={referral?.patientId ? patientHref(referral.patientId) : movementHref(movement.id)}>
-                {patientWho}
+                {patientIdentity.formalName}
               </Link>
             </h3>
             <span className={shortlistStyles.subjectSub}>

@@ -315,6 +315,11 @@
   white-space: nowrap;
 }
 
+/* The figures are words now ("2 ready · 2 pulled · 3 closed · of 24 beds"), so they may wrap. */
+.resultFigures {
+  white-space: normal;
+}
+
 .resultPrep {
   overflow: hidden;
   font-family: var(--wf-font);

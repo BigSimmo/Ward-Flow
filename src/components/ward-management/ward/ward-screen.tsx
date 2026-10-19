@@ -2110,12 +2110,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 ? "tab-beds"
                 : "tab-attn"
         }
-        aria-label="Home (Worth Your Attention)"
+        // Simplification A8 (19 Oct 2026): "Ward home", as the bed board names this tab, so "Home"
+        // means only the app's front page.
+        aria-label="Ward home (Worth Your Attention)"
         onClick={() => {
           selectActiveTab("attn");
         }}
       >
-        <span>Home</span>
+        <span>Ward home</span>
       </button>
     </li>
   );

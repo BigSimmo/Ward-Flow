@@ -15,7 +15,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { clockState, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   allDeclines,
   allOverrides,
@@ -60,7 +60,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeBedflow } from "./home-bedflow";
-import { dueWindowLabel, HomeEdPressure } from "./home-ed-pressure";
+import { HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { HomeWardSheet } from "./home-phone-sheets";
@@ -586,17 +586,12 @@ export function CoordinatorScreen() {
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
-  const breachWithinHour = openMovements.filter(
-    (movement) =>
-      movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "critical",
-  ).length;
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).
   const overdueInQueue = queue.filter(
     (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
   ).length;
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
-  const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -848,30 +843,12 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     inline
-                    value={breachWithinHour}
-                    // Names its noun (device audit, 11 Oct 2026): it counts recorded legal forms due
-                    // within the saved window, not the queue's "due in" wait targets.
-                    label={`Forms due within ${dueWindow}`}
-                    tone={breachWithinHour > 0 ? "warning" : undefined}
-                    className={styles.heroDueChip}
-                  />
-                  <HeroStat
-                    inline
                     value={actionInbox.length}
                     label="Exceptions"
                     tone={actionInbox.length > 0 ? "warning" : undefined}
                     expanded={heroPanel === "registers" && registerTab !== "declines"}
                     controls="ward-home-hero-panel"
                     onToggle={() => toggleRegisters("exceptions")}
-                  />
-                  <HeroStat
-                    inline
-                    value={declineRegister.length}
-                    label="Declines"
-                    tone={declineRegister.length > 0 ? "closed" : undefined}
-                    expanded={heroPanel === "registers" && registerTab === "declines"}
-                    controls="ward-home-hero-panel"
-                    onToggle={() => toggleRegisters("declines")}
                   />
                 </div>
               )
@@ -911,12 +888,6 @@ export function CoordinatorScreen() {
               isPhone ? undefined : (
                 <CheckingFoot
                   items={[
-                    {
-                      id: "overdue",
-                      label: "Overdue",
-                      value: overdueInQueue,
-                      tone: overdueInQueue > 0 ? "danger" : "neutral",
-                    },
                     {
                       id: "stale-counts",
                       label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,

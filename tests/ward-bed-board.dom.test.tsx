@@ -62,7 +62,10 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
   it("opens as a third tab and draws one cell per bed", () => {
     renderBoard();
     expect(screen.getByRole("tab", { name: /^Bed board/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "Home (Worth Your Attention)" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Ward home (Worth Your Attention)" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
     expect(document.querySelectorAll("[data-testid^='ward-board-bed-']")).toHaveLength(24);
   });
 

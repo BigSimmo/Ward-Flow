@@ -1109,12 +1109,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           </div>
           {deskModalOpen ? <OperatorSwitcherModal isOpen onClose={() => setDeskModalOpen(false)} /> : null}
         </div>
-
-        <div className={styles.railPolicyFoot}>
-          <Link href={GOVERNANCE_HREF} className={styles.railPolicyLink} title="Clinical governance and policy">
-            Policy 2026.3
-          </Link>
-        </div>
       </div>
       <Sheet
         id="ward-rail-more-pages"
