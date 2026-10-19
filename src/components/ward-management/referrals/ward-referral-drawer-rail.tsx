@@ -180,6 +180,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
     confirmationOpen,
     setConfirmationOpen,
     sendPending,
+    submissionAwaitingRecord,
     sentReferralId,
     setFlowError,
     isPhone,
@@ -217,7 +218,16 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
         </p>
       ) : null}
       <div className={styles.sendActionCluster}>
-        {isPhone && phMode === "list" ? (
+        {submissionAwaitingRecord ? (
+          <>
+            <Link className={styles.btnCancelReferral} href="/mockups/ward-flow/referrals" onClick={onClose}>
+              Open referrals board
+            </Link>
+            <button type="button" className={styles.btnSendReferral} onClick={requestClose}>
+              Close
+            </button>
+          </>
+        ) : isPhone && phMode === "list" ? (
           <button
             type="button"
             className={styles.btnSendReferral}

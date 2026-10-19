@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -42,7 +42,7 @@ describe("Handover sign-off with Undo", () => {
 });
 
 describe("Transport stage step with Undo", () => {
-  it("records en route on WF-005 and the toast's Undo puts it back at Accepted", () => {
+  it("records en route on WF-005 and the toast's Undo puts it back at Accepted", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -56,7 +56,8 @@ describe("Transport stage step with Undo", () => {
       "Transport stage: En route, next collected",
     );
 
-    fireEvent.click(screen.getByTestId("ward-officer-toast-undo"));
+    const undo = await screen.findByTestId("ward-officer-toast-undo");
+    await act(async () => fireEvent.click(undo));
     expect(screen.getByTestId("ward-officer-stepper-WF-005")).toHaveAttribute(
       "aria-label",
       "Transport stage: Accepted, next en route",

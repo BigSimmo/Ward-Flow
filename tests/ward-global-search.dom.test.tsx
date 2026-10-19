@@ -51,11 +51,20 @@ import {
   patientListName,
 } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
-import { allUnits } from "@/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 
 const units = allUnits();
+function SessionSearch({ adopted }: { adopted: boolean }) {
+  const state = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...state, sessionAdopted: adopted }}>
+      <WardGlobalSearch movements={wardMovements} patients={wardPatients} units={units} />
+    </WardFlowOverride>
+  );
+}
 
 /*
  * ⚠️ EVERY EXPECTATION BELOW IS DERIVED FROM THE SEEDED FIXTURE, NEVER FROM A STRING TYPED HERE.
@@ -101,6 +110,25 @@ describe("WardGlobalSearch — anti-vacuity floor", () => {
 });
 
 describe("WardGlobalSearch", () => {
+  it("prepares the session before accepting the first query", () => {
+    const content = (adopted: boolean) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SessionSearch adopted={adopted} />
+      </WardFlowProvider>
+    );
+    const view = render(content(false));
+    const input = screen.getByTestId("ward-global-search-input");
+    expect(input).toBeDisabled();
+    expect(input).toHaveAttribute("placeholder", "Preparing search…");
+    expect(input).toHaveAccessibleDescription("Preparing workspace. Search will be available shortly.");
+    view.rerender(content(true));
+    expect(input).toBeEnabled();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: movementQuery } });
+    const result = screen.getByTestId(`ward-global-search-result-movement-${targetMovement.id}`);
+    expect(result).toBeVisible();
+    expect(result).toHaveAttribute("href", movementHref(targetMovement.id));
+  });
   function renderSearch(onNavigate = vi.fn()) {
     render(
       <WardGlobalSearch

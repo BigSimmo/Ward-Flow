@@ -54,9 +54,10 @@ export interface ResetBaselineModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onConfirm: () => void;
+  readonly pending?: boolean;
 }
 
-export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaselineModalProps) {
+export function ResetBaselineModal({ isOpen, onClose, onConfirm, pending = false }: ResetBaselineModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Focus trapping, Escape key listener, and focus restoration to trigger
@@ -123,10 +124,11 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
             type="button"
             className={styles.btnPrimary}
             onClick={onConfirm}
+            disabled={pending}
             data-testid="confirm-restore-defaults-btn"
           >
             <RotateCcw size={15} aria-hidden="true" />
-            <span>Restore all defaults</span>
+            <span>{pending ? "Restoring…" : "Restore all defaults"}</span>
           </button>
         </footer>
       </div>

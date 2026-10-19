@@ -36,6 +36,7 @@ import {
   selectDischargeRecord,
   safeCounter,
   validRecordActor,
+  newDischargeRequestNamespace,
   type DischargeOpenHandle,
   type DischargeRecord,
   type RecordRead,
@@ -1281,7 +1282,11 @@ function WardFlowWorld({
         openDischargeRecord: (actor, admissionId) => {
           if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
             throw new Error("Record request allocation unavailable");
-          const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
+          const handle = {
+            generation: state.worldGeneration,
+            requestId: openRequestSequence.current++,
+            requestNamespace: newDischargeRequestNamespace(),
+          };
           const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
           dispatch({
             ...declaredActor,
@@ -1290,6 +1295,7 @@ function WardFlowWorld({
             admissionId,
             expectedGeneration: handle.generation,
             requestId: handle.requestId,
+            requestNamespace: handle.requestNamespace,
           });
           return handle;
         },

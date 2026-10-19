@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { OfficerScreen, isOfficerJob } from "@/components/ward-management/officer/officer-screen";
@@ -153,7 +153,7 @@ describe("officer screen carries no legal-status claim the transport record cann
 });
 
 describe("officer screen's empty state names both exclusions isOfficerJob applies", () => {
-  it("says a job may leave the list by arriving OR by its movement closing, once every job has arrived", () => {
+  it("says a job may leave the list by arriving OR by its movement closing, once every job has arrived", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -181,23 +181,24 @@ describe("officer screen's empty state names both exclusions isOfficerJob applie
 
     // Audit A4-11 / S-2 (13 Oct 2026): Collected with no Form 4A or no fit to travel asks for a
     // recorded reason first; it never blocks. Answer it the way an officer would.
-    function confirmCollectCheckIfAsked() {
+    async function confirmCollectCheckIfAsked() {
       const reason = screen.queryByTestId("ward-officer-collect-check-reason");
       if (!reason) return;
       fireEvent.change(reason.querySelector("select") ?? reason, { target: { value: "paper_sighted" } });
-      fireEvent.click(screen.getByRole("button", { name: "Collected, record reason" }));
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Collected, record reason" })));
+      expect(screen.queryByTestId("ward-officer-collect-check-reason")).not.toBeInTheDocument();
     }
 
     for (const id of acceptedOnly) {
       selectIfNeeded(id);
-      fireEvent.click(screen.getByTestId(`ward-officer-enroute-${id}`));
-      fireEvent.click(screen.getByTestId(`ward-officer-collect-${id}`));
-      confirmCollectCheckIfAsked();
-      fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`));
+      await act(async () => fireEvent.click(screen.getByTestId(`ward-officer-enroute-${id}`)));
+      await act(async () => fireEvent.click(screen.getByTestId(`ward-officer-collect-${id}`)));
+      await confirmCollectCheckIfAsked();
+      await act(async () => fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`)));
     }
     for (const id of collectedOnly) {
       selectIfNeeded(id);
-      fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`));
+      await act(async () => fireEvent.click(screen.getByTestId(`ward-officer-arrive-${id}`)));
     }
 
     expect(
