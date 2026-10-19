@@ -206,11 +206,15 @@ export function describeInvalidConfiguration(payload: unknown): string {
   return "invalid configuration payload";
 }
 
-/** Three-way atomic merge: only the draft's edited fields replace current values. */
+/**
+ * Three-way atomic merge: only the draft's edited fields replace current values. `replaceAll`
+ * (Restore defaults) treats every field as edited, so another desk's later change is refused.
+ */
 export function mergeConfiguration(
   current: WardConfiguration,
   requested: unknown,
   base: unknown,
+  replaceAll = false,
 ):
   | { status: "merged"; configuration: WardConfiguration }
   | { status: "conflict"; fields: (keyof WardConfiguration)[] }
@@ -221,7 +225,7 @@ export function mergeConfiguration(
   const configuration = { ...current };
   const fields: (keyof WardConfiguration)[] = [];
   for (const key of CONFIGURATION_KEYS) {
-    if (draft[key] === original[key]) continue;
+    if (!replaceAll && draft[key] === original[key]) continue;
     if (current[key] !== original[key] && current[key] !== draft[key]) fields.push(key);
     configuration[key] = draft[key];
   }

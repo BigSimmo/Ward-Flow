@@ -6,7 +6,13 @@
 // screen readers, with the exact range, beneath the drawing.
 import { StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { forecastHeadline, forecastRangeEnd, type BedsForecast, type BedsForecastHorizon } from "./beds-forecast";
+import {
+  BEDS_FORECAST_LIMITS,
+  forecastHeadline,
+  forecastRangeEnd,
+  type BedsForecast,
+  type BedsForecastHorizon,
+} from "./beds-forecast";
 import styles from "./beds-forecast.module.css";
 
 const WIDTH = 300;
@@ -124,6 +130,11 @@ export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
         ))}
       </svg>
       <p className={styles.caption}>Estimate. Whiskers show the likely range.</p>
+      {BEDS_FORECAST_LIMITS.map((limit) => (
+        <p key={limit} className={styles.caption}>
+          {limit}
+        </p>
+      ))}
       <ul className={styles.horizons}>
         {forecast.horizons.map((horizon) => (
           <ForecastHorizon key={horizon.hours} horizon={horizon} now={forecast.now} />

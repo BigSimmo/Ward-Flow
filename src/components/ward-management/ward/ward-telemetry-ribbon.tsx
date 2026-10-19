@@ -108,7 +108,7 @@ export function WardTelemetryRibbon({
     return (
       <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
         <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
-        <div className={styles.cell} data-testid="ward-hero" aria-labelledby="ward-hero-title">
+        <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
           <HeroStat
             inline
             value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
@@ -159,7 +159,7 @@ export function WardTelemetryRibbon({
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
       <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
-      <div className={styles.cell} data-testid="ward-hero" aria-labelledby="ward-hero-title">
+      <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
         <HeroStat
           value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
           label={<span id="ward-hero-title">Ready now</span>}

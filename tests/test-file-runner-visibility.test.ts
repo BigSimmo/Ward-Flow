@@ -211,6 +211,12 @@ describe("no file under tests/ is invisible to every runner", () => {
         expect(project.pattern.test("tests/release-gate-journeys.spec.ts"), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
         expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
+      } else if (project.name === "ward-shared-mode") {
+        // One spec, run only by tests/support/ward-shared-mode-run.mjs.
+        expect(project.patternName, project.name).toBe("sharedModeSpecPattern");
+        expect(project.pattern.test("tests/ward-shared-mode.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
       } else if (["chromium-mockups", "chromium-mockups-known"].includes(project.name)) {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(true);

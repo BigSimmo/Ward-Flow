@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useId } from "react";
 import { Check, ClipboardCopy, Clock, FileText, Route, Truck, UserRound, X } from "lucide-react";
-import { Badge, Button, Card, Count, Icon, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
+import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
@@ -148,8 +148,9 @@ export function HandoverFlowPanel({
             <span className={styles.mono}>{row.umrn}</span> · {row.edShort}
           </span>
         </div>
-        <span className={styles.tier} aria-label={`Tier ${row.tier}`}>
-          T{row.tier}
+        <span className={styles.tier}>
+          <span aria-hidden="true">T{row.tier}</span>
+          <SrOnly>Tier {row.tier}</SrOnly>
         </span>
         <Badge title={`Waiting since ${formatInstantWithDay(row.openedAt, now)}`}>
           <Icon icon={Clock} size={14} />

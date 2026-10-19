@@ -85,6 +85,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "lock-idle", label: "Lock after idle", tab: "display", keywords: "privacy timeout blank" },
   { id: "clear-on-close", label: "Clear session on close", tab: "display", keywords: "privacy tab drafts" },
   { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
+  {
+    id: "character-shortcuts",
+    label: "Single-key shortcuts",
+    tab: "display",
+    keywords: "keyboard letters numbers punctuation accessibility disable",
+  },
   { id: "role", label: "Role", tab: "profile", keywords: "profile sign in account" },
   // Audit settings-27: the desk drawer is findable here; choosing it opens the drawer.
   {

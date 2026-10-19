@@ -1,5 +1,6 @@
 "use client";
 
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
@@ -482,6 +483,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     ) {
       return;
     }
+    if (!areCharacterShortcutsEnabled()) return;
     const key = e.key.toLowerCase();
     if (key === "j" || key === "k") {
       e.preventDefault();

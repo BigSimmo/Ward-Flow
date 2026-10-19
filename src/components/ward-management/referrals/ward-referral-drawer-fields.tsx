@@ -1,10 +1,45 @@
 "use client";
 
 import { ChevronDown, User } from "lucide-react";
+import { Children, cloneElement, isValidElement, type AriaAttributes, type ReactNode } from "react";
 import styles from "./ward-referral-drawer.module.css";
 import { StatusGlyph } from "@/components/wf";
 
 /* The referral slide-out's small form parts, moved unchanged from `ward-referral-drawer.tsx`. */
+
+type FieldChildProps = AriaAttributes & { id?: string; children?: ReactNode; required?: boolean };
+
+/** Reach the native control through SelectBox and decorative wrappers. */
+function describeControl(
+  children: ReactNode,
+  id: string,
+  required: boolean,
+  describedBy: string,
+  invalid: boolean,
+): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement<FieldChildProps>(child)) return child;
+    if (
+      typeof child.type === "string" &&
+      ["input", "select", "textarea"].includes(child.type) &&
+      (!child.props.id || child.props.id === id)
+    ) {
+      return cloneElement(child, {
+        id,
+        required: required || child.props.required || undefined,
+        "aria-required": required || child.props["aria-required"] || undefined,
+        "aria-invalid": invalid || child.props["aria-invalid"] || undefined,
+        "aria-describedby":
+          [...new Set(`${child.props["aria-describedby"] ?? ""} ${describedBy}`.split(/\s+/).filter(Boolean))].join(
+            " ",
+          ) || undefined,
+      });
+    }
+    return child.props.children
+      ? cloneElement(child, { children: describeControl(child.props.children, id, required, describedBy, invalid) })
+      : child;
+  });
+}
 
 export function Field({
   label,
@@ -23,17 +58,24 @@ export function Field({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const hintId = hint ? `${htmlFor}-hint` : undefined;
+  const errorId = error ? `${htmlFor}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ");
   return (
     <div className={`${styles.formField} ${wide ? styles.fieldWide : ""}`} data-invalid={error ? true : undefined}>
       <div className={styles.fieldLabelRow}>
         <label htmlFor={htmlFor} className={required ? styles.required : undefined}>
           {label}
         </label>
-        {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+        {hint ? (
+          <span id={hintId} className={styles.fieldHint}>
+            {hint}
+          </span>
+        ) : null}
       </div>
-      {children}
+      {describeControl(children, htmlFor, required, describedBy, Boolean(error))}
       {error ? (
-        <p className={styles.fieldError}>
+        <p id={errorId} className={styles.fieldError}>
           <StatusGlyph tone="danger" size={9} />
           {error}
         </p>
@@ -104,7 +146,7 @@ export function CardHead({
       <span className={styles.cardIcon} aria-hidden="true">
         <Icon aria-hidden="true" />
       </span>
-      <h3 className={styles.cardTitle} id={titleId}>
+      <h3 className={styles.cardTitle} id={titleId} tabIndex={-1}>
         {title}
       </h3>
       {children ? <div className={styles.cardHeadAside}>{children}</div> : null}

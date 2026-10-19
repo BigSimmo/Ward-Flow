@@ -1250,12 +1250,9 @@ export function ShortlistPanel({
                 Flagged<SrOnly> urgent</SrOnly>
               </span>
             ) : null}
-            <span
-              className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`}
-              data-tier={movement.urgency}
-              aria-label={`Tier ${movement.urgency}`}
-            >
-              T{movement.urgency}
+            <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={movement.urgency}>
+              <span aria-hidden="true">T{movement.urgency}</span>
+              <SrOnly>Tier {movement.urgency}</SrOnly>
             </span>
           </div>
         </div>
@@ -1699,6 +1696,7 @@ export function ShortlistPanel({
             two columns always agree. */}
             <div
               className={`${shortlistStyles.candidateCounts} ${shortlistStyles.tabularNum}`}
+              role="group"
               aria-label="Candidate summary"
             >
               <span data-tone="good">
