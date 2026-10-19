@@ -137,7 +137,10 @@ export function missedRequestCheck(input: {
 
   for (const movement of open) {
     const due = movement.openedAt + windowMinutes;
+    // Any sign a ward was ever asked counts, including one that has since declined or been withdrawn.
     const asked =
+      movement.referredAt !== undefined ||
+      movement.declines.length > 0 ||
       movement.referredUnitIds.length > 0 ||
       (movement.waitlistedUnitIds?.length ?? 0) > 0 ||
       movement.acceptedUnitId !== undefined;

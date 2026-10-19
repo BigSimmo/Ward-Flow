@@ -22,6 +22,8 @@ function fixture() {
     stage: "placement_requested",
     stageChanges: [],
     unwinds: [],
+    declines: [],
+    referredAt: undefined,
     referredUnitIds: [],
     waitlistedUnitIds: undefined,
     acceptedUnitId: undefined,
@@ -42,6 +44,8 @@ describe("missedRequestCheck", () => {
       f.movement("MV-old", { openedAt: NOW - WINDOW }),
       f.movement("MV-new", { openedAt: NOW - WINDOW + 1 }),
       f.movement("MV-asked", { openedAt: NOW - WINDOW * 3, referredUnitIds: [f.state.units[0]!.id] }),
+      // Asked once; every ward since withdrawn. A ward was asked, so this is not "no ward asked".
+      f.movement("MV-asked-before", { openedAt: NOW - WINDOW * 3, referredAt: NOW - WINDOW * 2 }),
       f.movement("MV-closed", {
         openedAt: NOW - WINDOW * 3,
         closure: { at: NOW - 5, outcome: "did_not_proceed", reason: "no_longer_required" } as Movement["closure"],

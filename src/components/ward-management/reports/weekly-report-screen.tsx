@@ -313,6 +313,7 @@ export function WeeklyReportScreen() {
               referrals={referrals}
               patients={patients}
               now={now}
+              pullHoldMinutes={configuration.pullHoldMinutes}
               week={week}
               isPhone
             />
@@ -478,6 +479,7 @@ export function WeeklyReportScreen() {
               referrals={referrals}
               patients={patients}
               now={now}
+              pullHoldMinutes={configuration.pullHoldMinutes}
               week={week}
               isPhone={false}
             />

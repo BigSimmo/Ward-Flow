@@ -9,6 +9,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 const DAY = 24 * 60;
 const WEEK: ReportWeek = { offset: 0, start: 0, end: 7 * DAY, countedEnd: 7 * DAY };
 const NOW = 8 * DAY;
+const HOLD = 240;
 
 function fixture() {
   const state = seedWardFlowState();
@@ -31,12 +32,13 @@ function fixture() {
     acceptedAt: undefined,
     pullExpiresAt: undefined,
     leftDepartmentAt: undefined,
+    arrivalDetails: undefined,
     transport: undefined,
     closure: undefined,
     ...patch,
   });
   const run = (movements: Movement[]) =>
-    pilotMeasures({ movements, referrals: [], patients: state.patients, now: NOW }, WEEK);
+    pilotMeasures({ movements, referrals: [], patients: state.patients, now: NOW, pullHoldMinutes: HOLD }, WEEK);
   return { state, movement, run };
 }
 
@@ -113,6 +115,13 @@ describe("pilotMeasures", () => {
     ]);
     expect(measures.requests.duplicates).toBe(1);
 
+    // Raised in the same minute: only the second (by id) is the duplicate, not both.
+    const sameMinute = f.run([
+      f.movement("MV-a", { openedAt: DAY, patientId: personId }),
+      f.movement("MV-b", { openedAt: DAY, patientId: personId }),
+    ]);
+    expect(sameMinute.requests.duplicates).toBe(1);
+
     const closed = f.run([
       f.movement("MV-first", {
         openedAt: DAY,
@@ -124,28 +133,44 @@ describe("pilotMeasures", () => {
     expect(closed.requests.duplicates).toBe(0);
   });
 
-  it("counts holds that ran out before the person left, and holds given back", () => {
+  it("counts each hold on its own, the ones that ran out before the person left, and holds given back", () => {
     const f = fixture();
-    const held = (id: string, expiresAfter: number, leftAfter: number | undefined) =>
+    const held = (id: string, leftAfter: number | undefined) =>
       f.movement(id, {
         openedAt: DAY,
-        pullExpiresAt: DAY + 100 + expiresAfter,
         stageChanges: [
           { at: DAY + 100, to: "pulled", by: "ward" },
           ...(leftAfter === undefined ? [] : [{ at: DAY + 100 + leftAfter, to: "moving" as const, by: "officer" }]),
         ],
       });
-    const givenBack = f.movement("MV-back", {
+    // Held, given back inside the hold, then held again and left late: two holds, one ran out.
+    const heldTwice = f.movement("MV-twice", {
       openedAt: DAY,
-      unwinds: [{ at: DAY + 200, kind: "pull_released", by: "coordinator", reason: "patient_no_longer_coming" }],
+      stageChanges: [
+        { at: DAY + 100, to: "pulled", by: "ward" },
+        { at: DAY + 160, to: "accepted_awaiting_bed", by: "coordinator" },
+        { at: DAY + 400, to: "pulled", by: "ward" },
+        { at: DAY + 400 + HOLD + 1, to: "moving", by: "officer" },
+      ],
+      unwinds: [{ at: DAY + 160, kind: "pull_released", by: "coordinator", reason: "patient_no_longer_coming" }],
     });
+    // Arrival sorted inside the hold stops the countdown, even though the person left later.
+    const sorted = f.movement("MV-sorted", {
+      openedAt: DAY,
+      stageChanges: [
+        { at: DAY + 100, to: "pulled", by: "ward" },
+        { at: DAY + 100 + HOLD + 60, to: "moving", by: "officer" },
+      ],
+      arrivalDetails: { mode: "ambulance", estimatedArrivalAt: DAY + 300, recordedAt: DAY + 150, recordedBy: "ward" },
+    } as Partial<Movement>);
     const measures = f.run([
-      held("MV-ok", 240, 60),
-      held("MV-late", 240, 300),
-      held("MV-waiting", 240, undefined),
-      givenBack,
+      held("MV-ok", 60),
+      held("MV-late", HOLD + 60),
+      held("MV-waiting", undefined),
+      heldTwice,
+      sorted,
     ]);
-    expect(measures.holds).toEqual({ held: 3, ranOut: 2, givenBack: 1 });
+    expect(measures.holds).toEqual({ held: 6, ranOut: 3, givenBack: 1 });
   });
 
   it("measures transport lateness against the estimate and counts cancellations", () => {
@@ -164,9 +189,19 @@ describe("pilotMeasures", () => {
         openedAt: DAY,
         transport: job({ estimatedAt: DAY + 60, collectedAt: DAY + 61 + grace }),
       }),
-      f.movement("MV-cancelled", { openedAt: DAY, transport: job({ cancelledAt: DAY + 30 }) }),
+      f.movement("MV-cancelled", {
+        openedAt: DAY,
+        transport: job({ cancelledAt: DAY + 30 }),
+        unwinds: [{ at: DAY + 30, kind: "transport_cancelled", by: "ward", reason: "not_needed", transportId: "TJ" }],
+      }),
+      // Cancelled and replaced: the first job survives only in the audit trail.
+      f.movement("MV-replaced", {
+        openedAt: DAY,
+        transport: { ...job({}), id: "TJ-2" },
+        unwinds: [{ at: DAY + 40, kind: "transport_cancelled", by: "ward", reason: "not_needed", transportId: "TJ-1" }],
+      }),
     ]);
-    expect(measures.transport).toMatchObject({ collections: 2, lateCollections: 1, cancelled: 1 });
+    expect(measures.transport).toMatchObject({ collections: 2, lateCollections: 1, cancelled: 2 });
   });
 
   it("gives a rate per 100 only with something to divide by", () => {

@@ -99,6 +99,7 @@ export function PilotMeasuresSection({
   referrals,
   patients,
   now,
+  pullHoldMinutes,
   week,
   isPhone,
 }: {
@@ -106,14 +107,15 @@ export function PilotMeasuresSection({
   referrals: readonly Referral[];
   patients: readonly Patient[];
   now: Instant;
+  pullHoldMinutes: number;
   week: ReportWeek;
   isPhone: boolean;
 }) {
   const small = useSmallNumber();
   const enabled = useWardFeatureFlag("pilot-measures");
   const measures = useMemo(
-    () => pilotMeasures({ movements, referrals, patients, now }, week),
-    [movements, referrals, patients, now, week],
+    () => pilotMeasures({ movements, referrals, patients, now, pullHoldMinutes }, week),
+    [movements, referrals, patients, now, pullHoldMinutes, week],
   );
   if (!enabled) return null;
   const held = durationFigures(measures.requestToBedHeld, "beds held");

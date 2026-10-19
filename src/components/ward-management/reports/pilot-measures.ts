@@ -51,7 +51,10 @@ export type PilotMeasures = {
     /** The window used for `noWardAsked`, minutes. */
     windowMinutes: number;
   };
-  /** Supporting measure 5: beds held in the week, and how many ran out or were given back. */
+  /**
+   * Supporting measure 5: holds made in the week (a bed held again after being given back is a
+   * second hold), how many ran out before the person left, and how many were given back.
+   */
   holds: { held: number; ranOut: number; givenBack: number };
   /** Supporting measure 6: transport in the week. */
   transport: {
@@ -70,6 +73,8 @@ export type PilotMeasuresInput = {
   referrals: readonly Referral[];
   patients: readonly Patient[];
   now: Instant;
+  /** The configured hold length (`WardConfiguration.pullHoldMinutes`), minutes. */
+  pullHoldMinutes: number;
 };
 
 function inWeek(at: Instant | null | undefined, week: ReportWeek): at is Instant {
@@ -142,8 +147,37 @@ function openAt(movement: Movement, at: Instant): boolean {
   return closedAt === undefined || closedAt > at;
 }
 
+/**
+ * Each time this movement's bed was held, with when that hold stopped counting down: the next
+ * stage change out of the held stages, a release, a closure, the person leaving, or the arrival
+ * being sorted (which clears the countdown in the reducer). `stoppedAt` is `undefined` while the
+ * hold is still counting down.
+ */
+function holdEpisodes(movement: Movement): { heldAt: Instant; stoppedAt: Instant | undefined }[] {
+  return movement.stageChanges.flatMap((change, index) => {
+    if (change.to !== "pulled") return [];
+    const heldAt = change.at;
+    const after = (at: Instant | undefined) => (at !== undefined && at >= heldAt ? at : undefined);
+    const stops = [
+      movement.stageChanges.slice(index + 1).find((next) => next.to !== "pulled" && next.to !== "handover_ready")?.at,
+      ...movement.unwinds.filter((unwind) => unwind.kind === "pull_released").map((unwind) => unwind.at),
+      movement.closure?.at,
+      movement.leftDepartmentAt,
+      movement.arrivalDetails?.recordedAt,
+    ]
+      .map(after)
+      .filter((at): at is Instant => at !== undefined);
+    return [{ heldAt, stoppedAt: stops.length > 0 ? Math.min(...stops) : undefined }];
+  });
+}
+
+/** The earlier request for the same moment: opened first, or the same minute with the lower id. */
+function openedBefore(other: Movement, movement: Movement): boolean {
+  return other.openedAt < movement.openedAt || (other.openedAt === movement.openedAt && other.id < movement.id);
+}
+
 export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): PilotMeasures {
-  const { movements, referrals, patients, now } = input;
+  const { movements, referrals, patients, now, pullHoldMinutes } = input;
   const records = { movements, referrals, patients };
   const windowMinutes = CLINICAL_VALUES.missedRequestWindow.value;
   const graceMinutes = CLINICAL_VALUES.lateArrivalGrace.value;
@@ -215,20 +249,21 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
       movements.some(
         (other) =>
           other.id !== movement.id &&
-          other.openedAt <= movement.openedAt &&
+          openedBefore(other, movement) &&
           openAt(other, movement.openedAt) &&
           movementPersonId(other, records) === personId,
       )
     );
   }).length;
 
-  // Supporting measure 5: holds. A hold "ran out" when the person had not left the ED by the time
-  // it lapsed; "given back" is a recorded release of the held bed.
-  const ranOut = heldInWeek.filter((movement) => {
-    const expires = movement.pullExpiresAt;
-    if (expires === undefined) return false;
-    const left = leftEd(movement);
-    return left === undefined ? expires < Math.min(now, week.countedEnd) : left > expires;
+  // Supporting measure 5: holds. Each hold is counted on its own, so a bed held, given back and
+  // held again is two holds. A hold "ran out" when it was still counting down at its configured
+  // length; "given back" is a recorded release of the held bed.
+  const counted = Math.min(now, week.countedEnd);
+  const holdsInWeek = movements.flatMap(holdEpisodes).filter((episode) => inWeek(episode.heldAt, week));
+  const ranOut = holdsInWeek.filter((episode) => {
+    const expires = episode.heldAt + pullHoldMinutes;
+    return episode.stoppedAt === undefined ? expires < counted : episode.stoppedAt > expires;
   }).length;
   const givenBack = movements.reduce(
     (count, movement) =>
@@ -253,7 +288,20 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
       .filter((minutes): minutes is number => minutes !== undefined),
     arrivedJobs.length,
   );
-  const cancelled = jobs.filter((job) => inWeek(job.cancelledAt, week)).length;
+  // A cancelled job replaced by another lives on only in the audit trail, so count both.
+  const cancelled =
+    jobs.filter((job) => inWeek(job.cancelledAt, week)).length +
+    movements.reduce(
+      (count, movement) =>
+        count +
+        movement.unwinds.filter(
+          (unwind) =>
+            unwind.kind === "transport_cancelled" &&
+            unwind.transportId !== movement.transport?.id &&
+            inWeek(unwind.at, week),
+        ).length,
+      0,
+    );
 
   // Supporting measure 7: arrivals in the week with every step time recorded.
   const arrivals = movements.filter((movement) => inWeek(arrived(movement), week));
@@ -270,7 +318,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     requestToBedHeld,
     steps,
     requests: { raised: raised.length, noWardAsked, duplicates, windowMinutes },
-    holds: { held: heldInWeek.length, ranOut, givenBack },
+    holds: { held: holdsInWeek.length, ranOut, givenBack },
     transport: {
       collectedToArrived,
       lateCollections,
