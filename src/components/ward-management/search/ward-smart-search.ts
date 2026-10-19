@@ -635,15 +635,15 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   const limit = input.limitPerGroup ?? 6;
   const truncatedGroups: string[] = [];
-  const rankGroup = <T>(
+  function rankGroup<T>(
     key: string,
     items: readonly T[],
     needle: string,
     fieldsOf: (item: T) => readonly (string | undefined)[],
-  ): T[] => {
+  ): T[] {
     if (items.length > limit) truncatedGroups.push(key);
     return rankAndLimit(items, needle, fieldsOf, limit);
-  };
+  }
   const names = movementDisplayNames(input.movements, input.patients, input.referrals);
 
   const people = rankGroup("people", findPatients(input.patients, trimmed), trimmed, (patient) => [
