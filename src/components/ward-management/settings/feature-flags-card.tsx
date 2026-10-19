@@ -23,7 +23,7 @@ export function FeatureFlagsCard() {
   const baseId = useId();
   const flags = useWardFeatureFlags();
   const environment = wardEnvironment();
-  const deviceCanChange = flags[0]?.deviceCanChange ?? false;
+  const deviceCanChange = flags.some((flag) => flag.deviceCanChange);
   const anyOnDevice = flags.some((flag) => flag.source === "device");
 
   return (
@@ -61,9 +61,9 @@ export function FeatureFlagsCard() {
         >
           <Switch
             checked={flag.on}
-            unavailable={!deviceCanChange}
+            unavailable={!flag.deviceCanChange}
             onCheckedChange={(next) => {
-              if (deviceCanChange) setWardFeatureFlagOnDevice(flag.name, next);
+              if (flag.deviceCanChange) setWardFeatureFlagOnDevice(flag.name, next);
             }}
             label={<SrOnly>{flag.definition.label}</SrOnly>}
           />

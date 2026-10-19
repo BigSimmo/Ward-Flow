@@ -6,6 +6,7 @@ import { WardIdleLock, recordViewFor } from "@/components/ward-management/shell/
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { screenForPath } from "@/components/ward-management/ward-role-access";
+import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
 import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
@@ -13,12 +14,19 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 
 const IDLE_MS = CLINICAL_VALUES.idleLock.value * 60_000;
 
+const route = vi.hoisted(() => ({ pathname: null as string | null }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  usePathname: () => route.pathname,
+}));
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
 
 afterEach(() => {
   cleanup();
+  route.pathname = null;
   resetWardAccessStoreForTests();
   setWardFeatureFlagOnDevice("role-access", null);
   vi.useRealTimers();
@@ -37,6 +45,24 @@ it("covers the screen after the idle time even with role access switched off (re
   expect(screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` })).toBeVisible();
   fireEvent.click(screen.getByTestId("ward-idle-unlock"));
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("leaves the bed meeting TV running, and locks again once the TV page is left (audit F-18)", () => {
+  const signOut = vi.fn();
+  route.pathname = WARD_BED_MEETING_TV_HREF;
+  const tree = () => (
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>
+  );
+  const { rerender } = render(tree());
+  act(() => vi.advanceTimersByTime(IDLE_MS * 3));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(signOut).not.toHaveBeenCalled();
+  route.pathname = "/ward-flow/coordinator";
+  rerender(tree());
+  act(() => vi.advanceTimersByTime(IDLE_MS));
+  expect(signOut).toHaveBeenCalledTimes(1);
 });
 
 it("signs out of the shared workspace when it locks, so the next person needs the password", () => {
