@@ -1158,6 +1158,76 @@
       "after": 0,
       "reason": "Docs archive clean-up (item 22, 18 October 2026): the superseded mockup engineering handover folder, including this template test, moved to Git history at main commit 0a469c6 (see docs/ARCHIVE.md). It exercised a handover template, not app behaviour.",
       "approvedOn": "2026-10-18"
+    },
+    {
+      "path": "tests/ward-network-cluster-header.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network screen's service cluster headers, which no longer exist.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-hero-highlight.dom.test.tsx",
+      "before": 3,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network screen's hero figures, which no longer exist.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-initial-patient-selection.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases pinned initialNetworkPatientId, deleted with the Network placement workspace.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-queue-count.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network placement queue count; the queue itself is still on Home and Movements.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-referral-clocks.dom.test.tsx",
+      "before": 3,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered referral clocks inside the Network placement workspace; the referral screens keep their own clock tests.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-referral-placement.dom.test.tsx",
+      "before": 17,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network placement workspace and its schematic diagram; placement for a referral remains covered by the referral match and Home shortlist tests.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-stage-filter.dom.test.tsx",
+      "before": 8,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network pipeline stage filter, deleted with the screen.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-network-stage-strip.dom.test.tsx",
+      "before": 8,
+      "after": 0,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. These cases rendered the Network pipeline stage strip, deleted with the screen.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-data-checker.test.ts",
+      "before": 39,
+      "after": 35,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. The four removed cases checked the Network map's columnServices list, which the data checker could no longer read even on main and which went with the screen; the wardServiceOrder check and its tests remain.",
+      "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/ward-management.test.ts",
+      "before": 10,
+      "after": 8,
+      "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. The removed describe pinned originServiceFit, a Network-only helper deleted with the screen.",
+      "approvedOn": "2026-10-19"
     }
   ]
 }

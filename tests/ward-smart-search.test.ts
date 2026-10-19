@@ -75,7 +75,10 @@ describe("searchGroupOrder", () => {
   it("keeps the fixed order for a general query", () => {
     expect(searchGroupOrder("general", "??")).toEqual([
       "people",
+      "similar",
       "movements",
+      "referrals",
+      "beds",
       "wards",
       "eds",
       "teams",
@@ -86,11 +89,11 @@ describe("searchGroupOrder", () => {
   });
 
   it("leads with the intent group, and with the three place groups for a place query", () => {
-    expect(searchGroupOrder("person", "Jamie Lee")[0]).toBe("people");
+    expect(searchGroupOrder("person", "Jamie Lee").slice(0, 2)).toEqual(["people", "similar"]);
     expect(searchGroupOrder("form", "4C")[0]).toBe("forms");
     expect(searchGroupOrder("view", "capacity")[0]).toBe("views");
     expect(searchGroupOrder("task", "tasks")[0]).toBe("tasks");
-    expect(searchGroupOrder("place", "emergency").slice(0, 3)).toEqual(["wards", "eds", "teams"]);
+    expect(searchGroupOrder("place", "emergency").slice(0, 4)).toEqual(["beds", "wards", "eds", "teams"]);
   });
 
   it("puts movements ahead of people only for a WF- identifier", () => {
@@ -122,7 +125,8 @@ describe("searchWardFlow ranking", () => {
     const result = searchWardFlow({ query: "ann", patients, movements: [], units: [] });
     expect(result.intent).toBe<SearchIntent>("person");
     expect(result.people.map((patient) => patient.id)).toEqual(["PT-A", "PT-B"]);
-    expect(result).not.toHaveProperty("referrals");
+    // With no referrals supplied there are none to find (referrals are covered by their own suite).
+    expect(result.referrals).toEqual([]);
   });
 
   it("caps each group at 6 and keeps word-start name matches inside that cap", () => {

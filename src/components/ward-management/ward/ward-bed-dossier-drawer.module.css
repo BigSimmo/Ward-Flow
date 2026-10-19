@@ -96,7 +96,8 @@
   margin: 0;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  color: var(--wf-ink-3);
+  /* Design audit DA-37: --wf-ink-3 read 4.17:1 on the translucent drawer over the dimmed page. */
+  color: var(--wf-ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

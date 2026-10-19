@@ -14,6 +14,7 @@ import {
   alertKindOf,
   bookingOfInboxId,
   movementIdOfInboxId,
+  personIdOfInboxId,
   resolveAlertSubject,
 } from "./alerts-model";
 
@@ -60,7 +61,15 @@ export function alertsHistory({
     const dischargeAdmissionId = admissionIdOfInboxId(inboxItemId);
     const admission =
       dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
-    const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking, admission);
+    const subject = resolveAlertSubject(
+      movement,
+      movementId,
+      umrnLookup,
+      units,
+      booking,
+      admission,
+      personIdOfInboxId(inboxItemId),
+    );
     const kind = alertKindOf(inboxItemId);
     return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;
   };

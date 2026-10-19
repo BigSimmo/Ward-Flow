@@ -269,7 +269,6 @@ capacity figure anywhere in this group is real.
   network); has no React dependency and carries no `"use client"` directive. Every exported
   function, one phrase each:
   - `stageSummaries` — counts movements per lifecycle stage.
-  - `queueStageSummaries` — stage counts scoped to the queue view.
   - `movementHealthService` — which health service a movement belongs to.
   - `elapsedLabel` — human "time in this stage" label for a movement.
   - `isOpen` — whether a movement is still active (not resolved or cancelled).

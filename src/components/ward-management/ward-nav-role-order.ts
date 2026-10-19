@@ -27,13 +27,12 @@ const VIEW_ORDER: Record<WardChromeRole, readonly WardMode[]> = {
      already written for, so this list restates it rather than changing it. */
   coordinator: WARD_MODES,
   /* A nurse in charge opens the sidebar to answer "what is happening to my beds, and who is coming
-     to them" — so the bed board and the movement board come first and the network overview, which
-     is somebody else's job, drops below them. */
-  ward: ["capacity", "movements", "delays", "command", "network", "governance"],
+     to them" — so the bed board and the movement board come first. */
+  ward: ["capacity", "movements", "delays", "command", "governance"],
   /* An emergency department is waiting on other people: where their patients have got to, and what
      is holding them up. Capacity is context they cannot act on — see the ED figures in
      `ward-standing-strip.tsx`, which carry the same caveat for the same reason. */
-  ed: ["movements", "delays", "network", "capacity", "command", "governance"],
+  ed: ["movements", "delays", "capacity", "command", "governance"],
   officer: WARD_MODES,
   /* No role-specific order has been drawn for these three, so they keep source order — the same
      "keep source position" rule `orderFor` already applies to an id a list does not name. They must

@@ -256,7 +256,6 @@ Every page file is a server component that renders one client screen (or redirec
 | `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
 | `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker            |
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |
-| `/network`                                                                               | `WardModeWorkspace` mode "network"                                        |
 | `/on-call`                                                                               | `OnCallScreen` (on-call) — separate from PsychSift's on-call              |
 | `/out-of-area`                                                                           | `OutOfAreaBoard` (out-of-area)                                            |
 | `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                            |
@@ -275,7 +274,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
 | `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Six redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command` → `/ward-flow`, `/constellation` → `/network`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
+**Seven redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries
@@ -284,8 +283,8 @@ module load in `ward-movements.ts` is not caught by any of the three boundaries
 
 ### 3.2 Navigation
 
-- **`ward-nav.ts`** (747 lines) is the single source: six coordinator views (command, network,
-  delays, capacity, movements, governance), 17 further destinations, a map of every route
+- **`ward-nav.ts`** (747 lines) is the single source: five coordinator views (command, delays,
+  capacity, movements, governance; Network was retired on 19 Oct 2026), 17 further destinations, a map of every route
   deliberately left out with its reason, one primary action per route, and a route → title
   resolver. `tests/ward-nav.test.ts` checks both directions (every link is a route; every route is
   listed or exempt).
@@ -360,7 +359,7 @@ events the screen dispatches.
 
 Root-level screens: `ward-management-console.tsx` (3,287; movement workspace),
 `governance-registers.tsx` (1,928; dispatches `REVIEW_AUDIT_EVENT`), `ward-management-modes.tsx`
-(governance and network workspaces), `ward-management-network.tsx`, `decline-register.tsx`
+(governance workspace), `decline-register.tsx`
 (inside the coordinator's exception drawer), `override-register.tsx` (inside the ward screen).
 
 **Formerly unreachable:** `escalation/escalation-board.tsx`, `tracker/live-tracker.tsx`,

@@ -45,7 +45,8 @@ export default function WardFlowErrorBoundary({
       error={error}
       retry={retry}
       title="This ward screen could not be shown"
-      description="Nothing was changed or lost. Try again uses the same prototype state. Reload may restore saved synthetic data. Unsaved changes may be lost."
+      // Design audit DA-32: the old text promised nothing was lost, then warned that changes might be.
+      description="Try again keeps the same prototype state. Reloading may restore the last saved synthetic data; anything not yet saved may be lost."
       logLabel="Unhandled runtime error captured by the Ward Flow boundary:"
       testId="ward-flow-error-boundary"
     />

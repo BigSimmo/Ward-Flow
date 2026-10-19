@@ -4852,6 +4852,24 @@
   width: 22%;
 }
 
+/* Design audit DA-06: below a wide laptop the fixed columns left the patient name a sliver (18 px at
+ * 1024, 58 px at 1280) with no way to scroll it into view. Cleared and Review step aside first, as
+ * they do in tablet portrait, and Next narrows, so the name keeps a readable width. Both stay on
+ * the patient sheet. */
+@media (max-width: 1365px) {
+  .a2Table[data-columns="all"] col[data-col="Next"] {
+    width: 168px;
+  }
+  .a2Table[data-columns="all"] col[data-col="Cleared"],
+  .a2Table[data-columns="all"] col[data-col="Review"],
+  .a2Table[data-columns="all"] th:nth-child(6),
+  .a2Table[data-columns="all"] th:nth-child(7),
+  .a2Table[data-columns="all"] td:nth-child(6),
+  .a2Table[data-columns="all"] td:nth-child(7) {
+    display: none;
+  }
+}
+
 .a2Table th {
   position: sticky;
   /* Under the sticky Ward bar (shell/ward-bar.module.css, 3.75rem tall). */

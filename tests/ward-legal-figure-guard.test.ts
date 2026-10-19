@@ -1057,11 +1057,10 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // said it — QueueView, CapacityView, MovementsView, ExceptionsView, TransportView — were
     // deleted, having been folded into CapacityScreen/MovementsScreen/DelaysScreen by MERGE 01-03
     // and rendered by no route since. **The clinical property is not lost: four carriers remain,
-    // measured on the day, and they are the surfaces a coordinator actually reads.** Four anchors
+    // measured on the day, and they are the surfaces a coordinator actually reads.** Three anchors (four until the Network screen was retired, 19 Oct 2026)
     // hold the non-vacuity argument as well as five did.
     for (const expected of [
       `${WARD_DIR}/movements/movement-workspace-cockpit.tsx`,
-      `${WARD_DIR}/ward-management-network.tsx`,
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
       // Fix list 2.5 and 9.6 (15 Oct 2026): the ED screen's sentence (`outstandingItem`) moved,
       // unchanged, from `ed/ed-screen.tsx` into `ed/ed-screen-model.ts` when the screen was split.
