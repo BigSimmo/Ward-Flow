@@ -10,7 +10,7 @@ export const WardRecoveryNoticeContext = createContext<string | null>(null);
 /** Holds no record content: only that this tab has already seen a routine restore notice. */
 const ROUTINE_SEEN_KEY = "ward-flow:restore-notice-seen";
 /** How long a routine restore notice stays before it fades. */
-export const ROUTINE_NOTICE_MS = 8_000;
+const ROUTINE_NOTICE_MS = 8_000;
 
 function routineAlreadySeen(): boolean {
   try {
@@ -47,8 +47,12 @@ export function WardRecoveryNotice() {
       setHidden(true);
       return;
     }
-    markRoutineSeen();
-    const timer = window.setTimeout(() => setHidden(true), ROUTINE_NOTICE_MS);
+    // Marked seen only once it has been on screen for the full pause, so an effect that React
+    // cancels (StrictMode, or leaving the page early) never hides a notice nobody saw.
+    const timer = window.setTimeout(() => {
+      markRoutineSeen();
+      setHidden(true);
+    }, ROUTINE_NOTICE_MS);
     return () => window.clearTimeout(timer);
   }, [routine, notice]);
 
