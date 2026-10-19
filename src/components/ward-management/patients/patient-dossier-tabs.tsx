@@ -366,7 +366,9 @@ export function PatientHistoryTab({
                 </div>
               )}
               {prior.length === 0 && items.length > 0 && (
-                <p className={legacy.note}>No earlier presentation history is available in this record.</p>
+                <p className={cx(legacy.note, legacy.noteAfterList)}>
+                  No earlier presentation history is available in this record.
+                </p>
               )}
             </div>
           </div>
