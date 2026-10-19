@@ -9,7 +9,7 @@ import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mockups/ward-flow/handover",
+  usePathname: () => "/ward-flow/handover",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));

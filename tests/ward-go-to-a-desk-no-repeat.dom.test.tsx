@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const route = { pathname: "/mockups/ward-flow" };
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -26,14 +26,14 @@ function renderSheet(pathname: string) {
 
 describe("Go to a desk names the current desk once", () => {
   it("drops the You are here row on the coordinator desk; the coordinator tile stays as the current page", () => {
-    renderSheet("/mockups/ward-flow");
+    renderSheet("/ward-flow");
     expect(screen.queryByRole("region", { name: "Your desk" })).toBeNull();
     const tile = screen.getByTestId("workstation-open-coordinator");
     expect(tile).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps the You are here row on a ward desk", () => {
-    renderSheet("/mockups/ward-flow/ward/rph-adult-secure");
+    renderSheet("/ward-flow/ward/rph-adult-secure");
     expect(screen.getByRole("region", { name: "Your desk" })).toHaveTextContent("You are here");
   });
 });

@@ -55,7 +55,7 @@ const WARD_CSS = "src/components/ward-management/**/*.css";
  * token actually paints — an unresolved `var()` fails silently, invalid at computed-value time,
  * painting the INHERITED value rather than erroring — so before this line was added, `WardRail`
  * and `WardBar` were rendered through Next's own dev build (not jsdom, not a static read of the
- * CSS) at `/mockups/ward-flow/shell-token-check-scratch` and read back with a real browser's
+ * CSS) at `/ward-flow/shell-token-check-scratch` and read back with a real browser's
  * `getComputedStyle` on the live `[data-testid="ward-rail"]`/`[data-testid="ward-bar"]` elements:
  * `--accent` -> `#2f4c66`, `--r1` -> `.625rem`, `--body` -> the resolved Geist stack (`"geistSans",
  * "geistSans Fallback", "Segoe UI", system-ui, sans-serif` — proving the nested

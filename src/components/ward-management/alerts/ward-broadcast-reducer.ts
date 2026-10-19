@@ -143,7 +143,7 @@ export function reduceBroadcastAlertEvent(
       // telling the caller why nothing happened.
       //
       // Owner ruling 2026-09-25: `WardBroadcastBanner`'s only real mount
-      // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
+      // (`src/app/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
       // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
       // refusal exempts. Every other unrecognised unitId is still refused.
       if (event.unitId === COORDINATOR_DESK_ACKNOWLEDGER_ID && event.role !== "coordinator") {

@@ -259,8 +259,8 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 
 ## `escalation/`
 
-**Route:** none live. `/escalation` (`src/app/mockups/ward-flow/escalation/page.tsx`) is a
-`redirect()` to `/mockups/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
+**Route:** none live. `/escalation` (`src/app/ward-flow/escalation/page.tsx`) is a
+`redirect()` to `/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
 inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
 `escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306
@@ -648,8 +648,8 @@ demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-shee
 
 ## `tracker/`
 
-**Route:** none live. `/transport` (`src/app/mockups/ward-flow/transport/page.tsx`) redirects to
-`/mockups/ward-flow/movements` — MERGE 03, owner-approved 2026-09-05, folding the live vehicle
+**Route:** none live. `/transport` (`src/app/ward-flow/transport/page.tsx`) redirects to
+`/ward-flow/movements` — MERGE 03, owner-approved 2026-09-05, folding the live vehicle
 tracker into `MovementsScreen`. **Mockup:** none current. **Dispatches:** none. **Reads:**
 `transportLeg` (`ward-derivations.ts`) only, via its own `tracker-derivations.ts`. **Tests:**
 `tracker-derivations.test.ts` (tests the derivations module directly — legitimate unit-test

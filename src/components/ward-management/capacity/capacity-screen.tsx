@@ -1014,7 +1014,7 @@ export function CapacityScreen() {
                     </FilterChip>
                   );
                 })}
-                <Link className={styles.highlightLink} href="/mockups/ward-flow/discharges">
+                <Link className={styles.highlightLink} href="/ward-flow/discharges">
                   Discharge board
                 </Link>
               </div>

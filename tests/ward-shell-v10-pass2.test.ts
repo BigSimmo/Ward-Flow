@@ -11,18 +11,18 @@ import {
 /** v10 build pass 2 shell fixes (10 Oct 2026). */
 describe("v10 pass 2 shell", () => {
   it("titles the two report pages by their own names, not Home", () => {
-    expect(resolveWardScreenTitle("/mockups/ward-flow/reports/downtime")).toBe("Downtime pack");
-    expect(resolveWardScreenTitle("/mockups/ward-flow/reports/chronology")).toBe("Patient chronology");
-    expect(resolveWardScreenTitle("/mockups/ward-flow/reports/chronology/")).toBe("Patient chronology");
+    expect(resolveWardScreenTitle("/ward-flow/reports/downtime")).toBe("Downtime pack");
+    expect(resolveWardScreenTitle("/ward-flow/reports/chronology")).toBe("Patient chronology");
+    expect(resolveWardScreenTitle("/ward-flow/reports/chronology/")).toBe("Patient chronology");
   });
 
   it("puts New referral in the header on every statistics route, never Export the figures", () => {
     for (const route of [
-      "/mockups/ward-flow/statistics",
-      "/mockups/ward-flow/statistics/ward/rph-adult-secure",
-      "/mockups/ward-flow/statistics/community/any-team",
-      "/mockups/ward-flow/statistics/ed/rph",
-      "/mockups/ward-flow/statistics/service/east",
+      "/ward-flow/statistics",
+      "/ward-flow/statistics/ward/rph-adult-secure",
+      "/ward-flow/statistics/community/any-team",
+      "/ward-flow/statistics/ed/rph",
+      "/ward-flow/statistics/service/east",
     ]) {
       expect(resolveWardPrimaryAction(route)?.kind, route).toBe("new-referral");
     }

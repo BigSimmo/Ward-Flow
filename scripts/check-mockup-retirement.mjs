@@ -180,9 +180,9 @@ export function readDeveloperGatedPrefixes(root, fileSystem = NODE_FILE_SYSTEM) 
   const source = fileSystem.readFileSync(resolve(root, ...DEVELOPER_GATE_SOURCE.split("/")), "utf8");
   const block = source.match(/DEVELOPER_GATED_PATH_PREFIXES\s*=\s*\[([\s\S]*?)\]/u);
   if (!block) throw new Error(`${DEVELOPER_GATE_SOURCE} no longer declares DEVELOPER_GATED_PATH_PREFIXES`);
-  const prefixes = [...block[1].matchAll(/["'`]([^"'`]+)["'`]/gu)].map((match) => match[1]);
-  if (!prefixes.length) throw new Error(`${DEVELOPER_GATE_SOURCE} declares an empty developer-gate list`);
-  return prefixes;
+  // An empty list is allowed: since Ward Flow left /mockups (19 October 2026) no subtree there is
+  // public. A list this cannot find still throws above.
+  return [...block[1].matchAll(/["'`]([^"'`]+)["'`]/gu)].map((match) => match[1]);
 }
 
 /** Every inline-code span in a Markdown body, unwrapped. */

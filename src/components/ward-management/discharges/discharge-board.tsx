@@ -875,7 +875,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     </label>
                   ) : null}
                   <Link
-                    href={`/mockups/ward-flow/ward/${selectedUnitId}`}
+                    href={`/ward-flow/ward/${selectedUnitId}`}
                     className={buttonClass({ size: "sm", variant: "sec" })}
                   >
                     Open ward

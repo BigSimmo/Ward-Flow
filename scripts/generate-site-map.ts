@@ -30,7 +30,7 @@ type SiteMapData = {
 const documentedRedirectTargets: Record<string, string> = {
   // The proxy and the page both forward this unlinked compatibility path; pinned because
   // the page's `redirect()` target is not a plain string literal.
-  "/mockups/ward-flow/constellation": "/mockups/ward-flow/network",
+  "/ward-flow/constellation": "/ward-flow/network",
 };
 
 // Ward Flow's routes carry no curated description: they render with the generic "Route
@@ -47,8 +47,8 @@ const apiDescriptions: Record<string, string> = {
 };
 
 const routeOwnershipRows = [
-  ["Ward Flow screens", "src/app/mockups/ward-flow, src/components/ward-management"],
-  ["Ward Flow sign-in and digest", "src/app/mockups/ward-flow-sign-in, src/app/mockups/ward-flow-digest"],
+  ["Ward Flow screens", "src/app/ward-flow, src/components/ward-management"],
+  ["Ward Flow sign-in and digest", "src/app/ward-flow-sign-in, src/app/mockups/ward-flow-digest"],
   ["Global shell layouts", "src/app/layout.tsx, src/app/mockups/layout.tsx"],
   ["Mockups", "src/app/mockups"],
 ] as const;
@@ -166,7 +166,7 @@ function renderSiteMapRaw(data = collectSiteMapData()) {
       "Main product routes",
       productRoutes.length
         ? productRoutes.map((route) => routeLine(route, routeDescriptions))
-        : ["- None. Every product screen is a Ward Flow route under `/mockups/ward-flow`."],
+        : ["- None. Every product screen is a Ward Flow route under `/ward-flow`."],
     ),
     ...section("Mockup/prototype routes", [
       ...mockupRoutes.map((route) => routeLine(route, routeDescriptions)),

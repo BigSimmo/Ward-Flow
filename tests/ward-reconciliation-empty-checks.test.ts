@@ -147,7 +147,7 @@ describe("D-40: an empty check array never claims reconciliation", () => {
       expect(sentence).toBe("No reconciliation is available for this page yet, no event feed on this screen");
       expect(
         sentence,
-        "the hub printed the agreeing sentence from a hardcoded zero, so /mockups/ward-flow/hub " +
+        "the hub printed the agreeing sentence from a hardcoded zero, so /ward-flow/hub " +
           "carried TWO agreeing sentences over zero checks — its own and the rail's",
       ).not.toContain(AGREEMENT);
     });

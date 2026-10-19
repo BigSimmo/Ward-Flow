@@ -4,7 +4,7 @@
 
 Follow the [Ward entry point](../ward-flow/README.md), current source and accepted app.
 Navigation is defined by `src/components/ward-management/ward-nav.ts` and
-`ward-management-navigation.tsx`; routes live in `src/app/mockups/ward-flow/`.
+`ward-management-navigation.tsx`; routes live in `src/app/ward-flow/`.
 Every offered action must work, or expose its unavailable reason accessibly. Preserve focus,
 keyboard use and status meaning; do not copy a foreign route catalogue or widen lint exemptions.
 

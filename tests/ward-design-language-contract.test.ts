@@ -380,7 +380,7 @@ describe("every --ward-* token a new module uses is actually declared", () => {
     const rootRule = /\.shell\s*\{([^}]+)\}/u.exec(ground)?.[1] ?? "";
     expect(rootRule).toContain("composes: wardTokens");
     expectWardGroundAncestry();
-    expect(stripComments(readFileSync("src/app/mockups/ward-flow/layout.tsx", "utf8"))).toContain(
+    expect(stripComments(readFileSync("src/app/ward-flow/layout.tsx", "utf8"))).toContain(
       "<WardGround>{children}</WardGround>",
     );
     for (const token of rootRule.matchAll(/(--ward-[\w-]+)\s*:/gu)) declared.add(token[1]);
@@ -427,7 +427,7 @@ describe("every --ward-* token a new module uses is actually declared", () => {
     const rootRule = /\.shell\s*\{([^}]+)\}/u.exec(ground)?.[1] ?? "";
     expect(rootRule).toContain("composes: wardTokens");
     expectWardGroundAncestry();
-    expect(stripComments(readFileSync("src/app/mockups/ward-flow/layout.tsx", "utf8"))).toContain(
+    expect(stripComments(readFileSync("src/app/ward-flow/layout.tsx", "utf8"))).toContain(
       "<WardGround>{children}</WardGround>",
     );
     for (const token of rootRule.matchAll(/(--ward-[\w-]+)\s*:/gu)) declared.add(token[1]);

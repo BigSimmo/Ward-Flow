@@ -7,7 +7,7 @@ without having to be told.
 ## 1. A leading slash is rewritten before git sees it
 
 On the Windows/Git-Bash workstation, MSYS rewrites an argument beginning with `/` into a Windows
-path before the command receives it. `git grep -F "/mockups/ward-flow/statistics/overview"` becomes
+path before the command receives it. `git grep -F "/ward-flow/statistics/overview"` becomes
 a search for `C:/Program Files/Git/mockups/...` and returns **nothing, exit 0, no warning**.
 
 Two instances in one day:
@@ -22,7 +22,7 @@ right or wrong, and an absence is usually the thing you were hoping to find.**
 
 **Do this instead**
 
-- Drop the leading slash: search `mockups/ward-flow/...`.
+- Drop the leading slash: search `ward-flow/...`.
 - Or reach the blob by hash: `git rev-parse <ref>:<path>`, then `git cat-file blob <hash>`.
 - **Prove any absence before reporting it.** Run the same search against a string known to be
   present. A search that cannot find a known positive has not established a negative.
@@ -348,7 +348,7 @@ Error: strict mode violation: getByTestId('ward-ed-screen') resolved to 2 elemen
 looks like accommodating a strict matcher rather than changing what is tested.
 
 **The measurement that makes it indefensible.** The duplication was not the ED screen's. Counting
-every `data-testid` in the live DOM of `/mockups/ward-flow/referrals`, **on the dev server, read at
+every `data-testid` in the live DOM of `/ward-flow/referrals`, **on the dev server, read at
 load**: **104 testids, 51 of them duplicated, every one at exactly 2** — every patient row, every
 control, every panel. The duplicate is a **hidden 0×0 copy** left inside React's streaming container.
 

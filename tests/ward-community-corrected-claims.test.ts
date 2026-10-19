@@ -47,7 +47,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
 }));
 
@@ -406,7 +406,7 @@ describe("claims 6 and 7 — the switcher is the way across, and carries no coun
      * THIS PIN ALREADY FIRED ONCE, WHICH IS WHY IT IS WORDED LIKE THIS. It used to assert
      * `ward-nav.test.ts` said "NOTHING links to it", with a comment explaining that the pin would go
      * red if somebody linked the route, "which is the outcome everybody wants". Somebody did, about
-     * an hour later: `/mockups/ward-flow/community` landed and `ward-nav.ts` carries it. The pin
+     * an hour later: `/ward-flow/community` landed and `ward-nav.ts` carries it. The pin
      * went red on the merge and the comment above was rewritten instead of being left describing a
      * fixed orphan. That is the mechanism working, not a fault.
      *
@@ -424,7 +424,7 @@ describe("claims 6 and 7 — the switcher is the way across, and carries no coun
     // naming the route passed this test unchanged. The two checks below stay on the unstripped `nav`
     // deliberately: one pins a documented explanation (reads a comment on purpose) and the other is
     // an absence check, the conservative direction already.
-    expect(stripAllComments(nav)).toContain("/mockups/ward-flow/community/[teamId]");
+    expect(stripAllComments(nav)).toContain("/ward-flow/community/[teamId]");
     expect(nav, "the nav test no longer explains that 0 is a scan limit rather than an orphan").toContain(
       "a limit of a source scan, not an orphan",
     );
@@ -531,7 +531,7 @@ describe("claim 9 — the page says what it can establish, and says who is missi
  * same paired presence/absence discipline for that file.
  */
 describe("claim 10 — the community index route is registered, in the mockups page and in the claims register", () => {
-  const routePagePath = "src/app/mockups/ward-flow/community/page.tsx";
+  const routePagePath = "src/app/ward-flow/community/page.tsx";
   const routePageSource = readFileSync(join(process.cwd(), routePagePath), "utf8");
   // This route page is much shorter than the screens `sourceOf` was calibrated for, so its own
   // floor (rather than `sourceOf`'s 2000-char one) is what stops a renamed or emptied file

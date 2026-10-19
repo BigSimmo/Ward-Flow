@@ -6,6 +6,6 @@
 
 <!-- docs-script-refs:historical-start -->
 
-This legacy path (`docs/ward-flow/design/SCREEN-SPECIFICATIONS.md`) is retired and superseded by [`design/v9/design-system-v9.md`](../../../design/v9/design-system-v9.md), [`docs/ward-flow/STATUS.md`](../STATUS.md), and the live Next.js routes under `src/app/mockups/ward-flow/`.
+This legacy path (`docs/ward-flow/design/SCREEN-SPECIFICATIONS.md`) is retired and superseded by [`design/v9/design-system-v9.md`](../../../design/v9/design-system-v9.md), [`docs/ward-flow/STATUS.md`](../STATUS.md), and the live Next.js routes under `src/app/ward-flow/`.
 
 <!-- docs-script-refs:historical-end -->

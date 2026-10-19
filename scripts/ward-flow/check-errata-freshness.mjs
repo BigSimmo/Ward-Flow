@@ -235,7 +235,7 @@ const CLAIMS = [
   {
     id: "H4",
     status: "live",
-    claim: "The four routes §1.5 names do not exist (real ones are under /mockups/ward-flow/)",
+    claim: "The four routes §1.5 names do not exist (real ones are under /ward-flow/)",
     check: () => {
       const bad = ["src/app/ward", "src/app/board", "src/app/ed", "src/app/community"].filter((d) => existsSync(p(d)));
       return { ok: bad.length === 0, saw: bad.length ? `now EXIST: ${bad.join(", ")}` : "all four still absent" };

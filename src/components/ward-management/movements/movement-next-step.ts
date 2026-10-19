@@ -73,6 +73,6 @@ export function isCoordinatorStep(step: MovementNextStep | null): step is Moveme
 /** Where a coordinator step is recorded: escalation lives on the coordinator screen, the rest on the Patient page. */
 export function nextStepTarget(step: MovementNextStep, movementId: string): { href: string; where: string } {
   return step.kind === "escalate"
-    ? { href: "/mockups/ward-flow", where: "the coordinator screen" }
+    ? { href: "/ward-flow", where: "the coordinator screen" }
     : { href: movementHref(movementId), where: "the Patient page" };
 }

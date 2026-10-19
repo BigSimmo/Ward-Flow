@@ -375,7 +375,7 @@ takes that file's item with it.
 scale, declared on ITS `.screen` class. Board's own scale is `--wb-`. `board.module.css` declares
 **zero** `--wd-*` tokens of its own.
 
-Measured on the live page at `/mockups/ward-flow/board/rph-adult-secure`, on the element carrying
+Measured on the live page at `/ward-flow/board/rph-adult-secure`, on the element carrying
 `board-module__fePlTG__destinations`:
 
 ```

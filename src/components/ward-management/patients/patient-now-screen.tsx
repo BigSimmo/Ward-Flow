@@ -740,12 +740,12 @@ export function PatientNowScreen({
     // movement's own page with its transport job (not linked when that is this page already).
     bedHref:
       (acceptingUnit ?? stayUnit) !== undefined
-        ? `/mockups/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
+        ? `/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: `/mockups/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
         }
       : undefined,
     transportHref:

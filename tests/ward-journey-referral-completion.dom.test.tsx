@@ -22,7 +22,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ReferralDrawerFoot } from "@/components/ward-management/referrals/ward-referral-drawer-rail";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 
-const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/ed/rph", push: vi.fn() }));
+const route = vi.hoisted(() => ({ pathname: "/ward-flow/ed/rph", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => route,
@@ -69,7 +69,7 @@ function Probe({ footer = false }: { footer?: boolean }) {
   });
   return footer ? <ReferralDrawerFoot s={value} /> : null;
 }
-function setup(children = <Probe />, pathname = "/mockups/ward-flow/ed/rph") {
+function setup(children = <Probe />, pathname = "/ward-flow/ed/rph") {
   dispatch.mockClear();
   route.pathname = pathname;
   return render(
@@ -142,10 +142,7 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.sendPending).toBe(false);
     expect(state.submissionAwaitingRecord).toBe(true);
     expect(state.footStatus.first).toContain("Referral saved");
-    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/referrals",
-    );
+    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute("href", "/ward-flow/referrals");
     expect(screen.getByRole("button", { name: "Close" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Confirm and send" })).not.toBeInTheDocument();
     act(() => state.confirmAndSend({ preventDefault() {} } as React.FormEvent));
@@ -221,8 +218,8 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.activePatientKey).toBe("patient:PT-991");
   });
   it.each([
-    ["/mockups/ward-flow/ed/rph", "ed"],
-    ["/mockups/ward-flow/ward/rph-adult-secure", "community"],
+    ["/ward-flow/ed/rph", "ed"],
+    ["/ward-flow/ward/rph-adult-secure", "community"],
   ] as const)("registers from %s using the supported source actor %s", (pathname, role) => {
     setup(<AddPatientForm />, pathname);
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999993" } });

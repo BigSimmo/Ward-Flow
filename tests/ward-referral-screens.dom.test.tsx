@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/mockups/ward-flow",
+  usePathname: () => "/ward-flow",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
@@ -340,7 +340,7 @@ describe("ReferralBoard", () => {
     );
     expect(screen.queryByTestId("ward-referral-board-new")).not.toBeInTheDocument();
     expect(within(screen.getByTestId("ward-referral-kpis")).queryByText("New referral")).not.toBeInTheDocument();
-    expect(WARD_REFERRAL_INTAKE_HREF).toBe("/mockups/ward-flow/referrals/new");
+    expect(WARD_REFERRAL_INTAKE_HREF).toBe("/ward-flow/referrals/new");
     for (const entry of WARD_NEW_REFERRAL_MENU) {
       expect(entry.href.startsWith(WARD_REFERRAL_INTAKE_HREF)).toBe(true);
     }

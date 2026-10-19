@@ -1102,7 +1102,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
           <WardNotFoundBody
             title="Community team not found"
             testId="ward-community-unresolved"
-            list={{ href: "/mockups/ward-flow/community", label: "All community teams" }}
+            list={{ href: "/ward-flow/community", label: "All community teams" }}
           >
             No community team matches this link. It never falls back to a different team.
           </WardNotFoundBody>

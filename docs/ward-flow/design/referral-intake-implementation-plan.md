@@ -257,7 +257,7 @@ it is testing — that is a tautology, and it will look like a passing guard.
 - **Unknown id** — already implemented as a whole-screen refusal. Keep that behaviour exactly; only
   restyle it to match. Do not soften a refusal into a warning.
 
-Profile link: `/mockups/ward-flow/people/<patientId>`. That URL is built inline as a template string
+Profile link: `/ward-flow/people/<patientId>`. That URL is built inline as a template string
 in more than one place today; **add a single helper and use it here**, matching the
 `WARD_REFERRAL_INTAKE_HREF` constant that already exists for the other direction.
 

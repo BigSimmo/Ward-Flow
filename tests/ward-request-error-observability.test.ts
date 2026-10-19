@@ -6,7 +6,7 @@ afterEach(() => vi.restoreAllMocks());
 
 const context = {
   routerKind: "App Router",
-  routePath: "/mockups/ward-flow/patients/[id]",
+  routePath: "/ward-flow/patients/[id]",
   routeType: "render",
   renderSource: "react-server-components",
   revalidateReason: undefined,

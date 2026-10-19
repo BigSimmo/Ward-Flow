@@ -112,7 +112,7 @@ Back to [the code map index](README.md).
 
 ## `coordinator/` — 9 files, 9,518 lines
 
-- **Routes:** `/` (`src/app/mockups/ward-flow/page.tsx` imports `CoordinatorScreen`) and `/command` (`src/app/mockups/ward-flow/command/page.tsx` redirects to `/mockups/ward-flow`).
+- **Routes:** `/` (`src/app/ward-flow/page.tsx` imports `CoordinatorScreen`) and `/command` (`src/app/ward-flow/command/page.tsx` redirects to `/ward-flow`).
 - **Mockup:** `command-third-edition.html` (SCREEN-MAP.md row for `coordinator/`).
 - **Reducer events dispatched:** `CANCEL_TRANSPORT`, `CHANGE_LEGAL_STATUS`, `CHANGE_URGENCY`,
   `RECORD_ESCALATION`, `REFER_TO_UNITS`, `RELEASE_PULL`, `WITHDRAW_WARD_REQUEST` (7 types, 9
@@ -174,7 +174,7 @@ derivation; it is not a newly recorded bed assignment. `ward-ed-polished.dom.tes
 selection and draft isolation. The historical file totals and outline below retain their dated
 baseline.
 
-- **Routes:** `/ed` (`src/app/mockups/ward-flow/ed/page.tsx` imports `EdIndex` from `ed-index.tsx`) and `/ed/[edId]` (`src/app/mockups/ward-flow/ed/[edId]/page.tsx` imports `EdScreen`).
+- **Routes:** `/ed` (`src/app/ward-flow/ed/page.tsx` imports `EdIndex` from `ed-index.tsx`) and `/ed/[edId]` (`src/app/ward-flow/ed/[edId]/page.tsx` imports `EdScreen`).
 - **Mockup:** `emergency-department-third-edition.html` (SCREEN-MAP.md row for `ed/`).
 - **Reducer events dispatched:** `BOOK_TRANSPORT`, `CHANGE_LEGAL_STATUS`, `CHANGE_URGENCY`,
   `CORRECT_LEGAL_FORM_RECEIPT`, `DECLINE_REFERRAL`, `HANDOVER_READY`, `RAISE_REFERRAL`,
