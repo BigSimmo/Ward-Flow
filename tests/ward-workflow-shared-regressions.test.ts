@@ -24,8 +24,9 @@ describe("command-owned opaque completion metadata", () => {
   it("returns this ED step's sequence while scoped state still excludes private Undo snapshots", () => {
     const world = seedWorld(at);
     const candidate = applyFirstAccepted("RECORD_ARRIVED_IN_DEPARTMENT", world.state, 642);
-    expect(candidate).not.toBeNull();
-    const result = applyCommand(world, candidate!.event, at);
+    expect(candidate).toBeDefined();
+    if (!candidate) throw new Error("fixture produced no accepted RECORD_ARRIVED_IN_DEPARTMENT candidate");
+    const result = applyCommand(world, candidate.event, at);
     expect(result.outcome).toBe("accepted");
     if (result.outcome !== "accepted") throw new Error("fixture refused");
     expect(result.completion.undoStep).toMatchObject({ undoType: "UNDO_ED_STEP", seq: expect.any(Number) });

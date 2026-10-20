@@ -283,9 +283,14 @@ describe("accepted direct referral continuation", () => {
         options,
       ),
     ).toBeNull();
-    expect(commandScopeRefusal(state, access, { ...event, acceptedUnitId: "outside-unit" }, options)).toContain(
-      "outside",
-    );
+    expect(
+      commandScopeRefusal(
+        state,
+        access,
+        { ...(event as unknown as Record<string, unknown>), edId: undefined, acceptedUnitId: "outside-unit" },
+        options,
+      ),
+    ).toContain("outside");
     const wrongWard = wardFlowReducer(state, { ...event, actingUnitId: "outside-unit" } as WardFlowEvent);
     expect(wrongWard.movements).toEqual(state.movements);
     expect(wrongWard.rejections.at(-1)?.reason).toContain("accepting ward");
