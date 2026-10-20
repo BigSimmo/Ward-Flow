@@ -79,7 +79,7 @@ export type WardNavCountInput = {
   leaveBeds: readonly LeaveBed[];
   /**
    * Read so "beds ready now" leaves out a bed pulled for an incoming patient (`readyBedsNow`).
-   * Optional only while every caller is brought across; omitted, no pull is left out.
+   * Every screen passes it; it stays optional for test fixtures with no pulls. Omitted, no pull is left out.
    */
   admissions?: readonly Admission[];
   now: Instant;
