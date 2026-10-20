@@ -50,6 +50,7 @@ import {
   uniqueRecord,
   validRecordActor,
   type WardRecordActor,
+  type LegalStatusRecords,
 } from "./ward-discharge-records";
 // D-64: these two live beside the discharge records so the Discharges list can use them too.
 export { admissionCriteriaEligibility, dischargeMovement };
@@ -1342,10 +1343,7 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
 }
 
 /** The ward's legal status uses the same patient, current movement and booking sources as criteria eligibility. */
-export function admissionLegalStatus(
-  state: Pick<WardFlowState, "movements" | "patients"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
-  admission: Admission,
-): string | undefined {
+export function admissionLegalStatus(state: LegalStatusRecords, admission: Admission): string | undefined {
   const patient = uniqueRecord(state.patients, admission.patientId);
   const patientStatus = patient?.legalStatus;
   // A Form 5A in force excludes criteria led discharge even when the typed status was not changed.

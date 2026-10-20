@@ -99,6 +99,10 @@ export function stayLegalStatusIsInvoluntary(
   return status !== undefined && status !== "Voluntary";
 }
 
+/** Legal-status readers pass the bookings too, so an older converted stay keeps its status (review: CodeRabbit). */
+export type LegalStatusRecords = Pick<WardFlowState, "movements" | "patients"> &
+  Partial<Pick<WardFlowState, "plannedAdmissions">>;
+
 /** A previous stay must never decide this admission's discharge or transport state. */
 export function dischargeMovement(
   state: Pick<WardFlowState, "movements"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
@@ -119,10 +123,7 @@ export function dischargeMovement(
 }
 
 /** The single legal-status lookup used by the ward card, the command reducer and the Discharges list. */
-export function admissionCriteriaEligibility(
-  state: Pick<WardFlowState, "movements" | "patients"> & Partial<Pick<WardFlowState, "plannedAdmissions">>,
-  admission: Admission,
-): CriteriaEligibility {
+export function admissionCriteriaEligibility(state: LegalStatusRecords, admission: Admission): CriteriaEligibility {
   const movement = dischargeMovement(state, admission);
   const patient = uniqueRecord(state.patients, admission.patientId);
   return criteriaEligibility(

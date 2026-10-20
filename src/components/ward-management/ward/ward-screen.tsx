@@ -177,6 +177,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
     wardReferralInbox,
     patients,
+    plannedAdmissions,
   } = useWardFlowSelect(
     "movements",
     "resolvePatientIdentity",
@@ -194,6 +195,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "dayZero",
     "wardReferralInbox",
     "patients",
+    "plannedAdmissions",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
@@ -1177,6 +1179,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     now,
     criteriaLedOn,
     patients,
+    plannedAdmissions,
     dayZero,
     wardReferralInbox,
   });
@@ -2508,8 +2511,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           dispatch={dispatch}
           now={now}
           criteriaLedOn={criteriaLedOn}
-          movements={movements}
-          patients={patients}
           criteriaGate={criteriaGate}
           raiseAsRouteRole={raiseAsRouteRole}
         />

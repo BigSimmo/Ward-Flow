@@ -14,9 +14,9 @@ import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -200,8 +200,6 @@ type WardScreenBedDrawerProps = {
   dispatch: WardCommandDispatch;
   now: number;
   criteriaLedOn: boolean;
-  movements: Movement[];
-  patients: Patient[];
   criteriaGate: RoleGate;
   raiseAsRouteRole: WardRaise;
 };
@@ -235,13 +233,13 @@ export function WardScreenBedDrawer({
   dispatch,
   now,
   criteriaLedOn,
-  movements,
-  patients,
   criteriaGate,
   raiseAsRouteRole,
 }: WardScreenBedDrawerProps) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
+  // The legal-status helpers read the arrived booking too (review: CodeRabbit).
+  const legalRecords = useWardFlowSelect("movements", "patients", "plannedAdmissions");
   const completeCommand = useWardCommandCompletion();
   function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
     completeCommand(`bed:${selectedBed}`, record, (outcome) => {
@@ -387,7 +385,7 @@ export function WardScreenBedDrawer({
             }
             criteriaEligibility={
               criteriaLedOn && selectedAdmission
-                ? admissionCriteriaEligibility({ movements, patients }, selectedAdmission)
+                ? admissionCriteriaEligibility(legalRecords, selectedAdmission)
                 : undefined
             }
             onSetCriteria={
