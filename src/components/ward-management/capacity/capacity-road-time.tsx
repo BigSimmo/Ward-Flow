@@ -108,7 +108,7 @@ export function ReadyByRoadTime({
                     <span className={styles.driveTime}>On site</span>
                   ) : (
                     <>
-                      <span className={styles.driveTime}>{durMinutes(route.min)}</span>
+                      <span className={styles.driveTime}>{driveTime(route.min)}</span>
                       <span className={styles.unitMeta}>drive</span>
                     </>
                   )}
@@ -121,6 +121,11 @@ export function ReadyByRoadTime({
       <p className={styles.caveat}>{REFERENCE_DISTANCE_CAVEAT}</p>
     </Card>
   );
+}
+
+/** A road time is whole minutes; `durMinutes` adds seconds under ten minutes ("7m 00s"). */
+function driveTime(minutes: number): string {
+  return minutes < 10 ? `${Math.round(minutes)}m` : durMinutes(minutes);
 }
 
 function RowControl({
