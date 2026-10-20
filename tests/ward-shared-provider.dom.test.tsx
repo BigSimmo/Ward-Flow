@@ -97,6 +97,33 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("remounts desk forms after adopting a changed effective access context", () => {
+    const tree = () => (
+      <WardFlowProvider>
+        <PatientIdsProbe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    const initial = screen.getByLabelText("Scoped draft");
+    fireEvent.change(initial, { target: { value: "Synthetic previous desk draft" } });
+    // A normal save must keep the current form's unsent edits.
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: { ...fake.connection!.snapshot!, revision: 2 },
+    };
+    rerender(tree());
+    expect(screen.getByLabelText("Scoped draft")).toBe(initial);
+    expect(initial).toHaveValue("Synthetic previous desk draft");
+    // Cover/grant expiry can change context without another clinical revision.
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: { ...fake.connection!.snapshot!, accessContext: "b".repeat(64) },
+    };
+    rerender(tree());
+    expect(screen.getByLabelText("Scoped draft")).not.toBe(initial);
+    expect(screen.getByLabelText("Scoped draft")).toHaveValue("draft");
+  });
+
   it("keeps the frozen report through ordinary same-account clinical snapshot adoption", () => {
     const tree = () => (
       <ToastProvider>

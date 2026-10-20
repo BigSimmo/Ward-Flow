@@ -27,6 +27,8 @@ export const PHONE_PUSH_SCOPE = WARD_DEVELOPER_HUB_HREF;
 
 /** The calls the signed-in shared workspace offers (`SharedWorkspaceClient`). */
 export type PhonePushApi = {
+  /** Verified account, used only to retain a tab-memory ownership receipt for offline sign-out. */
+  readonly ownerId?: string;
   pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }>;
   /** Whether the signed-in account owns an active server record for this device endpoint. */
   pushStatus(endpoint: string): Promise<boolean>;
@@ -74,6 +76,111 @@ export type PhonePushState =
   | "error-on";
 
 const ON_OFF = "New act-now alerts, with Ward Flow closed";
+const confirmedOwners = new Map<string, { ownerId: string; keys: string }>();
+// Nonclinical coordination only: account id and the browser's public subscription key. Never
+// persist the push endpoint, authentication secret or notification contents.
+const OWNER_STORAGE_KEY = "ward-flow:phone-push-owner:v1";
+
+function sharedOwnershipReceipt(): string | null {
+  try {
+    return window.localStorage.getItem(OWNER_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** An awaited response may describe ownership from before another desk took over this device. */
+function ownershipStillCurrent(subscription: PushSubscription): () => boolean {
+  const memory = confirmedOwners.get(subscription.endpoint);
+  const shared = sharedOwnershipReceipt();
+  return () => confirmedOwners.get(subscription.endpoint) === memory && sharedOwnershipReceipt() === shared;
+}
+
+function sharedOwner(subscription: PushSubscription): string | null {
+  try {
+    const stored: unknown = JSON.parse(sharedOwnershipReceipt() ?? "null");
+    const publicKey = subscription.toJSON().keys?.p256dh;
+    if (
+      publicKey &&
+      stored &&
+      typeof stored === "object" &&
+      "ownerId" in stored &&
+      typeof stored.ownerId === "string" &&
+      "publicKey" in stored &&
+      stored.publicKey === publicKey
+    )
+      return stored.ownerId;
+  } catch {
+    // Without shared ownership coordination, offline removal cannot safely infer the owner.
+  }
+  return null;
+}
+
+function forgetOwner(api: PhonePushApi, subscription: PushSubscription): void {
+  if (confirmedOwners.get(subscription.endpoint)?.ownerId === api.ownerId)
+    confirmedOwners.delete(subscription.endpoint);
+  try {
+    if (sharedOwner(subscription) === api.ownerId) window.localStorage.removeItem(OWNER_STORAGE_KEY);
+  } catch {
+    // Storage errors do not prevent local or remote sign-out cleanup.
+  }
+}
+
+function subscriptionKeys(subscription: PushSubscription): string {
+  return JSON.stringify(subscription.toJSON().keys ?? {});
+}
+
+function locallyOwned(api: PhonePushApi, subscription: PushSubscription): boolean {
+  const receipt = confirmedOwners.get(subscription.endpoint);
+  return (
+    !!api.ownerId &&
+    receipt?.ownerId === api.ownerId &&
+    receipt.keys === subscriptionKeys(subscription) &&
+    sharedOwner(subscription) === api.ownerId
+  );
+}
+
+function rememberOwner(api: PhonePushApi, subscription: PushSubscription, owned: boolean): void {
+  if (!api.ownerId) return;
+  if (owned) {
+    confirmedOwners.set(subscription.endpoint, { ownerId: api.ownerId, keys: subscriptionKeys(subscription) });
+    try {
+      window.localStorage.setItem(
+        OWNER_STORAGE_KEY,
+        JSON.stringify({
+          ownerId: api.ownerId,
+          publicKey: subscription.toJSON().keys?.p256dh,
+          // Distinguish a later confirmation even if another tab returns to the same account.
+          revision: crypto.getRandomValues(new Uint32Array(4)).join("-"),
+        }),
+      );
+    } catch {
+      // Do not retain a previous account's shared receipt when this one cannot replace it.
+      try {
+        window.localStorage.removeItem(OWNER_STORAGE_KEY);
+      } catch {
+        /* Best effort. */
+      }
+    }
+  } else if (confirmedOwners.get(subscription.endpoint)?.ownerId === api.ownerId) {
+    forgetOwner(api, subscription);
+  }
+}
+
+/** Confirm an existing device once connected, so offline sign-out need not guess its owner. */
+export async function rememberPhonePushOwnership(api: PhonePushApi): Promise<void> {
+  try {
+    if (!phonePushSupported()) return;
+    const subscription = await currentSubscription();
+    if (subscription) {
+      const current = ownershipStillCurrent(subscription);
+      const owned = await api.pushStatus(subscription.endpoint);
+      if (current()) rememberOwner(api, subscription, owned);
+    }
+  } catch {
+    // An unknown owner is never treated as this account's device.
+  }
+}
 
 /**
  * What the Settings row shows for a state. Never hidden: unavailable states grey out with a reason.
@@ -158,17 +265,34 @@ function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
 }
 
 /**
- * Before sign-out: revoke this account's record for this device, then drop the browser
- * subscription, so the next account on a shared device starts with alerts off. Leaves alone a
- * browser subscription this account does not own. Best effort: errors are swallowed.
+ * Before sign-out: stop a locally confirmed owned device immediately, independently of server
+ * availability. Without a tab-memory ownership receipt, require the server's confirmation first.
+ * A different account's receipt is never authority to remove its subscription.
  */
 export async function releasePhonePush(api: PhonePushApi): Promise<void> {
   try {
     if (!phonePushSupported()) return;
     const subscription = await currentSubscription();
-    if (subscription && (await api.pushUnsubscribe(subscription.endpoint))) await subscription.unsubscribe();
+    if (!subscription) return;
+    const owned = locallyOwned(api, subscription);
+    if (owned) {
+      try {
+        await subscription.unsubscribe();
+        forgetOwner(api, subscription);
+      } catch {
+        // Still attempt server revocation when this browser cannot remove its subscription.
+      }
+    }
+    const revoked = await api.pushUnsubscribe(subscription.endpoint);
+    // A newly confirmed other owner invalidates an outgoing account's delayed cleanup.
+    const latest = confirmedOwners.get(subscription.endpoint);
+    const shared = sharedOwner(subscription);
+    if (!owned && revoked && (!latest || latest.ownerId === api.ownerId) && (!shared || shared === api.ownerId)) {
+      await subscription.unsubscribe();
+      forgetOwner(api, subscription);
+    }
   } catch {
-    // Sign-out goes ahead regardless; the server drops the record once the push service rejects it.
+    // An owned local subscription was already stopped; server cleanup remains best effort.
   }
 }
 
@@ -201,7 +325,11 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
         else if (window.Notification.permission === "denied") state = "denied";
         else {
           const subscription = await currentSubscription();
-          state = subscription && (await api.pushStatus(subscription.endpoint)) ? "on" : "off";
+          const current = subscription ? ownershipStillCurrent(subscription) : () => true;
+          const owned = subscription ? await api.pushStatus(subscription.endpoint) : false;
+          const confirmed = !cancelled && current();
+          if (subscription && confirmed) rememberOwner(api, subscription, owned);
+          state = (confirmed ? owned : subscription && locallyOwned(api, subscription)) ? "on" : "off";
         }
       } catch {
         state = "error";
@@ -284,13 +412,22 @@ async function turnOn(api: PhonePushApi): Promise<PhonePushState> {
     subscription = null;
   }
   subscription ??= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+  const current = ownershipStillCurrent(subscription);
   const outcome = await api.pushSubscribe(subscription.toJSON());
+  if (!current()) return locallyOwned(api, subscription) ? "on" : "off";
+  rememberOwner(api, subscription, outcome === "subscribed");
   return outcome === "subscribed" ? "on" : outcome;
 }
 
 async function turnOff(api: PhonePushApi): Promise<PhonePushState> {
   const subscription = await currentSubscription();
   // Only a browser subscription this account owned is removed; another account's stays theirs.
-  if (subscription && (await api.pushUnsubscribe(subscription.endpoint))) await subscription.unsubscribe();
+  if (subscription) {
+    const current = ownershipStillCurrent(subscription);
+    if ((await api.pushUnsubscribe(subscription.endpoint)) && current()) {
+      await subscription.unsubscribe();
+      rememberOwner(api, subscription, false);
+    }
+  }
   return "off";
 }

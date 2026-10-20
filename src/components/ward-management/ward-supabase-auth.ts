@@ -105,7 +105,13 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   private clear() {
     this.session = null;
     this.email = null;
-    this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+    try {
+      this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+      return true;
+    } catch {
+      // Browser storage is optional; it must never prevent memory or provider revocation.
+      return false;
+    }
   }
   private invalidate() {
     this.generation++;
@@ -115,7 +121,16 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   }
   private save(session: Session) {
     this.session = session;
-    this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(session));
+    try {
+      this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(session));
+    } catch {
+      // Keep rotated credentials in memory. Remove an older saved session when possible.
+      try {
+        this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+      } catch {
+        // A storage failure does not invalidate the verified in-memory session.
+      }
+    }
   }
   private async request(
     path: string,
@@ -231,7 +246,13 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       await this.verify(recovery);
       return;
     }
-    const saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
+    let saved: string | null | undefined;
+    try {
+      saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
+    } catch {
+      // No readable saved credentials: start signed out, as with memory-only auth.
+      return;
+    }
     if (!saved) return;
     try {
       const parsed: unknown = JSON.parse(saved);
@@ -347,8 +368,19 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   async signOut() {
     const token = this.session?.access_token;
     this.invalidate();
-    this.clear();
-    if (token) await this.request("/logout?scope=local", { method: "POST" }, token);
+    const removed = this.clear();
+    let logoutFailure: unknown;
+    try {
+      if (token) await this.request("/logout?scope=local", { method: "POST" }, token);
+    } catch (error) {
+      logoutFailure = error;
+    }
+    if (!removed)
+      throw new WardAuthError(
+        "unavailable",
+        "Signed out here, but this browser could not remove saved sign-in details. Clear this site's browser data before sharing the device.",
+      );
+    if (logoutFailure) throw logoutFailure;
   }
   dispose() {
     this.disposed = true;
