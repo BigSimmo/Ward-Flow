@@ -38,6 +38,7 @@ import {
   isStoppedAwaitingRelease,
 } from "./handover-model";
 import { wardClosedLine } from "../capacity/ward-closure";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import styles from "./handover-beds.module.css";
 
@@ -317,7 +318,7 @@ function WardPanel({
           </Button>
         </UnwiredPreview>
         <Link
-          href={`/ward-flow/ward/${encodeURIComponent(ward.id)}`}
+          href={unitHref(ward.id)}
           className={buttonClass({ variant: "sec", size: "sm", className: styles.footButton })}
         >
           Open ward
