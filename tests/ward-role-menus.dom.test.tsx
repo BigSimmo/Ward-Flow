@@ -208,6 +208,17 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
     expect(item[0]).not.toHaveAttribute("data-countdown-twin");
   });
 
+  it("does not repeat Handover in More's groups under the sheet's countdown (ED desk)", () => {
+    atDesk(ED_DESK);
+    render(wrap(<WardRail />));
+    fireEvent.click(screen.getByTestId("ward-rail-more"));
+    const sheet = screen.getByRole("dialog", { name: "More pages" });
+    const toHandover = within(sheet)
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href") === "/ward-flow/handover");
+    expect(toHandover).toHaveLength(1);
+  });
+
   it("does not repeat Handover under the Menu sheet's countdown", () => {
     render(wrap(<WardRail />));
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));

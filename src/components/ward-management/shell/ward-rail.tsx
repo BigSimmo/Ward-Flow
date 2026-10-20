@@ -467,9 +467,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const compactPrimaryIds = new Set(menu.main.slice(0, NARROW_CORE_ENTRY_COUNT).map((item) => item.id));
   if (activeEntry) compactPrimaryIds.add(activeEntry.id);
   // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
-  const sheetGroups = sheetShowsMain
-    ? [{ label: menuLabel, entries: withoutHandover(menu.main) }, ...menu.more]
-    : (menu.more as { label: string; entries: (RailEntry | RoleMenuAction)[] }[]);
+  // Every group in the sheet leaves Handover out under the sheet's countdown, More's groups too
+  // (an ED desk keeps Handover under More).
+  const sheetGroups = (sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...menu.more] : menu.more).map(
+    (group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
+      label: group.label,
+      entries: withoutHandover([...group.entries]),
+    }),
+  );
   const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   const capacityOpen = canOpen(WARD_CAPACITY_HREF);
   const handoverCountdown = (
