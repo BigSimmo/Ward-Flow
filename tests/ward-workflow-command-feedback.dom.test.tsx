@@ -252,6 +252,36 @@ describe("ward command feedback follows its own completion", () => {
     expect(screen.getByText(/Synthetic referral withdrawn/)).toBeInTheDocument();
   });
 
+  it("warns, naming both values, but still starts a placement whose legal status differs from the accepted bed need", async () => {
+    // Owner ruling (Josh, 14:17 AWST 20 Oct): warn but allow.
+    const reply = deferred();
+    const record = vi.fn<(...args: unknown[]) => unknown>();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AcceptedReferralWard reply={reply} record={record} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Voluntary" } });
+    expect(screen.queryByTestId("ward-accepted-placement-legal-mismatch")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Involuntary inpatient" } });
+    const warning = screen.getByTestId("ward-accepted-placement-legal-mismatch");
+    expect(warning).toHaveTextContent(/a voluntary bed/);
+    expect(warning).toHaveTextContent(/Involuntary inpatient/);
+    fireEvent.change(screen.getByLabelText("Legal form"), { target: { value: "none" } });
+    const start = screen.getByRole("button", { name: "Confirm and start placement" });
+    expect(start).toBeEnabled();
+    fireEvent.click(start);
+    expect(record).toHaveBeenCalledTimes(1);
+    expect(record.mock.calls[0][0]).toMatchObject({
+      type: "RAISE_REFERRAL",
+      draft: { legalStatus: "Involuntary inpatient" },
+    });
+    await act(async () => reply.resolve({ commandId: "start", status: "accepted", isCurrent: () => true }));
+    expect(screen.getByText(/Placement started.*a voluntary bed.*Involuntary inpatient/)).toBeInTheDocument();
+  });
+
   it("drops stale or unmounted completions and reports interrupted saves", async () => {
     const reply = deferred();
     const settled = vi.fn<(...args: unknown[]) => unknown>();

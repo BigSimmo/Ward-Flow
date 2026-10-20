@@ -6,6 +6,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { commandScopeRefusal } from "@/components/ward-management/ward-access-state";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { legalStatusMismatchWarning } from "@/components/ward-management/ward-eligibility";
 import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
 
 const now = NOW_ANCHOR;
@@ -145,7 +146,7 @@ describe("intervening actions and physical provenance", () => {
   });
 });
 
-function acceptedDirectReferral() {
+function acceptedDirectReferral(involuntaryBedNeeded = false) {
   let state = seedWardFlowState();
   const unit = state.units.find((u) => u.id === "scgh-adult-open")!;
   const ed = allEmergencyDepartments()[0];
@@ -163,7 +164,7 @@ function acceptedDirectReferral() {
         sex: "Female",
         gender: "Female",
         secureBedNeeded: false,
-        involuntaryBedNeeded: false,
+        involuntaryBedNeeded,
         highAcuityNursingNeeded: false,
       },
     ],
@@ -316,4 +317,43 @@ describe("accepted direct referral continuation", () => {
       expect(refused.units).toEqual(state.units);
     },
   );
+});
+
+describe("Start placement legal status against the accepted involuntary-bed need (owner ruling Josh 14:17 AWST 20 Oct: warn but allow)", () => {
+  const raise = (involuntary: boolean, legalStatus: "Voluntary" | "Involuntary inpatient") => {
+    const { state, event } = acceptedDirectReferral(involuntary);
+    if (event.type !== "RAISE_REFERRAL") throw new Error("fixture");
+    const next = wardFlowReducer(state, { ...event, draft: { ...event.draft, legalStatus } });
+    return { state, next, warning: legalStatusMismatchWarning(involuntary, legalStatus) };
+  };
+
+  it("sends without a warning when the legal status matches", () => {
+    for (const [involuntary, status] of [
+      [false, "Voluntary"],
+      [true, "Involuntary inpatient"],
+    ] as const) {
+      const { state, next, warning } = raise(involuntary, status);
+      expect(warning).toBeNull();
+      expect(next.movements).toHaveLength(state.movements.length + 1);
+      expect(next.movements.at(-1)?.legalStatus).toBe(status);
+    }
+  });
+
+  it("warns, naming both values, and still sends when a voluntary-bed acceptance gets an involuntary status", () => {
+    const { state, next, warning } = raise(false, "Involuntary inpatient");
+    expect(warning).toContain("a voluntary bed");
+    expect(warning).toContain("Involuntary inpatient");
+    expect(next.rejections).toEqual(state.rejections);
+    expect(next.movements).toHaveLength(state.movements.length + 1);
+    expect(next.movements.at(-1)?.legalStatus).toBe("Involuntary inpatient");
+  });
+
+  it("warns, naming both values, and still sends in the reverse direction", () => {
+    const { state, next, warning } = raise(true, "Voluntary");
+    expect(warning).toContain("an involuntary bed");
+    expect(warning).toContain("Voluntary");
+    expect(next.rejections).toEqual(state.rejections);
+    expect(next.movements).toHaveLength(state.movements.length + 1);
+    expect(next.movements.at(-1)?.legalStatus).toBe("Voluntary");
+  });
 });

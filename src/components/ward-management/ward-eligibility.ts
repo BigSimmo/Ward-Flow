@@ -124,6 +124,17 @@ export function requiresAuthorisedDestination(status: LegalStatus | undefined) {
   return status !== "Voluntary";
 }
 
+/**
+ * Owner ruling (Josh, 20 Oct 2026): when an accepted ward's recorded involuntary-bed need does
+ * not match the legal status chosen at Start placement, warn the clinician but let the send go
+ * through. Both values stay on the record (the referral's arm and the movement's legal status).
+ */
+export function legalStatusMismatchWarning(involuntaryBedNeeded: boolean, legalStatus: LegalStatus): string | null {
+  if (requiresAuthorisedDestination(legalStatus) === involuntaryBedNeeded) return null;
+  const accepted = involuntaryBedNeeded ? "an involuntary bed" : "a voluntary bed";
+  return `Check legal status: the ward accepted this referral for ${accepted}, but the legal status chosen is ${legalStatus}.`;
+}
+
 function capacityIsFresh(unit: Unit, now: Instant) {
   return now - unit.allocatable.confirmedAt <= unit.allocatable.staleAfterMinutes;
 }

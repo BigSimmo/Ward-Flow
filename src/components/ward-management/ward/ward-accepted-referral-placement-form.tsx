@@ -8,6 +8,7 @@ import { useDeskInScope } from "../shell/ward-access";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import type { LegalStatus } from "../ward-model";
+import { legalStatusMismatchWarning } from "../ward-eligibility";
 import styles from "./ward.module.css";
 
 /** Every `LegalStatus`, hand-listed like the shortlist panel's: importing the ED screen model for
@@ -67,6 +68,7 @@ export function WardAcceptedReferralPlacementForm({
     const legalStatus = LEGAL_STATUS_OPTIONS.find((status) => status === placementDraft.legalStatus);
     if (!current || !legalStatus || !placementDraft.legalFormCode) return;
     const { entry, cohort, ed } = current;
+    const mismatch = legalStatusMismatchWarning(entry.destination.involuntaryBedNeeded, legalStatus);
     completeCommand(
       `start:${entry.id}`,
       () =>
@@ -90,7 +92,8 @@ export function WardAcceptedReferralPlacementForm({
         }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        onMessage(failure ?? "Placement started. Open Ward flow, Admissions, then choose Pull a bed.");
+        const started = "Placement started. Open Ward flow, Admissions, then choose Pull a bed.";
+        onMessage(failure ?? (mismatch ? `${started} ${mismatch}` : started));
         if (!failure) {
           setPlacementDraft(null);
           onStarted();
@@ -123,6 +126,15 @@ export function WardAcceptedReferralPlacementForm({
                   ))}
                 </select>
               </label>
+              {(() => {
+                const chosen = LEGAL_STATUS_OPTIONS.find((status) => status === placementDraft.legalStatus);
+                const warning = chosen && legalStatusMismatchWarning(entry.destination.involuntaryBedNeeded, chosen);
+                return warning ? (
+                  <p role="alert" className={styles.cardMeta} data-testid="ward-accepted-placement-legal-mismatch">
+                    {warning} You can still start the placement.
+                  </p>
+                ) : null;
+              })()}
               <label>
                 Legal form
                 <select
