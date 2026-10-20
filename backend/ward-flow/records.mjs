@@ -274,10 +274,19 @@ function commandRecords(before, after, event) {
  * The tokens (`recordToken`) of the records a command changes or names, for its sender to report
  * as seen at the revision the command was saved at. Records in a field still kept whole have no
  * revision of their own and are left out, and so is every record of a command naming too many.
+ *
+ * `visible` is the sender's own scoped view of the workspace before and after the command (`null`
+ * for a desk that sees the whole network). A record in neither is left out: a command's side
+ * effects can reach records outside the sender's place, and a desk must never learn that one of
+ * those changed. Tokens are plain hashes of guessable record ids, so they name only what the
+ * sender can already see.
  */
-export function coveredRecords({ core, before, after, event }) {
+export function coveredRecords({ core, before, after, event, visible = null }) {
   const whole = wholeFields(core);
-  const records = [...commandRecords(before, after, event)].filter(([, part]) => !whole.has(part.collection));
+  const seeable = visible && new Set(visible.flatMap((world) => [...splitWorld(world).parts.keys()]));
+  const records = [...commandRecords(before, after, event)].filter(
+    ([key, part]) => !whole.has(part.collection) && (!seeable || seeable.has(key)),
+  );
   return records.length > MAX_COVERED ? [] : records.map(([key]) => recordToken(key));
 }
 

@@ -178,6 +178,28 @@ test("a record the sender saw through its own later save is checked from that sa
   assert.equal(check(urgency("WF-001", 3), { priorRevision: 4, seen: ahead }), false, "capped at the latest");
 });
 
+test("a save names as covered only the records the sender's own view shows (CS-19 follow-up)", async () => {
+  // A command's side effects can reach records outside the sender's place; a desk must never
+  // learn that one of those changed, so they are left out of `covered`.
+  const engine = await import("./dist/engine.mjs");
+  const before = engine.seedWorld(at);
+  const core = planSave([], before, 1).core;
+  const event = urgency("WF-001", 2);
+  const after = engine.applyCommand(before, event, at).world;
+  const without = (world) => ({
+    ...world,
+    state: { ...world.state, movements: world.state.movements.filter((row) => row.id !== "WF-001") },
+  });
+  const token = recordToken(partKey("movements", "WF-001"));
+  assert.deepEqual(coveredRecords({ core, before, after, event }), [token], "a whole-network desk");
+  assert.deepEqual(coveredRecords({ core, before, after, event, visible: [before, after] }), [token], "in view");
+  assert.deepEqual(
+    coveredRecords({ core, before, after, event, visible: [without(before), without(after)] }),
+    [],
+    "out of view",
+  );
+});
+
 test("a save against an older revision clashes only with someone else's change to the same record", async () => {
   const engine = await import("./dist/engine.mjs");
   const base = engine.seedWorld(at);

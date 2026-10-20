@@ -1589,7 +1589,15 @@ export function createWorkspaceStore(
             const before = row.payload;
             // CS-19 follow-up: the records this save checked, so the sender's open popups can say
             // they have seen them at this revision.
-            if (row.core) covered = coveredRecords({ core: row.core, before, after: applied.world, event });
+            // Only records the sender's own view shows: a side effect outside its place stays unnamed.
+            if (row.core) {
+              const worlds = [before, applied.world];
+              const scoped = view
+                ? worlds.map((world) => engine.scopeWorld(world, view.access, at, view.grants))
+                : worlds;
+              const visible = scoped.every((world, index) => world === worlds[index]) ? null : scoped;
+              covered = coveredRecords({ core: row.core, before, after: applied.world, event, visible });
+            }
             row.revision = priorRevision + 1;
             row.payload = applied.world;
             await saveWorld(client, row, row.payload, row.revision, at);
