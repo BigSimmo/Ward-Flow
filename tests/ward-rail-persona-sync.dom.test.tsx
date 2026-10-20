@@ -17,13 +17,18 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const route = { pathname: "/ward-flow" };
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/ward-flow",
+  usePathname: () => route.pathname,
   useSearchParams: () => new URLSearchParams(),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  route.pathname = "/ward-flow";
+  act(() => dispatchPersonaSyncForRole("coordinator"));
+});
 
 function trigger() {
   return screen.getByTestId("ward-rail-persona-trigger");
@@ -141,5 +146,44 @@ describe("the person follows the desk (B6)", () => {
     );
     expect(trigger().getAttribute("aria-label")).toContain("Nurse in charge");
     expect(trigger().getAttribute("aria-label")).not.toContain("Bed coordinator");
+  });
+});
+
+describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
+  function renderAt(pathname: string) {
+    route.pathname = pathname;
+    return render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+  }
+
+  it("keeps the coordinator and says which desk is being viewed", () => {
+    renderAt("/ward-flow/ed/rph-ed");
+    expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent("Viewing RPH ED as Bed coordinator");
+    expect(trigger().getAttribute("aria-label")).toContain(
+      "Dr S. Chen, Bed coordinator. Viewing RPH ED as Bed coordinator.",
+    );
+  });
+
+  it("names the ward and the transport desk the same way", () => {
+    renderAt("/ward-flow/ward/rph-adult-secure");
+    expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(/^Viewing .+ as Bed coordinator$/u);
+    cleanup();
+    renderAt("/ward-flow/transport/officer");
+    expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(
+      "Viewing the transport desk as Bed coordinator",
+    );
+  });
+
+  it("shows no viewing line on a network page or on the person's own kind of desk", () => {
+    renderAt("/ward-flow");
+    expect(screen.queryByTestId("ward-rail-viewing-desk")).toBeNull();
+    cleanup();
+    act(() => dispatchPersonaSyncForRole("ed"));
+    renderAt("/ward-flow/ed/rph-ed");
+    expect(screen.queryByTestId("ward-rail-viewing-desk")).toBeNull();
+    expect(trigger().getAttribute("aria-label")).toContain("Triage liaison nurse");
   });
 });

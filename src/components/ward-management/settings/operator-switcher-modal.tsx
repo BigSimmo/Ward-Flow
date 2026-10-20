@@ -72,7 +72,7 @@ import {
   type Desk,
   type DeskRole,
 } from "./workstation-desks";
-import { dispatchPersonaSyncForRole } from "./persona-sync";
+import { dispatchPersonaSyncForRole, useShellPersonaRole } from "./persona-sync";
 import styles from "./workstation-switcher.module.css";
 
 export interface OperatorSwitcherModalProps {
@@ -163,6 +163,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const here = allDesks.find((desk) => desk.id === hereId);
   const [openSites, setOpenSites] = useState<ReadonlySet<string>>(() => new Set(here?.site ? [here.site] : []));
   const isCoordinatorRoute = wardChromeRole(pathname) === "coordinator";
+  // Overall review (20 Oct 2026): a desk opened by its link is viewed as the person on the rail,
+  // so the row says so rather than naming the desk's own role as though it were theirs.
+  const viewerRole = useShellPersonaRole();
   const isPhone = useIsPhone();
   const searching = query.trim().length > 0;
 
@@ -415,7 +418,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             </span>
             <span className={styles.who}>
               <b>{here.name}</b>
-              <span>You are here, {deskRoleLabel(here.role)}</span>
+              <span>
+                {viewerRole === here.role
+                  ? `You are here, ${deskRoleLabel(here.role)}`
+                  : `You are viewing this desk as ${deskRoleLabel(viewerRole)}`}
+              </span>
             </span>
             <DeskFigure desk={here} now={now} accessTargetMinutes={configuration.edAccessTargetMinutes} />
             <Icon icon={ChevronDown} size={14} className={styles.chev} />

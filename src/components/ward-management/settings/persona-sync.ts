@@ -1,3 +1,8 @@
+import { useSyncExternalStore } from "react";
+
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
+import { WARD_SHELL_ROLE, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+
 import type { DeskRole } from "./workstation-desks";
 
 /**
@@ -6,7 +11,40 @@ import type { DeskRole } from "./workstation-desks";
  */
 export const WARD_PERSONA_SYNC_EVENT = "ward-flow-persona-sync";
 
+/**
+ * The desk "Go to a desk" last announced, kept in one place (overall review, 20 Oct 2026) so the
+ * rail's person and the desk picker's "You are here" row read the same answer. The coordinator
+ * until a desk is chosen; a desk opened by its link announces nothing, so the person stays.
+ */
+let personaRole: DeskRole = "coordinator";
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export function dispatchPersonaSyncForRole(role: DeskRole) {
   if (typeof window === "undefined") return;
+  personaRole = role;
+  for (const listener of listeners) listener();
   window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
+}
+
+/**
+ * Whose role the shell is being used as. A non-coordinator desk (role access on) is its own role;
+ * otherwise it is the desk last chosen in "Go to a desk", the coordinator until then. A page's
+ * route never changes it: a coordinator who opens a ward or ED page by its link is still the
+ * coordinator, viewing that desk.
+ */
+export function useShellPersonaRole(): WardChromeRole {
+  const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
+  const synced = useSyncExternalStore(
+    subscribe,
+    () => personaRole,
+    () => "coordinator" as const,
+  );
+  return deskRole === WARD_SHELL_ROLE ? synced : deskRole;
 }

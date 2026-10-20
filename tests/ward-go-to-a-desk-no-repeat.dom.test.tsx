@@ -2,7 +2,7 @@
 // twice (a "You are here" row above the same desk's tile). The tile alone stays; a ward desk keeps
 // its "You are here" row.
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const route = { pathname: "/ward-flow" };
@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -32,8 +33,18 @@ describe("Go to a desk names the current desk once", () => {
     expect(tile).toHaveAttribute("aria-current", "page");
   });
 
-  it("keeps the You are here row on a ward desk", () => {
+  it("keeps the desk row on a ward desk, viewed as the coordinator when opened by its link", () => {
     renderSheet("/ward-flow/ward/rph-adult-secure");
-    expect(screen.getByRole("region", { name: "Your desk" })).toHaveTextContent("You are here");
+    // Overall review (20 Oct 2026): nobody chose this desk, so it is not "You are here, Nurse in charge".
+    const row = screen.getByRole("region", { name: "Your desk" });
+    expect(row).toHaveTextContent("You are viewing this desk as Bed coordinator");
+    expect(row).not.toHaveTextContent("Nurse in charge");
+  });
+
+  it("says You are here once the ward desk is the one chosen", () => {
+    act(() => dispatchPersonaSyncForRole("ward"));
+    renderSheet("/ward-flow/ward/rph-adult-secure");
+    expect(screen.getByRole("region", { name: "Your desk" })).toHaveTextContent("You are here, Nurse in charge");
+    act(() => dispatchPersonaSyncForRole("coordinator"));
   });
 });
