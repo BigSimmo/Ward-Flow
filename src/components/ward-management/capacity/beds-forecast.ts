@@ -16,6 +16,7 @@ import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/componen
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
+import { bedsForecastSources, type BedsForecastSources } from "./beds-forecast-sources";
 import { plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
 
 /**
@@ -80,6 +81,8 @@ export type BedsForecastHorizon = {
 export type BedsForecast = {
   now: Instant;
   horizons: BedsForecastHorizon[];
+  /** Where the next 24 hours' discharges come from, ward by ward, as each ward recorded them. */
+  sources: BedsForecastSources;
 };
 
 /**
@@ -157,7 +160,7 @@ export function bedsForecast(
     };
   });
 
-  return { now, horizons };
+  return { now, horizons, sources: bedsForecastSources(units, releases, admissions, now, plannedAdmissions) };
 }
 
 /**

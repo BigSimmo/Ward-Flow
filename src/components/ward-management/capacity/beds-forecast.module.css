@@ -130,3 +130,129 @@
 .horizon {
   display: block;
 }
+
+/* Where beds are coming from: what each ward recorded, under the chart. */
+.sources {
+  border-top: 1px solid var(--wf-line);
+  padding-top: var(--wf-s-2);
+}
+
+.sourcesSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-height: var(--wf-row-touch);
+  cursor: pointer;
+}
+
+.sourcesTitle {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.sourcesCount {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.sourcesBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  max-height: 45vh;
+  overflow-y: auto;
+  padding: var(--wf-s-1) 2px var(--wf-s-2);
+}
+
+.sourcesStale {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-warning-ink);
+}
+
+.sourcesNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.sourcesNoteLead {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.sourceWindow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.sourceWindowTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.sourceWindowRange {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.sourceWindowTotal {
+  margin-left: auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.sourceWards,
+.sourceEntries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sourceWards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.sourceWard {
+  padding-left: var(--wf-s-2);
+  border-left: 2px solid var(--wf-line-2);
+}
+
+.sourceWardRow {
+  display: flex;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.sourceWardName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sourceWardCount {
+  flex: none;
+  font-family: var(--wf-mono);
+}
+
+.sourceEntries {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.sourceSaid,
+.sourceEntryNote {
+  color: var(--wf-ink-3);
+}

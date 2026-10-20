@@ -3,7 +3,8 @@
 // The next 48 hours on the Capacity screen (v6). Presentation only: every figure comes from
 // `bedsForecast` (`beds-forecast.ts`). Ready now is a solid column from zero; each horizon is its
 // likely figure with a whisker over the low-to-high range. The same figures are written out for
-// screen readers, with the exact range, beneath the drawing.
+// screen readers, with the exact range, beneath the drawing. Below it, "Where beds are coming from"
+// lists what each ward has recorded for the next 24 hours (`beds-forecast-sources.ts`).
 import { StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
@@ -13,6 +14,7 @@ import {
   type BedsForecast,
   type BedsForecastHorizon,
 } from "./beds-forecast";
+import { BedsForecastSourcesList } from "./beds-forecast-sources-list";
 import styles from "./beds-forecast.module.css";
 
 const WIDTH = 300;
@@ -140,6 +142,7 @@ export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
           <ForecastHorizon key={horizon.hours} horizon={horizon} now={forecast.now} />
         ))}
       </ul>
+      <BedsForecastSourcesList sources={forecast.sources} now={forecast.now} />
     </section>
   );
 }
