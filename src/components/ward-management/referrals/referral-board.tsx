@@ -1069,7 +1069,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       rejections={rejections}
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
-                      onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
                       admissions={admissions}
                       bedReleases={bedReleases}
                       phone={
@@ -1156,7 +1156,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         rejections={rejections}
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
-                        onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                        onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
                         admissions={admissions}
                         bedReleases={bedReleases}
                       />

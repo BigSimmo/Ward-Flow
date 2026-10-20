@@ -39,21 +39,54 @@ describe("emergency department pressure", () => {
     expect(edPressure(NOW_ANCHOR, wardMovements)).toHaveLength(allEmergencyDepartments().length);
   });
 
-  it("counts only open movements — an arrived or closed patient is not still waiting", () => {
-    const total = edPressure(NOW_ANCHOR, wardMovements).reduce((sum, row) => sum + row.waiting, 0);
-    expect(total).toBe(wardMovements.filter(isOpen).length);
+  it("counts ED patients awaiting a bed, excluding ward transfers, collection and transit", () => {
+    const waiting = movementFrom({ id: "WF-PRESSURE-WAITING", originEdId: "peel-ed" });
+    const pulled = movementFrom({ ...waiting, id: "WF-PRESSURE-PULLED", stage: "pulled" });
+    const excluded: Movement[] = [
+      movementFrom({ ...waiting, id: "WF-PRESSURE-WARD", sourceAdmissionId: "AD-SYNTHETIC" }),
+      movementFrom({
+        ...waiting,
+        id: "WF-PRESSURE-COLLECTED",
+        transport: {
+          id: "TR-SYNTHETIC",
+          provider: "Patient transport service",
+          escortRequired: true,
+          collectedAt: NOW_ANCHOR - 5,
+        },
+      }),
+      movementFrom({ ...waiting, id: "WF-PRESSURE-MOVING", stage: "moving" }),
+      movementFrom({ ...waiting, id: "WF-PRESSURE-ARRIVED", stage: "arrived" }),
+      movementFrom({ ...waiting, id: "WF-PRESSURE-DEPARTED", leftDepartmentAt: NOW_ANCHOR - 5 }),
+      movementFrom({
+        ...waiting,
+        id: "WF-PRESSURE-CLOSED",
+        closure: {
+          at: NOW_ANCHOR - 5,
+          outcome: "did_not_proceed",
+          reason: "Synthetic test closure",
+        },
+      }),
+    ];
+    const rows = edPressure(NOW_ANCHOR, [waiting, pulled, ...excluded]);
+    expect(rows.reduce((sum, row) => sum + row.waiting, 0)).toBe(2);
+    expect(rows.find((row) => row.ed.id === "peel-ed")?.waiting).toBe(2);
   });
 
-  it("never reports a longer wait than the department's longest-waiting movement", () => {
-    for (const row of edPressure(NOW_ANCHOR, wardMovements)) {
-      const waits = wardMovements
-        .filter((movement) => isOpen(movement) && movement.originEdId === row.ed.id)
-        // IMPORTANT 3: mirror the implementation's clamp here too. Without it this expectation
-        // is only true by coincidence of today's fixture (every open movement's wait happens to
-        // be positive) and would go red the moment a future-dated `openedAt` was authored, even
-        // though the implementation was doing the conservative, correct thing.
-        .map((movement) => Math.max(0, NOW_ANCHOR - movement.openedAt));
-      expect(row.longestWaitMinutes).toBe(waits.length ? Math.max(...waits) : 0);
+  it("reports each department's longest physical ED wait, excluding older ward or transit journeys", () => {
+    const movements = [
+      movementFrom({ id: "WF-LONGEST-PEEL-1", originEdId: "peel-ed", openedAt: NOW_ANCHOR - 10 }),
+      movementFrom({ id: "WF-LONGEST-PEEL-2", originEdId: "peel-ed", openedAt: NOW_ANCHOR - 20 }),
+      movementFrom({ id: "WF-LONGEST-FSH", originEdId: "fsh-ed", openedAt: NOW_ANCHOR - 30 }),
+      movementFrom({
+        id: "WF-LONGEST-WARD",
+        originEdId: "peel-ed",
+        openedAt: NOW_ANCHOR - 999,
+        sourceAdmissionId: "AD-SYNTHETIC",
+      }),
+      movementFrom({ id: "WF-LONGEST-TRANSIT", originEdId: "fsh-ed", openedAt: NOW_ANCHOR - 888, stage: "moving" }),
+    ];
+    for (const row of edPressure(NOW_ANCHOR, movements)) {
+      expect(row.longestWaitMinutes, row.ed.id).toBe(row.ed.id === "peel-ed" ? 20 : row.ed.id === "fsh-ed" ? 30 : 0);
     }
   });
 

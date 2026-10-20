@@ -1,3 +1,4 @@
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edHomeSummaries } from "../ed/ed-home-derivations";
 import { type Instant, isClockBreached, splitDuration } from "../ward-clock";
 import { ED_ACCESS_TARGET_MINUTES, type Movement } from "../ward-model";
@@ -68,9 +69,10 @@ export function publishedThresholds(
 
   // The same predicate `ward-pressure.ts` tints a department's card on. A deadline is per-form, so
   // this threshold has no single constant to quote — which is itself worth saying in the row.
-  const breachedForms = movements.filter(
-    (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
-  ).length;
+  const breachedForms = movements.filter((movement) => {
+    const dueAt = currentLegalDueAt(movement);
+    return dueAt !== undefined && isClockBreached(dueAt, now);
+  }).length;
 
   return [
     {
@@ -95,7 +97,7 @@ export function publishedThresholds(
         "A legal form's own due time, once it has passed. There is no single number here — each form carries its own deadline.",
       triggers: "The amber tint on a department's pressure card on Command, and the same card's overdue-form count.",
       livesIn:
-        "ward-pressure.ts, which counts movements whose legalForm.dueAt has passed; the tint is in coordinator.module.css.",
+        "ward-pressure.ts, which counts movements whose currentLegalDueAt has passed (the legalForm.dueAt still in force; an ended form's expiry is history only); the tint is in coordinator.module.css.",
       setBy:
         "The product owner, 17 September 2026 (owner answer 1): the clinician types the expiry written on whichever legal form they are holding, and this figure tints once that typed expiry is close or passed. Nothing here computes a deadline for any form — a form with no typed expiry simply never reaches this row.",
       state: stateFor(breachedForms),

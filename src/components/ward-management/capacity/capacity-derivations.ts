@@ -31,7 +31,6 @@ import type {
   Unit,
   BedRelease,
 } from "@/components/ward-management/ward-model";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /**
  * The four bed kinds a coordinator actually reasons about, in the order the design lock fixes
@@ -46,7 +45,7 @@ export type BedKindGap = {
   need: string;
   /** "Detained, or assessed as needing one" — who this kind of bed is for, in plain words. */
   who: string;
-  /** Open movements needing this kind. Never includes a closed movement — see `isOpen`. */
+  /** Open movements still needing a bed of this kind; allocated and post-pull journeys excluded. */
   waiting: number;
   /** Beds of this kind currently allocatable anywhere in the network. */
   bedsThatFit: number;
@@ -80,11 +79,10 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  * `tests/ward-locked-not-authorised.test.ts`) and merging them here would make a shortfall
  * disappear behind a bed nobody may actually place a detained patient in.
  */
-function bedsOfKindAtUnit(unit: Unit, kind: BedKindId): number {
+function bedsOfKindAtUnit(unit: Unit, kind: BedKindId, available: number): number {
   // A closed or zero-bed ward supplies no bed of any kind (R-B-09, owner ruling 13 Oct 2026).
   // Kind supply never exceeds the ward's bounded Ready (qodo, 13 Oct): a feed reporting more
   // allocatable beds than are empty or physically present cannot show more fitting beds than Ready.
-  const available = boundedBedAvailability(unit).available;
   if (available === 0) return 0;
   switch (kind) {
     case "locked_adult":
@@ -109,17 +107,37 @@ const ROWS: { id: BedKindId; need: string; who: string }[] = [
 ];
 
 /** One row per bed kind, in the locked order above. */
-export function bedKindGaps(movements: Movement[], units: Unit[], now: Instant): BedKindGap[] {
+export function bedKindGaps(
+  movements: Movement[],
+  units: Unit[],
+  now: Instant,
+  admissions: readonly Admission[] = [],
+): BedKindGap[] {
   // `now` is accepted for parity with every other Ward Flow derivation and because a caller
   // computing `movements`/`units` upstream typically already has it — `isOpen` itself does not
   // read a clock, and neither does this function.
   void now;
 
-  const open = movements.filter(isOpen);
+  // A pulled bed is already removed from allocatable supply. Counting its journey as demand
+  // again would show a shortfall for a person who already holds that bed (as in the forecast).
+  const waitingForBed = movements.filter(
+    (movement) =>
+      isOpen(movement) &&
+      movement.admissionId === undefined &&
+      movement.allocatedBed === undefined &&
+      (movement.stage === "placement_requested" ||
+        movement.stage === "destination_review" ||
+        movement.stage === "accepted_awaiting_bed"),
+  );
+  // Reconcile reservations once per ward, as the network table and map do. This leaves the
+  // recorded observation untouched when a later confirmation includes an already-pulled bed.
+  const supply = units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], []).ready }));
 
   return ROWS.map(({ id, need, who }) => {
-    const waiting = open.filter((movement) => bedKindOfMovement(movement.cohort, movement.security) === id).length;
-    const bedsThatFit = units.reduce((total, unit) => total + bedsOfKindAtUnit(unit, id), 0);
+    const waiting = waitingForBed.filter(
+      (movement) => bedKindOfMovement(movement.cohort, movement.security) === id,
+    ).length;
+    const bedsThatFit = supply.reduce((total, { unit, ready }) => total + bedsOfKindAtUnit(unit, id, ready), 0);
     return { id, need, who, waiting, bedsThatFit, gap: bedsThatFit - waiting };
   });
 }
@@ -139,8 +157,7 @@ export function bedKindTotals(rows: BedKindGap[]): { waiting: number; bedsThatFi
 
 export type NetworkWardRow = {
   unit: Unit;
-  /** Beds free and usable now — `lockedBedsFree(unit) + openBedsFree(unit)`, which the two
-   *  functions' own clamping keeps equal to `unit.allocatable.value` in every case. */
+  /** Ready beds from the same `bedStates` partition as Pulled, Closed and Occupied. */
   ready: number;
   /** Of `ready`, how many are locked. */
   lockedReady: number;
@@ -399,8 +416,8 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
   const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
   return {
     unit,
-    ready: cap.available,
-    lockedReady: Math.min(lockedBedsFree(unit), cap.available),
+    ready: states.ready,
+    lockedReady: Math.min(lockedBedsFree(unit), states.ready),
     freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
     dischargesDueToday: dischargesDueToday(unit.id, admissions, now),
     ...wardReleaseFigures(unit, inputs),

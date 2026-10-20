@@ -1,4 +1,5 @@
 // src/components/ward-management/ward-priority.ts
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   clockState,
   type DueSoonThresholds,
@@ -156,13 +157,14 @@ export function operationalScore(
   // clinician's own rule, with no compensating bonus for carrying a legal form, which would be
   // an unsupported clinical claim of the same kind this correction removes. This block is NOT
   // fully dormant, though: the transport/transfer forms (4A/4C) are out of scope for this
-  // correction, still carry a real `dueAt`, and still legitimately score here today (e.g.
-  // WF-006, WF-014 in the fixture, each "due in ≤90 min" at `NOW_ANCHOR`). The 1A/3B branch is
-  // kept live, not deleted, on the same precedent Task 6A set for a Form 3B: a real examination
-  // timeframe may be supplied later and should return as a derivation, not a rewritten function.
+  // correction, still carry a real `dueAt`, and still legitimately score here while in force.
+  // The 1A/3B branch is kept live, not deleted, on the same precedent Task 6A set for a Form 3B:
+  // a real examination timeframe may be supplied later and should return as a derivation, not a
+  // rewritten function.
+  // Score a person-recorded expiry only while that form remains in force (`currentLegalDueAt`).
   const legalForm = movement.legalForm;
-  if (legalForm?.dueAt !== undefined) {
-    const dueAt = legalForm.dueAt;
+  const dueAt = currentLegalDueAt(movement);
+  if (legalForm && dueAt !== undefined) {
     const state = clockState(dueAt, now, thresholds);
     const points = state === "breached" ? 30 : state === "critical" ? 20 : state === "due" ? 10 : 0;
     if (points > 0) {

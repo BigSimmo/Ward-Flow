@@ -17,13 +17,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it("prints the current desk and full place on every sheet, using the copy generation time", () => {
-  setWardFeatureFlagOnDevice("role-access", true);
-  setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
-  // The same clock face one day earlier must identify the older copy as yesterday.
-  const earlier = NOW_ANCHOR - 24 * 60;
+function renderSheet(initial: Instant | null) {
   function Sheet() {
-    const [takenAt, setTakenAt] = useState<Instant | null>(earlier);
+    const [preparedAt, setPreparedAt] = useState<Instant | null>(initial);
     return (
       <HandoverPrintSheet
         groups={[]}
@@ -44,8 +40,66 @@ it("prints the current desk and full place on every sheet, using the copy genera
         highlightControls={null}
         onOpenPatient={() => {}}
         onBack={() => {}}
-        onPrinted={setTakenAt}
-        takenAt={takenAt}
+        onPrintPrepared={setPreparedAt}
+        preparedAt={preparedAt}
+        now={NOW_ANCHOR}
+      />
+    );
+  }
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <Sheet />
+    </WardFlowProvider>,
+  );
+}
+
+it("labels a sheet nobody has prepared yet as a preview, then as prepared once Print is pressed", () => {
+  setWardFeatureFlagOnDevice("role-access", true);
+  setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+  renderSheet(null);
+  const stamps = () => screen.getAllByTestId("ward-print-attribution");
+  for (const stamp of stamps()) {
+    expect(stamp).toHaveTextContent(/^Preview opened by /);
+    expect(stamp).not.toHaveTextContent("Prepared for printing");
+  }
+  expect(document.body).toHaveTextContent("no copy prepared yet");
+  expect(document.body).not.toHaveTextContent(/Copy prepared \d/);
+  const print = vi.spyOn(window, "print").mockImplementation(() => {
+    for (const stamp of stamps()) expect(stamp).toHaveTextContent(/^Prepared for printing by /);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
+  expect(print).toHaveBeenCalledOnce();
+});
+
+it("prints the current desk and full place on every sheet, using the copy generation time", () => {
+  setWardFeatureFlagOnDevice("role-access", true);
+  setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+  // The same clock face one day earlier must identify the older copy as yesterday.
+  const earlier = NOW_ANCHOR - 24 * 60;
+  function Sheet() {
+    const [preparedAt, setPreparedAt] = useState<Instant | null>(earlier);
+    return (
+      <HandoverPrintSheet
+        groups={[]}
+        columns={[]}
+        ctx={{ now: NOW_ANCHOR, cutoff: NOW_ANCHOR, readyBeds: () => 0 }}
+        wards={[]}
+        held={[]}
+        outsideAct={[]}
+        isHighlighted={() => false}
+        anyHighlight={false}
+        scopeLabel="Whole network"
+        shiftLabel="Day"
+        densityLabel="Standard"
+        sheetDate="Friday"
+        options={DEFAULT_PRINT_OPTIONS}
+        onOptionsChange={() => {}}
+        controls={null}
+        highlightControls={null}
+        onOpenPatient={() => {}}
+        onBack={() => {}}
+        onPrintPrepared={setPreparedAt}
+        preparedAt={preparedAt}
         now={NOW_ANCHOR}
       />
     );
@@ -58,7 +112,7 @@ it("prints the current desk and full place on every sheet, using the copy genera
   const stamps = () => screen.getAllByTestId("ward-print-attribution");
   expect(stamps().length).toBeGreaterThan(1);
   for (const stamp of stamps()) {
-    expect(stamp).toHaveTextContent("Printed by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
+    expect(stamp).toHaveTextContent("Prepared for printing by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
     expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)} yesterday. Synthetic data.`);
   }
   const print = vi.spyOn(window, "print").mockImplementation(() => {

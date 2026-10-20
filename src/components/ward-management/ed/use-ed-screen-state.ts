@@ -98,9 +98,9 @@ export function useEdRowPanels() {
   });
   const [legalStatusChangeOpenFor, setLegalStatusChangeOpenFor] = useState<string | undefined>(undefined);
   const [legalStatusDraft, setLegalStatusDraft] = useState<{
-    legalStatus: LegalStatus;
+    legalStatus: LegalStatus | undefined;
     reason: LegalStatusChangeReason | undefined;
-  }>({ legalStatus: "Voluntary", reason: undefined });
+  }>({ legalStatus: undefined, reason: undefined });
 
   // `TR-D1`: the sending team books the transport out, and this department is the sending team for
   // its own patients. One open-for id and one draft, the same shape the three toggles above use —
@@ -175,9 +175,11 @@ export function useEdRowPanels() {
     setUrgencyDraft({ urgency: currentUrgency, reason: undefined });
   }
 
-  function toggleLegalStatusChange(movementId: string, currentLegalStatus: LegalStatus) {
+  // Blank on every open, as the legal form expiry below: the new status is a person's explicit
+  // choice, never the current one or a default left standing (owner rule, 19 Oct 2026).
+  function toggleLegalStatusChange(movementId: string) {
     setLegalStatusChangeOpenFor((current) => (current === movementId ? undefined : movementId));
-    setLegalStatusDraft({ legalStatus: currentLegalStatus, reason: undefined });
+    setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
   }
 
   function toggleWithdrawReferral(movementId: string) {

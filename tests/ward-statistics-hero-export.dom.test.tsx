@@ -10,6 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { StatisticsHero } from "@/components/ward-management/statistics/statistics-hero";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -75,5 +76,23 @@ describe("Statistics hero: Export the figures", () => {
     expect(name).toBe(`ward-flow-synthetic-${unit.id}-figures.csv`);
     expect(csv).toContain(`"Ward Flow statistics","${unit.name}"`);
     expect(csv).toContain(`"Beds","${unit.beds}"`);
+  });
+
+  it("exports the held calendar day and year in Perth time after midnight", async () => {
+    render(
+      <WardFlowProvider initialNow={0} initialDayZero={new Date("2026-10-18T16:00:00Z").getTime()}>
+        <StatisticsHero
+          section="overview"
+          eyebrow="Network"
+          title="Held figures"
+          now={1440 + 61}
+          paused
+          onTogglePause={() => {}}
+          exportFigures={{ stem: "held", scope: "Network", figures: () => [["Ready", 2]] }}
+        />
+      </WardFlowProvider>,
+    );
+    const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
+    expect(csv).toContain('"As at","20/10/2026 01:01 AWST"');
   });
 });

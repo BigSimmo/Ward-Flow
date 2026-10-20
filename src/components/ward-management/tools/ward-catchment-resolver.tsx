@@ -28,7 +28,7 @@ export interface ServiceHospitalMapping extends HealthServiceInfo {
   readonly hospital: string;
 }
 
-export type CatchmentStatus = "Reviewed direct match" | "Contested / split" | "Unreviewed" | "Not found";
+export type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
 
 export interface ContestedAnswerDetail {
   readonly clinics: readonly string[];
@@ -64,8 +64,8 @@ export interface CatchmentQueryResult {
 export const QUICK_PICK_SUBURBS = ["Perth", "Morley", "Fremantle", "Armadale", "Joondalup", "Rockingham"] as const;
 
 /**
- * Authoritative mapping from a clinic string (and optional context) to its
- * governing Health Service (NMHS / EMHS / SMHS / WACHS) and Primary Admitting Hospital.
+ * Unverified prototype mapping from a clinic string to a service and hospital.
+ * The reviewed catchment documents support clinic matches, not these hospital assignments.
  */
 export function mapClinicToServiceAndHospital(clinicStr: string): ServiceHospitalMapping {
   const norm = clinicStr.trim().toLowerCase();
@@ -272,7 +272,11 @@ export function resolveSuburb(suburbQuery: string): ResolvedCatchment | null {
   const knownPostcodes = POSTCODES_BY_SUBURB_KEY.get(suburbKey) ?? [];
 
   // Extract distinct document sources
-  const documentSources = Array.from(new Set(lookup.answers.map((a) => a.document.label || a.document.id)));
+  const documentSources = Array.from(
+    new Set(
+      lookup.answers.map((a) => `${a.document.label || a.document.id} (${a.document.date ?? "date not recorded"})`),
+    ),
+  );
 
   if (lookup.state === "reviewed") {
     const primaryClinic = lookup.answers[0]?.clinics.join(", ") || "Clinic not recorded";
@@ -289,7 +293,7 @@ export function resolveSuburb(suburbQuery: string): ResolvedCatchment | null {
       },
       primaryHospital: mapping.hospital,
       communityClinic: primaryClinic,
-      status: "Reviewed direct match",
+      status: "Reviewed clinic match",
       documentSources,
       rawLookup: lookup,
     };
@@ -476,20 +480,22 @@ export function resolveCatchmentQuery(rawQuery: string): CatchmentQueryResult {
 }
 
 /**
- * Cleanly formats a catchment summary into a plain-text representation suitable
- * for copying to the clinical clipboard.
+ * Formats a prototype summary with clinic provenance and mapping limitations retained.
  */
 export function formatCatchmentSummary(entry: ResolvedCatchment): string {
   const postcodesStr = entry.postcodes.length > 0 ? entry.postcodes.join(", ") : "Not recorded";
   const lines = [
     `WA Mental Health Catchment Summary`,
+    `Prototype reference only — not a verified referral destination.`,
     `──────────────────────────────────`,
     `Suburb: ${entry.suburb}`,
     `Postcode: ${postcodesStr}`,
-    `Health Service: ${entry.healthService.name} (${entry.healthService.code})`,
-    `Primary Admitting Hospital: ${entry.primaryHospital}`,
+    `Health Service (unverified prototype mapping): ${entry.healthService.name} (${entry.healthService.code})`,
+    `Hospital (unverified prototype mapping): ${entry.primaryHospital}`,
     `Follow-up Community Clinic: ${entry.communityClinic}`,
-    `Catchment Status: ${entry.status}`,
+    `Clinic Match Status: ${entry.status}`,
+    `Clinic sources: ${entry.documentSources.join("; ")}`,
+    `Hospital and service mappings are not verified by these clinic sources. Confirm the destination separately.`,
   ];
 
   if (entry.caveats) {
@@ -500,7 +506,7 @@ export function formatCatchmentSummary(entry: ResolvedCatchment): string {
     lines.push(`Discrepancy Details:`);
     for (const ans of entry.contestedAnswers) {
       lines.push(
-        `  • ${ans.documentId}: ${ans.clinics.join(", ")} -> Hospital: ${ans.hospital} (${ans.healthService.code})`,
+        `  • ${ans.documentId}: ${ans.clinics.join(", ")} -> Unverified prototype hospital: ${ans.hospital} (${ans.healthService.code})`,
       );
     }
   }
@@ -599,7 +605,7 @@ export function WardCatchmentResolver({
   const statusStyleClass = (() => {
     if (!activeResult) return "";
     switch (activeResult.status) {
-      case "Reviewed direct match":
+      case "Reviewed clinic match":
         return styles.statusReviewed;
       case "Contested / split":
         return styles.statusContested;
@@ -639,8 +645,8 @@ export function WardCatchmentResolver({
           <h2 className={styles.title}>WA Suburb-to-Catchment Resolver</h2>
         </div>
         <p className={styles.subtitle}>
-          Search Western Australian suburbs or 4-digit postcodes to determine Health Service jurisdiction, primary
-          admitting hospital, and community mental health team.
+          Look up community clinic records by Western Australian suburb or 4-digit postcode. Service and hospital
+          suggestions are unverified prototype mappings; confirm any referral destination separately.
         </p>
       </header>
 
@@ -765,7 +771,7 @@ export function WardCatchmentResolver({
                 )}
               </div>
               <span className={`${styles.statusBadge} ${statusStyleClass}`} data-testid="catchment-status-badge">
-                {activeResult.status === "Reviewed direct match" && (
+                {activeResult.status === "Reviewed clinic match" && (
                   <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
                   </svg>
@@ -790,7 +796,7 @@ export function WardCatchmentResolver({
             <div className={styles.detailsGrid}>
               {/* Health Service */}
               <div className={styles.factBlock}>
-                <span className={styles.factLabel}>Health Service Jurisdiction</span>
+                <span className={styles.factLabel}>Health Service — unverified prototype mapping</span>
                 <div className={styles.servicePill} style={serviceBadgeStyle} data-testid="health-service-pill">
                   <span className={styles.serviceDot} style={serviceDotStyle} aria-hidden="true" />
                   <span>
@@ -801,7 +807,7 @@ export function WardCatchmentResolver({
 
               {/* Primary Admitting Hospital */}
               <div className={styles.factBlock}>
-                <span className={styles.factLabel}>Primary Admitting Hospital</span>
+                <span className={styles.factLabel}>Hospital — unverified prototype mapping</span>
                 <span className={styles.factValue} data-testid="primary-hospital-value">
                   {activeResult.primaryHospital}
                 </span>
@@ -817,7 +823,7 @@ export function WardCatchmentResolver({
 
               {/* Data Provenance */}
               <div className={styles.factBlock}>
-                <span className={styles.factLabel}>Catchment Data Source</span>
+                <span className={styles.factLabel}>Clinic Data Sources — do not verify hospital mappings</span>
                 <span className={styles.factValue}>{activeResult.documentSources.join(", ")}</span>
               </div>
             </div>
@@ -837,8 +843,8 @@ export function WardCatchmentResolver({
                   <ul className={styles.contestedReadingsList}>
                     {activeResult.contestedAnswers.map((ans, idx) => (
                       <li key={idx}>
-                        <strong>{ans.documentId}:</strong> {ans.clinics.join(", ")} &rarr; Hospital: {ans.hospital} (
-                        {ans.healthService.code})
+                        <strong>{ans.documentId}:</strong> {ans.clinics.join(", ")} &rarr; Unverified prototype
+                        hospital: {ans.hospital} ({ans.healthService.code})
                       </li>
                     ))}
                   </ul>
@@ -922,7 +928,7 @@ export function WardCatchmentResolver({
             <h3 className={styles.stateTitle}>Ready to Resolve Catchment</h3>
             <p className={styles.stateMessage}>
               Type a suburb name or 4-digit WA postcode above, or tap one of the common quick-pick suburbs to look up
-              the admitting hospital and community mental health team.
+              community clinic records and unverified prototype hospital suggestions.
             </p>
           </div>
         )}

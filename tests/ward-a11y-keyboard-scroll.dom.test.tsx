@@ -68,9 +68,10 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     );
 
     const form = screen.getByRole("combobox", { name: "Form" });
-    expect(form).toHaveValue("1A");
+    expect(form).toHaveValue("");
     fireEvent.change(form, { target: { value: "3A" } });
     expect(form).toHaveValue("3A");
+    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
     expect(screen.getByLabelText("Date written on form")).toHaveAttribute("type", "date");
     expect(screen.getByLabelText("Time written on form")).toHaveAttribute("type", "time");
     // The result shows only a typed time (rule D5), so type one before reading it back.

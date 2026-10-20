@@ -1,6 +1,7 @@
 import { CLINICAL_VALUES } from "./ward-clinical-values";
 /** Explicit synthetic-form exception only. Submitted clinical state still uses the D-18 privacy lock. */
-const PREFIX = "wf-draft:v1:";
+// v2 (19 Oct 2026): drafts saved while legal status still had a default are dropped, not restored.
+const PREFIX = "wf-draft:v2:";
 export const SESSION_DRAFT_MAX_AGE_MS = CLINICAL_VALUES.sessionLimit.value * 60 * 60_000;
 export const SESSION_DRAFT_MAX_CHARS = 256_000;
 const SESSION_KEY = "wf-draft-session:v1";

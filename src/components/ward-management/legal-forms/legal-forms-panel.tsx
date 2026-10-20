@@ -24,7 +24,12 @@ import { edHref, movementHref } from "@/components/ward-management/shell/ward-fa
 
 import { actPeriodLineText, actPeriodReading } from "./act-periods-demo";
 import { formProgression } from "./legal-form-progression";
-import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
+import {
+  currentLegalDueAt,
+  formatReminderHours,
+  isLegalDeadlineBreached,
+  legalDeadlineText,
+} from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
@@ -90,10 +95,13 @@ function ClockRail({
 }) {
   const thresholds = useDueSoonThresholds();
   const marks: TimeRailMark[] = movements
-    .filter((movement) => currentLegalDueAt(movement) !== undefined)
-    .map((movement) => ({
+    .flatMap((movement) => {
+      const at = currentLegalDueAt(movement);
+      return at === undefined ? [] : [{ movement, at }];
+    })
+    .map(({ movement, at }) => ({
       id: movement.id,
-      at: movement.legalForm!.dueAt!,
+      at,
       code: movement.legalForm!.code,
       name: `Form ${movement.legalForm!.code}`,
       tone: STANDING_TONE[clockStanding(movement, now, thresholds)],
@@ -128,7 +136,7 @@ function ThresholdBar({ urgentHours, soonHours }: { urgentHours: number; soonHou
       <div
         className={styles.thresholdBar}
         role="img"
-        aria-label={`First window ${urgentHours} hours, second window ${soonHours} hours`}
+        aria-label={`First window ${formatReminderHours(urgentHours)}, second window ${formatReminderHours(soonHours)}`}
       >
         <span data-tone="danger" style={{ width: `${(urgent / span) * 100}%` }} />
         <span data-tone="warning" style={{ width: `${((soon - urgent) / span) * 100}%` }} />
@@ -137,11 +145,11 @@ function ThresholdBar({ urgentHours, soonHours }: { urgentHours: number; soonHou
       <div className={styles.windows}>
         <span className={styles.windowChip}>
           <StatusGlyph tone="danger" size={9} />
-          First <strong>{urgentHours}h</strong>
+          First <strong>{formatReminderHours(urgentHours)}</strong>
         </span>
         <span className={styles.windowChip}>
           <StatusGlyph tone="warning" size={9} />
-          Second <strong>{soonHours}h</strong>
+          Second <strong>{formatReminderHours(soonHours)}</strong>
         </span>
       </div>
     </div>
@@ -176,7 +184,7 @@ export function SummaryPanel({
   const demoOnly = counts.demo;
   counts.unwritten += counts.demo;
   counts.demo = 0;
-  const label = { ...RING_LABEL, soon: `Within ${soonHours}h` };
+  const label = { ...RING_LABEL, soon: `Within ${formatReminderHours(soonHours)}` };
   return (
     <section className={styles.panel} aria-label="Forms summary" data-testid="ward-legal-summary">
       <div className={styles.panelBlock}>

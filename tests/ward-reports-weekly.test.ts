@@ -92,6 +92,33 @@ function inputOf(f: ReturnType<typeof fixture>, patch: Partial<WeeklyReportInput
 describe("weeklyOperationsReport", () => {
   const week = reportWeek(0, NOW, WEDNESDAY);
 
+  it("excludes ward transfers and stops the ED wait at recorded collection", () => {
+    const f = fixture();
+    const collected = f.movement("WF-collected", {
+      openedAt: week.start - 60,
+      transport: {
+        id: "TR-test",
+        provider: "Patient transport service",
+        escortRequired: false,
+        collectedAt: week.start + 60,
+      },
+    });
+    expect(edWaitEnd(collected, NOW)).toBe(week.start + 60);
+    const report = weeklyOperationsReport(
+      inputOf(f, {
+        movements: [
+          collected,
+          f.movement("WF-ward", {
+            openedAt: week.start - 60,
+            sourceAdmissionId: "AD-source",
+          }),
+        ],
+      }),
+      week,
+    );
+    expect(report.edWaits.count).toBe(0);
+  });
+
   it("counts ED waits that passed the target inside the week, and only those", () => {
     const f = fixture();
     const crossedInWeek = f.movement("WF-A", { openedAt: week.start - 6 * 60, leftDepartmentAt: week.start + DAY });
