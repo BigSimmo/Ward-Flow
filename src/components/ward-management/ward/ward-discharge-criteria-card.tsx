@@ -138,7 +138,7 @@ export function WardDischargeCriteriaCard({
   if (status.kind === "none" && ineligible !== null && !editing && !closedSaveMessage) {
     return (
       <p className={styles.compact} data-testid="ward-drawer-discharge-criteria">
-        <span className={styles.compactLabel}>Criteria led discharge</span>
+        <span className={styles.compactLabel}>Criteria led discharge:</span>
         <span data-testid="ward-drawer-criteria-status">{INELIGIBLE_SHORT[eligibility]}</span>
       </p>
     );

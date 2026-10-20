@@ -84,9 +84,8 @@ describe("criteria led discharge card", () => {
     );
     const row = screen.getByTestId("ward-drawer-discharge-criteria");
     expect(row.tagName).toBe("P");
-    expect(row).toHaveTextContent(
-      "Criteria led discharge" + "Not available until legal status is recorded as voluntary.",
-    );
+    // The colon keeps label and reason apart when read aloud or copied as text.
+    expect(row.textContent).toBe("Criteria led discharge:Not available until legal status is recorded as voluntary.");
     expect(screen.queryByRole("heading")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
     rerender(<WardDischargeCriteriaCard record={null} eligibility="cto" now={NOW} onChange={vi.fn()} />);
