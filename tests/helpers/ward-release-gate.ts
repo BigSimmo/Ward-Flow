@@ -246,7 +246,7 @@ export function wardDesk(unitId: string, unitName: string) {
 
 /**
  * Opens the ward's full Arrivals or Discharges list. Desktop: the Home tab's Ward flow card. Phone:
- * the Ward flow button in the ward's own toolbar opens the same card as a sheet.
+ * the Ward flow row in Ward home's Needs you card opens the same card as a sheet.
  */
 export async function openWardList(page: Page, list: "Admissions" | "Discharges") {
   await openWardFlow(page, list);
@@ -257,16 +257,16 @@ export async function openWardList(page: Page, list: "Admissions" | "Discharges"
 
 /**
  * Shows one pane of the ward's Ward flow card: Referrals (awaiting this ward's answer), Admissions
- * or Discharges. On a phone the card is a sheet opened from the ward's toolbar.
+ * or Discharges. On a phone the card is a sheet opened from Ward home's Needs you card.
  */
 export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" | "Discharges") {
   if (isPhoneLayout(page)) {
     const sheet = page.getByRole("dialog", { name: "Ward flow" });
     if (!(await sheet.isVisible())) {
-      await page
-        .getByRole("toolbar", { name: "Ward actions" })
-        .getByRole("button", { name: "Ward flow", exact: true })
-        .click();
+      // Option B (20 Oct 2026): Ward flow is a row in Ward home's "Needs you" card, not a chip.
+      const home = page.locator("#tabBtn-attn");
+      if ((await home.getAttribute("aria-selected")) !== "true") await home.click();
+      await page.getByTestId("ward-phone-row-flow").click();
     }
     await expect(sheet).toBeVisible();
   } else {
