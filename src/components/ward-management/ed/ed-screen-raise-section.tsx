@@ -400,9 +400,9 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             {missingNote("urgency")}
           </label>
           <fieldset
- className={fieldClass("specialling", styles.referralCheckbox)}
- aria-describedby={isMissing("specialling") ? missingNoteId("specialling") : undefined}
- >
+            className={fieldClass("specialling", styles.referralCheckbox)}
+            aria-describedby={isMissing("specialling") ? missingNoteId("specialling") : undefined}
+          >
             <legend>One-to-one nursing</legend>
             <label>
               <input
@@ -427,9 +427,9 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             {groupMissingNote("specialling")}
           </fieldset>
           <fieldset
- className={fieldClass("highAcuity", styles.referralCheckbox)}
- aria-describedby={isMissing("highAcuity") ? missingNoteId("highAcuity") : undefined}
- >
+            className={fieldClass("highAcuity", styles.referralCheckbox)}
+            aria-describedby={isMissing("highAcuity") ? missingNoteId("highAcuity") : undefined}
+          >
             <legend>High-acuity nursing</legend>
             <label>
               <input
