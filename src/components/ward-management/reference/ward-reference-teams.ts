@@ -3,10 +3,10 @@
 // Generator: scripts/ward-flow/build-reference-teams.mjs  (npm run ward:reference:build)
 // Drift gate: npm run check:ward-reference
 //
-// 🔴 PUBLISHED CONTACT DETAIL FOR REAL WA COMMUNITY MENTAL HEALTH SERVICES. NOT CALL-TESTED.
-// Every record here is `operationally_ratified: false` in the pack, and the pack's own note on
-// these rows says "2023 PDF footer contacts may be obsolete". Whatever renders one of these must
-// say so beside it, with `recordedOn`.
+// 🔴 INVENTED PHONE NUMBERS AND MAILBOXES FOR REAL WA COMMUNITY MENTAL HEALTH SERVICES.
+// Owner, 20 Oct 2026: every number is in the fictitious range 08 5550 0xxx and every mailbox is on
+// example.invalid, so nobody can ring or email a real service from the demo. Whatever renders one
+// of these must say so beside it, with `recordedOn`.
 //
 // 🔴 NO NUMERIC CAPACITY FIELD EXISTS HERE, BY CONSTRUCTION - the same guarantee
 // ward-reference-registry.ts makes. A bed count that is never generated into src/ cannot leak into
@@ -38,7 +38,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-arm",
       hsp: "CAHS",
-      publishedPhone: "08 9391 2455",
+      publishedPhone: "08 5550 0115",
       publishedHours: null,
       referralEmail: null,
       address: "Unit 4, 40 Fourth Road, Armadale",
@@ -52,7 +52,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "e-armadale",
       hsp: "EMHS",
-      publishedPhone: "08 9398 6600",
+      publishedPhone: "08 5550 0108",
       publishedHours: null,
       referralEmail: null,
       address: "Tenancy 3, 10 Orchard Avenue, Armadale",
@@ -66,7 +66,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "e-bentley",
       hsp: "EMHS",
-      publishedPhone: "08 9416 3800",
+      publishedPhone: "08 5550 0106",
       publishedHours: null,
       referralEmail: null,
       address: "Bentley Health Service, Mills Street",
@@ -80,9 +80,9 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-butler",
       hsp: "NMHS",
-      publishedPhone: "08 6372 1500",
+      publishedPhone: "08 5550 0101",
       publishedHours: "08:30–16:30 Monday–Friday",
-      referralEmail: "ReferralsWannerooCatchment@health.wa.gov.au",
+      referralEmail: "wanneroo.referrals@example.invalid",
       address: "81 Exmouth Drive, Butler",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
@@ -94,7 +94,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "e-city",
       hsp: "EMHS",
-      publishedPhone: "08 9224 1720",
+      publishedPhone: "08 5550 0105",
       publishedHours: null,
       referralEmail: null,
       address: "74 Murray Street, Perth",
@@ -108,7 +108,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-clarkson",
       hsp: "CAHS",
-      publishedPhone: "08 9404 0000",
+      publishedPhone: "08 5550 0116",
       publishedHours: null,
       referralEmail: null,
       address: "Units 11–13, 30 Ainsbury Parade, Clarkson",
@@ -122,7 +122,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-fre",
       hsp: "CAHS",
-      publishedPhone: "08 6372 2800",
+      publishedPhone: "08 5550 0117",
       publishedHours: null,
       referralEmail: null,
       address: "Tower B Plaza, 48 Barry Marshall Parade, Murdoch",
@@ -136,7 +136,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "s-fre-old",
       hsp: "SMHS",
-      publishedPhone: "08 9431 3333",
+      publishedPhone: "08 5550 0113",
       publishedHours: null,
       referralEmail: null,
       address: "L Block, Alma Street, Fremantle",
@@ -150,7 +150,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-hillarys",
       hsp: "CAHS",
-      publishedPhone: "08 9403 1999",
+      publishedPhone: "08 5550 0118",
       publishedHours: null,
       referralEmail: null,
       address: "Units 2/3, Level D, 32 Endeavour Road, Hillarys",
@@ -164,7 +164,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-lowerwest-old",
       hsp: "NMHS",
-      publishedPhone: "08 9382 0800",
+      publishedPhone: "08 5550 0111",
       publishedHours: null,
       referralEmail: null,
       address: "6 Lemnos Street, Shenton Park",
@@ -178,7 +178,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "e-midland",
       hsp: "EMHS",
-      publishedPhone: "08 9237 8600",
+      publishedPhone: "08 5550 0107",
       publishedHours: "08:30–16:30 Monday–Friday, excluding public holidays",
       referralEmail: null,
       address: "281 Great Eastern Highway, Midland",
@@ -192,9 +192,9 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-mirra",
       hsp: "NMHS",
-      publishedPhone: "08 9344 5400",
+      publishedPhone: "08 5550 0103",
       publishedHours: "08:30–16:30 Monday–Friday",
-      referralEmail: "ReferralsStirlingCatchment@health.wa.gov.au",
+      referralEmail: "stirling.referrals@example.invalid",
       address: "Unit 1/20 Chesterfield Road, Mirrabooka",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
@@ -206,9 +206,9 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-osborne",
       hsp: "NMHS",
-      publishedPhone: "08 6457 8350",
+      publishedPhone: "08 5550 0150",
       publishedHours: "08:30–16:30 Monday–Friday",
-      referralEmail: "ReferralsStirlingCatchment@health.wa.gov.au",
+      referralEmail: "stirling.referrals@example.invalid",
       address: "Block H, Osborne Place, Stirling",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
@@ -220,7 +220,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-osborne-old",
       hsp: "NMHS",
-      publishedPhone: "08 6457 8300",
+      publishedPhone: "08 5550 0100",
       publishedHours: null,
       referralEmail: null,
       address: "G Block, Osborne Park Hospital",
@@ -234,7 +234,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "s-park-old",
       hsp: "SMHS",
-      publishedPhone: "08 6557 4900",
+      publishedPhone: "08 5550 0114",
       publishedHours: null,
       referralEmail: null,
       address: "7/5 Goddard Street, Rockingham",
@@ -248,7 +248,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-peel",
       hsp: "CAHS",
-      publishedPhone: "08 6559 5100",
+      publishedPhone: "08 5550 0119",
       publishedHours: null,
       referralEmail: null,
       address: "Level 1, 91 Allnutt Street, Mandurah East",
@@ -262,7 +262,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "s-peel",
       hsp: "SMHS",
-      publishedPhone: "08 9531 8080",
+      publishedPhone: "08 5550 0110",
       publishedHours: null,
       referralEmail: null,
       address: "50 Montsalvat Drive, Greenfields",
@@ -276,7 +276,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-rk",
       hsp: "CAHS",
-      publishedPhone: "08 9528 0555",
+      publishedPhone: "08 5550 0120",
       publishedHours: null,
       referralEmail: null,
       address: "5/6 Ameer Street, Rockingham",
@@ -290,7 +290,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "s-rk",
       hsp: "SMHS",
-      publishedPhone: "08 9528 0600",
+      publishedPhone: "08 5550 0109",
       publishedHours: null,
       referralEmail: null,
       address: "Cnr Clifton and Ameer Streets, Rockingham",
@@ -304,7 +304,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-shenton",
       hsp: "CAHS",
-      publishedPhone: "08 9381 7055",
+      publishedPhone: "08 5550 0121",
       publishedHours: null,
       referralEmail: null,
       address: "231 Stubbs Terrace, Shenton Park",
@@ -318,9 +318,9 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-subiaco",
       hsp: "NMHS",
-      publishedPhone: "08 9489 7200",
+      publishedPhone: "08 5550 0104",
       publishedHours: "08:30–16:30 Monday–Friday",
-      referralEmail: "SubiacoCMHSATTReferrals@health.wa.gov.au",
+      referralEmail: "subiaco.att@example.invalid",
       address: "303 Rokeby Road, Subiaco",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
@@ -332,7 +332,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-swan",
       hsp: "CAHS",
-      publishedPhone: "08 6326 1300",
+      publishedPhone: "08 5550 0122",
       publishedHours: null,
       referralEmail: null,
       address: "1 Midland Square, Midland",
@@ -346,9 +346,9 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-wanneroo",
       hsp: "NMHS",
-      publishedPhone: "08 9406 7100",
+      publishedPhone: "08 5550 0102",
       publishedHours: "08:30–16:30 Monday–Friday",
-      referralEmail: "ReferralsWannerooCatchment@health.wa.gov.au",
+      referralEmail: "wanneroo.referrals@example.invalid",
       address: "2 Cafaggio Crescent, Wanneroo",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
@@ -360,7 +360,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "n-wanneroo-old",
       hsp: "NMHS",
-      publishedPhone: "08 6163 4800",
+      publishedPhone: "08 5550 0112",
       publishedHours: null,
       referralEmail: null,
       address: "2 Cafaggio Crescent, Wanneroo",
@@ -374,7 +374,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
     {
       referenceId: "c-warwick",
       hsp: "CAHS",
-      publishedPhone: "08 6373 8500",
+      publishedPhone: "08 5550 0123",
       publishedHours: null,
       referralEmail: null,
       address: "316 Erindale Road, Warwick",
@@ -395,4 +395,4 @@ export const REFERENCE_TEAM_NAMES: readonly string[] = [...TEAMS.keys()];
 
 /** Render this beside any detail above. It is the whole caveat, in one sentence. */
 export const REFERENCE_TEAM_CAVEAT =
-  "Published contact detail from a service directory. Not call-tested, and not confirmed by the service.";
+  "Invented phone number and mailbox for the demo, not the service's real ones. Not call-tested, and not confirmed by the service.";

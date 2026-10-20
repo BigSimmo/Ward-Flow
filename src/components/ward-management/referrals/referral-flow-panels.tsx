@@ -367,7 +367,7 @@ export function DocumentationPanel({
 
 const CONTACT_FIELDS = [
   ["name", "Your name", "text", "Full name"],
-  ["email", "Email address", "email", "name@health.wa.gov.au"],
+  ["email", "Email address", "email", "name@example.invalid"],
   ["phone", "Phone number", "tel", "Direct number"],
   ["role", "Your role", "text", "For example ED registrar"],
   ["location", "Location or service", "text", "Ward, ED or team"],

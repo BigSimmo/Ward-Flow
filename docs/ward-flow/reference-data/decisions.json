@@ -42,9 +42,9 @@
       "issue_id": "ARMADALE-ORCHARD-CONTACT",
       "subject": "Armadale/Orchard naming and contact",
       "decision": "tip_names_demo_ok",
-      "applied_rule": "Synthetic tip names are demo-only; live contact is Orchard Ave 9398 6600; ATT phone is 9391 2400 until HSP confirms.",
-      "live_contact": "Orchard Ave 9398 6600",
-      "att_phone": "9391 2400",
+      "applied_rule": "Synthetic tip names are demo-only; live contact is Orchard Ave 5550 0108; ATT phone is 5550 0133 until HSP confirms.",
+      "live_contact": "Orchard Ave 5550 0108",
+      "att_phone": "5550 0133",
       "operational_use_approved": false,
       "automatic_routing_approved": false,
       "ratification_status": "awaiting HSP ratification"

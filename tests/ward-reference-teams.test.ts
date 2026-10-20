@@ -153,8 +153,8 @@ describe("the register's community-team contact detail", () => {
     }
   });
 
-  it("resolves a real team to its published number, and an unknown name to null", () => {
-    expect(referenceTeamDetail("Butler Community Mental Health Service")?.publishedPhone).toBe("08 6372 1500");
+  it("resolves a real team to its (invented) number, and an unknown name to null", () => {
+    expect(referenceTeamDetail("Butler Community Mental Health Service")?.publishedPhone).toBe("08 5550 0101");
     expect(referenceTeamDetail("A team that does not exist")).toBeNull();
   });
 
@@ -179,7 +179,17 @@ describe("the register's community-team contact detail", () => {
     expect(referenceTeamDetail(`  ${first}  `)).not.toBeNull();
   });
 
-  it("states its caveat in one sentence, and says the detail is not call-tested", () => {
+  it("holds only invented numbers and mailboxes, so the demo cannot ring or email a real service", () => {
+    // Owner, 20 Oct 2026: 08 5550 0xxx is a reserved fictitious range; example.invalid never resolves.
+    for (const name of REFERENCE_TEAM_NAMES) {
+      const detail = referenceTeamDetail(name)!;
+      if (detail.publishedPhone !== null) expect(detail.publishedPhone, name).toMatch(/^08 5550 0\d{3}$/u);
+      if (detail.referralEmail !== null) expect(detail.referralEmail, name).toMatch(/@example\.invalid$/u);
+    }
+  });
+
+  it("states its caveat in one sentence, and says the detail is invented and not call-tested", () => {
+    expect(REFERENCE_TEAM_CAVEAT).toMatch(/invented/iu);
     expect(REFERENCE_TEAM_CAVEAT).toMatch(/not call-tested/iu);
     expect(REFERENCE_TEAM_CAVEAT).toMatch(/not confirmed by the service/iu);
   });

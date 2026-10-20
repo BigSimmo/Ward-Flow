@@ -361,13 +361,13 @@ Page 12 of S2015 lists community referral addresses. These 8 are the only clinic
 gives an address and phone number for, so they are the closest thing the source has to a
 definitive hub list:
 
-1. **ALMA STREET CENTRE** — Alma Street, Fremantle 6160 — 9431 3300
-2. **MILLS STREET CENTRE** — Mills Street, Bentley 6102 — 9416 3666
-3. **SUBIACO CLINIC** — 2 Nicholson Road, Subiaco 6008 — 9381 9055
-4. **JOONDALUP HEALTH CAMPUS** — Shenton Avenue and Grand Boulevard, Joondalup 6027 — 9400 9400
-5. **INNER CITY CLINIC** — 74 Murray Street, Perth 6000 — 9224 1720
-6. **MIRRABOOKA CLINIC** — 4/14 Chesterfield Road, Mirrabooka 6061 — 9344 5400
-7. **OSBORNE CLINIC** — Osborne Place, Stirling 6021 — 9346 8350
+1. **ALMA STREET CENTRE** — Alma Street, Fremantle 6160 — 5550 0135
+2. **MILLS STREET CENTRE** — Mills Street, Bentley 6102 — 5550 0136
+3. **SUBIACO CLINIC** — 2 Nicholson Road, Subiaco 6008 — 5550 0137
+4. **JOONDALUP HEALTH CAMPUS** — Shenton Avenue and Grand Boulevard, Joondalup 6027 — 5550 0138
+5. **INNER CITY CLINIC** — 74 Murray Street, Perth 6000 — 5550 0105
+6. **MIRRABOOKA CLINIC** — 4/14 Chesterfield Road, Mirrabooka 6061 — 5550 0103
+7. **OSBORNE CLINIC** — Osborne Place, Stirling 6021 — 5550 0139
 8. **MIDLAND ADULT COMMUNITY MH SERVICE** — 281 Great Eastern Highway, Midland 6056 — Telephone 92378600, Fax 92378611
 
 Note this list has **no Armadale, Rockingham, Kwinana, Peel or Clarkson entry**, even though all
@@ -381,16 +381,16 @@ community team hubs":
 
 | Team (as written)  | Phone     | Fax       |
 | ------------------ | --------- | --------- |
-| ARMADALE           | 9391 2400 | 9391 2429 |
+| ARMADALE           | 5550 0133 | 5550 0140 |
 | INNER CITY         | 92241720  | 92241702  |
-| MIDLAND            | 9237 8600 | 9237 8611 |
-| ROCKINGHAM KWINANA | 9528 0600 | 9529 1266 |
-| FREMANTLE          | 9431 3555 | 9431 3479 |
-| PEEL               | 9531 8080 | 9531 8070 |
-| JOONDALUP          | 9400 9599 | 9400 9590 |
-| LOWER WEST         | 9489 7200 | 9382 4171 |
-| CLARKSON           | 9404 0094 | 9404 0099 |
-| BENTLEY            | 9416 3544 | 9416 3676 |
+| MIDLAND            | 5550 0107 | 5550 0141 |
+| ROCKINGHAM KWINANA | 5550 0109 | 5550 0142 |
+| FREMANTLE          | 5550 0143 | 5550 0144 |
+| PEEL               | 5550 0110 | 5550 0145 |
+| JOONDALUP          | 5550 0146 | 5550 0147 |
+| LOWER WEST         | 5550 0104 | 5550 0148 |
+| CLARKSON           | 5550 0149 | 5550 0151 |
+| BENTLEY            | 5550 0152 | 5550 0153 |
 
 SMETRO has **12 suburb blocks but only 10 headers** — two blocks lost their team name in
 extraction. See section 5.
@@ -1215,7 +1215,7 @@ way the `BENTLEY` header survived only as the corrupted string `487679356BENTLEY
   stray digit run glued to a caption. **It has no data.** The appendix content is the image.
 - `catchment-Mental_Health_Catchment.txt` line 3 is `14629179606487` — a stray digit run above
   the title.
-- `catchment-Metro_Catchment.txt` line 39 is `487679356BENTLEY P: 9416 3544` — a stray digit run
+- `catchment-Metro_Catchment.txt` line 39 is `487679356BENTLEY P: 5550 0152` — a stray digit run
   glued to the BENTLEY heading; and its last line is a bare `12`, a page number.
 - S2015 page 12 contains no catchment rows, only the community clinic address list.
 - SMETRO and SRPBG run suburb names together on a line with only spaces between them, so
@@ -1315,7 +1315,7 @@ Agreed Patient Flow Process <"_.
 It does **not** map suburbs to clinics. It maps **country hospitals to one of three metropolitan
 receiving sites**. That is a different question from the one the other four documents answer.
 
-**South Link → FSH, 6152 2222** (42 facilities)
+**South Link → FSH, 5550 0154** (42 facilities)
 
 | Group                   | Facilities as written                                                                                                                                                 |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1324,7 +1324,7 @@ receiving sites**. That is a different question from the one the other four docu
 | Goldfields (9)          | Coolgardie HC, Esperance H, Kalgoorlie RRC, Kambalda HC, Laverton H, Leonora H, Menzies HC, Norseman H, Varley NP                                                     |
 | Southern Wheatbelt (10) | Boddington H, Kondinin H, Dumbleyung MHS, Kukerin H, Lake Grace H, Narrogin H, Pingelly H, Wagin H, Wickepin HC, Williams HC                                          |
 
-**East Link → RPH, 9224 2244** (34 facilities)
+**East Link → RPH, 5550 0155** (34 facilities)
 
 | Group                 | Facilities as written                                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1333,7 +1333,7 @@ receiving sites**. That is a different question from the one the other four docu
 | Western Wheatbelt (9) | Beverley H, Cunderdin HC, Dalwallinu H, Goomalling H, Northam H, Moora H, Wongan Hills H, Wyalkatchem H, York H                        |
 | Eastern Wheatbelt (9) | Bruce Rock MHS, Corrigin HS, Kellerberrin MHS, Kununoppin H, Merredin HS, Narembeen MHS, Quairading H, Southern Cross H, Mukinbudin HC |
 
-**North Link → SCGH, 6457 3333** (16 facilities)
+**North Link → SCGH, 5550 0156** (16 facilities)
 
 | Group                | Facilities as written                                                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
