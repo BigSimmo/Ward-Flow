@@ -339,6 +339,16 @@
   text-decoration: underline;
 }
 
+/* DA-25: on a touch screen the link gains an invisible 12px above and below, a 44px tap area in
+ * the same layout. */
+@media (pointer: coarse) {
+  .highlightLink {
+    display: inline-block;
+    margin-block: calc(-1 * var(--wf-s-3));
+    padding-block: var(--wf-s-3);
+  }
+}
+
 .secondary {
   display: flex;
   flex-direction: column;
@@ -489,6 +499,8 @@
 
 .freeingWardButton {
   min-width: 0;
+  /* DA-25: touch tablets reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   padding: 0;
   border: 0;
   background: transparent;
