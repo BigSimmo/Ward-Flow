@@ -2,11 +2,11 @@
 // Ward Flow owner tests (Josh, 25 September 2026): run only the tests that use the files you changed,
 // found automatically. Never a full suite of your own; the batch gate covers the rest.
 //
-//   node scripts/ward-flow/related-tests.mjs [--base <ref>] [--head <ref>] [--root <dir>] [--dry-run]
+//   node scripts/ward-flow/related-tests.mjs [--base <ref>] [--head <ref>] [--root <dir>] [--dry-run] [--defer-source-guards]
 //
 // Changed files = your branch's commits since the ward line, plus uncommitted edits. Changed test
 // files always run. Other test files are found by following imports backwards from each changed
-// file (src/, scripts/ and tests/, "@/" alias and relative paths). If that selects more than CAP
+// file (src/, scripts/, tests/ and backend/ward-flow/, "@/" alias and relative paths). If that selects more than CAP
 // files (a file with huge fan-out, such as ward-sites.ts), it falls back to the test files that
 // import a changed file DIRECTLY, and if that is still over the cap, to the changed tests alone, and
 // prints "fan-out capped: batch gate covers the rest". Runs through the repo's vitest wrapper, which
@@ -15,10 +15,10 @@ import { execFileSync } from "node:child_process";
 import { acquireHeavyRunLock } from "../test-run-lock.mjs";
 import { runOwnedChild } from "../owned-child.mjs";
 import { offlineTestEnvironment } from "../test-environment.mjs";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { selectedBaselineVerdict } from "./selected-baseline-verdict.mjs";
-import { isOfflineUnitTestFile } from "../unit-test-population.mjs";
+import { selectRelatedTests } from "./related-test-selection.mjs";
 
 const CAP = 60;
 const LINE = "origin/main";
@@ -47,102 +47,16 @@ const changed = [
       .filter((file) => file && existsSync(path.join(root, file))),
   ),
 ];
-const isTest = isOfflineUnitTestFile;
-const isCode = (file) => /\.(tsx?|mjs|js|cjs|css)$/.test(file);
-const changedTests = changed.filter(isTest);
-const sources = changed.filter((file) => isCode(file) && !isTest(file));
-
-// With no changed source/helper, the graph cannot add a test: changed tests are already selected.
-// Keep the normal graph for any executable source (including shared test helpers) or CSS change.
-const files = [];
-for (const dir of sources.length ? ["src", "scripts", "tests"] : []) {
-  (function walk(d) {
-    if (!existsSync(path.join(root, d))) return;
-    for (const entry of readdirSync(path.join(root, d), { withFileTypes: true })) {
-      const rel = `${d}/${entry.name}`;
-      if (entry.isDirectory()) {
-        if (entry.name !== "node_modules" && !entry.name.startsWith(".")) walk(rel);
-      } else if (/\.(tsx?|mjs|js)$/.test(entry.name)) files.push(rel);
-    }
-  })(dir);
-}
-
-const resolve = (from, specifier) => {
-  let target;
-  if (specifier.startsWith("@/")) target = `src/${specifier.slice(2)}`;
-  else if (specifier.startsWith("."))
-    target = path.posix.normalize(path.posix.join(path.posix.dirname(from), specifier));
-  else return null;
-  for (const candidate of [
-    target,
-    `${target}.ts`,
-    `${target}.tsx`,
-    `${target}.mjs`,
-    `${target}/index.ts`,
-    `${target}/index.tsx`,
-  ]) {
-    const full = path.join(root, candidate);
-    if (existsSync(full) && statSync(full).isFile()) return candidate;
-  }
-  return null;
-};
-const importers = new Map();
-for (const file of files) {
-  const text = readFileSync(path.join(root, file), "utf8");
-  for (const match of text.matchAll(/(?:from\s+|import\s*\(\s*|import\s+|require\(\s*)["']([^"']+)["']/g)) {
-    const target = resolve(file, match[1]);
-    if (!target) continue;
-    if (!importers.has(target)) importers.set(target, new Set());
-    importers.get(target).add(file);
-  }
-}
-
-const transitive = new Set(changedTests);
-const direct = new Set(changedTests);
-for (const source of sources) {
-  const seen = new Set([source]);
-  const queue = [source];
-  while (queue.length) {
-    const current = queue.shift();
-    for (const importer of importers.get(current) ?? []) {
-      if (seen.has(importer)) continue;
-      seen.add(importer);
-      if (isTest(importer)) {
-        transitive.add(importer);
-        if (current === source) direct.add(importer);
-      } else queue.push(importer);
-    }
-  }
-}
-
-let selected = [...transitive];
-let note = `${selected.length} related test file(s) for ${changed.length} changed file(s)`;
-if (selected.length > CAP) {
-  selected = [...direct];
-  note = `fan-out capped: ${transitive.size} related files; running the ${selected.length} that import a changed file directly. The batch gate covers the rest.`;
-  if (selected.length > CAP) {
-    // The changed tests, plus each changed module's own unit tests (tests named after it, such as
-    // tests/ward-eligibility*.test.ts for ward-eligibility.ts).
-    const stems = sources.map((source) => path.posix.basename(source).replace(/\.[^.]+$/, ""));
-    const ownTests = [...direct].filter((test) => stems.some((stem) => path.posix.basename(test).startsWith(stem)));
-    selected = [...new Set([...changedTests, ...ownTests])];
-    note = `fan-out capped: ${transitive.size} related, ${direct.size} direct; running the ${changedTests.length} changed test file(s) and ${ownTests.length} unit test(s) named after the changed modules. The batch gate covers the rest.`;
-  }
-}
-// Guards that read source text instead of importing it, so the import walk above never finds them.
-// Any change to a ward-facing file always runs them (26 Sept: the referral boundary guard caught two
-// ward-screen pieces only at the full gate).
-const SOURCE_READING_GUARDS = [
-  "tests/ward-referral-screen-boundary.test.ts",
-  "tests/ward-no-invented-screen-figures.test.ts",
-  // 26 Sept: override-surfaces also reads source, and caught a ward-board change only at the gate.
-  "tests/ward-override-surfaces.test.ts",
-];
-if (changed.some((file) => file.startsWith("src/components/ward-management/"))) {
-  for (const guard of SOURCE_READING_GUARDS) if (existsSync(path.join(root, guard))) selected.push(guard);
-  selected = [...new Set(selected)];
-}
-selected.sort();
+const { selected, note, deferredSourceGuards } = selectRelatedTests({
+  root,
+  changed,
+  cap: CAP,
+  includeSourceGuards: !args.includes("--defer-source-guards"),
+});
+if (deferredSourceGuards.length)
+  console.log(
+    `related-tests: ${deferredSourceGuards.length} declared source contracts deferred to the full unit gate: ${deferredSourceGuards.join(", ")}`,
+  );
 console.log(`related-tests: ${note}`);
 if (selected.length === 0) {
   console.log("related-tests: nothing to run. Run your type check: node scripts/ward-flow/gate-tsc.mjs");

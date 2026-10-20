@@ -54,8 +54,8 @@ function walk(dir: string): string[] {
 }
 
 const isSource = (file: string) => file.endsWith(".ts") || file.endsWith(".tsx");
-const SOURCE_FILES = walk(WARD_SOURCE).filter(isSource);
 const APP_FILES = walk(APP_SOURCE).filter(isSource);
+const SOURCE_FILES = APP_FILES.filter((file) => file.startsWith(`${WARD_SOURCE}${sep}`));
 
 const relative = (file: string) =>
   file

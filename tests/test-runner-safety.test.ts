@@ -1169,7 +1169,7 @@ describe("provider-safe test environment", () => {
       runner.indexOf("lock = acquireHeavyRunLock("),
     );
     expect(runner.indexOf("assertPlaywrightBrowsersReady(playwrightArgs);")).toBeLessThan(
-      runner.indexOf("console.log(`Building isolated production Playwright app"),
+      runner.indexOf("const buildArgs ="),
     );
     expect(preflight).toContain("chromium_headless_shell");
     expect(preflight).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");

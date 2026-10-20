@@ -25,18 +25,17 @@ describe("the public Ward Flow browser journeys lane", () => {
     expect(workflow).toMatch(/^on:\s*\n {2}pull_request:\s*\n {4}branches: \[main\]/mu);
     expect(workflow).toMatch(/^ {2}merge_group:/mu);
     const browser = job("browser");
-    // No job-level draft/flag gate may silently bypass the browser result. The only job-level gate is
-    // the main-push reuse proof (an identical tree whose PR run already passed every browser group),
-    // and the aggregate then requires the job to be skipped, never failed. The planner narrows only
-    // the install step, and the later steps must follow the successful install/Chromium step.
+    // Scope is verified once before allocation. Selected groups also require a successful
+    // prepared build; only verified main reuse can intentionally skip a selected group.
     const header = browser.slice(0, browser.indexOf("    steps:"));
     expect(header.match(/^ {4}if:.*$/gmu)).toEqual([
-      "    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}",
+      "    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && needs.browser-build.result == 'success' }}",
     ]);
     expect(job("reuse")).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
     expect(browser).not.toContain("WARD_JOURNEYS_BLOCKING");
-    expect(browser).toContain("run: node scripts/ward-ci-public/plan.mjs");
-    expect(browser).toContain("if: ${{ !cancelled() && steps.plan.outputs.browser == 'true' }}");
+    expect(job("plan")).toContain("run: node scripts/ward-ci-public/plan.mjs");
+    expect(job("plan")).toContain("run: node scripts/ward-ci-public/verify-plan.mjs");
+    expect(browser).toContain("needs: [plan, reuse, browser-build]");
     expect(browser).toContain("if: ${{ !cancelled() && steps.install.outcome == 'success' }}");
     expect(browser).toContain("if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}");
   });
@@ -64,12 +63,16 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("requires a successful browser result in the always-running aggregate", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
-    expect(required).toContain("needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]");
+    expect(required).toContain(
+      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]",
+    );
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain("RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}");
-    expect(required).toContain(
-      'if [ "$REUSE_VERIFIED" != true ]; then\n            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success && test "$RELEASE_GATE_RESULT" = success\n',
-    );
+    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"');
+    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"');
+    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"');
+    expect(required).toContain('if [ "$1" = true ]; then test "$2" = success;');
+    expect(required).toContain('elif [ "$1" = false ]; then test "$2" = skipped;');
     // On a verified main reuse the browser groups must be skipped, not failed or cancelled.
     expect(required).toContain('test "$BROWSER_RESULT" = skipped');
   });
@@ -87,10 +90,11 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("retains failed journey evidence separately for every browser group", () => {
     const browser = job("browser");
     expect(browser).toContain("id: journeys");
-    expect(browser).toContain("id: csrf");
-    expect(browser).toContain(
-      "if: ${{ !cancelled() && (steps.journeys.outcome == 'failure' || steps.csrf.outcome == 'failure') }}",
+    expect(browser).not.toContain("id: csrf");
+    expect(readFileSync("scripts/run-playwright.mjs", "utf8")).toContain(
+      "includeGroupCsrf(playwrightArgs, journeyGroup)",
     );
+    expect(browser).toContain("if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}");
     expect(browser).toMatch(/uses: actions\/upload-artifact@[0-9a-f]{40}/u);
     expect(browser).toContain("name: ward-browser-failures-${{ github.run_id }}-${{ matrix.group }}");
     expect(browser).toContain("path: test-results/");

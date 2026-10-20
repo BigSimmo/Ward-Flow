@@ -32,17 +32,23 @@ describe("Ward backend CI", () => {
     const backendTest = step("Run Ward backend tests");
 
     expect(install.text).toMatch(/id: backend-install/u);
-    expect(install.text).toMatch(/steps\.plan\.outputs\.full == 'true'/u);
-    expect(install.text).toMatch(/hashFiles\('backend\/ward-flow\/package\.json'\) != ''/u);
-    expect(install.text).toMatch(/working-directory: backend\/ward-flow/u);
-    expect(install.text).toMatch(/run: npm ci --ignore-scripts/u);
+    expect(install.text).toMatch(/steps\.install\.outcome == 'success'/u);
+    expect(install.text).toMatch(
+      /^\s*run: node scripts\/install-locked-dependencies\.mjs --root backend\/ward-flow\s*$/mu,
+    );
     expect(backendTest.text).toMatch(/steps\.backend-install\.outcome == 'success'/u);
     expect(backendTest.text).toMatch(/working-directory: backend\/ward-flow/u);
-    expect(backendTest.text).toMatch(/run: npm run build:engine && npm run typecheck && npm test/u);
+    expect(backendTest.text).toMatch(
+      /^\s*run: npm run build:engine && npm run typecheck && npm run test:coverage\s*$/mu,
+    );
     expect(backendTest.text).toMatch(
       /WARD_TEST_DATABASE_URL: postgresql:\/\/postgres@127\.0\.0\.1:5432\/wardflow_test/u,
     );
     const backendJob = jobAt(backendTest.start);
+    expect(backendJob?.name).toBe("backend");
+    expect(backendJob?.text).toMatch(/^\s*needs: plan\s*$/mu);
+    expect(backendJob?.text).toContain("needs.plan.outputs.backend == 'true'");
+    expect(backendJob?.text).toMatch(/^\s*run: node scripts\/install-locked-dependencies\.mjs\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*ports:\s*\[\s*5432\s*:\s*5432\s*\]\s*$/mu);
@@ -57,5 +63,14 @@ describe("Ward backend CI", () => {
       .split(",")
       .map((name) => name.trim());
     expect(needs).toContain(job?.name);
+    expect(workflow).toContain("BACKEND_RESULT: ${{ needs.backend.result }}");
+    expect(workflow).toContain("BACKEND_SCOPE: ${{ needs.plan.outputs.backend }}");
+    expect(workflow).toContain('require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"');
+    const evidence = step("Upload backend and shared-mode evidence");
+    expect(jobAt(evidence.start)?.name).toBe("backend");
+    expect(evidence.text).toContain("coverage/backend/");
+    const sharedJourney = step("Run the shared-mode browser journey");
+    expect(jobAt(sharedJourney.start)?.name).toBe("backend");
+    expect(sharedJourney.text).toMatch(/^\s*run: node tests\/support\/ward-shared-mode-run\.mjs\s*$/mu);
   });
 });

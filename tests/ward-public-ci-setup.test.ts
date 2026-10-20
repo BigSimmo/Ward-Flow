@@ -158,7 +158,7 @@ describe("maintained document CI scope", () => {
   it("required workflow keeps the doc links, facts, safety wording, planned index/organisation checks, and the bounded synthetic check", () => {
     const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
     for (const flag of ["owner_index", "rules_index", "organisation"])
-      expect(workflow).toContain(`steps.plan.outputs.${flag} == 'true'`);
+      expect(workflow).toContain(`needs.plan.outputs.${flag} == 'true'`);
     expect(workflow).toContain("run: npm run docs:check-links");
     expect(workflow).toContain("run: node scripts/doc-facts.mjs");
     expect(workflow).toContain("run: npm run check:ward-legal-language");
@@ -177,6 +177,9 @@ describe("maintained document CI scope", () => {
       WARD_PLAN_UNIT: "true",
       WARD_PLAN_BROWSER: "true",
       WARD_PLAN_POLICY: "false",
+      WARD_PLAN_BACKEND: "true",
+      WARD_PLAN_BUILD: "true",
+      WARD_PLAN_FRONTEND_STATIC: "true",
       WARD_PLAN_DEPENDENCY_REVIEW: "true",
       WARD_PLAN_OWNER_INDEX: "true",
       WARD_PLAN_RULES_INDEX: "true",
@@ -184,12 +187,14 @@ describe("maintained document CI scope", () => {
     };
     const good = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], { env, encoding: "utf8" });
     expect(good.status).toBe(0);
-    const wrong = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], {
-      env: { ...env, WARD_PLAN_OWNER_INDEX: "false" },
-      encoding: "utf8",
-    });
-    expect(wrong.status).toBe(1);
-    expect(wrong.stderr).toContain("owner_index");
+    for (const flag of ["OWNER_INDEX", "BACKEND", "BUILD", "FRONTEND_STATIC"]) {
+      const wrong = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], {
+        env: { ...env, [`WARD_PLAN_${flag}`]: "false" },
+        encoding: "utf8",
+      });
+      expect(wrong.status, flag).toBe(1);
+      expect(wrong.stderr).toContain(flag.toLowerCase());
+    }
   });
 });
 

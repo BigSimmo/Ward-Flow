@@ -113,6 +113,7 @@ describe("Playwright invocation evidence", () => {
           playwrightArgs: [`--project=${projectName}`],
           reportArgs: [`--project=${projectName}`, "--reporter=list,json"],
           requiredProjects: [projectName],
+          requiredCases: [],
           advisoryRun: false,
           testEnv: {},
           journeyRunVerdict,
