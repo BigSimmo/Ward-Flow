@@ -37,6 +37,7 @@ import {
   unsignedClinicalValueCount,
 } from "@/components/ward-management/ward-clinical-values";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
+import { showsUnwiredPreviews, UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import {
   Button,
   Card,
@@ -63,7 +64,13 @@ import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
 
-/** Reports that a Preview control was pressed. The screen answers with the D4 sentence. */
+/**
+ * Reports that a Preview control was pressed. The screen answers with the D4 sentence.
+ *
+ * Overall review, 20 Oct 2026: Preview controls show only in a local development build. A Preview
+ * `SettingRow` hides itself; a card whose every row is Preview is wrapped in `UnwiredPreview` here,
+ * so demo and production builds show no empty card or lone "Preview" tag.
+ */
 export type OnPreview = (name: string) => void;
 
 /** A switch with its name read from the row beside it. */
@@ -170,19 +177,21 @@ export function AlertsPane({
               icon={BellRing}
               title="Alerts"
               action={
-                <span data-setting="snooze">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={BellOff}
-                    className={styles.pill}
-                    onClick={() => onPreview("Snooze 15m")}
-                  >
-                    Snooze 15m
-                  </Button>
-                  {/* Audit settings-26: not wired, so it carries the Preview tag like every other. */}
-                  <PreviewTag />
-                </span>
+                showsUnwiredPreviews() ? (
+                  <span data-setting="snooze">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={BellOff}
+                      className={styles.pill}
+                      onClick={() => onPreview("Snooze 15m")}
+                    >
+                      Snooze 15m
+                    </Button>
+                    {/* Audit settings-26: not wired, so it carries the Preview tag like every other. */}
+                    <PreviewTag />
+                  </span>
+                ) : undefined
               }
             />
             <SettingRow
@@ -245,91 +254,96 @@ export function AlertsPane({
             </SettingRow>
           </Card>
 
-          <Card aria-labelledby="live-title">
-            <CardHead iconPlain id="live-title" icon={Monitor} title="Live data and boards" aside={<PreviewTag />} />
-            <SettingRow setting="live-lists" title="Live lists" sub="Update every minute" preview="quiet">
-              <PreviewSegmented
-                name="Live lists"
-                items={["Live", "Pause when idle"]}
-                value="Live"
-                onPreview={onPreview}
-              />
-            </SettingRow>
-            <SettingRow setting="timer-seconds" title="Seconds on timers" sub="Under 10 minutes only" preview="quiet">
-              <RowSwitch name="Seconds on timers" checked onCheckedChange={() => onPreview("Seconds on timers")} />
-            </SettingRow>
-            <SettingRow
-              setting="wallboard"
-              title="Wallboard refresh"
-              sub="Shared ward screens"
-              testId="setting-wallboard-refresh-row"
-              preview="quiet"
-            >
-              <PreviewSegmented
-                name="Wallboard refresh"
-                items={["Off", "15s", "30s", "60s"]}
-                value="30s"
-                onPreview={onPreview}
-              />
-            </SettingRow>
-          </Card>
+          <UnwiredPreview>
+            <Card aria-labelledby="live-title">
+              <CardHead iconPlain id="live-title" icon={Monitor} title="Live data and boards" aside={<PreviewTag />} />
+              <SettingRow setting="live-lists" title="Live lists" sub="Update every minute" preview="quiet">
+                <PreviewSegmented
+                  name="Live lists"
+                  items={["Live", "Pause when idle"]}
+                  value="Live"
+                  onPreview={onPreview}
+                />
+              </SettingRow>
+              <SettingRow setting="timer-seconds" title="Seconds on timers" sub="Under 10 minutes only" preview="quiet">
+                <RowSwitch name="Seconds on timers" checked onCheckedChange={() => onPreview("Seconds on timers")} />
+              </SettingRow>
+              <SettingRow
+                setting="wallboard"
+                title="Wallboard refresh"
+                sub="Shared ward screens"
+                testId="setting-wallboard-refresh-row"
+                preview="quiet"
+              >
+                <PreviewSegmented
+                  name="Wallboard refresh"
+                  items={["Off", "15s", "30s", "60s"]}
+                  value="30s"
+                  onPreview={onPreview}
+                />
+              </SettingRow>
+            </Card>
+          </UnwiredPreview>
         </div>
 
-        <div className={styles.column}>
-          <Card aria-labelledby="notify-title" data-setting="notifications">
-            <CardHead iconPlain id="notify-title" icon={BellRing} title="Notifications" aside={<PreviewTag />} />
-            <div className={styles.notifyGrid} role="table" aria-label="Notifications">
-              <div className={cx(styles.notifyRow, styles.notifyHead)} role="row">
-                <span role="columnheader">Tell me when</span>
-                <span role="columnheader">In app</span>
-                <span role="columnheader">Sound</span>
-              </div>
-              <div className={styles.notifyGroup} role="row">
-                <span role="cell">Act now, always on</span>
-              </div>
-              {ACT_NOW_EVENTS.map((name) => (
-                <div key={name} className={styles.notifyRow} role="row">
-                  <span role="rowheader" className={styles.notifyName}>
-                    <StatusGlyph tone="danger" size={9} />
-                    {name}
-                  </span>
-                  {["In app", "Sound"].map((channel) => (
-                    <span key={channel} role="cell" className={styles.notifyCell}>
-                      <span className={styles.locked} title="Act now alerts cannot be turned off">
-                        <Lock size={12} aria-hidden="true" />
-                        <SrOnly>{`${channel}, always on`}</SrOnly>
-                      </span>
+        {/* Every event switch here is Preview, so the whole card waits for a development build. */}
+        <UnwiredPreview>
+          <div className={styles.column}>
+            <Card aria-labelledby="notify-title" data-setting="notifications">
+              <CardHead iconPlain id="notify-title" icon={BellRing} title="Notifications" aside={<PreviewTag />} />
+              <div className={styles.notifyGrid} role="table" aria-label="Notifications">
+                <div className={cx(styles.notifyRow, styles.notifyHead)} role="row">
+                  <span role="columnheader">Tell me when</span>
+                  <span role="columnheader">In app</span>
+                  <span role="columnheader">Sound</span>
+                </div>
+                <div className={styles.notifyGroup} role="row">
+                  <span role="cell">Act now, always on</span>
+                </div>
+                {ACT_NOW_EVENTS.map((name) => (
+                  <div key={name} className={styles.notifyRow} role="row">
+                    <span role="rowheader" className={styles.notifyName}>
+                      <StatusGlyph tone="danger" size={9} />
+                      {name}
                     </span>
-                  ))}
+                    {["In app", "Sound"].map((channel) => (
+                      <span key={channel} role="cell" className={styles.notifyCell}>
+                        <span className={styles.locked} title="Act now alerts cannot be turned off">
+                          <Lock size={12} aria-hidden="true" />
+                          <SrOnly>{`${channel}, always on`}</SrOnly>
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                ))}
+                <div className={styles.notifyGroup} role="row">
+                  <span role="cell">Everything else</span>
                 </div>
-              ))}
-              <div className={styles.notifyGroup} role="row">
-                <span role="cell">Everything else</span>
+                {OTHER_EVENTS.map((event) => (
+                  <div key={event.name} className={styles.notifyRow} role="row">
+                    <span role="rowheader" className={styles.notifyName}>
+                      {event.name}
+                    </span>
+                    <span role="cell" className={styles.notifyCell}>
+                      <RowSwitch
+                        name={`${event.name}, in app`}
+                        checked={event.inApp}
+                        onCheckedChange={() => onPreview(`${event.name}, in app`)}
+                      />
+                    </span>
+                    <span role="cell" className={styles.notifyCell}>
+                      <RowSwitch
+                        name={`${event.name}, sound`}
+                        checked={event.sound}
+                        onCheckedChange={() => onPreview(`${event.name}, sound`)}
+                      />
+                    </span>
+                  </div>
+                ))}
               </div>
-              {OTHER_EVENTS.map((event) => (
-                <div key={event.name} className={styles.notifyRow} role="row">
-                  <span role="rowheader" className={styles.notifyName}>
-                    {event.name}
-                  </span>
-                  <span role="cell" className={styles.notifyCell}>
-                    <RowSwitch
-                      name={`${event.name}, in app`}
-                      checked={event.inApp}
-                      onCheckedChange={() => onPreview(`${event.name}, in app`)}
-                    />
-                  </span>
-                  <span role="cell" className={styles.notifyCell}>
-                    <RowSwitch
-                      name={`${event.name}, sound`}
-                      checked={event.sound}
-                      onCheckedChange={() => onPreview(`${event.name}, sound`)}
-                    />
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </UnwiredPreview>
       </div>
     </>
   );
@@ -473,41 +487,43 @@ export function DisplayPane({
         <div className={styles.column}>
           {/* Audit settings-14: Preview controls that do not run read Off, never On. A protection
               that is not running must not look as if it is. */}
-          <Card aria-labelledby="privacy-title">
-            <CardHead iconPlain id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
-            <SettingRow
-              setting="initials"
-              title="Initials only on shared screens"
-              sub="Wallboards and projected views"
-              preview="quiet"
-            >
-              <RowSwitch
-                name="Initials only on shared screens"
-                checked={false}
-                onCheckedChange={() => onPreview("Initials only on shared screens")}
-              />
-            </SettingRow>
-            <SettingRow setting="lock-idle" title="Lock after idle" sub="Returns to a blank board" preview="quiet">
-              <PreviewSegmented
-                name="Lock after idle"
-                items={["5m", "10m", "15m", "Off"]}
-                value="Off"
-                onPreview={onPreview}
-              />
-            </SettingRow>
-            <SettingRow
-              setting="clear-on-close"
-              title="Clear session on close"
-              sub="Drafts and filters go with the tab"
-              preview="quiet"
-            >
-              <RowSwitch
-                name="Clear session on close"
-                checked={false}
-                onCheckedChange={() => onPreview("Clear session on close")}
-              />
-            </SettingRow>
-          </Card>
+          <UnwiredPreview>
+            <Card aria-labelledby="privacy-title">
+              <CardHead iconPlain id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
+              <SettingRow
+                setting="initials"
+                title="Initials only on shared screens"
+                sub="Wallboards and projected views"
+                preview="quiet"
+              >
+                <RowSwitch
+                  name="Initials only on shared screens"
+                  checked={false}
+                  onCheckedChange={() => onPreview("Initials only on shared screens")}
+                />
+              </SettingRow>
+              <SettingRow setting="lock-idle" title="Lock after idle" sub="Returns to a blank board" preview="quiet">
+                <PreviewSegmented
+                  name="Lock after idle"
+                  items={["5m", "10m", "15m", "Off"]}
+                  value="Off"
+                  onPreview={onPreview}
+                />
+              </SettingRow>
+              <SettingRow
+                setting="clear-on-close"
+                title="Clear session on close"
+                sub="Drafts and filters go with the tab"
+                preview="quiet"
+              >
+                <RowSwitch
+                  name="Clear session on close"
+                  checked={false}
+                  onCheckedChange={() => onPreview("Clear session on close")}
+                />
+              </SettingRow>
+            </Card>
+          </UnwiredPreview>
 
           <Card aria-labelledby="shortcuts-title" data-setting="shortcuts">
             <CardHead iconPlain id="shortcuts-title" icon={Keyboard} title="Shortcuts" />
@@ -602,58 +618,68 @@ export function ProfilePane({ onPreview, onGoToDesk }: { onPreview: OnPreview; o
           </Card>
         </div>
 
-        <div className={styles.column}>
-          <Card aria-labelledby="handover-title" data-testid="ward-settings-handover">
-            <CardHead
-              iconPlain
-              id="handover-title"
-              icon={ClipboardList}
-              title="Handover"
-              action={
-                <Link
-                  className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-                  href="/ward-flow/handover"
-                >
-                  Open handover
-                </Link>
-              }
-            />
-            <SettingRow setting="handover-sections" title="Sheet sections" sub="Printed and on screen" preview stacked>
-              <span className={styles.chips} role="group" aria-label="Sheet sections">
-                {HANDOVER_SHEET_SECTIONS.map((section) => (
-                  <FilterChip
-                    key={section}
-                    className={styles.pill}
-                    pressed
-                    onPressedChange={() => onPreview("Sheet sections")}
+        {/* Every handover row is Preview. Outside development the card would hold only its link, and
+            Handover is one step away in the sidebar, so the card goes with its rows. */}
+        <UnwiredPreview>
+          <div className={styles.column}>
+            <Card aria-labelledby="handover-title" data-testid="ward-settings-handover">
+              <CardHead
+                iconPlain
+                id="handover-title"
+                icon={ClipboardList}
+                title="Handover"
+                action={
+                  <Link
+                    className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
+                    href="/ward-flow/handover"
                   >
-                    {section}
-                  </FilterChip>
-                ))}
-              </span>
-            </SettingRow>
-            <SettingRow setting="handover-reminder" title="Remind me before shift end" preview>
-              <PreviewSegmented
-                name="Remind me before shift end"
-                items={["Off", "15m", "30m"]}
-                value="15m"
-                onPreview={onPreview}
+                    Open handover
+                  </Link>
+                }
               />
-            </SettingRow>
-            <SettingRow
-              setting="handover-open"
-              title="Open handover at shift change"
-              sub="07:00, 15:00 and 23:00"
-              preview
-            >
-              <RowSwitch
-                name="Open handover at shift change"
-                checked={false}
-                onCheckedChange={() => onPreview("Open handover at shift change")}
-              />
-            </SettingRow>
-          </Card>
-        </div>
+              <SettingRow
+                setting="handover-sections"
+                title="Sheet sections"
+                sub="Printed and on screen"
+                preview
+                stacked
+              >
+                <span className={styles.chips} role="group" aria-label="Sheet sections">
+                  {HANDOVER_SHEET_SECTIONS.map((section) => (
+                    <FilterChip
+                      key={section}
+                      className={styles.pill}
+                      pressed
+                      onPressedChange={() => onPreview("Sheet sections")}
+                    >
+                      {section}
+                    </FilterChip>
+                  ))}
+                </span>
+              </SettingRow>
+              <SettingRow setting="handover-reminder" title="Remind me before shift end" preview>
+                <PreviewSegmented
+                  name="Remind me before shift end"
+                  items={["Off", "15m", "30m"]}
+                  value="15m"
+                  onPreview={onPreview}
+                />
+              </SettingRow>
+              <SettingRow
+                setting="handover-open"
+                title="Open handover at shift change"
+                sub="07:00, 15:00 and 23:00"
+                preview
+              >
+                <RowSwitch
+                  name="Open handover at shift change"
+                  checked={false}
+                  onCheckedChange={() => onPreview("Open handover at shift change")}
+                />
+              </SettingRow>
+            </Card>
+          </div>
+        </UnwiredPreview>
       </div>
     </>
   );
