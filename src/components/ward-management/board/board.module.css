@@ -145,9 +145,7 @@
    * sticks to its nearest scrollport and this one never moves.
    *
    * `overflow-x: clip` clips the same horizontal spill without creating a scrollport, so
-   * `overflow-y` stays `visible` and the window remains the scroll container. This is the pattern
-   * `globals.css` already documents on `.phone-scroll-surface`, immediately above a
-   * `position: sticky` rule, for exactly this reason.
+   * `overflow-y` stays `visible` and the window remains the scroll container.
    */
   overflow-x: clip;
   overflow-y: visible;

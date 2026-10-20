@@ -737,7 +737,13 @@ describe("the legal-status change reason starts unchosen", () => {
     fireEvent.change(form.querySelector(`#ward-change-legal-status-reason-${id}`)!, {
       target: { value: "correcting_an_error" },
     });
-    expect(submit.getAttribute("aria-disabled"), "still unavailable after a reason was chosen").toBeNull();
+    // The new status starts unchosen too (owner rule, 19 Oct 2026), so a reason alone is not enough.
+    const status = form.querySelector(`#ward-change-legal-status-value-${id}`) as HTMLSelectElement;
+    expect(status.value, "the new legal status arrives pre-selected").toBe("");
+    expect(submit.getAttribute("aria-disabled"), "available with no new status chosen").toBe("true");
+    expect(submit.getAttribute("title") ?? "").toContain("Choose the new legal status");
+    fireEvent.change(status, { target: { value: "Voluntary" } });
+    expect(submit.getAttribute("aria-disabled"), "still unavailable after a status and reason were chosen").toBeNull();
   });
 });
 
