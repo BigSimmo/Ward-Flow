@@ -20,6 +20,10 @@ export type WardReferralInboxEntry = {
   declineReason?: ReferralAddressing["declineReason"];
   /** The bed this ward placed the referral in on its Bed board (`ACCEPT_REFERRAL.bedNumber`). */
   heldBedNumber?: number;
+  /** When this ward first opened it (smart features idea 3). This ward's own receipt. */
+  openedAt?: number;
+  /** What this ward asked the referrer for (smart features idea 4). This ward's own request. */
+  informationNeeds?: ReferralAddressing["informationNeeds"];
   source: Referral["source"];
   originUnitId?: Referral["originUnitId"];
 };
@@ -63,6 +67,8 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         waitlistedAt: arm.waitlistedAt,
         declineReason: arm.declineReason,
         ...(arm.heldBedNumber === undefined ? {} : { heldBedNumber: arm.heldBedNumber }),
+        ...(arm.openedAt === undefined ? {} : { openedAt: arm.openedAt }),
+        ...(arm.informationNeeds === undefined ? {} : { informationNeeds: arm.informationNeeds }),
         source: referral.source,
         originUnitId: referral.originUnitId,
         destination: {

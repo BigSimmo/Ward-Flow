@@ -491,6 +491,30 @@ describe("a command from a desk", () => {
     expect(receive(other)).toMatch(/outside/);
   });
 
+  it("lets a referrer tick off what a ward asked for, naming that ward as the referral's destination", () => {
+    // A referral this community team sent, so the team sees it in its own right.
+    const sent: Referral = { ...state.referrals[0]!, source: "community", sendingTeamName: "Synthetic Team" };
+    const world: WardFlowState = { ...state, referrals: [sent, ...state.referrals.slice(1)] };
+    const team: WardAccess = { role: "community", scope: { kind: "team", teamName: "Synthetic Team" } };
+    expect(scopeWardFlowState(world, team, options).state.referrals.map((referral) => referral.id)).toContain(sent.id);
+    const tick = (target: Record<string, string>) =>
+      commandScopeRefusal(
+        world,
+        team,
+        {
+          type: "MARK_REFERRAL_INFORMATION_MET",
+          role: "community",
+          referralId: sent.id,
+          need: "drug_screen",
+          ...target,
+        },
+        options,
+      );
+    expect(tick({ wardUnitId: ownUnit })).toBeNull();
+    // As `unitId` the ward would read as a place the team acts in, which it is not.
+    expect(tick({ unitId: ownUnit })).toMatch(/outside/);
+  });
+
   it("is refused when a service coordinator names an audit entry or review outside its service", () => {
     const service = unitHealthService(state.units.find((unit) => unit.id === ownUnit)!)!;
     const serviceCoordinator: WardAccess = { role: "coordinator", scope: { kind: "service", service } };

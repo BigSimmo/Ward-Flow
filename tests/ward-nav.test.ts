@@ -54,6 +54,7 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
+import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
@@ -1297,6 +1298,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
   { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },
+  // 19 Oct 2026: the bed meeting agenda, behind the `bed-meeting-actions` feature flag.
+  { route: `${ROUTE_PREFIX}/bed-meeting/agenda`, render: () => createElement(BedMeetingAgendaScreen) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
@@ -1428,8 +1431,9 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 43, not 39: the four statistics index pages (services, wards, eds, teams), 9 Oct 2026.
     // 44: the bed meeting TV view, 15 Oct 2026.
     // 43, not 44: the Sovereign showcase route was deleted once the Top 25 items moved into the real screens, 15 Oct 2026.
-    // 42, not 43: the Network screen was retired and `/network` became a redirect to Home, 19 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(42);
+    // 43: the Network screen was retired and `/network` became a redirect to Home, and the bed meeting
+    // agenda (`/bed-meeting/agenda`) was added, both 19 Oct 2026. Moved in both files together.
+    expect(RENDERABLE_ROUTES.length).toBe(43);
   });
 });
 

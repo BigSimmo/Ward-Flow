@@ -333,7 +333,8 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
   return capacity
     .map((row) => ({
       id: row.unit.id,
-      name: row.unit.name,
+      // Smart features idea 7: a closed ward says so with its name, the one text cell on the row.
+      name: row.unit.isClosed ? `${row.unit.name} (closed to admissions)` : row.unit.name,
       ready: row.ready,
       lockedReady: row.lockedReady,
       asked: open.filter((movement) => waitingOnWard(movement, row.unit.id)).length,

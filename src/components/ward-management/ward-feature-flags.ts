@@ -101,6 +101,48 @@ export const WARD_FEATURE_FLAGS = {
     defaults: { development: true, demo: false, production: false },
     removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
+  "referral-opened-receipts": {
+    label: "Opened by the ward",
+    description: "The referrer sees when a ward first opened a referral.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the receipt with ward and ED leads.",
+  },
+  "referral-information-needs": {
+    label: "What we still need",
+    description: "A ward can ask the referrer for listed items before deciding.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the list of items with ward and ED leads.",
+  },
+  "ward-closure-mode": {
+    label: "Ward closure",
+    description: "Close a whole ward to admissions with a reason, then reopen it.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the closure reasons with the coordinators.",
+  },
+  "shift-confirmations": {
+    label: "Confirmed this shift",
+    description:
+      "On Capacity, how many wards have confirmed their bed numbers since the shift began, and which have not.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
+  },
+  "bed-meeting-actions": {
+    label: "Bed meeting agenda",
+    description:
+      "A bed meeting agenda built from fixed rules, and an action log with an owner and a due time, linked from Capacity.",
+    owner: "Josh",
+    added: "2026-10-19",
+    defaults: { development: true, demo: true, production: false },
+    removeWhen: "Josh agrees the action list and owners with the coordinators after a bed meeting trial.",
+  },
   "pilot-measures": {
     label: "Pilot measures",
     description: "The weekly report adds the pilot's agreed measures.",
