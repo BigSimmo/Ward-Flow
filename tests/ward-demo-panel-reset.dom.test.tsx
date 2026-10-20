@@ -47,7 +47,7 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
     const dialog = screen.getByRole("dialog", { name: "Reset the demo?" });
     // On this device the reset reaches this browser only, and the confirm says so.
-    expect(dialog).toHaveTextContent("This puts Standard night back to its start");
+    expect(dialog).toHaveTextContent("This puts Standard day back to its start");
     expect(dialog).toHaveTextContent("replaces the demo data in this browser only. Other devices are not changed");
     expect(dialog).not.toHaveTextContent("everyone");
     expect(dialog).toHaveTextContent("There is no undo");
@@ -70,7 +70,7 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reset demo" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByTestId("clock").textContent).toBe(start);
-    expect(status()).toHaveTextContent("Standard night reset to its start in this browser only.");
+    expect(status()).toHaveTextContent("Standard day reset to its start in this browser only.");
   });
 
   it("resets the scenario that is loaded, not the standard night", () => {
@@ -118,7 +118,11 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     function Shared({ children }: { children: ReactNode }) {
       const value = useWardFlow();
       return (
-        <WardFlowOverride value={{ ...value, shared: { status: "ready", error: null, ...value.shared, enabled: true } }}>{children}</WardFlowOverride>
+        <WardFlowOverride
+          value={{ ...value, shared: { status: "ready", error: null, ...value.shared, enabled: true } }}
+        >
+          {children}
+        </WardFlowOverride>
       );
     }
     renderPanel((child) => <Shared>{child}</Shared>);

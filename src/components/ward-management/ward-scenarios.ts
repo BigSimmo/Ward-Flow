@@ -27,7 +27,9 @@ export const DEMO_RESET_SCENARIOS = [
 ] as const satisfies readonly WardScenario[];
 
 export const scenarioLabels: Record<WardScenario, string> = {
-  standard: "Standard night",
+  // Overall review (20 Oct 2026): its clock starts at 10:42, in the day shift, so it is called a
+  // day on screen. The id and the code comments that say "standard night" are unchanged.
+  standard: "Standard day",
   scarce: "Scarce beds",
   "emhs-demo": "EMHS demo",
   "emhs-surge": "EMHS surge",
@@ -37,8 +39,8 @@ export const scenarioLabels: Record<WardScenario, string> = {
 };
 
 export const scenarioDescriptions: Record<WardScenario, string> = {
-  standard: "The standard night with its usual wards and patients.",
-  scarce: "The standard night with few beds ready and no extra observation staff.",
+  standard: "The standard day with its usual wards and patients.",
+  scarce: "The standard day with few beds ready and no extra observation staff.",
   "emhs-demo": "A typical East Metro day with most beds full and some ED waits.",
   "emhs-surge": "A busy East Metro day with fuller wards and longer ED waits.",
   "quiet-day": "Beds free across the network and short ED waits.",

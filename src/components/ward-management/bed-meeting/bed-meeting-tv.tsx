@@ -33,6 +33,7 @@ import {
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
@@ -175,11 +176,22 @@ function More({ count, noun, one = noun }: { count: number; noun: string; one?: 
   );
 }
 
+/** "Day shift": the shift the board clock is in, worded as the rail and ward screens word it. */
+function shiftName(now: number): string {
+  const name = currentShift(now).name;
+  return name.charAt(0) + name.slice(1).toLowerCase();
+}
+
+/**
+ * Overall review (20 Oct 2026): the footer names the board clock's shift, as every other screen
+ * does, beside the demo scenario, so a TV no longer reads "Standard night" while the app says
+ * "Day shift".
+ */
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
   return (
     <p className={styles.footer}>
-      {scope} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not approved for
-      clinical use.
+      {scope} · {shiftName(now)} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not
+      approved for clinical use.
     </p>
   );
 }
