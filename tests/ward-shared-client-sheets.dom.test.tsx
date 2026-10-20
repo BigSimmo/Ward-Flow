@@ -79,6 +79,17 @@ describe("an edit made from a popup (audit CS-19)", () => {
     client.dispose();
   });
 
+  it("notes a popup opened before the board arrived against the first board it shows", async () => {
+    const { client, board, sent } = setup((expected) => ({ revision: expected + 1 }));
+    open("record");
+    await client.refresh();
+    board.revision = 2;
+    await client.refresh();
+    await client.dispatch(event);
+    expect(sent).toEqual([1]);
+    client.dispose();
+  });
+
   it("uses the oldest open popup when popups are stacked", async () => {
     const { client, board, sent } = setup((expected) => ({ revision: expected + 1 }));
     await client.refresh();

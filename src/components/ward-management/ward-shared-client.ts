@@ -231,7 +231,7 @@ export class SharedWorkspaceClient {
   private held() {
     return Math.max(this.view.snapshot?.revision ?? 0, this.headRevision);
   }
-  /** A popup opened before the board arrived is noted once it has. */
+  /** Notes each open popup not yet noted. One opened before the board arrived is noted when it does. */
   private noteOpenSheets() {
     if (!this.view.snapshot) return;
     for (const sheet of openSheetHandles()) if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, this.held());
@@ -287,6 +287,7 @@ export class SharedWorkspaceClient {
           ? held.payload
           : snapshot.payload;
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
+      this.noteOpenSheets();
     }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
