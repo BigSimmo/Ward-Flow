@@ -422,9 +422,11 @@ function BedMeetingTvView({
             testId: "bed-meeting-tv-discharges",
           },
           {
-            label: "Delayed",
+            // PR #489 review: this counts every open journey (waiting and in transit), the same
+            // figure as the Movements badge, so it carries that badge's words rather than "Delayed".
+            label: "Still open",
             value: delays.total,
-            detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "No delays",
+            detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
             tone: delays.total > 0 ? "warning" : undefined,
             testId: "bed-meeting-tv-delays",
           },
