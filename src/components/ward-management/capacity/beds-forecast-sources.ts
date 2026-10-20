@@ -11,13 +11,13 @@
 // as "nothing flagged" from a ward that just confirmed.
 //
 // Windows are the next 24 hours split on the one shift pattern every screen uses: this shift, the
-// next shift, then the rest of the 24 hours, and last a group for discharges whose date has
-// already slipped to an earlier day (the forecast's "overdue", which it counts as best case only).
+// next shift, then the rest of the 24 hours, and last a group for discharges whose time had
+// already passed before this shift began, so a slipped discharge is never shown as this shift's.
 // They do not overlap, so their totals add up to the 24 hour forecast's discharges (confirmed,
 // expected, held up and overdue together).
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardClosedLine } from "./ward-closure";
 
@@ -56,11 +56,11 @@ type ForecastSourceWard = {
 
 export type ForecastSourceWindow = {
   id: ForecastSourceWindowId;
-  /** "Overdue from an earlier day", "Day shift", "Evening shift" or "Rest of the 24 hours". */
+  /** "Overdue from before this shift", "Day shift", "Evening shift" or "Rest of the 24 hours". */
   label: string;
   /** Start of the window, exclusive; `null` for the overdue group, which has no start. */
   from: Instant | null;
-  /** End of the window: inclusive, except the overdue group, which ends before today began. */
+  /** End of the window: inclusive, except the overdue group, which ends before this shift began. */
   until: Instant;
   /** Flagged discharges not held up and confirmed. */
   confirmed: number;
@@ -125,10 +125,9 @@ export function bedsForecastSources(
   const nextShift = currentShift(thisShiftEnd);
   const nextShiftEnd = thisShiftEnd + shiftLength(nextShift.startMinute, nextShift.endMinute);
   const dayEnd = now + MINUTES_PER_DAY;
-  const todayStart = dayOf(now) * MINUTES_PER_DAY;
   const hours = MINUTES_PER_DAY / 60;
   const bounds: { id: ForecastSourceWindowId; label: string; from: Instant | null; until: Instant }[] = [
-    { id: "this_shift", label: shiftLabel(shift.name), from: todayStart - 1, until: thisShiftEnd },
+    { id: "this_shift", label: shiftLabel(shift.name), from: shiftStart - 1, until: thisShiftEnd },
     { id: "next_shift", label: shiftLabel(nextShift.name), from: thisShiftEnd, until: Math.min(nextShiftEnd, dayEnd) },
     {
       id: "rest_of_day",
@@ -136,7 +135,7 @@ export function bedsForecastSources(
       from: Math.min(nextShiftEnd, dayEnd),
       until: dayEnd,
     },
-    { id: "overdue", label: "Overdue from an earlier day", from: null, until: todayStart },
+    { id: "overdue", label: "Overdue from before this shift", from: null, until: shiftStart },
   ];
 
   // The forecast's own rule (clinical owner ruling, 14 Oct 2026): a closed ward counts as zero
@@ -155,7 +154,7 @@ export function bedsForecastSources(
   const lastUpdateAt = (unitId: string) => lastUpdate.get(unitId) ?? Number.NEGATIVE_INFINITY;
   const updatedThisShift = (unitId: string) => lastUpdateAt(unitId) >= shiftStart;
 
-  // The overdue group (no start) ends before today began; every other window runs (from, until].
+  // The overdue group (no start) ends before this shift began; every other window runs (from, until].
   const inWindow = (at: Instant, from: Instant | null, until: Instant) =>
     from === null ? at < until : at > from && at <= until;
 

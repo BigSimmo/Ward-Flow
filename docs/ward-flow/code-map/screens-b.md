@@ -190,7 +190,7 @@ repo-wide guards.
   `tests/ward-capacity-screen.dom.test.tsx`.
 - **`src/components/ward-management/capacity/beds-forecast-sources.ts`** — "Where beds are coming
   from" (Josh, 20 Oct 2026): `bedsForecastSources` lists every discharge a ward flagged for the next
-  24 hours, by ward, in this shift, next shift and the rest of the 24 hours, then an overdue group,
+  24 hours, by ward, in this shift, next shift and the rest of the 24 hours, then a group overdue from before this shift,
   each with what it waits on, who said it and when, plus planned dates not flagged, admissions
   booked in, wards with nothing flagged, closed wards and wards with no update this shift. A record
   of what wards said, never a prediction or a ranking. Returned as `bedsForecast(...).sources` and

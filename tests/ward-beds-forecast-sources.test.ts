@@ -52,6 +52,8 @@ describe("bedsForecastSources", () => {
     const units = [ward(first), ward(second)];
     const releases = [
       release(first, { expectedAt: NOW - MINUTES_PER_DAY, state: "confirmed" }),
+      // Earlier today but before the day shift began: overdue, never this shift's.
+      release(first, { expectedAt: DAY_SHIFT_START - 1 }),
       release(first, { expectedAt: NOW - 60 }),
       release(first, { expectedAt: 15 * 60, state: "confirmed" }),
       release(second, { expectedAt: 15 * 60 + 1, blocker: "Awaiting transport", blockedBy: "NUM Test Unit" }),
@@ -65,7 +67,7 @@ describe("bedsForecastSources", () => {
       ["this_shift", "Day shift", 2],
       ["next_shift", "Evening shift", 2],
       ["rest_of_day", "Rest of the 24 hours", 1],
-      ["overdue", "Overdue from an earlier day", 1],
+      ["overdue", "Overdue from before this shift", 2],
     ]);
     const thisShift = windowOf(sources, "this_shift");
     expect(thisShift.until).toBe(15 * 60);
@@ -86,7 +88,7 @@ describe("bedsForecastSources", () => {
         confirmedBy: "NUM 4 West",
         confirmedAt: NOW - 5,
       }),
-      release(first, { waitingOn: "Nothing outstanding" }),
+      release(first, { waitingOn: "Nothing outstanding", expectedAt: NOW + 90 }),
     ];
     const [entry, quiet] = windowOf(bedsForecastSources(units, releases, [], NOW), "this_shift").wards[0].entries;
 
