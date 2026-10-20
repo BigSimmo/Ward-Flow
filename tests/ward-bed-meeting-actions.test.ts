@@ -4,6 +4,7 @@ import { bedMeetingAgenda, meetingActionSummary } from "@/components/ward-manage
 import type { BedMeetingSubject } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { selectPatientHistory } from "@/components/ward-management/ward-history";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -93,6 +94,35 @@ describe("RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION", () => {
     expect(record(state, subject, { owner: "ward" }).rejections).toHaveLength(1);
     expect(record(state, { kind: "movement", id: "no-such-request" }).rejections).toHaveLength(1);
     expect(record(state, subject, { role: "ward" }).rejections).toHaveLength(1);
+  });
+});
+
+describe("a saved bed meeting action", () => {
+  type Row = Record<string, unknown>;
+  const saved = (action: Row) => {
+    const { state, movement } = setup();
+    // A saved state is plain JSON, so it is edited as JSON.
+    const stored = JSON.parse(JSON.stringify(state)) as { movements: Row[] };
+    stored.movements = stored.movements.map((row) =>
+      row.id === movement.id ? { ...row, meetingActions: [action] } : row,
+    );
+    return stored;
+  };
+  const base = { kind: "book_transport", owner: "coordinator", dueAt: NOW + 120, recordedAt: NOW };
+
+  it("restores an action chosen from the fixed lists, open or done", () => {
+    const { state } = setup();
+    expect(isValidStoredWardFlowState(saved(base))).toBe(true);
+    expect(isValidStoredWardFlowState(saved({ ...base, doneAt: NOW + 60, doneBy: "Coordinator" }))).toBe(true);
+    expect(isValidStoredWardFlowState(saved({ ...base, owner: "ward", ownerUnitId: state.units[0]!.id }))).toBe(true);
+  });
+
+  it("refuses typed text, a ward owner with no ward, and a half-recorded completion", () => {
+    expect(isValidStoredWardFlowState(saved({ ...base, note: "typed" }))).toBe(false);
+    expect(isValidStoredWardFlowState(saved({ ...base, owner: "ward" }))).toBe(false);
+    expect(isValidStoredWardFlowState(saved({ ...base, ownerUnitId: "some-ward" }))).toBe(false);
+    expect(isValidStoredWardFlowState(saved({ ...base, doneAt: NOW + 60 }))).toBe(false);
+    expect(isValidStoredWardFlowState(saved({ ...base, doneBy: "Coordinator" }))).toBe(false);
   });
 });
 

@@ -283,15 +283,21 @@ const unit = z
 const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
 const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
 // Smart features idea 5: a bed meeting action is chosen from fixed lists, never typed text.
-const meetingAction = z.looseObject({
-  kind: z.enum(BED_MEETING_ACTION_KINDS.map((entry) => entry.id) as [BedMeetingActionKind, ...BedMeetingActionKind[]]),
-  owner: z.enum(BED_MEETING_ACTION_OWNERS),
-  ownerUnitId: z.optional(text),
-  dueAt: finite,
-  recordedAt: finite,
-  doneAt: z.optional(finite),
-  doneBy: z.optional(text),
-});
+// A ward owner always names its ward, and a done action records both when and by whom.
+const meetingAction = z
+  .strictObject({
+    kind: z.enum(
+      BED_MEETING_ACTION_KINDS.map((entry) => entry.id) as [BedMeetingActionKind, ...BedMeetingActionKind[]],
+    ),
+    owner: z.enum(BED_MEETING_ACTION_OWNERS),
+    ownerUnitId: z.optional(text),
+    dueAt: finite,
+    recordedAt: finite,
+    doneAt: z.optional(finite),
+    doneBy: z.optional(text),
+  })
+  .check(z.refine((action) => (action.owner === "ward") === (action.ownerUnitId !== undefined)))
+  .check(z.refine((action) => (action.doneAt === undefined) === (action.doneBy === undefined)));
 
 const movement = z
   .looseObject({
