@@ -392,15 +392,6 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "from the booking picker, a yes/no that shows no ward, bed or referral, and (2) name a booked person through " +
       "usePatientOf, never printing the id. Void if rendered on a ward screen.",
   },
-  // Audit F-19 (Josh chose "Coordinator only" on 19 Oct 2026): a ward-screen version was refused
-  // by this guard and withdrawn; this one feeds the coordinator's task list only.
-  {
-    file: "ward-duplicate-bed-requests.ts",
-    reason:
-      "Audit F-19, coordinator only (Josh, 19 Oct 2026): finds a person with more than one referral " +
-      "still awaiting a ward or ED answer, for an amber row owned by the bed coordinator. inboxItemsForRole " +
-      "keeps it off ward, ED, team, officer and bed manager lists. Void if read by any other screen.",
-  },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -435,7 +426,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 46 → 47 on 2026-10-19: the line cap moved the reducer's subjectId into ward-flow-subject-id.ts
     // unchanged. No new reader, as above.
     // 47 → 48 on 2026-10-19: audit F-19, the coordinator-only duplicate bed request matcher.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(48);
+    // 48 → 47 on 2026-10-20: that matcher now asks openRequestsByPerson, so it reads no patient link itself.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(47);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

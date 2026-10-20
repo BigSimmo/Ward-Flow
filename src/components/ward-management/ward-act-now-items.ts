@@ -16,6 +16,8 @@ import { CircleAlert } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import { duplicateBedRequests } from "@/components/ward-management/ward-duplicate-bed-requests";
@@ -81,6 +83,14 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
   ];
 }
 
+/**
+ * One bed request's record, as the facade's `movementHref` writes it. Written here because the
+ * facade imports this file (the same reason `ward-patient-href.ts` exists).
+ */
+function duplicateMovementHref(movementId: string): string {
+  return `/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
+}
+
 /** The bed coordinator's own owner words: `inboxOwnerRoles` places them on the coordinator alone. */
 const DUPLICATE_OWNER = "Bed coordinator";
 
@@ -89,22 +99,29 @@ const DUPLICATE_OWNER = "Bed coordinator";
  * (`ward-duplicate-bed-requests.ts`). Coordinator only: the coordinator may see every referral
  * (FD-23), so naming the requests here tells them nothing a ward screen could not already.
  */
-export function duplicateBedRequestInboxItems(source: Pick<TaskSource, "referrals">): InboxItem[] {
-  return duplicateBedRequests(source.referrals ?? []).map(({ personId, requests, since }) => {
-    const ids = requests.map((referral) => referral.id);
+export function duplicateBedRequestInboxItems(
+  source: Pick<TaskSource, "movements" | "referrals" | "patients">,
+): InboxItem[] {
+  const records = { movements: source.movements, referrals: source.referrals ?? [], patients: source.patients ?? [] };
+  return duplicateBedRequests(records).map(({ personId, requests, since }) => {
+    const ids = requests.map((request) => request.id);
     const named = ids.length === 2 ? ids.join(" and ") : `${ids.slice(0, -1).join(", ")} and ${ids.at(-1)}`;
+    // A bed request may already hold a bed, so the wording says "open", never "waiting for an answer".
+    const open = ids.length === 2 ? "are both still open" : "are all still open";
+    const oldest = requests[0]!;
     return {
       id: `${INBOX_CATEGORIES.duplicate_bed_request.idPrefix}${personId}`,
       kind: INBOX_CATEGORIES.duplicate_bed_request.kind,
       tone: "warning",
       icon: CircleAlert,
       title: "More than one active bed request",
-      detail: `${named} are all waiting for a bed answer. Check each is still needed.`,
+      detail: `${named} ${open}. Check each is still needed.`,
       owner: DUPLICATE_OWNER,
       movementId: "",
       personId,
-      // Every list opens the Referrals board, where a request can be withdrawn; Alerts links the person.
-      href: "/ward-flow/referrals",
+      // Every list opens the oldest request itself: its bed request, or the referral on the Referrals
+      // board. A bed request with no referral is not on that board. Alerts links the person too.
+      href: oldest.kind === "movement" ? duplicateMovementHref(oldest.id) : referralBoardHref(oldest.id),
       since,
     };
   });

@@ -118,7 +118,11 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
     // Audit A3-1 (13 Oct 2026): absent without leave on an order, from the stay's held bed.
     ...absenceInboxItems(absenceOnOrderRecords(), NOW),
     // Audit F-19: one person with two referrals still awaiting a ward answer.
-    ...duplicateBedRequestInboxItems({ referrals: duplicateRequestRecords() }),
+    ...duplicateBedRequestInboxItems({
+      movements: [],
+      referrals: duplicateRequestRecords(),
+      patients: seedWardFlowState().patients,
+    }),
   ];
 }
 
