@@ -310,15 +310,16 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
             workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
+            // Signed in means the client has loaded, so this cleanup still runs in the click. It
+            // starts before the storage sweep below, which also removes its ownership receipt.
+            releasePhoneAlerts(base.toString(), token, chosen, ownerId);
             // Clear Ward Flow's saved browser data (bed keys, recents, snapshots, filters, drafts)
             // here too, so it goes even when the session had already ended or auth was swapped.
             endWardFlowBrowserSession();
             setForm({ open: false, recovery: false, busy: false, message: null });
             // The next account on a shared phone never sees this one's act-now count, even when
-            // the session has expired and the phone alert cleanup below cannot run.
+            // the session has expired and the phone alert cleanup could not run.
             setActNowAppBadge(0);
-            // Signed in means the client has loaded, so this cleanup still runs in the click.
-            releasePhoneAlerts(base.toString(), token, chosen, ownerId);
             // Auth clears its local session synchronously; remote logout and phone cleanup are independent.
             // The local session is already cleared, so remote logout is best-effort.
             await auth!.signOut().catch((error: unknown) => {

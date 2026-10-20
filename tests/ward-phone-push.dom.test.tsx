@@ -24,11 +24,11 @@ import {
   rememberPhonePushOwnership,
   phonePushRow,
   releasePhonePush,
-  usePhonePush,
   type PhonePushAccess,
   type PhonePushApi,
   type PhonePushState,
 } from "@/components/ward-management/shell/ward-phone-push";
+import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { useWardShared } from "@/components/ward-management/ward-shared-access";

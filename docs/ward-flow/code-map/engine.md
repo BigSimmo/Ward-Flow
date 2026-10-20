@@ -118,7 +118,8 @@ sweep picks up anything left pending. Migration 3 adds `push_subscriptions`, `pu
 `push_deliveries`. On the client, `ward-shared-client.ts` gains the four
 push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provides
 `PhonePushAccessContext` and releases the device's alerts before sign-out, `shell/ward-phone-push.ts`
-holds the per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
+holds the sign-out release and ownership receipts, `shell/ward-phone-push-switch.ts` holds the
+Settings-only per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
 when unavailable). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
