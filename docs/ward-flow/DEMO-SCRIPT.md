@@ -150,7 +150,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 | REFERRAL INTAKE INSPECTOR (Callum Halloway · UM100001 · Movement WF-301)                           |
 | - Origin: Royal Perth Hospital Emergency Department (RPH-ED)                                       |
 | - Legal Status: Referred for psychiatric examination · Form 1A                                     |
-| - Paper Form Expiry: Clinician-entered paper expiry timestamp (Not legally checked; per D-29)      |
+| - Paper Form Expiry: Clinician-entered paper expiry timestamp (Not legally checked; per D-70)      |
 | - Catchment: East Metropolitan Health Service (Home Suburb: Bayswater)                             |
 | - Bed Requirement: Adult Acute (Secure / HDU Capable requested due to acute behavioural acuity)     |
 +----------------------------------------------------------------------------------------------------+
@@ -168,18 +168,18 @@ This 10-minute guided demonstration script details a second-by-second clinical w
   >
   > Following medical clearance by the ED team, Dr Chen, the emergency consultant, determined that Callum lacks capacity, presents a significant risk of physical deterioration and self-harm, and requires an involuntary psychiatric examination under the Western Australian _Mental Health Act 2014_."
 
-#### 2:45 - 3:30 · Recording the Form 1A Paper Expiry (Owner Ruling D-29)
+#### 2:45 - 3:30 · Recording the Form 1A Paper Expiry (Owner Ruling D-70)
 
-- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** selector and the clinician-entered paper expiry field (`legalFormExpiryIso`). Note how statutory duration reference calculators are isolated to `/ward-flow/legal-forms`.
+- **Presenter Action:** Open the Referral Intake Drawer. Show the **Legal Forms** selector and the clinician-entered paper expiry field (`legalFormExpiryIso`).
 - **Presenter Spoken Dialogue:**
-  > "Observe how Ward Flow handles Western Australian statutory recording under Owner Ruling `D-29`.
+  > "Observe how Ward Flow handles Western Australian statutory recording under Owner Ruling `D-70`.
   >
   > In the intake drawer, the emergency team records the legal status (`Referred for psychiatric examination`) and the form identifier (**Form 1A**).
   >
   > Notice what Ward Flow does—and what it steadfastly refuses to do:
-  > The ED movement row **does not** calculate a 72-hour Form 1A countdown from duration. Per `D-29`, the main operational engine never computes deadlines from statutory durations: the movement row displays only the **clinician-entered paper expiry time** written on the physical form (labelled _Not legally checked_).
+  > The ED movement row **does not** calculate a 72-hour Form 1A countdown from duration. Per `D-70`, Ward Flow never computes deadlines from statutory durations: the movement row displays only the **clinician-entered paper expiry time** written on the physical form (labelled _Not legally checked_).
   >
-  > Meanwhile, statutory duration reference tables and calculators live solely in the isolated `/ward-flow/legal-forms` reference demo. In operational screens, the software never makes an autonomous legal duration assumption."
+  > No screen, including Legal forms, works out a statutory duration. The software never makes an autonomous legal duration assumption."
 
 #### 3:30 - 4:00 · Catchment Routing, Synthetic UMRNs & Clinical Acuity Indicators
 
@@ -429,7 +429,7 @@ Audit scope is implemented by `classifyAuditEvent()` in `src/components/ward-man
 ### 3. Statutory Fidelity (WA _Mental Health Act 2014_)
 
 - Under WA law, the legal authority to detain or examine a psychiatric patient resides exclusively in the signed statutory instrument (e.g. Form 1A, Form 3A, Form 6A).
-- Per Owner Ruling `D-29`, Ward Flow’s operational engine functions as a **statutory recorder**, not an automated legal arbiter: movement screens display only the paper expiry date and time typed from the physical form by the clinician, while statutory duration reference calculators live solely in the isolated `/ward-flow/legal-forms` demo.
+- Per Owner Ruling `D-70` (which replaced `D-29`), Ward Flow functions as a **statutory recorder**, not an automated legal arbiter: every screen displays only the paper expiry date and time typed from the physical form by the clinician, and no screen calculates a statutory duration.
 
 ### 4. Honest Denominators & Anti-Alarm Fatigue
 

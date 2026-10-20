@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // and Edge keep working. env is parsed at import time, so each case re-imports
 // the module with fresh stubs.
 
-const MATCHING_URL = "https://sjrfecxgysukkwxsowpy.supabase.co";
+const MATCHING_URL = "https://invented-not-a-real-ref.supabase.co";
 
 const ENV_KEYS = [
   "NEXT_RUNTIME",

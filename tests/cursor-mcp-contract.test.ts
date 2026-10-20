@@ -62,7 +62,7 @@ describeConfiguredCursor("Cursor project MCP contract", () => {
     // (`.mcp.json`) and Codex (`.codex/config.toml`) entries pin docs + development; Cursor
     // must match.
     expect(servers.supabase?.url).toBe(
-      "https://mcp.supabase.com/mcp?project_ref=sjrfecxgysukkwxsowpy&read_only=true&features=docs%2Cdevelopment",
+      "https://mcp.supabase.com/mcp?project_ref=invented-not-a-real-ref&read_only=true&features=docs%2Cdevelopment",
     );
     const claudeMcp = JSON.parse(readFileSync(path.join(repoRoot, ".mcp.json"), "utf8")) as CursorMcpConfig;
     expect(servers.supabase?.url).toBe(claudeMcp.mcpServers?.supabase?.url);
