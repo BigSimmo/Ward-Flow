@@ -101,8 +101,11 @@ async function goToCapacityBoard(page: Page) {
    * `ui-ward-referrals.spec.ts` already applies to its own rail lookups. Relaxing to a bare
    * substring would make the selector silently ambiguous the first time a second Capacity-ish
    * destination is added.
+   *
+   * B1 (overall review, 20 Oct 2026): the coordinator's menu now calls this page "Beds", so the
+   * anchored name is `/^Beds\b/`; the page itself is still Capacity.
    */
-  await page.getByRole("link", { name: /^Capacity\b/u }).click();
+  await page.getByRole("link", { name: /^Beds\b/u }).click();
   // MERGE 02 (`bf563af9f`, 2026-09-05) renamed the Capacity screen's root from `ward-capacity-view`
   // to `ward-capacity-page`. The screen and this journey are both intact and reachable — only the
   // handle moved — so this is a re-point, not a retirement.
@@ -418,6 +421,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
       await picker.selectOption(destination.id);
       await page.getByRole("button", { name: /Record that they have left/ }).click();
+      await page.getByRole("button", { name: "Record departure", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.getByTestId("ward-discharge-history").click();

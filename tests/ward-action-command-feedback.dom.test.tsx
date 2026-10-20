@@ -103,6 +103,7 @@ describe("Ward command feedback", () => {
       mount(control, <WardScreen unitId={UNIT} />);
       selectOccupiedBoardBed();
       fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
+      fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
       expect(control.record.mock.calls[0]?.[0].type).toBe("RECORD_LEAVING");
       expect(screen.queryByText(/^Recorded: .* has left the ward/)).toBeNull();
       expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
@@ -140,6 +141,7 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
     await act(() => control.accept());
     expect(screen.getByTestId("toast")).toHaveTextContent(/^Recorded: .* has left the ward/);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));

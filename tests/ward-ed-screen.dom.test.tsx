@@ -1136,8 +1136,9 @@ describe("direct CMHT referral pathway from ED screen", () => {
     const leftBtn = screen.getByTestId("ward-ed-mark-left-WF-001");
     expect(leftBtn).toHaveTextContent("Left the department");
 
-    // Click "Left the department"
+    // Click "Left the department", then confirm (Audit 1, CS-07)
     fireEvent.click(leftBtn);
+    fireEvent.click(within(screen.getByTestId("ward-ed-mark-left-WF-001-confirm")).getAllByRole("button").at(-1)!);
 
     // Now movement is recorded as left and removed from the active ED board
     expect(screen.queryByTestId("ward-ed-patient-WF-001")).not.toBeInTheDocument();
@@ -1291,6 +1292,11 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
 
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-toggle-${id}`));
     fireEvent.click(screen.getByTestId(`ward-ed-outcome-discharge-${id}`));
+    fireEvent.click(
+      within(screen.getByTestId(`ward-ed-outcome-discharge-${id}-confirm`))
+        .getAllByRole("button")
+        .at(-1)!,
+    );
 
     expect(
       screen.getByRole("button", { name: /Not reviewed/ }).textContent,

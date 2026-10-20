@@ -14,10 +14,11 @@ import {
   type UrgencyLevel,
 } from "@/components/ward-management/ward-model";
 
-export type ScoreFactor = { label: string; points: number; detail: string };
+/** One plain reason a wait is long. Audit 1, Josh 20 Oct (CS-05): no points and no total. */
+export type WaitFactor = { label: string; detail: string };
 
 /**
- * The label for the one operational-score factor that reports a legal form's recorded due time —
+ * The label for the one wait factor that reports a legal form's recorded due time —
  * exported so `priority-queue.tsx` can find that factor BY THIS CONSTANT rather than by matching
  * the literal label text a second time in a second file. Two files agreeing on a string by
  * coincidence is exactly the shape that drifts the moment either wording changes alone; this is
@@ -37,7 +38,7 @@ export const FORM_TIMING_FACTOR_LABEL = "Form due time";
  *
  * This lives here, beside `queueOrder`, because `ward-priority.ts` already owns tier semantics
  * and carries the product owner's 2026-08-24 provenance for the three tiers (see
- * `operationalScore` below). It is deliberately NOT in `ward-model.ts`: an exported declaration
+ * `waitFactors` below). It is deliberately NOT in `ward-model.ts`: an exported declaration
  * writing a number down there must be entered on `MODEL_CONSTANT_PROVENANCE`
  * (`tests/ward-legal-figure-guard.test.ts` Part 2), and these are display words for tiers that
  * already have their provenance recorded, not a new figure.
@@ -95,8 +96,8 @@ export function urgencyTierLabel(urgency: UrgencyLevel): string {
  * both CASE-SENSITIVE. That held while the only writers were the fixture and the reducer, which
  * write from a fixed vocabulary. `RECORD_MOVEMENT_BLOCKER` (2026-09-01) then let a person type any
  * non-blank prose, and the halves stopped matching: `"none — resolved"`, `"no blocker"`,
- * `"Nothing outstanding"`, `"N/A"` and `"Cleared"` all scored TEN POINTS as an active obstruction
- * on a movement nobody was holding up, pushing it up the queue with nothing red anywhere.
+ * `"Nothing outstanding"`, `"N/A"` and `"Cleared"` all counted as an active obstruction on a
+ * movement nobody was holding up.
  *
  * The remedy is not a wider pattern — chasing phrasings is unbounded, and `/^none/i` would swallow
  * `"None of the secure units can take him"`, a REAL blocker this file's own test pins. Clearing has
@@ -115,85 +116,57 @@ function hasActiveBlocker(blocker: string): boolean {
 }
 
 /**
- * How badly this movement is going — an operations question, not a clinical one.
+ * The plain reasons behind a wait, shown under "Why this wait". An operations question, not a
+ * clinical one.
  *
- * Deliberately blind to `movement.urgency`. Urgency is the clinician's judgement and orders the
- * queue on its own; folding it in here produced a number labelled "not clinical severity" that
- * partly was, which is why the previous score was deleted rather than migrated.
+ * Audit 1, Josh 20 Oct (CS-05): this used to be `operationalScore`, a 0 to 100 points total with
+ * "+N" beside each reason. Staff could read points as severity (never-build item 1), so the points
+ * and the total are gone; only the sentences remain. Nothing here orders any list.
  *
- * Also deliberately blind to `movement.examination`. Whether a patient has been reviewed does not
- * score here at all: on the product owner's 2026-08-24 instruction, priority is urgency and
- * waiting time alone, and being unreviewed neither costs points nor blocks a bed request. The
- * examination record itself is untouched — it is still captured and still displayed; it simply has
- * no effect on the queue. Do not reintroduce it here in any weight, and do not substitute a proxy.
+ * Deliberately blind to `movement.urgency` (the clinician's judgement) and to
+ * `movement.examination` (owner, 2026-08-24: priority is urgency and waiting time alone). Do not
+ * reintroduce either here, and do not substitute a proxy.
  */
-export function operationalScore(
-  movement: Movement,
-  now: Instant,
-  thresholds: DueSoonThresholds,
-): { score: number; factors: ScoreFactor[] } {
-  const factors: ScoreFactor[] = [];
+export function waitFactors(movement: Movement, now: Instant, thresholds: DueSoonThresholds): WaitFactor[] {
+  const factors: WaitFactor[] = [];
 
   const waitedMinutes = Math.max(0, now - movement.openedAt);
-  const waitPoints = Math.min(40, Math.floor(waitedMinutes / 15));
-  if (waitPoints > 0) {
+  if (waitedMinutes > 0) {
     factors.push({
       label: "Time waiting",
-      points: waitPoints,
       // "in ED", not "since the placement request" — the same figure, from the same field
       // (`now - movement.openedAt`), and `delays-screen.tsx`'s own ED clock states it in exactly
-      // those words. `ward-model.ts`'s §7 access-target comment defines `openedAt` as "how long
-      // the patient has been in the department"; "the placement request" names an event this
-      // model does not claim that field is. See `tests/ward-priority.test.ts`'s own pin for why
-      // both files' captions are tied together now.
+      // those words. See `tests/ward-priority.test.ts`'s own pin.
       detail: `${splitDuration(waitedMinutes)} in ED`,
     });
   }
 
-  // DORMANT FOR 1A/3B ONLY as of the 2026-08-23 product-owner correction: neither code carries
-  // a `dueAt` any longer (see `LegalForm`'s own doc comment in ward-model.ts), so this block can
-  // no longer award "Statutory timing" points on their account, and a patient referred for (or
-  // awaiting) examination has their priority ride on "Time waiting" above alone — exactly the
-  // clinician's own rule, with no compensating bonus for carrying a legal form, which would be
-  // an unsupported clinical claim of the same kind this correction removes. This block is NOT
-  // fully dormant, though: the transport/transfer forms (4A/4C) are out of scope for this
-  // correction, still carry a real `dueAt`, and still legitimately score here while in force.
-  // The 1A/3B branch is kept live, not deleted, on the same precedent Task 6A set for a Form 3B:
-  // a real examination timeframe may be supplied later and should return as a derivation, not a
-  // rewritten function.
-  // Score a person-recorded expiry only while that form remains in force (`currentLegalDueAt`).
+  // Only the transport/transfer forms (4A/4C) carry a person-recorded `dueAt` (see `LegalForm` in
+  // ward-model.ts); 1A/3B never do. Reported only while that form remains in force
+  // (`currentLegalDueAt`) and its recorded time is due, critical or passed.
   const legalForm = movement.legalForm;
   const dueAt = currentLegalDueAt(movement);
-  if (legalForm && dueAt !== undefined) {
-    const state = clockState(dueAt, now, thresholds);
-    const points = state === "breached" ? 30 : state === "critical" ? 20 : state === "due" ? 10 : 0;
-    if (points > 0) {
-      const remaining = minutesUntil(dueAt, now);
-      factors.push({
-        label: FORM_TIMING_FACTOR_LABEL,
-        points,
-        detail:
-          remaining < 0
-            ? `Form ${legalForm.code} passed its deadline ${splitDuration(Math.abs(remaining))} ago`
-            : `Form ${legalForm.code} due in ${splitDuration(remaining)}`,
-      });
-    }
+  if (legalForm && dueAt !== undefined && clockState(dueAt, now, thresholds) !== "clear") {
+    const remaining = minutesUntil(dueAt, now);
+    factors.push({
+      label: FORM_TIMING_FACTOR_LABEL,
+      detail:
+        remaining < 0
+          ? `Form ${legalForm.code} passed its deadline ${splitDuration(Math.abs(remaining))} ago`
+          : `Form ${legalForm.code} due in ${splitDuration(remaining)}`,
+    });
   }
 
   if (movement.declines.length > 0) {
-    const points = Math.min(15, movement.declines.length * 5);
-    // `declines.length` is a cumulative historical count and `PARALLEL_REFERRAL_CAP` limits
-    // simultaneous *live* referrals — they do not share a denominator (see the comment on
-    // `buildActionInbox` in ward-derivations.ts), so state only the count, not a fraction.
+    // `declines.length` is a cumulative historical count, not a fraction of live referrals.
     factors.push({
       label: "Destinations declined",
-      points,
       detail: `${movement.declines.length} destination${movement.declines.length === 1 ? " has" : "s have"} declined`,
     });
   }
 
   if (hasActiveBlocker(movement.blocker)) {
-    factors.push({ label: "Active blocker", points: 10, detail: movement.blocker });
+    factors.push({ label: "Active blocker", detail: movement.blocker });
   }
 
   if (
@@ -203,100 +176,32 @@ export function operationalScore(
     movement.transport.collectedAt === undefined &&
     movement.transport.cancelledAt === undefined
   ) {
-    factors.push({ label: "Transport delay", points: 5, detail: "Accepted but not yet collected" });
+    factors.push({ label: "Transport delay", detail: "Accepted but not yet collected" });
   }
 
-  const score = Math.min(
-    100,
-    factors.reduce((sum, factor) => sum + factor.points, 0),
-  );
-  return { score, factors };
+  return factors;
 }
 
 /**
- * Whether this patient carries the URGENT FLAG — the one thing that outranks a tier and a wait.
+ * Whether this patient carries the URGENT FLAG. Owner, 2026-08-30: "in certain cases patients can
+ * be marked as urgent for many reasons". See `Movement.flaggedUrgent` for the full ruling.
  *
- * Owner, 2026-08-30: "in certain cases patients can be marked as urgent for many reasons which
- * outranks everything." See `Movement.flaggedUrgent` for the full ruling and for what he
- * deliberately deferred.
+ * Audit 1, Josh 20 Oct (CS-04): the flag is a highlight on the row. It no longer moves the row.
  */
 export function isFlaggedUrgent(movement: Pick<Movement, "flaggedUrgent">): boolean {
   return movement.flaggedUrgent;
 }
 
 /**
- * How long this movement has waited, in minutes, with no ceiling.
+ * The Home queue's one order: longest wait first (earliest `openedAt`), then the id so equal waits
+ * never fall back on sort stability.
  *
- * `operationalScore`'s own "Time waiting" factor stops at `Math.min(40, …)` — a ten-hour cap that
- * exists for that function's display purpose, scoring a factor breakdown a coordinator reads, not
- * for ordering a queue. `queueOrder` below needs the true duration: two patients waiting ten hours
- * and thirty hours must not tie, which a capped score cannot express (D9-1).
+ * Audit 1, Josh 20 Oct (CS-04, NB-6a), superseding D-32 of 12 Oct: re-sorting the waiting queue is
+ * on the never-build list. The flag, an act-now task and the tier used to lift rows above longer
+ * waits; they now stay visible on each row as badges and do not move it. Legal status and form
+ * timing were never read here and still are not.
  */
-function waitedMinutesUncapped(movement: Pick<Movement, "openedAt">, now: Instant): number {
-  return Math.max(0, now - movement.openedAt);
-}
-
-/**
- * The flag leads; beneath it, act-now pins, then the longest wait with tier breaking ties (D-32,
- * 12 Oct 2026, see below). Historically: urgency tier, then the longest wait inside a tier — item 37,
- * resolved 2026-09-17.
- *
- * ⚠️ **THIS USED TO BE THREE RANKINGS STACKED AS A DELIBERATE STAGE, NOT A DESIGN, AND THE
- * OWNER HAS NOW BUILT ON IT.** His original scoping — "For now just have a feature that flags the
- * patient. I will build on it later" — held the tie-break at `operationalScore`, a composite that
- * mixed wait, form timing, declines and a blocker, and capped the wait it did count at ten hours.
- * His fuller ruling, named as deferred at the time, was "a long wait always is prioritised…
- * otherwise go by time for the main level of urgency" — and that is now what this function does:
- * flag, then tier, then the wait itself, uncapped. `operationalScore` and its factor breakdown are
- * UNCHANGED and still render on the coordinator queue (`priority-queue.tsx`) as an explanation of
- * how badly a movement is going operationally — "The factors below explain a wait; they do not
- * order the queue" is now literally true, where before the score doubled as the ordering.
- *
- * ⚠️ **FORM DUE TIME NO LONGER ORDERS THE COMMAND QUEUE** — narrowed 2026-09-17 (review
- * fix-forward item 9) from a claim about "anyone", which this function cannot make: the
- * Movements board's own `byLongestWait` (`movements-derivations.ts`) is a DIFFERENT ordering for a
- * DIFFERENT screen, and it still reads `isExpiringLegalAuthority`. This is this task's answer to
- * the legal plan's own §5 question for the ONE queue item 37 owns: a legal form's recorded due
- * time was never meant to carry statutory weight in this prototype, and on the Command queue
- * (`priority-queue.tsx`) it now carries no ordering weight either. Legal status was never read
- * here and still is not — two patients on THIS queue differing only in legal status or form
- * timing rank identically, exactly as before.
- *
- * `tests/ward-priority.test.ts` keeps the earlier, deferred state in its own historical comments;
- * do not read that file's prose as describing current behaviour without checking the assertions
- * themselves.
- *
- * ⚠️ **AN ID TIE-BREAKER, FOR PARITY WITH THE MOVEMENTS BOARD** — review fix-forward item 9,
- * 2026-09-17. Without one, two movements tied on flag, tier and wait fell back to
- * `Array.prototype.sort`'s stability, which is deterministic in this runtime but undocumented as a
- * property of THIS function — a reader has no way to tell "deliberate" from "happens to work"
- * from the code alone. `byLongestWait` (`movements-derivations.ts`) already ends its own
- * comparator on `a.id < b.id`; this matches it rather than inventing a second convention.
- *
- * ⚠️ **D-32 NOW COVERS THIS QUEUE — decision 4 of the 12 Oct 2026 site review (Recommended, Josh
- * approved).** The Referrals board sorted longest wait first while this queue sorted tier first,
- * so the two disagreed about who was next. Now: the flag still outranks everything; beneath it,
- * movements with an active act-now task are pinned on top so emergencies stay visible; then
- * everyone is ordered longest wait first, with the tier breaking a tie on wait, then the id.
- */
-export function queueOrder(
-  movements: Movement[],
-  now: Instant,
-  /**
-   * Movements with an active act-now (red) task, from `activeActNowItems` (`ward-act-now-items.ts`).
-   * They are pinned under the flag. Omitted, nothing is pinned but the flag.
-   */
-  actNowMovementIds: ReadonlySet<string> = new Set(),
-): Movement[] {
-  const pinned = (movement: Movement) => Number(actNowMovementIds.has(movement.id));
-  return movements
-    .filter(isOpen)
-    .sort(
-      (a, b) =>
-        Number(isFlaggedUrgent(b)) - Number(isFlaggedUrgent(a)) ||
-        pinned(b) - pinned(a) ||
-        waitedMinutesUncapped(b, now) - waitedMinutesUncapped(a, now) ||
-        a.urgency - b.urgency ||
-        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
-    );
+export function queueOrder(movements: Movement[], now: Instant): Movement[] {
+  void now; // Kept so existing callers compile; the order reads no clock.
+  return movements.filter(isOpen).sort((a, b) => a.openedAt - b.openedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }

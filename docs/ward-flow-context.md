@@ -305,10 +305,9 @@ first contact with reality.
 
 ### What does not exist
 
-**The operational score exists again.** Phase 1 deleted `operationalPriorityScore` for folding
-urgency into a number labelled "not clinical severity"; Phase 2 rebuilt it honestly in
-`ward-priority.ts` as `operationalScore(movement, now)` plus `queueOrder(movements, now)`. It is
-blind to `movement.urgency` and a test asserts two tiers score identically. Phase 2 also added
+**No operational score.** Phase 2's `operationalScore` points total was removed on 20 Oct 2026
+(D-71, Audit 1): a points total reads as a severity score. `ward-priority.ts` now has
+`waitFactors(movement, now)` (plain reasons, no points) and `queueOrder(movements)` (wait order). Phase 2 also added
 `ward-pressure.ts` — `edPressure(now, movements)`.
 
 ---

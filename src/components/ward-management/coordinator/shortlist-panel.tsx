@@ -92,7 +92,7 @@ import type { WardCommandDispatch } from "@/components/ward-management/ward-shar
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { operationalScore, urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
@@ -103,7 +103,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { FIT_LABEL, fitGroups, fitKind, type FitKind } from "./home-fit";
+import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
@@ -756,11 +756,9 @@ export function ShortlistPanel({
   // a coordinator acts on differently (same reasoning `flow-diagram.tsx` already applies), so
   // each renders its own badge below from the raw movement fields — never only the first
   // referral, and never conflated with an acceptance (review Minor 6). `destinationUnit`
-  // ("accepted, or else the first referral") is consulted only for ruling 5's exact condition:
-  // when it is `undefined`, the top ELIGIBLE candidate — never merely the first-listed ineligible
-  // one — is offered instead, and only ever labelled "Suggested destination": a computed
-  // suggestion must never sit unlabelled in the destination slot, and an ineligible candidate must
-  // never be presented as a suggestion at all (review Important 3).
+  // ("accepted, or else the first referral") is consulted only for ruling 5's exact condition.
+  // Audit 1, Josh 20 Oct (CS-03): when nothing is recorded the slot names no ward. The old
+  // "Suggested destination" badge was a system pick; the candidate fit counts below stay.
   const acceptedUnit = movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
   // L3: the one next step once a destination has accepted (see the "Next step" section below).
   // Audit A1-4: the one bed-hold rule (`ward-bed-hold.ts`); a lapsed hold asks for Move or release.
@@ -780,12 +778,7 @@ export function ShortlistPanel({
   const recordedDestination = destinationUnit(movement, units);
   const hasRecordedReferral =
     recordedDestination !== undefined || Boolean(movement.acceptedUnitId) || movement.referredUnitIds.length > 0;
-  // Audit S-21: suggest an eligible ward that is not a Review (a voluntary patient's locked ward)
-  // first; the locked ward is suggested only when nothing else is eligible.
-  const topEligible =
-    shortlist.find((candidate) => candidate.verdict.eligible && fitKind(candidate, movement) !== "review") ??
-    shortlist.find((candidate) => candidate.verdict.eligible);
-  const topEligibleNotice = topEligible ? restrictionNotice(movement, topEligible.unit) : undefined;
+  const hasEligible = shortlist.some((candidate) => candidate.verdict.eligible);
 
   // Whole-branch review Critical 2, carried forward into Task 5's Refer/Override. The old Confirm
   // acted on `activeUnit`, which falls back to `shortlist[0]` — a system-chosen default that no
@@ -855,7 +848,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const { factors } = operationalScore(movement, now, thresholds);
+  const factors = waitFactors(movement, now, thresholds);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -1571,36 +1564,13 @@ export function ShortlistPanel({
               </Fragment>
             ))}
           </>
-        ) : topEligible ? (
-          <>
-            <span className={`${styles.shortlistSuggestedBadge} ${shortlistStyles.destLine}`} data-tone="neutral">
-              Suggested destination: {topEligible.unit.name}
-            </span>
-            {/* Whole-branch review Important 5: on WF-001 (an OPEN-status movement) the top
-                eligible candidate is a locked ward, and the security gate passes it with an
-                affirmative "Secure ward meets an open requirement". The suggestion is not
-                withdrawn — the gate is a protected surface and a locked ward really can hold this
-                patient — but a coordinator must read the restriction here, in the destination
-                slot, rather than infer it from a ward's name. Task 5: `restrictionNotice` covers
-                both this and the sharper voluntary-on-locked warning; the badge renders whichever
-                one applies rather than assuming the older, narrower case. */}
-            {topEligibleNotice ? (
-              <span
-                className={`${
-                  topEligibleNotice.level === "voluntary_on_locked"
-                    ? styles.shortlistRestrictiveBadgeProminent
-                    : styles.shortlistRestrictiveBadge
-                } ${shortlistStyles.restrictLine}`}
-                data-testid="ward-shortlist-suggested-restrictive"
-                data-level={topEligibleNotice.level}
-              >
-                {topEligibleNotice.text}
-              </span>
-            ) : null}
-          </>
         ) : (
-          <span className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine}`} data-tone="neutral">
-            No eligible destination found yet.
+          <span
+            className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine}`}
+            data-tone="neutral"
+            data-testid="ward-shortlist-no-destination"
+          >
+            {hasEligible ? "No destination recorded yet." : "No eligible destination found yet."}
           </span>
         )}
         {activeUnit && sortedGates.length > 0 ? (
@@ -2695,14 +2665,14 @@ export function ShortlistPanel({
           screen records: that the network really was exhausted, stamped on the movement, and who
           is being contacted next. Rendered whenever a recorded escalation exists (a persistent
           fact, never a toast), and the control to record a new one only while there genuinely is
-          no eligible destination — the same `topEligible === undefined` condition the header
+          no eligible destination — the same `!hasEligible` condition the header
           above already uses for "No eligible destination found yet." */}
       {/* No contradiction (Home placement redesign, Josh 19 Oct 2026): once a destination has
           accepted, the "No eligible destination" prompt and its Record control are hidden. A
           recorded escalation still shows, because it is a fact on the movement. The recorded
           acceptance decides, not the unit lookup: an accepted ward that no longer resolves is
           still an acceptance. */}
-      {movement.escalation || (topEligible === undefined && !movement.acceptedUnitId) ? (
+      {movement.escalation || (!hasEligible && !movement.acceptedUnitId) ? (
         <section aria-label="Escalation" className={shortlistStyles.escalationSection}>
           <h4 className={styles.shortlistSectionHeading}>Escalation</h4>
           {movement.escalation ? (
@@ -2713,7 +2683,7 @@ export function ShortlistPanel({
               {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)} — tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"} — contact: "${movement.escalation.contact}".`}
             </p>
           ) : null}
-          {topEligible === undefined && !movement.acceptedUnitId ? (
+          {!hasEligible && !movement.acceptedUnitId ? (
             <>
               {!movement.escalation ? (
                 <p className={styles.shortlistSectionNote}>
@@ -2774,7 +2744,7 @@ export function ShortlistPanel({
           <ul className={styles.shortlistScoreList}>
             {factors.map((factor) => (
               <li key={factor.label} className={`${styles.shortlistScoreFactor} ${shortlistStyles.tabularNum}`}>
-                <strong>{factor.label}</strong> +{factor.points} — {factor.detail}
+                <strong>{factor.label}</strong> — {factor.detail}
               </li>
             ))}
           </ul>

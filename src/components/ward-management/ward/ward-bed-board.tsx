@@ -94,6 +94,32 @@ function occupantParts(
   return { surname: last, initial: init1 };
 }
 
+/**
+ * The "surname|initial" keys of occupants who look alike on this board: the same initial and the
+ * same surname, or (Audit 1, Josh 20 Oct, CS-16) one surname the start of the other, as Kestrel and
+ * Kestrelworth. Each of them then shows two letters and the UMRN's last two digits.
+ */
+export function lookAlikeKeys(beds: readonly BedItem[]): Set<string> {
+  const occupants: { key: string; last: string; initial: string }[] = [];
+  for (const bed of beds) {
+    if (bed.status === "ready" || bed.status === "closed" || bed.status === "incoming") continue;
+    const parts = bed.patientAlias?.trim().split(/\s+/) ?? [];
+    if (parts.length < 2) continue;
+    const last = parts[parts.length - 1]!.toLowerCase();
+    const initial = parts[0]!.charAt(0).toUpperCase();
+    occupants.push({ key: `${last}|${initial}`, last, initial });
+  }
+  const set = new Set<string>();
+  occupants.forEach((one, index) => {
+    for (const other of occupants.slice(index + 1)) {
+      if (one.initial !== other.initial) continue;
+      if (!one.last.startsWith(other.last) && !other.last.startsWith(one.last)) continue;
+      set.add(one.key).add(other.key);
+    }
+  });
+  return set;
+}
+
 function CellWord({
   bed,
   discreet,
@@ -181,9 +207,14 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
   );
 }
 
-function cellWord(bed: BedItem): string {
+/** Audit 1, Josh 20 Oct (CS-16): a held bed names the surname and the given-name initial, as an occupied bed does. */
+export function cellWord(bed: BedItem): string {
   if (bed.status === "ready" && !bed.heldFor && bed.preparing) return "Making ready";
-  if (bed.status === "ready") return bed.heldFor ? `Held, ${surname(bed.heldFor)}` : "Free";
+  if (bed.status === "ready") {
+    if (!bed.heldFor) return "Free";
+    const held = occupantParts(bed.heldFor);
+    return held ? `Held, ${held.surname}, ${held.initial}` : `Held, ${surname(bed.heldFor)}`;
+  }
   if (bed.status === "closed") return "Closed";
   if (bed.status === "incoming") return "Pulled";
   return surname(bed.patientAlias);
@@ -244,21 +275,7 @@ export function WardBedBoard({
   const nameFor = usePatientNameDisplay();
   const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
-  const collidingPairs = (() => {
-    const counts = new Map<string, number>();
-    for (const bed of beds) {
-      if (bed.status === "ready" || bed.status === "closed" || bed.status === "incoming") continue;
-      const parts = bed.patientAlias?.trim().split(/\s+/) ?? [];
-      if (parts.length < 2) continue;
-      const key = `${parts[parts.length - 1]!.toLowerCase()}|${parts[0]!.charAt(0).toUpperCase()}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    const set = new Set<string>();
-    for (const [key, count] of counts) {
-      if (count > 1) set.add(key);
-    }
-    return set;
-  })();
+  const collidingPairs = lookAlikeKeys(beds);
   const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
   const leavingToday = beds.filter(
     (bed) =>

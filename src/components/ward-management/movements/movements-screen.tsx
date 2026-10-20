@@ -217,10 +217,9 @@ export function MovementsScreen() {
     [closedMovements, now],
   );
   /*
-   * ⚠️ Ordered by `byLongestWait`, not left in fixture order. The footer states ONE precedence
-   * sentence over all three orders — an expiring legal authority outranks the rest — and a group
-   * rendered in whatever order the array happened to arrive in would make that sentence false
-   * under this option while it stayed true under the other two.
+   * ⚠️ Ordered by `byLongestWait`, not left in fixture order. The footer states ONE order over all
+   * three groups, longest wait first (D-71), and a group rendered in whatever order the array
+   * happened to arrive in would make that sentence false under this option.
    */
   // Active corridors are open movements with an accepting ward. Same-day declines are derived
   // separately because a decline has no journey stage of its own. The records do not support an
@@ -635,7 +634,7 @@ export function MovementsScreen() {
   // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
   // computed limit, D5), and the coordinator's own queue of next steps.
   const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
-  // The earliest opened open movement, not the worklist order (which puts legal expiry first).
+  // The earliest opened open movement.
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
     .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
@@ -644,7 +643,7 @@ export function MovementsScreen() {
     openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
     now,
     thresholds,
-  ).sort((a, b) => Number(Boolean(b.flaggedUrgent)) - Number(Boolean(a.flaggedUrgent)) || a.urgency - b.urgency);
+  ); // Wait order only (Audit 1, Josh 20 Oct 2026, D-71): flags and tier never move a row.
   const surname = (movement: Movement) =>
     resolveSubjectPatient(movement, { patients, referrals }).formalName.split(",")[0];
   // Phone nav cards: who is inbound to a ward, and the ranked ED to ward corridors.
