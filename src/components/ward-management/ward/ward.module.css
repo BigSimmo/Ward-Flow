@@ -4029,6 +4029,34 @@
   padding: 0 var(--wf-s-3);
 }
 
+.phoneChipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-1) calc(-1 * var(--wf-s-3)) 0;
+  padding-right: var(--wf-s-3);
+}
+
+.phoneChipRow > .phoneChips {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.phoneChipRow > .phoneChips > div {
+  padding-right: 0;
+}
+
+/* An open ward switch or More menu lifts the ward card over the pinned view tabs below it. Only
+   while a menu is open, so the tabs still pin over the card as the page scrolls. */
+@media (max-width: 48rem) {
+  .topActionBarWrap:has([role="menu"]) {
+    position: relative;
+    top: auto;
+    z-index: 7;
+  }
+}
+
 .phoneChip {
   display: inline-flex;
   flex: none;
@@ -4073,11 +4101,22 @@
 }
 
 .phoneHeroTitle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
   max-width: 100%;
   min-width: 0;
+}
+
+/* The ward switch list opens from the start of the ward name, not from the chevron, so a long
+   name never pushes it off the right edge of a phone. */
+.phoneHeroTitle > .wardSwitchAnchor {
+  position: static;
+}
+
+.phoneHeroTitle > .wardSwitchAnchor > [role="menu"] {
+  max-width: calc(100vw - 2 * var(--wf-s-4));
 }
 
 .phoneHeroName {
@@ -4163,6 +4202,9 @@
   margin: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
+  /* A hairline under the pinned tabs, so headings scrolling under them read as passing beneath
+     rather than cut off. */
+  box-shadow: 0 1px 0 var(--wf-line);
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
