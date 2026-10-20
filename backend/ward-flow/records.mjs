@@ -243,6 +243,45 @@ function namedValues(value, found = new Set()) {
 }
 
 /**
+ * The opaque name a client is given for a record, so it can say later that it has seen that
+ * record's latest state without the record's own key leaving the server.
+ */
+export const recordToken = (key) => createHash("sha256").update(key).digest("hex").slice(0, 16);
+
+/** The most records a reply names as covered; a larger command names none, which is always safe. */
+export const MAX_COVERED = 200;
+
+/**
+ * The records a command changes (adds, rewrites or removes) or names, by `partKey`, each with its
+ * part. Rows kept by position (`index`) are never named.
+ */
+function commandRecords(before, after, event) {
+  const was = splitWorld(before).parts;
+  const now = after === before ? was : splitWorld(after).parts;
+  /** @type {Map<string, Part>} */
+  const records = new Map();
+  for (const [key, part] of was) {
+    const next = now.get(key);
+    if (!next || !same(next.body, part.body)) records.set(key, part);
+  }
+  for (const [key, part] of now) if (!was.has(key)) records.set(key, part);
+  const named = namedValues(event);
+  for (const [key, part] of was) if (part.kind !== "index" && named.has(part.recordId)) records.set(key, part);
+  return records;
+}
+
+/**
+ * The tokens (`recordToken`) of the records a command changes or names, for its sender to report
+ * as seen at the revision the command was saved at. Records in a field still kept whole have no
+ * revision of their own and are left out, and so is every record of a command naming too many.
+ */
+export function coveredRecords({ core, before, after, event }) {
+  const whole = wholeFields(core);
+  const records = [...commandRecords(before, after, event)].filter(([, part]) => !whole.has(part.collection));
+  return records.length > MAX_COVERED ? [] : records.map(([key]) => recordToken(key));
+}
+
+/**
  * Whether a command sent against `expectedRevision` must be refused because someone else changed
  * a record it changes or names since then. `before` and `after` are the world now and with the
  * command applied (`after` is `before` when the command was refused). Rows kept by position
@@ -250,21 +289,23 @@ function namedValues(value, found = new Set()) {
  * it since `expectedRevision` counts. The small fields count too: a reset (`worldGeneration`) since
  * then always clashes, and so does changing one someone else changed since (the clock), except the
  * id counters (`...Sequence`), which every new record moves on.
- * @param {{ stored: StoredRow[], core: any, before: any, after: any, event: unknown, expectedRevision: number, priorRevision: number }} options
+ *
+ * `seen` maps a record's token to a later revision at which the sender has seen that record (its
+ * own save from the same popup, `coveredRecords`). That record is checked from there instead. It
+ * never reaches past `priorRevision`, and never applies to a field kept whole.
+ * @param {{ stored: StoredRow[], core: any, before: any, after: any, event: unknown, expectedRevision: number, priorRevision: number, seen?: Record<string, number> | null }} options
  */
-export function conflicts({ stored, core, before, after, event, expectedRevision, priorRevision }) {
+export function conflicts({ stored, core, before, after, event, expectedRevision, priorRevision, seen = null }) {
   if (expectedRevision >= priorRevision) return false;
   const revisions = new Map([...storedParts(stored)].map(([key, row]) => [key, Number(row.revision)]));
   const whole = wholeFields(core);
-  const revisionOf = (part) =>
-    whole.has(part.collection) ? priorRevision : (revisions.get(partKey(part.collection, part.recordId)) ?? 0);
-  const was = splitWorld(before).parts;
-  const now = after === before ? was : splitWorld(after).parts;
-  for (const [key, part] of was) {
-    const next = now.get(key);
-    if ((!next || !same(next.body, part.body)) && revisionOf(part) > expectedRevision) return true;
-  }
-  for (const [key, part] of now) if (!was.has(key) && revisionOf(part) > expectedRevision) return true;
+  const revisionOf = (key, part) => (whole.has(part.collection) ? priorRevision : (revisions.get(key) ?? 0));
+  const checkedFrom = (key, part) => {
+    const later = whole.has(part.collection) || !seen ? undefined : seen[recordToken(key)];
+    return Number.isSafeInteger(later) ? Math.max(expectedRevision, Math.min(later, priorRevision)) : expectedRevision;
+  };
+  for (const [key, part] of commandRecords(before, after, event))
+    if (revisionOf(key, part) > checkedFrom(key, part)) return true;
   const scalarRevision = (field) => Number(core[REVISIONS]?.[field] ?? priorRevision);
   if (scalarRevision("worldGeneration") > expectedRevision) return true;
   for (const field of scalarFields(core))
@@ -274,8 +315,5 @@ export function conflicts({ stored, core, before, after, event, expectedRevision
       scalarRevision(field) > expectedRevision
     )
       return true;
-  const named = namedValues(event);
-  for (const part of was.values())
-    if (part.kind !== "index" && named.has(part.recordId) && revisionOf(part) > expectedRevision) return true;
   return false;
 }

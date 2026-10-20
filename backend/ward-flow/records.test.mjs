@@ -7,7 +7,16 @@ import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
 import { MIGRATIONS, RECORDS_MIGRATION, readMigration } from "./migrations.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
-import { assembleWorld, conflicts, markerKind, partKey, planSave, splitWorld } from "./records.mjs";
+import {
+  assembleWorld,
+  conflicts,
+  coveredRecords,
+  markerKind,
+  partKey,
+  planSave,
+  recordToken,
+  splitWorld,
+} from "./records.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -122,6 +131,51 @@ test("dropping the oldest entry or adding at the end rewrites no other row", () 
     [["d", 0, 2]],
   );
   assert.deepEqual(assembleWorld(moved.core, stored(next, moved)), log("d", "b", "c"));
+});
+
+test("a record the sender saw through its own later save is checked from that save (CS-19 follow-up)", async () => {
+  // A popup opened at 1. Another desk changed WF-002 (2); the popup saved WF-001 (3). A second save
+  // of WF-001 from the same popup must not clash with its own first save, and must still clash with
+  // anyone else's change to WF-001 after it, or to WF-002, which the popup never saw.
+  const engine = await import("./dist/engine.mjs");
+  const base = engine.seedWorld(at);
+  const initial = planSave([], base, 1);
+  let rows = stored([], initial);
+  let core = initial.core;
+  let world = base;
+  const save = (event, revision) => {
+    const applied = engine.applyCommand(world, event, at);
+    const plan = planSave(rows, applied.world, revision, core);
+    const covered = coveredRecords({ core, before: world, after: applied.world, event });
+    rows = stored(rows, plan);
+    core = plan.core;
+    world = applied.world;
+    return covered;
+  };
+  save(urgency("WF-002", 1), 2);
+  const covered = save(urgency("WF-001", 2), 3);
+  assert.deepEqual(covered, [recordToken(partKey("movements", "WF-001"))]);
+  const seen = Object.fromEntries(covered.map((token) => [token, 3]));
+  const check = (event, options) => {
+    const applied = engine.applyCommand(world, event, at);
+    return conflicts({
+      stored: rows,
+      core,
+      before: world,
+      after: applied.outcome === "accepted" ? applied.world : world,
+      event,
+      expectedRevision: 1,
+      ...options,
+    });
+  };
+  assert.equal(check(urgency("WF-001", 3), { priorRevision: 3 }), true, "without seen: its own save clashes");
+  assert.equal(check(urgency("WF-001", 3), { priorRevision: 3, seen }), false, "its own save");
+  assert.equal(check(urgency("WF-002", 3), { priorRevision: 3, seen }), true, "the other desk's change");
+  // A claim past the latest revision is held to it.
+  const ahead = Object.fromEntries(covered.map((token) => [token, 99]));
+  save(urgency("WF-001", 1), 4);
+  assert.equal(check(urgency("WF-001", 3), { priorRevision: 4, seen }), true, "someone else's change after it");
+  assert.equal(check(urgency("WF-001", 3), { priorRevision: 4, seen: ahead }), false, "capped at the latest");
 });
 
 test("a save against an older revision clashes only with someone else's change to the same record", async () => {

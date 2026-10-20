@@ -52,6 +52,23 @@ const STORAGE_MESSAGES =
  * that retrying will not clear, so it is a code fault.
  */
 const STORAGE_SQLSTATE = /^(?:(?:08|53|57|58)[0-9A-Z]{3}|40001|40P01|55P03)$/;
+/**
+ * CS-19 follow-up: the records a command's open popups have seen at a later revision than the
+ * command's own, by the opaque tokens an earlier reply named as `covered` (records.mjs).
+ */
+const SEEN_TOKEN = /^[0-9a-f]{16}$/;
+function validSeen(seen) {
+  if (!seen || typeof seen !== "object" || Array.isArray(seen)) return false;
+  const entries = Object.entries(seen);
+  return (
+    entries.length <= 1_000 &&
+    entries.every(
+      ([token, revision]) =>
+        SEEN_TOKEN.test(token) && Number.isSafeInteger(revision) && revision >= 1 && revision < Number.MAX_SAFE_INTEGER,
+    )
+  );
+}
+
 /** Node network error codes for a database that cannot be reached. */
 const NETWORK_CODES = new Set([
   "ECONNREFUSED",
@@ -497,11 +514,13 @@ export function createSharedHandler({
         Array.isArray(body.event) ||
         typeof body.event.type !== "string" ||
         body.event.type.length > 100 ||
-        (body.reply !== undefined && body.reply !== "revision")
+        (body.reply !== undefined && body.reply !== "revision") ||
+        (body.seen !== undefined && !validSeen(body.seen))
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
       const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event, {
         revisionOnly: body.reply === "revision",
+        ...(body.seen ? { seen: body.seen } : {}),
         view,
       });
       return reply(result.status, result.body);
