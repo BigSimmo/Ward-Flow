@@ -486,7 +486,9 @@ describe("the one tap demo reset", () => {
       fireEvent.click(screen.getByTestId(testId));
       // It asks first: the shared workspace has no undo.
       expect(screen.getByTestId("scenario")).toHaveTextContent(before ?? "");
-      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent("replaces the demo data for everyone");
+      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent(
+        "replaces the demo data in this browser only",
+      );
       expect(screen.getByTestId("ward-demo-reset-confirm-load")).toHaveFocus();
       fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
       expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();

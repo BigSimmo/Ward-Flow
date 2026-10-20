@@ -6,13 +6,13 @@ import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { Dialog } from "@/components/wf";
 
-import { WardDemoReset } from "../demo-reset/ward-demo-reset";
+import { WardDemoReset, demoDataReach } from "../demo-reset/ward-demo-reset";
 import { WardPracticeMode } from "../demo-reset/ward-practice-mode";
 import { formatInstant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
 import type { WardCommandOutcome } from "../ward-shared-client";
-import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels } from "../ward-scenarios";
+import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import styles from "./ward-tools-sheet.module.css";
 
@@ -23,12 +23,13 @@ import styles from "./ward-tools-sheet.module.css";
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
  */
 export function WardDemoPanel() {
-  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration } = useWardFlowSelect(
+  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration, shared } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
     "loadScenarioFile",
     "savingOnDevice",
     "worldGeneration",
+    "shared",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("demo");
@@ -36,10 +37,15 @@ export function WardDemoPanel() {
   const offId = useId();
   const lock = demoOn ? {} : { disabled: true, "aria-describedby": offId };
   const [message, setMessage] = useState<string | null>(null);
-  const [confirmingReset, setConfirmingReset] = useState(false);
-  // A pending "Reset the demo?" is dropped when demo controls go off, so it can never reopen by
-  // itself when they come back (review finding on DA-10). Adjusted during render, not in an effect.
-  if (!demoOn && confirmingReset) setConfirmingReset(false);
+  // The world change waiting on its confirm: Reset demo, or a scenario card (overall review, 20 Oct
+  // 2026: a card replaced all the demo data in one tap, so it now asks first, the same as Reset).
+  const [confirming, setConfirming] = useState<{ kind: "reset" } | { kind: "load"; scenario: WardScenario } | null>(
+    null,
+  );
+  // A pending confirm is dropped when demo controls go off, so it can never reopen by itself when
+  // they come back (review finding on DA-10). Adjusted during render, not in an effect.
+  if (!demoOn && confirming) setConfirming(null);
+  const reach = demoDataReach(shared?.enabled === true);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
   const resetOn = useWardFeatureFlag("demo-reset");
@@ -59,15 +65,22 @@ export function WardDemoPanel() {
   }
 
   /**
-   * DA-10 (design audit, Josh, 19 Oct 2026): Reset demo asks first, and the line under it says the
-   * demo was reset only when the reducer actually reloaded the network (a new world generation). A
-   * refused or unchanged reset says nothing changed. A failed shared save may already have reached
-   * the server, so it says the reset is not confirmed rather than promising nothing changed.
+   * DA-10 (design audit, Josh, 19 Oct 2026): Reset demo and the scenario cards ask first, and the
+   * line under them says the demo changed only when the reducer actually reloaded the network (a new
+   * world generation). A refused or unchanged one says nothing changed. A failed shared save may
+   * already have reached the server, so it says the change is not confirmed rather than promising
+   * nothing changed. Each line names who it reached (`demoDataReach`).
    */
-  function resetDemo() {
-    setConfirmingReset(false);
+  function confirmWorldChange() {
+    const pending = confirming;
+    setConfirming(null);
+    if (!pending) return;
     const from = worldGeneration;
-    const notConfirmed = "The reset was not confirmed. Refresh the page and check the board before trying again.";
+    const label = scenarioLabels[pending.kind === "load" ? pending.scenario : scenario];
+    const notConfirmed =
+      pending.kind === "reset"
+        ? "The reset was not confirmed. Refresh the page and check the board before trying again."
+        : `Loading ${label} was not confirmed. Refresh the page and check the board before trying again.`;
     const settle = (outcome: WardCommandOutcome | void) => {
       if (!outcome) return;
       if (outcome.status === "failed") {
@@ -76,14 +89,25 @@ export function WardDemoPanel() {
       }
       const reloaded =
         outcome.status === "accepted" && (outcome.generation === undefined || outcome.generation !== from);
-      setMessage(reloaded ? "Demo reset to the start of the scenario." : "The demo was not reset. Nothing changed.");
+      if (!reloaded) {
+        setMessage(
+          pending.kind === "reset"
+            ? "The demo was not reset. Nothing changed."
+            : `${label} was not loaded. Nothing changed.`,
+        );
+        return;
+      }
+      setMessage(pending.kind === "reset" ? `${label} reset to its start ${reach}.` : `${label} loaded ${reach}.`);
     };
     setMessage(null);
-    const outcome = raise("RESET_SCENARIO");
+    const outcome =
+      pending.kind === "reset" ? raise("RESET_SCENARIO") : raise("SET_SCENARIO", { scenario: pending.scenario });
     if (outcome && "then" in outcome) {
       void outcome.then(settle, () => setMessage(notConfirmed));
     } else settle(outcome);
   }
+
+  const confirmLabel = confirming?.kind === "load" ? scenarioLabels[confirming.scenario] : scenarioLabels[scenario];
 
   async function loadFromFile(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -122,10 +146,7 @@ export function WardDemoPanel() {
             aria-checked={scenario === candidate}
             className={styles.scenarioCard}
             {...lock}
-            onClick={() => {
-              raise("SET_SCENARIO", { scenario: candidate });
-              setMessage(`${scenarioLabels[candidate]} loaded.`);
-            }}
+            onClick={() => setConfirming({ kind: "load", scenario: candidate })}
           >
             <strong>{scenarioLabels[candidate]}</strong>
             {scenario === candidate ? <em>Loaded</em> : null}
@@ -183,19 +204,27 @@ export function WardDemoPanel() {
         className={styles.resetButton}
         {...lock}
         data-testid="ward-tools-demo-reset"
-        onClick={() => setConfirmingReset(true)}
+        onClick={() => setConfirming({ kind: "reset" })}
       >
         Reset demo
       </button>
       <Dialog
-        open={confirmingReset && demoOn}
-        onClose={() => setConfirmingReset(false)}
-        title="Reset the demo?"
-        description={`This puts ${scenarioLabels[scenario]} back to its start and replaces the demo data for everyone in this workspace. There is no undo.`}
+        open={confirming !== null && demoOn}
+        onClose={() => setConfirming(null)}
+        title={confirming?.kind === "load" ? `Load ${confirmLabel}?` : "Reset the demo?"}
+        description={
+          confirming?.kind === "load"
+            ? `This replaces the demo data ${reach}. There is no undo.`
+            : `This puts ${confirmLabel} back to its start and replaces the demo data ${reach}. There is no undo.`
+        }
         size="sm"
-        data-testid="ward-tools-demo-reset-confirm"
-        primary={{ label: "Reset demo", tone: "danger", onAction: resetDemo }}
-        secondary={[{ label: "Cancel", onAction: () => setConfirmingReset(false) }]}
+        data-testid={confirming?.kind === "load" ? "ward-tools-demo-load-confirm" : "ward-tools-demo-reset-confirm"}
+        primary={{
+          label: confirming?.kind === "load" ? `Load ${confirmLabel}` : "Reset demo",
+          tone: "danger",
+          onAction: confirmWorldChange,
+        }}
+        secondary={[{ label: "Cancel", onAction: () => setConfirming(null) }]}
       />
       <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
       <WardPracticeMode className={styles.resetBlock} headingClassName={styles.resetHeading} />
