@@ -4,6 +4,7 @@ import { formTitleForCode } from "@/lib/form-register";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
+import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management/ward-eligibility";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
@@ -134,14 +135,10 @@ export type MockPatientProfile = {
 export const NOT_RECORDED = "Not recorded";
 
 /**
- * Whether a ward request needs a bed that can hold someone involuntarily, from the legal status
- * recorded at referral. Owner ruling D-69 (Josh, 20 Oct 2026, 2:02 PM AWST): "Needs an
- * involuntary-capable bed until status is set." Only a recorded "Voluntary" clears it; a blank,
- * "Not recorded" or any other status needs an involuntary-capable bed. Never default to Voluntary.
+ * D-69's one rule lives with the eligibility gates (`ward-eligibility.ts`), which acceptance also
+ * reads; the drawer re-exports it so the two can never disagree.
  */
-export function involuntaryBedNeededForLegalStatus(legalStatus: string | null | undefined): boolean {
-  return legalStatus?.trim() !== "Voluntary";
-}
+export { involuntaryBedNeededForLegalStatus };
 
 /** The ward destinations a referral drawer sends, one per chosen unit, from what the drawer records. */
 export function wardReferralDestinations(
