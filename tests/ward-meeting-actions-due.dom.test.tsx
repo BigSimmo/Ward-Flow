@@ -22,7 +22,11 @@ vi.mock("next/navigation", () => ({
 import type { BedMeetingSubject } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import {
+  resetWardAccessStoreForTests,
+  setWardAccess,
+  startAccessPreview,
+} from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -139,6 +143,20 @@ describe("bed meeting actions due on a record", () => {
     recordAction();
     fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+  });
+
+  it("shows nothing while the coordinator previews the owning ward, because a preview is read only", () => {
+    asDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordAtMeeting subject={MOVEMENT} owner="ward" />
+        <MeetingActionsDue subject={MOVEMENT} />
+      </WardFlowProvider>,
+    );
+    recordAction();
+    expect(screen.getByTestId("meeting-actions-due")).toBeInTheDocument();
+    act(() => startAccessPreview({ role: "ward", scope: { kind: "ward", unitIds: [ownerWard!] } }));
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 

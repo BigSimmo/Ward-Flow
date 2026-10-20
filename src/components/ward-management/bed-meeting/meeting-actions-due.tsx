@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 
-import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -21,20 +21,29 @@ import styles from "./meeting-actions-due.module.css";
  * the coordinator's agenda had the button. This lists the open actions on one bed request or stay
  * that belong to the viewer's desk, each with a Mark done button. The coordinator sees every open
  * action; a ward desk only its own wards' actions; the ED and community desks only theirs. Nothing
- * shows when there is none, or while the `bed-meeting-actions` switch is off. Marking one done
- * changes nothing else on the record.
+ * shows when there is none, or while the `bed-meeting-actions` switch is off. Nothing shows either
+ * while the coordinator previews another desk, or on a record this desk sees only through break
+ * glass: both are read only, so the button could never record anything (review on PR #511).
+ * Marking one done changes nothing else on the record.
  */
 export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | undefined }) {
   const enabled = useWardFeatureFlag("bed-meeting-actions");
   const access = useEffectiveWardAccess();
+  const { records, previewOf } = useWardAccessSnapshot();
   const { movements, admissions } = useWardFlowSelect("movements", "admissions");
-  if (!enabled || !subject) return null;
+  const now = useWardFlowClock();
+  if (!enabled || !subject || previewOf !== null) return null;
   const record =
     subject.kind === "movement"
       ? movements.find((movement) => movement.id === subject.id)
       : admissions.find((admission) => admission.id === subject.id);
   const desk = deskRole(access);
   if (!desk) return null;
+  const patientId = record?.patientId;
+  const readOnlyGlass = records.some(
+    (grant) => grant.role === access.role && grant.until > now && grant.patientId === patientId,
+  );
+  if (readOnlyGlass) return null;
   const due = (record?.meetingActions ?? []).filter(
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action),
   );
