@@ -60,6 +60,12 @@ async function gotoCapacity(page: Page) {
   await page.waitForLoadState("networkidle");
 }
 
+/** Waiting is one tap away under the rail's More (B1), not in the coordinator's own menu. */
+async function openWaitingFromMore(page: Page) {
+  await page.getByTestId("ward-rail-more").click();
+  await page.getByTestId("ward-rail-more-pages").getByRole("link", { name: /^Waiting\b/u }).click();
+}
+
 test.describe("@mockup Ward capacity — rail navigates away from the absorbed morning board and back", () => {
   test.describe.configure({ timeout: 60_000 });
 
@@ -79,11 +85,13 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     // figure AND its noun ("Waiting, 3 at a time limit or with nowhere to go", "Capacity, 27 beds ready now"), the
     // same reason `ui-ward-discharges.spec.ts`'s `goToCapacityBoard` gives for its own `^Capacity\b`
     // match. `exact: true` here found nothing and hung the full 60s timeout on the click.
-    await page.getByRole("link", { name: /^Waiting\b/u }).click();
+    // B1 (overall review, 20 Oct 2026): the coordinator's menu calls Capacity "Beds", and Waiting
+    // sits under More.
+    await openWaitingFromMore(page);
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    await page.getByRole("link", { name: /^Capacity\b/u }).click();
+    await page.getByRole("link", { name: /^Beds\b/u }).click();
     await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -91,7 +99,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     // and mounted fresh by the navigation back, so this exercises a newly-mounted rail after a
     // client-side return — a different condition from the first click, which was on the rail that
     // came with the server-rendered page. Same property the retired case proved, kept here.
-    await page.getByRole("link", { name: /^Waiting\b/u }).click();
+    await openWaitingFromMore(page);
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
   });
 });

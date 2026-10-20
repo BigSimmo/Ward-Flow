@@ -4,6 +4,8 @@
 // Alerts, Handover), with Alerts and Activity kept apart.
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import postcss from "postcss";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -57,12 +59,21 @@ function wrap(children: ReactNode) {
   );
 }
 
+/** The rail's handover countdown card, which opens the handover board. */
+function handoverCard() {
+  return screen.getByRole("link", { name: /^Handover (?:in |due now).*Open shift handover board\.$/u });
+}
+
+/**
+ * The role menu as the open desktop rail shows it. Each item's accessible name starts with its
+ * label; a count may follow it ("Referrals, 7 ..."). A5: an item marked as the countdown card's twin
+ * is hidden by CSS on the open rail (jsdom does not apply it), so it is left out here.
+ */
 function railMenu() {
   const menu = screen.getByTestId("ward-rail-role-menu");
-  // Each item's accessible name starts with its label; a count may follow it ("Referrals, 7 ...").
-  return Array.from(menu.querySelectorAll<HTMLElement>("a, button")).map(
-    (item) => item.getAttribute("aria-label") ?? "",
-  );
+  return Array.from(menu.querySelectorAll<HTMLElement>("a, button"))
+    .filter((item) => !item.closest("[data-countdown-twin]"))
+    .map((item) => item.getAttribute("aria-label") ?? "");
 }
 
 afterEach(() => {
@@ -89,15 +100,48 @@ describe("role menus split every page into the menu or More, never both or neith
 
 describe("the rail shows the desk's own menu (B1)", () => {
   it("gives the ward desk My ward, Coming and going, Referrals to answer and Handover", () => {
+    expect(roleMenu(railEntries(), "ward").main.map((item) => item.label)).toEqual([
+      "My ward",
+      "Coming and going",
+      "Referrals to answer",
+      "Handover",
+    ]);
     atDesk(WARD_DESK);
     render(wrap(<WardRail />));
+    // A5: on the open rail the countdown card above the menu is the desk's Handover.
     expect(railMenu()).toEqual([
       "My ward",
       expect.stringMatching(/^Coming and going/u),
       expect.stringMatching(/^Referrals to answer/u),
-      expect.stringMatching(/^Handover/u),
     ]);
+    expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
     expect(screen.getByTestId("ward-rail-role-menu")).toHaveAccessibleName("Nurse in charge menu");
+  });
+
+  it("gives the bed coordinator Needs you, Beds, Movements, Referrals and Handover (B1)", () => {
+    const { main, more } = roleMenu(railEntries(), "coordinator");
+    expect(main.map((item) => [item.id, item.label])).toEqual([
+      ["command", "Needs you"],
+      ["capacity", "Beds"],
+      ["movements", "Movements"],
+      ["referrals", "Referrals"],
+      ["handover", "Handover"],
+    ]);
+    // Only the menu words change: Waiting is one tap away under More, and no page is lost.
+    expect(more.find((group) => group.label === "Today")?.entries.map((entry) => entry.label)).toContain("Waiting");
+    render(wrap(<WardRail />));
+    expect(railMenu()).toEqual([
+      "Needs you",
+      expect.stringMatching(/^Beds, /u),
+      expect.stringMatching(/^Movements, /u),
+      expect.stringMatching(/^Referrals, /u),
+    ]);
+    expect(screen.getByRole("link", { name: "Needs you" })).toHaveAttribute("href", "/ward-flow");
+    expect(screen.getByRole("link", { name: /^Beds, /u })).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
+    fireEvent.click(screen.getByTestId("ward-rail-more"));
+    const sheet = screen.getByRole("dialog", { name: "More pages" });
+    expect(within(sheet).getByRole("link", { name: /^Waiting, /u })).toHaveAttribute("href", "/ward-flow/waiting");
   });
 
   it("gives the ED desk its board, its referrals, New referral and Find a bed", () => {
@@ -130,6 +174,41 @@ describe("the rail shows the desk's own menu (B1)", () => {
     const sheet = screen.getByRole("dialog", { name: "More pages" });
     expect(within(sheet).queryByRole("link", { name: /^My ward/u })).toBeNull();
     expect(within(sheet).getAllByRole("link").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Handover shows once where the countdown card links to it (A5)", () => {
+  it("hides the menu's Handover only on the open rail over 1200px, where the card shows", () => {
+    render(wrap(<WardRail />));
+    const twin = screen.getAllByRole("link", { name: "Handover" }).map((link) => link.closest("li"));
+    expect(twin).toHaveLength(1);
+    expect(twin[0]).toHaveAttribute("data-countdown-twin", "true");
+    // The icon rail (closed, or tablet landscape) hides the card, so it keeps its Handover icon.
+    const css = readFileSync("src/components/ward-management/shell/ward-rail.module.css", "utf8");
+    const rules: string[] = [];
+    postcss.parse(css).walkRules((rule) => {
+      if (rule.selector.includes(".countdownTwin")) {
+        const media = rule.parent?.type === "atrule" ? (rule.parent as postcss.AtRule).params : "";
+        rules.push(`${media} ${rule.selector} ${rule.nodes.map(String).join(";")}`);
+      }
+    });
+    expect(rules).toEqual([
+      '(min-width: 1201px) .rail[data-rail="open"]:not([data-tablet]) .countdownTwin display: none',
+    ]);
+  });
+
+  it("does not repeat Handover under the Menu sheet's countdown", () => {
+    render(wrap(<WardRail />));
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    const sheet = screen.getByRole("dialog", { name: "Menu" });
+    const toHandover = within(sheet)
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href") === "/ward-flow/handover");
+    expect(toHandover).toHaveLength(1);
+    expect(toHandover[0]).toHaveTextContent(/^Handover(in .+|due now)$/u);
+    expect(within(within(sheet).getByRole("region", { name: "Bed coordinator" })).getAllByRole("link")[0]).toHaveAccessibleName(
+      "Needs you",
+    );
   });
 });
 

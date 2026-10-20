@@ -2312,3 +2312,13 @@
     left: calc(var(--rail-closed-w) + 0.375rem);
   }
 }
+
+/* A5 (overall review, 20 Oct 2026): Handover shows once. Above 1200px the open rail draws the
+ * handover countdown card, which opens the handover board, so the menu's own Handover item steps
+ * aside. The icon rail (closed, or tablet landscape) hides the card and keeps the item. CSS rather
+ * than script, so the server's page and the early script's closed rail never disagree. */
+@media (min-width: 1201px) {
+  .rail[data-rail="open"]:not([data-tablet]) .countdownTwin {
+    display: none;
+  }
+}

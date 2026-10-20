@@ -119,6 +119,8 @@ export { setRailOpenPreference, useRailOpenStore } from "./ward-rail-preferences
 
 /** At 1000px and below only the first few of the role's own menu stay in the row (plus the page you are on). */
 const NARROW_CORE_ENTRY_COUNT = 3;
+/** The role menu id of the handover board, which the countdown card also opens (A5). */
+const HANDOVER_MENU_ID = "handover";
 
 const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
 /**
@@ -451,6 +453,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const menu = roleMenu(entries, role, (id) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER);
   const menuLabel = CHROME_ROLE_LABELS[role];
   const activeEntry = entries.find((entry) => isActiveRailEntry(pathname, entry));
+  // A5 (overall review, 20 Oct 2026): Handover shows once. Where the countdown card above the menu
+  // opens the handover board, the menu does not repeat it. On the rail that is CSS (the open rail
+  // over 1200px, where the card shows), so the server's page and the early script's closed rail
+  // agree; the icon rail hides the card and keeps its Handover icon. The Menu sheet leads with the
+  // same countdown, so its copy of the menu leaves Handover out.
+  const handoverCardLinks = canOpen(handoverHref());
+  const withoutHandover = (items: (RailEntry | RoleMenuAction)[]) =>
+    handoverCardLinks ? items.filter((item) => item.id !== HANDOVER_MENU_ID) : items;
   // Narrow navigation keeps the first few of the role's menu plus the current route; the same Sheet
   // holds the rest. Only the narrow CSS (1000px and below) hides the extras. This is the same at
   // every width, so the server render matches the browser's and the desktop rail does not grow on
@@ -459,7 +469,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   if (activeEntry) compactPrimaryIds.add(activeEntry.id);
   // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
   const sheetGroups = sheetShowsMain
-    ? [{ label: menuLabel, entries: menu.main }, ...menu.more]
+    ? [{ label: menuLabel, entries: withoutHandover(menu.main) }, ...menu.more]
     : (menu.more as { label: string; entries: (RailEntry | RoleMenuAction)[] }[]);
   const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   const capacityOpen = canOpen(WARD_CAPACITY_HREF);
@@ -531,7 +541,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
 
   function renderItem(
     item: RailEntry | RoleMenuAction,
-    options: { compactExtra?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
+    options: { compactExtra?: boolean; countdownTwin?: boolean; sheet?: boolean; firstInSheet?: boolean } = {},
   ) {
     return isRoleMenuAction(item) ? renderAction(item, options) : renderEntry(item, options);
   }
@@ -540,6 +550,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     entry: RailEntry,
     options: {
       compactExtra?: boolean;
+      /** A5: the Handover item the open rail's countdown card stands in for. */
+      countdownTwin?: boolean;
       sheet?: boolean;
       firstInSheet?: boolean;
     } = {},
@@ -591,8 +603,15 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         {options.sheet ? <ChevronRight aria-hidden="true" className={styles.sheetChevron} /> : null}
       </Link>
     );
+    const itemClass = [options.compactExtra ? styles.compactExtra : "", options.countdownTwin ? styles.countdownTwin : ""]
+      .filter(Boolean)
+      .join(" ");
     return (
-      <li key={entry.id} className={options.compactExtra ? styles.compactExtra : undefined}>
+      <li
+        key={entry.id}
+        className={itemClass || undefined}
+        data-countdown-twin={options.countdownTwin ? "true" : undefined}
+      >
         <Tooltip
           content={hoverCard}
           placement="right"
@@ -760,7 +779,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <span className={styles.shiftLiveClockTime}>{boardClock}</span>
           <span className={styles.shiftLiveTz}>AWST</span>
         </WardDemoClockPopover>
-        {canOpen(handoverHref()) ? (
+        {handoverCardLinks ? (
           <Link
             href={handoverHref()}
             className={styles.shiftTimerLink}
@@ -949,7 +968,12 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <p className={styles.eyebrow}>{menuLabel}</p>
             </div>
             <ul className={styles.railList}>
-              {menu.main.map((item) => renderItem(item, { compactExtra: !compactPrimaryIds.has(item.id) }))}
+              {menu.main.map((item) =>
+                renderItem(item, {
+                  compactExtra: !compactPrimaryIds.has(item.id),
+                  countdownTwin: handoverCardLinks && item.id === HANDOVER_MENU_ID,
+                }),
+              )}
             </ul>
           </section>
           {menu.more.length > 0 ? (
@@ -1173,7 +1197,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <strong>{boardClock}</strong> AWST
             </span>
           </p>
-          {canOpen(handoverHref()) ? (
+          {handoverCardLinks ? (
             <Link
               href={handoverHref()}
               className={`${styles.menuContextCell} ${styles.menuContextLink}`}
