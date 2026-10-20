@@ -14,6 +14,7 @@ import {
   examinationBlockedReason,
   handoverBlockedReason,
   referralDraftBlockedReason,
+  referralDraftMissingFields,
   transportLegalFormNotice,
   withdrawReferralBlockedReason,
   type ReferralDraftAnswers,
@@ -149,6 +150,60 @@ describe("referralDraftBlockedReason", () => {
   });
   it("accepts a found patient in place of 'Not yet identified'", () => {
     expect(referralDraftBlockedReason({ ...complete, unidentified: false, patientFound: true })).toBeUndefined();
+  });
+});
+
+describe("referralDraftMissingFields", () => {
+  const complete: ReferralDraftAnswers = {
+    patientFound: true,
+    unidentified: false,
+    cohort: "Adult",
+    security: "Open",
+    sex: "Female",
+    gender: "not_recorded",
+    legalStatus: "Voluntary",
+    urgency: 2,
+    specialling: false,
+    highAcuity: false,
+    legalFormDueAtDate: "",
+    legalFormDueAtTime: "",
+  };
+  it("is empty exactly when the raise is allowed", () => {
+    expect(referralDraftMissingFields(complete)).toEqual([]);
+    expect(referralDraftBlockedReason(complete)).toBeUndefined();
+  });
+  it("names every unanswered question in the form's order", () => {
+    const blank: ReferralDraftAnswers = {
+      ...complete,
+      patientFound: false,
+      cohort: undefined,
+      security: undefined,
+      sex: undefined,
+      gender: undefined,
+      legalStatus: undefined,
+      urgency: undefined,
+      specialling: undefined,
+      highAcuity: undefined,
+      legalFormDueAtTime: "09:00",
+    };
+    expect(referralDraftMissingFields(blank)).toEqual([
+      "patient",
+      "cohort",
+      "security",
+      "sex",
+      "gender",
+      "legalStatus",
+      "urgency",
+      "specialling",
+      "highAcuity",
+      "legalFormDueAtDate",
+    ]);
+    expect(referralDraftBlockedReason(blank)).toBeDefined();
+  });
+  it("names only the blank half of a half-typed expiry", () => {
+    expect(referralDraftMissingFields({ ...complete, legalFormDueAtDate: "2026-10-15" })).toEqual([
+      "legalFormDueAtTime",
+    ]);
   });
 });
 

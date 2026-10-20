@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
+import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
@@ -13,13 +15,15 @@ export const metadata: Metadata = {
  *
  * `params` is a Promise in this version of Next and is awaited here; `decodeURIComponent` undoes
  * the encoding `wardStatisticsHref` applies on the way out, so the pair stays symmetric. An id that
- * resolves to no ward is the screen's own honest not-found state — never a redirect to a different
+ * resolves to no ward gets the not-found page (DA-32) — never a redirect to a different
  * ward, and never an empty page that reads as a ward with nothing to show.
  *
  * ⚠️ **It must never pass `units`.** The screen's override exists for tests; the route takes the
  * live network, so a ward resolves as it is rather than as it was seeded.
  */
 export default async function WardStatisticsUnitPage({ params }: { params: Promise<{ unitId: string }> }) {
-  const { unitId } = await params;
-  return <StatisticsWardScreen unitId={safeDecodeURIComponent(unitId)} />;
+  const unitId = safeDecodeURIComponent((await params).unitId);
+  // DA-32: an address that names no ward in any scenario shows "Page not found", not a page reporting success.
+  if (!knownWardUnit(unitId)) notFound();
+  return <StatisticsWardScreen unitId={unitId} />;
 }

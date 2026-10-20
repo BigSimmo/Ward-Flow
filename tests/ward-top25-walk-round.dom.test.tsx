@@ -61,6 +61,7 @@ function list(mark: (bedNumber: number) => { reviewed: boolean; changed: boolean
             List bed {bed.number}
           </button>
           <WalkRoundRowMarks mark={mark(bed.bedNumber)} />
+          {mark(bed.bedNumber).reviewed ? <span>Reviewed</span> : null}
         </li>
       ))}
     </ul>
@@ -85,25 +86,31 @@ function Harness({
   );
 }
 
-describe("phone walk round (item 23, option D)", () => {
-  it("walks beds in bed order, marks them reviewed and returns to the list", () => {
+describe("phone round (item 23, redrawn as Option B on 20 Oct 2026)", () => {
+  it("walks beds in bed order on their own card, marks them reviewed and goes back to the list", () => {
     render(<Harness />);
     expect(screen.getByText("List bed 01")).toBeTruthy();
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 3 reviewed");
+    // Option B: no bed strip; the list is the round.
+    expect(screen.queryByRole("group", { name: "Beds in bed order" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
+    // The card has the page: the list steps aside, and its Close button has focus.
     expect(screen.queryByText("List bed 01")).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close, back to the round" }));
+    expect(screen.getByText("No change since the round started")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     expect(screen.getByRole("region", { name: "Bed 02, 2 of 3" })).toBeTruthy();
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
-    expect(screen.getByRole("button", { name: "Walk from bed 01, Due out, reviewed" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close, back to the round" }));
     expect(screen.getByText("List bed 02")).toBeTruthy();
     expect(screen.getAllByText("Reviewed")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Carry on from bed 02" })).toBeTruthy();
+    const carryOn = screen.getByRole("button", { name: "Carry on from bed 02" });
+    expect(document.activeElement).toBe(carryOn);
   });
 
   it("starts from a tapped list row and finishes on the last bed", () => {
@@ -117,7 +124,7 @@ describe("phone walk round (item 23, option D)", () => {
   it("opens the bed's existing panel to update it", () => {
     const onOpenBed = vi.fn();
     render(<Harness onOpenBed={onOpenBed} />);
-    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 02, Barrier" }));
+    fireEvent.click(screen.getByText("List bed 02"));
     fireEvent.click(screen.getByRole("button", { name: "Update this bed" }));
     expect(onOpenBed).toHaveBeenCalledWith(2);
   });
@@ -133,13 +140,13 @@ describe("phone walk round (item 23, option D)", () => {
     );
     rerender(<Harness bedList={moved} />);
     expect(screen.getAllByText("Changed")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Walk from bed 01, Due out" }));
+    fireEvent.click(screen.getByText("List bed 01"));
     expect(screen.getByText("Changed this round")).toBeTruthy();
   });
 
   it("keeps the round when the layout leaves the phone and comes back", () => {
     const { rerender } = render(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     const announce = vi.mocked(announceToWardShell);
     rerender(<Harness phone={false} />);
@@ -152,12 +159,12 @@ describe("phone walk round (item 23, option D)", () => {
 
   it("starts a finished round again from nothing", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("3 of 3 reviewed");
-    fireEvent.click(screen.getByRole("button", { name: "Walk again from bed 01" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start again from bed 01" }));
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 3 reviewed");
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
   });
@@ -166,31 +173,21 @@ describe("phone walk round (item 23, option D)", () => {
     announce.mockClear();
     render(<Harness />);
     expect(announce).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Start walk round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
     expect(announce).toHaveBeenLastCalledWith("Now on bed 01.");
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     expect(announce).toHaveBeenLastCalledWith("Now on bed 02.");
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
-    expect(announce).toHaveBeenLastCalledWith("Walk round finished. Every bed reviewed.");
+    expect(announce).toHaveBeenLastCalledWith("Round finished. Every bed reviewed.");
   });
 });
 
-// C3 (phone simplification, 19 Oct 2026): the bed strip shows a word under each number, so the edge
+// C3 (phone simplification, 19 Oct 2026): each bed in the round has a word for its state, so a
 // colour never carries the meaning alone. Each word comes from the bed's existing state.
-describe("the bed strip word (C3)", () => {
+describe("the bed state word (C3)", () => {
   const none = { free: false, preparing: false, awayAtEd: false, leaving: false };
   const occupied = { status: "occupied" } as const;
-
-  it("shows the word under the number", () => {
-    render(<Harness />);
-    const strip = screen.getByRole("group", { name: "Beds in bed order" });
-    expect([...strip.querySelectorAll("button")].map((button) => button.textContent)).toEqual([
-      "01Due out",
-      "02Barrier",
-      "03Free",
-    ]);
-  });
 
   it.each([
     ["Free", occupied, { ...none, free: true }],

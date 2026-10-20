@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * Item 23, option D (Josh, 15 Oct 2026): the phone walk round. A bed strip in bed order sits above
- * the grouped list, worst first. Tapping a bed in the strip or the list walks the ward one bed at a
- * time in bed order, with Reviewed, next bed as the main button and Back to list to return.
+ * Item 23, option D (Josh, 15 Oct 2026), redrawn as Option B (Josh, 20 Oct 2026): Ward home is the
+ * run-through and Bed board is the map. The round is a plain list of beds in bed order with a tick
+ * once reviewed. Carry on, or a tap on a bed, opens that bed's card on its own screen, with Close to
+ * go back to the list and Previous and Reviewed, next bed at the foot.
  *
  * Phone only. Reviewed marks and the changed this round marks
  * live in this screen's memory only: nothing is saved, and a reload starts a fresh round. The round
@@ -12,6 +13,7 @@
  */
 
 import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { Check, X } from "lucide-react";
 import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { announceToWardShell } from "../shell/ward-live-region";
@@ -25,9 +27,9 @@ export type WalkRoundBed = {
   name: string;
   note: string;
   /**
-   * C3 (phone simplification, 19 Oct 2026): one word under the number in the bed strip ("Free",
-   * "Due out", "Held"), from the bed's own state, so the strip's edge colour never carries the
-   * meaning alone.
+   * C3 (phone simplification, 19 Oct 2026): one word for the bed's state ("Free", "Due out",
+   * "Held"), from the bed's own state, so a colour never carries the meaning alone. Shown on each
+   * row of the round.
    */
   stateWord: string;
   /** What the bed's state is, without any time in it, so a ticking countdown is not a change. */
@@ -38,9 +40,9 @@ export type WalkRoundBed = {
 };
 
 /**
- * C3 (phone simplification, 19 Oct 2026): the one word under the number in the bed strip. It reads
+ * C3 (phone simplification, 19 Oct 2026): the one word for a bed's state in the round. It reads
  * the same state as the bed tile's note, in the order of `bedGlyphTone`, so the word names what the
- * strip's edge colour shows. No new state: each word is an existing bed state or tile note.
+ * row's status colour shows. No new state: each word is an existing bed state or tile note.
  */
 export function bedStripWord(
   bed: Pick<BedItem, "status" | "statusText" | "blockReason" | "pastDate" | "dischargeBarrier">,
@@ -102,7 +104,7 @@ type Props = {
   onOpenBed: (bedNumber: number) => void;
   /** Records the control that opened the panel, so focus returns to it when the panel closes. */
   registerTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
-  /** The grouped list. It gets each bed's marks and a way to start walking from that bed. */
+  /** The list of beds. It gets each bed's marks and a way to start walking from that bed. */
   renderList: (mark: (bedNumber: number) => WalkRoundMark, walkFrom: (bedNumber: number) => void) => React.ReactNode;
 };
 
@@ -134,6 +136,10 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const lastNumberRef = useRef<string | undefined>(undefined);
   // "Finished" is said once per round; a bed reopened afterwards just goes back to the list.
   const finishSaidRef = useRef(false);
+  // The card's close button takes focus when a bed opens, and the Carry on button gets it back when
+  // the card closes, so a keyboard never lands on nothing.
+  const backRef = useRef<HTMLButtonElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!allReviewed) finishSaidRef.current = false;
     const was = lastNumberRef.current;
@@ -141,11 +147,19 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
     if (currentNumber === was) return;
     if (currentNumber !== undefined) {
       announceToWardShell(`Now on bed ${currentNumber}.`);
-    } else if (allReviewed && !finishSaidRef.current) {
-      finishSaidRef.current = true;
-      announceToWardShell("Walk round finished. Every bed reviewed.");
+      if (was === undefined) {
+        // The card takes the page, so it opens at the top whatever the list was scrolled to.
+        backRef.current?.closest("section")?.scrollIntoView?.({ block: "start" });
+        backRef.current?.focus({ preventScroll: true });
+      }
     } else {
-      announceToWardShell("Back to the bed list.");
+      if (allReviewed && !finishSaidRef.current) {
+        finishSaidRef.current = true;
+        announceToWardShell("Round finished. Every bed reviewed.");
+      } else {
+        announceToWardShell("Back to the round.");
+      }
+      if (was !== undefined) headRef.current?.querySelector("button")?.focus();
     }
     // Only a change of bed speaks; `allReviewed` is read as it is at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,121 +182,119 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
     }
     if (firstUnreviewed) setWalking(firstUnreviewed.bedNumber);
   };
+  const progress = (
+    <div className={styles.progressLine}>
+      <span className={styles.track} aria-hidden="true">
+        <i style={{ width: `${ordered.length ? Math.round((reviewedCount / ordered.length) * 100) : 0}%` }} />
+      </span>
+      <span data-testid="walk-round-progress">
+        {reviewedCount} of {ordered.length} reviewed
+      </span>
+    </div>
+  );
 
-  return (
-    <div className={styles.walk} data-testid="ward-walk-round">
-      <div className={styles.head}>
-        <div className={styles.progressLine}>
-          <span className={styles.track} aria-hidden="true">
-            <i style={{ width: `${ordered.length ? Math.round((reviewedCount / ordered.length) * 100) : 0}%` }} />
-          </span>
-          <span data-testid="walk-round-progress">
-            {reviewedCount} of {ordered.length} reviewed
-          </span>
-        </div>
-        <div className={styles.strip} role="group" aria-label="Beds in bed order">
-          {ordered.map((bed) => {
-            const isReviewed = reviewed.has(bed.bedNumber);
-            return (
-              <button
-                key={bed.bedNumber}
-                type="button"
-                className={styles.stripBed}
-                data-reviewed={isReviewed ? "true" : undefined}
-                data-tone={bed.glyph ?? undefined}
-                aria-current={bed.bedNumber === walking ? "true" : undefined}
-                aria-label={`Walk from bed ${bed.number}, ${bed.stateWord}${isReviewed ? ", reviewed" : ""}`}
-                onClick={() => {
-                  setWalking(bed.bedNumber);
-                }}
-              >
-                <span className={styles.stripNo}>{bed.number}</span>
-                <span className={styles.stripWord}>{bed.stateWord}</span>
-              </button>
-            );
-          })}
-        </div>
-        {current ? null : (
-          <Button variant="pri" size="sm" onClick={startOrCarryOn}>
-            {reviewedCount === 0
-              ? "Start walk round"
-              : allReviewed
-                ? "Walk again from bed " + (ordered[0]?.number ?? "")
-                : "Carry on from bed " + (firstUnreviewed?.number ?? "")}
-          </Button>
-        )}
-      </div>
-
-      {current ? (
-        <section className={styles.card} aria-label={`Bed ${current.number}, ${index + 1} of ${ordered.length}`}>
-          <div className={styles.cardTop}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setWalking(null);
-              }}
-            >
-              Back to list
-            </Button>
+  if (current) {
+    const isChanged = changed(current);
+    const isReviewed = reviewed.has(current.bedNumber);
+    return (
+      <section
+        className={styles.card}
+        aria-label={`Bed ${current.number}, ${index + 1} of ${ordered.length}`}
+        data-testid="ward-walk-round"
+      >
+        {/* Close, not a back arrow: the header's Back (shell/ward-back.ts) leaves the ward page on a
+            drill-down, so an arrow here would put two arrows on screen that go different places.
+            The card closes like a sheet does. */}
+        <div className={styles.cardTop}>
+          <span className={styles.cardTitle}>
+            <b>Bed {current.number}</b>
             <span className={styles.position}>
               {index + 1} of {ordered.length}
             </span>
-          </div>
-          <h3 className={styles.cardName}>
-            <span className={styles.cardNo}>Bed {current.number}</span>
-            <span>{current.name}</span>
-          </h3>
-          <p className={styles.cardNote}>
-            {current.glyph ? <StatusGlyph tone={current.glyph} size={9} /> : null}
-            <span>{current.note}</span>
-            {current.days ? <span className={styles.cardDays}>{current.days} stay</span> : null}
-          </p>
-          <p className={styles.marks}>
-            {changed(current) ? <span className={styles.changed}>Changed this round</span> : null}
-            {reviewed.has(current.bedNumber) ? <span className={styles.done}>Reviewed</span> : null}
-          </p>
+          </span>
           <button
+            ref={backRef}
             type="button"
-            className={buttonClass({ variant: "sec", size: "md", iconOnly: false })}
-            aria-haspopup="dialog"
-            ref={(element) => registerTrigger?.(current.bedNumber, element)}
+            className={styles.back}
+            aria-label="Close, back to the round"
             onClick={() => {
-              onOpenBed(current.bedNumber);
+              setWalking(null);
             }}
           >
-            Update this bed
+            <X size={22} aria-hidden="true" />
           </button>
-          <div className={styles.cardFoot}>
-            <Button
-              variant="ghost"
-              disabled={index === 0}
-              onClick={() => {
-                const previous = ordered[index - 1];
-                if (previous) setWalking(previous.bedNumber);
-              }}
-            >
-              Previous
-            </Button>
-            <Button variant="pri" onClick={reviewAndNext}>
-              {index === ordered.length - 1 ? "Reviewed, finish" : "Reviewed, next bed"}
-            </Button>
-          </div>
-        </section>
-      ) : (
-        renderList(mark, setWalking)
-      )}
+        </div>
+        {progress}
+        <h3 className={styles.cardName}>{current.name}</h3>
+        <p className={styles.cardNote}>
+          {current.glyph ? <StatusGlyph tone={current.glyph} size={9} /> : null}
+          <span>{current.note}</span>
+          {current.days ? <span className={styles.cardDays}>{current.days} stay</span> : null}
+        </p>
+        <p className={styles.marks}>
+          <span className={isChanged ? styles.changed : styles.same}>
+            {isChanged ? "Changed this round" : "No change since the round started"}
+          </span>
+          {isReviewed ? <span className={styles.done}>Reviewed</span> : null}
+        </p>
+        <button
+          type="button"
+          className={buttonClass({ variant: "sec", size: "md", iconOnly: false })}
+          aria-haspopup="dialog"
+          ref={(element) => registerTrigger?.(current.bedNumber, element)}
+          onClick={() => {
+            onOpenBed(current.bedNumber);
+          }}
+        >
+          Update this bed
+        </button>
+        <div className={styles.cardFoot}>
+          <Button
+            variant="sec"
+            disabled={index === 0}
+            onClick={() => {
+              const previous = ordered[index - 1];
+              if (previous) setWalking(previous.bedNumber);
+            }}
+          >
+            Previous
+          </Button>
+          <Button variant="pri" onClick={reviewAndNext}>
+            {index === ordered.length - 1 ? "Reviewed, finish" : "Reviewed, next bed"}
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className={styles.walk} data-testid="ward-walk-round">
+      <div ref={headRef} className={styles.head}>
+        {progress}
+        <Button variant="pri" onClick={startOrCarryOn}>
+          {reviewedCount === 0
+            ? "Start the round"
+            : allReviewed
+              ? "Start again from bed " + (ordered[0]?.number ?? "")
+              : "Carry on from bed " + (firstUnreviewed?.number ?? "")}
+        </Button>
+      </div>
+      {renderList(mark, setWalking)}
     </div>
   );
 }
 
-/** The small marks a grouped list row shows while the walk round is on. */
+/** The small mark a round row shows when its bed changed this round. */
 export function WalkRoundRowMarks({ mark }: { mark: WalkRoundMark }) {
-  if (!mark.reviewed && !mark.changed) return null;
+  if (!mark.changed) return null;
   return (
     <span className={styles.rowMarks}>
-      {mark.changed ? <span className={styles.changed}>Changed</span> : null}
-      {mark.reviewed ? <span className={styles.done}>Reviewed</span> : null}
+      <span className={styles.changed}>Changed</span>
     </span>
   );
+}
+
+/** A reviewed bed's tick at the end of its round row. The row's own name says "reviewed". */
+export function WalkRoundTick({ mark }: { mark: WalkRoundMark }) {
+  return mark.reviewed ? <Check size={18} className={styles.tick} aria-hidden="true" /> : null;
 }

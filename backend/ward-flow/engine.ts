@@ -114,7 +114,9 @@ export function boundAudit(state: WardFlowState): WardFlowState {
   };
 }
 
-const SKIP_FACT_KEYS = new Set(["auditEvents", "auditReviews", "rejections"]);
+// Audit E-01: Undo snapshots copy whole rows, a referral's contacts included, and stay private to
+// the desk (`ward-command-metadata.ts`). The rows they restore are audited under their own keys.
+const SKIP_FACT_KEYS = new Set(["auditEvents", "auditReviews", "rejections", "undoRecords"]);
 
 /**
  * Audit F-01: a referral's chart files are never stored on the shared board. Older clients may
