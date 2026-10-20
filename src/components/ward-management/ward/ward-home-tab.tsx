@@ -1842,6 +1842,7 @@ export function WardHomeTab({
           {phoneSheets ? null : (
             <CardHead
               id="ward-home-every-bed"
+              className={styles.bedsHead}
               icon={BedDouble}
               title="Every bed"
               action={

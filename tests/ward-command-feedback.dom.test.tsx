@@ -198,11 +198,12 @@ it.each(["retry", "expire"] as const)(
 );
 
 it("consumes the real Undo button when the command lifetime has permanently ended", async () => {
+  let current = true;
   const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
     commandId: "accepted",
     status: "accepted",
     undoRecords: [acceptedRecord],
-    isCurrent: () => false,
+    isCurrent: () => current,
     canUndo: () => false,
   }));
   render(
@@ -213,6 +214,7 @@ it("consumes the real Undo button when the command lifetime has permanently ende
   await act(async () => {
     fireEvent.click(screen.getByText("Record"));
   });
+  current = false;
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
   });

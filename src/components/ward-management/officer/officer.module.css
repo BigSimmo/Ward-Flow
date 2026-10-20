@@ -1511,7 +1511,7 @@
     bottom: 0;
     left: 0;
     gap: var(--wf-s-1);
-    padding: var(--wf-s-2) var(--wf-s-3) max(var(--wf-s-2), var(--safe-area-bottom, 0px));
+    padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-2) + var(--safe-area-bottom, 0px));
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface);
     box-shadow: var(--wf-e2);
@@ -2008,12 +2008,15 @@
     min-height: var(--spacing-tap, 3rem);
   }
 
+  /* flex: none, or the long job sheet squeezed the foot below its button, which then stood out
+     over the foot's top edge and sat on the home indicator. */
   .detailFooter {
     position: sticky;
     bottom: 0;
     z-index: 1;
+    flex: none;
     margin-top: auto;
-    padding: 12px var(--wf-s-4) max(12px, var(--safe-area-bottom, 0px));
+    padding: 12px var(--wf-s-4) calc(12px + var(--safe-area-bottom, 0px));
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface-2);
   }

@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { CRITERIA_VOLUNTARY_ONLY } from "@/components/ward-management/ward-discharge-criteria";
 import { WardDischargeCriteriaCard } from "@/components/ward-management/ward/ward-discharge-criteria-card";
 
 // Top 25 item 9 (D-60): the criteria card on the bed panel's Plan to leave tab.
@@ -79,11 +78,41 @@ describe("criteria led discharge card", () => {
     expect(screen.getByRole("button", { name: "Review criteria" })).toBeInTheDocument();
   });
 
+  it("shows one line, not a card, when the patient is not recorded as voluntary", () => {
+    const { rerender } = render(
+      <WardDischargeCriteriaCard record={null} eligibility="not_recorded" now={NOW} onChange={vi.fn()} />,
+    );
+    const row = screen.getByTestId("ward-drawer-discharge-criteria");
+    expect(row.tagName).toBe("P");
+    // The colon keeps label and reason apart when read aloud or copied as text.
+    expect(row.textContent).toBe("Criteria led discharge:Not available until legal status is recorded as voluntary.");
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    rerender(<WardDischargeCriteriaCard record={null} eligibility="cto" now={NOW} onChange={vi.fn()} />);
+    expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(
+      "Not available on a community treatment order.",
+    );
+  });
+
+  it("keeps an open editor when the patient stops being recorded as voluntary", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+    rerender(<WardDischargeCriteriaCard record={null} eligibility="not_recorded" now={NOW} onChange={onChange} />);
+    expect(screen.getByRole("button", { name: "Save criteria" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByTestId("ward-drawer-discharge-criteria").tagName).toBe("P");
+  });
+
   it("offers nothing to set for an involuntary patient, and pauses existing criteria", () => {
     const { rerender } = render(
       <WardDischargeCriteriaCard record={null} eligibility="involuntary" now={NOW} onChange={vi.fn()} />,
     );
-    expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(CRITERIA_VOLUNTARY_ONLY);
+    expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(
+      "Not available. Voluntary patients only.",
+    );
     expect(screen.queryByRole("button", { name: "Set criteria" })).toBeNull();
     rerender(<WardDischargeCriteriaCard record={RECORD} eligibility="involuntary" now={NOW} onChange={vi.fn()} />);
     expect(screen.getByTestId("ward-drawer-criteria-status")).toHaveTextContent(/^Paused/);

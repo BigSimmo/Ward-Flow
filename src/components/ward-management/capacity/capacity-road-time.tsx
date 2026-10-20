@@ -1,10 +1,10 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { ChevronDown, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 
-import { Card, CardHead, Select, cx, durMinutes } from "@/components/wf";
+import { Card, CardHead, Icon, Select, cx, durMinutes } from "@/components/wf";
 import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
@@ -62,17 +62,26 @@ export function ReadyByRoadTime({
       <CardHead icon={MapPin} id={`${baseId}-heading`} level={3} title="Ready beds by road time" />
       <div className={styles.from}>
         <label htmlFor={`${baseId}-from`}>From</label>
-        <Select
-          id={`${baseId}-from`}
-          value={ed?.id ?? ""}
-          onChange={(event) => setChosenEdId(event.currentTarget.value)}
-        >
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.siteCode} ED
-            </option>
-          ))}
-        </Select>
+        {/* Phone: the real select stays at 16px, so iPhone Safari does not zoom when it is tapped,
+            and sits invisible over a 13px copy of its value that matches the ward names below. */}
+        <span className={styles.picker}>
+          <Select
+            id={`${baseId}-from`}
+            boxClassName={styles.pickerBox}
+            value={ed?.id ?? ""}
+            onChange={(event) => setChosenEdId(event.currentTarget.value)}
+          >
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.siteCode} ED
+              </option>
+            ))}
+          </Select>
+          <span className={styles.pickerValue} aria-hidden="true">
+            {ed === undefined ? null : `${ed.siteCode} ED`}
+            <Icon icon={ChevronDown} size={14} />
+          </span>
+        </span>
       </div>
       {ranked.length === 0 ? (
         <p className={styles.empty}>No ward with a ready bed has a measured route from this department.</p>
@@ -99,7 +108,7 @@ export function ReadyByRoadTime({
                     <span className={styles.driveTime}>On site</span>
                   ) : (
                     <>
-                      <span className={styles.driveTime}>{durMinutes(route.min)}</span>
+                      <span className={styles.driveTime}>{driveTime(route.min)}</span>
                       <span className={styles.unitMeta}>drive</span>
                     </>
                   )}
@@ -112,6 +121,11 @@ export function ReadyByRoadTime({
       <p className={styles.caveat}>{REFERENCE_DISTANCE_CAVEAT}</p>
     </Card>
   );
+}
+
+/** A road time is whole minutes; `durMinutes` adds seconds under ten minutes ("7m 00s"). */
+function driveTime(minutes: number): string {
+  return minutes < 10 ? `${Math.round(minutes)}m` : durMinutes(minutes);
 }
 
 function RowControl({

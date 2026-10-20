@@ -27,12 +27,12 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
  *
  *   (ed/ed-screen.tsx's statewide unit table left the ED page on 11 Oct 2026, device audit pick A2;
  *    the Capacity page owns that table now, so the ED screen no longer groups by service.)
- *   ward-management-network.tsx       `columnServices.right` is `wardServiceOrder.filter(...)`
- *   coordinator/flow-diagram.tsx      groups by `wardServiceOrder`
+ *   (ward-management-network.tsx left with the Network screen, 19 Oct 2026, and
+ *    coordinator/flow-diagram.tsx was deleted on 20 Oct 2026, unused since Home dropped it.)
  *   wards/ward-index.tsx              headings run in `wardServiceOrder`
  *
- * So a service present in `HEALTH_SERVICES` and absent from `wardServiceOrder` is invisible on all
- * three, and a service present in both is visible on all three. The completeness of that ONE list is
+ * So a service present in `HEALTH_SERVICES` and absent from `wardServiceOrder` is invisible there,
+ * and a service present in both is visible there. The completeness of that ONE list is
  * the whole property.
  *
  * WHAT THIS DOES NOT CLAIM. It does not check which COLUMN a service lands in on the network map —
@@ -41,12 +41,11 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
  * knows the gap is deliberate rather than overlooked.
  */
 
-/** The two surfaces that group by health service (three until the Network screen's map was
- *  retired, 19 Oct 2026). Each must derive from `wardServiceOrder` rather
+/** The surface that groups by health service (three until the Network screen's map was retired,
+ *  19 Oct 2026, and the unused flow diagram was deleted, 20 Oct 2026). Each must derive from `wardServiceOrder` rather
  *  than hold its own copy — that is what makes the single completeness assertion above sufficient
  *  for all of them, and re-typing a list here is exactly how the original hole was dug. */
 const SERVICE_GROUPING_SURFACES = new Map([
-  ["src/components/ward-management/coordinator/flow-diagram.tsx", "the flow diagram's service groups"],
   ["src/components/ward-management/wards/ward-index.tsx", "the ward index's service headings"],
 ]);
 
@@ -56,7 +55,7 @@ describe("no health service can go missing from the screens that group by it", (
     // an empty list on either side.
     expect(HEALTH_SERVICES.length).toBeGreaterThan(1);
     expect(wardServiceOrder.length).toBeGreaterThan(1);
-    expect(SERVICE_GROUPING_SURFACES.size).toBe(2);
+    expect(SERVICE_GROUPING_SURFACES.size).toBe(1);
   });
 
   it("orders exactly the health services that exist, each once", () => {
@@ -67,7 +66,7 @@ describe("no health service can go missing from the screens that group by it", (
       ordered,
       "wardServiceOrder and HEALTH_SERVICES disagree. Every screen that groups by health service " +
         "derives its list from wardServiceOrder, so a service in HEALTH_SERVICES and missing here " +
-        "is absent from the ED unit table, the flow diagram and the ward index — " +
+        "is absent from the ward index — " +
         "silently, with no error and no other failing test. Add it to wardServiceOrder, deciding " +
         "where in the order it belongs; do not remove it from HEALTH_SERVICES to make this pass.",
     ).toEqual(declared);

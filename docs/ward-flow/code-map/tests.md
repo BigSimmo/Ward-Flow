@@ -46,9 +46,9 @@ Evidence and limits are in the WA report (archived; see [ARCHIVE.md](../../ARCHI
   fail, changed lessons invalidate the index, and unmatched entries stay visible.
 
 This part covers every Ward Flow test file: everything matching `tests/ward-*`, `tests/ui-ward-*`
-and `tests/helpers/ward-*`, plus the two further files that import from
+and `tests/helpers/ward-*`, plus the one further file that imports from
 `src/components/ward-management` or `src/app/ward-flow` without carrying a `ward-` name
-(`tests/pressure-strip.dom.test.tsx`, `tests/tracker-derivations.test.ts` — found by
+(`tests/tracker-derivations.test.ts`; `tests/pressure-strip.dom.test.tsx` was deleted on 20 Oct 2026 — found by
 `grep -rl 'from "@/components/ward-management` over `tests/`). It also covers how these tests run:
 `vitest.config.mts`, the `chromium-mockups` Playwright project, `scripts/check-ward-expected-reds.mjs`
 and `tests/ward-expected-reds.json`, and `scripts/run-vitest.mjs`.
@@ -100,7 +100,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   - **Discovers the ward population itself**, independent of this map: every `tests/**/*.{test,spec}.tsx?`
     file matching `tests/ward-*` (minus `tests/ui-*`), **plus** any other test file with a
     non-comment line matching `/ward-(management|flow)/` — the same union rule this map's brief
-    used to find `pressure-strip.dom.test.tsx` and `tracker-derivations.test.ts`.
+    used to find `tracker-derivations.test.ts`.
   - **Two floors, not one, and they are deliberately far below the real population**: at least 200
     files discovered and at least 2,500 tests executed. Both exist only to catch a _broken_
     discovery or run (an empty failing set compared against an empty manifest reports success,
@@ -156,9 +156,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 
 ## The test files, by subject
 
-### Engine, reducer and cross-cutting domain rules (154 files)
+### Engine, reducer and cross-cutting domain rules (152 files)
 
-- **`tests/pressure-strip.dom.test.tsx`** (85 lines) — PressureStrip
 - **`tests/tracker-derivations.test.ts`** (79 lines) — trackerRowState
 - **`tests/ward-absence-wording-is-one-per-fact.test.ts`** (109 lines) — an absent fact has one rendered wording
 - **`tests/ward-acting-unit-guards.test.ts`** (215 lines) — a ward cannot act on another ward's bed release
@@ -223,7 +222,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-flow-contracts.test.ts`** (732 lines) — invariants across every reachable state
 - **`tests/ward-flow-core-engine-fixes.test.ts`** (255 lines) — Ward Flow Core Engine & Reducer Fixes
 - **`tests/ward-flow-data-boundary.test.ts`** (181 lines) — ward flow keeps its changeable data in one place
-- **`tests/ward-flow-diagram-scroll-notice.dom.test.tsx`** (103 lines) — FlowDiagram's sideways-scroll affordance
 - **`tests/ward-flow-offline-boundary.test.ts`** (104 lines) — Ward Flow's database-free runtime boundary
 - **`tests/ward-flow-provider-persistence-privacy.dom.test.tsx`** (800 lines) — ward-flow-provider default-deny persistence privacy
 - **`tests/ward-flow-reducer.test.ts`** (2060 lines) — seeding
@@ -384,6 +382,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-sex-cell.test.ts`** (90 lines) — the referral board's Sex column
 - **`tests/ward-referral-suburb-pin.test.ts`** (261 lines) — the suburb note, and the model fact that is the only reason it is true
 - **`tests/ward-referral-suburb.test.ts`** (183 lines) — a referral records its suburb
+- **`tests/ward-referral-unknown-legal-status-bed.test.ts`** (37 lines) — D-69: a referral with no legal status needs an involuntary-capable bed until a status is set; Voluntary clears it, Involuntary keeps it, on the helper and the drawer's ward destinations
 - **`tests/ward-referral-visibility.test.ts`** (3021 lines) — FD-23 — a ward cannot see where else a patient has been referred
 - **`tests/ward-referral-wait-line.test.ts`** (111 lines) — the wait figure the referral board and match view print
 - **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — T11 — the nav count drops when a referral is withdrawn
@@ -785,7 +784,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-traps-numbering.test.ts`** (204 lines) — the traps file's entry numbering
 - **`tests/ward-unresolvable-reference-unreachable.test.ts`** (179 lines) — no dispatch in this application can create an unresolvable department or ward reference
 
-### Shell, chrome and shared UI primitives (54 files)
+### Shell, chrome and shared UI primitives (53 files)
 
 - **`tests/ward-activity-category-filters.dom.test.tsx`** (116 lines) — Activity category filter chips
 - **`tests/ward-alerts-css-tap-and-edge-bars.test.ts`** (63 lines) — alerts.module.css — no coloured edge bars (F3.3)
@@ -811,7 +810,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-error-boundaries.dom.test.tsx`** (213 lines) — the ward flow error boundaries are client components
 - **`tests/ward-figure.dom.test.tsx`** (115 lines) — WardFigure
 - **`tests/ward-flow-clock-consistency.dom.test.tsx`** (129 lines) — the movements board reads the live shared clock, not a value frozen at import
-- **`tests/ward-flow-potential-chip-migration.dom.test.tsx`** (96 lines) — coordinator flow diagram never shows the raw potential figure
 - **`tests/ward-flow-provider-safe-payload-shape-guard.test.ts`** (115 lines) — WARD_FLOW_TEXT_SAFE payload-shape compile-time guard
 - **`tests/ward-flow-provider-server-determinism.test.ts`** (144 lines) — the server's ward markup does not depend on what minute it is
 - **`tests/ward-flow-provider.dom.test.tsx`** (579 lines) — WardFlowProvider

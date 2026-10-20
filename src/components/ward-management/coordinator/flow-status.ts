@@ -18,7 +18,7 @@ export type ShortlistCandidate = ReturnType<typeof eligibleCandidatesAmong>[numb
  * Important 2). Ids are returned rather than units so an id the fixture cannot resolve is still
  * counted as recorded rather than silently disappearing.
  */
-export function recordedDestinationIds(movement: Movement | undefined): Set<string> {
+function recordedDestinationIds(movement: Movement | undefined): Set<string> {
   if (!movement) return new Set();
   const ids = new Set(movement.referredUnitIds);
   if (movement.acceptedUnitId) ids.add(movement.acceptedUnitId);
