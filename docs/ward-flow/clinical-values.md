@@ -17,6 +17,9 @@ governance sign-off before real patient use (D-54).
   `signedOn`. The type will not accept one without the other.
 - **Other figures seen** lists a different figure another screen or document used for the same rule.
   Where screens disagreed, the figure the main app runs on was kept.
+- **Unknown legal status (D-69):** on 20 Oct 2026 (2:02 PM AWST) Josh ruled, in his own words:
+  "Needs an involuntary-capable bed until status is set." A referral with no legal status recorded needs an involuntary-capable bed and
+  never defaults to Voluntary. This is an allocation rule, not a threshold, so it is not in the table.
 - Mental Health Act periods are not here. They live only in
   `src/components/ward-management/legal-forms/act-periods-demo.ts` (D-29). Legal form titles come
   from the Chief Psychiatrist register, not from this list.

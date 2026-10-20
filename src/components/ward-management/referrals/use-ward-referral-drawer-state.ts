@@ -76,6 +76,7 @@ import { recordIdFromParam } from "@/components/ward-management/shell/ward-recor
 import {
   type MockPatientProfile,
   NOT_RECORDED,
+  involuntaryBedNeededForLegalStatus,
   SAMPLE_PATIENTS,
   NO_PATIENT_KEY,
   PATIENT_KEY_PREFIX,
@@ -745,7 +746,7 @@ export function useWardReferralDrawerState({
           sex: referralSex,
           gender: referralGender || undefined,
           secureBedNeeded: security === "Secure",
-          involuntaryBedNeeded: legalStatus !== "Voluntary",
+          involuntaryBedNeeded: involuntaryBedNeededForLegalStatus(legalStatus),
           highAcuityNursingNeeded: highAcuity,
         }))
       : !selectedRecipient
