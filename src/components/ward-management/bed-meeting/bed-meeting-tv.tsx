@@ -196,7 +196,7 @@ function Footer({ scope, scenario, now }: { scope: string; scenario: string; now
   );
 }
 
-/** People waiting somewhere, longest first: initials, where, stage and wait. */
+/** People waiting somewhere, longest first: initials, where, stage and how long they have waited. */
 /** The ED TV shows one row fewer than the other lists: under its tiles, a full list of two-line rows
  *  ran past a 1080p screen (design audit follow-up, 19 Oct 2026). The rest are counted, not lost. */
 const ED_TV_PEOPLE_ROWS = TV_ROW_LIMIT - 1;
@@ -209,7 +209,9 @@ function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number;
           <li key={row.id} data-long={row.waitMinutes > LONG_WAIT_MINUTES || undefined}>
             <span className={styles.who}>{row.name}</span>
             <span className={styles.where}>{[row.stage, row.where].filter(Boolean).join(" · ")}</span>
-            <span className={styles.wait}>{splitDuration(row.waitMinutes)}</span>
+            {/* Overall review (20 Oct 2026): the time says what it measures, the whole wait since
+                the journey opened, so "In transit · 8h 00m" is not read as 8 hours on the road. */}
+            <span className={styles.wait}>{splitDuration(row.waitMinutes)} waiting</span>
           </li>
         ))}
       </ol>

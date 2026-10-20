@@ -38,7 +38,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -315,6 +315,29 @@ describe("the ward and ED TV views", () => {
     for (const service of tvHealthServices(state.units)) {
       expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
     }
+  });
+
+  it("says what each time measures: the whole wait, and for a collected patient, the time on the road", () => {
+    const { state, inputs } = seedInputs();
+    // Overall review (20 Oct 2026): "In transit · 8h 00m" read as 8 hours in an ambulance.
+    const collected = state.movements.find(
+      (movement) =>
+        movement.acceptedUnitId !== undefined &&
+        movement.transport?.collectedAt !== undefined &&
+        movement.transport.cancelledAt === undefined &&
+        movement.stage !== "arrived" &&
+        movement.closure === undefined,
+    );
+    if (!collected?.acceptedUnitId || collected.transport?.collectedAt === undefined)
+      throw new Error("the seed has no collected patient");
+    const unit = state.units.find((candidate) => candidate.id === collected.acceptedUnitId);
+    if (!unit) throw new Error("the collected patient's ward is missing");
+    const sheet = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const row = sheet.coming.rows.find((candidate) => candidate.id === collected.id);
+    expect(row?.stage).toBe(`In transit ${splitDuration(NOW_ANCHOR - collected.transport.collectedAt)}`);
+    renderTv({ ward: unit.id });
+    const items = within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem");
+    for (const item of items) expect(item).toHaveTextContent(/\d+m waiting/u);
   });
 
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
