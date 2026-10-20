@@ -57,6 +57,11 @@ type WardBedRosterInputs = {
   wardReferralInbox: (unitId: string) => WardReferralInboxEntry[];
 };
 
+/** The open movement whose pull created this admission's bed: either side may carry the link. */
+function pulledBy(movement: Movement, admission: Admission): boolean {
+  return movement.id === admission.movementId || movement.admissionId === admission.id;
+}
+
 export function wardBedRoster({
   unit,
   unitLeaveBeds,
@@ -92,6 +97,17 @@ export function wardBedRoster({
   const otherOccupants = unitOccupantAdmissions.filter((a) => !leaveAdmissionIds.has(a.id));
   const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
+  // Audit 1, CS-01 (20 Oct 2026): each pulled bed belongs to a pulled admission, named by the open
+  // movement that admission belongs to. Never by place in `accepted`: that list also holds referrals
+  // accepted with no bed pulled, and one sitting first used to take a held bed's name and timer.
+  // Pulled beds keep the order of their movements in `accepted`; seeded ones with none come last.
+  const acceptedRank = (admission: Admission) => {
+    const rank = accepted.findIndex((movement) => pulledBy(movement, admission));
+    return rank < 0 ? accepted.length : rank;
+  };
+  const pulledSlots = [...unitPulledAdmissions]
+    .sort((left, right) => acceptedRank(left) - acceptedRank(right))
+    .map((admission) => ({ admission, movement: accepted.find((movement) => pulledBy(movement, admission)) }));
   // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. Each marker belongs to
   // one discharged release, oldest first; the tile it sits on is chosen once bed numbers are known
   // (below), so Ready on a bed clears that bed's own release.
@@ -132,12 +148,10 @@ export function wardBedRoster({
       statusText = "Closed";
     }
 
-    const incomingMovement = isIncomingSlot ? accepted[pulledSlotIndex] : undefined;
+    const pulledSlot = isIncomingSlot ? pulledSlots[pulledSlotIndex] : undefined;
+    const incomingMovement = pulledSlot?.movement;
     // A pulled bed with no live movement is a seeded pull: name the pulled admission itself.
-    const pulledAdmission =
-      isIncomingSlot && incomingMovement === undefined
-        ? unitPulledAdmissions[pulledSlotIndex - accepted.length]
-        : undefined;
+    const pulledAdmission = pulledSlot && incomingMovement === undefined ? pulledSlot.admission : undefined;
     // The person shown "On Leave" is whoever THIS leave record names, found by its own
     // `admissionId` — never by position. (Should the named admission ever not be among this
     // ward's occupied admissions, the slot is correctly left empty rather than borrowing someone
