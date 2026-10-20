@@ -351,8 +351,8 @@ export type LegalForm = {
   /** Setting recorded from the current paper, never inferred from geography. */
   region?: "metro" | "country";
   /**
-   * Age band recorded from the current paper (review 18 Oct 2026, item 1). The Act period
-   * countdown uses it when the linked patient has no date of birth. Never inferred.
+   * Age band recorded from the current paper (review 18 Oct 2026, item 1). Kept as recorded; no
+   * Act period is computed from it (D-70). Never inferred.
    */
   ageBand?: "adult" | "under_18";
   /**

@@ -42,7 +42,6 @@
  */
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 
-
 export type PatientQueryAssignment =
   /** From `patient-typeahead.tsx`'s "Add this person": the typed text is known to be a name search,
    *  so it lands directly in the Given name field. */
