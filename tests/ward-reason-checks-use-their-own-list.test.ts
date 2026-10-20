@@ -47,6 +47,10 @@ const REDUCERS = [
   "src/components/ward-management/ward-flow-placement-events.ts",
   "src/components/ward-management/ward-flow-transport-events.ts",
   "src/components/ward-management/ward-flow-bed-events.ts",
+  // Smart features idea 7 (19 Oct 2026): ward closure's reason check.
+  "src/components/ward-management/ward-flow-ward-closure-events.ts",
+  // Smart features idea 5 (19 Oct 2026): the bed meeting action's list check.
+  "src/components/ward-management/ward-flow-bed-meeting-events.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 
@@ -79,6 +83,8 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's closed snooze-reason list.
   InboxSnoozeReason: "SNOOZE_REASON_IDS",
   DischargeDelayClearReason: "DISCHARGE_DELAY_CLEAR_REASONS",
+  // Smart features idea 7 (19 Oct 2026): CLOSE_WARD_TO_ADMISSIONS's fixed closure reasons.
+  WardClosureReason: "WARD_CLOSURE_REASON_IDS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */

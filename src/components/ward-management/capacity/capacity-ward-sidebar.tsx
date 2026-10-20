@@ -18,6 +18,7 @@ import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import styles from "./capacity.module.css";
+import { WardClosurePanel } from "./ward-closure-panel";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 
 export function CapacityTabs({
@@ -255,6 +256,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
               )}
               {request ? <p role="status">Update requested {formatInstantWithDay(request.at, now)}.</p> : null}
             </section>
+            <WardClosurePanel unit={row.unit} now={now} actor={recordActor} />
           </>
         ) : (
           <>

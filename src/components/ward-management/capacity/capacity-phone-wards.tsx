@@ -13,6 +13,8 @@ import { BedStrip } from "@/components/ward-management/wards/bed-strip";
 import { FilterChip, PhoneSheet, SrOnly, StatusGlyph, durMinutes } from "@/components/wf";
 import { networkServiceGroupTotals, type NetworkServiceGroup, type NetworkWardRow } from "./capacity-derivations";
 import styles from "./capacity.module.css";
+import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
+import { WardClosurePanel } from "./ward-closure-panel";
 
 export interface CapacityPhoneFilter {
   id: string;
@@ -64,6 +66,7 @@ export function CapacityPhoneWards({
   isFresh: (unit: Unit) => boolean;
 }) {
   const { dispatch } = useWardFlowSelect("dispatch");
+  const recordActors = useWardRecordActors();
   const router = useRouter();
   const [region, setRegion] = useState<string>("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -244,6 +247,14 @@ export function CapacityPhoneWards({
               <dt>Site</dt>
               <dd>{siteByCode(open.unit.siteCode)?.name ?? open.unit.siteCode}</dd>
             </dl>
+            <WardClosurePanel
+              unit={open.unit}
+              now={now}
+              actor={
+                recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === open.unit.id) ??
+                recordActors[0]!
+              }
+            />
           </div>
         ) : null}
       </PhoneSheet>

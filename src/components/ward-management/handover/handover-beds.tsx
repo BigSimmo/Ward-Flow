@@ -37,6 +37,7 @@ import {
   type HeldDischarge,
   isStoppedAwaitingRelease,
 } from "./handover-model";
+import { wardClosedLine } from "../capacity/ward-closure";
 import styles from "./handover-beds.module.css";
 
 export type HandoverBedsProps = {
@@ -202,7 +203,9 @@ function WardPanel({
   const heading = rows.filter((row) => row.to?.unitId === ward.id && !isStoppedAwaitingRelease(row));
   const reviewing = rows.filter((row) => row.asked.some((asked) => asked.unitId === ward.id));
   const holds = held.filter((item) => item.admission.unitId === ward.id);
+  const closedLine = wardClosedLine(ward.unit);
   const facts: { label: string; value: string; warn?: boolean }[] = [
+    ...(closedLine ? [{ label: "Admissions", value: closedLine, warn: true }] : []),
     {
       label: "Updated",
       value: `${durMinutes(age)} ago, at ${formatInstantWithDay(ward.confirmedAt, now)}${stale ? ", over 15 min" : ""}`,

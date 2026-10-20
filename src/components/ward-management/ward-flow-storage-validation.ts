@@ -14,6 +14,7 @@ import {
   PLANNED_ADMISSION_STATES,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
+import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -26,6 +27,12 @@ import {
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
+import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import {
+  BED_MEETING_ACTION_KINDS,
+  BED_MEETING_ACTION_OWNERS,
+  type BedMeetingActionKind,
+} from "./bed-meeting/bed-meeting-actions";
 import { isFixedOnlyDischargeCriteriaRecord } from "./ward-discharge-criteria";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -239,6 +246,16 @@ const unit = z
       ),
     ),
     arrivalCapacityConflicts: z.optional(z.array(z.looseObject({ movementId: text, at: finite }))),
+    isClosed: z.optional(bool),
+    // Smart features idea 7: a chosen reason, never typed text.
+    admissionsClosure: z.optional(
+      z.looseObject({
+        reason: z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
+        at: finite,
+        by: text,
+        until: z.optional(finite),
+      }),
+    ),
   })
   // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the older feed
   // empty count and does not rewrite the separately recorded locked count. Each count is bounded
@@ -265,6 +282,23 @@ const unit = z
 
 const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
 const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
+// Smart features idea 5: a bed meeting action is chosen from fixed lists, never typed text.
+// A ward owner always names its ward, and a done action records both when and by whom.
+const meetingAction = z
+  .strictObject({
+    kind: z.enum(
+      BED_MEETING_ACTION_KINDS.map((entry) => entry.id) as [BedMeetingActionKind, ...BedMeetingActionKind[]],
+    ),
+    owner: z.enum(BED_MEETING_ACTION_OWNERS),
+    ownerUnitId: z.optional(text),
+    dueAt: finite,
+    recordedAt: finite,
+    doneAt: z.optional(finite),
+    doneBy: z.optional(text),
+  })
+  .check(z.refine((action) => (action.owner === "ward") === (action.ownerUnitId !== undefined)))
+  .check(z.refine((action) => (action.doneAt === undefined) === (action.doneBy === undefined)));
+
 const movement = z
   .looseObject({
     id,
@@ -299,6 +333,7 @@ const movement = z
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
     closure: z.optional(closureRule),
+    meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })
@@ -322,6 +357,7 @@ const movement = z
 const admission = z.looseObject({
   id,
   unitId: text,
+  meetingActions: z.optional(z.array(meetingAction)),
   state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
   specialling: bool,
   highAcuity: bool,
@@ -370,6 +406,16 @@ const referralDestination = z.discriminatedUnion("kind", [
   z.looseObject({ kind: z.literal("community_team"), teamName: text }),
   z.looseObject({ kind: z.literal("emergency_department"), edId: emergencyDepartmentId, purpose: text }),
 ]);
+// A ward's ask is a fixed item and two role labels; a tick-off carries both its time and its role.
+const informationNeed = z
+  .strictObject({
+    need: text.check(z.refine((need) => (REFERRAL_INFORMATION_NEED_IDS as readonly string[]).includes(need))),
+    at: finite,
+    by: text,
+    metAt: z.optional(finite),
+    metBy: z.optional(text),
+  })
+  .check(z.refine((entry) => (entry.metAt === undefined) === (entry.metBy === undefined)));
 const referral = z.looseObject({
   id,
   submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
@@ -391,6 +437,8 @@ const referral = z.looseObject({
       destination: referralDestination,
       state: z.enum(REFERRAL_ADDRESSING_STATES),
       acceptedUnitId: link,
+      openedAt: z.optional(finite),
+      informationNeeds: z.optional(z.array(informationNeed)),
     }),
   ),
   patientId: link,

@@ -242,6 +242,60 @@ export function candidateEvents(
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
         .flatMap((unit) => movementIds.map((movementId) => ({ type, role, now, movementId, unitId: unit.id })));
+    // Smart features idea 7: one ward only, so the sweep never closes the whole network and starves
+    // the pulls it also needs to reach. Reopening follows once that ward has been closed.
+    case "CLOSE_WARD_TO_ADMISSIONS":
+      return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
+    case "REOPEN_WARD_TO_ADMISSIONS":
+      return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
+    // Smart features idea 5: one action on every bed request, then marked done by the chair.
+    case "RECORD_BED_MEETING_ACTION":
+      return movementIds.map((id) => ({
+        type,
+        role,
+        now,
+        subject: { kind: "movement" as const, id },
+        action: "book_transport" as const,
+        owner: "coordinator" as const,
+        dueAt: now + 120,
+      }));
+    case "COMPLETE_BED_MEETING_ACTION":
+      return movementIds.map((id) => ({
+        type,
+        role,
+        now,
+        subject: { kind: "movement" as const, id },
+        action: "book_transport" as const,
+      }));
+    // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
+    // which ward copy exists and is still waiting.
+    case "MARK_REFERRAL_OPENED":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitId, actingUnitId: unitId })),
+      );
+    case "REQUEST_REFERRAL_INFORMATION":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          unitId,
+          actingUnitId: unitId,
+          needs: ["drug_screen" as const],
+        })),
+      );
+    case "MARK_REFERRAL_INFORMATION_MET":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((wardUnitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          wardUnitId,
+          need: "drug_screen" as const,
+        })),
+      );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)

@@ -80,6 +80,8 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     dischargeBarrier: null,
     dischargeCriteria: null,
     stepDownCandidate: false,
+    // Smart features idea 5 (19 Oct 2026): bed meeting actions, so the built fixture carries every field.
+    meetingActions: [],
     ...overrides,
   };
 }
@@ -600,6 +602,8 @@ describe("Admission privacy — structural", () => {
     "leftAt",
     "followUp",
     "careJourney",
+    // Smart features idea 5: chosen actions, owners and instants only.
+    "meetingActions",
   ].sort();
 
   it("declares exactly the permitted field set at runtime", () => {
@@ -654,6 +658,7 @@ describe("Admission privacy — structural", () => {
       dischargeBarrier: "Accommodation / Housing",
       dischargeCriteria: { setAt: DAY_ZERO, items: [{ criterion: "Accommodation confirmed", metAt: null }] },
       stepDownCandidate: true,
+      meetingActions: [{ kind: "review_step_down", owner: "coordinator", dueAt: 600, recordedAt: 360 }],
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_ADMISSION_FIELDS);
   });

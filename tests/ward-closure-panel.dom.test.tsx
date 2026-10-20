@@ -1,0 +1,65 @@
+import "@testing-library/jest-dom/vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+
+import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
+import type { WardRecordActor } from "@/components/ward-management/ward-discharge-records";
+import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+/** Smart features idea 7 on screen: close a ward with a listed reason, then reopen it. */
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+const UNIT_ID = seedWardFlowState().units[0]!.id;
+
+function Panel({ actor }: { actor: WardRecordActor }) {
+  const { units, now } = useWardFlow();
+  const unit = units.find((candidate) => candidate.id === UNIT_ID)!;
+  return <WardClosurePanel unit={unit} now={now} actor={actor} />;
+}
+
+function renderPanel(actor: WardRecordActor) {
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <Panel actor={actor} />
+    </WardFlowProvider>,
+  );
+}
+
+describe("ward closure panel", () => {
+  it("needs a reason, closes the ward, shows why, and reopens on a tap", () => {
+    renderPanel({ role: "coordinator" });
+    const closeButton = screen.getByTestId("ward-closure-close");
+    expect(closeButton).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(closeButton);
+    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
+    fireEvent.click(screen.getByTestId("ward-closure-close"));
+
+    expect(screen.getByRole("heading", { name: /Closed to admissions/ })).toBeInTheDocument();
+    expect(screen.getByText(/^Staffing · since/)).toBeInTheDocument();
+    expect(screen.getByText(/^Expected to reopen/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("ward-closure-reopen"));
+    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+  });
+
+  it("lets a ward close only itself", () => {
+    renderPanel({ role: "ward", actingUnitId: "some-other-ward" });
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    const closeButton = screen.getByTestId("ward-closure-close");
+    expect(closeButton).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(closeButton);
+    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+  });
+});

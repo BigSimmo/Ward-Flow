@@ -1,0 +1,51 @@
+/* Ward closure mode on the Capacity ward panel (smart features idea 7). */
+
+.panel {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-block: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+}
+
+.heading {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.subheading {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.line,
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.due {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}

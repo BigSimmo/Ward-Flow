@@ -12,6 +12,7 @@ import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
+import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
@@ -61,6 +62,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
     unitId,
     ...(isCoordinator || actingUnitId === undefined ? {} : { actingUnitId }),
   };
+  useMarkReferralsOpened(entries, unitId, actingUnitId);
   if (!entries.length) return null;
   return (
     <section className={styles.refCard} aria-label="Ward referral inbox">
@@ -261,6 +263,14 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 })()}
               </div>
             )}
+            {live ? (
+              <WardInformationNeedsPicker
+                entry={entry}
+                unitId={unitId}
+                actingUnitId={actingUnitId}
+                refusal={roleRefusal}
+              />
+            ) : null}
           </article>
         );
       })}

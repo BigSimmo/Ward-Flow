@@ -33,6 +33,8 @@ import {
   type ClearanceStatus,
 } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { referralInformationNeedLabel } from "./referral-information-needs";
+import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import styles from "./referral-board.module.css";
 
@@ -707,6 +709,13 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
       entries.push({ at: arm.waitlistedAt, tone: "neutral", text: `${where} waitlisted` });
     if (arm.withdrawnAt !== undefined)
       entries.push({ at: arm.withdrawnAt, tone: "closed", text: `${where} withdrawn by the referrer` });
+    // Smart features ideas 3 and 4: a receipt and the ward's asks. None of them is an answer.
+    if (arm.openedAt !== undefined) entries.push({ at: arm.openedAt, tone: "info", text: `Opened by ${where}` });
+    for (const entry of arm.informationNeeds ?? []) {
+      const item = referralInformationNeedLabel(entry.need);
+      entries.push({ at: entry.at, tone: "neutral", text: `${where} asked for: ${item}` });
+      if (entry.metAt !== undefined) entries.push({ at: entry.metAt, tone: "success", text: `${item} provided` });
+    }
     if (arm.decidedAt === undefined) continue;
     if (arm.state === "accepted") {
       const unit = units.find((candidate) => candidate.id === arm.acceptedUnitId);
@@ -767,6 +776,7 @@ export function ReferralTimeline({
   );
   return (
     <div className={styles.pTab} data-testid="ward-referral-timeline-tab">
+      <ReferralInformationNeedsPanel referral={referral} now={now} />
       <ol className={styles.timeline} aria-label="Referral timeline">
         {entries.map((entry, index) => (
           <li key={`${entry.at}-${index}`}>

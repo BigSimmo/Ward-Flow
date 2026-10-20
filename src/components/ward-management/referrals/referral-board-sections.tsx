@@ -2,6 +2,7 @@
 
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
+import { openInformationNeeds } from "./referral-information-needs";
 import { useMemo } from "react";
 import { Lock, Scale, Truck, Users } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -269,9 +270,10 @@ export function QueuedSection({
                           const open = arm.state === "queued" && arm.withdrawnAt === undefined;
                           const refused = arm.state === "declined";
                           if (!open && !refused) return null;
+                          const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
                           const words = `${shortKind(arm.destination.kind)}${
                             open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
-                          }`;
+                          }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
                           return (
                             <span
                               key={`${arm.destination.kind}-${index}`}
