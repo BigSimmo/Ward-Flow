@@ -125,7 +125,9 @@ const TICK_OFF_ROLES = ["ed", "community", "coordinator"] as const;
 /** The referrer's side: what each ward is still waiting on, ticked off one item at a time. */
 export function ReferralInformationNeedsPanel({ referral, now }: { referral: Referral; now: Instant }) {
   const arms = referral.destinations.flatMap((arm) => {
-    const waiting = openInformationNeeds(arm.informationNeeds);
+    // Once the ward has answered, or the referrer has withdrawn, its asks are closed (the reducer agrees).
+    const waiting =
+      arm.state === "queued" && arm.withdrawnAt === undefined ? openInformationNeeds(arm.informationNeeds) : [];
     return arm.destination.kind === "psychiatric_ward" && arm.destination.unitId && waiting.length > 0
       ? [{ unitId: arm.destination.unitId, where: referralDestinationLabel(arm.destination), waiting }]
       : [];

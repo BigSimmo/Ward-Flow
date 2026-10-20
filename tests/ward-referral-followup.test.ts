@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -186,5 +187,76 @@ describe("what we still need", () => {
       need: "bloods_or_ecg",
     });
     expect(byWard.rejections).toHaveLength(1);
+  });
+
+  it("refuses a tick-off once the ward has answered, as it refuses a new ask", () => {
+    const f = fixture();
+    const asked = ask(f.state, f, ["collateral_history"]);
+    const answered: WardFlowState = {
+      ...asked,
+      referrals: asked.referrals.map((referral) =>
+        referral.id === f.referralId
+          ? {
+              ...referral,
+              destinations: referral.destinations.map((copy) => ({ ...copy, state: "declined", decidedAt: NOW + 5 })),
+            }
+          : referral,
+      ),
+    };
+    const late = wardFlowReducer(answered, {
+      type: "MARK_REFERRAL_INFORMATION_MET",
+      role: "coordinator",
+      now: NOW + 30,
+      referralId: f.referralId,
+      wardUnitId: f.unitId,
+      need: "collateral_history",
+    });
+    expect(late.rejections).toEqual([expect.objectContaining({ reason: expect.stringMatching(/no longer waiting/) })]);
+    expect(copyOf(late, f.referralId, f.unitId).informationNeeds?.[0]?.metAt).toBeUndefined();
+  });
+});
+
+describe("a saved referral's receipts and asks", () => {
+  type Row = Record<string, unknown>;
+  const saved = (edit: (copy: Row) => Row) => {
+    const f = fixture();
+    const asked = wardFlowReducer(f.state, {
+      type: "REQUEST_REFERRAL_INFORMATION",
+      role: "ward",
+      now: NOW,
+      referralId: f.referralId,
+      unitId: f.unitId,
+      actingUnitId: f.unitId,
+      needs: ["drug_screen"],
+    });
+    // A saved state is plain JSON, so it is edited as JSON.
+    const stored = JSON.parse(JSON.stringify(asked)) as { referrals: { id: string; destinations: Row[] }[] };
+    const referral = stored.referrals.find((candidate) => candidate.id === f.referralId)!;
+    referral.destinations = referral.destinations.map(edit);
+    return stored;
+  };
+  const withNeed = (need: Row) => (copy: Row) => ({
+    ...copy,
+    informationNeeds: [need],
+  });
+
+  it("restores a listed ask, ticked off or not, with its opened time", () => {
+    expect(isValidStoredWardFlowState(saved((copy) => ({ ...copy, openedAt: NOW })))).toBe(true);
+    expect(
+      isValidStoredWardFlowState(
+        saved(withNeed({ need: "drug_screen", at: NOW, by: "Ward", metAt: NOW + 1, metBy: "ED" })),
+      ),
+    ).toBe(true);
+  });
+
+  it("refuses an item off the list, typed text, a half-recorded tick-off or a non-numeric opened time", () => {
+    expect(isValidStoredWardFlowState(saved(withNeed({ need: "anything typed", at: NOW, by: "Ward" })))).toBe(false);
+    expect(
+      isValidStoredWardFlowState(saved(withNeed({ need: "drug_screen", at: NOW, by: "Ward", note: "typed" }))),
+    ).toBe(false);
+    expect(isValidStoredWardFlowState(saved(withNeed({ need: "drug_screen", at: NOW, by: "Ward", metAt: NOW })))).toBe(
+      false,
+    );
+    expect(isValidStoredWardFlowState(saved((copy) => ({ ...copy, openedAt: "soon" })))).toBe(false);
   });
 });
