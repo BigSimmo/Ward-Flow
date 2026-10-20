@@ -230,6 +230,15 @@ export function reduceRecordedFactEvent(
           `cannot record a transport need for a closed movement (${movement.closure.reason})`,
         );
       }
+      // A ward desk must say which ward it is acting as; without that, neither the sending-ward
+      // ownership rule nor the E-20 "no ward records for an ED or community start" rule can apply.
+      if (event.role === "ward" && event.actingUnitId === undefined) {
+        return reject(
+          state,
+          event,
+          "RECORD_TRANSPORT_NEED was raised by a ward without an acting ward; only the sending ward, acting as itself, can record transport need",
+        );
+      }
       if (event.role === "ward" && event.actingUnitId !== undefined) {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
         const sendingWard =

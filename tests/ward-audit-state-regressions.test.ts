@@ -51,7 +51,7 @@ function fixture() {
     for (const event of events) send(event);
   };
   const arrive = (id: string, unitId: string) => {
-    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: id, needed: false });
+    send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId: id, needed: false });
     send({ type: "PATIENT_ARRIVED", role: "ward", movementId: id, actingUnitId: unitId });
   };
   const movement = raise();
