@@ -103,4 +103,6 @@ afterEach(() => {
   } catch {
     // ignore in environments without web storage
   }
+  // DA-15: screens keep their filters in the web address, so each test starts from a clean one too.
+  window.history.replaceState(null, "", window.location.pathname);
 });
