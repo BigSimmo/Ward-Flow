@@ -1196,10 +1196,11 @@ describe("Third Edition dropdown filters and yield strip", () => {
       expect(previewPanel.textContent).toContain("Selected referral");
       expect(previewPanel.textContent).toContain("Destinations Addressed");
 
-      // Test D4 notice compliance
-      const contactBtn = screen.getByRole("button", { name: "Contact Referrer" });
-      fireEvent.click(contactBtn);
-      expect(screen.getByText("Contact Referrer: Not wired in this prototype.")).toBeInTheDocument();
+      // Contact Referrer and Cancel Referral only ever said "Not wired", so they are hidden
+      // (overall review, 20 Oct 2026).
+      expect(screen.queryByRole("button", { name: "Contact Referrer" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Cancel Referral" })).not.toBeInTheDocument();
+      expect(previewPanel.textContent).not.toContain("Not wired");
     }
   });
 });

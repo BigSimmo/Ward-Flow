@@ -116,12 +116,41 @@ export function wardAddressing(referral: Referral): WardAddressing | undefined {
 }
 
 /**
+ * THE ONE RULE for whether a person needs a bed that can hold someone involuntarily, from a
+ * recorded legal status. Owner ruling D-69 (Josh, 20 Oct 2026, 2:02 PM AWST): "Needs an
+ * involuntary-capable bed until status is set." Only a recorded "Voluntary" clears it; a blank,
+ * "Not recorded" or any other status needs an involuntary-capable bed. Never default to Voluntary.
+ * The referral drawer (`referrals/ward-referral-drawer-model.ts`) re-exports this function.
+ */
+export function involuntaryBedNeededForLegalStatus(legalStatus: string | null | undefined): boolean {
+  return legalStatus?.trim() !== "Voluntary";
+}
+
+/**
  * Every status other than Voluntary carries a detention authority, so the receiving unit must
  * be authorised. This governs the DESTINATION only — detaining a referred patient in an
  * unauthorised emergency department is lawful and is the normal state while they wait.
  */
 export function requiresAuthorisedDestination(status: LegalStatus | undefined) {
-  return status !== "Voluntary";
+  return involuntaryBedNeededForLegalStatus(status);
+}
+
+/**
+ * Whether accepting this ward request needs an involuntary-capable bed (audit F-03, follow-up to
+ * PR #475). Re-derived from the referral's CURRENT recorded legal status through the one rule
+ * above, so acceptance never trusts a stored `involuntaryBedNeeded: false` that the legal status
+ * does not support. The stored answer can only add the need, never clear it. A referral with no
+ * intake (seeded or older records) carries no legal status field to re-derive from, so its stored
+ * answer stands.
+ */
+export function wardRequestNeedsInvoluntaryBed(
+  referral: Pick<Referral, "intake">,
+  ward: Pick<WardReferralDestination, "involuntaryBedNeeded">,
+): boolean {
+  return (
+    ward.involuntaryBedNeeded ||
+    (referral.intake !== undefined && involuntaryBedNeededForLegalStatus(referral.intake.legalStatus))
+  );
 }
 
 /**
@@ -657,7 +686,7 @@ export function referralEligibility(
 
   const gates: GateResult[] = [
     cohortGate("age", referral.ageBand, unit, "referral"),
-    authorisationGate("legal_status", ward.involuntaryBedNeeded, unit),
+    authorisationGate("legal_status", wardRequestNeedsInvoluntaryBed(referral, ward), unit),
     {
       // 🔴 RENAMED FROM `sex_designation`, T10 (item 8): see `eligibility()`'s own gate of this
       // name above and `genderDesignationResult`'s doc comment below for the full rule.

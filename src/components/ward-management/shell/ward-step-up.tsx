@@ -20,6 +20,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { useUnscopedWardFlow } from "./ward-access-context";
 import { sameDesk, useWardAccessSnapshot } from "./ward-access-store";
 import { StepUpReauthContext } from "./ward-step-up-context";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /** What an action returns when the server wants a fresh sign-in first. */
@@ -37,6 +38,8 @@ let confirmed: { desk: WardAccess; at: Instant } | null = null;
 export function forgetStepUp(): void {
   confirmed = null;
 }
+// A new account at this tab must confirm its own powerful steps (Codex review on PR #487).
+onWardSessionEnd(forgetStepUp);
 
 const CANCELLED = "Cancelled. Nothing was changed.";
 
