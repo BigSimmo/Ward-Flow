@@ -3,7 +3,7 @@
 // "Where beds are coming from" under the bed forecast. Presentation only: every line comes from
 // `bedsForecastSources` (`beds-forecast-sources.ts`) and repeats what a ward recorded, with the
 // role that said it and when. Wards are listed by name; nothing here ranks or recommends one.
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedsForecastSources, ForecastSourceEntry, ForecastSourceWindow } from "./beds-forecast-sources";
 import styles from "./beds-forecast.module.css";
 
@@ -41,7 +41,7 @@ export function BedsForecastSourcesList({ sources, now }: { sources: BedsForecas
     upcoming.flatMap((window) => window.wards.filter((ward) => ward.entries.length > 0).map((ward) => ward.unitId)),
   ).size;
   const shift = sources.shiftName.toLowerCase();
-  const shiftStart = formatInstant(sources.shiftStart);
+  const shiftStart = formatInstantWithDay(sources.shiftStart, now);
   const windows = sources.windows.filter((window) => window.id !== "overdue" || window.wards.length > 0);
 
   return (
