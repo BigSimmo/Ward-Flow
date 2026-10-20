@@ -272,6 +272,16 @@
   pointer-events: none;
 }
 
+/* From 769px to 1000px the tablet rail sits in the page under the header, and can wrap to more than
+   one row, so a note under the header would lie over it. There the note rests at the foot of the
+   window instead (no phone dock at these widths). */
+@media (min-width: 769px) and (max-width: 1000px) {
+  .loadingNote {
+    top: auto;
+    bottom: 0.75rem;
+  }
+}
+
 /* display: none, not visibility: hidden, so a finished note can never cover the page or be read out.
    (It once took a line in the page, and hidden-but-present space pushed a page's Hero below the band
    threshold: journeys, 18 Oct 2026.) */
