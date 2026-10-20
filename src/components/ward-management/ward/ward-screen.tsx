@@ -68,7 +68,9 @@ import {
   wardCommandRefusal,
   wardCommandUndoSeq,
   wardUndoBlocked,
+  type WardDischargeCheck,
   type WardMovementCheck,
+  wardCommandKey,
 } from "./use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
@@ -264,15 +266,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  const dischargeCheckRef = useRef<{
-    prior: number;
-    success: string;
-    who: string;
-    codes: string[];
-    /** Audit A1-12: the stay a recorded departure can take back from its toast. */
-    undoAdmissionId?: string;
-    outcome?: WardCommandOutcome;
-  } | null>(null);
+  const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
@@ -444,8 +438,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
   function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
-    // Keyed by bed: a repeat tap on the same bed is suppressed, a move of another bed is not.
-    completeCommand(`board:${check.bed}`, record, (outcome) => {
+    // Keyed by subject: a repeat on the same bed or Undo says it is still saving; another bed is not held up.
+    return completeCommand(check.key ?? wardCommandKey("board", check.bed), record, (outcome) => {
       boardChecksRef.current.push({ ...check, outcome });
       if (!outcome || outcome.status === "accepted") onAccepted?.();
       setBoardToken((token) => token + 1);
@@ -502,7 +496,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               onUndo: () => {
                 if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
                 return completeCommand(
-                  "departure",
+                  wardCommandKey("undo-departure", undoAdmissionId),
                   () =>
                     dispatch({
                       type: "UNDO_DEPARTURE",
@@ -615,6 +609,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     {
                       prior: rejectionCountRef.current,
                       bed: check.bed,
+                      key: wardCommandKey("undo-board", check.bed),
                       success: "Undone. The bed and the person are back where they were.",
                     },
                   );
@@ -881,6 +876,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     {
                       prior: rejectionCountRef.current,
                       bed: 0,
+                      key: wardCommandKey("undo-accept", undo.movementId),
                       success: "Acceptance undone. The referral is back with this ward.",
                     },
                   );
@@ -1272,7 +1268,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const raisedMessage = targetBed?.patientAlias
       ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
       : `Ward referral raised from ${unit.name}.`;
-    completeCommand("raise-referral", record, (outcome) => {
+    completeCommand(wardCommandKey("raise-referral", targetBed?.bedNumber ?? unit.id), record, (outcome) => {
       const failure = wardCommandFailure(outcome);
       if (failure) {
         setToastMessage(failure);
@@ -1826,7 +1822,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       undoAdmissionId: admissionId,
     };
     completeCommand(
-      "departure",
+      wardCommandKey("departure", admissionId),
       () =>
         recordWardDeparture
           ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination)

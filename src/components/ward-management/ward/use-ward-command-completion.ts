@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { UndoStepType } from "../ward-undo";
+import { useOptionalToast } from "@/components/wf/toast-provider";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import type { Rejection } from "@/components/ward-management/ward-model";
@@ -26,6 +27,17 @@ export function wardCommandRefusal(
       : undefined;
   return rejections.length > prior ? rejections[rejections.length - 1] : undefined;
 }
+
+/** A departure from the bed drawer, or its Undo, read once its command has an answer. */
+export type WardDischargeCheck = {
+  prior: number;
+  success: string;
+  who: string;
+  codes: string[];
+  /** Audit A1-12: the stay a recorded departure can take back from its toast. */
+  undoAdmissionId?: string;
+  outcome?: WardCommandOutcome;
+};
 
 /** An accept, pull or release from the Ward flow list, read once its command has an answer. */
 export type WardMovementCheck = {
@@ -73,8 +85,19 @@ export function wardCommandUndoSeq(
   return undefined;
 }
 
-/** Keep feedback tied to this command and screen, including while a shared save is pending. */
-export function useWardCommandCompletion() {
+/** Said when the same subject's last save has no answer yet, so a second tap is never silently lost. */
+export const WARD_STILL_SAVING = "Still saving the last change. Try again when it has finished.";
+
+/** A departure, its Undo, or any other command: one pending save per subject (review: gitar). */
+export const wardCommandKey = (kind: string, subject: string | number) => `${kind}:${subject}`;
+
+/**
+ * Keep feedback tied to this command and screen, including while a shared save is pending. A
+ * repeat on a subject whose save is still pending says so and returns false, so a toast's Undo
+ * stays offered.
+ */
+export function useWardCommandCompletion(say?: (message: string) => void) {
+  const toast = useOptionalToast();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration;
   const generationRef = useRef(generation);
   useEffect(() => {
@@ -93,8 +116,12 @@ export function useWardCommandCompletion() {
     key: string,
     record: () => ReturnType<WardCommandDispatch>,
     settled: (outcome?: WardCommandOutcome) => void,
-  ) => {
-    if (pending.current.has(key)) return;
+  ): false | undefined => {
+    if (pending.current.has(key)) {
+      if (say) say(WARD_STILL_SAVING);
+      else toast?.push({ tone: "info", title: WARD_STILL_SAVING });
+      return false;
+    }
     pending.current.add(key);
     const commandGeneration = generationRef.current;
     const finish = (outcome?: WardCommandOutcome) => {
@@ -114,5 +141,6 @@ export function useWardCommandCompletion() {
     } catch {
       failed();
     }
+    return undefined;
   };
 }

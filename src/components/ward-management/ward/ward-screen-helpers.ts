@@ -17,6 +17,8 @@ export type BoardCheck = {
   prior: number;
   bed: number;
   success: string;
+  /** The pending-save key; defaults to the bed, an Undo has its own (review: gitar). */
+  key?: string;
   /** The command's answer; in shared mode the local refusal list never grows (audit F-02). */
   outcome?: WardCommandOutcome;
   /** What Undo reverses; absent for an undo itself. */
