@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { alertKindOf, isQueueItem } from "@/components/ward-management/alerts/alerts-model";
+import { alertGroupOf, alertKindOf, isQueueItem } from "@/components/ward-management/alerts/alerts-model";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { changesSinceInstant } from "@/components/ward-management/coordinator/since-last-look";
 import { sinceLastLookCount } from "@/components/ward-management/coordinator/since-last-look-panel";
@@ -16,7 +16,17 @@ import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
-import { isTierOverdue, tierOverdueAfterMinutes, waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import {
+  isTierOverdue,
+  notWaitingMoreText,
+  notWaitingParts,
+  openJourneySplit,
+  tierOverdueAfterMinutes,
+  waitingInEds,
+  waitingSplit,
+} from "@/components/ward-management/ward-shared-figures";
+import { boardRows } from "@/components/ward-management/delays/delays-board-model";
+import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -74,6 +84,45 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
     expect(waiting.total, "picker All services vs Home").toBe(home);
     const sum = HEALTH_SERVICES.reduce((total, service) => total + (waiting.byService.get(service) ?? 0), 0);
     expect(sum, "the services add up to All services").toBe(waiting.total);
+  });
+
+  it("waiting and the rest: a list that holds more than waiting says what the rest are, and it adds up", () => {
+    const split = openJourneySplit(state.movements);
+    const queue = state.movements.filter(isOpen);
+    expect(split.listed, "Home's queue and Waiting list every open journey").toBe(queue.length);
+    expect(split.waiting, "the hero's waiting part is the one waiting figure").toBe(
+      waitingInEds(state.movements, now).total,
+    );
+    const rest = Object.values(split.notWaiting).reduce((sum, count) => sum + count, 0);
+    expect(rest, "the seed has people in transit, so the two figures differ").toBeGreaterThan(0);
+    expect(split.waiting + rest).toBe(split.listed);
+    expect(notWaitingParts(split)).toContain(`${split.notWaiting.in_transit} in transit`);
+    expect(notWaitingMoreText(split)).toBe(`${split.notWaiting.in_transit} more in transit`);
+    const twoKinds = { ...split, notWaiting: { ...split.notWaiting, in_transit: 2, ward_transfer: 1 } };
+    expect(notWaitingMoreText(twoKinds)).toBe("3 more: 2 in transit, 1 moving between wards");
+    expect(notWaitingMoreText({ ...split, notWaiting: { ...split.notWaiting, in_transit: 0 } })).toBeNull();
+  });
+
+  it("badges: the menu's Waiting badge is Waiting's title figure, in the same words", () => {
+    const counts = wardNavCounts({ ...state, now, sites: wardSites, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const rows = boardRows(delayGroups(state.movements, state.units, now, DEFAULT_DUE_SOON_THRESHOLDS), now);
+    const title = waitingSplit(rows.map((row) => row.movement));
+    expect(counts.delays?.value).toBe(title.waiting);
+    expect(counts.delays?.noun).toBe("waiting in ED");
+    // Movements' badge counts every open journey, so it differs from Waiting's by the people in transit.
+    expect(counts.movements?.value).toBe(rows.length);
+    expect(counts.movements?.value).not.toBe(counts.delays?.value);
+    // The severe causes stay available for the phone menu's Needs you row, under their own noun.
+    expect(counts.delays?.need?.noun).toBe("at a time limit or with nowhere to go");
+    expect(counts.delays?.need?.value).toBe(rows.filter((row) => row.severe).length);
+  });
+
+  it("act now: the Alerts screen's Act now group is the menu's act-now count, row for row", () => {
+    const items = taskItems(state, now).filter(isQueueItem);
+    for (const item of items) {
+      if (alertGroupOf(item) === "running") continue;
+      expect(alertGroupOf(item) === "act", item.id).toBe(item.tone === "danger");
+    }
   });
 
   it("beds ready: Home's hero and the Statistics ready count read one figure", () => {

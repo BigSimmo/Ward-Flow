@@ -6,6 +6,7 @@ import type { DueSoonThresholds, Instant } from "@/components/ward-management/wa
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 import type { BedRelease, LeaveBed, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 
 /**
  * **THE NUMBERS BESIDE THE SIDEBAR'S DESTINATIONS — owner's approved header/sidebar, 2026-09-06.**
@@ -16,12 +17,15 @@ import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav"
  * the derivation it reads and none is computed here — the sidebar is the last place a clinical
  * figure should be authored.
  *
- * 🔴 **AND EVERY COUNT MUST MEAN SOMETHING DIFFERENT FROM ITS NEIGHBOURS.** The obvious count for
- * Delays is "how many rows are on the Delays screen", and it was rejected: `delayGroups` sorts
- * EVERY open movement into a cause (`awaiting_coordinator` is its fallback), so that figure is the
- * open-movement count by construction — identical to Movements' count, forever, with two different
- * labels over it. Two figures that agree look like confirmation. This counts the three severe
- * causes instead, which is the number somebody acts on and can never coincide with Movements'.
+ * 🔴 **A BADGE SHOWS THE NUMBER ITS SCREEN LEADS WITH, IN THE SAME WORDS** (overall review,
+ * 20 Oct 2026, idea A2). The Waiting badge used to count the three severe delay causes ("2 at a
+ * time limit or with nowhere to go") while the Waiting screen led with "70 people waiting", so the
+ * menu and the page disagreed on sight. Waiting now leads with the one "waiting" figure,
+ * `waitingInEds` (people physically in a department awaiting a bed), and so does its badge. That is
+ * still never Movements' figure: Movements counts every open journey, including people already on
+ * the road ("still open"), so the two numbers differ whenever anybody is in transit and each says
+ * what it counts. The severe count lives on as `need`, for the phone menu's Needs you row, which
+ * opens Waiting filtered to exactly those people.
  *
  * ⚠️ **THE NOUN TRAVELS WITH THE NUMBER.** A bare numeral in a chip is read as "new since you last
  * looked" — the same misreading the header's Tasks control carries words to prevent. Each count
@@ -39,6 +43,13 @@ export type WardNavCount = {
    * alone cannot carry this: a forced-colours or colour-blind reader would lose it entirely.
    */
   urgent: boolean;
+  /**
+   * A narrower figure from the same screen that somebody must act on, for the phone menu's Needs you
+   * row (overall review, 20 Oct 2026). The badge itself always shows the figure its screen leads
+   * with, in the same words (rule A2, "badges mean what the screen means"); a severe subset that the
+   * screen does not lead with travels here, under its own noun, never in the badge.
+   */
+  need?: { value: number; noun: string };
 };
 
 /**
@@ -93,9 +104,14 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
   const counts: WardNavCounts = {
     capacity: { value: rollup.service.availableNow, noun: "beds ready now", urgent: false },
     movements: { value: open.length, noun: "still open", urgent: false },
-    // Josh, 25 Sept 2026: say what this counts (severe causes only; the Delays screen's Attention
-    // tab also counts urgent patients outside the service, so the two figures can differ).
-    delays: { value: severe, noun: "at a time limit or with nowhere to go", urgent: severe > 0 },
+    // Overall review, 20 Oct 2026: the badge is Waiting's own title figure, in its words. The severe
+    // causes (Josh, 25 Sept 2026) stay as the Needs you figure, which opens Waiting filtered to them.
+    delays: {
+      value: waitingInEds(movements, now).total,
+      noun: "waiting in ED",
+      urgent: false,
+      need: { value: severe, noun: "at a time limit or with nowhere to go" },
+    },
     discharges: {
       value: rollup.service.blockedToday,
       noun: BED_RELEASE_BLOCKED_FIGURE_LABEL.toLowerCase(),

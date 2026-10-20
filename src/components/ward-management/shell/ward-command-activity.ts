@@ -207,7 +207,8 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const openMovements = counts.movements?.value ?? movements.filter(isOpen).length;
   const queuedReferrals = counts.referrals?.value ?? 0;
   const bedsReady = counts.capacity?.value ?? 0;
-  const urgentDelays = counts.delays?.value ?? 0;
+  // The severe delay causes (`need`), not the Waiting badge's waiting-in-ED figure.
+  const urgentDelays = counts.delays?.need?.value ?? 0;
   const shown = ordered
     .slice(0, 20)
     .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, lookup) }));
