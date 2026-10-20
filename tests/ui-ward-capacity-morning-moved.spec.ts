@@ -63,7 +63,10 @@ async function gotoCapacity(page: Page) {
 /** Waiting is one tap away under the rail's More (B1), not in the coordinator's own menu. */
 async function openWaitingFromMore(page: Page) {
   await page.getByTestId("ward-rail-more").click();
-  await page.getByTestId("ward-rail-more-pages").getByRole("link", { name: /^Waiting\b/u }).click();
+  await page
+    .getByTestId("ward-rail-more-pages")
+    .getByRole("link", { name: /^Waiting\b/u })
+    .click();
 }
 
 test.describe("@mockup Ward capacity — rail navigates away from the absorbed morning board and back", () => {
