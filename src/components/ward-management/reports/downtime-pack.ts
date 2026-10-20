@@ -1,6 +1,7 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates, type BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -239,3 +240,5 @@ export function forgetDowntimePack(owner?: DowntimePackOwner | null): void {
   packOwner = null;
   notify();
 }
+// The pack lists one account's patients, so a session ending forgets it (Codex review on PR #487).
+onWardSessionEnd(() => forgetDowntimePack());

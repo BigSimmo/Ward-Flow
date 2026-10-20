@@ -110,6 +110,43 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
   return undefined;
 }
 
+/** A question on the ED "Raise into a movement" form that can still be unanswered. */
+export type ReferralDraftField =
+  | "patient"
+  | "cohort"
+  | "security"
+  | "sex"
+  | "gender"
+  | "legalStatus"
+  | "urgency"
+  | "specialling"
+  | "highAcuity"
+  | "legalFormDueAtDate"
+  | "legalFormDueAtTime";
+
+/**
+ * Every question `referralDraftBlockedReason` would still stop on, in the order the form shows
+ * them (overall review, 20 Oct 2026). After a blocked Send the form marks each one and moves focus
+ * to the first, as the registration form does (DA-12). Empty exactly when that function returns
+ * `undefined`. A half-typed expiry names only its blank half.
+ */
+export function referralDraftMissingFields(draft: ReferralDraftAnswers): ReferralDraftField[] {
+  const missing: ReferralDraftField[] = [];
+  if (!draft.patientFound && !draft.unidentified) missing.push("patient");
+  if (draft.cohort === undefined) missing.push("cohort");
+  if (draft.security === undefined) missing.push("security");
+  if (draft.sex === undefined) missing.push("sex");
+  if (draft.gender === undefined) missing.push("gender");
+  if (draft.legalStatus === undefined) missing.push("legalStatus");
+  if (draft.urgency === undefined) missing.push("urgency");
+  if (draft.specialling === undefined) missing.push("specialling");
+  if (draft.highAcuity === undefined) missing.push("highAcuity");
+  if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
+    missing.push(draft.legalFormDueAtDate === "" ? "legalFormDueAtDate" : "legalFormDueAtTime");
+  }
+  return missing;
+}
+
 /**
  * `RECORD_EXAMINATION`'s own preconditions (`ward-flow-reducer.ts`'s `case "RECORD_EXAMINATION"`),
  * named here in the same order so the control can never advertise an action the reducer would

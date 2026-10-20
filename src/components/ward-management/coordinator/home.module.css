@@ -98,6 +98,10 @@
 
 .footLink {
   flex: 0 0 auto;
+  /* WCAG 2.5.8: a 24px tap target on every pointer, not only the coarse-pointer block below. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--wf-accent-ink);
   font-weight: 600;
   font-size: var(--wf-fs-13);
@@ -111,6 +115,9 @@
 
 .footButton {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1256,6 +1263,7 @@ button.registerRow:hover {
     display: inline-block;
     margin-block: calc(-1 * var(--wf-s-4));
     padding-block: var(--wf-s-4);
+    min-height: 0;
   }
 
   .registersToggle {
@@ -2185,5 +2193,6 @@ button.registerRow:hover {
     display: inline-block;
     margin-block: calc(-1 * var(--wf-s-4));
     padding-block: var(--wf-s-4);
+    min-height: 0;
   }
 }

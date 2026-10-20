@@ -3,12 +3,12 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
-import { ArrowLeftRight, Bell, FileText, ListChecks, Printer, Search, Send, Tv } from "lucide-react";
+import { Bell, FileText, Printer, Search, Send, Tv } from "lucide-react";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { buttonClass, Hero, LiveChip, ScrollRow, TextInput } from "@/components/wf";
+import { buttonClass, Hero, LiveChip, TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
@@ -55,8 +55,6 @@ type WardScreenTopBarProps = {
   wardHeroFoot: ReactElement;
   wardHeroFootAside: ReactElement;
   selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => void;
-  setPhonePanel: Dispatch<SetStateAction<"shift" | "flow" | null>>;
-  phoneTodoCount: number | undefined;
   wardMoreMenu: (triggerClassName: string, tablet: boolean) => ReactElement;
   raiseReferralGate: RoleGate;
   wardRoleLockNote: ReactElement | null;
@@ -104,8 +102,6 @@ export function WardScreenTopBar({
   wardHeroFoot,
   wardHeroFootAside,
   selectActiveTab,
-  setPhonePanel,
-  phoneTodoCount,
   wardMoreMenu,
   raiseReferralGate,
   wardRoleLockNote,
@@ -142,6 +138,18 @@ export function WardScreenTopBar({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
+  const confirmButton = (
+    <button
+      ref={confirmTriggerRef}
+      type="button"
+      className={isPhone ? styles.phoneHeroAction : buttonClass({ variant: "light", size: "sm" })}
+      onClick={() => {
+        openCapacityModal();
+      }}
+    >
+      Confirm numbers
+    </button>
+  );
   return (
     <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
       <h2 className={styles.srOnlyHeading}>This ward</h2>
@@ -154,77 +162,71 @@ export function WardScreenTopBar({
         }
         title={
           isPhone ? (
+            // Option B (20 Oct 2026): the ward name is the Switch ward button when there is a ward to
+            // switch to, so the name shows once with no separate chevron box.
             <span className={styles.phoneHeroTitle}>
-              <span className={styles.phoneHeroName}>{unit.name}</span>
-              {wardSwitchMenu}
+              {wardSwitchMenu ?? <span className={styles.phoneHeroName}>{unit.name}</span>}
             </span>
           ) : (
             unit.name
           )
         }
-        titleMeta={
-          isPhone
-            ? `${unit.beds} beds · ${states.occupied} occupied · ${unit.allocatable.source === "ward" ? "confirmed" : "last figure"} ${formatInstant(unit.allocatable.confirmedAt)}`
-            : wardSwitchMenu
-        }
+        titleMeta={isPhone ? `${unit.beds} beds · ${states.occupied} occupied` : wardSwitchMenu}
         aside={
-          <>
-            <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
-            <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
-            <button
-              ref={confirmTriggerRef}
-              type="button"
-              className={buttonClass({ variant: "light", size: "sm" })}
-              onClick={() => {
-                openCapacityModal();
-              }}
-            >
-              Confirm numbers
-            </button>
-          </>
+          isPhone ? (
+            <>
+              <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
+              <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
+            </>
+          ) : (
+            <>
+              <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
+              <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
+              {confirmButton}
+            </>
+          )
         }
         stats={isPhone ? wardRibbon : undefined}
         bar={isPhone ? undefined : wardRibbon}
-        foot={isPhone ? undefined : wardHeroFoot}
+        foot={
+          isPhone ? (
+            // Option B: the numbers' confirm time and a quieter Confirm numbers sit under them, with
+            // Notices (the bell) and More beside it, where the chips above the tabs used to be.
+            <span className={styles.phoneHeroFoot}>
+              <span className={styles.phoneHeroConfirmed}>
+                {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
+                {formatInstant(unit.allocatable.confirmedAt)}
+              </span>
+              {confirmButton}
+              <button
+                ref={notificationTriggerRef}
+                type="button"
+                className={styles.phoneHeroIcon}
+                onClick={() => {
+                  setNotificationCenterOpen((prev) => !prev);
+                }}
+                aria-expanded={notificationCenterOpen}
+                aria-label={unreadAlertsCount > 0 ? `Notices, ${unreadAlertsCount} new` : "Notices"}
+                data-testid="ward-notifications-toggle-btn"
+              >
+                <Bell size={20} aria-hidden="true" />
+                {unreadAlertsCount > 0 ? (
+                  <span className={styles.phoneHeroBadge} data-testid="ward-notification-count-badge">
+                    {unreadAlertsCount}
+                  </span>
+                ) : null}
+              </button>
+              {wardMoreMenu(styles.phoneHeroIcon, false)}
+            </span>
+          ) : (
+            wardHeroFoot
+          )
+        }
         footAside={isPhone ? undefined : wardHeroFootAside}
       />
 
       {isPhone ? (
         <>
-          {/* More sits outside the scrolling row: a scrolling row clips anything that opens out of it,
-              so its menu showed only its first item. */}
-          <div className={styles.phoneChipRow} role="toolbar" aria-label="Ward actions">
-            <ScrollRow className={styles.phoneChips}>
-              <button
-                type="button"
-                className={styles.phoneChip}
-                aria-haspopup="dialog"
-                onClick={() => {
-                  selectActiveTab("attn");
-                  setPhonePanel("shift");
-                }}
-                data-testid="ward-phone-chip-shift"
-              >
-                <ListChecks size={16} aria-hidden="true" />
-                This shift
-                {phoneTodoCount !== undefined ? <span className={styles.phoneChipCount}>{phoneTodoCount}</span> : null}
-              </button>
-              <button
-                type="button"
-                className={styles.phoneChip}
-                aria-haspopup="dialog"
-                onClick={() => {
-                  selectActiveTab("attn");
-                  setPhonePanel("flow");
-                }}
-                data-testid="ward-phone-chip-flow"
-              >
-                <ArrowLeftRight size={16} aria-hidden="true" />
-                Ward flow
-              </button>
-            </ScrollRow>
-            {wardMoreMenu(styles.phoneChip, false)}
-          </div>
           {raiseReferralGate.note}
           {wardRoleLockNote}
           {notificationCenterOpen ? (
