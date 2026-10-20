@@ -30,7 +30,7 @@ const shownCount = () => screen.getByTestId("delays-shown-count").textContent ??
 
 describe("the Delays board's saved views", () => {
   it("opens on the view a link names, narrowed, with the chip pressed", () => {
-    window.history.replaceState(null, "", "/ward-flow/delays?view=form");
+    window.history.replaceState(null, "", "/ward-flow/waiting?view=form");
     withProvider(<DelaysScreen />);
     expect(screen.getByTestId("delays-view-form")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("delays-view-form")).toHaveTextContent("Form due within 3 h");
@@ -39,7 +39,7 @@ describe("the Delays board's saved views", () => {
   });
 
   it("keeps one view at a time and writes it to the address", () => {
-    window.history.replaceState(null, "", "/ward-flow/delays");
+    window.history.replaceState(null, "", "/ward-flow/waiting");
     withProvider(<DelaysScreen />);
     fireEvent.click(screen.getByTestId("delays-view-needs-me"));
     fireEvent.click(screen.getByTestId("delays-view-handover"));
@@ -51,13 +51,13 @@ describe("the Delays board's saved views", () => {
   });
 
   it("names the 1 hour chip's noun", () => {
-    window.history.replaceState(null, "", "/ward-flow/delays");
+    window.history.replaceState(null, "", "/ward-flow/waiting");
     withProvider(<DelaysScreen />);
     expect(screen.getByTestId("delays-stat-due")).toHaveTextContent("Form due within 1 h");
   });
 
   it("counts the referrals not yet on the list, with a link to Referrals", () => {
-    window.history.replaceState(null, "", "/ward-flow/delays");
+    window.history.replaceState(null, "", "/ward-flow/waiting");
     withProvider(<DelaysScreen />);
     const line = screen.getByTestId("delays-referrals-line");
     const queued = referralQueueOrder(seedWardFlowState().referrals).length;
@@ -70,17 +70,17 @@ describe("screens link into a view", () => {
   it("Movements' Needs you opens Needs me now", () => {
     withProvider(<MovementsScreen />);
     const head = screen.getByTestId("movements-needs-you");
-    expect(within(head).getByRole("link", { name: "All in Delays" })).toHaveAttribute(
+    expect(within(head).getByRole("link", { name: "All in Waiting" })).toHaveAttribute(
       "href",
-      "/ward-flow/delays?view=needs-me",
+      "/ward-flow/waiting?view=needs-me",
     );
   });
 
   it("Handover opens For handover", () => {
     withProvider(<HandoverPage />);
-    expect(screen.getByRole("link", { name: "Open in Delays" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open in Waiting" })).toHaveAttribute(
       "href",
-      "/ward-flow/delays?view=handover",
+      "/ward-flow/waiting?view=handover",
     );
   });
 
@@ -96,10 +96,10 @@ describe("screens link into a view", () => {
         onClearFilter={() => {}}
       />,
     );
-    const link = () => screen.getByRole("link", { name: "Open in Delays" });
-    expect(link()).toHaveAttribute("href", "/ward-flow/delays");
+    const link = () => screen.getByRole("link", { name: "Open in Waiting" });
+    expect(link()).toHaveAttribute("href", "/ward-flow/waiting");
     fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
-    expect(link()).toHaveAttribute("href", "/ward-flow/delays?view=form");
+    expect(link()).toHaveAttribute("href", "/ward-flow/waiting?view=form");
   });
 
   it("Home's Form due reads the current due time, as the Delays view does", () => {
@@ -147,6 +147,6 @@ describe("screens link into a view", () => {
         onHistory={() => {}}
       />,
     );
-    expect(screen.getByRole("link", { name: "Waiting list in Delays" })).toHaveAttribute("href", "/ward-flow/delays");
+    expect(screen.getByRole("link", { name: "Waiting list" })).toHaveAttribute("href", "/ward-flow/waiting");
   });
 });

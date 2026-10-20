@@ -169,7 +169,7 @@ describe("WardBar's Service selector, wired to the store", () => {
     expect(within(panel).queryByText("scopes the lists")).not.toBeInTheDocument();
     expect(
       within(panel).getByText(
-        "One service, or all of them. Capacity, Delays and Movements narrow their lists to it. " +
+        "One service, or all of them. Capacity, Waiting and Movements narrow their lists to it. " +
           "The bed shortlist, whole-network figures, the rail counts and the drawers do not. " +
           "Each count is the people waiting in that service's emergency departments; a narrowed list " +
           "also shows people referred to its wards.",
@@ -233,7 +233,8 @@ describe("WardBar's Service selector, wired to the store", () => {
     renderBar();
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     await user.click(screen.getByRole("button", { name: "South Metro" }));
-    expect(window.sessionStorage.getItem(SERVICE_SCOPE_STORAGE_KEY)).toBe("South Metro");
+    // DA-14: the choice applies just after the tap paints, not inside it.
+    await waitFor(() => expect(window.sessionStorage.getItem(SERVICE_SCOPE_STORAGE_KEY)).toBe("South Metro"));
     expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("South Metro");
   });
 
@@ -264,6 +265,8 @@ describe("assertion 2's Escape sentence", () => {
     renderBar();
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     await user.click(screen.getByRole("button", { name: "South Metro" }));
+    // DA-14: the choice applies just after the tap paints, not inside it.
+    await waitFor(() => expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("South Metro"));
     await user.keyboard("{Escape}");
     const live = screen.getByTestId("ward-live-region").textContent ?? "";
     expect(live).toContain(

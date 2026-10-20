@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
  * person still waiting? See that screen's own doc comment for the merge's reasoning. This route
  * stays as a bookmark/deep-link backstop so an existing link to the priority queue does not 404.
  *
- * Wave 4 item 15: `from=queue` lets Delays show the alias pedagogy banner.
+ * Wave 4 item 15: `from=queue` lets Waiting show the alias pedagogy banner.
  */
 export default function WardQueueRedirect() {
-  redirect("/ward-flow/delays?from=queue");
+  redirect("/ward-flow/waiting?from=queue");
 }

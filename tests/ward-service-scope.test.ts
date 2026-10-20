@@ -617,10 +617,10 @@ describe("movementIsUrgentForServiceSafety — D-a's three conditions plus R2's 
 });
 
 describe("SERVICE_SCOPED_SCREENS (D-e)", () => {
-  it("names exactly the screens that read the service choice — Capacity, Delays and Movements", () => {
+  it("names exactly the screens that read the service choice — Capacity, Waiting and Movements", () => {
     // R2: Capacity's own service-scoping code (its `service`/`scopedNetworkRows`/`WardServiceScopeBar`
     // read) is now present in THIS worktree — see this constant's own doc comment in
     // ward-service-scope.ts, corrected alongside this test.
-    expect([...SERVICE_SCOPED_SCREENS].sort()).toEqual(["Capacity", "Delays", "Movements"]);
+    expect([...SERVICE_SCOPED_SCREENS].sort()).toEqual(["Capacity", "Movements", "Waiting"]);
   });
 });

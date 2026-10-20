@@ -10,9 +10,9 @@ export const DELAYS_ALIAS_FROM = ["queue", "exceptions", "escalation"] as const;
 export type DelaysAliasFrom = (typeof DELAYS_ALIAS_FROM)[number];
 
 const COPY: Record<DelaysAliasFrom, string> = {
-  queue: "Opened from a Queue bookmark — that board is now Delays.",
-  exceptions: "Opened from an Exceptions bookmark — that board is now Delays.",
-  escalation: "Opened from an Escalation bookmark — that board is now Delays.",
+  queue: "Opened from a Queue bookmark — that board is now Waiting.",
+  exceptions: "Opened from an Exceptions bookmark — that board is now Waiting.",
+  escalation: "Opened from an Escalation bookmark — that board is now Waiting.",
 };
 
 export function parseDelaysAliasFrom(raw: string | null | undefined): DelaysAliasFrom | null {

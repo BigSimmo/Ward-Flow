@@ -100,19 +100,19 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(within(sheet).getByRole("table", { name: "Emergency departments" })).toBeInTheDocument();
   });
 
-  it("shows the same 20 system events and 'Delays' live tally on the delays screen", async () => {
-    currentPathname = "/ward-flow/delays";
+  it("shows the same 20 system events and 'Waiting' live tally on the Waiting screen", async () => {
+    currentPathname = "/ward-flow/waiting";
     const { user, sheet } = await openActivityDrawer();
 
     const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
     expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toMatch(/Live tally\s*Delays/u);
+    expect(segButtons[1].textContent).toMatch(/Live tally\s*Waiting/u);
 
     const feed = within(sheet).getByRole("list", { name: "Recent changes" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
 
     await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Delays now")).toBeInTheDocument();
+    expect(within(sheet).getByText("Waiting now")).toBeInTheDocument();
   });
 
   it("resolves the unit place name on a ward route while keeping the consistent 20 events", async () => {

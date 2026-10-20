@@ -834,10 +834,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const selectService = useCallback(
     (next: HealthService | null) => {
-      setServiceScope(next);
-      onServiceChange?.(next);
       closePopover("service", false);
       serviceTriggerRef.current?.focus();
+      // DA-14 (design audit): a new service redraws the whole page, about 260 ms on a slow phone,
+      // and the store is read through useSyncExternalStore, so a transition cannot defer it. The
+      // write waits for the next frame and then one more task, so the browser paints the tap and
+      // the closing panel before the redraw starts (a bare zero timer can run before any paint).
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          setServiceScope(next);
+          onServiceChange?.(next);
+        }, 0);
+      });
       // Round-1 review, Important 9: §7.4's own example is "Service set to South Metropolitan.
       // Showing 7 of 23." — the second clause is deliberately left off here, not merely
       // shortened. It names a queue count nothing in this shared bar computes (see Important 5,
