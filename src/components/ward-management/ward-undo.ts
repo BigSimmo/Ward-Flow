@@ -101,9 +101,10 @@ export function undoStepSubjectId(event: object): string {
 }
 
 /** One changed record: by id inside a list of records, rows appended to a plain list, or a whole value. */
+/** `createdList`: the step created this list where there was none, so an undo that empties it removes it. */
 export type StepChange =
-  | { slice: string; mode: "id"; id: string; index: number; before: unknown; after: unknown }
-  | { slice: string; mode: "append"; start: number; rows: unknown[] }
+  | { slice: string; mode: "id"; id: string; index: number; before: unknown; after: unknown; createdList?: true }
+  | { slice: string; mode: "append"; start: number; rows: unknown[]; createdList?: true }
   | { slice: string; mode: "whole"; before: unknown; after: unknown };
 
 export type StepUndo = {
@@ -183,21 +184,23 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     const b = now[slice];
     if (a === b || typeof b === "number") continue;
     if (Array.isArray(a) && Array.isArray(b) && sameRowsDiffed(slice, a, b, changes)) continue;
-    // A list the step created where there was none: undo removes the key, so the state reads exactly
-    // as before rather than gaining an empty list (Audit 2 E-19 soak, RECORD_SUPPORT_NOTIFICATION).
-    if (a === undefined && Array.isArray(b)) {
-      changes.push({ slice, mode: "whole", before: null, after: b });
-      continue;
-    }
     if (Array.isArray(b) && (a === undefined || Array.isArray(a))) {
       const old = (a ?? []) as unknown[];
+      const first = changes.length;
+      let diffed = false;
       if (old.every(isRow) && b.every(isRow)) {
         diffRows(slice, old as { id: string }[], b as { id: string }[], changes);
-        continue;
-      }
-      if (old.length <= b.length && old.every((row, index) => row === b[index] || sameRecord(row, b[index]))) {
+        diffed = true;
+      } else if (old.length <= b.length && old.every((row, index) => row === b[index] || sameRecord(row, b[index]))) {
         if (b.length > old.length)
           changes.push({ slice, mode: "append", start: old.length, rows: b.slice(old.length) });
+        diffed = true;
+      }
+      // A list the step created where there was none stays row by row, so a later step's rows in it
+      // never block this undo, and is marked so an undo that empties it removes it (Audit 2 E-19 soak).
+      if (diffed) {
+        const created = changes[first];
+        if (a === undefined && created && created.mode !== "whole") created.createdList = true;
         continue;
       }
     }
@@ -305,6 +308,11 @@ export function applyStepUndo<S extends object>(state: S, record: StepUndo): S {
       else list.splice(Math.min(change.index, list.length), 0, restored);
     }
     next[change.slice] = list;
+  }
+  for (const change of record.changes) {
+    const value = next[change.slice];
+    if (change.mode !== "whole" && change.createdList && Array.isArray(value) && value.length === 0)
+      delete next[change.slice];
   }
   const revisions = next.dischargeRevisions as Record<string, number> | undefined;
   const admissions = next.admissions as { id: string }[] | undefined;

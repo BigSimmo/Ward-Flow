@@ -269,9 +269,15 @@ export function reduceRecordedLegalEvent(
       if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
         // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
         const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
-        // Audit 2 E-15: the same 5B again is refused rather than rewriting its recorded times; a
-        // later 5B keeps the earlier one in `earlierContinuations`.
-        if (earlier !== undefined && earlier.code === event.formCode && earlier.startedAt === event.startedAt) {
+        // Audit 2 E-15: the very same 5B again (same start, no new end) is refused rather than
+        // rewriting its recorded times; a later or corrected 5B keeps the earlier one in
+        // `earlierContinuations`.
+        if (
+          earlier !== undefined &&
+          earlier.code === event.formCode &&
+          earlier.startedAt === event.startedAt &&
+          (event.paperExpiresAt ?? currentDueAt) === currentDueAt
+        ) {
           return reject(state, event, "This Form 5B continuation is already recorded with that start time.");
         }
         const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;

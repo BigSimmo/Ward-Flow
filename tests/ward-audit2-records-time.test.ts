@@ -4,6 +4,12 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { referralWithdrawn } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import {
+  applyStepUndo,
+  diffForStepUndo,
+  stepChangedSince,
+  type StepUndo,
+} from "@/components/ward-management/ward-undo";
 
 /**
  * Audit 2 (20 Oct 2026): recorded times are never rewritten, and records say what happened.
@@ -168,5 +174,26 @@ describe("E-15 and E-16: legal form records keep their history", () => {
     const earlier = current.earlierForms!.at(-1)!;
     expect(earlier).toMatchObject({ code: "5A", writtenAt: before.formedAt, at: NOW_ANCHOR + 300, by: "coordinator" });
     expect(earlier.dueAt).toBe(before.legalForm?.dueAt);
+  });
+});
+
+describe("undo of a step that created a list", () => {
+  const x = { id: "x", subject: "A" };
+  const y = { id: "y", subject: "B" };
+
+  it("removes the list when the undo empties it", () => {
+    const before = { movements: [] as unknown[] };
+    const after = { ...before, supportNotifications: [x] };
+    const record = { changes: diffForStepUndo(before, after) } as StepUndo;
+    expect(applyStepUndo(after, record)).toEqual(before);
+  });
+
+  it("is not blocked by another subject's row added later, and keeps that row", () => {
+    const before = { movements: [] as unknown[] };
+    const afterA = { ...before, supportNotifications: [x] };
+    const record = { changes: diffForStepUndo(before, afterA) } as StepUndo;
+    const afterB = { ...afterA, supportNotifications: [x, y] };
+    expect(stepChangedSince(afterB, record)).toBe(false);
+    expect(applyStepUndo(afterB, record)).toEqual({ movements: [], supportNotifications: [y] });
   });
 });

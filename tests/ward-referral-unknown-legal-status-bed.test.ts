@@ -93,10 +93,11 @@ describe("acceptance re-checks the legal status (D-69, audit F-03)", () => {
     expect(gate?.pass).toBe(!needed);
   });
 
-  it("never lets a stored need be cleared by the legal status, and keeps the stored answer with no intake", () => {
+  it("never lets a stored need be cleared by the legal status, and needs an authorised bed with no intake", () => {
     const voluntary = withStatus(pair.referral, "Voluntary");
     expect(wardRequestNeedsInvoluntaryBed(voluntary, { involuntaryBedNeeded: true })).toBe(true);
-    expect(wardRequestNeedsInvoluntaryBed({ intake: undefined }, { involuntaryBedNeeded: false })).toBe(false);
+    // Audit 2 E-04 (Josh, 20 Oct 2026): no recorded legal status fails safe, whatever was stored.
+    expect(wardRequestNeedsInvoluntaryBed({ intake: undefined }, { involuntaryBedNeeded: false })).toBe(true);
     expect(wardRequestNeedsInvoluntaryBed({ intake: undefined }, { involuntaryBedNeeded: true })).toBe(true);
   });
 

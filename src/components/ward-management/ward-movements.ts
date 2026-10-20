@@ -3238,7 +3238,9 @@ export const referrals: Referral[] = [
       {
         destination: {
           kind: "psychiatric_ward",
-          unitId: "sjgs-adult-secure",
+          // Audit 2 E-04 (20 Oct 2026): with no legal status recorded this referral needs an
+          // authorised bed, so it is accepted at Graylands rather than the voluntary-only SJGS unit.
+          unitId: "gry-adult-secure",
           sex: "Female",
           gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: true,
@@ -3246,7 +3248,7 @@ export const referrals: Referral[] = [
           highAcuityNursingNeeded: false,
         },
         state: "accepted",
-        acceptedUnitId: "sjgs-adult-secure",
+        acceptedUnitId: "gry-adult-secure",
         decidedAt: NOW_ANCHOR - 35,
         decidedBy: "Flow coordinator",
       },
@@ -3259,7 +3261,7 @@ export const referrals: Referral[] = [
     originSiteCode: "SJGS",
     transportNeeded: false,
     history:
-      "Transferred from a private hospital bed that was needed for a surgical admission, for continuing psychiatric care privately. Family has private health cover and requested the transfer.",
+      "Transferred from a private hospital bed that was needed for a surgical admission, for continuing psychiatric care. Family requested the transfer.",
   },
   // ⚠️ DEMONSTRATION DATA, LAST AND SPREAD RATHER THAN WRITTEN OUT, so the boundary between the
   // hand-authored referrals above and the nine added to populate one team's page is visible in the
