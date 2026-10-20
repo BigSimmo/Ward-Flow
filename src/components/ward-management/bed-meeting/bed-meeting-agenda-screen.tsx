@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
@@ -63,6 +63,15 @@ function BedMeetingAgenda() {
   const sections = bedMeetingAgenda({ movements, admissions, bedReleases, units }, now);
   const summary = meetingActionSummary(movements, admissions, now);
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
+  // A double click must close one action only. The list shifts up as an action closes, so a second
+  // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
+  const lastDoneAt = useRef(Number.NEGATIVE_INFINITY);
+  const claimDone = useCallback(() => {
+    const at = performance.now();
+    if (at - lastDoneAt.current < DONE_PAUSE_MS) return false;
+    lastDoneAt.current = at;
+    return true;
+  }, []);
   const ownerText = (action: BedMeetingAction) =>
     action.owner === "ward"
       ? (unitName(action.ownerUnitId) ?? WARD_FLOW_ROLE_LABELS.ward)
@@ -93,6 +102,7 @@ function BedMeetingAgenda() {
                   now={now}
                   name={patientOf(row.record).displayName}
                   owner={ownerText(row.action)}
+                  claimDone={claimDone}
                 />
               ))}
             </ul>
@@ -131,7 +141,22 @@ function BedMeetingAgenda() {
   );
 }
 
-function ActionRow({ row, now, name, owner }: { row: MeetingActionRow; now: Instant; name: string; owner: string }) {
+/** How long after one Done the list ignores another, longer than a double click. */
+const DONE_PAUSE_MS = 1000;
+
+function ActionRow({
+  row,
+  now,
+  name,
+  owner,
+  claimDone,
+}: {
+  row: MeetingActionRow;
+  now: Instant;
+  name: string;
+  owner: string;
+  claimDone: () => boolean;
+}) {
   const raise = useWardRaise("coordinator");
   const overdue = row.action.dueAt < now;
   return (
@@ -147,7 +172,11 @@ function ActionRow({ row, now, name, owner }: { row: MeetingActionRow; now: Inst
       <Button
         size="sm"
         variant="sec"
-        onClick={() => raise("COMPLETE_BED_MEETING_ACTION", { subject: row.subject, action: row.action.kind })}
+        onClick={(event) => {
+          // The second click of a double click is never a fresh Done.
+          if (event.detail > 1 || !claimDone()) return;
+          raise("COMPLETE_BED_MEETING_ACTION", { subject: row.subject, action: row.action.kind });
+        }}
         data-testid="bed-meeting-action-done"
       >
         Done
