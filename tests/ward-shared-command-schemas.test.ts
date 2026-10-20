@@ -110,6 +110,16 @@ describe("shared command schemas", () => {
     expect(validSharedCommand({ ...base, note: "x".repeat(4_000) })).toBe(true);
   });
 
+  it("refuse typed text the database cannot store, and keep whole emoji", () => {
+    // Audit E-17: PostgreSQL refused these on every retry after the engine had accepted them.
+    const base = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+    for (const note of ["before\u0000after", "lone \uD83D high half", "lone \uDE00 low half", "\uDE00\uD83D swapped"])
+      expect(validSharedCommand({ ...base, note }), JSON.stringify(note)).toBe(false);
+    expect(validSharedCommand({ ...base, ["key\u0000"]: "x" })).toBe(false);
+    expect(validSharedCommand({ ...base, nested: { list: ["ok", "\uD800"] } })).toBe(false);
+    expect(validSharedCommand({ ...base, note: "Settled \uD83D\uDE00 after a call" })).toBe(true);
+  });
+
   it("let a referral chart's file content past the text bound (the request size limit still applies)", () => {
     const role = EVENT_ROLE.RECEIVE_REFERRAL[0];
     const chart = (base64: string) => ({

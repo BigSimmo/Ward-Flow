@@ -26,11 +26,17 @@ const MAX_TEXT = 4_000;
  */
 const MAX_BASE64 = 4 * Math.ceil(CHART_MAX_BYTES / 3);
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+/**
+ * Text PostgreSQL cannot store in `jsonb` (audit E-17): a NUL character, or half of a surrogate
+ * pair. The engine would accept it and the save would then fail on every retry.
+ */
+const UNSTORABLE_TEXT = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const storableText = (value: string, maxText: number) => value.length <= maxText && !UNSTORABLE_TEXT.test(value);
 
 function boundedJson(value: unknown, depth: number, maxText = MAX_TEXT): boolean {
   if (value === null || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "string") return value.length <= maxText;
+  if (typeof value === "string") return storableText(value, maxText);
   if (depth >= MAX_DEPTH || typeof value !== "object") return false;
   if (Array.isArray(value)) return value.length <= MAX_ITEMS && value.every((item) => boundedJson(item, depth + 1));
   const prototype = Object.getPrototypeOf(value);
@@ -41,7 +47,7 @@ function boundedJson(value: unknown, depth: number, maxText = MAX_TEXT): boolean
     entries.every(
       ([key, item]) =>
         !FORBIDDEN_KEYS.has(key) &&
-        key.length <= 100 &&
+        storableText(key, 100) &&
         boundedJson(item, depth + 1, key === "base64" ? MAX_BASE64 : MAX_TEXT),
     )
   );
