@@ -376,6 +376,7 @@ export function WardGlobalSearch({
    * search simply has no answers and no "where now" line.
    */
   const admissions = wardFlow?.admissions;
+  const leaveBeds = wardFlow?.leaveBeds;
   const configuration = wardFlow?.configuration;
   const censusDayZero = wardFlow?.dayZero;
   const census = useMemo(
@@ -389,11 +390,24 @@ export function WardGlobalSearch({
             patients: [...patients],
             admissions,
             plannedAdmissions,
+            leaveBeds,
             now,
             thresholds: dueSoonThresholdsOf(configuration),
             dayZero: censusDayZero,
           }),
-    [open, admissions, censusDayZero, now, movements, referrals, units, patients, plannedAdmissions, configuration],
+    [
+      open,
+      admissions,
+      leaveBeds,
+      censusDayZero,
+      now,
+      movements,
+      referrals,
+      units,
+      patients,
+      plannedAdmissions,
+      configuration,
+    ],
   );
   const answer = useMemo(
     () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census, FULL_RESULTS_PER_GROUP)),
