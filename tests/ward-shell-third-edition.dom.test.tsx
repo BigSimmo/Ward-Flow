@@ -145,14 +145,20 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       within(menu)
         .getAllByTestId("ward-rail-link")
         .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
-    ).toEqual(["Home", "Capacity", "Movements", "Waiting", "Referrals", "Handover"]);
+    ).toEqual(["Needs you", "Beds", "Movements", "Referrals", "Handover"]);
+    // A5: the open rail's countdown card opens Handover, so the menu's own item is its CSS twin,
+    // hidden while the card shows.
+    expect(within(menu).getByRole("link", { name: "Handover" }).closest("li")).toHaveAttribute(
+      "data-countdown-twin",
+      "true",
+    );
     const sheet = await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
     // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).
     // (22 until the Network screen was retired on 19 Oct 2026.)
     expect(links).toHaveLength(21);
     const groups = [
-      ["Today", ["Bed meeting TV"]],
+      ["Today", ["Waiting", "Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Discharges"]],
       ["Checks", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
