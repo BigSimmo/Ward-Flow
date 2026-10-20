@@ -69,11 +69,21 @@ function queueRow(page: Page): Locator {
   return page.getByRole("region", { name: "Priority queue" }).getByTestId(`ward-queue-row-${MOVEMENT}`);
 }
 
-/** Select the movement on the queue, so Placement is about it whatever is now top of the queue. */
-async function selectMovement(page: Page): Promise<Locator> {
+/**
+ * The movement's queue row, expanding the queue first: a fresh page load lists only the top rows
+ * behind "Show all", and the movement need not be among them.
+ */
+async function revealQueueRow(page: Page): Promise<Locator> {
   const row = queueRow(page);
   const showAll = page.getByRole("region", { name: "Priority queue" }).getByRole("button", { name: /^Show all/u });
+  await expect(row.or(showAll).first()).toBeVisible();
   if (!(await row.isVisible()) && (await showAll.isVisible())) await showAll.click();
+  return row;
+}
+
+/** Select the movement on the queue, so Placement is about it whatever is now top of the queue. */
+async function selectMovement(page: Page): Promise<Locator> {
+  const row = await revealQueueRow(page);
   await row.click();
   await expect(placement(page)).toHaveAttribute("data-subject-movement", MOVEMENT);
   return placement(page);
@@ -145,7 +155,7 @@ test("two signed-in desks share one workspace: a save on one reaches the other o
   // A new page load must read the saved record from the backend, rather than reducer state.
   await one.page.reload({ waitUntil: "domcontentloaded" });
   await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
-  await expect(queueRow(one.page)).toContainText(chosen);
+  await expect(await revealQueueRow(one.page)).toContainText(chosen);
 });
 
 test("a clash: two desks change the same record from the same revision, and the second is refused", async () => {
