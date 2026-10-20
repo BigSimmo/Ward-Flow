@@ -384,7 +384,8 @@ test("every file the engine bundle is built from is under the backend's redeploy
   });
   const inputs = Object.keys(metafile.inputs).map((input) => relative(root, `${here}${input}`).replaceAll("\\", "/"));
   assert.ok(inputs.includes("src/lib/synthetic-data-guard.ts"), "the check must see the engine's real inputs");
-  const unwatched = inputs.filter((path) => !path.startsWith("node_modules/") && !watched(path));
+  // esbuild resolves external dependency symlinks, so node_modules can occur after ../ segments.
+  const unwatched = inputs.filter((path) => !path.split("/").includes("node_modules") && !watched(path));
   assert.deepEqual(unwatched, [], "add these to BACKEND_WATCH_PATHS, docs/hosting.md and the Railway service");
   assert.ok(watched("package-lock.json"), "root packages are rebuilt through the root lockfile");
   assert.equal(watched("src/app/page.tsx", BACKEND_WATCH_PATHS), false);

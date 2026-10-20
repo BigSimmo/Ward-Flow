@@ -19,6 +19,87 @@ import { LATEST_MIGRATION } from "./migrations.mjs";
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
   throw new Error("Database tests require an isolated loopback PostgreSQL server");
+test(
+  "real PostgreSQL: record-access repeat and rate limits survive concurrent requests",
+  { skip: !url, timeout: 30_000 },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const application = `ward-record-access-${randomUUID()}`;
+    const pool = new Pool({ connectionString: url, max: 4, application_name: application });
+    const control = new Pool({ connectionString: url, max: 2 });
+    const gate = await control.connect();
+    const workspaceId = randomUUID();
+    const at = new Date("2026-10-20T10:00:00Z");
+    const barrier = 873210;
+    let held = false;
+    try {
+      await migrate(control);
+      const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+      const initial = await store.read(randomUUID());
+      const [first, second] = initial.payload.state.patients.map((patient) => patient.id);
+      // A BEFORE INSERT gate holds each qualifying statement after its WHERE decision. Before the
+      // fix both statements qualify and wait here. With serialization the second instead waits on
+      // the account lock, then rechecks after the first commits. Observe both waits before release.
+      await gate.query(`CREATE FUNCTION ward_flow.test_record_access_gate() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN IF NEW.workspace_id = '${workspaceId}'::uuid THEN
+        PERFORM pg_advisory_xact_lock(${barrier});
+      END IF; RETURN NEW; END $$`);
+      await gate.query(
+        "CREATE TRIGGER test_record_access_gate BEFORE INSERT ON ward_flow.record_access FOR EACH ROW EXECUTE FUNCTION ward_flow.test_record_access_gate()",
+      );
+      for (const cap of [false, true]) {
+        await t.test(
+          cap ? "only one concurrent request takes the sixtieth slot" : "the same record is logged only once",
+          async () => {
+            const actorId = randomUUID();
+            const view = await store.viewer(actorId, { bootstrap: true });
+            if (cap)
+              await gate.query(
+                "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator','{\"kind\":\"statewide\"}'::jsonb,'PT-SYN-CAP-' || n,'patient',$3 FROM generate_series(1,59) n",
+                [workspaceId, actorId, at],
+              );
+            await gate.query("SELECT pg_advisory_lock($1)", [barrier]);
+            held = true;
+            const pending = Promise.all([
+              store.logView(view, first, "patient"),
+              store.logView(view, cap ? second : first, "patient"),
+            ]);
+            try {
+              let waiting = 0;
+              for (let attempt = 0; attempt < 250 && waiting < 2; attempt++) {
+                const result = await gate.query(
+                  "SELECT count(*)::int AS count FROM pg_stat_activity WHERE application_name=$1 AND wait_event_type='Lock' AND wait_event='advisory'",
+                  [application],
+                );
+                waiting = result.rows[0].count;
+                if (waiting < 2) await new Promise((resolve) => setTimeout(resolve, 20));
+              }
+              assert.equal(waiting, 2, "both real database requests must overlap before the gate opens");
+            } finally {
+              await gate.query("SELECT pg_advisory_unlock($1)", [barrier]);
+              held = false;
+            }
+            const results = await pending;
+            assert.equal(results.filter((result) => result.body.logged).length, 1);
+            const count = await gate.query(
+              "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+              [workspaceId, actorId],
+            );
+            assert.equal(count.rows[0].count, cap ? 60 : 1);
+          },
+        );
+      }
+    } finally {
+      if (held) await gate.query("SELECT pg_advisory_unlock($1)", [barrier]);
+      await gate.query("DROP TRIGGER IF EXISTS test_record_access_gate ON ward_flow.record_access");
+      await gate.query("DROP FUNCTION IF EXISTS ward_flow.test_record_access_gate()");
+      gate.release();
+      await pool.end();
+      await control.end();
+    }
+  },
+);
+
 test("real PostgreSQL: shared commands, last-bed contention, retry, audit and recovery", { skip: !url }, async (t) => {
   const engine = await import("./dist/engine.mjs");
   const pool = new Pool({ connectionString: url, max: 8 });

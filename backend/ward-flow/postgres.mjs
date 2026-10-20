@@ -1356,36 +1356,44 @@ export function createWorkspaceStore(
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
-      const at = clock();
-      const stored = await readWorld(pool, "payload");
-      if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
-      const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
-      const visible =
-        surface === "patient"
-          ? state.patients.some((patient) => patient.id === patientId)
-          : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
-      if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
-      const { rowCount } = await pool
-        .query(
-          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
-          [
-            workspaceId,
-            view.actorId,
-            view.membershipId ?? null,
-            view.access.role,
-            view.access.scope,
-            patientId,
-            surface,
-            at,
-            new Date(at.getTime() - VIEW_REPEAT_MS),
-            VIEW_RATE_LIMIT,
-          ],
-        )
-        .catch((error) => {
-          forgetVersionOnMissing(error);
-          throw error;
-        });
-      return { status: 200, body: { logged: rowCount > 0 } };
+      return transaction(async (client) => {
+        // The account lock is a separate statement: each check observes the preceding commit,
+        // including on another backend instance. Refresh time after waiting for the lock.
+        await client.query("SELECT pg_advisory_xact_lock(hashtext('record-access:' || $1), hashtext($2))", [
+          workspaceId,
+          view.actorId,
+        ]);
+        const at = clock();
+        const stored = await readWorld(client, "payload");
+        if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
+        const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
+        const visible =
+          surface === "patient"
+            ? state.patients.some((patient) => patient.id === patientId)
+            : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
+        if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
+        const { rowCount } = await client
+          .query(
+            "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
+            [
+              workspaceId,
+              view.actorId,
+              view.membershipId ?? null,
+              view.access.role,
+              view.access.scope,
+              patientId,
+              surface,
+              at,
+              new Date(at.getTime() - VIEW_REPEAT_MS),
+              VIEW_RATE_LIMIT,
+            ],
+          )
+          .catch((error) => {
+            forgetVersionOnMissing(error);
+            throw error;
+          });
+        return { status: 200, body: { logged: rowCount > 0 } };
+      });
     },
     /**
      * The newest record openings, optionally for one patient. Only the statewide coordinator reads

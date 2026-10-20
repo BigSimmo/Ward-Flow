@@ -15,6 +15,10 @@ import { StatisticsScreen } from "@/components/ward-management/statistics/statis
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * v10 pass 3: the header's one primary on Statistics is New referral, so "Export the figures"
@@ -52,9 +56,31 @@ async function exportedCsv(button: HTMLElement): Promise<{ csv: string; name: st
   }
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  installMatchMediaStub(false);
+});
 
 describe("Statistics hero: Export the figures", () => {
+  it.each([false, true])("counts physical ED waits on the summary and CSV (phone=%s)", async (phone) => {
+    installMatchMediaStub(phone);
+    const base = seedWardFlowStateAt(0).movements.find(isWaitingInEd)!;
+    const movements: Movement[] = [
+      { ...base, id: "WF-SYN-WAIT" },
+      { ...base, id: "WF-SYN-MOVING", stage: "moving" },
+      { ...base, id: "WF-SYN-DEPARTED", leftDepartmentAt: NOW_ANCHOR - 1 },
+      { ...base, id: "WF-SYN-TRANSFER", sourceAdmissionId: "ADM-SYN-TRANSFER" },
+    ];
+    inProvider(<StatisticsScreen movements={movements} />);
+    const label = screen.getByText("Waiting in ED", { exact: true });
+    const figure = phone ? label.closest("li") : label.parentElement;
+    expect(figure?.textContent).toBe("1Waiting in ED");
+    if (!phone) {
+      const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
+      expect(csv).toContain('"Waiting in ED","1"');
+    }
+  });
+
   it("sits in the Summary hero and exports the band's ready count, labelled synthetic", async () => {
     inProvider(<StatisticsScreen />);
     const button = screen.getByTestId("ward-statistics-export");

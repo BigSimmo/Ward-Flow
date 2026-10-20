@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 /**
  * The one list of shared-schema migrations, in order. migrate.mjs applies them, postgres.mjs
- * `ready()` requires the latest, and postgres-preflight.mjs bounds the ledger by it. Adding a
+ * `ready()` accepts MINIMUM_RUNTIME_MIGRATION through the latest; postgres-preflight.mjs bounds the ledger by it. Adding a
  * migration means one entry here plus its SQL file; nothing else hard-codes the version.
  *
  * Each SHA-256 is of the file with line endings normalised to LF. A file edited after it shipped

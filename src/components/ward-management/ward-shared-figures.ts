@@ -21,9 +21,9 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 /**
- * WAITING — people on an open movement out of an emergency department, by the health service that
- * runs the department. The noun is "waiting". Home's hero ("70 waiting"), the header's service
- * picker ("All services 70 waiting", "East Metro 35 waiting") and Network's ready-against-waiting
+ * WAITING — people physically in an emergency department awaiting a bed, by the health service
+ * running the department. Transit, recorded departures/outcomes and ward-origin transfers are
+ * excluded. Home's hero, Statistics, the header's service picker and Network's ready-against-waiting
  * rows all read this, so each service's figure is the same everywhere and the services add up to
  * the total: a person waits in exactly one department.
  */

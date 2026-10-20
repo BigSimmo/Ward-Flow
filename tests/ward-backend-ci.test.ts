@@ -45,7 +45,7 @@ describe("Ward backend CI", () => {
     const backendJob = jobAt(backendTest.start);
     expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);
-    expect(backendJob?.text).toMatch(/^\s*ports:\s*\[\s*5432\s*:\s*5432\s*\]\s*$/mu);
+    expect(backendJob?.text).toMatch(/^\s*ports:\s*\[\s*"127\.0\.0\.1:5432:5432"\s*\]\s*$/mu);
     expect(install.start).toBeLessThan(backendTest.start);
     expect(workflow).not.toMatch(/continue-on-error:/u);
 

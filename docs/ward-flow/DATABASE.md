@@ -13,7 +13,8 @@ _Updated 2026-10-19 - schema map extended to migration 11; Documentation owns._
   `ward_flow.access_requests` table, and each phone alert device in `ward_flow.push_subscriptions`
   records the membership that turned it on.
 - Migration 11 adds append-only record access history and break glass protection, plus
-  server-side session sign-outs. The backend accepts schema versions 5 through 11; these
+  server-side session sign-outs. The backend accepts schema versions 5 through
+  <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->; these
   capabilities require 11 and its runtime grants. See the backend setup guides for rollback limits.
 - Plain PostgreSQL (`postgres`) is kept behind the same seam as a fallback. It shares the SQL,
   migrations and runtime-role checks that the Supabase adapter builds on. It is not in use.

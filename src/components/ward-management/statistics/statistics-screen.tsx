@@ -80,6 +80,7 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
+import { waitingInEds } from "../ward-shared-figures";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
 
 /**
@@ -229,7 +230,7 @@ export function StatisticsScreen({
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
-  const waitingCount = refused.openMovementCount;
+  const waitingCount = waitingInEds(sourceMovements, now).total;
 
   const admissionsCount = sourceAdmissions.filter(
     (a) => a.arrivedAt !== null && dayOf(a.arrivedAt) === dayOf(now),
