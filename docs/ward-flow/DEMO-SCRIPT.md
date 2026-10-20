@@ -199,8 +199,8 @@ reloads and no typed addresses.**
 
 **Say (optional, one line):**
 
-> "Because I typed text, this demo has stopped saving in the browser. That's deliberate: typed text
-> is never kept in the browser."
+> "Because I typed text, this demo has stopped saving its state in the browser. That's deliberate:
+> the demo does not keep typed text in its saved state."
 
 **Do:** press **Mark handover ready**. Then open **Destination** (Dabakarn accepted · bed hold and
 placement) and press, in order, **Provider accepted job**, **Vehicle en route** and **Mark moving ·
@@ -269,9 +269,10 @@ Say these with confidence:
   decides.
 - **Steps happen in order.** Transport needs a held bed; handover ready needs transport; a missing
   transport order asks for a recorded reason.
-- **Single-sex wards.** A ward designated single-sex cannot be overridden for a patient of the other
-  sex. There is no room or wing model. For a gender-diverse patient, one coordinator records a
-  reason and ticks that it was checked with the ward.
+- **Single-gender wards.** The check uses the gender recorded at referral, not sex. A single-gender
+  ward cannot be overridden for a patient whose recorded gender is the other binary gender, and it
+  refuses when gender has not been recorded. There is no room or wing model. For a non-binary
+  patient, one coordinator records a reason and ticks that it was checked with the ward.
 - **Overrides are recorded.** The actions that need an override need a reason from a fixed list, and
   recorded overrides show in the governance view. Routine steps do not all record a reason.
 - **Alerts.** The Alerts screen watches 12 conditions and shows the quiet ones as well, so silence
@@ -305,9 +306,11 @@ Do not claim:
 
 **"What happens to the data?"**
 
-> "In this demo everything stays in this browser tab, and it is all invented. Typed text is never
-> saved in the browser: once you type, the demo stops saving, which is why I haven't reloaded. A
-> shared mode saves through a backend; it is not what you've seen today."
+> "In this demo everything stays in this browser tab, and it is all invented. Once you type text,
+> the demo stops saving its state, which is why I haven't reloaded. The referral and legal-form
+> editors can keep an unsent synthetic draft for this browser session so it can be checked and
+> sent; that is the one exception. A shared mode saves through a backend; it is not what you've
+> seen today."
 
 **"How is transport handled?"**
 
