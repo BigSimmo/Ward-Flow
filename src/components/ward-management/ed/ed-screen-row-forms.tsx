@@ -22,6 +22,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import {
   LEGAL_STATUS_OPTIONS,
   LEGAL_STATUS_REASON_UNCHOSEN,
+  LEGAL_STATUS_UNCHOSEN,
   NO_CHANGE_REASON_VALUE,
   URGENCY_OPTIONS,
   URGENCY_REASON_UNCHOSEN,
@@ -77,6 +78,13 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitLegalFormExpiry,
     submitReceiptCorrection,
   } = ctx;
+  // Why the legal status change cannot be recorded yet: the new status first, then the reason.
+  const legalStatusBlocked =
+    legalStatusDraft.legalStatus === undefined
+      ? LEGAL_STATUS_UNCHOSEN
+      : legalStatusDraft.reason === undefined
+        ? LEGAL_STATUS_REASON_UNCHOSEN
+        : undefined;
   return (
     <>
       {/*
@@ -392,14 +400,15 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             Legal status for {patientInfo.displayName}
             <select
               id={`ward-change-legal-status-value-${movement.id}`}
-              value={legalStatusDraft.legalStatus}
+              value={legalStatusDraft.legalStatus ?? ""}
               onChange={(event) =>
                 setLegalStatusDraft((current) => ({
                   ...current,
-                  legalStatus: event.target.value as LegalStatus,
+                  legalStatus: event.target.value === "" ? undefined : (event.target.value as LegalStatus),
                 }))
               }
             >
+              <option value="">Choose a legal status</option>
               {LEGAL_STATUS_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -434,18 +443,16 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={legalStatusDraft.reason === undefined ? "true" : undefined}
-            aria-describedby={
-              legalStatusDraft.reason === undefined ? `ward-change-legal-status-blocked-${movement.id}` : undefined
-            }
-            title={legalStatusDraft.reason === undefined ? LEGAL_STATUS_REASON_UNCHOSEN : undefined}
-            onClick={legalStatusDraft.reason === undefined ? ignoreUnavailableActivation : undefined}
+            aria-disabled={legalStatusBlocked ? "true" : undefined}
+            aria-describedby={legalStatusBlocked ? `ward-change-legal-status-blocked-${movement.id}` : undefined}
+            title={legalStatusBlocked}
+            onClick={legalStatusBlocked ? ignoreUnavailableActivation : undefined}
           >
             Record legal status change
           </button>
-          {legalStatusDraft.reason === undefined ? (
+          {legalStatusBlocked ? (
             <span id={`ward-change-legal-status-blocked-${movement.id}`} className="sr-only">
-              {LEGAL_STATUS_REASON_UNCHOSEN}
+              {legalStatusBlocked}
             </span>
           ) : null}
         </form>

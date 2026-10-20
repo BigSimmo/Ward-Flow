@@ -187,20 +187,22 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 describe("Form times on the Perth clock", () => {
   afterEach(() => vi.useRealTimers());
 
-  it("starts on the demo clock's Perth date with no time until one is typed", () => {
-    // Carried over from the retired MHA form calculator: 16:30 UTC is 00:30 on Saturday in Perth.
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-25T16:30:00.000Z"));
+  it("starts with no form, date or time, and shows a result only once all three are entered", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardFormTimes />
       </WardFlowProvider>,
     );
-    expect(screen.getByLabelText("Date written on form")).toHaveValue("2026-09-26");
-    // Rule D5: the result shows only a time the person typed.
+    // Owner rule (19 Oct 2026): no MHA form type or form time is prefilled, and rule D5: the
+    // result shows only what the person entered.
+    expect(screen.getByRole("combobox", { name: "Form" })).toHaveValue("");
+    expect(screen.getByLabelText("Date written on form")).toHaveValue("");
     expect(screen.getByLabelText("Time written on form")).toHaveValue("");
     expect(screen.getByRole("status").textContent).toBe("Not recorded");
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
+    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
+    expect(screen.getByRole("status").textContent).toBe("Not recorded");
+    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
     expect(screen.getByRole("status").textContent).toContain("on the demo clock");
     // Any form a Legal forms record can carry, not only the ones with a clock.
     expect(screen.getByRole("option", { name: /^Form 4A/u })).toBeTruthy();
@@ -212,6 +214,8 @@ describe("Form times on the Perth clock", () => {
         <WardFormTimes />
       </WardFlowProvider>,
     );
+    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
+    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
     expect(screen.getByRole("status").textContent).toBe("Not recorded");

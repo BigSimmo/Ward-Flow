@@ -202,7 +202,8 @@ export function sampleProfile(
       umrn: registered.umrn || NOT_RECORDED,
       dob: registered.dateOfBirth || NOT_RECORDED,
       origin: NOT_RECORDED,
-      legalStatus: "Voluntary",
+      // A registered person with no ED stay has no legal status on record here; never assume one.
+      legalStatus: NOT_RECORDED,
       recordedExpiry: "not recorded",
       security: "Open",
       initials: `${registered.givenName.charAt(0)}${registered.familyName.charAt(0)}`.toUpperCase(),
