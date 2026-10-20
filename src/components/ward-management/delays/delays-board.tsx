@@ -147,11 +147,6 @@ export type DelaysBoardProps = {
   service: string | null;
   isOutsideService: (movement: Movement) => boolean;
   onEscalate: (movement: Movement) => void;
-  /**
-   * No longer read: the board's two "(not wired)" record buttons were removed (simplification A5,
-   * 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
-   */
-  onNotWired?: () => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
