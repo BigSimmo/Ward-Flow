@@ -94,6 +94,17 @@ describe("Ready beds by road time", () => {
     expect(listedNames(card)[0]).toContain("On site");
   });
 
+  it("writes a drive under ten minutes as whole minutes, with no seconds", () => {
+    const pair = departments
+      .flatMap((d) => rows.map((row) => ({ d, row, route: routeFrom(d.id, row) })))
+      .find(({ route }) => route !== null && route.min > 0 && route.min < 10);
+    expect(pair, "no ward is under ten minutes from an emergency department in the fixture").toBeDefined();
+    const { card } = renderCard([{ ...pair!.row, ready: 1 }], pair!.d.id);
+    const text = listedNames(card)[0];
+    expect(text).toContain(`${pair!.route!.min}mdrive`);
+    expect(text).not.toMatch(/\d+s/u);
+  });
+
   it("re-ranks when another department is chosen, and reports the ward picked", async () => {
     const user = userEvent.setup();
     const { card, onSelectUnit } = renderCard(rows);
@@ -105,8 +116,13 @@ describe("Ready beds by road time", () => {
       const ranked = rows.filter((row) => row.ready > 0 && routeFrom(d.id, row) !== null);
       return d.id !== departments[0]!.id && ranked.length > 0;
     })!;
+    // The phone shows a 13px copy of the chosen department over the invisible 16px select.
+    const shown = () => select.parentElement?.nextElementSibling;
+    expect(shown()?.getAttribute("aria-hidden")).toBe("true");
+    expect(shown()?.textContent).toBe(`${departments[0]!.siteCode} ED`);
     await user.selectOptions(select, other.id);
     expect(select.value).toBe(other.id);
+    expect(shown()?.textContent).toBe(`${other.siteCode} ED`);
     expect(listedNames(card)).not.toEqual(before);
 
     await user.click(within(within(card).getByRole("list")).getAllByRole("button")[0]!);
