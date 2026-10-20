@@ -249,7 +249,7 @@ function namedValues(value, found = new Set()) {
 export const recordToken = (key) => createHash("sha256").update(key).digest("hex").slice(0, 16);
 
 /** The most records a reply names as covered; a larger command names none, which is always safe. */
-export const MAX_COVERED = 200;
+const MAX_COVERED = 200;
 
 /**
  * The records a command changes (adds, rewrites or removes) or names, by `partKey`, each with its
