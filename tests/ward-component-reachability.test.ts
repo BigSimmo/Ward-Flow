@@ -95,12 +95,11 @@ function importsOf(file: string): string[] {
  * Every module a coordinator's browser can reach, closed transitively from the routes themselves.
  *
  * ⚠️ **THE CLOSURE MUST BE TRANSITIVE, AND A SHALLOWER MEASUREMENT HAS ALREADY BEEN WRONG HERE.**
- * `coordinator/flow-diagram.tsx` has no direct app-route reference and looked orphaned to an earlier
- * pass; it is rendered by `CoordinatorScreen`, which has one. **That reachability verdict went stale
- * within a day** (recorded by Ward Builder Three in
- * `tests/ward-ready-figure-preparation-qualifier.test.ts`). This closure reports it REACHABLE —
- * checked deliberately, as a positive control on the instrument rather than on the tree, because a
- * scan that cannot see that edge would declare live screens dead and its list would look tidy.
+ * `coordinator/flow-diagram.tsx` (deleted 20 Oct 2026) once had no direct app-route reference and
+ * looked orphaned to an earlier pass while `CoordinatorScreen`, which has one, still rendered it.
+ * **That reachability verdict went stale within a day** (recorded by Ward Builder Three in
+ * `tests/ward-ready-figure-preparation-qualifier.test.ts`). A scan that cannot see such an edge
+ * would declare live screens dead and its list would look tidy.
  *
  * ⚠️ **TYPE-ONLY IMPORTS ARE FOLLOWED, AND THAT IS THE SAFE DIRECTION.** `import type { X } from
  * "./y"` carries no runtime edge, so following it can only make the reachable set LARGER than the
@@ -139,14 +138,6 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  * disk fails "declares nothing it cannot point at" below rather than staying silently stale.
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
-  {
-    module: "src/components/ward-management/coordinator/pressure-strip.tsx",
-    why: "its one route use was the Network screen, retired on 19 Oct 2026 (Josh's decision); Home has its own ED pressure card. A deletion candidate for the clean-up wave",
-  },
-  {
-    module: "src/components/ward-management/coordinator/flow-diagram.tsx",
-    why: "Home stopped drawing the flow diagram in the v6 pages (#113, 7 Oct 2026); its status sentence moved to flow-status.ts on 19 Oct 2026 so Home's first load skips the diagram. A deletion candidate for the clean-up wave",
-  },
   {
     module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
     why: "added by #269 but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",

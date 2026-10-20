@@ -1228,6 +1228,27 @@
       "after": 8,
       "reason": "Network screen retired (Josh's decision card, 19 October 2026 16:36 UTC): the screen repeated Home and Capacity, its route now redirects to Home and its one unique part, ready beds by road time, moved to Capacity. The removed describe pinned originServiceFit, a Network-only helper deleted with the screen.",
       "approvedOn": "2026-10-19"
+    },
+    {
+      "path": "tests/pressure-strip.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Josh approved deleting the unused pressure strip and flow diagram on 20 October 2026 (project thread, 06:04 UTC, \"Yes, delete those 7 files\"). No route had drawn PressureStrip since the Network screen was retired (19 Oct 2026) or FlowDiagram since the v6 Home (#113, 7 Oct 2026). This file rendered only PressureStrip and was deleted with it; Home's live ED pressure card (home-ed-pressure.tsx) keeps its own tests, including the service-scope foot in ward-coordinator-service-scope.dom.test.tsx.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-flow-diagram-scroll-notice.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Josh approved deleting the unused pressure strip and flow diagram on 20 October 2026 (project thread, 06:04 UTC, \"Yes, delete those 7 files\"). No route had drawn PressureStrip since the Network screen was retired (19 Oct 2026) or FlowDiagram since the v6 Home (#113, 7 Oct 2026). This file rendered only FlowDiagram's sideways-scroll note and was deleted with the component.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-flow-potential-chip-migration.dom.test.tsx",
+      "before": 1,
+      "after": 0,
+      "reason": "Josh approved deleting the unused pressure strip and flow diagram on 20 October 2026 (project thread, 06:04 UTC, \"Yes, delete those 7 files\"). No route had drawn PressureStrip since the Network screen was retired (19 Oct 2026) or FlowDiagram since the v6 Home (#113, 7 Oct 2026). Its one case rendered FlowDiagram to check it showed Confirmed/Expected rather than the raw potential figure; with the diagram gone there is no surface left for it to check. Hub status wording stays pinned by ward-flow-diagram-status-truthfulness.test.ts.",
+      "approvedOn": "2026-10-20"
     }
   ]
 }

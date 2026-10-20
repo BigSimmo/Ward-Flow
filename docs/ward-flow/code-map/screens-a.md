@@ -133,11 +133,10 @@ Back to [the code map index](README.md).
   `buildActionInbox`, `isOpen`, `elapsedLabel`), `ward-priority.ts` (`queueOrder`,
   `operationalScore`), `ward-referrals.ts` (`referralQueueOrder`), `ward-bed-availability.ts`,
   `ward-pressure.ts` (`edPressure`), `ward-eligibility.ts`. Also reaches into `delays/` (see
-  pitfalls) and `ed/ed-home-derivations.ts` (`edOpenSummaries`, for the pressure strip).
-- **Tests:** 31 files under `tests/` reference this folder, including
+  pitfalls) and `ed/ed-home-derivations.ts` (`edOpenSummaries`, for Home's ED pressure card).
+- **Tests:** 28 files under `tests/` reference this folder, including
   `ward-coordinator-screen.dom.test.tsx`, `ward-shortlist.dom.test.tsx` and four more
-  shortlist-specific specs, `pressure-strip.dom.test.tsx`, `ward-flow-diagram-scroll-notice.dom.test.tsx`,
-  `ward-flow-diagram-status-truthfulness.test.ts`, `ward-override-register-render.dom.test.tsx`,
+  shortlist-specific specs, `ward-flow-diagram-status-truthfulness.test.ts`, `ward-override-register-render.dom.test.tsx`,
   `ward-registers-drawer.dom.test.tsx`, `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx`.
 
 ### Files
@@ -150,14 +149,10 @@ Back to [the code map index](README.md).
   other component here imports it alongside its own smaller module.
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
-- **`flow-diagram.module.css`** (336 lines) — styles for `FlowDiagram` only.
-- **`flow-diagram.tsx`** — `FlowDiagram`, the bed-pipeline diagram (referred → accepted → placed).
-  No route draws it since the v6 Home (#113); only tests render it, and it re-exports `hubStatusText`.
 - **`flow-status.ts`** — `hubStatusText`, the hub's one-line status, used by `home-bedflow.tsx`.
-  Kept apart so Home's first load skips the diagram.
-- **`pressure-strip.tsx`** (247 lines) — `PressureStrip`, the horizontal ED-pressure scroller at the
-  top of the coordinator screen; reads `ed/ed-home-derivations.ts` directly rather than through a
-  coordinator-local selector.
+  The flow diagram it came from (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`)
+  were deleted on 20 Oct 2026 (Josh's yes); no route had drawn either since the v6 Home and the
+  Network screen's retirement.
 - **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the ranked movement list using
   `ward-priority.ts`'s `operationalScore`.
 - **`shortlist-panel.module.css`** (684 lines) — styles for `shortlist-panel.tsx` and reused by
@@ -213,7 +208,7 @@ baseline.
 - **`ed-index.tsx`** — `EdIndex`, the `/ed` index route component listing emergency departments across the network.
 - **`ed-home-derivations.ts`** (248 lines) — pure ED-summary functions: `isDetainedUnderTheAct`,
   `elapsedOpenMinutes`, `edOpenSummaries`, `edHomeSummaries`, `edHomeTotals`, `worstEdSummary`,
-  `groupByHealthService`, `ofPopulation`. **Not itself unreachable** — `coordinator/pressure-strip.tsx`
+  `groupByHealthService`, `ofPopulation`. **Not itself unreachable** — `coordinator/home-ed-pressure.tsx`
   imports `edOpenSummaries` directly, so this file stays live. Its sibling component
   `ed-home.tsx` was removed by PR #306 on 15 Oct 2026.
 - **`ed-screen.tsx`** (484 lines) — `EdScreen`, the routed ED board: referral intake, legal forms,
@@ -718,7 +713,7 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 
 ## Pitfalls in this area
 
-1. **`coordinator-screen.tsx` imports from `delays/` (Screens B), and `pressure-strip.tsx` imports
+1. **`coordinator-screen.tsx` imports from `delays/` (Screens B), and `home-ed-pressure.tsx` imports
    from `ed/ed-home-derivations.ts`.** Neither folder is self-contained the way the overview map's
    "engine files" are; changing `delays-derivations.ts`'s `answerSilenceReminder` or
    `ed-home-derivations.ts`'s exports can silently break the coordinator screen with no import
