@@ -16,7 +16,7 @@ import { generateSeedPatient } from "@/components/ward-management/ward-patients-
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 
 /**
@@ -835,9 +835,12 @@ const seededMovements: Movement[] = [
     // waited hours, the flag is unmistakably what put it there and nothing else could have.
     //
     // Clinically ordinary rather than contrived: someone can become urgent shortly after arriving,
-    // which is the case a flag exists for. No reason is recorded, because the owner said "for many
-    // reasons" and no vocabulary for them has been asked for.
+    // which is the case a flag exists for. Overall review (20 Oct 2026): the flag now carries who
+    // raised it, when and the chosen reason, as `FLAG_MOVEMENT_URGENT` writes them, so the first
+    // rows of Home no longer pair "Flagged urgent" with "who flagged this was not recorded".
     flaggedUrgent: true,
+    urgentFlag: { at: NOW_ANCHOR - 25, by: "ed", reason: "cannot_be_observed_safely_here" },
+    urgentFlagHistory: [{ raisedAt: NOW_ANCHOR - 25, raisedBy: "ed", reason: "cannot_be_observed_safely_here" }],
     urgency: 3,
     cohort: "Older adult",
     security: "Open",
@@ -1731,8 +1734,12 @@ const journeyCoverageMovements: Movement[] = [
     originEdId: "rph-ed",
     openedAt: NOW_ANCHOR - 60,
     // A second flagged-urgent patient, beside WF-018's — clinically ordinary rather than
-    // contrived, same reasoning as that row's own comment.
+    // contrived, same reasoning as that row's own comment, and with its provenance recorded too.
     flaggedUrgent: true,
+    urgentFlag: { at: NOW_ANCHOR - 45, by: "coordinator", reason: "cannot_safely_prevent_leaving" },
+    urgentFlagHistory: [
+      { raisedAt: NOW_ANCHOR - 45, raisedBy: "coordinator", reason: "cannot_safely_prevent_leaving" },
+    ],
     urgency: 3,
     cohort: "Adult",
     security: "Open",
@@ -1806,8 +1813,11 @@ export const wardMovements: Movement[] = [
 
 /**
  * The generated people on routine movements (seed-link plan task T2 names them `PT-G-<movement
- * id>`), built here next to the records they describe. Their index starts at 1,000 so no generated
- * movement patient shares a name or record number with a generated bed occupant.
+ * id>`), built here next to the records they describe. Their index carries on from the last
+ * generated bed occupant's, so no generated movement patient shares a record number with one, nor
+ * a full name while both groups together stay under the 400 name pairs `generateSeedPatient`
+ * cycles through. CS-16 (Audit 1, Josh 20 Oct 2026): the old start of 1,000 wrapped round to the
+ * names of occupants 200 onwards, so every movement patient shared an occupant's full name.
  */
 export const generatedMovementPatients: Patient[] = wardMovements
   .filter((movement) => movement.patientId?.startsWith("PT-G-"))
@@ -1817,7 +1827,7 @@ export const generatedMovementPatients: Patient[] = wardMovements
       sex: movement.sex,
       gender: movement.gender,
       cohort: movement.cohort,
-      index: 1000 + index,
+      index: generatedOccupantPatients.length + index,
     }),
   );
 

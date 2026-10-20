@@ -24,6 +24,7 @@ import {
 
 import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import {
   CORE_SEARCH_VIEWS,
   searchIntentLabel,
@@ -252,6 +253,9 @@ function subscribeRecents(listener: () => void) {
   };
 }
 
+// Recent records name patients, so a session ending forgets them (Codex review on PR #487).
+onWardSessionEnd(() => setSessionRecents(NO_RECENTS));
+
 const recentsSnapshot = () => sessionRecents;
 const serverRecentsSnapshot = () => NO_RECENTS;
 
@@ -376,6 +380,7 @@ export function WardGlobalSearch({
    * search simply has no answers and no "where now" line.
    */
   const admissions = wardFlow?.admissions;
+  const leaveBeds = wardFlow?.leaveBeds;
   const configuration = wardFlow?.configuration;
   const censusDayZero = wardFlow?.dayZero;
   const census = useMemo(
@@ -389,11 +394,24 @@ export function WardGlobalSearch({
             patients: [...patients],
             admissions,
             plannedAdmissions,
+            leaveBeds,
             now,
             thresholds: dueSoonThresholdsOf(configuration),
             dayZero: censusDayZero,
           }),
-    [open, admissions, censusDayZero, now, movements, referrals, units, patients, plannedAdmissions, configuration],
+    [
+      open,
+      admissions,
+      leaveBeds,
+      censusDayZero,
+      now,
+      movements,
+      referrals,
+      units,
+      patients,
+      plannedAdmissions,
+      configuration,
+    ],
   );
   const answer = useMemo(
     () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census, FULL_RESULTS_PER_GROUP)),

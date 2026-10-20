@@ -318,11 +318,13 @@ export function deriveEdScreen({
   const underFormPatients = patients.filter((m) => !!m.legalForm && !isEdInitiatedWithdrawal(m));
 
   const priorityFlags: PriorityFlag[] = [];
-  // Top 25 item 3: names the eligible wards nobody has asked yet. The
-  // coordinator refers from the shortlist, so this only tells the department who is next.
+  // Top 25 item 3: how many eligible wards nobody has asked yet. A count only, never names in
+  // an order (Audit 1, Josh 20 Oct 2026, D-71): the coordinator chooses from the shortlist.
   const nextWardsSentence = (m: Movement) => {
-    const names = deriveNextWardsAfterRefusal(m, units, now)?.candidates.map((c) => c.unit.name) ?? [];
-    return names.length === 0 ? " No other eligible ward is left to ask." : ` Next eligible: ${names.join(", ")}.`;
+    const count = deriveNextWardsAfterRefusal(m, units, now)?.candidates.length ?? 0;
+    return count === 0
+      ? " No other eligible ward is left to ask."
+      : ` ${count} other eligible ${count === 1 ? "ward" : "wards"} could be asked.`;
   };
   for (const m of patients) {
     const flagPatientInfo = resolveSubjectPatient(m, {
@@ -538,12 +540,25 @@ export function deriveEdScreen({
     }
     if (subject.arrivalDetails?.recordedAt !== undefined) {
       const details = subject.arrivalDetails;
+      const tone = isArrivalLate(subject, now) ? "danger" : "good";
+      const plan = `${arrivalModeLabel(details.mode)} · ward ${arrivalEtaLabel(details.estimatedArrivalAt, now)}`;
+      // The first recording keeps its own time and role; a later edit is its own "updated" row, and
+      // the current plan is shown on the latest of the two.
+      const updated = details.updatedAt !== undefined;
       events.push({
         min: details.recordedAt,
-        tone: isArrivalLate(subject, now) ? "danger" : "good",
-        what: `Arrival plan recorded · ${arrivalModeLabel(details.mode)} · ward ${arrivalEtaLabel(details.estimatedArrivalAt, now)}`,
+        tone,
+        what: updated ? "Arrival plan recorded" : `Arrival plan recorded · ${plan}`,
         by: details.recordedBy ? WARD_FLOW_ROLE_LABELS[details.recordedBy] : null,
       });
+      if (details.updatedAt !== undefined) {
+        events.push({
+          min: details.updatedAt,
+          tone,
+          what: `Arrival plan updated · ${plan}`,
+          by: details.updatedBy ? WARD_FLOW_ROLE_LABELS[details.updatedBy] : null,
+        });
+      }
     }
     events.sort((a, b) => b.min - a.min);
     return events;

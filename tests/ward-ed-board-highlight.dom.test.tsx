@@ -1,8 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import type { ReactNode } from "react";
+
+import { EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE } from "@/components/ward-management/ward-derivations";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -78,5 +82,60 @@ describe("ED page — v10 pass 3: names and the person sheet", () => {
     fireEvent.click(screen.getAllByTestId(/^ward-ed-row-name-/u)[0]);
     const journey = screen.getByTestId("ward-ed-person-journey");
     expect(within(journey).getByRole("img").getAttribute("aria-label")).toMatch(/^Time in the department: /u);
+  });
+});
+
+describe("ED page — clearance and review stay readable on a laptop (overall review, 20 Oct 2026)", () => {
+  it("repeats each row's clearance and review under the patient, in the same words as the columns", () => {
+    renderEd();
+    for (const row of rows()) {
+      const checks = within(row).getByTestId(/^ward-ed-row-checks-/u);
+      const cells = within(row).getAllByRole("cell");
+      // Columns: T, Patient, In ED, Bay, Form, Cleared, Review, Destination, Next.
+      const cleared = cells[5].textContent ?? "";
+      const review = cells[6].textContent ?? "";
+      const clearedWord = cleared.startsWith("Not cleared")
+        ? "Not cleared"
+        : cleared.startsWith("Cleared")
+          ? "Cleared"
+          : "Clearance pending";
+      expect(checks.textContent).toContain(clearedWord);
+      expect(checks.textContent).toContain(review.startsWith("Reviewed") ? "Reviewed" : "Not reviewed");
+    }
+  });
+
+  it("warns, never says Reviewed, when the examination was revoked and a bed is still held", () => {
+    function Revoked({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      const movements = value.movements.map((movement, index) =>
+        index === value.movements.findIndex((candidate) => candidate.originEdId === "sjgm-ed" && !candidate.closure)
+          ? { ...movement, stage: "pulled" as const, examination: { at: NOW_ANCHOR - 30, outcome: "revoked" as const } }
+          : movement,
+      );
+      return <WardFlowOverride value={{ ...value, movements }}>{children}</WardFlowOverride>;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Revoked>
+          <EdScreen edId="sjgm-ed" />
+        </Revoked>
+      </WardFlowProvider>,
+    );
+    const warned = screen
+      .getAllByTestId(/^ward-ed-row-checks-/u)
+      .filter((checks) => checks.textContent?.includes(EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE));
+    expect(warned).toHaveLength(1);
+    expect(warned[0]).not.toHaveTextContent("Reviewed");
+    expect(within(warned[0]).getByText(EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE)).toHaveAttribute(
+      "data-level",
+      "warning",
+    );
+  });
+
+  it("shows that line only while the Cleared and Review columns step aside", () => {
+    const css = readFileSync("src/components/ward-management/ed/ed.module.css", "utf8");
+    const narrow = css.slice(css.indexOf("@media (max-width: 1365px)"));
+    expect(narrow.slice(0, narrow.indexOf("\n}\n"))).toMatch(/\.a2Checks \{\s*display: flex;/u);
+    expect(css).toMatch(/\n\.a2Checks \{\n {2}display: none;/u);
   });
 });

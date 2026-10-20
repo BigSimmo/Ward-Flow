@@ -25,7 +25,6 @@ import {
   Truck,
   Activity,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 
 import { ContextualBackLink } from "@/components/contextual-back-link";
@@ -54,16 +53,13 @@ import {
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   MOVEMENT_STAGES,
-  REFERRAL_GENDERS,
   STEP_BACK_REASONS,
   stepBackReasonLabels,
   type LegalForm,
   type Movement,
   type MovementId,
   type MovementStage,
-  type ReferralGender,
   type StepBackReason,
-  type Unit,
 } from "@/components/ward-management/ward-model";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -80,16 +76,9 @@ import {
   type UrgentMarkReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  candidateReason,
-  eligibility,
-  gateMark,
-  type EligibilityVerdict,
-  type GateResult,
-} from "@/components/ward-management/ward-eligibility";
+import { candidateReason, eligibility, gateMark } from "@/components/ward-management/ward-eligibility";
 import {
   destinationNoLongerLawful,
-  eligibleCandidatesAmong,
   examinationRevokedWhileBedHeld,
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   isOpen,
@@ -170,7 +159,6 @@ export function MovementWorkspaceCockpit({
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
-  const [genderRecordDraft, setGenderRecordDraft] = useState<ReferralGender | undefined>(undefined);
 
   if (!patient) {
     return null;
@@ -178,19 +166,6 @@ export function MovementWorkspaceCockpit({
 
   const destination = patient.acceptedUnitId ? units.find((unit) => unit.id === patient.acceptedUnitId) : undefined;
   const verdict = destination ? eligibility(patient, destination, now) : undefined;
-  const candidates = eligibleCandidatesAmong(patient, units, now).filter(
-    (candidate: { unit: Unit; verdict: EligibilityVerdict }) => candidate.unit.id !== destination?.id,
-  );
-  const cohortUnitCount = units.filter((unit: Unit) => unit.cohort === patient.cohort).length;
-  const usableCandidates = candidates.filter(
-    (candidate: { unit: Unit; verdict: EligibilityVerdict }) =>
-      candidate.verdict.eligible && !patient.declines.some((decline) => decline.unitId === candidate.unit.id),
-  );
-  const genderRecordableHere =
-    patient.gender === undefined &&
-    candidates.some((candidate: { unit: Unit; verdict: EligibilityVerdict }) =>
-      candidate.verdict.gates.some((gate: GateResult) => gate.gate === "gender_designation" && !gate.pass),
-    );
   const open = isOpen(patient);
   const destinationRestriction = destination ? restrictionNotice(patient, destination) : undefined;
   const blockerIsActive = !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === patient.blocker.trim());
@@ -456,122 +431,8 @@ export function MovementWorkspaceCockpit({
           )}
         </div>
       </div>
-
-      <section className={styles.panelCard}>
-        <div className={styles.panelCardHeader}>
-          <div className={styles.panelTitleGroup}>
-            <Sparkles className={styles.readinessCardIcon} size={18} aria-hidden="true" />
-            <h2 className={styles.panelCardTitle}>Other wards, ranked</h2>
-          </div>
-          <span className={styles.panelCountBadge}>
-            {candidates.length} of {cohortUnitCount}
-          </span>
-        </div>
-        <div className={styles.panelCardBody}>
-          <p className={styles.panelBlurb}>
-            Ranked among the {cohortUnitCount} {patient.cohort.toLowerCase()} wards in the network — the rest take a
-            different cohort and were never candidates for this patient. At most three are listed. Being listed here is
-            not an offer and not a decision — a ward that has already declined this movement still appears, marked.
-          </p>
-
-          {candidates.length > 0 && usableCandidates.length === 0 ? (
-            <p className={styles.blockerAlertBanner} data-testid="ward-console-no-usable-alternative">
-              No ward on this list could take this patient. Every one of them has either already declined this movement
-              or fails a check of its own, so this is a ranking of what was considered, not a set of places left to try.
-            </p>
-          ) : null}
-
-          {genderRecordableHere ? (
-            <div className={styles.controlRow} data-testid="ward-console-record-gender">
-              <select
-                aria-label="Record gender"
-                className={styles.controlSelect}
-                data-testid="ward-console-record-gender-select"
-                value={genderRecordDraft ?? ""}
-                onChange={(event) =>
-                  setGenderRecordDraft(event.target.value === "" ? undefined : (event.target.value as ReferralGender))
-                }
-              >
-                <option value="">Choose…</option>
-                {REFERRAL_GENDERS.map((gender) => (
-                  <option key={gender} value={gender}>
-                    {gender}
-                  </option>
-                ))}
-              </select>
-              <>
-                <button
-                  type="button"
-                  data-testid="ward-console-record-gender-submit"
-                  className={styles.controlButton}
-                  aria-disabled={genderRecordDraft === undefined ? "true" : undefined}
-                  aria-describedby={
-                    genderRecordDraft === undefined ? `${baseId}-ward-console-record-gender-blocked` : undefined
-                  }
-                  title={genderRecordDraft === undefined ? "Choose a gender to record first." : undefined}
-                  {...lock("RECORD_MOVEMENT_GENDER").buttonProps}
-                  onClick={(event) => {
-                    if (genderRecordDraft === undefined) {
-                      ignoreUnavailableActivation(event);
-                      return;
-                    }
-                    raise("RECORD_MOVEMENT_GENDER", {
-                      movementId: patient.id,
-                      gender: genderRecordDraft,
-                    });
-                    setGenderRecordDraft(undefined);
-                  }}
-                >
-                  Record gender
-                </button>
-                {genderRecordDraft === undefined ? (
-                  <span id={`${baseId}-ward-console-record-gender-blocked`} className="sr-only">
-                    Choose a gender to record first.
-                  </span>
-                ) : null}
-                {lock("RECORD_MOVEMENT_GENDER").note}
-              </>
-            </div>
-          ) : null}
-
-          <ul className={styles.candidateTable} data-testid="ward-console-alternatives">
-            {candidates.length === 0 ? (
-              <li className={styles.candidateRow}>
-                <span className={styles.candidateNote}>
-                  No other ward in the network ranked at all for this patient&rsquo;s requirements. That is a statement
-                  about the ranking, not a statement that no bed exists anywhere.
-                </span>
-              </li>
-            ) : null}
-            {candidates.map((candidate: { unit: Unit; verdict: EligibilityVerdict }) => {
-              const notice = restrictionNotice(patient, candidate.unit);
-              const declined = patient.declines.some((decline) => decline.unitId === candidate.unit.id);
-              const reason = candidateReason(candidate.verdict);
-              const reasonAddsSomething =
-                !candidate.verdict.eligible && !(declined && reason.toLowerCase().startsWith("already declined"));
-              return (
-                <li className={styles.candidateRow} key={candidate.unit.id}>
-                  <div className={styles.candidateMain}>
-                    <strong className={styles.candidateName}>{candidate.unit.name}</strong>
-                    {reasonAddsSomething ? <span className={styles.candidateNote}>{reason}</span> : null}
-                    {notice ? (
-                      <span className={styles.candidateRisk} data-restriction={notice.level}>
-                        {notice.text}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className={styles.candidateChips}>
-                    {declined ? <WardChip level="routine">Already declined</WardChip> : null}
-                    <b className={styles.candidateVerdict}>
-                      {candidate.verdict.eligible ? "Eligible" : "Not eligible"}
-                    </b>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
+      {/* Audit 1, Josh 20 Oct (NB-9): the "Other wards, ranked" panel is removed. It ranked wards
+          (never-build item 2) and no route reached it. */}
     </div>
   );
 
@@ -839,7 +700,7 @@ export function MovementWorkspaceCockpit({
               </div>
             </div>
 
-            {/* Destination & Ranked Cohort Alternative Wards */}
+            {/* Destination */}
             {open ? eligibilityBlock : null}
 
             {/* 4-Pillar Clinical Readiness Matrix */}

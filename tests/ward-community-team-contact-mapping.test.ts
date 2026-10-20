@@ -18,7 +18,7 @@ import { REFERENCE_TEAM_NAMES } from "@/components/ward-management/reference/war
  * who is not theirs — and it is the failure nobody notices until somebody has already rung, because
  * a wrong number that connects looks exactly like a right one.
  *
- * ⚠️ **`Osborne` and `Osborne Park` are two real services whose published numbers differ by one
+ * ⚠️ **`Osborne` and `Osborne Park` are two real services whose recorded (invented) numbers differ by one
  * digit.** That is the distance between correct and wrong here.
  */
 describe("community team contact mapping", () => {
@@ -65,7 +65,7 @@ describe("community team contact mapping", () => {
     // a repeated row that could drift away from it.
     for (const name of ["Inner City", "ICC", "Inner City Clinic", "Inner City (central)"]) {
       expect(contactForTeam(name), `${name} did not reach City East`).not.toBeNull();
-      expect(contactForTeam(name)!.publishedPhone).toBe("08 9224 1720");
+      expect(contactForTeam(name)!.publishedPhone).toBe("08 5550 0105");
     }
     expect(COMMUNITY_TEAM_CONTACT_MAPPINGS.filter((m) => m.teamName.startsWith("Inner City")).length).toBe(1);
   });
@@ -80,8 +80,8 @@ describe("community team contact mapping", () => {
      * 🔴 THIS TEST ASSERTED THE OPPOSITE UNTIL THE OWNER RULED ON IT, 2026-09-18, AND THE
      * REASONING IS KEPT RATHER THAN REPLACED.
      *
-     * Two register services answer to this name and their published numbers differ by ONE DIGIT:
-     * Osborne CMHS on 08 6457 8350, Osborne Park Older Adult MHS on 08 6457 8300. The adult rule
+     * Two register services answer to this name and their recorded (invented) numbers differ by ONE DIGIT:
+     * Osborne CMHS on 08 5550 0150, Osborne Park Older Adult MHS on 08 5550 0100. The adult rule
      * points at the first. The ADDRESS points at the second — Osborne CMHS sits at Osborne Place,
      * Stirling, while "Osborne Park" is the older-adult service's own hospital.
      *
@@ -93,9 +93,9 @@ describe("community team contact mapping", () => {
      *
      * Anyone changing this line is reversing an owner ruling, not correcting a fixture.
      */
-    expect(contactForTeam("Osborne Park")?.publishedPhone).toBe("08 6457 8350");
-    expect(contactForTeam("Osborne")?.publishedPhone).toBe("08 6457 8350");
-    expect(contactForTeam("Osborne Park")?.publishedPhone).not.toBe("08 6457 8300");
+    expect(contactForTeam("Osborne Park")?.publishedPhone).toBe("08 5550 0150");
+    expect(contactForTeam("Osborne")?.publishedPhone).toBe("08 5550 0150");
+    expect(contactForTeam("Osborne Park")?.publishedPhone).not.toBe("08 5550 0100");
   });
 
   it("maps no team to a service whose number belongs to a different cohort's clinic", () => {

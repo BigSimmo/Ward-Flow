@@ -129,10 +129,44 @@ describe("WardNotificationCenter DOM Component", () => {
     render(
       <WardNotificationCenter {...defaultProps} refreshRequests={[buzz, { ...buzz }]} onDismissBuzz={onDismissBuzz} />,
     );
-    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge Buzz" });
+    // Phone notices (20 Oct 2026): the repeat shows as one card, and each buzz is still its own
+    // acknowledgement under Show each.
+    expect(screen.getByTestId("ward-buzz-group")).toHaveTextContent("×2");
+    fireEvent.click(screen.getByRole("button", { name: "Show each" }));
+    // The message has a space; aria-controls must still name one element that exists.
+    const controls = screen.getByRole("button", { name: "Hide each" }).getAttribute("aria-controls") ?? "";
+    expect(controls).not.toMatch(/\s/);
+    expect(document.getElementById(controls)).not.toBeNull();
+    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge" });
     expect(acknowledgeButtons).toHaveLength(2);
     fireEvent.click(acknowledgeButtons[1]);
     expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:540:coordinator:Same buzz:false#1");
+  });
+
+  it("acknowledges a run of repeat buzzes at once, and keeps different buzzes apart", () => {
+    const onDismissBuzz = vi.fn();
+    const buzz = { unitId: "ward-alpha", at: 540, byRole: "coordinator", message: "Same buzz" };
+    render(
+      <WardNotificationCenter
+        {...defaultProps}
+        refreshRequests={[buzz, { ...buzz, at: 550 }, { ...buzz, message: "Other buzz" }]}
+        onDismissBuzz={onDismissBuzz}
+      />,
+    );
+    expect(screen.getAllByTestId("ward-buzz-group")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Acknowledge Buzz" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Acknowledge all 2" }));
+    expect(onDismissBuzz).toHaveBeenCalledTimes(2);
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:540:coordinator:Same buzz:false#0");
+    expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:550:coordinator:Same buzz:false#0");
+  });
+
+  it("lists urgent before buzzes, and leaves the title and close to a sheet", () => {
+    render(<WardNotificationCenter {...defaultProps} inSheet onClose={vi.fn()} />);
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent ?? "");
+    expect(tabs.findIndex((t) => t.startsWith("Urgent"))).toBeLessThan(tabs.findIndex((t) => t.startsWith("Buzzes")));
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-notification-close-btn")).not.toBeInTheDocument();
   });
 
   it("renders 09:30 overdue census banner with confirm callback", () => {
@@ -219,7 +253,8 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
 
     // Does not display alert for non-overdue or other ward
-    expect(screen.queryByText(/John Connor/)).not.toBeInTheDocument();
+    // John Connor is still listed under "Medical clearance not recorded" (CS-14), just not as overdue.
+    expect(screen.queryByText(/Overdue Inbound Arrival: John Connor/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Sarah Connor/)).not.toBeInTheDocument();
   });
 
@@ -246,6 +281,37 @@ describe("WardNotificationCenter DOM Component", () => {
 
     // Agent Smith was cleared, so no clearance alert
     expect(screen.queryByText(/Agent Smith/)).not.toBeInTheDocument();
+  });
+
+  it("lists incoming patients with no clearance recorded, and never says no urgent tasks then (CS-14)", () => {
+    const movements = [
+      makeMovement({
+        id: "WF-020" as Movement["id"],
+        acceptedUnitId: "ward-alpha",
+        patientName: "Synthetic Unrecorded",
+      }),
+      makeMovement({
+        id: "WF-021" as Movement["id"],
+        acceptedUnitId: "ward-alpha",
+        patientName: "Synthetic Cleared",
+        medicalClearance: { cleared: true, at: 500 },
+      }),
+      makeMovement({
+        id: "WF-022" as Movement["id"],
+        acceptedUnitId: "ward-alpha",
+        patientName: "Synthetic Closed",
+        closure: { at: 600, outcome: "did_not_proceed", reason: "Synthetic withdrawal" },
+      }),
+    ];
+
+    render(<WardNotificationCenter {...defaultProps} movements={movements} />);
+
+    const card = screen.getByTestId("ward-clearance-not-recorded");
+    expect(card).toHaveTextContent("No medical clearance is recorded on the transfer for 1 incoming patient.");
+    expect(card).toHaveTextContent("Synthetic Unrecorded");
+    expect(card).not.toHaveTextContent("Synthetic Cleared");
+    expect(card).not.toHaveTextContent("Synthetic Closed");
+    expect(screen.queryByText("No urgent tasks recorded.")).not.toBeInTheDocument();
   });
 
   it("renders direct ward notices and allows acknowledging unread notices", () => {

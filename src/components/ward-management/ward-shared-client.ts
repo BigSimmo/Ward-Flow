@@ -1,3 +1,4 @@
+import { openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -70,6 +71,11 @@ export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
+  /**
+   * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
+   * suitable were referred; the person must still be told about the one that was not.
+   */
+  partly?: string;
   undoRecords?: WardFlowState["undoRecords"];
   generation?: number;
   /** Memory-only fence for an accepted toast; never serialized with workspace state. */
@@ -78,7 +84,14 @@ export type WardCommandOutcome = WardCommandMetadata & {
   canUndo?: () => boolean;
 };
 export type WardCommandDispatch = (event: WardFlowEvent) => void | WardCommandOutcome | Promise<WardCommandOutcome>;
-type QueuedCommand = { event: WardFlowEvent; commandId: string; confirmed: boolean; worldEpoch: number };
+type QueuedCommand = {
+  event: WardFlowEvent;
+  commandId: string;
+  confirmed: boolean;
+  worldEpoch: number;
+  /** The oldest revision an open popup was showing when this was asked for (audit CS-19). */
+  basedOn?: number;
+};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
@@ -134,6 +147,7 @@ export class SharedWorkspaceClient {
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
     metadata?: WardCommandMetadata,
+    partly?: string,
   ) {
     this.completions.get(commandId)?.({
       commandId,
@@ -141,6 +155,7 @@ export class SharedWorkspaceClient {
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
+      ...(partly ? { partly } : {}),
     });
     this.completions.delete(commandId);
   }
@@ -194,6 +209,13 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
+  /**
+   * Audit CS-19: the revision this tab held when each open popup opened. A command asked for from
+   * a popup is checked against that, so the server refuses it when another desk changed the record
+   * while the person was looking, rather than letting an edit made from an older view through.
+   */
+  private sheetSeen = new WeakMap<object, number>();
+  private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
   private fullReadAt = 0;
@@ -218,6 +240,35 @@ export class SharedWorkspaceClient {
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
   ) {}
+  private held() {
+    return Math.max(this.view.snapshot?.revision ?? 0, this.headRevision);
+  }
+  /** Notes each open popup not yet noted. One opened before the board arrived is noted when it does. */
+  private noteOpenSheets() {
+    if (!this.view.snapshot) return;
+    for (const sheet of openSheetHandles()) if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, this.held());
+  }
+  /** The oldest revision an open popup was showing, or `undefined` when none is open. */
+  private seenByOpenSheets() {
+    this.noteOpenSheets();
+    let oldest: number | undefined;
+    for (const sheet of openSheetHandles()) {
+      const seen = this.sheetSeen.get(sheet);
+      if (seen !== undefined && (oldest === undefined || seen < oldest)) oldest = seen;
+    }
+    return oldest;
+  }
+  /**
+   * This tab's own save is not a change made while the person was looking, so popups and queued
+   * commands based on the revision it was checked against move on with it. Only when nothing came
+   * in between: otherwise another desk's save sits in the gap, and a later save from the same popup
+   * is still checked against it.
+   */
+  private ownSaveLanded(from: number, to: number | undefined) {
+    if (to !== from + 1) return;
+    for (const sheet of openSheetHandles()) if (this.sheetSeen.get(sheet) === from) this.sheetSeen.set(sheet, to);
+    for (const queued of this.queue) if (queued.basedOn === from) queued.basedOn = to;
+  }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
     this.view = { ...this.view, ...update };
@@ -250,6 +301,7 @@ export class SharedWorkspaceClient {
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
+      this.noteOpenSheets();
     }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
@@ -499,6 +551,7 @@ export class SharedWorkspaceClient {
       commandId,
       confirmed: confirmed || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO",
       worldEpoch: this.worldEpoch,
+      basedOn: this.seenByOpenSheets(),
     });
     void this.drain();
     return completion;
@@ -525,7 +578,7 @@ export class SharedWorkspaceClient {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: queued.commandId,
-            expectedRevision: Math.max(snapshot.revision, this.headRevision),
+            expectedRevision: queued.basedOn ?? Math.max(snapshot.revision, this.headRevision),
             event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
@@ -586,6 +639,8 @@ export class SharedWorkspaceClient {
             this.headRevision = Math.max(this.headRevision, value.commandRevision);
           else this.needsRefresh = true;
         }
+        if (response.ok)
+          this.ownSaveLanded(command.expectedRevision, value.commandRevision ?? value.snapshot?.revision);
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
@@ -620,11 +675,18 @@ export class SharedWorkspaceClient {
         }
         if (!response.ok) {
           this.cancelQueued();
+          if (response.status === 409) {
+            // The person has now been told. Popups still open are checked against the board from
+            // here on, so trying again after reviewing it works.
+            this.sheetSeen = new WeakMap();
+            if (!value?.snapshot) this.needsRefresh = true;
+            else this.noteOpenSheets();
+          }
           this.publish({
             status: "ready",
             error:
               response.status === 409
-                ? "Someone else changed this first. Your action was not applied; review the latest state."
+                ? "This record changed while you were looking. Your action was not applied; review the latest details and try again."
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
@@ -641,8 +703,14 @@ export class SharedWorkspaceClient {
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
           this.worldEpoch++;
-        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value);
-        this.publish({ status: "ready", error: null });
+        const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
+        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
+        // Audit E-05: the board's message line tells the person which ward was not asked, as the
+        // local board's refusal note does, on whichever screen sent it.
+        this.publish({
+          status: "ready",
+          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
+        });
       }
     } catch {
       if (generation === this.viewGeneration) {
@@ -741,6 +809,7 @@ export class SharedWorkspaceClient {
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;
     this.headRevision = 0;
+    this.sheetSeen = new WeakMap();
     this.workingAsOverride = workingAs;
     this.options.workingAs?.set(workingAs);
     this.publish({ snapshot: null, eventLog: [], status: "loading", choices: undefined, error: null });
@@ -854,6 +923,7 @@ export class SharedWorkspaceClient {
   };
   dispose() {
     this.disposed = true;
+    this.stopWatchingSheets();
     this.lifetime.abort();
     this.cancelAll("The connection closed. Review the board before trying again.");
     this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };

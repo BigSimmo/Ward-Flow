@@ -73,6 +73,18 @@ describe("classifyLegalStatus", () => {
   });
 });
 
+describe("the words Not recorded (Audit 1, TS-8)", () => {
+  it("classes them as not recorded, still on an order, never detained, in any case or padding", () => {
+    for (const status of ["Not recorded", " not RECORDED "]) {
+      expect(classifyLegalStatus(status), status).toBe("not_recorded");
+      expect(legalStatusIsOnOrder(status), status).toBe(true);
+      expect(isOnOrder(status), status).toBe(true);
+      expect(legalStatusIsDetained(status), status).toBe(false);
+      expect(criteriaEligibility(status, undefined), status).toBe("not_recorded");
+    }
+  });
+});
+
 describe("criteria led discharge reads the same classes", () => {
   it("excludes a patient record on a referral for examination as involuntary, not as not recorded", () => {
     expect(criteriaEligibility("Referred for psychiatric examination", undefined)).toBe("involuntary");

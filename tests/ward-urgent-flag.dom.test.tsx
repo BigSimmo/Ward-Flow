@@ -54,32 +54,50 @@ describe("the urgent flag is visible on the row it moved", () => {
     }
   });
 
-  it("shows the flag on the row that LEADS, which is the whole point of showing it", () => {
+  // Audit 1, Josh 20 Oct (CS-04): the queue is wait order; the flag marks its row wherever it sits.
+  it("shows the flag on the flagged row, which keeps its place in wait order", () => {
     renderQueue();
-    const leader = queueOrder(wardMovements, NOW_ANCHOR)[0];
-    expect(leader.flaggedUrgent, "precondition: the flagged movement leads the queue").toBe(true);
-    // The label and the position must be on the same row. A flag rendered somewhere else on the
-    // screen would satisfy a naive "is it visible" check while explaining nothing about the order.
-    const row = screen.getByTestId(`ward-queue-row-${leader.id}`);
+    const ordered = queueOrder(wardMovements, NOW_ANCHOR);
+    expect(ordered[0].flaggedUrgent, "the longest wait leads, not the flag").toBe(false);
+    const flagged = ordered.find((movement) => movement.flaggedUrgent)!;
+    const row = screen.getByTestId(`ward-queue-row-${flagged.id}`);
     expect(row).toHaveTextContent(/flagged urgent/i);
-    expect(row, "and the row must still say the tier it would otherwise have been ranked by").toHaveTextContent(
-      /tier 3/i,
-    );
+    expect(row, "and the row still says its tier").toHaveTextContent(/tier 3/i);
   });
 
   /**
    * Item 37 (2026-09-17), widened by the review fix-forward (item 5) to name the reason too:
-   * "Who flagged this, when and why was not recorded." WF-018 is the fixture's one hand-authored
-   * flag, seeded before `Movement.urgentFlag` existed — see that field's own doc comment — so it
-   * is the one live case this sentence has to cover honestly rather than inventing an author,
-   * instant or reason for it.
+   * "Who flagged this, when and why was not recorded." A flag saved before `Movement.urgentFlag`
+   * existed still says so honestly rather than inventing an author, instant or reason. The
+   * synthetic fixture's own flags now carry provenance (overall review, 20 Oct 2026), so this
+   * builds a flagged movement without it.
    */
-  it("reads 'Who flagged this, when and why was not recorded' for WF-018, which carries no provenance", () => {
-    renderQueue();
+  it("reads 'Who flagged this, when and why was not recorded' for a flag that carries no provenance", () => {
     const wf018 = wardMovements.find((movement) => movement.id === "WF-018");
-    expect(wf018?.urgentFlag, "precondition: WF-018 carries no urgentFlag record").toBeUndefined();
+    if (!wf018) throw new Error("fixture lost WF-018");
+    const legacy: Movement = { ...wf018, urgentFlag: undefined, urgentFlagHistory: undefined };
+    render(
+      <PriorityQueue
+        movements={[legacy]}
+        now={NOW_ANCHOR}
+        selectedId={undefined}
+        onSelect={() => {}}
+        filterEdId={undefined}
+        onClearFilter={() => {}}
+      />,
+    );
     const detail = screen.getByTestId("ward-queue-flag-detail-WF-018");
     expect(detail).toHaveTextContent("Who flagged this, when and why was not recorded.");
+  });
+
+  it("names who flagged each seeded urgent row, so the first rows of Home explain themselves", () => {
+    renderQueue();
+    for (const movement of wardMovements.filter((candidate) => candidate.flaggedUrgent && !candidate.closure)) {
+      expect(movement.urgentFlag, `${movement.id} is flagged without provenance`).toBeDefined();
+      const detail = screen.getByTestId(`ward-queue-flag-detail-${movement.id}`);
+      expect(detail).toHaveTextContent(/^Flagged urgent by .+ at .+: .+\.$/u);
+      expect(detail).not.toHaveTextContent("was not recorded");
+    }
   });
 
   /**
@@ -208,7 +226,8 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
 });
 
 describe("the queue footer states the order of the tab on show", () => {
-  it("says flagged and act now first, then longest wait, for patients and longest wait first for referrals (D-32)", () => {
+  // Audit 1, Josh 20 Oct (CS-04): both tabs are longest wait first.
+  it("says longest wait first for patients and for referrals", () => {
     render(
       <PriorityQueue
         movements={wardMovements}
@@ -219,9 +238,9 @@ describe("the queue footer states the order of the tab on show", () => {
         onClearFilter={() => {}}
       />,
     );
-    expect(screen.getByText("Flagged and act now first, then longest wait")).toBeInTheDocument();
+    expect(screen.getByText("Longest wait first")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
     expect(screen.getByText("Longest wait first")).toBeInTheDocument();
-    expect(screen.queryByText("Flagged and act now first, then longest wait")).toBeNull();
+    expect(screen.queryByText(/Flagged and act now first/u)).toBeNull();
   });
 });

@@ -2,7 +2,7 @@
 
 import { Copy } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
@@ -42,7 +42,7 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { notWaitingMoreText, openJourneySplit, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import {
   Button,
@@ -294,8 +294,8 @@ export function CoordinatorScreen() {
   }, [service, units]);
 
   const scopedFilteredMovements = isInServiceScope ? filteredMovements.filter(isInServiceScope) : filteredMovements;
-  // D-32 on Home (decision 4, 12 Oct 2026): movements with an active act-now task are pinned on top
-  // of the queue, then longest wait first. The act-now rows are the shared ones (`activeActNowItems`).
+  // Movements with an active act-now task (`activeActNowItems`). Audit 1, Josh 20 Oct (CS-04): they
+  // carry an "Act now" mark on their row and are no longer pinned on top; the queue is wait order.
   const actNowMovementIds = useMemo(
     () =>
       new Set(
@@ -329,7 +329,7 @@ export function CoordinatorScreen() {
       now,
     ],
   );
-  const queue = queueOrder(scopedFilteredMovements, now, actNowMovementIds);
+  const queue = queueOrder(scopedFilteredMovements, now);
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
 
   const noRecordedServiceCount = useMemo(() => noRecordedServiceMovementCount(movements, units), [movements, units]);
@@ -373,6 +373,13 @@ export function CoordinatorScreen() {
   function pickUnit(unitId: string | undefined) {
     if (previewMovement) selectMovement(previewMovement.id);
     setSelectedUnitId(unitId);
+  }
+
+  function choosePreviewFirst(event: SyntheticEvent) {
+    if (!previewMovement) return;
+    event.preventDefault();
+    event.stopPropagation();
+    selectMovement(previewMovement.id);
   }
 
   function closeShortlist() {
@@ -434,7 +441,13 @@ export function CoordinatorScreen() {
       setRightPanel("placement");
       return;
     }
-    if (previewMovement?.id === movement.id) selectMovement(movement.id);
+    // Audit 1, Josh 20 Oct (WP-06): an Offer on the previewed patient only chooses them and the
+    // ward; the coordinator offers with a second tap.
+    if (previewMovement?.id === movement.id) {
+      selectMovement(movement.id);
+      setSelectedUnitId(unitId);
+      return;
+    }
     setSelectedUnitId(unitId);
     const who = patientOf(movement);
     runStep(
@@ -591,6 +604,11 @@ export function CoordinatorScreen() {
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
+  // Overall review, 20 Oct 2026: the queue lists every open journey, so the hero names the people on
+  // it who are not waiting in ED ("8 more in transit") and its figures add up to the queue's count.
+  const notWaitingOnQueue = useMemo(() => notWaitingMoreText(openJourneySplit(movements)), [movements]);
+  const notWaitingMeta =
+    notWaitingOnQueue === null ? null : <span data-testid="ward-home-hero-not-waiting">{notWaitingOnQueue}</span>;
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).
   const overdueInQueue = queue.filter(
@@ -694,10 +712,10 @@ export function CoordinatorScreen() {
             aria-label={selectedReferral ? "Referral placement" : "Placement"}
             // Journeys prove which movement the panel is for by this attribute.
             data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
-            // Reaching into the top-of-queue preview selects that patient first, so every action
-            // acts on a chosen patient and a queue reorder cannot swap them mid-form.
-            onPointerDownCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
-            onFocusCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
+            // Audit 1, Josh 20 Oct (WP-06): the preview is nobody's pick. The first tap or change in
+            // it only chooses that patient; nothing acts until the coordinator has chosen them.
+            onClickCapture={previewMovement ? choosePreviewFirst : undefined}
+            onChangeCapture={previewMovement ? choosePreviewFirst : undefined}
           >
             <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
             <header className={styles.shortlistHeader}>
@@ -706,7 +724,7 @@ export function CoordinatorScreen() {
               </h2>
               {previewMovement ? (
                 <span className={styles.shortlistPreviewLabel} data-testid="ward-placement-top-of-queue">
-                  Top of queue
+                  First in list, not a recommendation
                 </span>
               ) : (
                 <button
@@ -765,11 +783,22 @@ export function CoordinatorScreen() {
             eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
             title={heroTitle}
             titleMeta={
-              isPhone
-                ? `Prototype data, invented records${
+              isPhone ? (
+                <>
+                  {/* The phone title keeps its one line; the people in transit get a line of their own. */}
+                  {notWaitingMeta ? (
+                    <>
+                      {notWaitingMeta}
+                      <br />
+                    </>
+                  ) : null}
+                  {`Prototype data, invented records${
                     statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`
-                : undefined
+                  }`}
+                </>
+              ) : (
+                (notWaitingMeta ?? undefined)
+              )
             }
             stats={
               isPhone ? (

@@ -280,6 +280,18 @@ describe("Handover page", () => {
     await user.click(screen.getByRole("tab", { name: /Beds/ }));
     expect(screen.getByTestId("ward-handover-beds")).toBeInTheDocument();
   });
+
+  it("links each ward's Open ward button to that ward's page, not a missing address (DR-08)", async () => {
+    const user = userEvent.setup();
+    renderHandover();
+    await user.click(screen.getByRole("tab", { name: /Beds/ }));
+    const beds = screen.getByTestId("ward-handover-beds");
+    const wardRow = beds.querySelector("tr[aria-selected]");
+    expect(wardRow).not.toBeNull();
+    await user.click(wardRow!);
+    const link = within(beds).getByRole("link", { name: "Open ward" });
+    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[^/?]+$/u);
+  });
 });
 
 describe("Handover shift after the last handover of the day", () => {

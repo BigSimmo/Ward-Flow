@@ -34,6 +34,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
@@ -52,15 +53,20 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, referrals, dispatch, rejections, readAuditEvents, configuration } = useWardFlowSelect(
-    "units",
-    "admissions",
-    "referrals",
-    "dispatch",
-    "rejections",
-    "readAuditEvents",
-    "configuration",
-  );
+  const { units, admissions, referrals, patients, movements, dispatch, rejections, readAuditEvents, configuration } =
+    useWardFlowSelect(
+      "units",
+      "admissions",
+      "referrals",
+      "patients",
+      "movements",
+      "dispatch",
+      "rejections",
+      "readAuditEvents",
+      "configuration",
+    );
+  // Audit 1 (CS-09, Josh 20 Oct): the gap dialogs name the person and UMRN, never "this patient".
+  const identity = patientIdentityLine(resolveSubjectPatient(movement, { patients, referrals, movements }));
   // Top 25 item 2: asking more wards than the cap warns and asks for a reason instead of refusing.
   const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   const now = useWardFlowClock();
@@ -746,7 +752,7 @@ export function PatientTransitOperations({
               </button>
               <TransportExceptionDialog
                 open={collectCheck}
-                who="this patient"
+                who={identity}
                 action="Mark moving"
                 gaps={collectionGaps(movement)}
                 onClose={() => setCollectCheck(false)}
@@ -797,7 +803,7 @@ export function PatientTransitOperations({
                 </button>
                 <TransportExceptionDialog
                   open={arriveCheck}
-                  who="this patient"
+                  who={identity}
                   action="Confirm arrival"
                   gaps={arrivalGaps(movement)}
                   onClose={() => setArriveCheck(false)}

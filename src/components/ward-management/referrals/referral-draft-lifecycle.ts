@@ -1,3 +1,4 @@
+import { onWardSessionEnd } from "../ward-browser-data";
 import { clearSessionDrafts, setDraftAccessContext } from "../ward-session-drafts";
 
 /** Shared tab owner only: sign-out/reset must not load the referral form or recovery validator. */
@@ -38,3 +39,6 @@ function clearReferralDraftMemory(): void {
   referralDraftMemory.keptAtMs = null;
   referralDraftMemory.lastReferrer = null;
 }
+
+// The kept draft and last referrer belong to the account that typed them (Codex review on PR #487).
+onWardSessionEnd(clearReferralDraftSession);

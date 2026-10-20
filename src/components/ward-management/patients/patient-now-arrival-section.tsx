@@ -149,7 +149,9 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
 
               {hasArrivalPlan && liveMovement?.arrivalDetails && (
                 <span className={styles.recordedNote}>
-                  Updated by {liveMovement.arrivalDetails.recordedBy} at {clock(liveMovement.arrivalDetails.recordedAt)}
+                  {liveMovement.arrivalDetails.updatedAt !== undefined
+                    ? `Updated by ${liveMovement.arrivalDetails.updatedBy ?? "not recorded"} at ${clock(liveMovement.arrivalDetails.updatedAt)}`
+                    : `Recorded by ${liveMovement.arrivalDetails.recordedBy} at ${clock(liveMovement.arrivalDetails.recordedAt)}`}
                 </span>
               )}
             </div>

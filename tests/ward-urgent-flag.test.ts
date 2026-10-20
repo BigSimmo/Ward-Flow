@@ -98,9 +98,8 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     const state = seedWardFlowState();
     const seededFlag = state.movements.find((candidate) => candidate.flaggedUrgent);
     if (!seededFlag) throw new Error("the seed flags nobody urgent");
-    // Precondition: the seeded flag was hand-authored before this field existed and carries no
-    // provenance — see `Movement.urgentFlag`'s own doc comment on WF-018.
-    expect(seededFlag.urgentFlag).toBeUndefined();
+    // Precondition (overall review, 20 Oct 2026): the seeded flag carries who, when and why.
+    expect(seededFlag.urgentFlag).toBeDefined();
 
     const cleared = wardFlowReducer(state, {
       type: "CLEAR_MOVEMENT_URGENT_FLAG",
@@ -114,31 +113,14 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     expect(movement(cleared, seededFlag.id).urgentFlag).toBeUndefined();
   });
 
-  /**
-   * ⚠️ THE ASSERTION THAT MAKES THE FEATURE REAL RATHER THAN MERELY STORED. The owner's words were
-   * that a flag "outranks everything", so this walks the actual queue: a flagged patient in the
-   * LEAST urgent tier must lead one in the most urgent tier. A test that only checked the boolean
-   * would pass just as well against a flag nothing sorted on.
-   */
-  it("puts a flagged tier-3 patient ahead of an unflagged tier-1 patient", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6a), superseding D-32: the flag is a badge, not an order.
+  it("leaves the queue order unchanged when a flag is raised and cleared", () => {
     const state = seedWardFlowState();
     const open = state.movements.filter((candidate) => !candidate.closure && candidate.stage !== "arrived");
     const leastUrgent = open.find((candidate) => candidate.urgency === 3 && !candidate.flaggedUrgent);
-    // D-32 on Home (12 Oct 2026): beneath the flag the wait leads, so the tier-1 patient must have
-    // waited longer for "before" to put them first.
-    const mostUrgent = open.find(
-      (candidate) =>
-        candidate.urgency === 1 &&
-        !candidate.flaggedUrgent &&
-        leastUrgent !== undefined &&
-        candidate.openedAt < leastUrgent.openedAt,
-    );
-    if (!leastUrgent || !mostUrgent) throw new Error("the seed lacks an open tier-1 and tier-3 pair");
+    if (!leastUrgent) throw new Error("the seed lacks an open, unflagged tier-3 movement");
 
-    // Before: the longer-waiting tier-1 patient leads.
     const before = queueOrder(state.movements, NOW).map((candidate) => candidate.id);
-    expect(before.indexOf(mostUrgent.id)).toBeLessThan(before.indexOf(leastUrgent.id));
-
     const flagged = wardFlowReducer(state, {
       type: "FLAG_MOVEMENT_URGENT",
       role: "coordinator",
@@ -147,19 +129,16 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
       reason: A_REASON,
     });
     expect(flagged.rejections).toHaveLength(0);
+    expect(flagged.movements.find((candidate) => candidate.id === leastUrgent.id)?.flaggedUrgent).toBe(true);
+    expect(queueOrder(flagged.movements, NOW).map((candidate) => candidate.id)).toEqual(before);
 
-    const after = queueOrder(flagged.movements, NOW).map((candidate) => candidate.id);
-    expect(after.indexOf(leastUrgent.id)).toBeLessThan(after.indexOf(mostUrgent.id));
-
-    // And it goes back when the flag is removed — the ordering is not a one-way door either.
     const cleared = wardFlowReducer(flagged, {
       type: "CLEAR_MOVEMENT_URGENT_FLAG",
       role: "coordinator",
       now: NOW + 60,
       movementId: leastUrgent.id,
     });
-    const restored = queueOrder(cleared.movements, NOW).map((candidate) => candidate.id);
-    expect(restored.indexOf(mostUrgent.id)).toBeLessThan(restored.indexOf(leastUrgent.id));
+    expect(queueOrder(cleared.movements, NOW).map((candidate) => candidate.id)).toEqual(before);
   });
 
   it("refuses a second flag, rather than reporting a no-op as success", () => {
@@ -411,11 +390,23 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     });
   });
 
-  it("clearing the seeded WF-018 flag, which predates this history field, leaves the history absent rather than an invented empty log", () => {
-    const state = seedWardFlowState();
-    const seededFlag = state.movements.find((candidate) => candidate.flaggedUrgent);
-    if (!seededFlag) throw new Error("the seed flags nobody urgent");
-    expect(seededFlag.urgentFlagHistory, "precondition: the seed carries no history for this field").toBeUndefined();
+  it("clearing a flag that predates this history field leaves the history absent rather than an invented empty log", () => {
+    const seeded = seedWardFlowState();
+    const flagged = seeded.movements.find((candidate) => candidate.flaggedUrgent);
+    if (!flagged) throw new Error("the seed flags nobody urgent");
+    // The synthetic seed now records its flags (overall review, 20 Oct 2026), so a flag saved
+    // before the field existed is built here by removing them.
+    const state = {
+      ...seeded,
+      movements: seeded.movements.map((candidate) =>
+        candidate.id === flagged.id ? { ...candidate, urgentFlag: undefined, urgentFlagHistory: undefined } : candidate,
+      ),
+    };
+    const seededFlag = flagged;
+    expect(
+      state.movements.find((candidate) => candidate.id === seededFlag.id)?.urgentFlagHistory,
+      "precondition: this flag carries no history for this field",
+    ).toBeUndefined();
 
     const cleared = wardFlowReducer(state, {
       type: "CLEAR_MOVEMENT_URGENT_FLAG",

@@ -37,6 +37,11 @@ export type WardFeatureFlagDefinition = {
    * control fails closed: a typo or a stray setting cannot switch it off.
    */
   safeguard?: true;
+  /**
+   * Audit 1 (Josh 20 Oct 2026, D-71): a mockup kept to local builds. Off on any deployed build,
+   * whatever the server setting or a device says.
+   */
+  localOnly?: true;
 };
 
 export const WARD_FEATURE_FLAGS = {
@@ -46,7 +51,8 @@ export const WARD_FEATURE_FLAGS = {
       "Read only, large type screens for the bed meeting, one ward or one ED, linked from the menu, Tools, Capacity, each ward and each ED.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh signs off the TV views after a real bed meeting, ward and ED trial.",
   },
   "demo-reset": {
@@ -54,7 +60,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "Quiet day, winter surge and ED crisis buttons in Tools that reload the whole synthetic network.",
     owner: "Josh",
     added: "2026-10-15",
-    defaults: { development: true, demo: true, production: false },
+    // Josh 20 Oct 2026: off on the live site (runs as demo), on for local builds.
+    defaults: { development: true, demo: false, production: false },
     removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
   "role-access": {
@@ -87,9 +94,10 @@ export const WARD_FEATURE_FLAGS = {
       "The absent without leave tracker asks for a review of the held bed once the person has been away past the set time.",
     owner: "Josh",
     added: "2026-10-17",
-    // D-65 (17 Oct 2026): paused everywhere until Josh reviews the hold time against local procedure.
-    defaults: { development: false, demo: false, production: false },
-    removeWhen: "Josh reviews the bed hold time and switches the review back on, or removes it.",
+    // D-65 (17 Oct 2026) paused it until Josh reviewed the hold time against local procedure.
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
+    removeWhen: "Josh reviews the bed hold time against local procedure, then keeps or removes the review.",
   },
   "make-room-chains": {
     label: "Make room plans",
@@ -99,6 +107,7 @@ export const WARD_FEATURE_FLAGS = {
     added: "2026-10-17",
     // Mockup stage with preview data, so on only for a local build until Josh picks a design.
     defaults: { development: true, demo: false, production: false },
+    localOnly: true,
     removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
   "referral-opened-receipts": {
@@ -106,7 +115,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "The referrer sees when a ward first opened a referral.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the receipt with ward and ED leads.",
   },
   "referral-information-needs": {
@@ -114,7 +124,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "A ward can ask the referrer for listed items before deciding.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the list of items with ward and ED leads.",
   },
   "ward-closure-mode": {
@@ -122,7 +133,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "Close a whole ward to admissions with a reason, then reopen it.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
   "shift-confirmations": {
@@ -131,7 +143,8 @@ export const WARD_FEATURE_FLAGS = {
       "On Capacity, how many wards have confirmed their bed numbers since the shift began, and which have not.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
   },
   "bed-meeting-actions": {
@@ -140,7 +153,8 @@ export const WARD_FEATURE_FLAGS = {
       "A bed meeting agenda built from fixed rules, and an action log with an owner and a due time, linked from Capacity.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the action list and owners with the coordinators after a bed meeting trial.",
   },
   "pilot-measures": {
@@ -148,7 +162,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "The weekly report adds the pilot's agreed measures.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
   },
   "missed-requests-check": {
@@ -156,7 +171,8 @@ export const WARD_FEATURE_FLAGS = {
     description: "Waiting shows coordinators a daily check for missed or doubled bed requests.",
     owner: "Josh",
     added: "2026-10-19",
-    defaults: { development: true, demo: true, production: false },
+    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
+    defaults: { development: true, demo: true, production: true },
     removeWhen: "Josh agrees the window and the rules with the pilot sponsor.",
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
@@ -257,6 +273,8 @@ export function resolveWardFeatureFlags(input: {
     const definition: WardFeatureFlagDefinition = WARD_FEATURE_FLAGS[name];
     if (definition.safeguard && safeguardsLocked)
       return { name, definition, on: true, source: "default", deviceCanChange: false };
+    if (definition.localOnly && input.environment !== "development")
+      return { name, definition, on: false, source: "default", deviceCanChange: false };
     const device = deviceCanChange ? input.device[name] : undefined;
     if (device !== undefined) return { name, definition, on: device, source: "device", deviceCanChange };
     const server = input.server[name];

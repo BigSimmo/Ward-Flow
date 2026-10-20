@@ -31,14 +31,18 @@ import {
 } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_BED_MEETING_TV_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { activateScenarioNetwork } from "@/components/ward-management/ward-scenarios";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import {
+  DEFAULT_DUE_SOON_THRESHOLDS,
+  formatInstantWithDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -149,6 +153,10 @@ describe("the bed meeting TV view", () => {
       nameOf: () => "",
     });
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
+    // CS-10 (Audit 1): the ready figure says how old it is.
+    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(
+      /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
+    );
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -160,7 +168,7 @@ describe("the bed meeting TV view", () => {
     const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
       .getAllByRole("term")
       .map((term) => term.firstElementChild?.textContent);
-    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Delayed"]);
+    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Still open"]);
     // Every box says its state in words as well as colour.
     for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
       expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);
@@ -272,6 +280,10 @@ describe("the bed meeting TV view", () => {
     expect(within(tv).getByRole("link", { name: "Leave TV view" })).toHaveAttribute("href", "/ward-flow/capacity");
     expect(tv).toHaveTextContent("Synthetic prototype");
     expect(tv).toHaveTextContent("Not approved for clinical use");
+    // Overall review (20 Oct 2026): the footer names the shift the rest of the app shows, and the
+    // standard scenario is a day, so it never reads "Standard night" beside "Day shift".
+    expect(tv).toHaveTextContent("Day shift · Scenario: Standard day");
+    expect(tv).not.toHaveTextContent("Standard night");
     const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
     expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
     expect(layoutCss).toMatch(/\.shellContent:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-bar"\]/u);
@@ -311,6 +323,29 @@ describe("the ward and ED TV views", () => {
     for (const service of tvHealthServices(state.units)) {
       expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
     }
+  });
+
+  it("says what each time measures: the whole wait, and for a collected patient, the time on the road", () => {
+    const { state, inputs } = seedInputs();
+    // Overall review (20 Oct 2026): "In transit · 8h 00m" read as 8 hours in an ambulance.
+    const collected = state.movements.find(
+      (movement) =>
+        movement.acceptedUnitId !== undefined &&
+        movement.transport?.collectedAt !== undefined &&
+        movement.transport.cancelledAt === undefined &&
+        movement.stage !== "arrived" &&
+        movement.closure === undefined,
+    );
+    if (!collected?.acceptedUnitId || collected.transport?.collectedAt === undefined)
+      throw new Error("the seed has no collected patient");
+    const unit = state.units.find((candidate) => candidate.id === collected.acceptedUnitId);
+    if (!unit) throw new Error("the collected patient's ward is missing");
+    const sheet = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const row = sheet.coming.rows.find((candidate) => candidate.id === collected.id);
+    expect(row?.stage).toBe(`In transit ${splitDuration(NOW_ANCHOR - collected.transport.collectedAt)}`);
+    renderTv({ ward: unit.id });
+    const items = within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem");
+    for (const item of items) expect(item).toHaveTextContent(/\d+m waiting/u);
   });
 
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
@@ -431,8 +466,9 @@ describe("the ward and ED TV views", () => {
     expect(figure("ed-tv-no-bed")).toBe(shown(sheet.noBed));
     expect(figure("ed-tv-bed-found")).toBe(shown(sheet.held));
     expect(sheet.summary.waiting).toBeGreaterThan(0);
-    // One row fewer than the other lists, so the busiest ED still fits a 1080p screen; the rest are counted.
-    const peopleShown = Math.min(sheet.people.length, TV_ROW_LIMIT - 1);
+    // DA-22 (Josh 20 Oct 2026): at 24 px the ED view names five people so the busiest ED still fits a
+    // 1080p screen; the rest are counted.
+    const peopleShown = Math.min(sheet.people.length, 5);
     expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(peopleShown);
     const peopleMore = sheet.morePeople + sheet.people.length - peopleShown;
     if (peopleMore > 0) {
@@ -456,6 +492,59 @@ describe("the ward and ED TV views", () => {
       }
       unmount();
     }
+  });
+
+  it("says when the ready figure was last confirmed, and how many wards are late (CS-10)", () => {
+    const { state, inputs } = seedInputs();
+    const thresholds = DEFAULT_DUE_SOON_THRESHOLDS;
+    const unit = state.units[0];
+    const fresh = wardTvSheet({ ...inputs, unit, thresholds });
+    expect(fresh.bedCount).toEqual({ wards: 1, notConfirmed: 0, oldestAt: unit.allocatable.confirmedAt });
+    const first = render(<WardTvView sheet={fresh} now={NOW_ANCHOR} scenario="Synthetic" />);
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, NOW_ANCHOR)}`,
+    );
+    first.unmount();
+
+    // Past the ward's own staleAfterMinutes: Capacity's rule, so both screens call it late.
+    const lateAt = NOW_ANCHOR - unit.allocatable.staleAfterMinutes - 30;
+    const late = { ...unit, allocatable: { ...unit.allocatable, confirmedAt: lateAt } };
+    const units = inputs.units.map((each) => (each.id === unit.id ? late : each));
+    const sheet = wardTvSheet({ ...inputs, units, unit: late, thresholds });
+    render(<WardTvView sheet={sheet} now={NOW_ANCHOR} scenario="Synthetic" />);
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `Not confirmed since ${formatInstantWithDay(lateAt, NOW_ANCHOR)}`,
+    );
+    expect(screen.getByTestId("ward-tv-ready")).toHaveAttribute(
+      "data-tone",
+      sheet.capacity.ready === 0 ? "danger" : "warning",
+    );
+
+    const before = meetingTvExtras({ ...inputs, service: null, thresholds }).bedCount;
+    const after = meetingTvExtras({ ...inputs, units, service: null, thresholds }).bedCount;
+    expect(after.notConfirmed).toBe(before.notConfirmed + 1);
+    expect(after.oldestAt).toBe(Math.min(lateAt, before.notConfirmed > 0 ? (before.oldestAt ?? lateAt) : lateAt));
+  });
+
+  it("stops saying it updates on its own while the shared refresh is unavailable (CS-13)", () => {
+    function SharedDown({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      return (
+        <WardFlowOverride value={{ ...value, shared: { enabled: true, status: "unavailable", error: null } }}>
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedDown>
+          <BedMeetingTvScreen />
+        </SharedDown>
+      </WardFlowProvider>,
+    );
+    const asAt = screen.getByTestId("bed-meeting-tv-as-at");
+    expect(asAt).toHaveTextContent(/^As at \d\d:\d\d · connection unavailable, not updating$/);
+    expect(asAt).not.toHaveTextContent("updates on its own");
   });
 
   it("says so when a link names a ward or ED that is not in the network", () => {
@@ -486,8 +575,11 @@ describe("the one tap demo reset", () => {
       fireEvent.click(screen.getByTestId(testId));
       // It asks first: the shared workspace has no undo.
       expect(screen.getByTestId("scenario")).toHaveTextContent(before ?? "");
-      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent("replaces the demo data for everyone");
-      expect(screen.getByTestId("ward-demo-reset-confirm-load")).toHaveFocus();
+      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent(
+        "replaces the demo data in this browser only",
+      );
+      // WP-11 (Audit 1): focus lands on Cancel, never on the Load that replaces the data.
+      expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
       fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
       expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
       expect(screen.getByTestId("scenario")).toHaveTextContent(scenario);

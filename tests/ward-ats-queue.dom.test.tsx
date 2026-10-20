@@ -10,10 +10,11 @@ describe("ATS remains independent from operational urgency in both queue tabs", 
     const recorded = { ...state.movements[0], urgency: 2 as const, atsCategory: 5 as const };
     const missing = { ...state.movements[1], atsCategory: undefined };
     const referral = { ...state.referrals[0], urgency: 2 as const, atsCategory: 5 as const };
+    const referralMissing = { ...state.referrals[1], atsCategory: undefined };
     render(
       <PriorityQueue
         movements={[recorded, missing]}
-        referralQueue={[referral]}
+        referralQueue={[referral, referralMissing]}
         now={NOW_ANCHOR}
         selectedId={undefined}
         onSelect={() => {}}
@@ -29,5 +30,13 @@ describe("ATS remains independent from operational urgency in both queue tabs", 
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
     expect(within(screen.getByTestId(`ward-referral-row-${referral.id}`)).getByText("ATS 5")).toBeInTheDocument();
+    // Overall review, 20 Oct 2026: a referral with no ATS shows no visible filler, as a patient row does;
+    // the absence is still read out.
+    const missingReferralText = within(screen.getByTestId(`ward-referral-row-${referralMissing.id}`)).getByText(
+      "ATS not recorded",
+    );
+    expect(within(screen.getByTestId(`ward-queue-row-${missing.id}`)).getByText("ATS not recorded").className).toBe(
+      missingReferralText.className,
+    );
   });
 });

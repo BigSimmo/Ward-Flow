@@ -23,6 +23,15 @@ import {
 import styles from "./ward-demo-reset.module.css";
 
 /**
+ * Who a demo reset or scenario load reaches (overall review, 20 Oct 2026): everyone in the shared
+ * workspace, or only this browser (its open tabs share one copy) when the demo runs on this device.
+ * Every confirm and result line reads it, so none of them promises a reach the mode does not have.
+ */
+export function demoDataReach(shared: boolean): string {
+  return shared ? "for everyone in this workspace" : "in this browser only. Other devices are not changed";
+}
+
+/**
  * THE ONE TAP DEMO RESET (Josh, 15 Oct 2026, item 10): quiet day, winter surge, ED crisis.
  *
  * Each button reloads the whole synthetic network through the reducer's own `SET_SCENARIO`, the
@@ -31,7 +40,8 @@ import styles from "./ward-demo-reset.module.css";
  * It is a demo tool, never a clinical action, and it says so. Behind the `demo-reset` flag.
  *
  * A choice asks once before it loads (15 Oct 2026, review): in the shared workspace a stray tap
- * would replace everyone's demo data mid demonstration, and there is no undo.
+ * would replace everyone's demo data mid demonstration, and there is no undo. The confirm names who
+ * it reaches (`demoDataReach`): the whole workspace when shared, this browser only otherwise.
  *
  * `offNoteId` names a "demo controls are off" note the host already shows (the Tools demo panel), so
  * the reason appears once on the page and the choices point at it.
@@ -46,7 +56,7 @@ export function WardDemoReset({
   offNoteId?: string;
 }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { scenario } = useWardFlowSelect("scenario");
+  const { scenario, shared } = useWardFlowSelect("scenario", "shared");
   const raise = useWardRaise("demo");
   const demoOn = useDemoControlsAvailable();
   const [pending, setPending] = useState<WardScenario | null>(null);
@@ -54,10 +64,12 @@ export function WardDemoReset({
   const titleId = `${baseId}-title`;
   const ownOffId = `${baseId}-off`;
   const offId = offNoteId ?? ownOffId;
-  const loadButton = useRef<HTMLButtonElement>(null);
+  const cancelButton = useRef<HTMLButtonElement>(null);
   // The confirm takes focus as it opens, so keyboard and screen reader users meet it straight away.
+  // WP-11 (Audit 1, Josh 20 Oct 2026): on Cancel, as the wf Dialog does, never on the Load that
+  // replaces everyone's data, so a second Enter cannot load it.
   useEffect(() => {
-    if (pending) loadButton.current?.focus();
+    if (pending) cancelButton.current?.focus();
   }, [pending]);
   if (!enabled) return null;
 
@@ -118,16 +130,16 @@ export function WardDemoReset({
           aria-label="Confirm demo reset"
           data-testid="ward-demo-reset-confirm"
         >
-          <p>Load {scenarioLabels[pending]}? This replaces the demo data for everyone in this workspace.</p>
-          <Button
-            ref={loadButton}
-            variant="pri"
-            onClick={() => load(pending)}
-            data-testid="ward-demo-reset-confirm-load"
-          >
+          <p>
+            Load {scenarioLabels[pending]}? This replaces the demo data {demoDataReach(shared?.enabled === true)}. There
+            is no undo.
+          </p>
+          <Button variant="pri" onClick={() => load(pending)} data-testid="ward-demo-reset-confirm-load">
             Load {scenarioLabels[pending]}
           </Button>
-          <Button onClick={cancel}>Cancel</Button>
+          <Button ref={cancelButton} onClick={cancel}>
+            Cancel
+          </Button>
         </div>
       ) : null}
     </section>

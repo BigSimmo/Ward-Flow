@@ -8,6 +8,7 @@ import {
   HEADERS_TIMEOUT_MS,
   MAX_CONNECTIONS,
   createHandler,
+  databaseHealth,
   listen,
   registerShutdown,
 } from "./server.mjs";
@@ -89,10 +90,69 @@ test("liveness needs no sign-in and unknown paths are not found", async () => {
   const { handler, calls } = setup();
   const health = await handler(new Request("http://localhost/healthz"));
   assert.equal(health.status, 200);
-  assert.deepEqual(await health.json(), { service: "ward-flow-backend" });
+  assert.deepEqual(await health.json(), { service: "ward-flow-backend", database: "not_configured" });
   // The retired Azure Blob session vault route is gone.
   assert.equal((await handler(new Request(`http://localhost/v1/sessions/${coordinator}`))).status, 404);
   assert.equal(calls.length, 0);
+});
+
+test("liveness reports the database without sign-in or detail, and stays 200 when it is down", async () => {
+  let up = true;
+  let queries = 0;
+  const sharedStore = {
+    async ready() {
+      queries += 1;
+      if (!up) throw new Error("secret connection string");
+    },
+  };
+  const { handler, calls } = setup({ sharedStore });
+  const health = await handler(new Request("http://localhost/healthz"));
+  assert.equal(health.status, 200);
+  assert.deepEqual(await health.json(), { service: "ward-flow-backend", database: "ok" });
+  up = false;
+  const down = databaseHealth(sharedStore);
+  assert.equal(await down(), "unavailable");
+  const response = await setup({ sharedStore }).handler(new Request("http://localhost/healthz"));
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(await response.text(), /secret|connection/);
+  assert.equal(calls.length, 0);
+  assert.equal(queries, 3);
+});
+
+test("the database health answer asks at most once per 30 seconds and once at a time", async () => {
+  let clock = 0;
+  let queries = 0;
+  /** @type {(() => void) | undefined} */
+  let finish;
+  const store = {
+    ready() {
+      queries += 1;
+      return new Promise((resolve) => {
+        finish = () => resolve(undefined);
+      });
+    },
+  };
+  const health = databaseHealth(store, { now: () => clock });
+  const first = health();
+  const second = health();
+  await new Promise((resolve) => setImmediate(resolve));
+  finish?.();
+  assert.deepEqual(await Promise.all([first, second]), ["ok", "ok"]);
+  assert.equal(queries, 1);
+  clock = 29_999;
+  assert.equal(await health(), "ok");
+  assert.equal(queries, 1);
+  clock = 30_000;
+  const third = health();
+  await new Promise((resolve) => setImmediate(resolve));
+  finish?.();
+  assert.equal(await third, "ok");
+  assert.equal(queries, 2);
+});
+
+test("a database check that hangs answers unavailable", async () => {
+  const health = databaseHealth({ ready: () => new Promise(() => {}) }, { timeoutMs: 10 });
+  assert.equal(await health(), "unavailable");
 });
 
 test("readiness requires sign-in and never exposes diagnostics", async () => {

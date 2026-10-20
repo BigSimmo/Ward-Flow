@@ -82,9 +82,10 @@ export const RAIL_GROUPS = [
  * the Tools bed finder rather than a page. A label here is what the role calls that page; an id the
  * desk cannot open is simply left out (the access filter runs first).
  *
- * The coordinator keeps today's page names: "Needs you" and "Beds" in the B1 table wait for B5 and
- * B3, which rename those pages, so the menu, header and page title keep one name (shell-18).
- * Delays stays in the coordinator's menu, because it is that desk's daily list today. B1's officer
+ * The coordinator's menu reads as the B1 table does (overall review, 20 Oct 2026): "Needs you" opens
+ * Home and "Beds" opens Capacity, the way the ward desk's "Coming and going" opens Movements. Only
+ * the menu words change; the pages keep their names until B5 and B3 rename them. Waiting moves to
+ * More with every other page. B1's officer
  * "Run sheet" has no screen yet (Movements' Run sheet button is not wired, and Movements is not part
  * of the officer desk), so the officer gets My jobs and Alerts until one is built.
  */
@@ -94,10 +95,9 @@ export type RoleMenuItem = readonly [id: string, label: string];
 
 export const ROLE_MENUS: Record<WardChromeRole, readonly RoleMenuItem[]> = {
   coordinator: [
-    ["command", "Home"],
-    ["capacity", "Capacity"],
+    ["command", "Needs you"],
+    ["capacity", "Beds"],
     ["movements", "Movements"],
-    ["delays", "Waiting"],
     ["referrals", "Referrals"],
     ["handover", "Handover"],
   ],

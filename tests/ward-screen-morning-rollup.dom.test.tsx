@@ -78,7 +78,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
 
     const banner = screen.getByTestId("ward-morning-rollup-overdue-banner");
     expect(banner).toBeInTheDocument();
-    expect(banner).toHaveTextContent("09:30 morning bed rollup overdue");
+    expect(banner).toHaveTextContent("Morning bed numbers not confirmed, due 09:30");
 
     const confirmBtn = screen.getByTestId("ward-confirm-morning-rollup-btn");
     expect(confirmBtn).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     expect(screen.queryByTestId("ward-morning-rollup-overdue-banner")).not.toBeInTheDocument();
     const confirmedBanner = screen.getByTestId("ward-morning-rollup-confirmed-banner");
     expect(confirmedBanner).toBeInTheDocument();
-    expect(confirmedBanner).toHaveTextContent("09:30 morning bed rollup confirmed");
+    expect(confirmedBanner).toHaveTextContent("Morning bed numbers confirmed (due 09:30)");
   });
 
   it("renders the confirmed banner when morning rollup is already recorded for today", () => {
@@ -104,7 +104,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     expect(screen.queryByTestId("ward-morning-rollup-overdue-banner")).not.toBeInTheDocument();
     const confirmedBanner = screen.getByTestId("ward-morning-rollup-confirmed-banner");
     expect(confirmedBanner).toBeInTheDocument();
-    expect(confirmedBanner).toHaveTextContent("09:30 morning bed rollup confirmed");
+    expect(confirmedBanner).toHaveTextContent("Morning bed numbers confirmed (due 09:30)");
     expect(confirmedBanner).toHaveTextContent("3 discharges scheduled today");
   });
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarRange, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { SrOnly, cx } from "@/components/wf";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import styles from "./statistics-hero-tools.module.css";
 
@@ -21,9 +22,14 @@ const RANGES = [
 /**
  * The time range on every statistics hero, as one compact pill that opens the choices. Only Now is
  * backed: the prototype keeps no history, so Shift, 7 days and 30 days are Preview (dashed) and say
- * so when pressed.
+ * so when pressed. Only Now is real, so outside a local development build the pill is left out
+ * (overall review, 20 Oct 2026: nothing on screen pretends to work).
  */
 export function StatisticsRange() {
+  return showsUnwiredPreviews() ? <StatisticsRangePicker /> : null;
+}
+
+function StatisticsRangePicker() {
   const [open, setOpen] = useState(false);
   const [said, setSaid] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
