@@ -40,6 +40,8 @@
  * `AddPatientForm` calls this exactly once, in its initial-state initialiser, so it never observes
  * a value written after it has already mounted.
  */
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+
 
 export type PatientQueryAssignment =
   /** From `patient-typeahead.tsx`'s "Add this person": the typed text is known to be a name search,
@@ -98,6 +100,12 @@ export function takeHandedOffPatientSearchText(): string | undefined {
   pendingSearch = undefined;
   return value;
 }
+
+// Typed text waiting for the next screen never outlives the session that typed it (PR #487).
+onWardSessionEnd(() => {
+  pending = undefined;
+  pendingSearch = undefined;
+});
 
 /**
  * Whether a click event is the "open in a new tab/window" gesture — a modifier key held, or a

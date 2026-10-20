@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
-import { endWardFlowBrowserSession } from "./ward-browser-data";
+import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
@@ -93,6 +93,10 @@ const workingAs = {
     }
   },
 };
+// The next account at this tab picks its own role, even after an expiry rather than a sign-out.
+onWardSessionEnd(() => {
+  workingAsInMemory = null;
+});
 const defaultCreateAuth = (): WardBrowserAuthAdapter =>
   new SupabaseWardAuth({
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",

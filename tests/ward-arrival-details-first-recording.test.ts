@@ -5,6 +5,7 @@ import { patientChronology } from "@/components/ward-management/reports/patient-
 import type { ReportWeek } from "@/components/ward-management/reports/weekly-report";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 
@@ -171,5 +172,30 @@ describe("arrival plan: first recording is kept", () => {
       week,
     );
     expect(measures.holds).toEqual({ held: 1, ranOut: 0, givenBack: 0 });
+  });
+
+  it("moves both arrival times when the demo clock re-anchors", () => {
+    const state = seedWardFlowState();
+    const movement = pulledMovement(state);
+    const withPlan: WardFlowState = {
+      ...state,
+      movements: state.movements.map((m) =>
+        m.id === movement.id
+          ? {
+              ...m,
+              arrivalDetails: {
+                mode: "ambulance",
+                estimatedArrivalAt: NOW + 60,
+                recordedAt: NOW,
+                recordedBy: "coordinator",
+                updatedAt: NOW + 25,
+                updatedBy: "ward",
+              },
+            }
+          : m,
+      ),
+    };
+    const shifted = shiftInstants(withPlan, 137).movements.find((m) => m.id === movement.id)!.arrivalDetails!;
+    expect(shifted).toMatchObject({ recordedAt: NOW + 137, updatedAt: NOW + 162, estimatedArrivalAt: NOW + 197 });
   });
 });

@@ -27,7 +27,6 @@ export const WARD_FLOW_DEVICE_SETTING_KEYS = [
   "ward-flow-audio-buzz-pref",
   "ward-flow-act-now-notifications",
   "ward-flow-statistics-samples",
-  "ward-flow-appearance",
   "ward_flow_feature_flags",
   "ward_flow_delays_order",
 ] as const;
@@ -89,10 +88,31 @@ export function clearWardFlowBrowserData(storages: readonly SweepableStorage[] =
 }
 
 /**
+ * Per-account memory held at module level (break glass records, cover, previews, step-up confirms,
+ * search recents, handed-off typed text, the downtime pack) survives a sign-out in the same tab, so
+ * each such store registers how to forget itself here (Codex review on PR #487). A store registers
+ * when its module loads; one that never loaded holds nothing to forget.
+ */
+const sessionEndResets = new Set<() => void>();
+
+/** Register a module-level store's reset, run once each time a signed-in session ends. */
+export function onWardSessionEnd(reset: () => void): void {
+  sessionEndResets.add(reset);
+}
+
+/**
  * What the app runs when a signed-in session ends: fence any open form's draft writer first (so a
- * mounted sheet cannot write its draft back), then sweep the storage.
+ * mounted sheet cannot write its draft back), forget every per-account memory store, then sweep
+ * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
   clearSessionDrafts();
+  for (const reset of sessionEndResets) {
+    try {
+      reset();
+    } catch {
+      // Keep going: the remaining stores and the storage still need clearing.
+    }
+  }
   clearWardFlowBrowserData();
 }

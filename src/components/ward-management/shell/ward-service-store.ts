@@ -23,6 +23,7 @@
  */
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 
 export const SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service";
 const serviceScopeChangeEvent = "ward-flow-service-change";
@@ -33,6 +34,11 @@ const serviceScopeChangeEvent = "ward-flow-service-change";
 // "no in-memory override; read storage" — distinct from `null`, which means "override to All
 // services" (chosen deliberately, not merely unset).
 let serviceInMemoryFallback: HealthService | null | undefined;
+// The service filter is one person's choice; a session ending drops it with its stored copy (PR #487).
+onWardSessionEnd(() => {
+  serviceInMemoryFallback = undefined;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(serviceScopeChangeEvent));
+});
 
 function isHealthService(value: string): value is HealthService {
   return (HEALTH_SERVICES as readonly string[]).includes(value);
