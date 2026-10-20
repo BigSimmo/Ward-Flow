@@ -5,16 +5,18 @@
  * The pages in the rail and the dock are starting points and keep Menu.
  */
 
-const BASE = "/ward-flow";
+import { WARD_DEVELOPER_HUB_HREF as BASE } from "@/components/ward-management/ward-nav";
+
+import { patientSearchHref, unitHref } from "./ward-facade";
 
 type DrillDown = { readonly pattern: RegExp; readonly parent: (match: RegExpExecArray) => string };
 
 /** Screens below a list, each with the page it falls back to. Order matters: `/people/new` first. */
 const DRILL_DOWNS: readonly DrillDown[] = [
-  { pattern: /^\/ward-flow\/people\/new\/?$/u, parent: () => `${BASE}/search` },
+  { pattern: /^\/ward-flow\/people\/new\/?$/u, parent: patientSearchHref },
   { pattern: /^\/ward-flow\/people\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
   { pattern: /^\/ward-flow\/movements\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
-  { pattern: /^\/ward-flow\/ward\/([^/]+)\/answer\/?$/u, parent: (match) => `${BASE}/ward/${match[1]}` },
+  { pattern: /^\/ward-flow\/ward\/([^/]+)\/answer\/?$/u, parent: (match) => unitHref(decodeSegment(match[1])) },
   { pattern: /^\/ward-flow\/referrals\/new\/?$/u, parent: () => `${BASE}/referrals` },
   {
     pattern: /^\/ward-flow\/statistics\/(?:ward|ed|community|service)\/[^/]+\/?$/u,
@@ -31,6 +33,14 @@ const PLACE_PAGES: readonly (DrillDown & { readonly kind: "unit" | "ed" | "team"
   { kind: "ed", pattern: /^\/ward-flow\/ed\/([^/]+)\/?$/u, parent: () => `${BASE}/ed` },
   { kind: "team", pattern: /^\/ward-flow\/community\/([^/]+)\/?$/u, parent: () => `${BASE}/community` },
 ];
+
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
 
 function placeKey(pathname: string): string | undefined {
   for (const page of PLACE_PAGES) {

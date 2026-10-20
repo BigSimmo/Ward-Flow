@@ -768,13 +768,14 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // from the facade instead of typing the route, the re-pointing the note above expected.
     // SIX FROM 10 OCTOBER 2026: Change view (`ward-role-switcher.tsx`) no longer builds ward hrefs;
     // it opens the Switch workstation drawer, which takes `unitHref` from the facade.
+    // The ward answer's own "Ward overview" back link went on 20 Oct 2026: the header Back
+    // (`shell/ward-back.ts`) returns there, taking `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
       "src/components/ward-management/capacity/capacity-ward-sidebar.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/patients/patient-now-screen.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      "src/components/ward-management/ward/ward-answer-view.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
 
