@@ -18,27 +18,27 @@
     },
     "open_questions.json": {
       "bytes": 37276,
-      "sha256": "378d337f656791a59d637017070b06edd8ff2030fbb164273f8a8c5bf5d90679"
+      "sha256": "b84a6feb1a11d6976ed1b63f065f675fb2158c6f5e5673435e6af57da782cd19"
     },
     "capacity_assertions.json": {
       "bytes": 70121,
       "sha256": "b3ba2f798bc44de433944ab94fa1bc55885629994e4b2b3f66fc08c4ac4fc651"
     },
     "decisions.json": {
-      "bytes": 3042,
-      "sha256": "1fbf48a4570a4d682793a1286f4c86f79059dabee730f571603b54eedfa3bcc7"
+      "bytes": 3140,
+      "sha256": "c6037163c2ef81cd483b91dd0d00290569f3fcc9a04678d505b3323c925ed445"
     },
     "entities.json": {
       "bytes": 252801,
       "sha256": "4caa19e54797301bae2f076f3a87e5e9a6cf349541f3827f09ebf0ba8cb3f154"
     },
     "WARD-FLOW-MASTER-COMPLETE-2026-09-17.md": {
-      "bytes": 61154,
-      "sha256": "6f8ca212740764e6c275b06c7343e6289969109bde85d2c2e000f6587992d279"
+      "bytes": 61296,
+      "sha256": "64a4e1b418e46f657a402531561dda081ae2143f89ad8bda7b23244501ce6d66"
     },
     "DECISIONS-APPLIED-2026-09-17.md": {
-      "bytes": 3348,
-      "sha256": "267c950252be1e76b86e1044cdc4abc3f75cc4039a64b79528c4e71ca7a445d4"
+      "bytes": 3700,
+      "sha256": "7efecc72d5f88a4a9c535b612462c1c8115e501a461119a03872f47edd39840c"
     },
     "sources.json": {
       "bytes": 129697,

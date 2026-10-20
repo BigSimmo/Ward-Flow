@@ -8,11 +8,11 @@
 
 These calls are locked into the reference pack for Joshua's Ward Flow DATA review. The pack remains preparation-only: `operational_use_approved=false` and `automatic_routing_approved=false` throughout. No unratified bed count is imported into runtime.
 
-| ID  | Applied recommendation                                                                                                               | Status                                                     |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| D1  | **Graylands: `prefer_neither`** — keep dual 109 and 122; never use a single number for routing.                                      | Awaiting HSP ratification                                  |
-| D2  | **Lynwood CAMHS: `contested_manual_only`** — PDF→Swan versus Fremantle page remains contested; manual review only.                   | Awaiting HSP ratification                                  |
-| D3  | **Butler/Wanneroo: `clinics_verified_no_auto_split`** — clinics verified, unpublished suburb split not automated.                    | Awaiting HSP ratification                                  |
-| D4  | **Armadale/Orchard: `tip_names_demo_ok`** — live contact Orchard Ave **5550 0108**; ATT phone **5550 0133** until HSP confirms.      | Awaiting HSP ratification                                  |
-| D5  | **Overlay scope: `pack_side_by_side` + name/distance/ED compilation** — bed numbers stay synthetic; generated modules carry no beds. | Names, 10 EDs & 468 distances compiled; beds remain sample |
-| D6  | **Distance method: OSRM public road routing** on OpenStreetMap for metro ED↔acute pairs, stamped with source and retrieval date.     | Applied (468 verified pairs); still non-operational        |
+| ID  | Applied recommendation                                                                                                                                                           | Status                                                     |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| D1  | **Graylands: `prefer_neither`** — keep dual 109 and 122; never use a single number for routing.                                                                                  | Awaiting HSP ratification                                  |
+| D2  | **Lynwood CAMHS: `contested_manual_only`** — PDF→Swan versus Fremantle page remains contested; manual review only.                                                               | Awaiting HSP ratification                                  |
+| D3  | **Butler/Wanneroo: `clinics_verified_no_auto_split`** — clinics verified, unpublished suburb split not automated.                                                                | Awaiting HSP ratification                                  |
+| D4  | **Armadale/Orchard: `tip_names_demo_ok`** — live contact Orchard Ave; ATT phone stands until HSP confirms (numbers replaced with invented demo numbers 5550 0108 and 5550 0133). | Awaiting HSP ratification                                  |
+| D5  | **Overlay scope: `pack_side_by_side` + name/distance/ED compilation** — bed numbers stay synthetic; generated modules carry no beds.                                             | Names, 10 EDs & 468 distances compiled; beds remain sample |
+| D6  | **Distance method: OSRM public road routing** on OpenStreetMap for metro ED↔acute pairs, stamped with source and retrieval date.                                                 | Applied (468 verified pairs); still non-operational        |

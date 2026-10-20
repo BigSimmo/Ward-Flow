@@ -391,6 +391,8 @@ _Full inventory:_ `ward-flow-data-review/referring-forms/INVENTORY-REPORT-2026-0
 
 **Layers:** OneDrive (extracted) · Live WA/HSP (fetched 2026-09-17 AWST) · Research pack · tip `f10ca39fbd` (synthetic)
 
+**Phone numbers** in this pack were replaced with invented demo numbers (08 5550 0xxx) on 20 Oct 2026. The real ones stay at the cited URLs.
+
 **Standing:** Graylands 109 vs 122 prefer neither; contested catchments → no auto-route; never merge/rewrite tip.
 
 | Claim                     | OneDrive                                                                                                         | Live WA/HSP (URL + date)                                                                                                                                                                                                                                                                                                    | Research pack                                                                          | Tip f10ca39fbd                              | Status                                                                     |
