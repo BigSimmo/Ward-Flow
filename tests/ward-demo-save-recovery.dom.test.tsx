@@ -37,6 +37,16 @@ describe("successful save identity after storage failure", () => {
     );
     expect(STORAGE_UNAVAILABLE).toContain("Changes stay in memory and may be lost");
   });
+
+  it("names the day when the board has moved past midnight since the save", () => {
+    const dayZero = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
+    expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    // Reopened 14 real hours later: the board resumes at 00:42 the next day.
+    expect(tryReadDemoState(dayZero, savedAt + 14 * 60).recoveryNotice).toBe(
+      "Restored the last successful save from 10:42 yesterday on the board clock. Later changes may not have been saved.",
+    );
+  });
 });
 
 it("shows the retained successful save label alongside the storage warning after actual provider restoration", () => {

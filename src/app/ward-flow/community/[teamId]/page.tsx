@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CommunityTeamPage({ params }: Props) {
   const teamId = safeDecodeURIComponent((await params).teamId);
-  // DA-32: an address that names no community team is a real 404, not a page reporting success.
+  // DA-32: an address that names no community team shows "Page not found", not a page reporting success.
   if (!communityTeamById(teamId)) notFound();
   return <CommunityScreen teamId={teamId} />;
 }

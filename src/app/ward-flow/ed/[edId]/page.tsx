@@ -22,7 +22,7 @@ export default async function EdDepartmentPage({ params }: Props) {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
   const ed = edById(id);
-  // DA-32: an address that names no emergency department is a real 404, not a page reporting success.
+  // DA-32: an address that names no emergency department shows "Page not found", not a page reporting success.
   if (!ed) notFound();
   return <EdScreen edId={ed.id} />;
 }

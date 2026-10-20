@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  *
  * `params` is a Promise in this version of Next and is awaited here; `decodeURIComponent` undoes
  * the encoding `wardStatisticsHref` applies on the way out, so the pair stays symmetric. An id that
- * resolves to no ward gets the route's real 404 (DA-32) — never a redirect to a different
+ * resolves to no ward gets the not-found page (DA-32) — never a redirect to a different
  * ward, and never an empty page that reads as a ward with nothing to show.
  *
  * ⚠️ **It must never pass `units`.** The screen's override exists for tests; the route takes the
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
  */
 export default async function WardStatisticsUnitPage({ params }: { params: Promise<{ unitId: string }> }) {
   const unitId = safeDecodeURIComponent((await params).unitId);
-  // DA-32: an address that names no ward in any scenario is a real 404, not a page reporting success.
+  // DA-32: an address that names no ward in any scenario shows "Page not found", not a page reporting success.
   if (!knownWardUnit(unitId)) notFound();
   return <StatisticsWardScreen unitId={unitId} />;
 }

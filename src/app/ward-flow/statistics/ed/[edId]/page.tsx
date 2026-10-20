@@ -15,13 +15,13 @@ export const metadata: Metadata = {
  *
  * `params` is a Promise in this version of Next and is awaited here; `decodeURIComponent` undoes
  * the encoding `edStatisticsHref` applies on the way out. An id that resolves to no department is
- * a real 404 (DA-32) — never a fallback to a different department.
+ * the not-found page (DA-32) — never a fallback to a different department.
  */
 export default async function WardStatisticsEdPage({ params }: { params: Promise<{ edId: string }> }) {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
   const ed = edById(id);
-  // DA-32: an address that names no emergency department is a real 404, not a page reporting success.
+  // DA-32: an address that names no emergency department shows "Page not found", not a page reporting success.
   if (!ed) notFound();
   return <StatisticsEdScreen edId={ed.id} />;
 }

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function WardBoardPage({ params }: { params: Promise<{ unitId: string }> }) {
   const unitId = safeDecodeURIComponent((await params).unitId);
-  // DA-32: an address that names no ward in any scenario is a real 404, not a page reporting success.
+  // DA-32: an address that names no ward in any scenario shows "Page not found", not a page reporting success.
   if (!knownWardUnit(unitId)) notFound();
   return <WardBoard unitId={unitId} />;
 }

@@ -40,7 +40,7 @@ export default async function WardUnitPage({
   searchParams: Promise<{ tab?: string | string[] }>;
 }) {
   const unitId = safeDecodeURIComponent((await params).unitId);
-  // DA-32: an address that names no ward in any scenario is a real 404, not a page reporting success.
+  // DA-32: an address that names no ward in any scenario shows "Page not found", not a page reporting success.
   if (!knownWardUnit(unitId)) notFound();
   return <WardScreen unitId={unitId} departurePlanning={(await searchParams).tab === "departure-planning"} />;
 }

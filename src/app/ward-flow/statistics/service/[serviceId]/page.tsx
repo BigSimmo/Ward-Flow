@@ -22,7 +22,7 @@ export const metadata: Metadata = {
  */
 export default async function StatisticsServicePage({ params }: { params: Promise<{ serviceId: string }> }) {
   const serviceId = safeDecodeURIComponent((await params).serviceId);
-  // DA-32: a name that is no health service is a real 404, not a page reporting success.
+  // DA-32: a name that is no health service shows "Page not found", not a page reporting success.
   if (!isKnownHealthService(serviceId)) notFound();
   return <StatisticsServiceScreen serviceId={serviceId} />;
 }

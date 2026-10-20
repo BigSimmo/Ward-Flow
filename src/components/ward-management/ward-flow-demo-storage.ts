@@ -1,4 +1,4 @@
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -121,10 +121,12 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
       return { recoveryNotice: SAVE_REJECTED };
     // DA-27 (overall review, 20 Oct 2026): the notice names the save by the board's own clock, the
     // time shown beside it in the header, never the device's real time, which read as a different
-    // day and hour next to a demo clock.
+    // day and hour next to a demo clock. The board resumes at the save plus the real minutes since,
+    // so a save from the board's previous day says so.
+    const resumedAt = parsed.now + (mountedAtAbsolute - parsed.savedAtAbsolute);
     return {
       saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstant(parsed.now)} on the board clock. Later changes may not have been saved.`,
+      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock. Later changes may not have been saved.`,
     };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.
