@@ -249,14 +249,14 @@ describe("the Delays board's data views", () => {
   it("a matrix cell filters to that catchment and owner, and pressing it again clears both", () => {
     renderDelays();
     fireEvent.click(within(graphs()).getByRole("tab", { name: "Where and whose move" }));
-    const cell = within(graphs()).getByRole("button", { name: /^East Metro, Yours: \d+ waiting/u });
+    const cell = within(graphs()).getByRole("button", { name: /^East Metro, Waiting on you: \d+ waiting/u });
     const count = Number(/: (\d+) waiting/u.exec(cell.getAttribute("aria-label") ?? "")?.[1]);
     expect(count, "nobody is in that cell").toBeGreaterThan(0);
     fireEvent.click(cell);
     showEveryDelayRow();
     expect(listed()).toHaveLength(count);
     expect(screen.getByRole("button", { name: "Remove filter East Metro" })).toBeInTheDocument();
-    fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Yours: \d+ waiting/u }));
+    fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Waiting on you: \d+ waiting/u }));
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
   });
 

@@ -136,7 +136,9 @@ export const SEVERE_CAUSES: readonly DelayCause[] = ["legal_breached", "legal_ex
 export type DelayOwnerId = "yours" | "wards" | "ed" | "transport" | "other";
 
 export const DELAY_OWNERS: readonly { readonly id: DelayOwnerId; readonly name: string; readonly subLine: string }[] = [
-  { id: "yours", name: "Yours", subLine: "Your decision, or a legal form's due time running out" },
+  // Overall review, 20 Oct 2026: "Yours 41" sat beside the "Needs me now 45" view and read as the
+  // same set. This tile is whose move it is; the view adds forms due soon and urgent flags to it.
+  { id: "yours", name: "Waiting on you", subLine: "Your decision, or a legal form's due time running out" },
   { id: "wards", name: "Wards", subLine: "Waiting on a ward to answer or a bed to be ready" },
   { id: "ed", name: "ED", subLine: "Waiting on the referring department" },
   { id: "transport", name: "Transport", subLine: "Waiting on a vehicle or an escort" },

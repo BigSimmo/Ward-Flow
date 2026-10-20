@@ -44,6 +44,11 @@ type Props = {
   departments: EdOverviewDepartment[];
   /** People on this department's psychiatry board: the answer title's figure. */
   onBoard: number;
+  /**
+   * How that figure splits (`waitingSplit`): "5 waiting" first, the strip tile's own figure, then
+   * anybody else on the board ("1 in transit"). Shown beside the title so the two numbers reconcile.
+   */
+  onBoardParts?: readonly string[];
   chips: EdOverviewChip[];
   /** The pressed chip, or null when nothing is highlighted. */
   highlight: string | null;
@@ -73,6 +78,7 @@ export function EdOverview({
   sinceLastLook,
   departments,
   onBoard,
+  onBoardParts = [],
   chips,
   highlight,
   onHighlight,
@@ -90,6 +96,8 @@ export function EdOverview({
   // Simplification A1 (Josh, 19 Oct 2026): three figures on every size, the same three the phone has
   // always shown. "Over 8h" is left to the board's own wait column.
   const heroChips = chips.filter((chip) => chip.id !== "severe");
+  // Only worth saying when the board holds somebody who is not waiting; otherwise it repeats the title.
+  const boardSplit = onBoardParts.length > 1 ? onBoardParts.join(", ") : null;
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
   const raiseButton = (
     <button
@@ -125,6 +133,12 @@ export function EdOverview({
           }
           sub={
             <>
+              {boardSplit ? (
+                <>
+                  <span data-testid="ward-ed-board-split">{boardSplit}</span>
+                  <br />
+                </>
+              ) : null}
               {/* F-08 (phone review, Oct 2026): "updating", since "live" beside the Demo pill contradicts it. */}
               Longest {checkValue("longest") ?? "—"} · target {checkValue("target") ?? "—"} · updating
             </>
@@ -166,6 +180,7 @@ export function EdOverview({
               </span>
             </>
           }
+          titleMeta={boardSplit ? <span data-testid="ward-ed-board-split">{boardSplit}</span> : undefined}
           bar={
             <div className={styles.chips} role="group" aria-label="Highlight people on the board">
               {heroChips.map((chip) => (

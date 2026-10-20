@@ -42,7 +42,7 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { notWaitingMoreText, openJourneySplit, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import {
   Button,
@@ -591,6 +591,11 @@ export function CoordinatorScreen() {
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
+  // Overall review, 20 Oct 2026: the queue lists every open journey, so the hero names the people on
+  // it who are not waiting in ED ("8 more in transit") and its figures add up to the queue's count.
+  const notWaitingOnQueue = useMemo(() => notWaitingMoreText(openJourneySplit(movements)), [movements]);
+  const notWaitingMeta =
+    notWaitingOnQueue === null ? null : <span data-testid="ward-home-hero-not-waiting">{notWaitingOnQueue}</span>;
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).
   const overdueInQueue = queue.filter(
@@ -765,11 +770,22 @@ export function CoordinatorScreen() {
             eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
             title={heroTitle}
             titleMeta={
-              isPhone
-                ? `Prototype data, invented records${
+              isPhone ? (
+                <>
+                  {/* The phone title keeps its one line; the people in transit get a line of their own. */}
+                  {notWaitingMeta ? (
+                    <>
+                      {notWaitingMeta}
+                      <br />
+                    </>
+                  ) : null}
+                  {`Prototype data, invented records${
                     statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`
-                : undefined
+                  }`}
+                </>
+              ) : (
+                (notWaitingMeta ?? undefined)
+              )
             }
             stats={
               isPhone ? (

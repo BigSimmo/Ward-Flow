@@ -818,14 +818,13 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
-  // F-09 (phone review, Oct 2026): the title counts act now alerts assigned to you and not yet
-  // seen, a part of the Act now figure, so it says so rather than reading as a different total.
+  // Overall review, 20 Oct 2026 (rule A2): the title leads with the Act now figure, the number the
+  // menu's "Act-now alerts" row shows. The part of it assigned to you and not yet seen (F-09) follows
+  // as its own clause, so it never stands in for the total.
   const heroTitle =
-    needYouCount > 0
-      ? `${needYouCount} act now, new to you`
-      : actEntries.length > 0
-        ? `${actEntries.length} to act on now`
-        : "No alert needs you";
+    actEntries.length > 0
+      ? `${actEntries.length} act now${needYouCount > 0 ? `, ${needYouCount} new to you` : ""}`
+      : "No alert needs you";
 
   // ---- Queue views ----
   const rows = (list: QueueEntry[]) =>
