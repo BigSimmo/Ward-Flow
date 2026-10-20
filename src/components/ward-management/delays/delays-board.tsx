@@ -14,7 +14,10 @@ import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-rea
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import Link from "next/link";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -65,6 +68,8 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
+import { WAITING_VIEWS } from "./waiting-href";
+import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, windowText } from "./waiting-views";
 import styles from "./delays-board.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
@@ -142,11 +147,6 @@ export type DelaysBoardProps = {
   service: string | null;
   isOutsideService: (movement: Movement) => boolean;
   onEscalate: (movement: Movement) => void;
-  /**
-   * No longer read: the board's two "(not wired)" record buttons were removed (simplification A5,
-   * 19 Oct 2026). Kept optional so the screen that mounts the board can drop it in its own change.
-   */
-  onNotWired?: () => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
@@ -225,7 +225,23 @@ export function DelaysBoard({
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
-  const rows = useMemo(() => boardRows(groups, now), [groups, now]);
+  // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
+  const {
+    referrals: allReferrals,
+    movements: allMovements,
+    configuration,
+    inboxSnoozes,
+  } = useWardFlowSelect("referrals", "movements", "configuration", "inboxSnoozes");
+  const actNowIds = useMemo(
+    () =>
+      new Set(
+        activeActNowItems({ movements: allMovements, units, configuration, inboxSnoozes }, now).map(
+          (item) => item.movementId,
+        ),
+      ),
+    [allMovements, units, configuration, inboxSnoozes, now],
+  );
+  const rows = useMemo(() => boardRows(groups, now, actNowIds), [groups, now, actNowIds]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const catchments = useMemo(() => boardCatchments(rows), [rows]);
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
@@ -246,10 +262,13 @@ export function DelaysBoard({
   useEffect(() => {
     if (chosenKey === addressKey) return;
     // The order goes with the filters, so a link copied from a filtered list opens in the order its
-    // sender saw, not the receiver's remembered one. A bare address stays bare: each viewer's own order.
+    // sender saw, not the receiver's remembered one. Clearing every filter leaves the order key as it
+    // was, so a bare address stays bare: each viewer's own order.
     replaceSearchParams({
       ...filtersToParams(chosenFilters),
-      order: (flatOrderFromSearch(window.location.search) ?? readDelaysFlat()) ? "longest" : "blocker",
+      ...(chosenKey === ""
+        ? {}
+        : { order: (flatOrderFromSearch(window.location.search) ?? readDelaysFlat()) ? "longest" : "blocker" }),
     });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- records what was just written to the address, an external store
     setSeenAddressKey(chosenKey);
@@ -383,6 +402,21 @@ export function DelaysBoard({
   const silentCount = rows.filter((row) => row.silent).length;
   const urgentMinutes = thresholds.urgentMinutes;
   const soonHours = thresholds.soonMinutes / 60;
+  // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
+  const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
+  // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
+  const scope = useServiceScope();
+  const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
+  const referralsLine = (
+    <p className={styles.footNote} data-testid="delays-referrals-line">
+      {queuedReferrals === 0
+        ? "No referrals are waiting for a ward's answer."
+        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral is" : "referrals are"} waiting for a ward's answer, not yet on this list.`}{" "}
+      <Link href="/ward-flow/referrals" className={styles.lnk}>
+        Open Referrals
+      </Link>
+    </p>
+  );
 
   const heroStat = (
     value: number,
@@ -443,7 +477,7 @@ export function DelaysBoard({
   if (filters.dueSoon)
     chips.push({
       key: "due",
-      label: `Due within ${urgentMinutes}m`,
+      label: dueSoonLabel,
       clear: () => {
         set({ dueSoon: false });
       },
@@ -807,10 +841,31 @@ export function DelaysBoard({
   // C1: the filters that are on, for the phone Filter button. The hero's 8h and 24h figures set the
   // same wait threshold as the 12h chip, so any threshold counts once; the search box is separate.
   const filterCount =
-    chips.length + (filters.threshold !== 0 ? 1 : 0) + (filters.locked ? 1 : 0) + (filters.silent ? 1 : 0);
+    chips.length +
+    (filters.threshold !== 0 ? 1 : 0) +
+    (filters.locked ? 1 : 0) +
+    (filters.silent ? 1 : 0) +
+    (filters.view !== null ? 1 : 0);
   /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
   const filterRow = (inSheet: boolean) => (
     <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
+      {/* B4 saved views: each narrows the list and keeps its order. One view at a time. */}
+      {WAITING_VIEWS.map((view) => (
+        <button
+          key={view}
+          type="button"
+          className={styles.chip}
+          aria-pressed={filters.view === view}
+          title={waitingViewHint(view, thresholds)}
+          onClick={() => {
+            set({ view: filters.view === view ? null : view });
+          }}
+          data-testid={`delays-view-${view}`}
+        >
+          {waitingViewLabel(view, thresholds)}{" "}
+          <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
+        </button>
+      ))}
       {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
           12h step, which the hero does not carry, stays here as a chip. */}
       <button
@@ -925,7 +980,7 @@ export function DelaysBoard({
             )}
             {heroStat(
               dueSoon,
-              isPhone ? `Due in ${urgentMinutes}m` : `Due within ${urgentMinutes}m`,
+              isPhone ? `Form due ${windowText(urgentMinutes)}` : dueSoonLabel,
               "danger",
               filters.dueSoon,
               dueSoon > 0 || filters.dueSoon
@@ -959,6 +1014,7 @@ export function DelaysBoard({
         <div className={styles.split}>
           <section className={`${styles.card} ${styles.emptyCard}`} aria-label="Waiting">
             {empty}
+            {referralsLine}
           </section>
           {registers}
         </div>
@@ -1144,6 +1200,7 @@ export function DelaysBoard({
                   </tbody>
                 </table>
               </div>
+              {referralsLine}
             </section>
 
             {selected !== null ? (

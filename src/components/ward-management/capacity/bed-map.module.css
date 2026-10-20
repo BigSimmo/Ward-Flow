@@ -354,6 +354,8 @@
 
 .wardSelect {
   min-width: 0;
+  /* DA-25: touch tablets reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   padding: 0;
   border: 0;
   background: transparent;

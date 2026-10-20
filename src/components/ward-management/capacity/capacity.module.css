@@ -339,6 +339,16 @@
   text-decoration: underline;
 }
 
+/* DA-25: on a touch tablet the link reaches the 44px touch size (`--wf-tablet-tap`, 0 elsewhere).
+ * It grows its own row rather than reaching past it, so it never covers a wrapped chip above. */
+@media (pointer: coarse) {
+  .highlightLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-tablet-tap, 0px);
+  }
+}
+
 .secondary {
   display: flex;
   flex-direction: column;
@@ -489,6 +499,8 @@
 
 .freeingWardButton {
   min-width: 0;
+  /* DA-25: touch tablets reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   padding: 0;
   border: 0;
   background: transparent;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import {
   memo,
   useDeferredValue,
@@ -758,6 +759,10 @@ export function ShiftSummary(props: ShiftSummaryProps) {
         })}
       </ul>
       <p className={styles.panelFoot}>Choose a row to see the patient here</p>
+      {/* B4: everyone waiting, with why, is the Delays list. */}
+      <Link href={waitingHref()} className={buttonClass({ variant: "ghost", size: "sm" })}>
+        Waiting list in Delays
+      </Link>
     </div>
   );
 }
