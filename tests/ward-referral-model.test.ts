@@ -495,6 +495,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // unit is declining a placement.
     FLAG_MOVEMENT_TURNAROUND_PRIORITY: false,
     FLAG_REFERRAL_TURNAROUND_PRIORITY: false,
+    // Smart features ideas 3 and 4: a receipt, a request for listed items and ticking one off. None
+    // decides the referral; asking for information is not a refusal and the decision clock runs on.
+    MARK_REFERRAL_OPENED: false,
+    REQUEST_REFERRAL_INFORMATION: false,
+    MARK_REFERRAL_INFORMATION_MET: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,
@@ -539,6 +544,12 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // A ward restating what is currently limiting its own intake, from a fixed list. Not a
     // refusal of any named referral or placement — it carries no subject at all.
     RECORD_WARD_INTAKE_CONSTRAINTS: false,
+    // Smart features idea 7: closes a whole ward to everyone, never one named patient.
+    CLOSE_WARD_TO_ADMISSIONS: false,
+    REOPEN_WARD_TO_ADMISSIONS: false,
+    // Smart features idea 5: a task for a person about a record, never a refusal of it.
+    RECORD_BED_MEETING_ACTION: false,
+    COMPLETE_BED_MEETING_ACTION: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,

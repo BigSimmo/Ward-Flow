@@ -1,4 +1,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
+import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -220,6 +223,15 @@ export type EmergencyDepartment = {
   name: string;
 };
 
+/** A whole ward closed to new admissions; see `Unit.admissionsClosure`. */
+export type WardAdmissionsClosure = {
+  reason: WardClosureReason;
+  at: Instant;
+  /** The role label of whoever closed it, as history records it. */
+  by: string;
+  until?: Instant;
+};
+
 export type Unit = {
   id: string;
   siteCode: string;
@@ -266,6 +278,12 @@ export type Unit = {
   beds: number;
   /** Whether the ward is closed to new allocations while retaining its physical bed count. */
   isClosed?: boolean;
+  /**
+   * Smart features idea 7 (19 Oct 2026): why and since when, set with `isClosed` by
+   * `CLOSE_WARD_TO_ADMISSIONS` and cleared by `REOPEN_WARD_TO_ADMISSIONS`. `until` is the expected
+   * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
+   */
+  admissionsClosure?: WardAdmissionsClosure;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */
@@ -787,6 +805,8 @@ export type Movement = {
   arrivalMode?: "self" | "ambulance" | "police";
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
+  /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
+  meetingActions?: BedMeetingAction[];
   /**
    * WHEN THE COORDINATOR PLANS THE MOVE TO HAPPEN (owner, 26 Sept 2026: "go ahead with your
    * recommendations" — the 48-hour horizon shows demo moves spread across the window rather than
@@ -1351,6 +1371,28 @@ export type ReferralAddressing = {
   /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */
   reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>;
   reassessmentNote?: string;
+  /**
+   * Smart features idea 3 (19 Oct 2026): when the addressed ward first opened this referral
+   * (`MARK_REFERRAL_OPENED`). Shown to the sender as "Opened by <ward>". A receipt, never an answer:
+   * it does not move `state` and does not stop the decision clock. Only on a `psychiatric_ward`
+   * addressing, and only the first opening is kept.
+   */
+  openedAt?: Instant;
+  /**
+   * Smart features idea 4 (19 Oct 2026): what the ward asked for before deciding
+   * (`REQUEST_REFERRAL_INFORMATION`), each ticked off by the referrer or the coordinator
+   * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only.
+   */
+  informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>;
+};
+
+/** One item a ward asked for on a referral. `by` and `metBy` are ROLES, never people. */
+export type ReferralInformationNeedEntry = {
+  need: ReferralInformationNeed;
+  at: Instant;
+  by: string;
+  metAt?: Instant;
+  metBy?: string;
 };
 
 /** The ward arm, named so signatures can require it. */

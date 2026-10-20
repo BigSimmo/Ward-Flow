@@ -1,3 +1,4 @@
+import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
 import type {
   DischargeBarrier,
@@ -8,6 +9,8 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
   SupportNotificationOccasion,
@@ -724,6 +727,103 @@ export type WardFlowEvent =
       referralId: string;
       unitId: string;
       source?: "cld" | "departure";
+    }
+  | {
+      /**
+       * Smart features idea 3 (19 Oct 2026): the addressed ward opened this referral. Stamps
+       * `ReferralAddressing.openedAt` once, so the sender sees "Opened by <ward>". A receipt, not an
+       * answer: no state moves and the decision clock keeps running. Raised for one ward's own copy:
+       * by that ward, or by the coordinator on its behalf (every action is the coordinator's, Josh
+       * 10 Oct 2026). Screens raise it only when the ward itself shows the referral.
+       */
+      type: "MARK_REFERRAL_OPENED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      actingUnitId: string;
+    }
+  | {
+      /**
+       * Smart features idea 4 (19 Oct 2026): a ward asks for items from a fixed list before it
+       * decides. Each item is membership-checked; none is typed. Does not decide the referral and
+       * does not stop the decision clock. The ward for its own copy, or the coordinator for any ward.
+       */
+      type: "REQUEST_REFERRAL_INFORMATION";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      needs: readonly ReferralInformationNeed[];
+    }
+  | {
+      /** Smart features idea 4: the referrer or the coordinator ticks off one item a ward asked for. */
+      type: "MARK_REFERRAL_INFORMATION_MET";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      /**
+       * The ward whose copy asked, named as a referral destination rather than `unitId`: the referrer
+       * ticks off from its own place, and the shared write check treats every `unitId` as a place the
+       * sender must be in.
+       */
+      wardUnitId: string;
+      need: ReferralInformationNeed;
+    }
+  | {
+      /**
+       * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets
+       * `Unit.isClosed` and `Unit.admissionsClosure`. `reason` is chosen from `WARD_CLOSURE_REASONS`,
+       * never typed; `until` is an expected reopening that only prompts. Existing holds and
+       * acceptances stand. The ward for itself, or the coordinator for any ward.
+       */
+      type: "CLOSE_WARD_TO_ADMISSIONS";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      reason: WardClosureReason;
+      until?: Instant;
+    }
+  | {
+      /** Smart features idea 7: a person reopens a closed ward to admissions. Never automatic. */
+      type: "REOPEN_WARD_TO_ADMISSIONS";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      actingUnitId?: string;
+    }
+  | {
+      /**
+       * Smart features idea 5 (19 Oct 2026): the bed meeting chair records an agreed action against
+       * a bed request or a stay. `action` is chosen from `BED_MEETING_ACTION_KINDS`, `owner` from
+       * `BED_MEETING_ACTION_OWNERS`; nothing typed. A task for a person, never a change to the
+       * record it is about. The coordinator only.
+       */
+      type: "RECORD_BED_MEETING_ACTION";
+      role: WardFlowRole;
+      now: Instant;
+      subject: BedMeetingSubject;
+      action: BedMeetingActionKind;
+      owner: BedMeetingActionOwner;
+      /** The owning ward. Required when `owner` is `ward`. */
+      unitId?: string;
+      dueAt: Instant;
+    }
+  | {
+      /**
+       * Smart features idea 5: the open action of this kind is done. The coordinator, or the owner
+       * (a ward only for its own action, by `actingUnitId`).
+       */
+      type: "COMPLETE_BED_MEETING_ACTION";
+      role: WardFlowRole;
+      now: Instant;
+      subject: BedMeetingSubject;
+      action: BedMeetingActionKind;
+      actingUnitId?: string;
     }
   | {
       type: "CHANGE_URGENCY";

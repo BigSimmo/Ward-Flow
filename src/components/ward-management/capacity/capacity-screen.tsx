@@ -40,10 +40,12 @@ import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { ShiftConfirmationsCard } from "./shift-confirmations-card";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import {
   bedKindGaps,
@@ -127,6 +129,7 @@ export function CapacityScreen() {
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const makeRoomOn = useWardFeatureFlag("make-room-chains");
+  const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -285,6 +288,7 @@ export function CapacityScreen() {
     () => (service === null ? networkRows : networkRows.filter((row) => unitHealthService(row.unit) === service)),
     [service, networkRows],
   );
+  const scopedUnits = useMemo(() => scopedNetworkRows.map((row) => row.unit), [scopedNetworkRows]);
   /**
    * The scoped mirrors of `totalLockedReady`/`totalOpenReady`/`netTotals.beds` above — §2 "Ready now
    * is scoped, with the network figure in words." Each is summed straight from `scopedNetworkRows`,
@@ -546,6 +550,7 @@ export function CapacityScreen() {
             <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
           </div>
           <BedsForecastPanel forecast={forecast} />
+          {isPhone ? null : <ShiftConfirmationsCard units={scopedUnits} now={now} />}
           <CapacityTabs
             id="capacity-network"
             label="Network details"
@@ -813,6 +818,15 @@ export function CapacityScreen() {
                   Open on TV
                 </Link>
               ) : null}
+              {!isPhone && bedMeetingActionsOn ? (
+                <Link
+                  href={BED_MEETING_AGENDA_HREF}
+                  className={buttonClass({ variant: "onHero" })}
+                  data-testid="capacity-bed-meeting-agenda"
+                >
+                  Meeting agenda
+                </Link>
+              ) : null}
             </>
           }
         />
@@ -990,6 +1004,7 @@ export function CapacityScreen() {
               freeingWards={freeingWards}
             />
           ) : null}
+          {isPhone && phoneTab === "overview" ? <ShiftConfirmationsCard units={scopedUnits} now={now} /> : null}
           {isPhone && phoneTab === "overview" ? (
             <ReadyByRoadTime
               rows={scopedNetworkRows}

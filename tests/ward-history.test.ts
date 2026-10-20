@@ -32,7 +32,11 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Top 25 item 9 (D-60, 15 Oct 2026) adds SET_DISCHARGE_CRITERIA.
       // CLD turnaround priority (handover, 17 Oct 2026) adds FLAG_MOVEMENT_TURNAROUND_PRIORITY and
       // FLAG_REFERRAL_TURNAROUND_PRIORITY.
-      expect(allEventTypes.length).toBe(133);
+      // Smart features ideas 3 and 4 (19 Oct 2026) add MARK_REFERRAL_OPENED,
+      // REQUEST_REFERRAL_INFORMATION and MARK_REFERRAL_INFORMATION_MET.
+      // Smart features idea 7 (19 Oct 2026) adds CLOSE_WARD_TO_ADMISSIONS and REOPEN_WARD_TO_ADMISSIONS.
+      // Smart features idea 5 (19 Oct 2026) adds RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION.
+      expect(allEventTypes.length).toBe(140);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
