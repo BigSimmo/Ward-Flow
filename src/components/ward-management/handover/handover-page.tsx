@@ -82,6 +82,7 @@ import {
   handoverShift,
   heldDischarges,
   isActNow,
+  isFlaggedUrgent,
   isbarText,
   pillTest,
   summaryText,
@@ -145,6 +146,7 @@ const GROUPING_LABEL: Record<HandoverGrouping, string> = {
 
 const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "neutral" | "info"> = {
   act: "danger",
+  urg: "danger",
   due: "warning",
   bed: "neutral",
   mov: "info",
@@ -152,6 +154,7 @@ const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "ne
 
 const GROUP_TONE = {
   act: "danger",
+  urg: "danger",
   due: "warning",
   rel: "warning",
   bed: "neutral",
@@ -357,6 +360,7 @@ export function HandoverPage() {
   const counts = useMemo(
     () => ({
       act: rows.filter((row) => groupOf(row, now, cutoff) === "act").length,
+      urg: rows.filter((row) => groupOf(row, now, cutoff) === "urg").length,
       due: rows.filter((row) => groupOf(row, now, cutoff) === "due").length,
       bed: rows.filter((row) => groupOf(row, now, cutoff) === "bed").length,
       mov: rows.filter((row) => groupOf(row, now, cutoff) === "mov").length,
@@ -438,7 +442,8 @@ export function HandoverPage() {
     (ward) =>
       wardIsStale(ward, now) || now - ward.unit.allocatable.confirmedAt > ward.unit.allocatable.staleAfterMinutes,
   );
-  const outsideAct = outside.filter((row) => isActNow(row, now));
+  // Flagged urgent rows outside the scope are listed with act now, so neither leaves the sheet.
+  const outsideAct = outside.filter((row) => isActNow(row, now) || isFlaggedUrgent(row, now));
 
   /* columns */
   // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
@@ -597,7 +602,10 @@ export function HandoverPage() {
 
   /* sign-off checks */
   const actRows = rows.filter((row) => groupOf(row, now, cutoff) === "act");
-  const actOwned = actRows.every((row) => row.owner !== "No owner recorded");
+  // Flagged urgent rows need an owner too; they are counted on their own line.
+  const urgentRows = rows.filter((row) => groupOf(row, now, cutoff) === "urg");
+  const actOwnedRows = [...actRows, ...urgentRows];
+  const actOwned = actOwnedRows.every((row) => row.owner !== "No owner recorded");
   const actPassed = actRows.filter(
     (row) =>
       (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
@@ -609,7 +617,7 @@ export function HandoverPage() {
       // A4-27 (audit round 2): an act-now row whose bed pull or form time has passed is not settled,
       // whoever owns it, so the tick stays open until that time is dealt with.
       done: actOwned && actPassed === 0,
-      text: `${actRows.length} act now, ${actPassed > 0 ? `${actPassed} past ${actPassed === 1 ? "its" : "their"} time` : actOwned ? "each has an owner" : "some have no owner"}`,
+      text: `${actRows.length} act now${urgentRows.length > 0 ? ` and ${urgentRows.length} flagged urgent` : ""}, ${actPassed > 0 ? `${actPassed} past ${actPassed === 1 ? "its" : "their"} time` : actOwned ? "each has an owner" : "some have no owner"}`,
     },
     { id: "due", done: true, text: `${counts.due} due by ${formatInstantWithDay(cutoff, now)} listed` },
     staleWards.length
@@ -943,7 +951,7 @@ export function HandoverPage() {
           role="group"
           aria-label="Handover counts"
         >
-          {(["act", "due", "bed", "mov"] as const).map((id) => (
+          {(["act", "urg", "due", "bed", "mov"] as const).map((id) => (
             <button
               key={id}
               type="button"
@@ -955,11 +963,13 @@ export function HandoverPage() {
               <StatusGlyph tone={PILL_TONE[id]} size={9} />
               {id === "act"
                 ? "Act now"
-                : id === "due"
-                  ? `Due by ${formatInstantWithDay(cutoff, now)}`
-                  : id === "bed"
-                    ? "Finding a ward"
-                    : "Moving"}
+                : id === "urg"
+                  ? "Flagged urgent"
+                  : id === "due"
+                    ? `Due by ${formatInstantWithDay(cutoff, now)}`
+                    : id === "bed"
+                      ? "Finding a ward"
+                      : "Moving"}
             </button>
           ))}
         </div>
@@ -1131,10 +1141,11 @@ export function HandoverPage() {
             {outside.length} outside this scope
             {outsideAct.length ? (
               <>
-                , <b className={styles.urgentOut}>{outsideAct.length} act now</b> listed under the sheet
+                , <b className={styles.urgentOut}>{outsideAct.length} act now or flagged urgent</b> listed under the
+                sheet
               </>
             ) : (
-              ", none act now"
+              ", none act now or flagged urgent"
             )}
           </span>
         ) : null}
@@ -1238,7 +1249,7 @@ export function HandoverPage() {
       {scope.kind !== "network" && outsideAct.length ? (
         <div className={styles.tableFoot} data-testid="ward-handover-urgent-outside-filter">
           <StatusGlyph tone="danger" size={9} />
-          <b>Act now outside this scope</b>
+          <b>Act now or flagged urgent outside this scope</b>
           {outsideAct.map((row) => (
             <Button key={row.id} variant="ghost" size="sm" onClick={() => pick(row.id)}>
               {row.name} <span className={styles.mono}>{row.umrn}</span>

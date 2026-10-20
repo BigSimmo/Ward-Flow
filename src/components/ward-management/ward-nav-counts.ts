@@ -16,6 +16,8 @@ import type {
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
  * **THE NUMBERS BESIDE THE SIDEBAR'S DESTINATIONS — owner's approved header/sidebar, 2026-09-06.**
@@ -75,6 +77,11 @@ export type WardNavCountInput = {
   referrals: Referral[];
   bedReleases: readonly BedRelease[];
   leaveBeds: readonly LeaveBed[];
+  /**
+   * Read so "beds ready now" leaves out a bed pulled for an incoming patient (`readyBedsNow`).
+   * Optional only while every caller is brought across; omitted, no pull is left out.
+   */
+  admissions?: readonly Admission[];
   now: Instant;
   thresholds: DueSoonThresholds;
   /** The service chosen in the header (`useServiceScope`); Waiting's badge follows it as its title does. */
@@ -93,13 +100,14 @@ export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardN
   input.referrals,
   input.bedReleases,
   input.leaveBeds,
+  input.admissions,
   input.now,
   input.thresholds,
   input.service,
 ]);
 
 function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds, service } = input;
+  const { movements, units, sites, referrals, bedReleases, leaveBeds, admissions, now, thresholds, service } = input;
   // Waiting's screen filters to the chosen service before titling itself, so its badge counts the same people.
   const waitingMovements = service
     ? movements.filter((movement) => movementBelongsToService(movement, service, units))
@@ -118,7 +126,8 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     .reduce((total, group) => total + group.movements.length, 0);
 
   const counts: WardNavCounts = {
-    capacity: { value: rollup.service.availableNow, noun: "beds ready now", urgent: false },
+    // Audit 6 (Josh, 20 Oct 2026): the one ready figure, which leaves out beds pulled for an incoming patient.
+    capacity: { value: totalReadyBedsNow(units, admissions ?? [], bedReleases), noun: "beds ready now", urgent: false },
     movements: { value: open.length, noun: "still open", urgent: false },
     // Overall review, 20 Oct 2026: the badge is Waiting's own title figure, in its words. The severe
     // causes (Josh, 25 Sept 2026) stay as the Needs you figure, which opens Waiting filtered to them.

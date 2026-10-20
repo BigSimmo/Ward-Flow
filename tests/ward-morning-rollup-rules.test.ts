@@ -506,8 +506,8 @@ describe("ward-morning-rollup", () => {
       // "Ready" since the owner's 2026-09-04 ruling — one word for one number. This figure is
       // `min(allocatable, empty)` and was called seven different things across the product.
       availableNow: "Ready",
-      confirmedToday: "Confirmed today",
-      expectedToday: "Expected today",
+      confirmedToday: "Confirmed today and tomorrow",
+      expectedToday: "Expected today and tomorrow",
       // "Discharges held up", not "Blocked releases" — owner ruling 2026-09-06. The label changed;
       // the field name and the one-label-per-figure rule this pins did not.
       blockedToday: "Discharges held up",

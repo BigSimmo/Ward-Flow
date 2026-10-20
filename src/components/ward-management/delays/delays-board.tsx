@@ -61,6 +61,7 @@ import {
   waitTone,
   type BoardFilters,
   type BoardRow,
+  isOver24hInEd,
 } from "./delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -396,7 +397,8 @@ export function DelaysBoard({
   }, [close, filters, selectedId]);
 
   const over8 = rows.filter((row) => row.waited >= OVER_8H).length;
-  const over24 = rows.filter((row) => row.waited >= OVER_24H).length;
+  // Audit 6 (Josh, 20 Oct 2026): "Over 24h" is people in an ED 24 hours or more, as the TV counts it.
+  const over24 = rows.filter(isOver24hInEd).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
   // Overall review, 20 Oct 2026: the title leads with the one "waiting" figure (`waitingInEds`, the

@@ -170,6 +170,7 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     referrals: input.referrals,
     bedReleases: input.bedReleases,
     leaveBeds: input.leaveBeds,
+    admissions: input.admissions,
     now: input.now,
     thresholds: input.thresholds,
   });

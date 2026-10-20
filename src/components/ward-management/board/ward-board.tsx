@@ -654,7 +654,8 @@ export function WardBoard({
     {
       key: "availableNow",
       label: CAPACITY_FIGURE_LABELS.availableNow,
-      value: breakdown.availableNow,
+      // Audit 6 (Josh, 20 Oct 2026): the one ready figure, the headline's, which leaves out pulled beds.
+      value: states.ready,
     },
     // Keyed `held` because that is the `CAPACITY_FIGURE_LABELS` key; the label it carries is
     // "Closed" (2026-09-01 ruling 5) and the value is the ruled Closed, so it matches the tiles.

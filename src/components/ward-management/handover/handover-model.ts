@@ -36,7 +36,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 
 /* ------------------------------------------------------------------ shifts */
 
@@ -242,14 +242,15 @@ export function toHandoverRow(
 
 /* ------------------------------------------------------------------ groups */
 
-export type HandoverGroupId = "act" | "due" | "rel" | "bed" | "acc" | "mov";
+export type HandoverGroupId = "act" | "urg" | "due" | "rel" | "bed" | "acc" | "mov";
 export type HandoverTone = "act" | "due" | "calm";
 
 /**
  * Act now on the sheet. L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read
  * 2, because the sheet kept its own list. With `actNow` set the sheet reads the shared act-now list
  * (`activeActNowItems`), so a snoozed alert leaves both together. A journey flagged urgent by a
- * person is always act now as well: that flag is a human safety call the sheet must not drop.
+ * person is a human safety call the sheet must not drop: Audit 6 (Josh, 20 Oct 2026) moved it from
+ * Act now to its own Flagged urgent group straight beneath, so Act now is exactly Alerts' red rows.
  */
 export function isCollected(row: HandoverRow): boolean {
   // A stopped (or cancelled) journey is no longer in transit: its held bed must still be able to lapse.
@@ -278,12 +279,17 @@ export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
 }
 
 export function isActNow(row: HandoverRow, now: Instant): boolean {
-  if (row.actNow !== undefined) return row.actNow || row.urgent;
-  return row.urgent || pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
+  if (row.actNow !== undefined) return row.actNow;
+  return pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
+}
+
+/** Flagged urgent by a person and not already act now: the sheet's own line beneath Act now. */
+export function isFlaggedUrgent(row: HandoverRow, now: Instant): boolean {
+  return row.urgent && !isActNow(row, now);
 }
 
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
-  if (isActNow(row, now)) return false;
+  if (isActNow(row, now) || isFlaggedUrgent(row, now)) return false;
   return pullHasLapsed(row, cutoff) || (row.formDueAt !== undefined && row.formDueAt <= cutoff);
 }
 
@@ -293,6 +299,7 @@ export const isMoving = (row: HandoverRow) => row.stage === "moving" || row.stag
 
 export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): HandoverGroupId {
   if (isActNow(row, now)) return "act";
+  if (isFlaggedUrgent(row, now)) return "urg";
   if (isDueBy(row, now, cutoff)) return "due";
   if (isStoppedAwaitingRelease(row)) return "rel";
   if (isWaitingForBed(row)) return "bed";
@@ -302,7 +309,8 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
 
 export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
-    { id: "act", title: "Act now", why: "On the act-now alerts, or flagged urgent" },
+    { id: "act", title: "Act now", why: "On the act-now alerts" },
+    { id: "urg", title: "Flagged urgent", why: "Flagged urgent by a person, not on the act-now alerts" },
     {
       id: "due",
       title: `Due by ${formatInstantWithDay(cutoff, now)}`,
@@ -410,7 +418,8 @@ export function nextStep(
   cutoff: Instant,
   readyBeds: (unitId: string) => number,
 ): { text: string; tone: HandoverTone } {
-  const tone: HandoverTone = isActNow(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
+  const tone: HandoverTone =
+    isActNow(row, now) || isFlaggedUrgent(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
   const hold = shownBedHold(row, now);
   if (isStoppedAwaitingRelease(row)) {
@@ -533,7 +542,7 @@ export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: st
 
 /* ------------------------------------------------------------------ highlight, sort, group */
 
-export type HandoverPill = "act" | "due" | "bed" | "mov" | "new";
+export type HandoverPill = "act" | "urg" | "due" | "bed" | "mov" | "new";
 export type HandoverChip = "spec" | "form" | "dec" | "day" | "mine" | "esc";
 
 export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: HandoverRow, now: Instant) => boolean }[] =
@@ -550,6 +559,8 @@ export function pillTest(pill: HandoverPill, row: HandoverRow, now: Instant, cut
   switch (pill) {
     case "act":
       return groupOf(row, now, cutoff) === "act";
+    case "urg":
+      return groupOf(row, now, cutoff) === "urg";
     case "due":
       return groupOf(row, now, cutoff) === "due";
     // Waiting and Moving name their meeting group, so a highlight, its count and the group heading
@@ -651,7 +662,8 @@ export function toHandoverWard(
     beds: unit.beds,
     occupied: here.length,
     empty: unit.empty.value,
-    ready: boundedBedAvailability(unit).available,
+    // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
+    ready: readyBedsNow(unit, admissions, bedReleases),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,

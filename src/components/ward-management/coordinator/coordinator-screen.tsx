@@ -551,6 +551,7 @@ export function CoordinatorScreen() {
       rejections,
       bedReleases,
       leaveBeds,
+      admissions,
       refreshRequests,
       now,
       sites: network.sites,
@@ -568,6 +569,7 @@ export function CoordinatorScreen() {
     rejections,
     bedReleases,
     leaveBeds,
+    admissions,
     refreshRequests,
     now,
     thresholds,
@@ -583,11 +585,12 @@ export function CoordinatorScreen() {
         referrals,
         bedReleases,
         leaveBeds,
+        admissions,
         now,
         sites: network.sites,
         thresholds,
       }),
-    [movements, units, referrals, bedReleases, leaveBeds, now, thresholds, network],
+    [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network],
   );
   // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
   const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
@@ -806,7 +809,7 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     value={actionInbox.length}
-                    label="Exceptions"
+                    label="Alerts"
                     tone={actionInbox.length > 0 ? "danger" : undefined}
                     command
                     expanded={phoneSheet?.kind === "exceptions"}
@@ -865,7 +868,7 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={actionInbox.length}
-                    label="Exceptions"
+                    label="Alerts"
                     tone={actionInbox.length > 0 ? "warning" : undefined}
                     expanded={heroPanel === "registers" && registerTab !== "declines"}
                     controls="ward-home-hero-panel"
@@ -1082,7 +1085,7 @@ export function CoordinatorScreen() {
             <Sheet
               open
               onClose={() => setPhoneSheet(undefined)}
-              title="Exceptions"
+              title="Alerts"
               description="Choose one to open its patient"
               mobilePlacement="bottom"
               testId="ward-home-exceptions-sheet"

@@ -1478,7 +1478,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
                   </div>
                   <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Expected out today</span>
+                    <span className={styles.milieuLabel}>Expected out today and tomorrow</span>
                     <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
                   </div>
                 </div>
