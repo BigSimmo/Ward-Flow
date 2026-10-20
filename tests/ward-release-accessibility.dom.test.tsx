@@ -65,7 +65,8 @@ it("waits for fonts, finite animation and stable layout before scanning", async 
   });
   const geometry = vi.spyOn(document.querySelector("main")!, "getBoundingClientRect").mockImplementation(() => {
     expect(animationComplete).toBe(true);
-    return { x: frames === 1 ? 1 : 2, y: 0, width: 100, height: 100 } as DOMRect;
+    // Frame 1 is the first rendering opportunity; geometry sampling starts at frame 2.
+    return { x: frames === 2 ? 1 : 2, y: 0, width: 100, height: 100 } as DOMRect;
   });
   try {
     await waitForAccessibleReadiness({ evaluate: (callback: () => Promise<void>) => callback() } as unknown as Page);
@@ -157,8 +158,35 @@ it.each([
       evaluate: (callback: () => Promise<void>) => callback(),
     } as unknown as Page);
     const rejected = expect(readiness).rejects.toThrow("Accessibility layout did not settle");
-    await vi.advanceTimersByTimeAsync(5000);
+    // One frame to the first rendering opportunity, then the unchanged five-second budget.
+    await vi.advanceTimersByTimeAsync(16 + 5000);
     await rejected;
+  } finally {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  }
+});
+
+it("starts the settle budget at the first rendered frame, not while a cold browser has not painted", async () => {
+  document.body.innerHTML = "<main></main>";
+  Object.defineProperty(document, "fonts", { configurable: true, value: { ready: Promise.resolve() } });
+  Object.defineProperty(document, "getAnimations", { configurable: true, value: () => [] });
+  vi.useFakeTimers();
+  let frames = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    // The first frame arrives six seconds after load, later than the whole settle budget.
+    return setTimeout(() => callback(0), frames++ === 0 ? 6000 : 16);
+  });
+  try {
+    let settled = false;
+    const readiness = waitForAccessibleReadiness({
+      evaluate: (callback: () => Promise<void>) => callback(),
+    } as unknown as Page).then(() => {
+      settled = true;
+    });
+    await vi.advanceTimersByTimeAsync(6000 + 16 * 4);
+    await readiness;
+    expect(settled).toBe(true);
   } finally {
     vi.useRealTimers();
     vi.unstubAllGlobals();

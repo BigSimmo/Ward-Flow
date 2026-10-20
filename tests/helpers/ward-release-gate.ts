@@ -92,6 +92,12 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
 /** Wait for fonts, finite motion and three equal layout frames before measuring accessibility. */
 export async function waitForAccessibleReadiness(page: Page) {
   await page.evaluate(async () => {
+    // The settle budget starts at the browser's first rendering opportunity. A cold WebKit (the
+    // first phone test of a run) can go seconds after load without producing a frame; until it
+    // does, neither requestAnimationFrame nor CSS transitions advance (every transition reads
+    // localTime 0), so that start-up time is not motion and must not consume the budget. The
+    // test's own timeout still bounds a browser that never renders.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     let cancelled = false;
     let phase = "fonts";
     let timer: ReturnType<typeof setTimeout>;
