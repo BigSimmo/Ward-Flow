@@ -189,6 +189,27 @@ describe("audited shared command permission boundaries", () => {
     },
   );
 
+  it.each(["ADD_REFERRAL_CORRECTION", "RECORD_REFERRER_WITHDRAWAL"] as const)(
+    "never treats a community team named on an ED referral as its sender for %s",
+    (type) => {
+      const world = seedWorld(at);
+      const row = world.state.referrals.find((item) => item.id === "RF-014")!;
+      row.source = "ed_medical";
+      row.sendingTeamName = "Synthetic receiving team";
+      row.destinations.push({
+        destination: { kind: "community_team", teamName: "Synthetic receiving team" },
+        state: "queued",
+      });
+      const receiver: WardAccess = {
+        role: "community",
+        scope: { kind: "team", teamName: "Synthetic receiving team" },
+      };
+      const event = { type, role: "community", now: 642, referralId: row.id, note: "Synthetic correction" };
+      expect(scopeWorld(world, receiver, at).state.referrals.some((item) => item.id === row.id)).toBe(true);
+      expect(commandRefusal(world, receiver, event, at)).not.toBeNull();
+    },
+  );
+
   it("does not let a receiving community team assess the sending team's transport need", () => {
     const world = seedWorld(at);
     const movement = world.state.movements.find((row) => !row.closure && row.referralId)!;

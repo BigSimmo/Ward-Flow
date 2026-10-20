@@ -542,6 +542,7 @@ export function commandScopeRefusal(
             places.edSiteCode(scope.edId) === referral.originSiteCode
           : access.role === "community"
             ? referral.source !== "psychiatric_ward" &&
+              referral.source !== "ed_medical" &&
               referral.sendingTeamName !== undefined &&
               teamIsOwn(access, referral.sendingTeamName, places)
             : access.role === "ward" &&
