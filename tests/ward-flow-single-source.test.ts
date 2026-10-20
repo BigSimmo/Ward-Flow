@@ -214,6 +214,11 @@ const UNITS_FIXTURE_ALLOWLIST = new Set([
   // below does not include either — so the mutable-field guard applies to both in full.
   "src/components/ward-management/patients/patient-now-records.ts",
   "src/components/ward-management/patients/patient-now-screen.tsx",
+  // SEVENTH ENTRY, 20 Oct 2026 (DA-32), the same shape as the fourth: `ward-known-places.ts` reads
+  // each scenario network's wards on the server to answer an unknown ward address with a real 404,
+  // and lends the ward routes the immutable `.name` for the browser tab. Existence and name only,
+  // never a field the reducer writes, so the mutable-field guard below applies to it in full.
+  "src/components/ward-management/ward-known-places.ts",
 ]);
 
 /**
