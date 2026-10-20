@@ -36,7 +36,7 @@ import {
   handoverAt,
   handoverHasPassed,
   handoverShift,
-  isActNow,
+  isActOrUrgent,
   isbarLines,
   nextStep,
   wardIsStale,
@@ -183,7 +183,7 @@ function PatientRow({
   onPick: (movementId: string) => void;
 }) {
   const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
-  const act = isActNow(row, ctx.now);
+  const act = isActOrUrgent(row, ctx.now);
   return (
     <button
       type="button"

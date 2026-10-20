@@ -82,6 +82,7 @@ import {
   handoverShift,
   heldDischarges,
   isActNow,
+  isActOrUrgent,
   isFlaggedUrgent,
   isbarText,
   pillTest,
@@ -1226,7 +1227,7 @@ export function HandoverPage() {
                           className={`${styles.row} ${isSelected ? styles.rowSelected : ""}`}
                           data-highlighted={isHighlighted(row) ? "true" : undefined}
                           data-dim={anyHighlight && !isHighlighted(row) ? "true" : undefined}
-                          data-act={isActNow(row, now) ? "true" : undefined}
+                          data-act={isActOrUrgent(row, now) ? "true" : undefined}
                           onClick={() => pick(row.id)}
                           onKeyDown={(event: ReactKeyboardEvent<HTMLTableRowElement>) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -1362,7 +1363,7 @@ export function HandoverPage() {
                 figureNote: "waiting",
                 tone: rowTone(row, ctx),
                 next: next.text,
-                actNow: isActNow(row, now),
+                actNow: isActOrUrgent(row, now),
                 selected: row.id === selectedId,
                 dim: anyHighlight && !isHighlighted(row),
               };

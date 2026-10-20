@@ -288,6 +288,11 @@ export function isFlaggedUrgent(row: HandoverRow, now: Instant): boolean {
   return row.urgent && !isActNow(row, now);
 }
 
+/** Drawn in danger: act now, or flagged urgent on its own line. Counts never use this. */
+export function isActOrUrgent(row: HandoverRow, now: Instant): boolean {
+  return isActNow(row, now) || isFlaggedUrgent(row, now);
+}
+
 export function isDueBy(row: HandoverRow, now: Instant, cutoff: Instant): boolean {
   if (isActNow(row, now) || isFlaggedUrgent(row, now)) return false;
   return pullHasLapsed(row, cutoff) || (row.formDueAt !== undefined && row.formDueAt <= cutoff);
@@ -418,8 +423,7 @@ export function nextStep(
   cutoff: Instant,
   readyBeds: (unitId: string) => number,
 ): { text: string; tone: HandoverTone } {
-  const tone: HandoverTone =
-    isActNow(row, now) || isFlaggedUrgent(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
+  const tone: HandoverTone = isActOrUrgent(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
   const hold = shownBedHold(row, now);
   if (isStoppedAwaitingRelease(row)) {
