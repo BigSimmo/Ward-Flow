@@ -1,20 +1,14 @@
 "use client";
 
-import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
+import dynamic from "next/dynamic";
 
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
-import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
-import { useWardRaise } from "../ward-flow-raise";
 import type { WardAccess } from "../ward-role-access";
-import {
-  bedMeetingActionLabel,
-  type BedMeetingAction,
-  type BedMeetingActionOwner,
-  type BedMeetingSubject,
-} from "./bed-meeting-actions";
-import styles from "./meeting-actions-due.module.css";
+import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting-actions";
+
+const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) => m.DueActions));
 
 /**
  * Overall review, 20 Oct 2026: the owner of a bed meeting action had no way to mark it done; only
@@ -67,57 +61,4 @@ function deskOwnsAction(access: WardAccess, desk: BedMeetingActionOwner, action:
     action.ownerUnitId !== undefined &&
     access.scope.unitIds.includes(action.ownerUnitId)
   );
-}
-
-function DueActions({
-  subject,
-  desk,
-  actions,
-}: {
-  subject: BedMeetingSubject;
-  desk: BedMeetingActionOwner;
-  actions: readonly BedMeetingAction[];
-}) {
-  const raise = useWardRaise(desk);
-  const now = useWardFlowClock();
-  return (
-    <Card data-testid="meeting-actions-due">
-      <CardHead title="Agreed at the bed meeting" meta={`${actions.length}`} level={2} />
-      <CardBody>
-        <ul className={styles.list}>
-          {actions.map((action) => (
-            <li key={action.kind} className={styles.row}>
-              <div className={styles.rowText}>
-                <span className={styles.name}>
-                  <StatusGlyph tone={action.dueAt < now ? "warning" : "info"} size={8} />{" "}
-                  {bedMeetingActionLabel(action.kind)}
-                </span>
-                <span className={styles.detail}>{dueWords(action.dueAt, now)}</span>
-              </div>
-              <Button
-                size="sm"
-                variant="sec"
-                onClick={() =>
-                  raise("COMPLETE_BED_MEETING_ACTION", {
-                    subject,
-                    action: action.kind,
-                    ...(desk === "ward" ? { actingUnitId: action.ownerUnitId } : {}),
-                  })
-                }
-                aria-label={`Mark done: ${bedMeetingActionLabel(action.kind)}`}
-                data-testid="meeting-action-mark-done"
-              >
-                Mark done
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </CardBody>
-    </Card>
-  );
-}
-
-/** The agenda's wording: shown when overdue, never escalated. */
-function dueWords(dueAt: Instant, now: Instant): string {
-  return `${dueAt < now ? "Was due" : "Due"} ${formatInstantWithDay(dueAt, now)}`;
 }
