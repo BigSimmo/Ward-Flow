@@ -31,7 +31,7 @@ import type {
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
-import { hasMovedInWardFlow } from "./ward-back";
+import { hasMovedInWardFlow, markWardRouteReplace } from "./ward-back";
 import { openWardMenu } from "./ward-drawer-bus";
 import type { WardActivityContent, WardPrimaryAction } from "./ward-shell-types";
 import {
@@ -69,7 +69,7 @@ export function WardBarBack({
         aria-label="Back"
         data-testid="ward-bar-phone-back"
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
-        onClick={() => navigateContextuallyBack(router, parentHref, hasMovedInWardFlow)}
+        onClick={() => navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace)}
       >
         <ArrowLeft aria-hidden="true" strokeWidth={1.75} />
       </button>
@@ -79,6 +79,7 @@ export function WardBarBack({
     <ContextualBackLink
       fallbackHref={parentHref}
       canUseHistory={hasMovedInWardFlow}
+      onFallback={markWardRouteReplace}
       className={styles.deskBack}
       aria-label="Back"
       data-testid="ward-bar-back"

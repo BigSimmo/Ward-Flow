@@ -78,6 +78,7 @@ export function wardBackParent(pathname: string, deskHomeHref: string): string |
  */
 let landingIndex: number | undefined;
 let routeStack: string[] = [];
+let replacingTop = false;
 
 function historyIndex(): number | undefined {
   const index = (globalThis as { navigation?: { currentEntry?: { index?: number } | null } }).navigation?.currentEntry
@@ -85,11 +86,19 @@ function historyIndex(): number | undefined {
   return typeof index === "number" && index >= 0 ? index : undefined;
 }
 
+/** Called by Back just before its fallback replaces the current page, which adds no history. */
+export function markWardRouteReplace(): void {
+  replacingTop = true;
+}
+
 /** Called by the bar on every route change. */
 export function noteWardRoute(pathname: string): void {
   if (routeStack.length === 0) landingIndex = historyIndex();
+  const replacing = replacingTop;
+  replacingTop = false;
   if (routeStack.at(-1) === pathname) return;
-  if (routeStack.at(-2) === pathname) routeStack.pop();
+  if (replacing && routeStack.length > 0) routeStack[routeStack.length - 1] = pathname;
+  else if (routeStack.at(-2) === pathname) routeStack.pop();
   else routeStack.push(pathname);
 }
 
@@ -103,4 +112,5 @@ export function hasMovedInWardFlow(): boolean {
 export function resetWardRouteHistory(): void {
   landingIndex = undefined;
   routeStack = [];
+  replacingTop = false;
 }

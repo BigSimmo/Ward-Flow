@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WardBarBack } from "@/components/ward-management/shell/ward-bar-controls";
-import { noteWardRoute, resetWardRouteHistory } from "@/components/ward-management/shell/ward-back";
+import { hasMovedInWardFlow, noteWardRoute, resetWardRouteHistory } from "@/components/ward-management/shell/ward-back";
 
 const router = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
 
@@ -34,6 +34,18 @@ describe("the header's Back control", () => {
     fireEvent.click(screen.getByTestId("ward-bar-phone-back"));
     expect(router.back).not.toHaveBeenCalled();
     expect(router.replace).toHaveBeenCalledWith("/ward-flow/movements");
+    // The replace adds no history entry, so a second Back must not follow the tab out of Ward Flow.
+    noteWardRoute("/ward-flow/movements");
+    expect(hasMovedInWardFlow()).toBe(false);
+  });
+
+  it("on desktop, counts its fallback as replacing the page too", () => {
+    noteWardRoute("/ward-flow/ward/W1/answer");
+    render(<WardBarBack parentHref="/ward-flow/ward/W1" phone={false} />);
+    fireEvent.click(screen.getByTestId("ward-bar-back"));
+    expect(router.replace).toHaveBeenCalledWith("/ward-flow/ward/W1");
+    noteWardRoute("/ward-flow/ward/W1");
+    expect(hasMovedInWardFlow()).toBe(false);
   });
 
   it("returns to the previous Ward Flow screen once the tab has moved within the app", () => {

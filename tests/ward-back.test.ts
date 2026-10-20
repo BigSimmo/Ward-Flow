@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   hasMovedInWardFlow,
+  markWardRouteReplace,
   noteWardRoute,
   resetWardRouteHistory,
   wardBackParent,
@@ -87,6 +88,15 @@ describe("the header's Back control (Josh, 20 Oct 2026)", () => {
       noteWardRoute("/ward-flow/people/PX-1a2b"); // browser Back to the landing page
       expect(hasMovedInWardFlow()).toBe(false);
       noteWardRoute("/ward-flow/movements"); // browser Forward
+      expect(hasMovedInWardFlow()).toBe(true);
+    });
+
+    it("without the Navigation API, counts Back's own fallback as replacing the page, not a step forward", () => {
+      noteWardRoute("/ward-flow/ward/W1/answer"); // opened from an email
+      markWardRouteReplace(); // Back had no history, so it replaced this page with its parent
+      noteWardRoute("/ward-flow/ward/W1");
+      expect(hasMovedInWardFlow()).toBe(false);
+      noteWardRoute("/ward-flow/people/PX-1a2b"); // an ordinary push still counts
       expect(hasMovedInWardFlow()).toBe(true);
     });
   });
