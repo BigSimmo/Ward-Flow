@@ -60,8 +60,10 @@ export function MissedRequestsPanel() {
         }
         action={
           items.length > 0 ? (
+            // Overall review (20 Oct 2026): the card's own secondary button. "light" is for the dark
+            // hero band, and on a dark-mode card it glared white.
             <Button
-              variant="light"
+              variant="sec"
               size="sm"
               aria-expanded={open}
               aria-controls={listId}
