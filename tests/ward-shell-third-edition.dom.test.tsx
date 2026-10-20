@@ -280,7 +280,8 @@ describe("assertion 2 — Escape never clears the Service selector", () => {
     await user.click(screen.getByRole("button", { name: "South Metro" }));
 
     const trigger = screen.getByTestId("ward-bar-service-trigger");
-    expect(trigger).toHaveTextContent("South Metro");
+    // DA-14: the choice applies just after the tap paints, not inside it.
+    await waitFor(() => expect(trigger).toHaveTextContent("South Metro"));
 
     // Several presses, not one — the standard is explicit that a FURTHER press still answers
     // ("Nothing more to clear") rather than the second press finally getting through.
@@ -298,6 +299,8 @@ describe("assertion 2 — Escape never clears the Service selector", () => {
 
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     await user.click(screen.getByRole("button", { name: "East Metro" }));
+    // DA-14: the choice applies just after the tap paints, not inside it.
+    await waitFor(() => expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("East Metro"));
     await user.keyboard("{Escape}");
 
     const live = screen.getByTestId("ward-live-region");

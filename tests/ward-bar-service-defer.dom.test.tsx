@@ -1,6 +1,6 @@
 // DA-14 (design audit, 19 Oct 2026): choosing a service in the header redraws the whole page, about
 // 260 ms on a slow phone. `selectService` in `shell/ward-bar.tsx` now closes the panel first and
-// moves the store write to the next task, so the closed panel paints before the redraw starts.
+// moves the store write past the next frame, so the tap paints before the redraw starts.
 
 import type { ReactNode } from "react";
 
