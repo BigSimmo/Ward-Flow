@@ -14,6 +14,7 @@ import {
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
   type Movement,
+  type MovementArrivalDetails,
   type Notice,
   type Unit,
 } from "@/components/ward-management/ward-model";
@@ -995,12 +996,16 @@ export function reduceTransportEvent(
         );
       }
 
-      const arrivalDetails = {
+      // The first recording keeps its time and role; a later edit is stamped as an update, so the
+      // ED timeline, chronology and pilot measures never read the latest edit as the first.
+      const firstRecording = movement.arrivalDetails;
+      const arrivalDetails: MovementArrivalDetails = {
         mode: event.arrivalMode,
         trackingNumber: event.trackingNumber?.trim() || undefined,
         estimatedArrivalAt: event.estimatedArrivalAt,
-        recordedAt: event.now,
-        recordedBy: event.role,
+        recordedAt: firstRecording?.recordedAt ?? event.now,
+        recordedBy: firstRecording?.recordedBy ?? event.role,
+        ...(firstRecording ? { updatedAt: event.now, updatedBy: event.role } : {}),
       };
 
       let updatedMovement: Movement = {

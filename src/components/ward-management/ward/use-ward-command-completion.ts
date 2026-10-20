@@ -67,12 +67,25 @@ export function wardUndoBlocked(outcome: WardCommandOutcome | undefined, say: (m
 
 /** Design audit DA-11: the Pull a bed button has gone, so keep focus on the arrival it changed. */
 export function focusWardArrival(movementId: string) {
+  if (document.activeElement !== null && document.activeElement !== document.body) return;
   const row = document.getElementById(`ward-arrival-${movementId}`);
-  if (row && (document.activeElement === null || document.activeElement === document.body)) {
+  if (row) {
     if (!row.hasAttribute("tabindex")) row.setAttribute("tabindex", "-1");
     row.focus({ preventScroll: true });
+    if (document.activeElement === row) return;
   }
+  // Overall review (20 Oct 2026): pulled from Home's Ward flow list, the arrivals row is on a
+  // hidden tab and cannot take focus, and the row's Pull a bed button has been replaced by its next
+  // action. Focus goes to that row's own
+  // control, so a keyboard user carries on from the same place instead of the top of the page.
+  const origin = commandOrigin;
+  commandOrigin = null;
+  if (!origin?.key.endsWith(`:${movementId}`) || !origin.row.isConnected) return;
+  origin.row.querySelector<HTMLElement>("button:not([disabled]), a[href]")?.focus({ preventScroll: true });
 }
+
+/** The list row a command was started from, for `focusWardArrival` when no arrivals row exists. */
+let commandOrigin: { key: string; row: Element } | null = null;
 
 /** Generic Undo must name the record created by this command, including scoped receipts. */
 export function wardCommandUndoSeq(
@@ -123,6 +136,8 @@ export function useWardCommandCompletion(say?: (message: string) => void) {
       return false;
     }
     pending.current.add(key);
+    const startedRow = typeof document === "undefined" ? null : document.activeElement?.closest("li");
+    commandOrigin = startedRow ? { key, row: startedRow } : null;
     const commandGeneration = generationRef.current;
     const finish = (outcome?: WardCommandOutcome) => {
       pending.current.delete(key);

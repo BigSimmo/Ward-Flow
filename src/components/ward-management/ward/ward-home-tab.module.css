@@ -1086,28 +1086,8 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
-/* Phone (v10 pass 3): every bed grouped by state, one row each at the touch height. */
-.phoneGroups {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
-}
-
-.phoneGroupHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0 0 var(--wf-s-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.phoneGroupHead > :last-child {
-  margin-left: auto;
-}
-
+/* Phone round (Option B, 20 Oct 2026): every bed once, in bed order, one row each at the touch
+   height, with a tick once reviewed. */
 .phoneRows {
   display: flex;
   flex-direction: column;
@@ -1192,27 +1172,16 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-dim);
 }
 
-.phoneMore {
-  width: 100%;
-  min-height: var(--wf-touch, 44px);
-  margin-top: var(--wf-s-1);
-  border: 1px dashed var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-2);
-}
-
 @media (max-width: 48rem) {
   .viewSwitch {
     display: none;
   }
 }
 
-/* Phone v10 (11 Oct 2026): the first screen is Awaiting your answer, then Every bed as one card
- * of state groups with settled beds one tap away, then Ward figures behind a disclosure. This
- * shift and Ward flow open as bottom sheets from the chips above the tabs. Every class below
- * renders only on a phone, and the rest sit under the phone query. */
+/* Phone, Option B (Josh, 20 Oct 2026): the first screen is Needs you (answers waiting, This shift,
+ * Ward flow), then the Round, then Ward details behind a disclosure. This shift and Ward flow open
+ * as bottom sheets from their rows. Every class below renders only on a phone, and the rest sit
+ * under the phone query. */
 .phoneSection {
   display: flex;
   flex-direction: column;
@@ -1325,6 +1294,142 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-ink-1);
 }
 
+.needsCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.needsCard > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+.needsCard > .phoneClear,
+.needsCard > .phoneAwaitList {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.needsCard > .phoneAwaitList {
+  border-top: 1px solid var(--wf-line);
+}
+
+.needsCard > .phoneClear {
+  padding: var(--wf-s-3);
+}
+
+.needsCard .phoneClearTitle {
+  flex-wrap: wrap;
+  font-size: var(--wf-fs-14);
+}
+
+.needsLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3) 0;
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.needsLabel + .phoneAwaitList {
+  border-top: 0;
+}
+
+.needsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.needsRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.needsIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.needsIcon[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 14%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+
+.needsIcon[data-tone="info"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.needsText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.needsText b {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+}
+
+.needsText span {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-3);
+}
+
+.needsChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.phoneBoardHint {
+  margin: calc(-1 * var(--wf-s-3)) var(--wf-s-1) calc(-1 * var(--wf-s-2));
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.phoneBoardLink {
+  min-height: var(--wf-touch);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.phoneRow[data-reviewed="true"] .phoneRowNo,
+.phoneRow[data-reviewed="true"] .phoneRowName {
+  color: var(--wf-ink-2);
+}
+
 .phoneBedsHead {
   display: flex;
   flex-direction: column;
@@ -1435,40 +1540,18 @@ label.todoMain:has(.todoTick:focus-visible) {
     gap: var(--wf-s-4);
   }
 
-  /* Every bed: one card, each state group a quiet header band with its rows under it. */
+  /* The round: one card, the progress and Carry on at the top, then a row per bed. */
   .areaBeds {
     padding: 0;
     overflow: hidden;
   }
 
-  .phoneGroups {
-    gap: 0;
-    padding: 0;
-  }
-
-  .phoneGroups > section + section {
-    border-top: 1px solid var(--wf-line);
-  }
-
-  .phoneGroupHead {
-    min-height: var(--wf-row-group);
-    margin: 0;
-    padding: 0 var(--wf-s-3);
-    border-bottom: 1px solid var(--wf-line);
-    background: var(--wf-surface-2);
-    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-    letter-spacing: var(--wf-tr-caps);
-    text-transform: uppercase;
-    color: var(--wf-ink-2);
-  }
-
-  .phoneGroupHead > :last-child {
-    min-width: 0;
-    padding: 0;
+  /* A bed's card takes the page: no card frame, and nothing clipped, so its foot can pin. */
+  .areaBeds[data-walking="true"] {
+    overflow: visible;
     border: 0;
     background: transparent;
-    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-    color: var(--wf-ink-1);
+    box-shadow: none;
   }
 
   .phoneRows {
@@ -1478,6 +1561,8 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .phoneRow {
     grid-template-columns: 36px minmax(0, 1fr) auto;
+    /* A reviewed bed's tick takes a fourth column on the same line, only when it is there. */
+    grid-auto-flow: column;
     gap: var(--wf-s-3);
     min-height: 60px;
     padding: var(--wf-s-2) var(--wf-s-3);
@@ -1505,15 +1590,6 @@ label.todoMain:has(.todoTick:focus-visible) {
   .phoneRowDaysSub {
     font: 400 var(--wf-fs-12) / 1 var(--wf-font);
     color: var(--wf-ink-3);
-  }
-
-  .phoneMore {
-    margin: 0;
-    border: 0;
-    border-top: 1px solid var(--wf-line);
-    border-radius: 0;
-    font-weight: 600;
-    color: var(--wf-accent-ink);
   }
 
   .phoneFigures .bedKey {

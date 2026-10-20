@@ -31,6 +31,7 @@ import type { BreakGlassGrant } from "@/components/ward-management/ward-access-s
 import { withCover } from "@/components/ward-management/ward-access-shell-rules";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 
 const WARD_ACCESS_STORAGE_KEY = "wardflow:access-desk-v1";
@@ -306,6 +307,20 @@ export function lockWardDesk(): void {
   clearPersonalKeys();
   emit({ ...snapshot, records: expireGrants(snapshot.records) });
 }
+
+/**
+ * A signed-in session ended (sign-out, expiry or the idle lock signing out): forget this account's
+ * break glass records (with any typed "Other" reason), cover and any coordinator preview, so the
+ * next account in this tab inherits none of them (Codex review on PR #487). Like the idle lock, it
+ * never widens access: the desk keeps its own restricted scope until the next account's access
+ * arrives from the server.
+ */
+function forgetAccountAccess(): void {
+  load();
+  clearPersonalKeys();
+  emit({ desk: snapshot.desk, records: [], previewOf: null, covers: [] });
+}
+onWardSessionEnd(forgetAccountAccess);
 
 /**
  * Open one patient record outside the desk's care, read only, for a set time (plan section 7).

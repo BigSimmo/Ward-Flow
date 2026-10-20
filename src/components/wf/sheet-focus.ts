@@ -118,6 +118,14 @@ export function hasOpenSheet() {
 }
 
 /**
+ * The open sheets, bottom first, as handles that stay the same while each one is open. The shared
+ * board uses them to remember what it held when each popup opened (audit CS-19).
+ */
+export function openSheetHandles(): readonly object[] {
+  return openSheets.slice();
+}
+
+/**
  * Whether a closing sheet may still return focus to `target`.
  *
  * With nothing open, always. With a sheet still open, only when the target
@@ -137,7 +145,7 @@ export function canRestoreFocusTo(target: HTMLElement | null) {
  * Notifies on every push/pop so the top-most sheet can re-take focus the moment
  * a sibling sheet finishes tearing down, instead of polling for it.
  */
-function subscribeToSheetStack(listener: () => void) {
+export function subscribeToSheetStack(listener: () => void) {
   stackListeners.add(listener);
   return () => {
     stackListeners.delete(listener);

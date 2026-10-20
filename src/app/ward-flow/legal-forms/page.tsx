@@ -4,7 +4,7 @@ import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal
 import { recordIdFromAddress } from "@/components/ward-management/shell/ward-record-address";
 
 export const metadata: Metadata = {
-  title: "Forms — Ward Flow",
+  title: "Legal forms — Ward Flow",
   description:
     "Synthetic prototype: every open movement that carries a legal form, ordered by time remaining, honest about which form types this model can never put a deadline against.",
 };
