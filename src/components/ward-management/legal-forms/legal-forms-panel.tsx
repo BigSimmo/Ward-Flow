@@ -22,7 +22,6 @@ import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-mana
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
-import { actPeriodLineText, actPeriodReading } from "./act-periods-demo";
 import { formProgression } from "./legal-form-progression";
 import {
   currentLegalDueAt,
@@ -50,21 +49,20 @@ import styles from "./legal-forms.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /** The board's clock states, in the order the legend line names them. */
-export type RingState = "act" | "soon" | "running" | "demo" | "unwritten";
-const RING_ORDER: RingState[] = ["act", "soon", "running", "demo", "unwritten"];
+export type RingState = "act" | "soon" | "running" | "unwritten";
+const RING_ORDER: RingState[] = ["act", "soon", "running", "unwritten"];
 const RING_TONE: Record<RingState, "danger" | "warning" | "neutral" | "closed"> = {
   act: "danger",
   soon: "warning",
   running: "neutral",
-  demo: "closed",
   unwritten: "closed",
 };
 
-function ringStateOf(movement: Movement, standing: ClockStanding, dayZero: Date): RingState {
+function ringStateOf(standing: ClockStanding): RingState {
   if (standing === "passed" || standing === "urgent") return "act";
   if (standing === "soon") return "soon";
   if (standing === "later") return "running";
-  return actPeriodReading(movement, dayZero) ? "demo" : "unwritten";
+  return "unwritten";
 }
 
 function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): TimelineItem[] {
@@ -75,14 +73,13 @@ const RING_LABEL: Record<RingState, string> = {
   act: "Act now",
   soon: "Within window",
   running: "Later",
-  demo: "Demo period only",
   unwritten: "Time not written",
 };
 
 /**
  * The clock rail, on the shared v10 TimeRail: a Passed bay above, then every typed expiry in the
  * next twelve hours on one line. D5: only an expiry a person typed (`legalForm.dueAt`) is a mark;
- * demo Act periods never reach the rail. Each mark opens the first form it holds.
+ * nothing here works out a Mental Health Act time. Each mark opens the first form it holds.
  */
 function ClockRail({
   movements,
@@ -164,26 +161,19 @@ function ThresholdBar({ urgentHours, soonHours }: { urgentHours: number; soonHou
 export function SummaryPanel({
   rows,
   now,
-  dayZero,
   soonHours,
   urgentHours,
   onSelect,
 }: {
   rows: Movement[];
   now: Instant;
-  dayZero: Date;
   soonHours: number;
   urgentHours: number;
   onSelect: (movement: Movement) => void;
 }) {
   const thresholds = useDueSoonThresholds();
-  const counts: Record<RingState, number> = { act: 0, soon: 0, running: 0, demo: 0, unwritten: 0 };
-  for (const movement of rows) counts[ringStateOf(movement, clockStanding(movement, now, thresholds), dayZero)] += 1;
-  // Device audit 11 Oct 2026: the hero counts every form with no typed expiry as one figure, so
-  // the board does too. The demo Act period is a reading of the same rows, given as a note.
-  const demoOnly = counts.demo;
-  counts.unwritten += counts.demo;
-  counts.demo = 0;
+  const counts: Record<RingState, number> = { act: 0, soon: 0, running: 0, unwritten: 0 };
+  for (const movement of rows) counts[ringStateOf(clockStanding(movement, now, thresholds))] += 1;
   const label = { ...RING_LABEL, soon: `Within ${formatReminderHours(soonHours)}` };
   return (
     <section className={styles.panel} aria-label="Forms summary" data-testid="ward-legal-summary">
@@ -195,7 +185,7 @@ export function SummaryPanel({
         <h3 className={styles.eyebrow}>Typed expiries ahead</h3>
         <ClockRail movements={rows} now={now} onSelect={onSelect} />
         <ul className={styles.legend} aria-label={`${rows.length} on open moves, by clock state`}>
-          {RING_ORDER.filter((state) => state !== "demo" && (counts[state] > 0 || state === "act")).map((state) => (
+          {RING_ORDER.filter((state) => counts[state] > 0 || state === "act").map((state) => (
             <li key={state}>
               <StatusGlyph tone={RING_TONE[state]} size={9} />
               <span>{label[state]}</span>
@@ -203,11 +193,6 @@ export function SummaryPanel({
             </li>
           ))}
         </ul>
-        {demoOnly > 0 ? (
-          <p className={styles.meta}>
-            {demoOnly} of the {counts.unwritten} with no expiry typed show a demo Act period only.
-          </p>
-        ) : null}
       </div>
 
       <div className={styles.panelBlock} data-testid="ward-legal-expiry-reminder">
@@ -226,7 +211,7 @@ export function SummaryPanel({
   );
 }
 
-// "not_recorded" until someone picks a band: a default of Adult would record the longer period unasked.
+// "not_recorded" until someone picks a band: a default of Adult would record an age band nobody chose.
 type WrittenDraft = {
   date: string;
   time: string;
@@ -244,7 +229,6 @@ export type FocusTab = "now" | "form" | "history";
  */
 export function FocusPanel({
   movement,
-  dateOfBirth,
   name,
   umrn,
   edName,
@@ -268,8 +252,6 @@ export function FocusPanel({
   copied,
 }: {
   movement: Movement;
-  /** The linked patient's date of birth, which decides whether an under-18 Act period applies. */
-  dateOfBirth?: string;
   name: string;
   umrn: string;
   edName: string;
@@ -300,7 +282,6 @@ export function FocusPanel({
   const legalForm = movement.legalForm;
   const standing = clockStanding(movement, now, thresholds);
   const breached = isLegalDeadlineBreached(movement, now);
-  const reading = actPeriodReading(movement, dayZero, dateOfBirth);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
   const recordedDraft = (): WrittenDraft => ({
@@ -389,11 +370,6 @@ export function FocusPanel({
           </>
         ) : null}
       </div>
-      {reading ? (
-        <p className={styles.demoNote} data-testid="ward-legal-act-period">
-          {actPeriodLineText(reading, movement, now)}
-        </p>
-      ) : null}
 
       <Segmented<FocusTab>
         className={styles.focusTabs}

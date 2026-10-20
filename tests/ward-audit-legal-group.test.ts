@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { dueTone, isDueSoon, type BoardRow } from "@/components/ward-management/delays/delays-board-model";
-import {
-  actPeriodLineText,
-  actPeriodReading,
-  orderByActPeriodShare,
-} from "@/components/ward-management/legal-forms/act-periods-demo";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   currentLegalDueAt,
   isLegalDeadlineBreached,
   legalFormGroupOf,
+  legalFormGroupRows,
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { delayGroups, legalDeadlineMinutes } from "@/components/ward-management/delays/delays-derivations";
 import { clockStanding, isActNow } from "@/components/ward-management/legal-forms/legal-forms-view";
@@ -34,7 +30,6 @@ import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-ma
 
 /** Audit fix group "legal", 13 Oct 2026. Synthetic data only. */
 const NOW = 10 * 60 + 42;
-const DAY_ZERO = new Date("2026-10-05T00:00:00+08:00");
 
 function movement(overrides: Partial<Movement>): Movement {
   const base = seedWardFlowStateAt(0).movements[0]!;
@@ -71,29 +66,14 @@ describe("one time-left rule for legal forms (A3-3, A3-4)", () => {
   });
 });
 
-describe("Act period line beside a typed expiry (A3-5)", () => {
-  it("drops the second countdown and 'nothing to count from' when an expiry was typed", () => {
-    const typed = movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 60 }, formedAt: undefined });
-    const reading = actPeriodReading(typed, DAY_ZERO)!;
-    const line = actPeriodLineText(reading, typed, NOW);
-    expect(line).toBe(reading.text);
-    expect(line).not.toMatch(/nothing to count from/);
-  });
-
-  it("keeps the demo countdown sentence when no expiry was typed", () => {
-    const untyped = movement({ legalForm: { code: "4A", kind: "transport" }, formedAt: undefined });
-    const reading = actPeriodReading(untyped, DAY_ZERO)!;
-    expect(actPeriodLineText(reading, untyped, NOW)).toMatch(/nothing to count from/);
-  });
-});
-
-describe("Time not written group order (A3-6)", () => {
-  it("puts the form with most of its Act period used first, unsourced forms last", () => {
+describe("Time not written group order (A3-6, owner 20 Oct 2026)", () => {
+  it("keeps the longest wait in ED first and works out no Act period to order by", () => {
     const sixA = movement({ id: "WF-T6A", legalForm: { code: "6A", kind: "detention" }, openedAt: NOW - 600 });
     const threeB = movement({ id: "WF-T3B", legalForm: { code: "3B", kind: "detention" }, openedAt: NOW - 420 });
     const oneB = movement({ id: "WF-T1B", legalForm: { code: "1B", kind: "examination" }, openedAt: NOW - 900 });
-    const ordered = orderByActPeriodShare([oneB, sixA, threeB], NOW, DAY_ZERO).map((m) => m.id);
-    expect(ordered).toEqual(["WF-T3B", "WF-T6A", "WF-T1B"]);
+    const ordered = legalFormGroupRows([threeB, sixA, oneB], NOW, "no-deadline").map((m) => m.id);
+    // The removed demo ordered 3B before 6A by share of a computed Act period. Arrival order only now.
+    expect(ordered).toEqual(["WF-T1B", "WF-T6A", "WF-T3B"]);
   });
 });
 

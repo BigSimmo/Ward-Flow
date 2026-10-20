@@ -898,17 +898,6 @@ button.taskLabel[aria-pressed="true"] {
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
 }
 
-.demoNote {
-  margin: 0 var(--wf-s-4) var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px dashed var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
 .focusTabs {
   margin: 0 var(--wf-s-4) var(--wf-s-3);
 }

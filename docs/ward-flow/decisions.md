@@ -396,7 +396,7 @@ is inferred.
 
 ## D-29. Act time limits shown as a labelled synthetic demo (4 October 2026)
 
-- **Date:** 4 October 2026. **Decided by:** Josh (item 13 thread: "Go ahead for act drafting task",
+- **Date:** 4 October 2026. **Replaced by D-70** (20 October 2026). **Decided by:** Josh (item 13 thread: "Go ahead for act drafting task",
   then "Ok I give permission" after reviewing the draft of the Act time limits).
 - **Decision:** This narrows D5 for one purpose. The Legal forms screen may show the Mental Health
   Act period for a recorded form, with its section reference. It is labelled "Synthetic demo, not
@@ -782,3 +782,9 @@ is inferred.
 - **Decision:** A referral with no legal status recorded is allocated as needing a bed that can hold someone involuntarily until a status is set. It never defaults to Voluntary. Only a recorded Voluntary status clears the need; Involuntary, any form, a blank or "Not recorded" keeps it. The rule lives in `involuntaryBedNeededForLegalStatus` (`src/components/ward-management/referrals/ward-referral-drawer-model.ts`) and is tested in `tests/ward-referral-unknown-legal-status-bed.test.ts`.
 - **Boundary:** This is a prototype allocation rule for synthetic data, not a legal determination about the person, and not clinical governance sign-off (D-54).
 - **Why:** PR #465 made every legal status start blank. Unknown status is the safe direction: it widens nothing and routes to a bed that can hold the person whatever their status turns out to be.
+
+## D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)
+
+- **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, on the overall review of 20 October 2026 (section 1, item 1): "Fix all of these issues ... Go ahead with all recommendations." The recommendation was "Remove the computed countdown. Show only the due time a person recorded."
+- **Decision:** This replaces D-29. The Legal forms screen no longer works out when an Act period ends, never picks an under-18 period from age, and no longer counts down to a computed end or orders a list by one. It shows only the due time a person recorded from the form (`legalForm.dueAt`), and says no deadline is recorded when there is none. `legal-forms/act-periods-demo.ts` and its test are deleted, and the section-citation guard exempts no file. D5 applies everywhere again.
+- **Why:** The standing rule rules out computed Act times and expiry, including the under-18 periods. The legal question pack is unanswered, and the screen itself said the periods were not legally checked.
