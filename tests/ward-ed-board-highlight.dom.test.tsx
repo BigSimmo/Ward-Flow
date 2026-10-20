@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import type { ReactNode } from "react";
+
+import { EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE } from "@/components/ward-management/ward-derivations";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -99,6 +102,34 @@ describe("ED page — clearance and review stay readable on a laptop (overall re
       expect(checks.textContent).toContain(clearedWord);
       expect(checks.textContent).toContain(review.startsWith("Reviewed") ? "Reviewed" : "Not reviewed");
     }
+  });
+
+  it("warns, never says Reviewed, when the examination was revoked and a bed is still held", () => {
+    function Revoked({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      const movements = value.movements.map((movement, index) =>
+        index === value.movements.findIndex((candidate) => candidate.originEdId === "sjgm-ed" && !candidate.closure)
+          ? { ...movement, stage: "pulled" as const, examination: { at: NOW_ANCHOR - 30, outcome: "revoked" as const } }
+          : movement,
+      );
+      return <WardFlowOverride value={{ ...value, movements }}>{children}</WardFlowOverride>;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Revoked>
+          <EdScreen edId="sjgm-ed" />
+        </Revoked>
+      </WardFlowProvider>,
+    );
+    const warned = screen
+      .getAllByTestId(/^ward-ed-row-checks-/u)
+      .filter((checks) => checks.textContent?.includes(EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE));
+    expect(warned).toHaveLength(1);
+    expect(warned[0]).not.toHaveTextContent("Reviewed");
+    expect(within(warned[0]).getByText(EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE)).toHaveAttribute(
+      "data-level",
+      "warning",
+    );
   });
 
   it("shows that line only while the Cleared and Review columns step aside", () => {
