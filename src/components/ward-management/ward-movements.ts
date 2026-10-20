@@ -835,9 +835,12 @@ const seededMovements: Movement[] = [
     // waited hours, the flag is unmistakably what put it there and nothing else could have.
     //
     // Clinically ordinary rather than contrived: someone can become urgent shortly after arriving,
-    // which is the case a flag exists for. No reason is recorded, because the owner said "for many
-    // reasons" and no vocabulary for them has been asked for.
+    // which is the case a flag exists for. Overall review (20 Oct 2026): the flag now carries who
+    // raised it, when and the chosen reason, as `FLAG_MOVEMENT_URGENT` writes them, so the first
+    // rows of Home no longer pair "Flagged urgent" with "who flagged this was not recorded".
     flaggedUrgent: true,
+    urgentFlag: { at: NOW_ANCHOR - 25, by: "ed", reason: "cannot_be_observed_safely_here" },
+    urgentFlagHistory: [{ raisedAt: NOW_ANCHOR - 25, raisedBy: "ed", reason: "cannot_be_observed_safely_here" }],
     urgency: 3,
     cohort: "Older adult",
     security: "Open",
@@ -1731,8 +1734,12 @@ const journeyCoverageMovements: Movement[] = [
     originEdId: "rph-ed",
     openedAt: NOW_ANCHOR - 60,
     // A second flagged-urgent patient, beside WF-018's — clinically ordinary rather than
-    // contrived, same reasoning as that row's own comment.
+    // contrived, same reasoning as that row's own comment, and with its provenance recorded too.
     flaggedUrgent: true,
+    urgentFlag: { at: NOW_ANCHOR - 45, by: "coordinator", reason: "cannot_safely_prevent_leaving" },
+    urgentFlagHistory: [
+      { raisedAt: NOW_ANCHOR - 45, raisedBy: "coordinator", reason: "cannot_safely_prevent_leaving" },
+    ],
     urgency: 3,
     cohort: "Adult",
     security: "Open",

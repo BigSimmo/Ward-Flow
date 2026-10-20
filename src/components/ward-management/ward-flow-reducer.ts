@@ -477,7 +477,8 @@ export {
 
 /**
  * Deep-copies the frozen fixture so callers never alias or mutate it. Defaults to the standard
- * night so `RESET_SCENARIO` always returns there (a product-owner decision).
+ * night. `RESET_SCENARIO` reloads the scenario that is loaded (overall review, 20 Oct 2026: Josh
+ * accepted "reset to the scenario that is loaded"), so Reset demo does what its confirm says.
  */
 export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlowState {
   // The EMHS demo and surge scenarios bring their own wards and linked patients
@@ -2151,7 +2152,12 @@ export function reduceClinicalEvent(
       return reducePatientRegistration(state, event, reject);
 
     case "RESET_SCENARIO":
-      return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR);
+      // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
+      // restore) falls back to the standard night rather than seeding something unknown.
+      return seedWardFlowStateAt(
+        event.now - state.clockOffsetMinutes - NOW_ANCHOR,
+        WARD_SCENARIOS.includes(state.scenario) ? state.scenario : "standard",
+      );
 
     case "SET_SCENARIO": {
       // Y4 privacy fix: membership-checked against `WARD_SCENARIOS`, the same list the restore-side

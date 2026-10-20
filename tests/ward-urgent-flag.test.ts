@@ -98,9 +98,8 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     const state = seedWardFlowState();
     const seededFlag = state.movements.find((candidate) => candidate.flaggedUrgent);
     if (!seededFlag) throw new Error("the seed flags nobody urgent");
-    // Precondition: the seeded flag was hand-authored before this field existed and carries no
-    // provenance — see `Movement.urgentFlag`'s own doc comment on WF-018.
-    expect(seededFlag.urgentFlag).toBeUndefined();
+    // Precondition (overall review, 20 Oct 2026): the seeded flag carries who, when and why.
+    expect(seededFlag.urgentFlag).toBeDefined();
 
     const cleared = wardFlowReducer(state, {
       type: "CLEAR_MOVEMENT_URGENT_FLAG",
@@ -411,11 +410,23 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
     });
   });
 
-  it("clearing the seeded WF-018 flag, which predates this history field, leaves the history absent rather than an invented empty log", () => {
-    const state = seedWardFlowState();
-    const seededFlag = state.movements.find((candidate) => candidate.flaggedUrgent);
-    if (!seededFlag) throw new Error("the seed flags nobody urgent");
-    expect(seededFlag.urgentFlagHistory, "precondition: the seed carries no history for this field").toBeUndefined();
+  it("clearing a flag that predates this history field leaves the history absent rather than an invented empty log", () => {
+    const seeded = seedWardFlowState();
+    const flagged = seeded.movements.find((candidate) => candidate.flaggedUrgent);
+    if (!flagged) throw new Error("the seed flags nobody urgent");
+    // The synthetic seed now records its flags (overall review, 20 Oct 2026), so a flag saved
+    // before the field existed is built here by removing them.
+    const state = {
+      ...seeded,
+      movements: seeded.movements.map((candidate) =>
+        candidate.id === flagged.id ? { ...candidate, urgentFlag: undefined, urgentFlagHistory: undefined } : candidate,
+      ),
+    };
+    const seededFlag = flagged;
+    expect(
+      state.movements.find((candidate) => candidate.id === seededFlag.id)?.urgentFlagHistory,
+      "precondition: this flag carries no history for this field",
+    ).toBeUndefined();
 
     const cleared = wardFlowReducer(state, {
       type: "CLEAR_MOVEMENT_URGENT_FLAG",

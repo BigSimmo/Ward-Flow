@@ -558,7 +558,9 @@ button.stat:hover .statV {
   --t-1: var(--wf-fs-13);
 
   width: 100%;
-  min-width: 46rem;
+  /* Overall review (20 Oct 2026): every column fits the table's own width at 1440 and 1280 px, so
+     "Last update" is no longer cut. Below this width the table scrolls sideways with its cue (#462). */
+  min-width: 42rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -573,46 +575,72 @@ button.stat:hover .statV {
   color: var(--wf-ink-1);
 }
 
+/* Person takes whatever the fixed columns leave, so a wide table gives the name line the room. */
 .colP {
-  width: 11.5rem;
+  width: auto;
 }
 
 .colW {
-  width: 10.75rem;
+  width: 7.5rem;
 }
 
 .colT {
-  width: 3rem;
+  width: 2.75rem;
 }
 
 .colB {
-  width: 9rem;
+  width: 8rem;
 }
 
-/* U1: wide enough for "Form 3B" plus the recorded time left, so legal status is never cut. */
+/* U1: legal status is never cut. The form chip and its recorded time left wrap onto two lines
+   rather than widen the column (.cLegal below). */
 .colL {
-  width: 11rem;
+  width: 8rem;
 }
 
+/* Wide enough for "10h 00m ago"; a longer line such as "Escalated 2h 10m" wraps (.cUpd below). */
 .colU {
-  /* Fixed layout must reserve the final column too: the preceding columns already consume
-     45.25rem, leaving less than a rem for Last update at the table's minimum width. */
-  width: 10rem;
+  width: 6.5rem;
 }
 
-/* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so the name and
-   wait columns give up width and Last update is no longer clipped at the right edge. */
+/* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so it may give
+   up its minimum width rather than scroll. */
 @media (min-width: 48.0625rem) and (max-width: 73.75rem) {
   .tbl {
     min-width: 0;
   }
+}
 
-  .colP {
-    width: 10rem;
+/* The table, not the phone cards: the profile line under the name wraps to two lines instead of
+   being cut after a few words, and legal status and last update wrap inside their columns. */
+@media (min-width: 40.0625rem) {
+  .tbl .whoBtn > span {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
-  .colW {
-    width: 8rem;
+  .tbl .cTier {
+    padding-inline: 6px;
+  }
+
+  .tbl .cLegal,
+  .tbl .cUpd {
+    padding-block: var(--wf-s-1);
+    white-space: normal;
+  }
+
+  .tbl .cLegal .lg {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .tbl .cUpd .lg {
+    align-items: baseline;
   }
 }
 

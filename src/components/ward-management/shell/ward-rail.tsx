@@ -22,14 +22,17 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
-import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/persona-sync";
+import { communityTeamById } from "@/components/ward-management/community/community-derivations";
+import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
+import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
@@ -196,13 +199,39 @@ const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
   executive: { id: "executive", name: CHROME_ROLE_LABELS.executive, initials: "EX", role: "Demo desk" },
 };
 
-const SYNCED_ROLES: readonly WardChromeRole[] = ["coordinator", "ward", "ed", "community", "officer"];
-
 const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
 ] as const;
+
+/**
+ * The desk a page belongs to, when it is not the person's own kind of desk: "Viewing RPH ED as Bed
+ * coordinator". Null on the person's own kind of desk and on every network page. Place names only,
+ * never a patient.
+ */
+function viewingDeskLine(
+  pathname: string,
+  personaRole: WardChromeRole,
+  units: readonly { id: string; name: string }[],
+  personaLabel: string,
+): string | null {
+  const pageRole = wardChromeRole(pathname);
+  if (pageRole === "coordinator" || pageRole === personaRole) return null;
+  const deskId = currentDeskId(pathname);
+  const place =
+    pageRole === "ed"
+      ? `${(deskId ? edById(deskId)?.siteCode : undefined) ?? "this"} ED`
+      : pageRole === "ward"
+        ? (units.find((unit) => unit.id === deskId)?.name ?? "this ward")
+        : pageRole === "officer"
+          ? "the transport desk"
+          : pageRole === "community"
+            ? // PR #489 review: the team by name when its page names one; the index has none.
+              ((deskId ? communityTeamById(deskId)?.name : undefined) ?? "a community team")
+            : CHROME_ROLE_LABELS[pageRole];
+  return `Viewing ${place} as ${personaLabel}`;
+}
 
 /**
  * Retained for the layout's existing call shape. The reconciliation line this used to feed is no
@@ -282,19 +311,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
-  // The desk a switch announced (persona sync). With role access on, the desk's own role wins below.
-  const [syncedRole, setSyncedRole] = useState<WardChromeRole>("coordinator");
+  // The person using the shell: the desk a switch announced (persona sync), or with role access on,
+  // the desk's own role. Shared with the desk picker so both name the same person.
+  const personaRole = useShellPersonaRole();
   const [openOverlay, setOpenOverlay] = useState<"alerts" | "appearance" | null>(null);
-
-  useEffect(() => {
-    function onPersonaSync(event: Event) {
-      const next = (event as CustomEvent<{ role?: string }>).detail?.role;
-      const known = SYNCED_ROLES.find((candidate) => candidate === next);
-      if (known) setSyncedRole(known);
-    }
-    window.addEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
-    return () => window.removeEventListener(WARD_PERSONA_SYNC_EVENT, onPersonaSync);
-  }, []);
   const appearanceOpen = openOverlay === "appearance";
   const alertsOpen = openOverlay === "alerts";
   const personaTriggerRef = useRef<HTMLButtonElement>(null);
@@ -321,7 +341,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
-  const currentPersona = DESK_PERSONAS[role === "coordinator" ? syncedRole : role];
+  const currentPersona = DESK_PERSONAS[personaRole];
+  // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
+  // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
+  const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
@@ -720,6 +743,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
               {currentPersona.name} · {currentPersona.role}
             </span>
+            {viewing ? (
+              <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
+                {viewing}
+              </span>
+            ) : null}
           </span>
         </div>
         <WardDemoClockPopover
@@ -1039,7 +1067,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             }}
             aria-expanded={deskModalOpen}
             aria-haspopup="dialog"
-            aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
+            aria-label={`${currentPersona.name}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
             title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
           >
             <span className={styles.userAvatar} aria-hidden="true">

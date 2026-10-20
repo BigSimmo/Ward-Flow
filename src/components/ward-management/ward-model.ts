@@ -544,9 +544,9 @@ export type Movement = {
   /**
    * WHO FLAGGED THIS, WHEN, AND WHY — the part of "I will build on it later" that arrived
    * 2026-09-17 (item 37). `undefined` alongside `flaggedUrgent: true` means exactly what it says:
-   * a movement flagged before this field existed (the fixture's own WF-018, hand-authored on
-   * 2026-08-30 with no provenance to recover), never a bug to paper over with an invented author
-   * or instant. `undefined` alongside `flaggedUrgent: false` is the ordinary unflagged case.
+   * a movement flagged before this field existed (a saved or restored record with no provenance
+   * to recover), never a bug to paper over with an invented author or instant. The synthetic
+   * fixture's WF-018 and WF-030 carry their own (overall review, 20 Oct 2026). `undefined` alongside `flaggedUrgent: false` is the ordinary unflagged case.
    *
    * `FLAG_MOVEMENT_URGENT` writes this together with `flaggedUrgent: true`; `CLEAR_MOVEMENT_URGENT_FLAG`
    * clears both together, so the two fields can never disagree about whether a flag is live —
@@ -572,9 +572,8 @@ export type Movement = {
    * `FLAG_MOVEMENT_URGENT` appends one entry with `clearedAt`/`clearedBy` both absent.
    * `CLEAR_MOVEMENT_URGENT_FLAG` fills those two fields on the OPEN entry — the last one with no
    * `clearedAt` — rather than appending a second entry, so one flag-then-clear cycle is one row,
-   * not two. Absent (`undefined`) entirely on a movement never flagged through either event; the
-   * fixture's WF-018 is flagged with no history, the same "flagged before this existed" case
-   * `urgentFlag` above documents.
+   * not two. Absent (`undefined`) entirely on a movement never flagged through either event, and
+   * on one flagged before this existed, the same case `urgentFlag` above documents.
    */
   urgentFlagHistory?: {
     raisedAt: Instant;

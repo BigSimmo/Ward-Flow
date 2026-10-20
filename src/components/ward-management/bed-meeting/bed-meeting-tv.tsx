@@ -33,6 +33,7 @@ import {
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
@@ -175,16 +176,27 @@ function More({ count, noun, one = noun }: { count: number; noun: string; one?: 
   );
 }
 
+/** "Day shift": the shift the board clock is in, worded as the rail and ward screens word it. */
+function shiftName(now: number): string {
+  const name = currentShift(now).name;
+  return name.charAt(0) + name.slice(1).toLowerCase();
+}
+
+/**
+ * Overall review (20 Oct 2026): the footer names the board clock's shift, as every other screen
+ * does, beside the demo scenario, so a TV no longer reads "Standard night" while the app says
+ * "Day shift".
+ */
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
   return (
     <p className={styles.footer}>
-      {scope} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not approved for
-      clinical use.
+      {scope} · {shiftName(now)} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not
+      approved for clinical use.
     </p>
   );
 }
 
-/** People waiting somewhere, longest first: initials, where, stage and wait. */
+/** People waiting somewhere, longest first: initials, where, stage and how long they have waited. */
 /** The ED TV shows one row fewer than the other lists: under its tiles, a full list of two-line rows
  *  ran past a 1080p screen (design audit follow-up, 19 Oct 2026). The rest are counted, not lost. */
 const ED_TV_PEOPLE_ROWS = TV_ROW_LIMIT - 1;
@@ -197,7 +209,9 @@ function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number;
           <li key={row.id} data-long={row.waitMinutes > LONG_WAIT_MINUTES || undefined}>
             <span className={styles.who}>{row.name}</span>
             <span className={styles.where}>{[row.stage, row.where].filter(Boolean).join(" · ")}</span>
-            <span className={styles.wait}>{splitDuration(row.waitMinutes)}</span>
+            {/* Overall review (20 Oct 2026): the time says what it measures, the whole wait since
+                the journey opened, so "In transit · 8h 00m" is not read as 8 hours on the road. */}
+            <span className={styles.wait}>{splitDuration(row.waitMinutes)} waiting</span>
           </li>
         ))}
       </ol>
@@ -408,9 +422,11 @@ function BedMeetingTvView({
             testId: "bed-meeting-tv-discharges",
           },
           {
-            label: "Delayed",
+            // PR #489 review: this counts every open journey (waiting and in transit), the same
+            // figure as the Movements badge, so it carries that badge's words rather than "Delayed".
+            label: "Still open",
             value: delays.total,
-            detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "No delays",
+            detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
             tone: delays.total > 0 ? "warning" : undefined,
             testId: "bed-meeting-tv-delays",
           },
