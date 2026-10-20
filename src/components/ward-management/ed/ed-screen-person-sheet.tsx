@@ -90,7 +90,14 @@ export function renderEdPersonSheet(
         </div>
         <div>
           <dt>Form</dt>
-          <dd>{movement.legalForm ? legalStatusShort(movement) : "None"}</dd>
+          {/* Audit 1 (CS-14, Josh 20 Oct): "None" only for a voluntary person; otherwise not recorded. */}
+          <dd>
+            {movement.legalForm
+              ? legalStatusShort(movement)
+              : movement.legalStatus === "Voluntary"
+                ? "None"
+                : "Not recorded"}
+          </dd>
         </div>
       </dl>
       {/* v10 phone person sheet: where the time in the department went, then the

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
@@ -11,6 +11,16 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * carries no form/examination gate, so this movement needs no special setup to exercise it.
  */
 const ED_ID = "fsh-ed";
+
+/** Audit 1 (CS-07, Josh 20 Oct): the step asks first; this taps it, then the dialog's confirm. */
+function confirmStep(testId: string) {
+  fireEvent.click(screen.getByTestId(testId));
+  fireEvent.click(
+    within(screen.getByTestId(`${testId}-confirm`))
+      .getAllByRole("button")
+      .at(-1)!,
+  );
+}
 
 function renderEd() {
   return render(
@@ -31,7 +41,12 @@ describe("recording an ED outcome from the board", () => {
     fireEvent.click(screen.getByTestId("ward-ed-outcome-toggle-WF-002"));
     expect(screen.getByTestId("ward-ed-outcome-form-WF-002")).toBeInTheDocument();
 
+    // Audit 1 (CS-07): the first tap only asks, naming the person and UMRN; nothing is recorded yet.
     fireEvent.click(screen.getByTestId("ward-ed-outcome-discharge-WF-002"));
+    const confirm = screen.getByTestId("ward-ed-outcome-discharge-WF-002-confirm");
+    expect(confirm).toHaveTextContent(/Check: .+ · UM\d+/);
+    expect(screen.getByTestId("ward-ed-outcome-form-WF-002")).toBeInTheDocument();
+    fireEvent.click(within(confirm).getByRole("button", { name: "For discharge" }));
 
     // The panel closes, and the row now offers "Left the department" instead of the earlier
     // examine/outcome/handover group — the same swap RECORD_LEFT_DEPARTMENT's own row already
@@ -48,10 +63,10 @@ describe("recording an ED outcome from the board", () => {
   it("removes the patient from the board once 'Left the department' is recorded", () => {
     renderEd();
     fireEvent.click(screen.getByTestId("ward-ed-outcome-toggle-WF-002"));
-    fireEvent.click(screen.getByTestId("ward-ed-outcome-community-WF-002"));
+    confirmStep("ward-ed-outcome-community-WF-002");
     expect(screen.getByTestId("ward-ed-patient-WF-002")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("ward-ed-mark-left-WF-002"));
+    confirmStep("ward-ed-mark-left-WF-002");
     expect(screen.queryByTestId("ward-ed-patient-WF-002")).not.toBeInTheDocument();
   });
 });
@@ -80,7 +95,7 @@ describe("recording an ED outcome clears the outbox row and the gender control",
     // Owner answer 1 (second round, 2026-09-17): WF-004 is on a legal form with no examination
     // recorded, so "For discharge" is now correctly disabled here — "For community follow-up"
     // carries no such gate and proves the identical P1-4 unwind this test exists for.
-    fireEvent.click(screen.getByTestId("ward-ed-outcome-community-WF-004"));
+    confirmStep("ward-ed-outcome-community-WF-004");
 
     expect(
       screen.queryByTestId("ward-ed-outbox-row-WF-004"),

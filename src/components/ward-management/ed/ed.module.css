@@ -4868,6 +4868,20 @@
   .a2Table[data-columns="all"] td:nth-child(7) {
     display: none;
   }
+  .a2Table[data-columns="all"] .a2Checks {
+    display: flex;
+  }
+}
+
+/* Overall review (20 Oct 2026): the compact clearance and review line under the patient, shown
+ * only while the Cleared and Review columns are stepped aside (above). */
+.a2Checks {
+  display: none;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-2);
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .a2Table th {

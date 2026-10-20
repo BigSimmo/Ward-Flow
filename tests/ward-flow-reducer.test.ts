@@ -1365,12 +1365,22 @@ describe("scenario selection", () => {
     expect(next.scenario).toBe("standard");
   });
 
-  it("returns to the standard night on RESET_SCENARIO after SET_SCENARIO — reset is never scenario-sticky", () => {
+  it("puts the loaded scenario back to its start on RESET_SCENARIO (overall review, 20 Oct 2026)", () => {
     let state = seeded();
     state = wardFlowReducer(state, { type: "SET_SCENARIO", role: "demo", now: NOW, scenario: "scarce" });
     expect(state.scenario).toBe("scarce");
+    const fresh = state;
+    state = wardFlowReducer(state, { type: "ADVANCE_CLOCK", role: "demo", now: NOW, minutes: 60 });
 
-    const reset = wardFlowReducer(state, { type: "RESET_SCENARIO", role: "demo", now: NOW });
+    const reset = wardFlowReducer(state, { type: "RESET_SCENARIO", role: "demo", now: NOW + 60 });
+    expect(reset.scenario).toBe("scarce");
+    expect(reset.clockOffsetMinutes).toBe(0);
+    expect(reset.units).toEqual(fresh.units);
+  });
+
+  it("falls back to the standard night when the loaded scenario is unknown", () => {
+    const damaged = { ...seeded(), scenario: "not-a-scenario" as never };
+    const reset = wardFlowReducer(damaged, { type: "RESET_SCENARIO", role: "demo", now: NOW });
     expect(reset.scenario).toBe("standard");
   });
 });

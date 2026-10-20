@@ -38,6 +38,8 @@ import {
   isStoppedAwaitingRelease,
 } from "./handover-model";
 import { wardClosedLine } from "../capacity/ward-closure";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import styles from "./handover-beds.module.css";
 
 export type HandoverBedsProps = {
@@ -302,19 +304,21 @@ function WardPanel({
         </div>
       ) : null}
       <div className={styles.panelFoot}>
-        <Button
-          variant="sec"
-          size="sm"
-          icon={Send}
-          aria-disabled="true"
-          title="Not wired in this prototype."
-          className={styles.footButton}
-        >
-          Ask for update
-          <SrOnly>, preview, not wired in this prototype</SrOnly>
-        </Button>
+        <UnwiredPreview>
+          <Button
+            variant="sec"
+            size="sm"
+            icon={Send}
+            aria-disabled="true"
+            title="Not wired in this prototype."
+            className={styles.footButton}
+          >
+            Ask for update
+            <SrOnly>, preview, not wired in this prototype</SrOnly>
+          </Button>
+        </UnwiredPreview>
         <Link
-          href={`/ward-flow/ward?unit=${encodeURIComponent(ward.id)}`}
+          href={unitHref(ward.id)}
           className={buttonClass({ variant: "sec", size: "sm", className: styles.footButton })}
         >
           Open ward

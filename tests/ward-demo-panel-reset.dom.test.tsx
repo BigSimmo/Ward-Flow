@@ -18,6 +18,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+function ScenarioProbe() {
+  return <output data-testid="scenario">{useWardFlow().scenario}</output>;
+}
+
 function ClockProbe() {
   return <output data-testid="clock">{formatInstant(useWardFlowClock())}</output>;
 }
@@ -42,7 +46,10 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
 
     fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
     const dialog = screen.getByRole("dialog", { name: "Reset the demo?" });
-    expect(dialog).toHaveTextContent("replaces the demo data for everyone in this workspace");
+    // On this device the reset reaches this browser only, and the confirm says so.
+    expect(dialog).toHaveTextContent("This puts Standard day back to its start");
+    expect(dialog).toHaveTextContent("replaces the demo data in this browser only. Other devices are not changed");
+    expect(dialog).not.toHaveTextContent("everyone");
     expect(dialog).toHaveTextContent("There is no undo");
     // Nothing happens until the confirm.
     expect(screen.getByTestId("clock").textContent).toBe(moved);
@@ -63,7 +70,66 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reset demo" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByTestId("clock").textContent).toBe(start);
-    expect(status()).toHaveTextContent("Demo reset to the start of the scenario.");
+    expect(status()).toHaveTextContent("Standard day reset to its start in this browser only.");
+  });
+
+  it("resets the scenario that is loaded, not the standard night", () => {
+    renderPanel((child) => (
+      <>
+        <ScenarioProbe />
+        {child}
+      </>
+    ));
+    fireEvent.click(within(panel()).getByRole("radio", { name: /Scarce beds/ }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Load Scarce beds?" })).getByRole("button", {
+        name: "Load Scarce beds",
+      }),
+    );
+    expect(screen.getByTestId("scenario")).toHaveTextContent("scarce");
+
+    fireEvent.click(within(panel()).getByRole("button", { name: "+1 hour" }));
+    fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
+    const dialog = screen.getByRole("dialog", { name: "Reset the demo?" });
+    expect(dialog).toHaveTextContent("This puts Scarce beds back to its start");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reset demo" }));
+    expect(screen.getByTestId("scenario")).toHaveTextContent("scarce");
+    expect(status()).toHaveTextContent("Scarce beds reset to its start");
+  });
+
+  it("asks before a scenario card replaces the demo data, and changes nothing when cancelled", () => {
+    renderPanel((child) => (
+      <>
+        <ScenarioProbe />
+        {child}
+      </>
+    ));
+    fireEvent.click(within(panel()).getByRole("radio", { name: /Scarce beds/ }));
+    const dialog = screen.getByRole("dialog", { name: "Load Scarce beds?" });
+    expect(dialog).toHaveTextContent("This replaces the demo data in this browser only");
+    expect(screen.getByTestId("scenario")).toHaveTextContent("standard");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByTestId("scenario")).toHaveTextContent("standard");
+    expect(status()).toHaveTextContent("");
+  });
+
+  it("says it reaches everyone in the workspace when the demo is shared", () => {
+    function Shared({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      return (
+        <WardFlowOverride
+          value={{ ...value, shared: { status: "ready", error: null, ...value.shared, enabled: true } }}
+        >
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    renderPanel((child) => <Shared>{child}</Shared>);
+    fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
+    const dialog = screen.getByRole("dialog", { name: "Reset the demo?" });
+    expect(dialog).toHaveTextContent("replaces the demo data for everyone in this workspace");
+    expect(dialog).not.toHaveTextContent("this browser only");
   });
 
   it("says nothing changed when the reset is refused", () => {

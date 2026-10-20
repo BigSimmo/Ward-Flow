@@ -21,7 +21,10 @@ const accounts: { email: string; password: string }[] = JSON.parse(process.env.W
 const READY = "Coordinator · shared synthetic workspace";
 /** The client polls every SHARED_REFRESH_MS (3 s); allow a few polls before calling it missed. */
 const POLL = { timeout: 15_000 };
-/** The seed's first queue row: an accepted movement with transport booked, so it cannot be referred. */
+/**
+ * A seeded accepted movement with transport booked, so it cannot be referred. Wait order (Audit 1,
+ * D-71) can put it past the queue's first rows, so `revealRow` opens "Show all" when needed.
+ */
 const MOVEMENT = "WF-030";
 /** A seeded ward whose capacity detail the focus test asks for an update from. */
 const WARD = "Graylands Adult Secure";
@@ -69,21 +72,20 @@ function queueRow(page: Page): Locator {
   return page.getByRole("region", { name: "Priority queue" }).getByTestId(`ward-queue-row-${MOVEMENT}`);
 }
 
-/**
- * The movement's queue row, expanding the queue first: a fresh page load lists only the top rows
- * behind "Show all", and the movement need not be among them.
- */
-async function revealQueueRow(page: Page): Promise<Locator> {
+/** Show the movement's queue row, opening the queue's "Show all" when the row is past the first rows. */
+async function revealRow(page: Page): Promise<Locator> {
+  const queue = page.getByRole("region", { name: "Priority queue" });
   const row = queueRow(page);
-  const showAll = page.getByRole("region", { name: "Priority queue" }).getByRole("button", { name: /^Show all/u });
-  await expect(row.or(showAll).first()).toBeVisible();
+  const showAll = queue.getByRole("button", { name: /^Show all/u });
+  await expect(queue.locator('[data-testid^="ward-queue-row-"]').first()).toBeVisible();
   if (!(await row.isVisible()) && (await showAll.isVisible())) await showAll.click();
+  await expect(row).toBeVisible();
   return row;
 }
 
 /** Select the movement on the queue, so Placement is about it whatever is now top of the queue. */
 async function selectMovement(page: Page): Promise<Locator> {
-  const row = await revealQueueRow(page);
+  const row = await revealRow(page);
   await row.click();
   await expect(placement(page)).toHaveAttribute("data-subject-movement", MOVEMENT);
   return placement(page);
@@ -141,7 +143,7 @@ test.afterAll(async () => {
 
 test("two signed-in desks share one workspace: a save on one reaches the other on its next poll", async () => {
   // Both desks are signed in as different coordinators and read the same queue.
-  for (const desk of [one, two]) await expect(queueRow(desk.page)).toBeVisible();
+  for (const desk of [one, two]) await revealRow(desk.page);
 
   const tier = await openUrgencyForm(one.page);
   const chosen = await chooseOtherTier(one.page, tier);
@@ -155,7 +157,7 @@ test("two signed-in desks share one workspace: a save on one reaches the other o
   // A new page load must read the saved record from the backend, rather than reducer state.
   await one.page.reload({ waitUntil: "domcontentloaded" });
   await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
-  await expect(await revealQueueRow(one.page)).toContainText(chosen);
+  await expect(await revealRow(one.page)).toContainText(chosen);
 });
 
 test("a clash: two desks change the same record from the same revision, and the second is refused", async () => {
@@ -176,7 +178,7 @@ test("a clash: two desks change the same record from the same revision, and the 
   await chooseOtherTier(two.page, tierTwo, first);
   await placement(two.page).getByRole("button", { name: "Record urgency change" }).click();
   await expect(sharedStatus(two.page)).toContainText(
-    "Someone else changed this first. Your action was not applied; review the latest state.",
+    "This record changed while you were looking. Your action was not applied; review the latest details and try again.",
   );
   // The refusal carried the latest board, so desk two now shows desk one's change, not its own.
   await expect(queueRow(two.page)).toContainText(first);

@@ -44,7 +44,6 @@ import {
   SILENT_MINUTES,
   H24,
   H8,
-  WAIT_THRESHOLDS,
   WAIT_THRESHOLD_LABELS,
   bandCounts,
   boardCatchments,
@@ -68,6 +67,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
+import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import { WAITING_VIEWS } from "./waiting-href";
 import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, windowText } from "./waiting-views";
 import styles from "./delays-board.module.css";
@@ -399,9 +399,13 @@ export function DelaysBoard({
   const over24 = rows.filter((row) => row.waited >= OVER_24H).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
+  // Overall review, 20 Oct 2026: the title leads with the one "waiting" figure (`waitingInEds`, the
+  // menu badge's figure too), then names whoever else is on this list ("8 in transit"), so the words
+  // add up to the list's own count.
+  const split = useMemo(() => waitingSplit(rows.map((row) => row.movement)), [rows]);
+  const heroTitle = [`${split.waiting} waiting in ED`, ...notWaitingParts(split)].join(", ");
   const silentCount = rows.filter((row) => row.silent).length;
   const urgentMinutes = thresholds.urgentMinutes;
-  const soonHours = thresholds.soonMinutes / 60;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
@@ -498,6 +502,24 @@ export function DelaysBoard({
         set({ breached: false });
       },
     });
+  // The 12h step and No update 2h+ no longer have a chip of their own (overall review, 20 Oct 2026),
+  // so when a link or the Longest quiet register turns one on it shows here, with a remove.
+  if (filters.threshold === 2)
+    chips.push({
+      key: "threshold",
+      label: `Waited ${WAIT_THRESHOLD_LABELS[2]}`,
+      clear: () => {
+        set({ threshold: 0 });
+      },
+    });
+  if (filters.silent)
+    chips.push({
+      key: "silent",
+      label: `No update ${SILENT_MINUTES / 60}h+`,
+      clear: () => {
+        set({ silent: false });
+      },
+    });
   if (filters.bin !== null) {
     const bin = bins[filters.bin];
     chips.push({
@@ -531,6 +553,7 @@ export function DelaysBoard({
         data-severe={row.severe}
         aria-selected={isSelected}
         data-act={isActRow ? "true" : undefined}
+        data-form-due={isPinned(row, thresholds) ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -684,36 +707,9 @@ export function DelaysBoard({
       }
     }
   } else {
-    const pinned = shown.filter((row) => isPinned(row, thresholds)).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
-    const rest = shown.filter((row) => !isPinned(row, thresholds)).sort(byWait);
-    if (pinned.length > 0) {
-      body.push(
-        <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
-          <td role="cell" colSpan={6}>
-            <span className={styles.gin}>
-              <Glyph tone="danger" />
-              <span className={styles.gTitle}>{`Recorded time due within ${soonHours}h`}</span>
-              <span className={styles.k}>{pinned.length}</span>
-              <span className={styles.mut}>Pinned first</span>
-            </span>
-          </td>
-        </tr>,
-        ...pinned.flatMap(renderRow),
-      );
-      if (rest.length > 0)
-        body.push(
-          <tr role="row" key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
-            <td role="cell" colSpan={6}>
-              <span className={styles.gin}>
-                <span className={styles.gTitle}>Everyone else</span>
-                <span className={styles.k}>{rest.length}</span>
-                <span className={styles.mut}>Longest wait first</span>
-              </span>
-            </td>
-          </tr>,
-        );
-    }
-    body.push(...rest.flatMap(renderRow));
+    // Audit 1, Josh 20 Oct (CS-04, NB-6b): longest wait first for everyone. A recorded form time
+    // due soon no longer pins a row; its legal cell and `data-form-due` still mark it.
+    body.push(...[...shown].sort(byWait).flatMap(renderRow));
   }
   // A person filtered out must never look like a person placed. Whenever filters hide anyone, the
   // table says how many, with a way to show everyone (owner ruling, 9 October 2026).
@@ -837,14 +833,12 @@ export function DelaysBoard({
     </PortraitRail>
   ) : null;
   const tiles = ownerTiles(rows);
-  const cumulative = WAIT_THRESHOLDS.map((limit) => rows.filter((row) => row.waited >= limit).length);
-  // C1: the filters that are on, for the phone Filter button. The hero's 8h and 24h figures set the
-  // same wait threshold as the 12h chip, so any threshold counts once; the search box is separate.
+  // C1: the filters that are on, for the phone Filter button. The 12h step and No update 2h+ are
+  // already in `chips`; the hero's 8h and 24h figures count once here. The search box is separate.
   const filterCount =
     chips.length +
-    (filters.threshold !== 0 ? 1 : 0) +
+    (filters.threshold === 1 || filters.threshold === 3 ? 1 : 0) +
     (filters.locked ? 1 : 0) +
-    (filters.silent ? 1 : 0) +
     (filters.view !== null ? 1 : 0);
   /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
   const filterRow = (inSheet: boolean) => (
@@ -866,19 +860,11 @@ export function DelaysBoard({
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
-      {/* Audit 11 Oct 2026: Over 8h and Over 24h filter from the hero figures, so only the
-          12h step, which the hero does not carry, stays here as a chip. */}
-      <button
-        type="button"
-        className={styles.chip}
-        aria-pressed={filters.threshold === 2}
-        disabled={cumulative[2] === 0 && filters.threshold !== 2}
-        onClick={() => {
-          set({ threshold: filters.threshold === 2 ? 0 : 2 });
-        }}
-      >
-        {WAIT_THRESHOLD_LABELS[2]} <span className={styles.k}>{cumulative[2]}</span>
-      </button>
+      {/* Overall review, 20 Oct 2026 ("Waiting is busy"): only the views and the one filter nothing
+          else on the page offers stay here. The 12h step sat between the hero's Over 8h and Over 24h
+          figures, which set the same wait filter, and No update 2h+ repeated the checking line and
+          the Longest quiet register's own "Show all quiet" button. A link can still ask for either
+          (`delays-url-state.ts`), and the applied-filter chip below then shows it with a remove. */}
       <button
         type="button"
         className={styles.chip}
@@ -890,18 +876,6 @@ export function DelaysBoard({
         }}
       >
         Locked bed <span className={styles.k}>{rows.filter((row) => row.locked).length}</span>
-      </button>
-      <button
-        type="button"
-        className={styles.chip}
-        aria-pressed={filters.silent}
-        onClick={() => {
-          set({ silent: !filters.silent });
-        }}
-      >
-        <Glyph tone="warning" />
-        {`No update ${SILENT_MINUTES / 60}h+`}{" "}
-        <span className={styles.k}>{rows.filter((row) => row.silent).length}</span>
       </button>
       {chips.map((chip) => (
         <button
@@ -936,7 +910,7 @@ export function DelaysBoard({
       <Hero
         level={1}
         eyebrow={isPhone ? `Waiting · ${service ?? "Statewide"}` : "Waiting"}
-        title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
+        title={heroTitle}
         titleMeta={
           isPhone ? (
             <>
@@ -951,7 +925,7 @@ export function DelaysBoard({
         testId="delays-hero"
         className={styles.delaysHero}
         // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
-        condensed={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting · ${breached} past recorded time`}
+        condensed={`${heroTitle} · ${breached} past recorded time`}
         stats={
           <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
             {heroStat(

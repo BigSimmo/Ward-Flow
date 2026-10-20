@@ -749,7 +749,8 @@ false`, clears `urgentFlag`, closes the newest `urgentFlagHistory` entry. Guards
 - **`ADVANCE_CLOCK`** — roles: `demo`. Effect: adds `event.minutes` to
   `state.clockOffsetMinutes`. Guards: none. Case at `:1855`.
 - **`RESET_SCENARIO`** — roles: `demo`. Effect: re-seeds the entire `WardFlowState` from the
-  fixture, anchored to the current `now`. Guards: none. Case at `:1835`.
+  loaded scenario's fixture (the standard night if the loaded one is unknown), anchored to the
+  current `now`. Guards: none. Case at `:1835`.
 - **`SET_SCENARIO`** — roles: `demo`. Effect: re-seeds with a chosen scenario, same anchoring.
   Guards: `scenario` must be a member of `WARD_SCENARIOS`. Case at `:1838`.
 - **`SET_CONFIGURATION`** — roles: `coordinator`. Effect: replaces `state.configuration`

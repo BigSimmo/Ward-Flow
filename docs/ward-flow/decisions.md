@@ -396,7 +396,7 @@ is inferred.
 
 ## D-29. Act time limits shown as a labelled synthetic demo (4 October 2026)
 
-- **Date:** 4 October 2026. **Decided by:** Josh (item 13 thread: "Go ahead for act drafting task",
+- **Date:** 4 October 2026. **Replaced by D-70** (20 October 2026). **Decided by:** Josh (item 13 thread: "Go ahead for act drafting task",
   then "Ok I give permission" after reviewing the draft of the Act time limits).
 - **Decision:** This narrows D5 for one purpose. The Legal forms screen may show the Mental Health
   Act period for a recorded form, with its section reference. It is labelled "Synthetic demo, not
@@ -754,6 +754,7 @@ is inferred.
 - **Subsequent note (17 October 2026):** Josh chose to keep the self-ticked "Set by the treating psychiatrist" box for typed criteria in the prototype. His answer, verbatim, on the decision card in the clinical sign-off sheet thread at 05:14 UTC: "Keep tick box", to the question "Keep the psychiatrist tick box for typed discharge criteria in the prototype?" The app cannot check who ticked it. The fixed D-60 criteria use the same tick box. Before any real use, setting, changing or reviewing any criteria, fixed or typed, needs a real psychiatrist sign in, not the tick box.
 - **Subsequent note (17 October 2026):** Josh, verbatim, in the clinical sign-off sheet thread at 05:29 UTC: "Go ahead with all recommendations and I give full permission for sign off". For the prototype this signs off the D-64 "patient told" wording, the typed criteria rules above, and community teams seeing numbered placeholders instead of the typed wording (task ledger 7.82 item 1). It does not close D-54. Real patient use still needs clinical governance sign-off by a health service.
 - **Subsequent note (17 October 2026):** Josh, verbatim, in the clinical sign-off sheet thread at 06:55 UTC: "Go ahead with your recommendations", to the recommendation to build the ISM-0428 12 hour session limit only. The signed-in shared site now refuses any request from a sign-in more than 12 hours old (`sessionLimit` in the clinical values module), reads included, and the app signs the person out with the reason. It counts from the first sign-in factor, which a token refresh or a later factor never moves, so only a fresh password sign-in resets it. A sign-in with no recorded time is refused. Asking for every sign-in factor to unlock the screen lock is not built. The screen lock stays a local privacy screen.
+- **Subsequent note (20 October 2026):** Josh switched every finished feature on for the prototype on 20 October 2026 (overall review project thread; relayed to this change by the coordinating session, not quoted here). That includes `awol-bed-hold-review`, so the absent without leave bed hold review warning described above as paused and "off everywhere" is no longer paused; it uses the signed `awolBedHoldWarning` figure. The flag change itself is in PR #487. The same day Josh chose to keep demo reset off on the live site.
 
 ## D-66. Granted roles work without a second approval (17 October 2026)
 
@@ -782,3 +783,22 @@ is inferred.
 - **Decision:** A referral with no legal status recorded is allocated as needing a bed that can hold someone involuntarily until a status is set. It never defaults to Voluntary. Only a recorded Voluntary status clears the need; Involuntary, any form, a blank or "Not recorded" keeps it. The rule lives in `involuntaryBedNeededForLegalStatus` (`src/components/ward-management/referrals/ward-referral-drawer-model.ts`) and is tested in `tests/ward-referral-unknown-legal-status-bed.test.ts`.
 - **Boundary:** This is a prototype allocation rule for synthetic data, not a legal determination about the person, and not clinical governance sign-off (D-54).
 - **Why:** PR #465 made every legal status start blank. Unknown status is the safe direction: it widens nothing and routes to a bed that can hold the person whatever their status turns out to be.
+
+## D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)
+
+- **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, on the overall review of 20 October 2026 (section 1, item 1): "Fix all of these issues ... Go ahead with all recommendations." The recommendation was "Remove the computed countdown. Show only the due time a person recorded."
+- **Decision:** This replaces D-29. The Legal forms screen no longer works out when an Act period ends, never picks an under-18 period from age, and no longer counts down to a computed end or orders a list by one. It shows only the due time a person recorded from the form (`legalForm.dueAt`), and says no deadline is recorded when there is none. `legal-forms/act-periods-demo.ts` and its test are deleted, and the section-citation guard exempts no file. D5 applies everywhere again.
+- **Why:** The standing rule rules out computed Act times and expiry, including the under-18 periods. The legal question pack is unanswered, and the screen itself said the periods were not legally checked.
+
+## D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026)
+
+- **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, on Audit 1 (clinical safety and the never-build rule, `main` `3ff8503`), at 10:03 PM AWST: "Please go ahead with all recommendations and fix all issues identified."
+- **Decision:** All seven Audit 1 recommendations apply:
+  1. The ward answer view shows no invented clinical summary and no "Admit to" line, only recorded facts or "Not recorded".
+  2. No suggested, ranked, capped or pre-selected ward anywhere: "Suggested destination" goes, wards not yet asked are listed in full in a fixed order, the ED board gives a count only, and the phone accept starts with no ward chosen.
+  3. Waiting lists default to wait order. Flags, act-now and form due times are highlights that do not move rows. This restores D-32 (first in, first out), which the Home queue, Waiting, Movements and step-down lists had drifted from.
+  4. No points score: "Why this wait" gives plain reasons only.
+  5. "Time left" counted down to an expiry a person typed from the form stays: it computes nothing about the Act (D-70 is unchanged).
+  6. Road time "nearest ready beds" stays, captioned "Distance only, not suitability". Make-room chains stay switched off outside local builds. Candidate wards use a fixed order within each fit group, not catchment or free-bed tiers.
+  7. Every copy to the clipboard starts with the synthetic line. Whether real names may appear in copied text is decided before any real data.
+- **Why:** The standing never-build rule (19 October 2026) excludes best-match ward suggestions, automatic placement, re-sorting the ED queue and risk scores, and the audit found these built before the rule. Findings and evidence: `/mnt/project-files/audits/2026-10-20-clinical-safety-audit/`.

@@ -87,6 +87,68 @@
 
 /* ── title and scope ─────────────────────────────────────────────────────────────────────── */
 
+/* Back (Josh, 20 Oct 2026): leads the bar on a drill-down screen (`ward-back.ts`). It takes the bar's
+ * own ink, so it reads on the light bar and on the dark band over a hero. The phone draws Back in
+ * the Menu button's place instead (`.phoneBack`, end of file), so this one is desktop and tablet
+ * only; a tablet keeps its Menu button beside it. */
+.deskBack {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 36px;
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0 12px 0 8px;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: var(--wf-r-ctl);
+  color: inherit;
+  background: transparent;
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* With Back in front, the search box gives up the room before the page title does. */
+.deskBack + .title {
+  flex-shrink: 0;
+}
+
+.deskBack svg {
+  width: 18px;
+  height: 18px;
+}
+
+.deskBack:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.deskBack:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Below a wide screen the bar is full (search, Activity, Alerts, Tools, New referral), so Back is
+ * the arrow alone and the page title keeps its room. Its name stays "Back" (aria-label). */
+@media (max-width: 1500px) {
+  .deskBack {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .deskBack span {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .deskBack {
+    display: none;
+  }
+}
+
 .title {
   display: flex;
   align-items: center;
@@ -3129,14 +3191,18 @@
     letter-spacing: -0.01em;
   }
 
+  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is at least 24px tall, not the
+   * 18px line. The 3px it gains above and below come back from its margins, so the line does not
+   * move; it stays inline-flex (above) so the words sit centred in the taller box. */
   .scopeBadgeBtn {
-    min-height: 18px;
+    min-height: 24px;
+    margin-block: calc(-0.75rem - 3px);
     line-height: var(--wf-lh-12);
   }
 
-  /* The 18px line keeps a 48px tall hit area: 15px above and below. */
+  /* The 24px box keeps a 48px tall hit area: 12px above and below. */
   .scopeBadgeBtn::before {
-    inset: -15px -8px;
+    inset: -12px -8px;
   }
 
   /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under
@@ -3443,5 +3509,19 @@
 
   :global(:root[data-mode="glare"]) .bar::before {
     background: none;
+  }
+}
+
+/* Back on a phone (Josh, 20 Oct 2026): on a drill-down screen it takes the Menu button's place.
+ * Above the phone the bar's own `.deskBack` leads instead, and a tablet keeps its Menu. */
+@media (max-width: 48rem) {
+  .phoneOnly[data-back-replaced] {
+    display: none;
+  }
+}
+
+@media (min-width: 48.0625rem) {
+  .phoneOnly.phoneBack {
+    display: none;
   }
 }

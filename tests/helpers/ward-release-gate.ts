@@ -288,6 +288,14 @@ export async function goToDesk(
 ) {
   const phone = isPhoneLayout(page);
   if (phone) {
+    // On a phone drill-down the header Back takes Menu's place (20 Oct 2026), so step back to a
+    // starting page first, as a person would.
+    const back = page.getByTestId("ward-bar-phone-back");
+    for (let step = 0; step < 5 && (await back.isVisible()); step += 1) {
+      const from = page.url();
+      await back.click();
+      await page.waitForURL((url) => url.href !== from, { timeout: 15_000 });
+    }
     await page.getByTestId("ward-bar-phone-menu").click();
     await page.getByTestId("ward-phone-menu-switch-workstation").click();
   } else {
@@ -320,7 +328,7 @@ export function wardDesk(unitId: string, unitName: string) {
 
 /**
  * Opens the ward's full Arrivals or Discharges list. Desktop: the Home tab's Ward flow card. Phone:
- * the Ward flow button in the ward's own toolbar opens the same card as a sheet.
+ * the Ward flow row in Ward home's Needs you card opens the same card as a sheet.
  */
 export async function openWardList(page: Page, list: "Admissions" | "Discharges") {
   await openWardFlow(page, list);
@@ -331,16 +339,17 @@ export async function openWardList(page: Page, list: "Admissions" | "Discharges"
 
 /**
  * Shows one pane of the ward's Ward flow card: Referrals (awaiting this ward's answer), Admissions
- * or Discharges. On a phone the card is a sheet opened from the ward's toolbar.
+ * or Discharges. On a phone the card is a sheet opened from Ward home's Needs you card.
  */
 export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" | "Discharges") {
   if (isPhoneLayout(page)) {
     const sheet = page.getByRole("dialog", { name: "Ward flow" });
     if (!(await sheet.isVisible())) {
-      await page
-        .getByRole("toolbar", { name: "Ward actions" })
-        .getByRole("button", { name: "Ward flow", exact: true })
-        .click();
+      // Option B (20 Oct 2026): Ward flow is a row in Ward home's "Needs you" card, not a chip.
+      // The Home tab also stays selected on a full Arrivals or Discharges list, which hides the row.
+      const row = page.getByTestId("ward-phone-row-flow");
+      if (!(await row.isVisible())) await page.locator("#tabBtn-attn").click();
+      await row.click();
     }
     await expect(sheet).toBeVisible();
   } else {

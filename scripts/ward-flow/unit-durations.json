@@ -116,7 +116,6 @@
     "tests/ward-acknowledge-inbox-item-id-validation.test.ts": 0.4,
     "tests/ward-act-now-notifications.dom.test.tsx": 1,
     "tests/ward-act-now-notifier.dom.test.tsx": 2.5,
-    "tests/ward-act-periods-demo.test.ts": 0.1,
     "tests/ward-act-section-citation-guard.test.ts": 2.2,
     "tests/ward-acting-unit-guards.test.ts": 0.5,
     "tests/ward-activity-category-filters.dom.test.tsx": 3.3,

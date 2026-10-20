@@ -211,18 +211,14 @@ test.describe("@mockup Ward screen", () => {
     const bogusUnitId = "nonexistent-unit-does-not-exist";
     expect(unitById(bogusUnitId), "fixture assumption: this id resolves to no real unit").toBeUndefined();
 
+    // DA-32 (overall review, 20 Oct 2026): an unknown ward shows the app's own "Page not found"
+    // instead of the ward screen with a message inside it.
     await page.goto(`/ward-flow/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
-    await expect(
-      page.locator('div[hidden][id^="S:"]'),
-      "React's streamed content is still staged, so the whole screen is duplicated in the document",
-    ).toHaveCount(0, { timeout: 15_000 });
-    await expect(page.getByTestId("ward-unit-screen")).toHaveCount(1, { timeout: 15_000 });
-    await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({ timeout: 15_000 });
 
-    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
-    await expect(page.getByTestId("ward-unit-screen")).toContainText("No ward matches this link.");
-    await expect(page.getByTestId("ward-unit-screen")).not.toContainText(bogusUnitId);
-    // And never a substituted unit: no unit card is rendered at all for this route.
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026), and never a substituted unit.
+    await expect(page.locator("body")).not.toContainText(bogusUnitId);
+    await expect(page.getByTestId("ward-unit-screen")).toHaveCount(0);
     await expect(page.locator('[data-testid^="ward-unit-card-"]')).toHaveCount(0);
     await expect(page.getByTestId("ward-unit-beds")).toHaveCount(0);
   });
@@ -714,18 +710,14 @@ test.describe("@mockup Emergency department screen", () => {
     const bogusEdId = "nonexistent-ed-does-not-exist";
     expect(edById(bogusEdId), "fixture assumption: this id resolves to no real department").toBeUndefined();
 
+    // DA-32 (overall review, 20 Oct 2026): an unknown department shows the app's own "Page not
+    // found" instead of the ED screen with a message inside it.
     await page.goto(`/ward-flow/ed/${bogusEdId}`, { waitUntil: "domcontentloaded" });
-    await expect(
-      page.locator('div[hidden][id^="S:"]'),
-      "React's streamed content is still staged, so the whole screen is duplicated in the document",
-    ).toHaveCount(0, { timeout: 15_000 });
-    await expect(page.getByTestId("ward-ed-screen")).toHaveCount(1, { timeout: 15_000 });
-    await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
-    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({ timeout: 15_000 });
 
-    // Not-found pages quote no ids (shell-12, 13 Oct 2026): the plain sentence, never the id.
-    await expect(page.getByTestId("ward-ed-screen")).toContainText("No emergency department matches this link.");
-    await expect(page.getByTestId("ward-ed-screen")).not.toContainText(bogusEdId);
+    // Not-found pages quote no ids (shell-12, 13 Oct 2026), and never a substituted department.
+    await expect(page.locator("body")).not.toContainText(bogusEdId);
+    await expect(page.getByTestId("ward-ed-screen")).toHaveCount(0);
     await expect(page.locator('[data-testid^="ward-ed-card-"]')).toHaveCount(0);
     await expect(page.locator('[data-testid^="ward-ed-patient-"]')).toHaveCount(0);
   });

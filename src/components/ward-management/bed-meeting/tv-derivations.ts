@@ -25,9 +25,10 @@ import {
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
+import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -58,6 +59,7 @@ export type TvJourneyRow = {
   name: string;
   where: string;
   stage: string;
+  /** Since the journey opened, shown as "8h 00m waiting"; a transit time is in `stage`. */
   waitMinutes: number;
 };
 
@@ -90,9 +92,36 @@ function waitingOnWard(movement: Movement, unitId: string): boolean {
   );
 }
 
+/**
+ * Overall review (20 Oct 2026): a collected patient's stage says how long they have been on the
+ * road ("In transit 4m"), so the row's wait, which runs from when the journey opened, is not read
+ * as hours in an ambulance. Any other row keeps its stage label.
+ */
+function stageText(movement: Movement, label: string, now: Instant): string {
+  const collectedAt = movement.transport?.collectedAt;
+  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
+    return label;
+  return `In transit ${splitDuration(Math.max(0, now - collectedAt))}`;
+}
+
 function edLabel(edId: string): string {
   const ed = edById(edId);
   return ed ? edShortName(ed) : edId;
+}
+
+/**
+ * CS-10 (Audit 1, Josh 20 Oct 2026): how old the ready figure is. A bed meeting allocates against
+ * it, so the TV says when the counted wards last confirmed their beds, by Capacity's own rule
+ * (`isConfirmationFresh`: within the ward's own `staleAfterMinutes`). `oldestAt` is the oldest
+ * confirmation among the wards not confirmed in time when there are any, otherwise among all.
+ */
+export type TvBedCountAge = { wards: number; notConfirmed: number; oldestAt: Instant | undefined };
+
+function bedCountAge(units: Unit[], now: Instant): TvBedCountAge {
+  const late = units.filter((unit) => !isConfirmationFresh(unit, now));
+  const counted = late.length > 0 ? late : units;
+  const oldestAt = counted.length === 0 ? undefined : Math.min(...counted.map((unit) => unit.allocatable.confirmedAt));
+  return { wards: units.length, notConfirmed: late.length, oldestAt };
 }
 
 /** A bed meeting discharge row, with the person it belongs to from the Shift brief's own rows. */
@@ -103,6 +132,7 @@ export type WardTvSheet = {
   capacity: BedMeetingCapacity;
   /** Ready beds still being made ready: counted in `capacity.ready`, never subtracted, always said. */
   pendingPreparation: number;
+  bedCount: TvBedCountAge;
   /** Accepted for this ward and not yet arrived, longest wait first. */
   incoming: { total: number; onTheWay: number };
   /** Asked of this ward and not yet answered by anyone. */
@@ -136,7 +166,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     id: movement.id,
     name: nameOf(movement),
     where: edLabel(movement.originEdId),
-    stage,
+    stage: stageText(movement, stage, now),
     waitMinutes: elapsedOpenMinutes(movement, now),
   });
   const incoming = open
@@ -157,6 +187,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     unit,
     capacity: sheet.capacity,
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
+    bedCount: bedCountAge([unit], now),
     incoming: { total: incoming.length, onTheWay },
     askedCount: asked.length,
     coming: { rows: coming.slice(0, TV_ROW_LIMIT), more: Math.max(0, coming.length - TV_ROW_LIMIT) },
@@ -193,6 +224,7 @@ export type EdTvSheet = {
   readyInService: number;
   /** Of `readyInService`, the beds still being made ready. */
   pendingPreparation: number;
+  bedCount: TvBedCountAge;
 };
 
 export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes: number }): EdTvSheet | undefined {
@@ -204,7 +236,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
   const people = summary.open
     .map((movement) => {
       const destination = unitName(movement.acceptedUnitId);
-      const stage = ED_STAGE_LABELS[movement.stage];
+      const stage = stageText(movement, ED_STAGE_LABELS[movement.stage], now);
       return {
         id: movement.id,
         name: nameOf(movement),
@@ -242,6 +274,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
     moreWards: Math.max(0, withBeds.length - TV_ROW_LIMIT),
     readyInService: rows.reduce((sum, row) => sum + row.ready, 0),
     pendingPreparation: serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    bedCount: bedCountAge(serviceUnits, now),
   };
 }
 
@@ -305,6 +338,7 @@ export type MeetingTvExtras = {
   gaps: BedKindGap[];
   /** Ready beds in scope still being made ready: counted in the ready figure, never subtracted, always said. */
   pendingPreparation: number;
+  bedCount: TvBedCountAge;
 };
 
 type MeetingInputs = TvInputs & { service: HealthService | null };
@@ -367,5 +401,6 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
     gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions),
     pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    bedCount: bedCountAge(scopedUnits, now),
   };
 }

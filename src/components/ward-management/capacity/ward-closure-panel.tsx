@@ -53,8 +53,13 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   if (!unit.isClosed) {
     const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
     return (
-      <section className={styles.panel} aria-label="Close to admissions" data-testid="ward-closure-panel">
-        <h3 className={styles.heading}>Close to admissions</h3>
+      <section
+        className={styles.panel}
+        aria-label={`Close ${unit.name} to admissions`}
+        data-testid="ward-closure-panel"
+      >
+        {/* Audit 1 (WP-10, Josh 20 Oct): the panel names its ward, so a close is never for the wrong one. */}
+        <h3 className={styles.heading}>Close {unit.name} to admissions</h3>
         <Field label="Reason">
           <Select
             value={reason}
@@ -105,7 +110,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           }}
           data-testid="ward-closure-close"
         >
-          Close ward to admissions
+          Close {unit.name} to admissions
         </Button>
         {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
         {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
@@ -117,9 +122,9 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   const waiting = pointedAtWard(unit.id, movements, referrals);
   const due = wardReopeningDue(unit, now);
   return (
-    <section className={styles.panel} aria-label="Closed to admissions" data-testid="ward-closure-panel">
+    <section className={styles.panel} aria-label={`${unit.name} closed to admissions`} data-testid="ward-closure-panel">
       <h3 className={styles.heading}>
-        <StatusGlyph tone="closed" size={8} /> Closed to admissions
+        <StatusGlyph tone="closed" size={8} /> {unit.name} closed to admissions
       </h3>
       {closure ? (
         <p className={styles.line}>
@@ -137,13 +142,15 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         <>
           <p className={styles.subheading}>Still pointed at this ward ({waiting.length})</p>
           <ul className={styles.list} data-testid="ward-closure-waiting">
-            {waiting.map((item) =>
+            {/* Audit 1: no internal journey numbers on screen, and no names on a ward panel, so each
+                item is numbered in this list only. */}
+            {waiting.map((item, index) =>
               item.kind === "bed_request" ? (
                 <li key={`m-${item.id}`}>
-                  <Link href={movementHref(item.id)}>Bed request {item.id}</Link> · {STATUS_WORDS[item.status]}
+                  <Link href={movementHref(item.id)}>Bed request {index + 1}</Link> · {STATUS_WORDS[item.status]}
                 </li>
               ) : (
-                <li key={`r-${item.id}`}>Referral {item.id} · waiting on this ward&rsquo;s answer</li>
+                <li key={`r-${item.id}`}>Referral {index + 1} · waiting on this ward&rsquo;s answer</li>
               ),
             )}
           </ul>
@@ -165,7 +172,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         }}
         data-testid="ward-closure-reopen"
       >
-        Reopen to admissions
+        Reopen {unit.name} to admissions
       </Button>
       {refusal ? <DisabledReason id={`${reasonId}-reopen`}>{refusal}</DisabledReason> : null}
     </section>

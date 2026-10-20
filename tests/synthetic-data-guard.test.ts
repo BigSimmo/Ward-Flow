@@ -94,6 +94,15 @@ describe("synthetic-data-guard", () => {
     if (!result.safe) expect(result.reason).toContain("hospital record number");
   });
 
+  it("passes the fictitious 5550 and 7010 landline ranges and still refuses a real number beside one", () => {
+    // Audit E-06: the demo's own numbers (Settings profile, reference teams) are 08 5550 0xxx.
+    for (const phone of ["08 5550 0142", "(08) 5550 0115", "08 7010 1234", "0855500108"])
+      expect(checkSyntheticPayload({ referrer: { phone } }).safe, phone).toBe(true);
+    const mixed = checkSyntheticPayload({ note: "Office 08 5550 0142, home 08 1234 5678" });
+    expect(mixed.safe).toBe(false);
+    if (!mixed.safe) expect(mixed.sample).toBe("08 1****");
+  });
+
   it("detects Australian mobile phone numbers", () => {
     const badPayload = {
       contact: "Next of kin phone 0412 345 678 called.",

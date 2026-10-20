@@ -818,14 +818,13 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
-  // F-09 (phone review, Oct 2026): the title counts act now alerts assigned to you and not yet
-  // seen, a part of the Act now figure, so it says so rather than reading as a different total.
+  // Overall review, 20 Oct 2026 (rule A2): the title leads with the Act now figure, the number the
+  // menu's "Act-now alerts" row shows. The part of it assigned to you and not yet seen (F-09) follows
+  // as its own clause, so it never stands in for the total.
   const heroTitle =
-    needYouCount > 0
-      ? `${needYouCount} act now, new to you`
-      : actEntries.length > 0
-        ? `${actEntries.length} to act on now`
-        : "No alert needs you";
+    actEntries.length > 0
+      ? `${actEntries.length} act now${needYouCount > 0 ? `, ${needYouCount} new to you` : ""}`
+      : "No alert needs you";
 
   // ---- Queue views ----
   const rows = (list: QueueEntry[]) =>
@@ -949,24 +948,33 @@ function AlertsWorkspace() {
     { id: "history" as const, label: "History", count: history.length },
   ];
 
+  // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
+  // chose it, says so above its actions.
   const selectedPanel = selected ? (
-    <AlertDetail
-      key={selected.item.id}
-      item={selected.item}
-      movement={selected.movement}
-      subject={selected.subject}
-      units={units}
-      now={now}
-      mine={selected.mine}
-      acknowledgements={inboxAcknowledgements[selected.item.id]}
-      ownership={inboxOwnership[selected.item.id]}
-      snoozeEntries={inboxSnoozes[selected.item.id]}
-      snoozedUntil={selected.snooze}
-      configuration={configuration}
-      handlers={detailHandlers}
-      actionDisabledReason={actionDisabledReason}
-      releaseRef={releaseRef}
-    />
+    <>
+      {chosen ? null : (
+        <p className={styles.confirmNote} data-testid="ward-alerts-first-in-line">
+          First in line, not chosen yet. Check the name before you act.
+        </p>
+      )}
+      <AlertDetail
+        key={selected.item.id}
+        item={selected.item}
+        movement={selected.movement}
+        subject={selected.subject}
+        units={units}
+        now={now}
+        mine={selected.mine}
+        acknowledgements={inboxAcknowledgements[selected.item.id]}
+        ownership={inboxOwnership[selected.item.id]}
+        snoozeEntries={inboxSnoozes[selected.item.id]}
+        snoozedUntil={selected.snooze}
+        configuration={configuration}
+        handlers={detailHandlers}
+        actionDisabledReason={actionDisabledReason}
+        releaseRef={releaseRef}
+      />
+    </>
   ) : null;
 
   const todayChart = (

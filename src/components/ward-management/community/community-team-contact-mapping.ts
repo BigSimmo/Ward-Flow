@@ -164,8 +164,8 @@ export const COMMUNITY_TEAM_CONTACT_MAPPINGS: readonly CommunityTeamContactMappi
     decidedOn: "2026-09-18",
     reason:
       "🔴 THE ROW WHERE TWO SIGNALS DISAGREED AND A PERSON PICKED ONE. Two register services " +
-      "could answer to this name and their published numbers differ by ONE DIGIT: Osborne CMHS on " +
-      "08 6457 8350 and Osborne Park Older Adult MHS on 08 6457 8300. The adult rule points at the " +
+      "could answer to this name and their recorded (invented) numbers differ by ONE DIGIT: Osborne CMHS on " +
+      "08 5550 0150 and Osborne Park Older Adult MHS on 08 5550 0100. The adult rule points at the " +
       "first; the ADDRESS points at the second, because Osborne CMHS sits at Osborne Place, " +
       "Stirling while 'Osborne Park' is the older-adult service's own hospital. Asked in exactly " +
       "those terms, the owner said use the adult one, so the address signal is OVERRIDDEN here " +

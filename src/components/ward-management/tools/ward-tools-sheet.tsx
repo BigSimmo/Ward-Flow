@@ -333,7 +333,7 @@ export function WardToolsSheet({
                   <span className={styles.clinicPhone}>
                     <Phone aria-hidden="true" strokeWidth={1.75} />
                     {clinic?.publishedPhone
-                      ? `${result.communityClinic} clinic ${clinic.publishedPhone}, published number, not call-tested`
+                      ? `${result.communityClinic} clinic ${clinic.publishedPhone}, invented demo number`
                       : `${result.communityClinic} clinic number not recorded`}
                   </span>
                   {/* Opens a community referral. The slide-out has no clinic field to prefill, so the

@@ -206,13 +206,33 @@
   flex: 0 0 auto;
 }
 
+/* Overall review (20 Oct 2026): the slider's tap area is 24px tall (44px on touch), WCAG 2.5.8;
+ * the visible track stays a 4px line drawn by the track pseudo-elements below. */
 .ganttSlider {
   appearance: none;
   width: 8rem;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .ganttSlider {
+    height: 44px;
+  }
+}
+
+.ganttSlider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--wf-r-pill);
   background: var(--wf-track);
-  cursor: pointer;
+}
+
+.ganttSlider::-moz-range-track {
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
 }
 
 .ganttSlider:focus-visible {
@@ -222,6 +242,8 @@
 
 .ganttSlider::-webkit-slider-thumb {
   appearance: none;
+  /* Centres the 14px thumb on the 4px track. */
+  margin-top: -5px;
   width: 14px;
   height: 14px;
   border: 2px solid var(--wf-surface);

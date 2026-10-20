@@ -777,6 +777,12 @@ export function WardBoard({
     });
   }
 
+  // The ED-transfer confirm is opened from the detail panel with the admission only, so its second
+  // identifier is looked up here, the same way as the departure confirm's (design audit DA-08).
+  const confirmIdentity = pendingConfirm
+    ? (pendingConfirm.identity ?? identityFor(pendingConfirm.admissionId))
+    : undefined;
+
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
     if (pendingConfirm.kind === "leaving") {
@@ -1289,11 +1295,6 @@ export function WardBoard({
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
-                    {pendingConfirm.identity ? (
-                      <span className={styles.confirmIdentity} data-testid="ward-board-confirm-identity">
-                        Check: {pendingConfirm.identity}
-                      </span>
-                    ) : null}
                   </>
                 ) : (
                   <>
@@ -1301,6 +1302,12 @@ export function WardBoard({
                     department? The bed will remain held for them while they are away.
                   </>
                 )}
+                {/* DA-08: both confirmations check a second identifier, not the name alone. */}
+                {confirmIdentity ? (
+                  <span className={styles.confirmIdentity} data-testid="ward-board-confirm-identity">
+                    Check: {confirmIdentity}
+                  </span>
+                ) : null}
               </p>
 
               <div className={styles.modalActions}>

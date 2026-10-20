@@ -97,7 +97,8 @@ describe("journeyStages", () => {
     }
   });
 
-  it("puts an expiring legal authority ahead of a much longer wait (design lock §5.4)", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6c): an expiring legal authority no longer moves a row.
+  it("keeps an expiring legal authority in wait order, behind a much longer wait", () => {
     // WF-311 (pulled, openedAt -125) is the longest-waiting real movement in the "pulled" stage and
     // carries no legal form at all. The synthetic movement below clones WF-004 (a real "pulled"
     // movement that DOES carry a legalForm), overrides its dueAt to 30 minutes out — clockState
@@ -117,10 +118,10 @@ describe("journeyStages", () => {
     const stage = journeyStages([...others, urgent], NOW, DEFAULT_DUE_SOON_THRESHOLDS).find(
       (entry) => entry.id === "pulled",
     );
-    expect(stage?.movements[0]?.id).toBe(urgent.id);
-    // And WF-311, the real longest wait, is still second — the urgency exception does not disturb
-    // the ordering of everyone it does not apply to.
-    expect(stage?.movements[1]?.id).toBe("WF-311");
+    expect(stage?.movements[0]?.id).not.toBe(urgent.id);
+    expect(stage?.movements.at(-1)?.id).toBe(urgent.id);
+    const openedAts = stage!.movements.map((movement) => movement.openedAt);
+    expect(openedAts).toEqual([...openedAts].sort((a, b) => a - b));
   });
 });
 
@@ -265,7 +266,8 @@ describe("transportLegs", () => {
     expect(mixed.length).toBe(transportLegs(wardMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS).length);
   });
 
-  it("puts an expiring legal authority ahead of a much longer time since booking (design lock §5.4)", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6c): wait order only, whatever the legal clock says.
+  it("keeps an expiring legal authority in wait order on the transport legs", () => {
     // WF-005 (handover_ready) was accepted at 612, WF-015 (handover_ready) at 627 — WF-005 has
     // therefore been booked longer and a plain wait sort ranks it first. `urgent` clones WF-015
     // (the later, shorter-waiting booking) and gives it a critical legal deadline; design lock
@@ -276,7 +278,10 @@ describe("transportLegs", () => {
     urgent.legalForm = { code: "4C", dueAt: NOW + 30 };
 
     const legs = transportLegs([longAgoBooked, urgent], NOW, DEFAULT_DUE_SOON_THRESHOLDS);
-    expect(legs.map((leg) => leg.movement.id)).toEqual([urgent.id, longAgoBooked.id]);
+    const expected = [longAgoBooked, urgent]
+      .sort((a, b) => a.openedAt - b.openedAt || (a.id < b.id ? -1 : 1))
+      .map((movement) => movement.id);
+    expect(legs.map((leg) => leg.movement.id)).toEqual(expected);
   });
 });
 
@@ -644,7 +649,8 @@ describe("how long a movement has waited", () => {
    * version of `byLongestWait` did not, which would have made the footer sentence true under one
    * order and false under another, on the same screen, with nothing telling the reader which.
    */
-  it("puts an expiring legal authority above a longer wait, exactly as the stage order does", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6c): both orders are wait only.
+  it("keeps an expiring legal authority below a longer wait, exactly as the stage order does", () => {
     const longWait: Movement = { ...base, id: "WF-LONG", openedAt: NOW - 900 };
     const expiring: Movement = {
       ...base,
@@ -655,8 +661,8 @@ describe("how long a movement has waited", () => {
 
     expect(
       byLongestWait([longWait, expiring], NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((movement) => movement.id),
-      "the expiring legal authority waited 10 minutes against 900 and must still come first",
-    ).toEqual(["WF-EXPIRING", "WF-LONG"]);
+      "the longer wait must come first; a legal clock does not move a row",
+    ).toEqual(["WF-LONG", "WF-EXPIRING"]);
   });
 
   it("is a stable total order, so an unchanged state cannot reshuffle the list", () => {

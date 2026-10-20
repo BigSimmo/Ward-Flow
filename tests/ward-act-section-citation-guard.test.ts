@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { extname, join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -90,15 +90,11 @@ const TEST_DIR = "tests";
 const GUARD_FILE_NAME = "ward-act-section-citation-guard.test.ts";
 
 /**
- * Owner ruling, 4 October 2026 (Josh, item 13): the synthetic demo may show Act periods with their
- * section references, labelled "Synthetic demo, not legally checked". Exactly these two files may
- * carry section numbers — the one table that holds them and its own test. Every other file in every
- * scanned root stays under D5. Adding a path here needs the owner's word, recorded beside it.
+ * No file is exempt. The 4 October 2026 exemption (D-29) covered the Act period demo table and its
+ * test; the owner removed that demo on 20 October 2026 (D-70), so every file in every scanned root
+ * is under D5 again. Adding a path here needs the owner's word, recorded beside it.
  */
-const OWNER_APPROVED_CITATION_FILES = new Set([
-  join(WARD_MANAGEMENT_DIR, "legal-forms", "act-periods-demo.ts"),
-  join(TEST_DIR, "ward-act-periods-demo.test.ts"),
-]);
+const OWNER_APPROVED_CITATION_FILES = new Set<string>();
 
 /**
  * Named exemption: `design/third-edition-mockups/reference/` holds Gemini reference copies that nothing
@@ -218,11 +214,10 @@ describe("no Mental Health Act section citations in product code, comments, test
     expect(scannedFiles().length).toBeGreaterThan(50);
   });
 
-  it("exempts only the owner-approved Act period table and its test, and both still exist", () => {
-    expect(OWNER_APPROVED_CITATION_FILES.size).toBe(2);
-    for (const path of OWNER_APPROVED_CITATION_FILES) {
-      expect(readFileSync(path, "utf8").length, `${path} is exempt but missing`).toBeGreaterThan(0);
-    }
+  it("exempts no file now that the Act period demo is removed (D-70), and the demo files are gone", () => {
+    expect(OWNER_APPROVED_CITATION_FILES.size).toBe(0);
+    expect(existsSync(join(WARD_MANAGEMENT_DIR, "legal-forms", "act-periods-demo.ts"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, "ward-act-periods-demo.test.ts"))).toBe(false);
   });
 
   it("finds no Act or WAPOL section citation outside the reference exemption", () => {

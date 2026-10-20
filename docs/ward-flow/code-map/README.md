@@ -113,9 +113,9 @@ apply the former Database ward-line fold procedure to this repository.
    differently. The rendered app is the current design authority.
 8. **Appearance and accessible controls.** Preserve the accepted app and understandable status. Historical token/edge-bar prescriptions do not authorise restyling; retain accessible tap targets. Older edge-bar and top-highlight restrictions describe drawings; inspect current scoped tests before changing controls.
 9. **Mental Health Act wording.** The engine does not calculate legal expiry, but it stores the expiry
-   entered from the checked paper form. [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
-   permits sourced section references and countdowns only in the separately labelled Legal forms
-   synthetic demo. Unconnected controls say exactly "Not wired in this prototype."
+   entered from the checked paper form. No screen shows section references or a computed countdown
+   ([D-70](../decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)
+   removed the D-29 demo). Unconnected controls say exactly "Not wired in this prototype."
 10. **Trusting a document's number or SHA.** Quote a figure with the tree it came from, and check
     `git log -1`.
 

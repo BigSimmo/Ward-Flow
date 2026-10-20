@@ -13,6 +13,7 @@ import { formatInstant, formatInstantWithDay, type Instant } from "@/components/
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import {
   isbarLines,
   isCollected,
@@ -264,11 +265,13 @@ export function HandoverFlowPanel({
         </dl>
       </div>
 
-      <div className={styles.preview} title="Not wired in this prototype.">
-        <Icon icon={FileText} size={14} />
-        Note for next shift
-        <span className={styles.previewTag}>Preview</span>
-      </div>
+      <UnwiredPreview>
+        <div className={styles.preview} title="Not wired in this prototype.">
+          <Icon icon={FileText} size={14} />
+          Note for next shift
+          <span className={styles.previewTag}>Preview</span>
+        </div>
+      </UnwiredPreview>
 
       <div className={styles.panelFoot}>
         <Link href="/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
@@ -354,19 +357,21 @@ export function HandoverSignOffPanel({
           <span>you</span>
         </div>
       </div>
-      <div className={styles.section}>
-        <span className={styles.sectionHead}>
-          Handing to <span className={styles.previewTag}>Preview</span>
-        </span>
-        <div className={styles.roles} title="Not wired in this prototype.">
-          {HANDING_TO_ROLES.map((role) => (
-            <span key={role} className={styles.role}>
-              {role}
-            </span>
-          ))}
+      <UnwiredPreview>
+        <div className={styles.section}>
+          <span className={styles.sectionHead}>
+            Handing to <span className={styles.previewTag}>Preview</span>
+          </span>
+          <div className={styles.roles} title="Not wired in this prototype.">
+            {HANDING_TO_ROLES.map((role) => (
+              <span key={role} className={styles.role}>
+                {role}
+              </span>
+            ))}
+          </div>
+          <span className={styles.label}>Not wired in this prototype. They confirm on their own login.</span>
         </div>
-        <span className={styles.label}>Not wired in this prototype. They confirm on their own login.</span>
-      </div>
+      </UnwiredPreview>
       {signedAt !== null ? (
         <div className={styles.section}>
           <div className={styles.signed} data-testid="ward-handover-sign-off-visible-status" role="status">

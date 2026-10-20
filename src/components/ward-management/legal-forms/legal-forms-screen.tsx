@@ -63,7 +63,6 @@ import {
   legalFormRowClassification,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
-import { orderByActPeriodShare } from "./act-periods-demo";
 import { formProgression } from "./legal-form-progression";
 import { FocusPanel, SummaryPanel, type FocusTab } from "./legal-forms-panel";
 import {
@@ -205,14 +204,11 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   const [allCodes, setAllCodes] = useState(false);
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
-  // Audit A3-6 (13 Oct 2026): "Time not written" holds forms that do carry Act periods, so it is
-  // never folded and runs by share of the demo Act period used, counted from arrival in ED. It
-  // replaces the 11 Oct fold after 5 on a phone and 10 elsewhere.
+  // "Time not written" is never folded (audit A3-6, 13 Oct 2026) and keeps the longest wait in ED
+  // first (`legalFormGroupRows`). Owner, 20 Oct 2026: nothing here works out an Act period, so no
+  // computed time orders it.
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
-  // The linked patient's date of birth decides whether an under-18 Act period applies.
-  const dateOfBirthOf = (movement: Movement) => patientOf(movement).patient?.dateOfBirth;
-  const noDeadlineRows = legalFormGroupRows(movements, now, "no-deadline");
-  const noDeadline = orderByActPeriodShare(noDeadlineRows, now, dayZero, dateOfBirthOf);
+  const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
@@ -430,7 +426,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
     <FocusPanel
       key={selected.id}
       movement={selected}
-      dateOfBirth={dateOfBirthOf(selected)}
       name={nameOf(selected)}
       umrn={umrnOf(selected)}
       edName={edNameOf(selected)}
@@ -1038,7 +1033,6 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                   <SummaryPanel
                     rows={rows}
                     now={now}
-                    dayZero={dayZero}
                     soonHours={reminders.soonHours}
                     urgentHours={reminders.urgentHours}
                     onSelect={select}

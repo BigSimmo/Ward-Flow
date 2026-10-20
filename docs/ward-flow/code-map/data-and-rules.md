@@ -222,11 +222,11 @@ capacity figure anywhere in this group is real.
   types and operational warnings; it does not compute legal expiry or extension periods. The
   record keeps the expiry typed from the paper form. Key exports: `LEGAL_CLOCK_FORM_CODES`,
   `isLegalClockFormCode`, `isArrivalLate`, `leaveBedNeedsOpenWarning` and `HANDOVER_COMPLETION_WINDOWS`.
-  [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
-  separately permits sourced periods and section references in
-  `src/components/ward-management/legal-forms/act-periods-demo.ts`, labelled "Synthetic demo, not
-  legally checked". That display never writes a calculated `dueAt`; Forms 1B and 3D have no demo
-  period until a source is confirmed.
+  No file computes an Act period:
+  [D-70](../decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)
+  removed the D-29 demo (`legal-forms/act-periods-demo.ts`). The Legal forms screen shows only the
+  recorded due time (`currentLegalDueAt` in `legal-forms/legal-forms-derivations.ts`) and orders
+  "Time not written" by arrival in ED.
 - **`src/components/ward-management/ward-legal-forms.ts`** (73 lines, 30 importers) — The picker
   list of selectable legal forms and how a form names itself on screen. Deliberately its own module
   rather than part of `ward-model.ts`, so a guard (`tests/ward-flow-single-source.test.ts`) can
@@ -353,10 +353,10 @@ capacity figure anywhere in this group is real.
   `duplicateCandidates`, `patientDisplayName`, `patientAgeYears`, `patientCohort`,
   `matchDateOfBirth`.
 - **`src/components/ward-management/ward-priority.ts`** (273 lines, 21 importers) — The movement
-  operational-priority score and queue order. `FORM_TIMING_FACTOR_LABEL` is exported so
+  wait-order queue and plain wait reasons (no points, D-71). `FORM_TIMING_FACTOR_LABEL` is exported so
   `priority-queue.tsx` matches the legal-form-due-time factor by constant rather than by a second
-  copy of the label string. Key exports: `operationalScore`, `queueOrder`, `urgencyTierLabel`,
-  `isFlaggedUrgent`, `ScoreFactor`.
+  copy of the label string. Key exports: `waitFactors`, `queueOrder`, `urgencyTierLabel`,
+  `isFlaggedUrgent`, `WaitFactor`.
 - **`src/components/ward-management/ward-diagnosis.ts`** (99 lines, 12 importers) — The tentative
   ICD-10-AM Chapter V diagnosis-block vocabulary (11 blocks or none), added after the owner's
   2026-08-29 reversal of the previous no-diagnosis rule. Deliberately holds no knowledge of what

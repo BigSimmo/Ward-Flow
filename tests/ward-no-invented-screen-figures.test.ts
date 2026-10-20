@@ -67,16 +67,10 @@ const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = 
 ];
 
 /**
- * Files whose shown hour periods Josh ruled on (rule 2 only), relative to WARD_DIR. D-29 (4 Oct
- * 2026): the Act period table may show sourced Mental Health Act periods, each labelled "Synthetic
- * demo, not legally checked". "Breach", percentages and time constants in it are still refused.
+ * Files whose shown hour periods Josh ruled on (rule 2 only), relative to WARD_DIR. Empty: the one
+ * entry, the D-29 Act period demo table, was removed with the demo on 20 Oct 2026 (D-70).
  */
-const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [
-  {
-    file: "legal-forms/act-periods-demo.ts",
-    ruling: "D-29 (4 Oct 2026): sourced Act periods, shown only as a labelled synthetic demo.",
-  },
-];
+const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [];
 
 type Exclusion = { id: string; why: string; whole?: RegExp; strip?: RegExp };
 
