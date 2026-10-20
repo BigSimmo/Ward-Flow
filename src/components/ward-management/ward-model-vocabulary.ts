@@ -154,8 +154,17 @@ export type MovementArrivalDetails = {
   modeOfArrival?: string;
   trackingNumber?: string;
   estimatedArrivalAt: Instant;
+  /** When the arrival plan was FIRST recorded, and by whom. Later edits never move these. */
   recordedAt: Instant;
   recordedBy: WardFlowRole;
+  /**
+   * The latest edit after the first recording, when there has been one. Absent on a plan recorded
+   * once, and on plans saved before 20 Oct 2026 (overall review: edits used to overwrite
+   * `recordedAt`, so the ED timeline, chronology and pilot measures showed the latest edit as the
+   * first recording).
+   */
+  updatedAt?: Instant;
+  updatedBy?: WardFlowRole;
 };
 
 export type MovementUploadedForm = {

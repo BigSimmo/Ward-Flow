@@ -538,12 +538,25 @@ export function deriveEdScreen({
     }
     if (subject.arrivalDetails?.recordedAt !== undefined) {
       const details = subject.arrivalDetails;
+      const tone = isArrivalLate(subject, now) ? "danger" : "good";
+      const plan = `${arrivalModeLabel(details.mode)} · ward ${arrivalEtaLabel(details.estimatedArrivalAt, now)}`;
+      // The first recording keeps its own time and role; a later edit is its own "updated" row, and
+      // the current plan is shown on the latest of the two.
+      const updated = details.updatedAt !== undefined;
       events.push({
         min: details.recordedAt,
-        tone: isArrivalLate(subject, now) ? "danger" : "good",
-        what: `Arrival plan recorded · ${arrivalModeLabel(details.mode)} · ward ${arrivalEtaLabel(details.estimatedArrivalAt, now)}`,
+        tone,
+        what: updated ? "Arrival plan recorded" : `Arrival plan recorded · ${plan}`,
         by: details.recordedBy ? WARD_FLOW_ROLE_LABELS[details.recordedBy] : null,
       });
+      if (details.updatedAt !== undefined) {
+        events.push({
+          min: details.updatedAt,
+          tone,
+          what: `Arrival plan updated · ${plan}`,
+          by: details.updatedBy ? WARD_FLOW_ROLE_LABELS[details.updatedBy] : null,
+        });
+      }
     }
     events.sort((a, b) => b.min - a.min);
     return events;

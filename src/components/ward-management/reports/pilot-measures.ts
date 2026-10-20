@@ -167,7 +167,10 @@ function holdEpisodes(movement: Movement): { heldAt: Instant; stoppedAt: Instant
       ...releases,
       movement.closure?.at,
       movement.leftDepartmentAt,
+      // The first arrival recording stops a hold made before it. A later edit can stop only a hold
+      // made after that first recording; it never stretches the earlier hold to the edit's time.
       movement.arrivalDetails?.recordedAt,
+      movement.arrivalDetails?.updatedAt,
     ]
       .map(after)
       .filter((at): at is Instant => at !== undefined);
