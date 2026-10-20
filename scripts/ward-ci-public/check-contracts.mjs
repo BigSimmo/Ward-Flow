@@ -194,7 +194,7 @@ function requireWorkflow(source) {
     expression("!cancelled() && steps.backend-install.outcome == 'success'"),
   );
   assert.equal(step("backend", "Run Ward backend tests").fields.get("working-directory"), "backend/ward-flow");
-  assert.match(jobs.get("backend"), /image: postgres:16\n/u);
+  assert.match(jobs.get("backend"), /image: postgres:16@sha256:[0-9a-f]{64}\n/u);
   assert.match(
     step("backend", "Run Ward backend tests").text,
     /WARD_TEST_DATABASE_URL: postgresql:\/\/postgres@127.0.0.1:5432\/wardflow_test\n/u,
