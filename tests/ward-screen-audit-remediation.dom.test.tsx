@@ -112,15 +112,16 @@ describe("WardScreen & WardIndex audit remediation", () => {
 
     const center = await screen.findByTestId("ward-notification-center");
     const allTab = within(center).getByRole("tab", { name: /^All/ });
-    const buzzesTab = within(center).getByRole("tab", { name: /^Buzzes/ });
+    // Notices (20 Oct 2026): Urgent comes straight after All.
+    const urgentTab = within(center).getByRole("tab", { name: /^Urgent/ });
     expect(allTab).toHaveAttribute("tabindex", "0");
-    expect(buzzesTab).toHaveAttribute("tabindex", "-1");
+    expect(urgentTab).toHaveAttribute("tabindex", "-1");
 
     allTab.focus();
     fireEvent.keyDown(allTab, { key: "ArrowRight" });
-    expect(buzzesTab).toHaveAttribute("aria-selected", "true");
-    expect(buzzesTab).toHaveAttribute("tabindex", "0");
-    expect(document.activeElement).toBe(buzzesTab);
+    expect(urgentTab).toHaveAttribute("aria-selected", "true");
+    expect(urgentTab).toHaveAttribute("tabindex", "0");
+    expect(document.activeElement).toBe(urgentTab);
 
     fireEvent.keyDown(center, { key: "Escape" });
     await act(async () => {

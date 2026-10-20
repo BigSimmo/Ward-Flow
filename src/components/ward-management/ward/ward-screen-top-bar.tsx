@@ -8,7 +8,7 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { buttonClass, Hero, LiveChip, TextInput } from "@/components/wf";
+import { buttonClass, Hero, LiveChip, PhoneSheet, TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
@@ -138,6 +138,9 @@ export function WardScreenTopBar({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
+  const closePhoneNotices = () => {
+    setNotificationCenterOpen(false);
+  };
   const confirmButton = (
     <button
       ref={confirmTriggerRef}
@@ -229,13 +232,19 @@ export function WardScreenTopBar({
         <>
           {raiseReferralGate.note}
           {wardRoleLockNote}
-          {notificationCenterOpen ? (
-            <div
-              ref={notificationCenterRef}
-              className={styles.phoneNotificationCenter}
-              data-testid="ward-notification-center-wrap"
-            >
+          {/* Phone notices (20 Oct 2026): the bell opens a pop-up sheet rather than a panel pushed
+              into the page, so the page stays put behind it and Close returns to the bell. */}
+          <PhoneSheet
+            open={notificationCenterOpen}
+            onClose={closePhoneNotices}
+            title="Notices"
+            height="tall"
+            returnFocusRef={notificationTriggerRef}
+            data-testid="ward-notifications-sheet"
+          >
+            <div ref={notificationCenterRef} data-testid="ward-notification-center-wrap">
               <WardNotificationCenter
+                inSheet
                 unitId={unit.id}
                 unitName={unit.name}
                 now={now}
@@ -248,15 +257,10 @@ export function WardScreenTopBar({
                 onConfirmMorningRollup={handleConfirmMorningRollup}
                 onAcknowledgeNotice={handleAcknowledgeNotice}
                 onDismissBuzz={handleDismissBuzz}
-                onClose={() => {
-                  setNotificationCenterOpen(false);
-                  setTimeout(() => {
-                    notificationTriggerRef.current?.focus({ preventScroll: true });
-                  }, 0);
-                }}
+                onClose={closePhoneNotices}
               />
             </div>
-          ) : null}
+          </PhoneSheet>
         </>
       ) : null}
       {isPhone ? null : (
