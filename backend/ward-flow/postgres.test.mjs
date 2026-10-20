@@ -2184,6 +2184,99 @@ test(
   },
 );
 
+/** Audit E-01: a synthetic referral with every contact the audit must leave out. */
+const contactReferral = () => ({
+  type: "RECEIVE_REFERRAL",
+  role: "community",
+  ageBand: "Adult",
+  homeRegion: "Perth Metropolitan",
+  suburb: { kind: "named", name: "Perth" },
+  source: "community",
+  urgency: 2,
+  originSiteCode: "SCGH",
+  transportNeeded: false,
+  history: "Synthetic patient story",
+  intake: {
+    catchment: { teamName: "Inner City Clinic", service: "East Metro", confirmed: true },
+    reasonForReferral: "Synthetic referral for assessment",
+    legalStatus: "Voluntary",
+    riskFlags: [],
+    medicalClearance: {
+      cleared: false,
+      expectedAt: "2026-10-07T18:00+08:00",
+      contactName: "Demo Doctor",
+      contactPhone: "5550 0102",
+    },
+    triageAndRampCompleted: false,
+    additionalDocuments: false,
+    charts: [
+      { kind: "medication", name: "medication.pdf", mimeType: "application/pdf", sizeBytes: 21 },
+      { kind: "observation", name: "observation.pdf", mimeType: "application/pdf", sizeBytes: 21 },
+    ],
+    referrer: {
+      name: "Demo Sender",
+      phone: "5550 0101",
+      email: "demo@example.test",
+      role: "Nurse",
+      location: "Synthetic ED",
+    },
+  },
+  destinations: [
+    {
+      kind: "psychiatric_ward",
+      unitId: "scgh-adult-open",
+      sex: "Female",
+      gender: "Female",
+      secureBedNeeded: false,
+      involuntaryBedNeeded: false,
+      highAcuityNursingNeeded: false,
+    },
+  ],
+});
+const CONTACT_STRINGS = ["Demo Sender", "5550 0101", "demo@example.test", "Demo Doctor", "5550 0102"];
+/** Each later step on one referral that writes an Undo snapshot. */
+const contactReferralSteps = (referralId) => [
+  { type: "RECORD_MEDICAL_CLEARANCE", role: "ed", referralId, cleared: true },
+  {
+    type: "ACCEPT_REFERRAL",
+    role: "coordinator",
+    referralId,
+    destinationKind: "psychiatric_ward",
+    unitId: "scgh-adult-open",
+  },
+  { type: "UNDO_REFERRAL_DECISION", role: "coordinator", referralId },
+  {
+    type: "DECLINE_REFERRAL",
+    role: "coordinator",
+    referralId,
+    destinationKind: "psychiatric_ward",
+    unitId: "scgh-adult-open",
+    reason: "no_suitable_bed",
+  },
+];
+
+test("no undoable referral step copies the referrer's or clearance contact's details into the audit", async () => {
+  // Audit E-01: the Undo snapshot of each step held the whole referral row, contacts included.
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  let applied = engine.applyCommand(engine.seedWorld(at), contactReferral(), at);
+  assert.equal(applied.outcome, "accepted");
+  let world = applied.world;
+  const referralId = world.state.referrals.at(-1).id;
+  for (const [index, event] of contactReferralSteps(referralId).entries()) {
+    applied = engine.applyCommand(world, event, new Date(at.getTime() + (index + 1) * 60_000));
+    assert.equal(applied.outcome, "accepted", `${event.type}: ${applied.reason}`);
+    const facts = JSON.stringify(applied.changes.facts);
+    assert.ok(!Object.hasOwn(applied.changes.facts, "undoRecords"), event.type);
+    for (const secret of CONTACT_STRINGS) assert.ok(!facts.includes(secret), `${event.type} audits ${secret}`);
+    assert.ok(
+      applied.world.state.undoRecords.some((record) => JSON.stringify(record).includes("demo@example.test")),
+      `${event.type} still keeps its Undo snapshot on the board`,
+    );
+    world = applied.world;
+  }
+});
+
 test(
   "real PostgreSQL: a shared referral stores no chart file, and its audit copy no contact details",
   { skip: !url },
@@ -2269,6 +2362,22 @@ test(
       for (const secret of [file, contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
         assert.ok(!rows[0].text.includes(secret), `the audit copy must not hold ${secret}`);
       assert.ok(rows[0].text.includes("medication.pdf"), "the audit still records which files were named");
+
+      // Audit E-01: nor do the later steps on the same referral, through their Undo snapshots.
+      let revision = result.body.snapshot.revision;
+      for (const event of contactReferralSteps(created.id)) {
+        const step = await store.command(actor, randomUUID(), revision, event);
+        assert.equal(step.status, 200, `${event.type}: ${JSON.stringify(step.body.error ?? null)}`);
+        revision = step.body.snapshot.revision;
+      }
+      const steps = await pool.query(
+        "SELECT action, changes::text AS text FROM ward_flow.audit WHERE workspace_id=$1 AND action = ANY($2)",
+        [workspaceId, contactReferralSteps(created.id).map((event) => event.type)],
+      );
+      assert.equal(steps.rows.length, 4);
+      for (const row of steps.rows)
+        for (const secret of [contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
+          assert.ok(!row.text.includes(secret), `the ${row.action} audit copy must not hold ${secret}`);
 
       // A receipt written before this change was fingerprinted with the file content, so a tab that
       // still sends it can retry that command and get its original answer.
