@@ -1719,17 +1719,6 @@
   }
 }
 
-.moreSheetPolicy {
-  color: var(--wf-accent-ink);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.moreSheetPolicy:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 /* ── Desktop, fine pointer: v6 control heights ─────────────────────────────────────────────── */
 
 @media (min-width: 1001px) and (pointer: fine) {
@@ -2310,5 +2299,15 @@
   .rail[data-rail="closed"] :is(.appearancePopover, .capacityAlertsDropdown),
   .rail[data-tablet="landscape"] :is(.appearancePopover, .capacityAlertsDropdown) {
     left: calc(var(--rail-closed-w) + 0.375rem);
+  }
+}
+
+/* A5 (overall review, 20 Oct 2026): Handover shows once. Above 1200px the open rail draws the
+ * handover countdown card, which opens the handover board, so the menu's own Handover item steps
+ * aside. The icon rail (closed, or tablet landscape) hides the card and keeps the item. CSS rather
+ * than script, so the server's page and the early script's closed rail never disagree. */
+@media (min-width: 1201px) {
+  .rail[data-rail="open"]:not([data-tablet]) .countdownTwin {
+    display: none;
   }
 }

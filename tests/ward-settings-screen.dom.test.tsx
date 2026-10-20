@@ -196,6 +196,12 @@ describe("the settings screen's thresholds panel", () => {
     expect(digest).toHaveAttribute("rel", "noopener noreferrer");
   });
 
+  it("shows the policy version in About, moved from the rail's Menu foot (A7)", () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    expect(screen.getByTestId("ward-settings-policy-version")).toHaveTextContent(/^Policy2026\.3$/u);
+  });
+
   it("renders a row for each published threshold and no others", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));

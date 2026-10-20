@@ -869,6 +869,11 @@ export function DataPane({
                 <dt>Status</dt>
                 <dd>Not approved for clinical use</dd>
               </div>
+              {/* A7 (overall review, 20 Oct 2026): moved here from the rail's Menu foot. */}
+              <div data-testid="ward-settings-policy-version">
+                <dt>Policy</dt>
+                <dd>2026.3</dd>
+              </div>
               <div>
                 <dt>Sign-in</dt>
                 <dd>{shared ? "Signed-in shared workspace" : "Local synthetic demo"}</dd>

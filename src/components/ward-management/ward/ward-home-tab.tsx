@@ -396,7 +396,7 @@ export function WardHomeTab({
       at: unit.allocatable.confirmedAt,
       timeLabel: formatInstant(unit.allocatable.confirmedAt),
       title: "Capacity confirmed",
-      detail: `${unit.allocatable.value} beds allocatable`,
+      detail: `${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`,
       status: "Verified",
     });
   }
@@ -890,14 +890,16 @@ export function WardHomeTab({
   if (morningRollupOverdue && !morningRollupConfirmed) {
     actNow.push({
       key: "rollup",
-      title: "Morning rollup",
-      detail: "Overdue, not yet confirmed",
+      // Overall review (20 Oct 2026): "morning rollup" and "allocatable" were project jargon; these
+      // match the ward decisions list ("Morning bed numbers not confirmed, due 09:30").
+      title: "Morning bed numbers",
+      detail: `Not confirmed, due ${morningRollupTimeLabel}`,
       tone: "danger",
       action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
       secondaryAction:
         !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
           ? {
-              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              label: `Confirm beds and morning numbers (due ${morningRollupTimeLabel})`,
               run: () => onConfirmBedsAndMorningRollup(),
             }
           : onOpenDischarges
@@ -927,7 +929,7 @@ export function WardHomeTab({
       secondaryAction:
         !morningRollupConfirmed && onConfirmBedsAndMorningRollup
           ? {
-              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              label: `Confirm beds and morning numbers (due ${morningRollupTimeLabel})`,
               run: () => onConfirmBedsAndMorningRollup(),
             }
           : onOpenDischarges
@@ -941,7 +943,7 @@ export function WardHomeTab({
   if (morningRollupConfirmed) {
     doneRows.push({
       key: "rollup",
-      title: "Morning rollup",
+      title: "Morning bed numbers",
       detail: "Confirmed today",
       tone: "success",
       secondaryAction: onOpenDischarges
@@ -954,14 +956,14 @@ export function WardHomeTab({
   } else if (!morningRollupOverdue) {
     laterToday.push({
       key: "rollup",
-      title: "Morning rollup",
+      title: "Morning bed numbers",
       detail: "Still due",
       tone: "neutral",
       action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
       secondaryAction:
         !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
           ? {
-              label: `Confirm beds & morning roll-up (${morningRollupTimeLabel})`,
+              label: `Confirm beds and morning numbers (due ${morningRollupTimeLabel})`,
               run: () => onConfirmBedsAndMorningRollup(),
             }
           : onOpenDischarges

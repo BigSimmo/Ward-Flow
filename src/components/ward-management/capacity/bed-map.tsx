@@ -34,6 +34,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { countCellText } from "./capacity-derivations";
 import styles from "./bed-map.module.css";
 
@@ -360,10 +361,14 @@ function WardBlock({
                 onSelectWard(ward.unit.id);
               }}
             >
-              <span className={styles.wardNameText}>{ward.unit.name}</span>
+              <span className={styles.wardNameText}>
+                <SpelledCodes text={ward.unit.name} />
+              </span>
             </button>
           ) : (
-            <span className={styles.mapWardName}>{ward.unit.name}</span>
+            <span className={styles.mapWardName}>
+              <SpelledCodes text={ward.unit.name} />
+            </span>
           )}
           <span className={styles.bedTotalBadge} title={`${ward.unit.beds} total beds`}>
             {ward.unit.beds}b
@@ -769,7 +774,9 @@ function ServiceGroup({
         <div className={styles.serviceTitleGroup}>
           <h3 id={headingId} className={styles.serviceHeading}>
             <span className={styles.serviceAccentIndicator} aria-hidden="true" />
-            <span className={styles.serviceNameText}>{group.service}</span>
+            <span className={styles.serviceNameText}>
+              <SpelledCodes text={group.service} />
+            </span>
             <span className={styles.serviceCount}>
               {group.wards.length === 1 ? "1 ward" : `${group.wards.length} wards`}
             </span>

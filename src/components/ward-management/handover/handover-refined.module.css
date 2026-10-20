@@ -12,12 +12,26 @@
 
 .heroTools {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
+/*
+ * DA-24 (overall review, 20 Oct 2026): "Which handover" never squeezes its three choices under their
+ * own words. At 1280px with wider letter and word spacing (WCAG 1.4.12), and slightly at 1024px even
+ * without it, the track shrank to fit beside the countdown and the labels ran into each other. Now
+ * each choice keeps its full width: the countdown moves to the next line first, and if the hero is
+ * still too narrow the choices wrap onto a second row inside the track rather than overlap.
+ */
+.shiftTrack {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+
 .shiftTrack button {
+  flex-shrink: 0;
   gap: 6px;
 }
 

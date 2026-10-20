@@ -184,8 +184,16 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
           <button type="button" aria-pressed={view === "new"} onClick={() => onViewChange("new")}>
             New referral
           </button>
-          <button type="button" aria-pressed={view === "inbox"} onClick={() => onViewChange("inbox")}>
-            Inbox <span className={styles.count}>{inboxCount}</span>
+          {/* Overall review (20 Oct 2026): "Inbox 0" sat beside the menu's "7 awaiting a decision" and
+              read as a contradiction. They count different things: this is referrals already sent to a
+              ward and waiting in that ward's own inbox, so the tab says so. */}
+          <button
+            type="button"
+            aria-pressed={view === "inbox"}
+            onClick={() => onViewChange("inbox")}
+            title="Referrals sent to a ward and waiting in that ward's inbox"
+          >
+            Ward inboxes <span className={styles.count}>{inboxCount}</span>
           </button>
         </div>
         <kbd className={styles.kbd} aria-hidden="true">
