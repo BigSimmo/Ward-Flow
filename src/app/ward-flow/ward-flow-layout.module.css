@@ -245,11 +245,23 @@
  * A1-17 (audit 13 Oct 2026, slow signal): the server draws the page before its code arrives, and
  * taps do nothing until it does. This quiet line says so, and goes as soon as the header is ready
  * (`data-wf-bar-ready`, set by `replayEarlyHeaderTap`). Neutral words, no tint of its own.
+ *
+ * DA-02 (overall review, 20 Oct 2026): the note floats over the top of the page instead of taking a
+ * line in it, so when it goes the page no longer jumps up about 39px (measured as a 0.02 layout
+ * shift on desktop and 0.04 on a phone, on every route). It sits under the header, above the pinned
+ * banners (z-index 25) and below the header (30). Taps pass through it, as before.
  */
 .loadingNote {
-  flex-shrink: 0;
-  margin: 0.5rem 0.75rem 0;
+  position: fixed;
+  top: calc(var(--wf-header-height, 3.75rem) + 0.5rem);
+  left: 50%;
+  z-index: 26;
+  transform: translateX(-50%);
+  inline-size: max-content;
+  max-inline-size: calc(100vw - 1.5rem);
+  margin: 0;
   padding: 6px 12px;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--wf-ink-1) 12%, transparent);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
@@ -260,8 +272,9 @@
   pointer-events: none;
 }
 
-/* display: none, not visibility: hidden. The note is in flow, so hidden-but-present space pushes a
-   page's Hero below the band threshold and the header never takes the band (journeys, 18 Oct 2026). */
+/* display: none, not visibility: hidden, so a finished note can never cover the page or be read out.
+   (It once took a line in the page, and hidden-but-present space pushed a page's Hero below the band
+   threshold: journeys, 18 Oct 2026.) */
 :global(html[data-wf-bar-ready]) .loadingNote {
   display: none;
 }
