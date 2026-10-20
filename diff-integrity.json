@@ -1263,6 +1263,34 @@
       "after": 11,
       "reason": "Same owner decision (20 October 2026, D-70). Two cases tested the Act period line beside a typed expiry (audit A3-5) and one the Time not written order by share of a computed Act period (A3-6). The line and the computed order are removed. The A3-6 case is replaced by one that pins the group to arrival order (longest wait in ED first), so the net drop is two.",
       "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-priority.test.ts",
+      "before": 28,
+      "after": 25,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): the 0 to 100 points score (operationalScore) was removed as a never-build severity score; the three cases that pinned point values and the flag/tier re-sort have nothing left to test. Wait order and the plain wait reasons are pinned by the remaining cases.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-console-controls.dom.test.tsx",
+      "before": 71,
+      "after": 68,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): the unreachable \"Other wards, ranked\" cockpit panel was removed as a never-build ranked ward suggestion; its three cases tested that panel only.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-shortlist-candidates.test.ts",
+      "before": 22,
+      "after": 20,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): catchment-first tiers were replaced by a fixed order (fit, then service, then name); the two tier-ordering cases no longer describe any behaviour.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-console-record-gender.dom.test.tsx",
+      "before": 1,
+      "after": 0,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): its one case drove a control inside the removed ranked-wards cockpit panel; recording sex when it is missing stays covered by tests/ward-bed-matching-recorded-sex.test.ts and tests/ward-eligibility.test.ts.",
+      "approvedOn": "2026-10-20"
     }
   ]
 }

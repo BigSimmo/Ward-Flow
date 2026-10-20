@@ -379,8 +379,8 @@ export function referralBlockedReason(movement: Movement): string | undefined {
 /**
  * The unit a movement is *actually* recorded against — accepted, or else the first live
  * referral. Never falls back to a different unit, and never returns a merely-suggested
- * candidate: callers that want a suggestion when this is `undefined` must ask for one
- * explicitly (see `eligibleCandidatesAmong`) and label it as a suggestion, not a destination.
+ * candidate. When this is `undefined`, no destination is shown (Audit 1, Josh 20 Oct: no
+ * "Suggested destination").
  *
  * Whole-branch review Critical 1: takes the caller's own `units` rather than resolving via
  * `unitById` (the frozen `ward-sites.ts` fixture). Every live surface must pass the provider's
@@ -761,8 +761,8 @@ export function buildActionInbox(
       kind: INBOX_CATEGORIES.no_eligible_bed.kind,
       tone: "danger",
       icon: CircleAlert,
-      title: "No eligible bed: bed coordinator notified",
-      detail: `${movement.id} · no ward in the network is currently eligible; patient stays on the waitlist`,
+      title: "No eligible bed: shown to the bed coordinator",
+      detail: "No ward in the network is currently eligible; the patient stays on the waitlist",
       owner: "Bed coordinator",
       movementId: movement.id,
     });
@@ -1296,61 +1296,51 @@ export interface CompatibleWardCandidate {
 }
 
 /**
- * One-Tap Multi-Ward Parallel Referral Fan-Out (#2).
- * Returns up to `maxCount` (default 3, capped by `PARALLEL_REFERRAL_CAP`) top compatible wards
- * for a movement, ranked by passing eligibility gates, in-catchment preference, and available beds.
+ * Every ward not yet asked that passes every eligibility gate, in a fixed neutral order: health
+ * service, then ward name.
+ *
+ * Audit 1, Josh 20 Oct (CS-03, NB-3): this replaces `deriveTopCompatibleWards`, which ranked
+ * in-area first, then most free beds, and cut the list to three. That was a "best match" pick and
+ * hid other eligible wards. Nothing here ranks or caps; the coordinator chooses.
  */
-export function deriveTopCompatibleWards(
+function eligibleWardsInFixedOrder(
   movement: Movement,
   units: readonly Unit[],
-  maxCount: number = PARALLEL_REFERRAL_CAP,
-  now?: Instant,
+  now: Instant,
 ): CompatibleWardCandidate[] {
-  // Wards already live use up parallel slots, so only the remaining slots can be suggested.
-  const remainingSlots = Math.max(0, PARALLEL_REFERRAL_CAP - movement.referredUnitIds.length);
-  const cap = Math.max(0, Math.min(maxCount, remainingSlots));
-  if (cap === 0) return [];
-  const effectiveNow = (now ?? Math.max(movement.openedAt, ...units.map((u) => u.allocatable.confirmedAt))) as Instant;
   const originService = movementHealthService(movement);
-  const scored = units
+  const serviceOf = (unit: Unit) => siteByCode(unit.siteCode)?.service ?? "";
+  return units
     .filter((u) => !movement.referredUnitIds.includes(u.id))
     .map((unit) => {
-      const check = eligibility(movement, unit, effectiveNow);
-      const { available } = boundedBedAvailability(unit);
-      const isOutOfArea = Boolean(originService && siteByCode(unit.siteCode)?.service !== originService);
+      const check = eligibility(movement, unit, now);
       // A previous decline is informational: the ward may be referred again without an override.
       const failingGates = (check.gates ?? [])
         .filter((g) => !g.pass && !INFORMATIONAL_GATES.includes(g.gate))
         .map((g) => g.gate);
       return {
         unit,
-        availableNow: available,
+        availableNow: boundedBedAvailability(unit).available,
         failingGates,
-        isOutOfArea,
+        isOutOfArea: Boolean(originService && siteByCode(unit.siteCode)?.service !== originService),
       };
     })
     .filter((entry) => entry.failingGates.length === 0)
-    .sort((a, b) => {
-      if (a.isOutOfArea !== b.isOutOfArea) return a.isOutOfArea ? 1 : -1;
-      if (b.availableNow !== a.availableNow) return b.availableNow - a.availableNow;
-      return a.unit.name.localeCompare(b.unit.name);
-    });
-  return scored.slice(0, cap);
+    .sort((a, b) => serviceOf(a.unit).localeCompare(serviceOf(b.unit)) || a.unit.name.localeCompare(b.unit.name));
 }
 
 export interface NextWardsAfterRefusal {
   /** The most recent decline, so the screen can say why the last ward said no. */
   latestDecline: Decline;
-  /** Eligible wards not yet asked, best first, from the same rules as `deriveTopCompatibleWards`. */
+  /** Every eligible ward not yet asked, in fixed order (health service, then name). Not ranked. */
   candidates: CompatibleWardCandidate[];
 }
 
 /**
- * Next best ward after a refusal (Top 25 item 3). Once a ward has declined
- * and none has accepted, this suggests the wards nobody has asked yet that pass every eligibility
- * gate, ranked by `deriveTopCompatibleWards`. A ward that declined or still holds a live request
- * is never suggested. It only suggests: the coordinator still chooses and refers with
- * `REFER_TO_UNITS`.
+ * Wards not yet asked after a refusal (Top 25 item 3). Once a ward has declined and none has
+ * accepted, this lists every ward nobody has asked yet that passes every eligibility gate, in a
+ * fixed neutral order with no cap (Audit 1, Josh 20 Oct). A ward that declined or still holds a
+ * live request is left out. The coordinator still chooses and refers with `REFER_TO_UNITS`.
  */
 export function deriveNextWardsAfterRefusal(
   movement: Movement,
@@ -1365,5 +1355,5 @@ export function deriveNextWardsAfterRefusal(
   const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
   const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
   const notAsked = units.filter((unit) => !asked.has(unit.id));
-  return { latestDecline, candidates: deriveTopCompatibleWards(movement, notAsked, PARALLEL_REFERRAL_CAP, now) };
+  return { latestDecline, candidates: eligibleWardsInFixedOrder(movement, notAsked, now) };
 }

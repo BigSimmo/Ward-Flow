@@ -122,6 +122,24 @@ describe("canonical placement actions", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  // Audit 1, Josh 20 Oct (CS-03, WP-05): the phone sheet starts with no ward picked.
+  it("starts the phone sheet with no ward picked and Accept waiting for a choice", () => {
+    const dispatch = renderReferral(true);
+    const accept = screen.getByTestId("ward-referral-match-phone-accept");
+    expect(accept).toHaveTextContent("Choose a ward first");
+    expect(accept).toHaveAccessibleDescription("Choose a ward first.");
+    expect(screen.queryByText(/^Accept at /u)).toBeNull();
+    const radios = screen.getAllByRole("radio");
+    expect(radios.length).toBeGreaterThan(0);
+    expect(radios.every((radio) => radio.getAttribute("aria-checked") === "false")).toBe(true);
+    fireEvent.click(accept);
+    expect(dispatch).not.toHaveBeenCalled();
+
+    fireEvent.click(radios[0]!);
+    expect(radios[0]).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("ward-referral-match-phone-accept")).toHaveTextContent(/^Accept at /u);
+  });
+
   it("keeps a blocked Pull focusable and explains actual bed availability", () => {
     const { onPullPatient, dispatch, unit } = renderPull(false);
     const pull = screen.getByRole("button", { name: "Pull a bed" });

@@ -395,7 +395,8 @@ describe("the Movements screen", () => {
    * sentence covering three orderings is only honest if all three apply it, which is why
    * `byLongestWait` carries the same rule rather than sorting on wait alone.
    */
-  it("preserves the legal-priority movement at the front of the waiting order", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6c): a passed legal deadline no longer moves its row to the front.
+  it("keeps the waiting order by wait alone, whatever a legal deadline says", () => {
     const urgent = wardMovements.find((movement) => isOpen(movement) && movement.legalForm?.dueAt !== undefined)!;
     expect(urgent).toBeDefined();
     const original = urgent.legalForm;
@@ -405,7 +406,16 @@ describe("the Movements screen", () => {
       const board = screen.getByRole("region", { name: "Movement worklist" });
       fireEvent.click(within(board).getByRole("radio", { name: "By how long it has waited" }));
       const rows = board.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]");
-      expect(rows[0].getAttribute("data-record-key")).toBe(urgent.id);
+      const keys = [...rows].map((row) => row.getAttribute("data-record-key")!);
+      const byId = new Map<string, (typeof wardMovements)[number]>(
+        wardMovements.map((movement) => [movement.id, movement]),
+      );
+      const openedAts = keys
+        .map((key) => byId.get(key))
+        .filter((m) => m && isOpen(m))
+        .map((m) => m!.openedAt);
+      expect(openedAts.length).toBeGreaterThan(1);
+      expect(openedAts, "open rows are not longest wait first").toEqual([...openedAts].sort((a, b) => a - b));
     } finally {
       urgent.legalForm = original;
     }

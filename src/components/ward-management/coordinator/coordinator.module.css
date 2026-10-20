@@ -1133,12 +1133,11 @@
 /*
  * Review ruling 5: an accepted destination, an outstanding referral, and a merely-suggested
  * candidate are three different facts a coordinator acts on differently, so each gets its own
- * badge rather than one conflated "destination" field. The suggested badge is deliberately never
- * accent- or success-toned — it is a computed guess, not a recommendation, and reads as neutral.
+ * badge rather than one conflated "destination" field. The old "Suggested destination" badge was
+ * removed with the suggestion itself (Audit 1, Josh 20 Oct, D-71).
  */
 .shortlistAcceptedBadge,
 .shortlistReferredBadge,
-.shortlistSuggestedBadge,
 .shortlistUnresolvedBadge {
   justify-self: start;
   border-radius: var(--wf-r-tag);
@@ -1155,12 +1154,6 @@
 .shortlistReferredBadge {
   background: var(--warn-soft);
   color: var(--ink);
-}
-
-.shortlistSuggestedBadge {
-  border: 0.0625rem dashed var(--line-strong);
-  background: var(--sunk);
-  color: var(--muted);
 }
 
 .shortlistUnresolvedBadge {
@@ -2191,12 +2184,9 @@
    * in that list.
    *
    * THE ORDER SURVIVES ON THE PAGE, and it did not need a rank column invented for it. `queueOrder`
-   * (`ward-priority.ts`) sorts by the urgent flag, then `urgency` ascending, then — as of item 37,
-   * 2026-09-17 — the wait itself, uncapped (no longer `operationalScore`). The tier pill still
-   * carries its own direction from `urgencyTierLabel` ("Tier 1 · most urgent"), and the elapsed
-   * wait prints beside it in the same row. The operational score still prints too ("Operational
-   * 87"), but only as a factor breakdown ("The factors below explain a wait; they do not order
-   * the queue") — it is no longer one of the keys a reader is checking the order against. Position
+   * (`ward-priority.ts`) is wait order only since Audit 1 (Josh 20 Oct, D-71): flags and tiers
+   * highlight a row and never move it. The tier pill carries its own label from `urgencyTierLabel`,
+   * and the elapsed wait prints beside it in the same row. Position
    * is not the only signal here, so nothing had to be added to make it legible — the rows only had
    * to be allowed to print.
    * ---------------------------------------------------------------------- */
@@ -2351,10 +2341,9 @@
    * subordinate to the legal-status line above it. Measured on WF-006 ("Accepted destination:
    * RGH Adult Secure") and WF-017 ("Parallel referral: BTY Adult Secure").
    *
-   * `.shortlistSuggestedBadge` and `.shortlistUnresolvedBadge` are deliberately left alone: both
-   * carry a dashed border of their own, which survives inking, so their padding is still the
-   * inside of a visible box rather than a phantom indent — visible on WF-009's "No eligible
-   * destination found yet." and WF-315's suggestion.
+   * `.shortlistUnresolvedBadge` is deliberately left alone: it carries a dashed border of its
+   * own, which survives inking, so its padding is still the inside of a visible box rather than a
+   * phantom indent — visible on WF-009's "No eligible destination found yet."
    */
   .shortlistHeader .shortlistAcceptedBadge,
   .shortlistHeader .shortlistReferredBadge {

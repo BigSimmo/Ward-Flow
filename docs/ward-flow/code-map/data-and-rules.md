@@ -353,10 +353,10 @@ capacity figure anywhere in this group is real.
   `duplicateCandidates`, `patientDisplayName`, `patientAgeYears`, `patientCohort`,
   `matchDateOfBirth`.
 - **`src/components/ward-management/ward-priority.ts`** (273 lines, 21 importers) — The movement
-  operational-priority score and queue order. `FORM_TIMING_FACTOR_LABEL` is exported so
+  wait-order queue and plain wait reasons (no points, D-71). `FORM_TIMING_FACTOR_LABEL` is exported so
   `priority-queue.tsx` matches the legal-form-due-time factor by constant rather than by a second
-  copy of the label string. Key exports: `operationalScore`, `queueOrder`, `urgencyTierLabel`,
-  `isFlaggedUrgent`, `ScoreFactor`.
+  copy of the label string. Key exports: `waitFactors`, `queueOrder`, `urgencyTierLabel`,
+  `isFlaggedUrgent`, `WaitFactor`.
 - **`src/components/ward-management/ward-diagnosis.ts`** (99 lines, 12 importers) — The tentative
   ICD-10-AM Chapter V diagnosis-block vocabulary (11 blocks or none), added after the owner's
   2026-08-29 reversal of the previous no-diagnosis rule. Deliberately holds no knowledge of what

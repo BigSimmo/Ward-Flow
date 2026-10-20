@@ -8,7 +8,6 @@ import {
   eligibleCandidatesAmong,
   INFORMATIONAL_GATES,
   isOpen,
-  restrictionNotice,
   transportLeg,
   unitCapacity,
 } from "../src/components/ward-management/ward-derivations";
@@ -22,7 +21,7 @@ import {
   type TransportJob,
 } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
-import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
 function transportJob(overrides: Partial<TransportJob> = {}): TransportJob {
   return {
@@ -392,50 +391,31 @@ describe("eligibleCandidatesAmong", () => {
     expect(exhausted?.verdict.eligible).toBe(false);
   });
 
-  // Fix round 1, Finding 2. The two-pass truncate-then-reorder fix only had incidental coverage
-  // before this: one Playwright assertion on one unit name for one movement, and the vitest
-  // contract test that also exercises this function calls it with `Number.POSITIVE_INFINITY`, so
-  // truncation never engages there at all. This pins the actual invariant directly, against the
-  // real fixture: reordering by restrictiveness must never change WHICH candidates are in the
-  // top-`PARALLEL_REFERRAL_CAP` cut, only their order within it. Restoring the original one-pass
-  // version (reorder-then-truncate) turns this red — see the task report for the captured output.
-  //
-  // The "expected" set below is deliberately reimplemented from `allUnits()`/`eligibility()`
-  // directly, never derived by calling `eligibleCandidatesAmong(..., Infinity)` — an Infinity call
-  // still runs the function's OWN second (restriction-reorder) pass over the whole cohort, which
-  // would make the oracle circular: re-sorting that already-reordered array by eligibility alone
-  // does not recover the raw `allUnits()`-order tie-break, so slicing it would silently compare
-  // the implementation against a copy of itself instead of an independent ground truth.
-  it("reorders by restrictiveness within the eligible-first cut without ever changing which candidates are in it", () => {
+  // Audit 1, Josh 20 Oct (NB-4): eligible first, then a fixed neutral order (health service, then
+  // ward name), then the cut. The "least restrictive first" reorder is gone. The expected order is
+  // rebuilt here from `allUnits()` and `eligibility()` directly, never from the function itself.
+  it("orders eligible first, then by health service and ward name, before the cut", () => {
     const CAP = PARALLEL_REFERRAL_CAP;
-    let provedAMixedReorder = false;
-
+    const service = (unit: { siteCode: string }) => siteByCode(unit.siteCode)?.service ?? "";
+    let checked = 0;
     for (const movement of wardMovements) {
       const cohortUnits = allUnits().filter((unit) => unit.cohort === movement.cohort);
-      if (cohortUnits.length <= CAP) continue; // truncation never engages for this movement
-
-      const eligibleFirstOnly = cohortUnits
+      if (cohortUnits.length <= CAP) continue;
+      const expected = cohortUnits
         .map((unit) => ({ unit, verdict: eligibility(movement, unit, NOW_ANCHOR) }))
-        .sort((a, b) => Number(b.verdict.eligible) - Number(a.verdict.eligible))
-        .slice(0, CAP);
-
-      const capped = eligibleCandidatesAmong(movement, allUnits(), NOW_ANCHOR, CAP);
-      const cappedIds = new Set(capped.map((candidate) => candidate.unit.id));
-      const expectedIds = new Set(eligibleFirstOnly.map((candidate) => candidate.unit.id));
-      expect(cappedIds, `${movement.id}: top-${CAP} membership must match the eligible-first cut`).toEqual(expectedIds);
-
-      // Only counts as proof of the REORDER (not just the slice) if this movement's cut actually
-      // mixes a restricted and an unrestricted candidate — otherwise the second sort pass is a
-      // no-op for this movement and it proves nothing about reordering, only about truncation.
-      const anyRestricted = capped.some((candidate) => restrictionNotice(movement, candidate.unit) !== undefined);
-      const anyUnrestricted = capped.some((candidate) => restrictionNotice(movement, candidate.unit) === undefined);
-      if (anyRestricted && anyUnrestricted) provedAMixedReorder = true;
+        .sort(
+          (a, b) =>
+            Number(b.verdict.eligible) - Number(a.verdict.eligible) ||
+            service(a.unit).localeCompare(service(b.unit)) ||
+            a.unit.name.localeCompare(b.unit.name),
+        )
+        .slice(0, CAP)
+        .map((candidate) => candidate.unit.id);
+      const capped = eligibleCandidatesAmong(movement, allUnits(), NOW_ANCHOR, CAP).map((c) => c.unit.id);
+      expect(capped, movement.id).toEqual(expected);
+      checked += 1;
     }
-
-    expect(
-      provedAMixedReorder,
-      "fixture assumption: at least one movement's top-N cut mixes restricted and unrestricted candidates",
-    ).toBe(true);
+    expect(checked, "no movement's cohort was larger than the cut, so this proves nothing").toBeGreaterThan(0);
   });
 });
 

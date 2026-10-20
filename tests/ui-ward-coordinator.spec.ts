@@ -221,7 +221,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).toBeVisible();
 
     // Home direction A (Josh, 10 Oct 2026): at rest on desktop, Placement previews the top of the
-    // queue, labelled "Top of queue", with no row pressed. Selecting a row makes it the subject.
+    // queue, labelled as first in the list (not a recommendation), with no row pressed.
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
     const firstRow = rows.first();
     const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
@@ -360,7 +360,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).toBeInViewport();
   });
 
-  test("orders by clinical tier first and labels the score as operational, not clinical", async ({ page }) => {
+  test("orders by longest wait only and shows no score", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
@@ -378,28 +378,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(rowCount).toBeGreaterThan(0);
     expect(tiers).toHaveLength(rowCount);
 
-    // D-32 on Home (decision 4, site review 12 Oct 2026): the flag leads, act-now rows are pinned
-    // under it (`data-pinned`), then every other row is longest wait first with the tier breaking a
-    // tie. So among rows that are neither flagged nor pinned, the wait must be non-increasing.
-    const rowKeys = await rows.evaluateAll((nodes) =>
-      nodes.map((node) => ({
-        tier: Number(node.querySelector("[data-tier]")?.getAttribute("data-tier")),
-        wait: Number(node.getAttribute("data-wait")),
-        flagged: node.querySelector('[data-testid^="ward-queue-flag-"]') !== null,
-        pinned: node.getAttribute("data-pinned") === "true",
-      })),
-    );
-    const rest = rowKeys.filter((row) => !row.flagged && !row.pinned);
-    expect(rest.length, "the fixture must still hold unflagged, unpinned rows to order").toBeGreaterThan(1);
-    for (let i = 1; i < rest.length; i++) {
-      const prev = rest[i - 1];
-      const curr = rest[i];
-      expect(
-        curr.wait,
-        `row ${i} (wait ${curr.wait}) must not have waited longer than row ${i - 1} (wait ${prev.wait})`,
-      ).toBeLessThanOrEqual(prev.wait);
-      if (curr.wait === prev.wait) expect(curr.tier).toBeGreaterThanOrEqual(prev.tier);
+    // Audit 1, Josh 20 Oct (CS-04), superseding D-32: every row is longest wait first. Flags,
+    // act-now marks and tiers are badges and do not move a row. No row carries a score.
+    const waits = await rows.evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-wait"))));
+    expect(waits.length).toBeGreaterThan(1);
+    for (let i = 1; i < waits.length; i++) {
+      expect(waits[i], `row ${i} must not have waited longer than row ${i - 1}`).toBeLessThanOrEqual(waits[i - 1]);
     }
+    await expect(queue.locator("[data-score]")).toHaveCount(0);
 
     // The score must never read as clinical severity, and the "Operational" leftover is gone (U3).
     await expect(queue).not.toContainText("Operational");
