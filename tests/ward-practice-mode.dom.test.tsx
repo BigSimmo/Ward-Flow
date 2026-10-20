@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardPracticeMode } from "@/components/ward-management/demo-reset/ward-practice-mode";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -45,6 +47,20 @@ afterEach(() => {
   if (stop) act(() => fireEvent.click(stop));
 });
 
+describe("practice mode visibility", () => {
+  it("shows even when the one tap demo reset is off, as on the live site (Josh, 20 Oct 2026)", () => {
+    act(() => setWardFeatureFlagOnDevice("demo-reset", false));
+    try {
+      renderPractice();
+      expect(screen.getByTestId("ward-practice-mode")).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId("ward-practice-start"));
+      expect(screen.getByTestId("ward-practice-steps")).toBeInTheDocument();
+    } finally {
+      act(() => setWardFeatureFlagOnDevice("demo-reset", null));
+    }
+  });
+});
+
 describe("practice mode session", () => {
   it("keeps running when Tools closes and opens again", () => {
     const { show } = renderPractice();
@@ -72,5 +88,14 @@ describe("practice mode session", () => {
     expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
     expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
     show(true);
+  });
+
+  it("ends when the person signs out, so the next person sees Start practice", () => {
+    renderPractice();
+    fireEvent.click(screen.getByTestId("ward-practice-start"));
+    expect(screen.getByTestId("ward-practice-steps")).toBeInTheDocument();
+    act(() => endWardFlowBrowserSession());
+    expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
+    expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
   });
 });

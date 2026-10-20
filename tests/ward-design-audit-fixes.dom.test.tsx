@@ -68,4 +68,28 @@ describe("departure confirmation (DA-08)", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByTestId("ward-board-confirm-identity").textContent).toMatch(/^Check: .+ · .+/u);
   });
+
+  it("shows the same second identifier on the emergency department transfer confirm", () => {
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <WardBoard unitId="arm-adult-open" requireConfirmation={true} />
+      </WardFlowProvider>,
+    );
+    const beds = screen.getByTestId("ward-board-beds");
+    const occupied = within(beds)
+      .getAllByRole("listitem")
+      .filter((tile) => tile.getAttribute("data-bed-kind") === "occupied");
+    // Open occupied beds until one offers the ED transfer (one already away at ED does not).
+    let away: HTMLElement | null = null;
+    for (const tile of occupied) {
+      fireEvent.click(within(tile).getByRole("button"));
+      away = screen.queryByTestId("ward-board-record-away-submit");
+      if (away) break;
+    }
+    expect(away, "the seed must offer an ED transfer on this ward").not.toBeNull();
+    fireEvent.click(away!);
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/has gone to an emergency/u)).toBeInTheDocument();
+    expect(within(dialog).getByTestId("ward-board-confirm-identity").textContent).toMatch(/^Check: .+ · .+/u);
+  });
 });
