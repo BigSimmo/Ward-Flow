@@ -28,6 +28,14 @@ export type DischargeCriteriaUpdate = {
   tick?: { criterion: string; met: boolean };
 };
 
+/** The one-line reason the bed panel shows when criteria cannot be set for this patient. */
+const INELIGIBLE_SHORT: Record<CriteriaEligibility, string> = {
+  voluntary: "",
+  not_recorded: "Not available until legal status is recorded as voluntary.",
+  involuntary: "Not available. Voluntary patients only.",
+  cto: "Not available on a community treatment order.",
+};
+
 /**
  * Criteria led discharge on the bed panel's Plan to leave tab (Top 25 item 9, D-60, flag
  * `top25-criteria-led-discharge`). The ward records the criteria the treating psychiatrist set,
@@ -124,6 +132,16 @@ export function WardDischargeCriteriaCard({
       tick: { criterion, met },
     });
   };
+
+  // Nothing to set or tick: one line saying why, not a whole card. The rule itself is unchanged.
+  if (status.kind === "none" && ineligible !== null) {
+    return (
+      <p className={styles.compact} data-testid="ward-drawer-discharge-criteria">
+        <span className={styles.compactLabel}>Criteria led discharge</span>
+        <span data-testid="ward-drawer-criteria-status">{INELIGIBLE_SHORT[eligibility]}</span>
+      </p>
+    );
+  }
 
   return (
     <section className={drawerStyles.card} data-testid="ward-drawer-discharge-criteria">
