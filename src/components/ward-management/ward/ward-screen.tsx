@@ -62,6 +62,7 @@ import {
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import {
   focusWardArrival,
+  newWardMovementRefusal,
   useWardCommandCompletion,
   wardCommandFailure,
   wardCommandRefusal,
@@ -819,13 +820,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const check = movementCheckRef.current;
     if (checkToken === 0) return;
     if (!check) {
-      if (rejections.length > priorRejectionCountRef.current) {
-        setLastActionRejection(rejections[rejections.length - 1]);
-        priorRejectionCountRef.current = rejections.length;
-      }
+      const own = newWardMovementRefusal(rejections, priorRejectionCountRef.current);
+      priorRejectionCountRef.current = rejections.length;
+      if (own) setLastActionRejection(own);
       return;
     }
     movementCheckRef.current = null;
+    priorRejectionCountRef.current = rejections.length;
     if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
     const failure = wardCommandFailure(check.outcome);
     if (failure && check.outcome?.status !== "refused") {

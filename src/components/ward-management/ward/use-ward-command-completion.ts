@@ -36,6 +36,16 @@ export type WardMovementCheck = {
   undo?: { movementId: string; unitId: string };
 };
 
+/** The Ward flow list's own commands, the only refusals its movement rows show (review: gitar). */
+const WARD_MOVEMENT_ATTEMPTS = new Set(["ACCEPT_IN_PRINCIPLE", "PULL_PATIENT", "RELEASE_HELD_BED"]);
+
+/** The newest accept, pull or release refusal since `prior`; any other refusal is not this list's. */
+export function newWardMovementRefusal(rejections: readonly Rejection[], prior: number): Rejection | undefined {
+  for (let i = rejections.length - 1; i >= Math.max(0, prior); i -= 1)
+    if (WARD_MOVEMENT_ATTEMPTS.has(rejections[i].attempted)) return rejections[i];
+  return undefined;
+}
+
 /** A toast's Undo is withdrawn once its step is no longer current or no longer undoable. */
 export function wardUndoBlocked(outcome: WardCommandOutcome | undefined, say: (message: string) => void): boolean {
   if (!(outcome?.isCurrent && !outcome.isCurrent()) && !(outcome?.canUndo && !outcome.canUndo())) return false;
