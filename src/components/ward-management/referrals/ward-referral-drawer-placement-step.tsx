@@ -25,6 +25,71 @@ import {
 } from "./referral-submission";
 import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import {
+  HOME_REGIONS,
+  type Cohort,
+  type Referral,
+  type Unit,
+  type WardReferralDestination,
+} from "@/components/ward-management/ward-model";
+import { referralEligibility } from "@/components/ward-management/ward-eligibility";
+import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { wardReferralDestinations } from "./ward-referral-drawer-model";
+
+/**
+ * Audit 1 (CS-06, Josh 20 Oct): the engine's own referral check for one listed ward, in plain words,
+ * so the list never says "Bed ready" for a ward that will refuse this person. `undefined` when no
+ * suitability gate fails. The ready count and the confirmed time say capacity and freshness, so
+ * neither is repeated here. The probe is a question about a bed, never stored, as in
+ * `referral-destination-options.ts`.
+ */
+export function wardRefusalWords(
+  unit: Unit,
+  ward: WardReferralDestination,
+  ageBand: Cohort,
+  now: Instant,
+): string | undefined {
+  const probe: Referral = {
+    id: "drawer-ward-probe",
+    destinations: [{ destination: ward, state: "queued" }],
+    ageBand,
+    homeRegion: HOME_REGIONS[0],
+    suburb: { kind: "named", name: "Armadale" },
+    source: "community",
+    raisedAt: now,
+    urgency: 2,
+    originSiteCode: "",
+    transportNeeded: false,
+    history: "",
+  };
+  const failed = referralEligibility(probe, ward, unit, now).gates.find((gate) => !gate.pass);
+  const designation = unit.sexDesignation === "Female only" ? "Female-only ward" : "Male-only ward";
+  switch (failed?.gate) {
+    case "age":
+      return `${unit.cohort} ward`;
+    case "legal_status":
+      return "Not set up for involuntary admissions";
+    case "gender_designation":
+      return ward.gender === "Female" || ward.gender === "Male"
+        ? designation
+        : `${designation}; gender not recorded as female or male`;
+    case "forensic":
+      return "Forensic ward, not offered";
+    case "security":
+      return "No locked bed free";
+    case "sex_mix":
+      return "No same-sex patients and only one bed ready";
+    default:
+      return undefined;
+  }
+}
+
+/** CS-10: when the ward last confirmed its count, by the Capacity screen's freshness rule. */
+function confirmedWords(unit: Unit, now: Instant): string {
+  const at = formatInstantWithDay(unit.allocatable.confirmedAt, now);
+  return isConfirmationFresh(unit, now) ? `confirmed ${at}` : `not confirmed since ${at}`;
+}
 
 /** Step 3, Clearance or Documents: the ward clearance checklist and the documentation panel. */
 export function ReferralDocumentationStep({ s }: { s: WardReferralDrawerState }) {
@@ -113,7 +178,20 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     selectedDestinations,
     recipientLabels,
     clearance,
+    units,
+    referralSex,
+    referralGender,
+    legalStatus,
+    highAcuity,
   } = s;
+  // The person's own needs, as the send will carry them, for the engine's check on each ward.
+  const [needs] = wardReferralDestinations([""], {
+    sex: referralSex,
+    gender: referralGender,
+    security,
+    legalStatus,
+    highAcuity,
+  });
   return (
     <div
       id={`${sectionId}-placement`}
@@ -166,6 +244,12 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
             <div role="list" aria-label="Placement Destination Options">
               {realTimeMatch.sortedUnits.map((unit) => {
                 const selected = selectedUnitIds.includes(unit.unitId);
+                const model = units.find((candidate) => candidate.id === unit.unitId);
+                const cohort = effectiveCohort || undefined;
+                const refusal =
+                  model && needs && cohort
+                    ? wardRefusalWords(model, { ...needs, unitId: model.id }, cohort, now)
+                    : undefined;
                 const inCatchment =
                   catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;
                 const waiting =
@@ -207,10 +291,14 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                         <strong>{unit.name}</strong> <span className={styles.wardHospital}>{unit.hospital}</span>
                       </span>
                       <span className={styles.wardMeta}>
-                        <span className={styles.fit} data-fit={unit.readyBeds > 0 ? "bed" : "none"}>
-                          <StatusGlyph tone={unit.readyBeds > 0 ? "success" : "warning"} size={9} />
-                          {unit.readyBeds > 0 ? "Bed ready" : "No bed now"}
+                        {/* Audit 1 (CS-06, Josh 20 Oct): green only when the engine's own check passes;
+                                        a refusal is said in words, and the ward stays listed. */}
+                        <span className={styles.fit} data-fit={unit.readyBeds > 0 && !refusal ? "bed" : "none"}>
+                          <StatusGlyph tone={unit.readyBeds > 0 && !refusal ? "success" : "warning"} size={9} />
+                          {refusal ?? (unit.readyBeds > 0 ? "Bed ready" : "No bed now")}
                         </span>
+                        {/* CS-10: the count's age, by the Capacity screen's freshness rule. */}
+                        {model ? ` · ${confirmedWords(model, now)}` : null}
                         {/* Audit round 2 (A2-7): once the catchment is confirmed this never
                                         says "not confirmed". With no service area given there is no
                                         match to show, so the part is left out. */}

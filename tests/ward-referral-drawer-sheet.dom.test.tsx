@@ -354,6 +354,23 @@ describe("owner pins carried over from the retired full-page form", () => {
     }
   });
 
+  it("lists every ward in a fixed order and says in words why one will refuse (Audit 1, CS-06)", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Wards" }));
+    const rows = within(screen.getByRole("list", { name: "Placement Destination Options" })).getAllByRole("listitem");
+    const text = rows.map((row) => row.textContent ?? "");
+    // WF-009's person needs an involuntary bed; SJGS is not set up for one, so it is not "Bed ready".
+    const sjgs = text.find((row) => row.includes("sjgs-adult-secure"))!;
+    expect(sjgs).toContain("Not set up for involuntary admissions");
+    expect(sjgs).not.toContain("Bed ready");
+    // Every count says how fresh it is, and the order is by health service, never by beds or catchment.
+    for (const row of text) expect(row).toMatch(/confirmed \d{2}:\d{2}/);
+    const services = text.map(
+      (row) => / · (North Metro|South Metro|East Metro|WACHS|CAHS|Private) · /.exec(row)?.[1] ?? "",
+    );
+    expect(services).toEqual([...services].sort((a, b) => a.localeCompare(b)));
+  });
+
   it("caps the wards chosen and says choose up to the cap", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
@@ -393,7 +410,10 @@ describe("referral letter text", () => {
 
   it("builds an ISBAR note with the send and due times, never the referral number", () => {
     const text = referralIsbarText(input, { referralId: "RF-024", sentAt: "10:47", decisionDue: "14:47" });
-    expect(text.split("\n").map((line) => line.slice(0, 2))).toEqual(["I:", "S:", "B:", "A:", "R:"]);
+    // Audit 1 (CS-12): the synthetic line comes first in every copy.
+    const [first, ...isbar] = text.split("\n");
+    expect(first).toBe("Synthetic prototype.");
+    expect(isbar.map((line) => line.slice(0, 2))).toEqual(["I:", "S:", "B:", "A:", "R:"]);
     expect(text).toContain("Referral sent 10:47");
     expect(text).not.toContain("RF-024");
     expect(text).toContain("Decision due 14:47.");

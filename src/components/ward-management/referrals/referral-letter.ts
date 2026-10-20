@@ -32,6 +32,12 @@ export type ReferralTextInput = {
 
 const NOT_RECORDED = "Not recorded";
 
+/**
+ * The first line of every text Ward Flow puts on the clipboard (Audit 1, CS-12, Josh 20 Oct), so a
+ * pasted copy always says it came from the prototype. The letter's own header words.
+ */
+export const SYNTHETIC_COPY_LINE = "Synthetic prototype.";
+
 function value(text: string): string {
   return text.trim() || NOT_RECORDED;
 }
@@ -41,7 +47,7 @@ export function referralLetterText(input: ReferralTextInput, draftedAt: string):
   const referrer = [input.referrer.name, input.referrer.role, input.referrer.phone].map((part) => part.trim());
   return [
     `Mental health referral to ${input.destinationPhrase}`,
-    `Synthetic prototype. Draft ${draftedAt} AWST.`,
+    `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} AWST.`,
     "",
     "PERSON",
     `Name: ${value(input.patientName)}`,
@@ -74,6 +80,7 @@ export function referralIsbarText(
 ): string {
   const to = input.recipients.length ? input.recipients.join(" and ") : NOT_RECORDED;
   return [
+    SYNTHETIC_COPY_LINE,
     `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. Referral sent ${sent.sentAt} to ${to}.`,
     `S: ${value(input.urgency)}. ${value(input.legalStatus)}.`,
     `B: ${value(input.history)}`,

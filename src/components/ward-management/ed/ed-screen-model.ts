@@ -779,6 +779,7 @@ export type EdStepEvent = Extract<
       | "RECORD_EXAMINATION"
       | "RECORD_MEDICAL_CLEARANCE"
       | "RECORD_TRANSPORT_NEED"
+      | "RECORD_LEGAL_FORM_RECEIVED"
       | "HANDOVER_READY";
   }
 >;
@@ -794,6 +795,8 @@ export function edStepSaid(event: EdStepEvent): string {
       return event.cleared ? "Recorded medically cleared" : "Recorded not medically cleared";
     case "RECORD_TRANSPORT_NEED":
       return event.needed ? "Recorded: transport needed" : "Recorded: no transport needed";
+    case "RECORD_LEGAL_FORM_RECEIVED":
+      return "Recorded Form 1A received";
     case "HANDOVER_READY":
       return "Marked handover ready";
   }

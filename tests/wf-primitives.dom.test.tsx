@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { MoreHorizontal } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 
+import { publishLiveRefresh } from "@/components/wf/live";
 import {
   BarList,
   Button,
@@ -229,6 +230,23 @@ describe("LiveChip", () => {
     expect(screen.getByRole("button", { name: "Paused, pause demo updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} />);
     expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+  });
+
+  it("reads Stale while the shared refresh is failing or older than allowed (Audit 1, CS-13)", () => {
+    const receivedAt = new Date("2026-10-07T10:26:00+08:00").getTime();
+    try {
+      act(() => publishLiveRefresh({ unavailable: true, receivedAt }));
+      const { rerender } = render(<LiveChip state="live" />);
+      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+      act(() => publishLiveRefresh({ unavailable: false, receivedAt, staleAfterMs: 6000 }));
+      rerender(<LiveChip state="live" />);
+      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+      act(() => publishLiveRefresh({ unavailable: false, receivedAt: Date.now(), staleAfterMs: 60 * 60_000 }));
+      rerender(<LiveChip state="live" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
+    } finally {
+      act(() => publishLiveRefresh(undefined));
+    }
   });
 });
 

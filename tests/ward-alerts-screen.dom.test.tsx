@@ -346,3 +346,12 @@ describe("Escalate only applies to a bed search that is really exhausted (PR #34
     expect(escalationAppliesTo(noBedRow(wf308.id), undefined, units, NOW)).toBe(false);
   });
 });
+
+describe("Audit 1 (CS-15): the alert nobody chose says it is first in line", () => {
+  it("labels the first-in-line alert until one is chosen", () => {
+    renderScreen();
+    expect(screen.getByTestId("ward-alerts-first-in-line")).toHaveTextContent("First in line, not chosen yet");
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open").at(-1)!);
+    expect(screen.queryByTestId("ward-alerts-first-in-line")).not.toBeInTheDocument();
+  });
+});

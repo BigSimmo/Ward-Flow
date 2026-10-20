@@ -147,7 +147,11 @@ export function EdScreen({ edId }: EdScreenProps) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {
       success: edStepSaid(event),
-      undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, ...subject }),
+      // Audit 1 CS-07: a Form 1A receipt is taken back by the legal form undo, as on Legal forms.
+      undo: (at) =>
+        event.type === "RECORD_LEGAL_FORM_RECEIVED"
+          ? { type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: event.movementId }
+          : { type: "UNDO_ED_STEP", role: "ed", now: at, ...subject },
       undone: "Undone. Back as it was.",
     });
   }

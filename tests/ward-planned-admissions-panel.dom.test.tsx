@@ -132,6 +132,10 @@ describe("planned admissions panel", () => {
   it("cancels a booking with a listed reason, and records an arrival", () => {
     renderPanel();
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-01")).getByRole("button", { name: "Cancel" }));
+    // Audit 1 (WP-12): no reason is chosen for the coordinator, and Cancel booking waits for one.
+    expect(screen.getByTestId("ward-planned-cancel-reason")).toHaveValue("");
+    fireEvent.click(screen.getByTestId("ward-planned-cancel-confirm"));
+    expect(screen.getByTestId("ward-planned-PA-SEED-01")).toBeInTheDocument();
     fireEvent.change(screen.getByTestId("ward-planned-cancel-reason"), { target: { value: "rebooked" } });
     fireEvent.click(screen.getByTestId("ward-planned-cancel-confirm"));
     expect(screen.queryByTestId("ward-planned-PA-SEED-01")).toBeNull();
