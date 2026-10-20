@@ -33,7 +33,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 
 - **Browser:** Chromium-based browser (Chrome, Edge) maximized at 1920x1080 resolution (100% zoom).
 - **Environment:** Local Next.js runtime (`npm run ensure`) at verified local port.
-- **Scenario Fixture:** Defaulting to `EMHS demo` or `Standard night` scenario (`NOW_ANCHOR = 10:42` / Synthetic Day: `15 Aug 2026`).
+- **Scenario Fixture:** Defaulting to `EMHS demo` or `Standard day` scenario (id `standard`) (`NOW_ANCHOR = 10:42` / Synthetic Day: `15 Aug 2026`).
 - **Watermark Check:** Verify that the high-contrast `SYNTHETIC PROTOTYPE ONLY · NOT A MEDICAL DEVICE` disclosure banner is visible in the application footer.
 - **Audio / Visual:** High-definition presentation display; presenter microphone calibrated for warm, calm, authoritative delivery.
 
