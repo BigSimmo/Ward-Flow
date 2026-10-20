@@ -344,7 +344,7 @@ describe("shortlistCandidates — a closed ward is not offered", () => {
   });
 });
 
-describe("a closed ward on Home: never a fit, never a best fit", () => {
+describe("a closed ward on Home: never a fit", () => {
   const eligibleOpen = all.find(
     (c) => c.availability === "eligible" && !c.unit.isClosed && c.unit.cohort === movement.cohort,
   );
@@ -364,7 +364,7 @@ describe("a closed ward on Home: never a fit, never a best fit", () => {
     expect(fitKind(closed, movement)).toBe("no");
   });
 
-  it("is not eligible in the routed shortlist the Home best fit reads", () => {
+  it("is not eligible in the routed shortlist Home reads", () => {
     const routed = eligibleCandidatesAmong(movement, closedUnits, NOW, closedUnits.length);
     const closed = routed.find((c) => c.unit.id === eligibleOpen!.unit.id)!;
     expect(closed.unit.allocatable.value, "still has allocatable beds, so only closure explains it").toBeGreaterThan(0);
