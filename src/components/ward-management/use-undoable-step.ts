@@ -6,6 +6,7 @@ import { useToast, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
+import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -37,6 +38,8 @@ type Pending = {
   undo?: (now: Instant) => WardFlowEvent;
   /** What the toast says once the undo is accepted. */
   undone?: string;
+  /** A refusal is already said inline by the page; see `UndoableStep.refusalShownInline`. */
+  refusalShownInline?: boolean;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
   /**
@@ -61,10 +64,18 @@ export type UndoableStep = {
   undo?: (now: Instant) => WardFlowEvent;
   /** The toast's title once the undo is accepted. Defaults to "Undone. Back as it was." */
   undone?: string;
+  /**
+   * The page already says a refusal beside the control that raised it (from `rejections`), so the
+   * toast stays silent for a refusal that reached `rejections`. A refusal known only from the
+   * command outcome, and an unconfirmed save, are still said, because nothing inline covers them.
+   */
+  refusalShownInline?: boolean;
 };
 
 export type UndoableStepOptions = {
   dispatch: WardCommandDispatch;
+  /** Require an explicit command outcome; false retains older local-adapter behaviour. */
+  requireConfirmation?: boolean;
   rejections: readonly Rejection[];
   now: Instant;
   /** The route's role: the toast's Undo is greyed with its reason like any other control. */
@@ -86,6 +97,7 @@ export type UndoableStepOptions = {
  */
 export function useUndoableStep({
   dispatch,
+  requireConfirmation = false,
   rejections,
   now,
   routeRole,
@@ -129,6 +141,10 @@ export function useUndoableStep({
           ? rejections[rejections.length - 1]
           : undefined;
       if (pending.outcome && pending.outcome.status !== "accepted") {
+        // Only when the refusal also reached `rejections`, which is what the inline surface reads;
+        // a refusal known only from the command outcome (shared mode) is still said here.
+        if (pending.outcome.status === "refused" && pending.refusalShownInline && rejections.length > pending.prior)
+          continue;
         const said =
           pending.outcome.status === "refused"
             ? `Not recorded: ${sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused.")}`
@@ -138,6 +154,7 @@ export function useUndoableStep({
         continue;
       }
       if (refused) {
+        if (pending.refusalShownInline) continue;
         const said = `Not recorded: ${sayRefusal ? sayRefusal(refused.reason) : refused.reason}. Nothing was changed.`;
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said);
@@ -218,7 +235,18 @@ export function useUndoableStep({
   }, [token, rejections]);
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {
-    const completion = record ? record() : dispatch(event);
+    let result: ReturnType<WardCommandDispatch>;
+    try {
+      result = record ? record() : dispatch(event);
+    } catch {
+      // A synchronous throw takes the same failed-outcome path as a rejected completion.
+      result = {
+        commandId: "",
+        status: "failed",
+        message: "Save is not confirmed. Review the board before trying again.",
+      };
+    }
+    const completion = requireConfirmation ? confirmedWardCommand(result) : result;
     if (completion && "then" in completion) {
       void completion
         .then((outcome) => {
@@ -263,9 +291,13 @@ export function useUndoableStep({
     },
     /** Offers Undo for a step another component on the page has already recorded. */
     offer(step: UndoableStep, options?: { guard?: boolean; completion?: ReturnType<WardCommandDispatch> }) {
-      if (options?.completion) {
+      if (options?.completion || requireConfirmation) {
         const offered = step.undo?.(nowRef.current);
-        submit(offered!, { prior: rejectionCountRef.current, ...step, guard: options.guard }, () => options.completion);
+        submit(
+          offered!,
+          { prior: rejectionCountRef.current, ...step, guard: options?.guard },
+          () => options?.completion,
+        );
       } else {
         pendingRef.current.push({ prior: rejectionCountRef.current, ...step, guard: options?.guard });
         setToken((value) => value + 1);

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -136,7 +136,16 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
         </OverrideDayZero>
       </WardFlowProvider>,
     );
-    expect(screen.getByLabelText("Date written on form")).toHaveValue("2026-08-16");
+    // The date no longer starts on the demo day (no form time is prefilled, 19 Oct 2026), so type
+    // the demo clock's own Perth date and time and read the gap: zero means the scenario day was used.
+    expect(screen.getByLabelText("Date written on form")).toHaveValue("");
     expect(screen.getByLabelText("Time written on form")).toHaveValue("");
+    const minutes = NOW_ANCHOR + 1440;
+    const day = 15 + Math.floor(minutes / 1440);
+    const clock = `${String(Math.floor((minutes % 1440) / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
+    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: `2026-08-${day}` } });
+    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: clock } });
+    expect(screen.getByRole("status")).toHaveTextContent("0h 00m");
   });
 });

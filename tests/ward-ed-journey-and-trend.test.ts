@@ -10,6 +10,19 @@ import type { Movement } from "@/components/ward-management/ward-model";
 const base = { id: "WF-T", openedAt: 0 } as const;
 
 describe("edJourneyStages", () => {
+  it("stops recorded department time at collection, without a live tail", () => {
+    const stages = edJourneyStages(
+      {
+        ...base,
+        transport: { id: "TR-test", provider: "Patient transport service", escortRequired: false, collectedAt: 100 },
+      },
+      undefined,
+      "In transit",
+      500,
+    );
+    expect(stages.reduce((sum, item) => sum + item.minutes, 0)).toBe(100);
+    expect(stages.some((item) => item.now)).toBe(false);
+  });
   it("is one stage, 'In the department' up to now, when nothing else is recorded", () => {
     expect(edJourneyStages(base, undefined, "No bed yet", 95)).toEqual([
       { id: "WF-T-now", label: "In the department", minutes: 95, now: true },
@@ -47,6 +60,29 @@ describe("edJourneyStages", () => {
 describe("edWaitingSeries", () => {
   const movement = (id: string, openedAt: number, extra: Partial<Movement> = {}) =>
     ({ id, originEdId: "arm-ed", openedAt, stage: "placement_requested", ...extra }) as Movement;
+
+  it("leaves ward-origin journeys out and stops at collection before arrival", () => {
+    expect(
+      edWaitingSeries(
+        [
+          movement("ward", 0, { sourceAdmissionId: "AD-source" }),
+          movement("collected", 0, {
+            stage: "moving",
+            transport: {
+              id: "TR-test",
+              provider: "Patient transport service",
+              escortRequired: false,
+              collectedAt: 150,
+            },
+          }),
+        ],
+        "arm-ed",
+        300,
+        300,
+        100,
+      ),
+    ).toEqual([1, 1, 0, 0]);
+  });
 
   it("counts who had opened and not yet closed at each 2 hour point over 12 hours", () => {
     const now = 1000;

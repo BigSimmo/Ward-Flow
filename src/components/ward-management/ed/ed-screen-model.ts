@@ -280,6 +280,9 @@ export const NO_CHANGE_REASON_VALUE = "";
 export const URGENCY_REASON_UNCHOSEN =
   "Choose why the urgency is changing before recording it. None is chosen for you: an unpicked reason would be filed as a clinical reassessment nobody made.";
 
+export const LEGAL_STATUS_UNCHOSEN =
+  "Choose the new legal status before recording the change. None is chosen for you: a status nobody picked would be filed as the patient's legal status.";
+
 export const LEGAL_STATUS_REASON_UNCHOSEN =
   "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
 export const NO_URGENCY_VALUE = "";
@@ -484,7 +487,8 @@ export function isEdInitiatedWithdrawal(movement: Movement): boolean {
 /**
  * L4 (site review 12 Oct 2026): the wait marker beside "In ED" reads the one tier-due rule Home
  * uses (`queueWaitThresholds`, from Settings' "Tier 1 overdue after 1h"), so a T1 patient nine
- * hours in is overdue here as on Home. Past the access target also marks overdue.
+ * hours in is overdue here as on Home. Reaching the access target (at or over, the ops-16 rule in
+ * ward-pressure.ts) also marks overdue.
  */
 export function edWaitTone(
   urgency: number,
@@ -492,7 +496,7 @@ export function edWaitTone(
   accessTarget: number,
 ): "danger" | "warning" | undefined {
   const thresholds = queueWaitThresholds(urgency);
-  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment > accessTarget) return "danger";
+  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment >= accessTarget) return "danger";
   if (minutesInDepartment >= thresholds.dueSoon) return "warning";
   return undefined;
 }

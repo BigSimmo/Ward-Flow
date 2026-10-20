@@ -775,9 +775,10 @@ describe("AddPatientForm safety regressions", () => {
     expect(screen.getByLabelText("Health service")).toHaveValue("");
     expect(screen.getByLabelText("Presenting facility")).toHaveValue("");
     expect(screen.getByRole("radio", { name: /^ATS 4/ })).toHaveAttribute("aria-checked", "true");
-    expect(
-      within(screen.getByRole("radiogroup", { name: "Legal status" })).getByRole("radio", { name: /^Voluntary/ }),
-    ).toHaveAttribute("aria-checked", "true");
+    // Legal status goes back to unchosen, never to a default (owner rule, 19 Oct 2026).
+    for (const radio of within(screen.getByRole("radiogroup", { name: "Legal status" })).getAllByRole("radio")) {
+      expect(radio).toHaveAttribute("aria-checked", "false");
+    }
     expect(screen.getByLabelText("Presenting complaint")).toHaveValue("assessment");
     expect(screen.queryByTestId("ward-add-patient-d4-notice")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

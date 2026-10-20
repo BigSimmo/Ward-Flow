@@ -364,7 +364,7 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
   return {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
-    gaps: bedKindGaps(scopedMovements, scopedUnits, now),
+    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions),
     pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
   };
 }

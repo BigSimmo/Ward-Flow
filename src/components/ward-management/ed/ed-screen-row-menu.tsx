@@ -196,7 +196,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         data-testid={`ward-change-legal-status-toggle-${movement.id}`}
         aria-expanded={legalStatusChangeOpen}
         className={styles.declineButton}
-        onClick={() => toggleLegalStatusChange(movement.id, movement.legalStatus)}
+        onClick={() => toggleLegalStatusChange(movement.id)}
       >
         Change legal status
       </button>

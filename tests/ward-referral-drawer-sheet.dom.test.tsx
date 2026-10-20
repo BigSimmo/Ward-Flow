@@ -344,9 +344,9 @@ describe("owner pins carried over from the retired full-page form", () => {
       fireEvent.click(steps().getByRole("button", { name: "Referral" }));
       fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
       act(() => vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS - 1));
-      const draftKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("wf-draft:v1:"));
+      const draftKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("wf-draft:v2:"));
       expect(draftKeys).toEqual([]);
-      expect(setItem.mock.calls.some(([key]) => String(key).startsWith("wf-draft:v1:"))).toBe(false);
+      expect(setItem.mock.calls.some(([key]) => String(key).startsWith("wf-draft:v2:"))).toBe(false);
       expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     } finally {
       setItem.mockRestore();

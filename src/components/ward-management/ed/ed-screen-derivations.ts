@@ -3,7 +3,8 @@
 // list 2.5 and 9.6, 15 Oct 2026). A plain function, not a hook: `EdScreen` calls it after its early
 // return, exactly where this code used to run.
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
-import { isOpen, stageCopy, deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
+import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { stageCopy, deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -97,6 +98,8 @@ export function deriveEdScreen({
   toggleBookTransport: (movementId: string) => void;
   recordEdStep: (event: EdStepEvent) => void;
 }) {
+  // Ward-origin transfers are excluded even if routing retains an ED id. Transit rows remain
+  // accountable to this board; physical ED wait figures use isWaitingInEd separately.
   // Its own patients only, and only while still open — an arrived or otherwise closed movement
   // has left the department (see `isOpen`'s own doc comment). This is THIS DEPARTMENT'S OPEN
   // MOVEMENTS: everyone it is still accountable for until they reach a ward, INCLUDING patients
@@ -140,6 +143,7 @@ export function deriveEdScreen({
   // other closure stays off the board exactly as before.
   const patients = movements.filter(
     (movement) =>
+      isEdOriginJourney(movement) &&
       movement.originEdId === thisEdId &&
       movement.stage !== "arrived" &&
       (!movement.closure ||
@@ -280,8 +284,8 @@ export function deriveEdScreen({
     return `${person.displayName} ${person.umrn}`.toLowerCase().includes(q);
   };
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
-    past: (m) => now - m.openedAt >= accessTarget,
-    severe: (m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+    past: (m) => isWaitingInEd(m) && now - m.openedAt >= accessTarget,
+    severe: (m) => isWaitingInEd(m) && now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
     no_bed: edHasNoBedYet,
     under_form: (m) => !!m.legalForm && !isEdInitiatedWithdrawal(m),
   };
@@ -412,7 +416,7 @@ export function deriveEdScreen({
         onAction: () => setArrivalPlanOpenFor(m.id),
       });
     }
-    if (m.originEdId === thisEdId && isOpen(m) && now - m.openedAt > LONG_WAIT_MINUTES) {
+    if (m.originEdId === thisEdId && isWaitingInEd(m) && now - m.openedAt > LONG_WAIT_MINUTES) {
       priorityFlags.push({
         tone: "quiet",
         kind: `Waiting ${LONG_WAIT_TEXT}`,
@@ -549,8 +553,9 @@ export function deriveEdScreen({
   const waitingForBed = patients.filter(
     (movement) => movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled",
   ).length;
-  const longestHere = patients.length
-    ? Math.max(...patients.map((movement) => Math.max(now - movement.openedAt, 0)))
+  const waitingHere = patients.filter(isWaitingInEd);
+  const longestHere = waitingHere.length
+    ? Math.max(...waitingHere.map((movement) => Math.max(now - movement.openedAt, 0)))
     : undefined;
 
   const leavingForWard = patients.filter(
