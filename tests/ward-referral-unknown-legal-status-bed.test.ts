@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NOT_RECORDED,
   involuntaryBedNeededForLegalStatus,
+  wardReferralDestinations,
 } from "@/components/ward-management/referrals/ward-referral-drawer-model";
 
 // Owner ruling D-69 (Josh, 20 Oct 2026, 2:02 PM AWST): "Needs an involuntary-capable bed until
@@ -20,5 +21,17 @@ describe("referral destination: involuntary-capable bed until legal status is se
 
   it.each([undefined, null, "", "   ", NOT_RECORDED])("treats %j as no status recorded", (status) => {
     expect(involuntaryBedNeededForLegalStatus(status)).toBe(true);
+  });
+});
+
+describe("ward destinations the referral drawer sends (D-69)", () => {
+  const needs = { sex: "Female", gender: "", security: "Open", highAcuity: false } as const;
+  it("marks each destination involuntary-capable until Voluntary is set, then again for Involuntary", () => {
+    const send = (legalStatus: string) =>
+      wardReferralDestinations(["unit-a", "unit-b"], { ...needs, legalStatus }).map((d) => d.involuntaryBedNeeded);
+    expect(send("")).toEqual([true, true]);
+    expect(send(NOT_RECORDED)).toEqual([true, true]);
+    expect(send("Voluntary")).toEqual([false, false]);
+    expect(send("Involuntary")).toEqual([true, true]);
   });
 });
