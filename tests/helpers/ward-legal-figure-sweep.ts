@@ -248,6 +248,25 @@ export function candidateEvents(
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
     case "REOPEN_WARD_TO_ADMISSIONS":
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
+    // Smart features idea 5: one action on every bed request, then marked done by the chair.
+    case "RECORD_BED_MEETING_ACTION":
+      return movementIds.map((id) => ({
+        type,
+        role,
+        now,
+        subject: { kind: "movement" as const, id },
+        action: "book_transport" as const,
+        owner: "coordinator" as const,
+        dueAt: now + 120,
+      }));
+    case "COMPLETE_BED_MEETING_ACTION":
+      return movementIds.map((id) => ({
+        type,
+        role,
+        now,
+        subject: { kind: "movement" as const, id },
+        action: "book_transport" as const,
+      }));
     // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
     // which ward copy exists and is still waiting.
     case "MARK_REFERRAL_OPENED":

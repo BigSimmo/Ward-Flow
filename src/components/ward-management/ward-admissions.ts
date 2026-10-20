@@ -1,3 +1,4 @@
+import type { BedMeetingAction } from "./bed-meeting/bed-meeting-actions";
 import type { CareJourney } from "./ward-care-journey";
 import {
   type BedReleaseBlocker,
@@ -708,6 +709,8 @@ export type Admission = {
    * Whether this acute patient is flagged as suitable for step-down care to unlock an acute bed.
    */
   stepDownCandidate?: boolean;
+  /** Smart features idea 5: actions the bed meeting agreed for this stay. Absent when none. */
+  meetingActions?: BedMeetingAction[];
 };
 
 /**
@@ -752,6 +755,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   leftAt: true,
   followUp: true,
   careJourney: true,
+  meetingActions: true,
 };
 
 export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_PRESENCE);

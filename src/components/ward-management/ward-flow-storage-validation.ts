@@ -27,6 +27,11 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import {
+  BED_MEETING_ACTION_KINDS,
+  BED_MEETING_ACTION_OWNERS,
+  type BedMeetingActionKind,
+} from "./bed-meeting/bed-meeting-actions";
 import { isFixedOnlyDischargeCriteriaRecord } from "./ward-discharge-criteria";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -276,6 +281,17 @@ const unit = z
 
 const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
 const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
+// Smart features idea 5: a bed meeting action is chosen from fixed lists, never typed text.
+const meetingAction = z.looseObject({
+  kind: z.enum(BED_MEETING_ACTION_KINDS.map((entry) => entry.id) as [BedMeetingActionKind, ...BedMeetingActionKind[]]),
+  owner: z.enum(BED_MEETING_ACTION_OWNERS),
+  ownerUnitId: z.optional(text),
+  dueAt: finite,
+  recordedAt: finite,
+  doneAt: z.optional(finite),
+  doneBy: z.optional(text),
+});
+
 const movement = z
   .looseObject({
     id,
@@ -310,6 +326,7 @@ const movement = z
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
     closure: z.optional(closureRule),
+    meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })
@@ -333,6 +350,7 @@ const movement = z
 const admission = z.looseObject({
   id,
   unitId: text,
+  meetingActions: z.optional(z.array(meetingAction)),
   state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
   specialling: bool,
   highAcuity: bool,

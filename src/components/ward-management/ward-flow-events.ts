@@ -1,3 +1,4 @@
+import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
 import type {
   DischargeBarrier,
@@ -793,6 +794,35 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       unitId: string;
+      actingUnitId?: string;
+    }
+  | {
+      /**
+       * Smart features idea 5 (19 Oct 2026): the bed meeting chair records an agreed action against
+       * a bed request or a stay. `action` is chosen from `BED_MEETING_ACTION_KINDS`, `owner` from
+       * `BED_MEETING_ACTION_OWNERS`; nothing typed. A task for a person, never a change to the
+       * record it is about. The coordinator only.
+       */
+      type: "RECORD_BED_MEETING_ACTION";
+      role: WardFlowRole;
+      now: Instant;
+      subject: BedMeetingSubject;
+      action: BedMeetingActionKind;
+      owner: BedMeetingActionOwner;
+      /** The owning ward. Required when `owner` is `ward`. */
+      unitId?: string;
+      dueAt: Instant;
+    }
+  | {
+      /**
+       * Smart features idea 5: the open action of this kind is done. The coordinator, or the owner
+       * (a ward only for its own action, by `actingUnitId`).
+       */
+      type: "COMPLETE_BED_MEETING_ACTION";
+      role: WardFlowRole;
+      now: Instant;
+      subject: BedMeetingSubject;
+      action: BedMeetingActionKind;
       actingUnitId?: string;
     }
   | {

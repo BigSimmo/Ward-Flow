@@ -547,6 +547,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Smart features idea 7: closes a whole ward to everyone, never one named patient.
     CLOSE_WARD_TO_ADMISSIONS: false,
     REOPEN_WARD_TO_ADMISSIONS: false,
+    // Smart features idea 5: a task for a person about a record, never a refusal of it.
+    RECORD_BED_MEETING_ACTION: false,
+    COMPLETE_BED_MEETING_ACTION: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,

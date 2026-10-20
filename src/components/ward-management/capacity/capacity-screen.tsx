@@ -40,6 +40,7 @@ import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { bedsForecast } from "./beds-forecast";
@@ -128,6 +129,7 @@ export function CapacityScreen() {
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const makeRoomOn = useWardFeatureFlag("make-room-chains");
+  const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -814,6 +816,15 @@ export function CapacityScreen() {
                   data-testid="capacity-bed-meeting-tv"
                 >
                   Open on TV
+                </Link>
+              ) : null}
+              {!isPhone && bedMeetingActionsOn ? (
+                <Link
+                  href={BED_MEETING_AGENDA_HREF}
+                  className={buttonClass({ variant: "onHero" })}
+                  data-testid="capacity-bed-meeting-agenda"
+                >
+                  Meeting agenda
                 </Link>
               ) : null}
             </>

@@ -158,6 +158,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   MARK_REFERRAL_INFORMATION_MET: { category: "patient", plainWording: "Information a ward asked for was provided" },
   CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
+  RECORD_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action recorded" },
+  COMPLETE_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action done" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },
@@ -344,7 +346,9 @@ export function selectPatientHistory(
       eventFieldString(event, "movementId") === recordId ||
       eventFieldString(event, "admissionId") === recordId ||
       eventFieldString(event, "referralId") === recordId ||
-      eventFieldString(event, "plannedAdmissionId") === recordId;
+      eventFieldString(event, "plannedAdmissionId") === recordId ||
+      // Bed meeting actions name their bed request or stay as `subject.id`.
+      ("subject" in event && event.subject.id === recordId);
 
     if (matchesPatient) {
       matchingEntries.push(buildHistoryEntry(event, now));
