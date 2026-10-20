@@ -867,11 +867,8 @@
 /* The action bar: the count, Override and the one primary Refer, held at the foot of the panel
    while the ward list scrolls. It sits after the list because a ward is picked before Refer. An
    open form (override reason, non-binary placement) releases it into the flow so a tall form is
-   never pinned over the list.
-   The class is doubled so these rules beat coordinator.module.css .shortlistActions (display: grid)
-   whatever order the two stylesheets load in. When the coordinator styles arrived after this file
-   (with the lazy panel, PR #457), the grid bar grew taller and clipped Override out of the panel. */
-.actionToolbar.actionToolbar {
+   never pinned over the list. */
+.actionToolbar {
   position: sticky;
   bottom: 0;
   z-index: 1;
@@ -884,6 +881,13 @@
   background: var(--wf-surface-2);
   padding: 0.625rem 1rem;
   box-shadow: 0 -0.25rem 0.75rem -0.5rem rgb(var(--ward-shadow-rgb) / 0.12);
+}
+
+/* coordinator.module.css .shortlistActions sets display: grid on the same element. Doubled so the bar stays
+   flex whatever order the two stylesheets load in (when grid won, the taller bar clipped Override out of the
+   panel). Only display: the :has(form), safe-area and print single-class rules stay in charge of the rest. */
+.actionToolbar.actionToolbar {
+  display: flex;
 }
 
 .actionToolbar:has(form) {
