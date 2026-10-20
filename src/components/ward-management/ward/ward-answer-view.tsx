@@ -1290,14 +1290,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       ) : null}
 
                       {/* Decision Action Controls */}
+                      {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
-                        <button
-                          type="button"
-                          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
-                          onClick={() => triggerToast("Not wired in this prototype.")}
-                        >
-                          Ask a question
-                        </button>
                         <button
                           type="button"
                           data-testid={`ward-decline-toggle-${activeMovement.id}`}
