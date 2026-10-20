@@ -134,7 +134,8 @@ export function WardDischargeCriteriaCard({
   };
 
   // Nothing to set or tick: one line saying why, not a whole card. The rule itself is unchanged.
-  if (status.kind === "none" && ineligible !== null) {
+  // An editor or save message still open when legal status changes keeps the full card.
+  if (status.kind === "none" && ineligible !== null && !editing && !closedSaveMessage) {
     return (
       <p className={styles.compact} data-testid="ward-drawer-discharge-criteria">
         <span className={styles.compactLabel}>Criteria led discharge</span>

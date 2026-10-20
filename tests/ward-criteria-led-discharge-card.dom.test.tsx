@@ -95,6 +95,18 @@ describe("criteria led discharge card", () => {
     );
   });
 
+  it("keeps an open editor when the patient stops being recorded as voluntary", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <WardDischargeCriteriaCard record={null} eligibility="voluntary" now={NOW} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Set criteria" }));
+    rerender(<WardDischargeCriteriaCard record={null} eligibility="not_recorded" now={NOW} onChange={onChange} />);
+    expect(screen.getByRole("button", { name: "Save criteria" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByTestId("ward-drawer-discharge-criteria").tagName).toBe("P");
+  });
+
   it("offers nothing to set for an involuntary patient, and pauses existing criteria", () => {
     const { rerender } = render(
       <WardDischargeCriteriaCard record={null} eligibility="involuntary" now={NOW} onChange={vi.fn()} />,
