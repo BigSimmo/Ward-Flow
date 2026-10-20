@@ -353,8 +353,21 @@
   font-weight: 600;
 }
 
+/* Like the pill tabs: each ward keeps its own width and the row scrolls, never wraps. Without
+ * `flex: none` the buttons shrank below their labels and the names overlapped on a phone. */
 .inboxPicker .headTabs {
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.inboxPicker .headTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.inboxPicker .headTabs > button {
+  flex: none;
 }
 
 /* Body */
