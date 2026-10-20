@@ -440,6 +440,34 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
   );
 }
 
+/**
+ * DA-09 (design audit, 19 Oct 2026): whether this desk may open an address, by the same table the
+ * menu reads. Chrome links outside the menu (the brand, Policy, Capacity, Handover, an ED's other
+ * pages) ask this first, so none of them leads to "Not part of your role". Always true while the
+ * `role-access` flag is off or for the statewide coordinator.
+ */
+export function useCanOpenHref(): (href: string) => boolean {
+  const on = useWardFeatureFlag("role-access");
+  const access = useEffectiveWardAccess();
+  const { units } = useUnscopedWardFlow();
+  return useCallback(
+    (href: string) => {
+      if (!on || accessIsWholeNetwork(access)) return true;
+      return screenDecision(access, screenForPath(href), wardPlaceLookup(units)).open;
+    },
+    [on, access, units],
+  );
+}
+
+/**
+ * DA-09: this desk's own home (`homeHrefFor`), so the brand never opens a screen the desk cannot.
+ * With the flag off the effective access is the statewide coordinator, whose home is Ward Flow's own.
+ */
+export function useDeskHomeHref(): string {
+  const access = useEffectiveWardAccess();
+  return homeHrefFor(access, communityTeamSlug);
+}
+
 /** One line under the header saying which desk this is, and the way back from a preview. */
 export function WardAccessBanner() {
   const on = useWardFeatureFlag("role-access");
@@ -772,12 +800,21 @@ export function WardIdleLock() {
 }
 
 /** Reused inside isolated paper stacks as well as ordinary page print footers. */
-export function WardPrintAttribution({ at, className }: { at?: Instant; className?: string }) {
+export function WardPrintAttribution({
+  at,
+  className,
+  lead = "Printed by",
+}: {
+  at?: Instant;
+  className?: string;
+  /** Callers that stamp before the print dialog opens say "Prepared for printing by". */
+  lead?: string;
+}) {
   const access = useEffectiveWardAccess();
   const { units, now } = useUnscopedWardFlow();
   return (
     <span className={className} data-testid="ward-print-attribution">
-      Printed by {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
+      {lead} {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
       {formatInstantWithDay(at ?? now, now)}. Synthetic data.
     </span>
   );

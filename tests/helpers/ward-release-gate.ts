@@ -13,8 +13,16 @@ import { escapeForRegExp } from "./ward-place-names";
  * 390x844, which is its own design rather than a squeezed desktop.
  */
 
-/** WCAG 2.1 A and AA. Best-practice rules are left out: the gate fails on standards, not taste. */
-const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+/** WCAG 2.2 A and AA. Best-practice rules are left out: the gate fails on standards, not taste. */
+const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+/**
+ * Target size (WCAG 2.5.8) is scanned with the screen scrolled to the top. Mid-scroll, the pinned
+ * header and view rows sit over whatever passes under them, and axe counts a button half under a
+ * pinned bar as too small. That is a scroll position, not a small button: the page's
+ * `scroll-padding-top` keeps focus and jumps clear of the pinned bars, and at the top every target
+ * is laid out at its real size. The scroll is put back afterwards, so later steps are unchanged.
+ */
+const SCROLL_TOP_RULES = ["target-size"];
 const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 
 /**
@@ -24,7 +32,9 @@ const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
  */
 export async function expectAccessible(page: Page, testInfo: TestInfo, step: string) {
   const scan = async () => {
-    const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+    const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).disableRules(SCROLL_TOP_RULES).analyze();
+    const atTop = await atScrollTop(page, () => new AxeBuilder({ page }).withRules(SCROLL_TOP_RULES).analyze());
+    results.violations.push(...atTop.violations);
     const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
     return { results, blocking };
   };
@@ -85,6 +95,31 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   expect(blocking, `serious or critical accessibility violations at "${step}":\n${summary}`).toEqual([]);
 }
 
+/**
+ * Runs `action` with the window and the work column (`[data-wf-scroller]`, which scrolls on a
+ * phone) at the top, then puts both back where they were.
+ */
+async function atScrollTop<T>(page: Page, action: () => Promise<T>): Promise<T> {
+  const saved = await page.evaluate(() => {
+    const column = document.querySelector("[data-wf-scroller]");
+    const before = { window: window.scrollY, column: column?.scrollTop ?? 0 };
+    window.scrollTo(0, 0);
+    if (column) column.scrollTop = 0;
+    return before;
+  });
+  // The phone header condenses on scroll; let it settle back to its full face first.
+  await page.waitForTimeout(300);
+  try {
+    return await action();
+  } finally {
+    await page.evaluate((before) => {
+      const column = document.querySelector("[data-wf-scroller]");
+      if (column) column.scrollTop = before.column;
+      window.scrollTo(0, before.window);
+    }, saved);
+  }
+}
+
 /** True on the phone release-gate project (390px wide), where the header Menu replaces the rail. */
 export function isPhoneLayout(page: Page): boolean {
   return (page.viewportSize()?.width ?? 1440) < 768;
@@ -131,8 +166,13 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
   const rail = page.getByTestId("ward-rail");
   const railLink = rail.locator(`[data-testid="ward-rail-link"][href="${href}"]`);
   const dockLink = page.getByTestId("ward-phone-dock").locator(`a[href="${href}"]`);
+  // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
+  const railMore = rail.locator('[data-testid="ward-rail-more"], [data-testid="ward-rail-tablet-more"]').first();
   if (await railLink.isVisible()) {
     await railLink.click();
+  } else if (await railMore.isVisible()) {
+    await railMore.click();
+    await page.locator(`[data-testid="ward-rail-link"][href="${href}"]:visible`).first().click();
   } else if (await dockLink.isVisible()) {
     await dockLink.click();
   } else {

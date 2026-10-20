@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
@@ -16,6 +18,8 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import {
   movementBelongsToService,
@@ -25,6 +29,11 @@ import {
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
 import styles from "./delays.module.css";
+
+// Coordinators only, behind a switch: loaded on demand so other screens that include Delays stay small.
+const MissedRequestsPanel = dynamic(() =>
+  import("@/components/ward-management/coordinator/missed-requests-panel").then((m) => m.MissedRequestsPanel),
+);
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
@@ -48,6 +57,10 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
+  // Checked here as well as in the panel, so nobody else's page asks for the panel's code.
+  const missedRequestsOn = useWardFeatureFlag("missed-requests-check");
+  const accessRole = useEffectiveWardAccess().role;
+  const showMissedRequests = missedRequestsOn && accessRole === "coordinator";
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
@@ -200,6 +213,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           {notice}
         </div>
       ) : null}
+      {showMissedRequests ? <MissedRequestsPanel /> : null}
     </>
   );
 

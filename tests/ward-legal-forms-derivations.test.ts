@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import {
+  currentLegalDueAt,
+  formatReminderHours,
   isLegalDeadlineBreached,
   legalDeadlineText,
   legalFormBreakdown,
@@ -20,6 +22,12 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 
+import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
+import { FORM_TIMING_FACTOR_LABEL, operationalScore } from "@/components/ward-management/ward-priority";
+import { edPressure } from "@/components/ward-management/ward-pressure";
+import { openWorkBeforeShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
+import { publishedThresholds } from "@/components/ward-management/settings/settings-thresholds";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
 
@@ -365,5 +373,83 @@ describe("legal expiry reminders (item 13 synthetic demo, typed expiries only)",
     expect(text).toContain("not legally checked");
     expect(text, "no Act section numbers on screen (D5)").not.toMatch(/\bs(?:ection)?\.?\s*\d/i);
     expect(legalExpiryReminderText({ withinUrgent: 0, withinSoon: 0, urgentHours: 1, soonHours: 3 })).toBeUndefined();
+  });
+});
+
+describe("current form deadlines across operational outputs", () => {
+  it("retains an ended form expiry as history without generating work, pressure, activity or points", () => {
+    const live = synthetic({
+      id: "WF-ENDED-FORM",
+      stage: "placement_requested",
+      closure: undefined,
+      examination: undefined,
+      legalStatus: "Involuntary inpatient",
+      legalForm: { code: "1A", kind: "examination", dueAt: NOW - 5 },
+    });
+    const ended = { ...live, examination: { at: NOW - 10, outcome: "inpatient_order" as const } };
+    const activity = (movement: Movement) =>
+      deriveCommandActivity({
+        movements: [movement],
+        patients: [],
+        units: [],
+        sites: [],
+        referrals: [],
+        rejections: [],
+        bedReleases: [],
+        leaveBeds: [],
+        refreshRequests: [],
+        now: NOW,
+        thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      }).content.changes;
+    const legalTasks = (movement: Movement) =>
+      buildActionInbox([movement], NOW, []).filter((item) => item.title === "Legal due time passed");
+    const legalFactors = (movement: Movement) =>
+      operationalScore(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.filter(
+        (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
+      );
+    const breaches = (movement: Movement) => edPressure(NOW, [movement]).reduce((sum, row) => sum + row.breaching, 0);
+    const publishedBreaches = (movement: Movement) =>
+      publishedThresholds([movement], NOW, defaultWardConfiguration()).find((row) => row.id === "legal-form-deadline")
+        ?.reached;
+
+    expect(currentLegalDueAt(live)).toBe(NOW - 5);
+    expect(legalTasks(live)).toHaveLength(1);
+    expect(legalFactors(live)).toHaveLength(1);
+    expect(breaches(live)).toBe(1);
+    expect(publishedBreaches(live)).toBe(1);
+    expect(activity(live).some((event) => event.id.startsWith("legal-deadline:"))).toBe(true);
+    expect(openWorkBeforeShiftEnd([live], NOW).some((item) => item.kind === "typed_form")).toBe(true);
+
+    expect(ended.legalForm?.dueAt).toBe(NOW - 5);
+    expect(currentLegalDueAt(ended)).toBeUndefined();
+    expect(isLegalDeadlineBreached(ended, NOW)).toBe(false);
+    expect(legalTasks(ended)).toHaveLength(0);
+    expect(legalFactors(ended)).toHaveLength(0);
+    expect(breaches(ended)).toBe(0);
+    expect(publishedBreaches(ended)).toBe(0);
+    expect(activity(ended).some((event) => event.id.startsWith("legal-deadline:"))).toBe(false);
+    expect(openWorkBeforeShiftEnd([ended], NOW).some((item) => item.kind === "typed_form")).toBe(false);
+  });
+
+  it("names exact 15-minute and 75-minute warning settings without rounding", () => {
+    const thresholds = { urgentMinutes: 75, soonMinutes: 90 };
+    const urgent = synthetic({ legalForm: { code: "1A", dueAt: NOW + 70 } });
+    const soon = synthetic({ legalForm: { code: "1A", dueAt: NOW + 80 } });
+    expect(legalFormRowClassification(urgent, NOW, thresholds).chip?.text).toBe("Expires within 1h 15m");
+    expect(
+      legalFormRowClassification(synthetic({ legalForm: { code: "1A", dueAt: NOW + 10 } }), NOW, {
+        urgentMinutes: 15,
+        soonMinutes: 90,
+      }).chip?.text,
+    ).toBe("Expires within 15m");
+    const summary = legalExpiryReminderSummary([urgent, soon], NOW, thresholds);
+    expect(summary).toEqual({ withinUrgent: 1, withinSoon: 1, urgentHours: 1.25, soonHours: 1.5 });
+    expect(legalExpiryReminderText(summary)).toContain("1 within 1h 15m, 1 within 1h 30m");
+    expect(formatReminderHours(1)).toBe("1h");
+    // A window built from whole minutes prints whole minutes, never float residue.
+    for (const minutes of [7, 41, 100, 107, 173, 599]) {
+      expect(formatReminderHours(minutes / 60)).toMatch(/^(?:\d+h(?: \d{2}m)?|\d+m)$/);
+    }
+    expect(formatReminderHours(100 / 60)).toBe("1h 40m");
   });
 });

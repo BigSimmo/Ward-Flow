@@ -5,6 +5,7 @@
  * these three files can drift out of sync if a formula changes, so a change here changes every
  * consumer at once rather than needing three coordinated edits.
  */
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,
@@ -606,20 +607,18 @@ export function buildActionInbox(
     });
   }
 
-  // A form with no `dueAt` is never breached and contributes nothing here; `undefined` must never
-  // reach `clockState`'s arithmetic. As of the 2026-08-23 product-owner correction that is every
-  // Form 1A and every Form 3B in this model — the record carries no deadline for them. Stated
-  // that way deliberately: what this model holds is a fact about the record, whereas what the
-  // Mental Health Act does or does not require is a legal claim this prototype is not entitled to
-  // make in either direction. The question was settled for the 3B by the clinician (Task 6A:
+  // A form with no current deadline is never breached and contributes nothing here; `undefined`
+  // must never reach `clockState`'s arithmetic. As of the 2026-08-23 product-owner correction that
+  // is every Form 1A and every Form 3B in this model — the record carries no deadline for them.
+  // Stated that way deliberately: what this model holds is a fact about the record, whereas what
+  // the Mental Health Act does or does not require is a legal claim this prototype is not entitled
+  // to make in either direction. The question was settled for the 3B by the clinician (Task 6A:
   // "It is just counting how long they have been in ED determining priority. So counting up") and
   // for the 1A by the product owner on 2026-08-23. See `LegalForm`'s doc comment in ward-model.ts.
-  const breachedLegal = movements.filter(
-    (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
-  );
-  for (const movement of breachedLegal) {
-    const dueAt = movement.legalForm?.dueAt;
-    if (dueAt === undefined) continue;
+  // Only the typed expiry still in force can create current work. Ended forms remain history.
+  for (const movement of movements) {
+    const dueAt = currentLegalDueAt(movement);
+    if (dueAt === undefined || !isClockBreached(dueAt, now)) continue;
     items.push({
       id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.legal_timing_breached.kind,

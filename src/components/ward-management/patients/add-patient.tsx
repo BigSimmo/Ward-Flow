@@ -273,6 +273,9 @@ export function AddPatientForm() {
   // The approved ward registration allowance uses the source/community event role.
   const raise = useWardRaise(role === "ward" ? "community" : role);
   const registrationScope = patientRegistrationScope(access.scope);
+  // Smart features idea 9 (19 Oct 2026): an ED desk presents at its own ED unless someone picks another.
+  const deskEdId = access.scope.kind === "ed" ? access.scope.edId : undefined;
+  const deskFacility = PRESENTING_FACILITIES.some((entry) => entry.value === deskEdId) ? (deskEdId ?? "") : "";
   const registrationUnavailable =
     access.scope.kind === "ward" && !registrationScope
       ? "Open a referral from a single source ward before registering the patient."
@@ -292,7 +295,9 @@ export function AddPatientForm() {
   const [address, setAddress] = useState<string>("");
   const [suburb, setSuburb] = useState<string>("");
   const [healthService, setHealthService] = useState<string>("");
-  const [facility, setFacility] = useState<string>("");
+  // `null` until someone chooses, so the desk's own ED shows once access has loaded.
+  const [chosenFacility, setFacility] = useState<string | null>(null);
+  const facility = chosenFacility ?? deskFacility;
 
   const [triageUrgency, setTriageUrgency] = useState<TriageLevel>("4");
   const [legalStatus, setLegalStatus] = useState<StatutoryLegalStatus>("Voluntary");
@@ -358,7 +363,7 @@ export function AddPatientForm() {
     address.trim().length > 0 ||
     suburb.trim().length > 0 ||
     healthService.trim().length > 0 ||
-    facility.trim().length > 0;
+    facility !== deskFacility;
   const intakeChanged =
     triageUrgency !== "4" ||
     legalStatus !== "Voluntary" ||
@@ -434,7 +439,7 @@ export function AddPatientForm() {
     setAddress("");
     setSuburb("");
     setHealthService("");
-    setFacility("");
+    setFacility(null);
     setTriageUrgency("4");
     setLegalStatus("Voluntary");
     setPresentingComplaint("assessment");

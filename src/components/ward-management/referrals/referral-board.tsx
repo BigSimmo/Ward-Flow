@@ -62,7 +62,8 @@ import {
   durMinutes,
 } from "@/components/wf";
 
-import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
+import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { ReferralMatchView } from "./referral-match-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
@@ -1068,7 +1069,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       rejections={rejections}
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
-                      onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                      onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
                       admissions={admissions}
                       bedReleases={bedReleases}
                       phone={
@@ -1155,7 +1156,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         rejections={rejections}
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
-                        onDecision={(title) => watchDecision(selectedReferral.id, title)}
+                        onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
                         admissions={admissions}
                         bedReleases={bedReleases}
                       />

@@ -60,6 +60,10 @@ const MAY_ASSERT_TODAY = new Map([
     "Add patient phone list (11 Oct 2026): the bare clock is only compared with formatInstantWithDay's text to say Today or Yesterday in front of it; any other day returns formatInstantWithDay's text, so the row still names the day.",
   ],
   [
+    "toldAt",
+    "Support told shortcut (19 Oct 2026): the bare clock fills an HTML time input whose day is set beside it in the Day selector, which toldAgo fills in the same tap, so the saved record and its display still name the day.",
+  ],
+  [
     "closedAt",
     "Legal forms phone history (11 Oct 2026): the clock sits beside a time label taken from formatInstantWithDay (today, yesterday or the day), so the row still names the day.",
   ],

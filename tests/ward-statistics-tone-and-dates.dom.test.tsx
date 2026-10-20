@@ -83,7 +83,7 @@ describe("Weekly ED waits (stats-9)", () => {
       </ToastProvider>,
     );
     // The seeded last full week has long waits, one still open (the audit's own example).
-    const list = screen.getByRole("list", { name: /^ED waits over/u });
+    const list = screen.getByRole("list", { name: /^ED waits first passing over/u });
     const rows = within(list).getAllByRole("listitem");
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.textContent ?? "")?.[1] ?? 0) >= 2)).toBe(true);
@@ -103,7 +103,7 @@ describe("Weekly ED waits (stats-9)", () => {
     asPhone();
     const monday = demoDayZero(new Date("2026-10-12T12:00:00+08:00")).getTime();
     renderInProvider(<WeeklyReportScreen />, monday);
-    const rows = within(screen.getByRole("list", { name: /^ED waits over/u })).getAllByRole("listitem");
+    const rows = within(screen.getByRole("list", { name: /^ED waits first passing over/u })).getAllByRole("listitem");
     let redCount = 0;
     let nonredCount = 0;
     for (const row of rows) {
@@ -126,8 +126,8 @@ describe("Weekly ED waits (stats-9)", () => {
     const sunday = demoDayZero(new Date("2026-10-18T12:00:00+08:00")).getTime();
     renderInProvider(<WeeklyReportScreen />, sunday);
     expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent(/^0$/u);
-    expect(screen.getByText(/^Nobody waited over/u)).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: /^ED waits over/u })).not.toBeInTheDocument();
+    expect(screen.getByText(/^No wait first passed over/u)).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /^ED waits first passing over/u })).not.toBeInTheDocument();
   });
 });
 

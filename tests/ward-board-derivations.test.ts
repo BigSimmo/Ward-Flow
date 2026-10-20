@@ -254,6 +254,24 @@ describe("constraintSentence", () => {
     expect(constraintSentence(unit, [], [], [], NOW)).toBe("Only 1 can be watched one-to-one.");
   });
 
+  it.each(["occupied", "pulled"] as const)("counts a %s one-to-one place as already staffed", (state) => {
+    const unit = testUnit({ speciallingCapacity: 1 });
+    const admissions = [admission({ state, specialling: true })];
+    expect(acceptingBedCounts(unit, admissions, [], [], NOW).specialled).toBe(0);
+    expect(constraintSentence(unit, admissions, [], [], NOW)).toBe("None can be watched one-to-one.");
+
+    // A departed place gives the staffing back; an admission on another ward does not consume it.
+    expect(
+      acceptingBedCounts(
+        unit,
+        [admission({ state: "departed", specialling: true }), admission({ unitId: "OTHER", specialling: true })],
+        [],
+        [],
+        NOW,
+      ).specialled,
+    ).toBe(1);
+  });
+
   it("says None rather than 'Only 0' when the ward can staff no one-to-one", () => {
     const unit = testUnit({ sexDesignation: "Undesignated", speciallingCapacity: 0 });
     expect(constraintSentence(unit, [], [], [], NOW)).toBe("None can be watched one-to-one.");

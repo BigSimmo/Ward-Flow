@@ -484,7 +484,8 @@ export function isEdInitiatedWithdrawal(movement: Movement): boolean {
 /**
  * L4 (site review 12 Oct 2026): the wait marker beside "In ED" reads the one tier-due rule Home
  * uses (`queueWaitThresholds`, from Settings' "Tier 1 overdue after 1h"), so a T1 patient nine
- * hours in is overdue here as on Home. Past the access target also marks overdue.
+ * hours in is overdue here as on Home. Reaching the access target (at or over, the ops-16 rule in
+ * ward-pressure.ts) also marks overdue.
  */
 export function edWaitTone(
   urgency: number,
@@ -492,7 +493,7 @@ export function edWaitTone(
   accessTarget: number,
 ): "danger" | "warning" | undefined {
   const thresholds = queueWaitThresholds(urgency);
-  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment > accessTarget) return "danger";
+  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment >= accessTarget) return "danger";
   if (minutesInDepartment >= thresholds.dueSoon) return "warning";
   return undefined;
 }

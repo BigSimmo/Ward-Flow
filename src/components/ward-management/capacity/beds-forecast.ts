@@ -11,7 +11,7 @@
 //
 // Aggregate only, like the rest of the Capacity screen: nothing here ranks a ward for a person.
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
-import { boundedBedAvailability } from "@/components/ward-management/ward-bed-availability";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -40,7 +40,7 @@ export type BedsForecastHorizon = {
   hours: number;
   /** The end of the window, `now + hours`. Releases due at or before it count, overdue ones included. */
   until: Instant;
-  /** Beds ready now across the network: bounded by each unit’s physical capacity. */
+  /** Beds ready now across the network, using the table/map partition of observations and reservations. */
   readyNow: number;
   /** Confirmed discharges due in the window, from today onwards, that nothing is holding up. */
   confirmed: number;
@@ -102,7 +102,7 @@ export function bedsForecast(
   // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands, and a closed unit counts as
   // zero capacity, now or projected.
   const openUnits = units.filter((unit) => !unit.isClosed);
-  const readyNow = openUnits.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
+  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], []).ready, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
   const pending = releases.filter((release) => release.state !== "discharged" && openUnitIds.has(release.unitId));

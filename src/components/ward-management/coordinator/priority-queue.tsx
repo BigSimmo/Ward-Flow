@@ -1,5 +1,7 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+
 import Link from "next/link";
 import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import { useState } from "react";
@@ -50,7 +52,6 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { liveTurnaroundPreference } from "@/components/ward-management/ward-turnaround-priority";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { referralState } from "@/components/ward-management/ward-referrals";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 
 import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
@@ -97,10 +98,7 @@ export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
     : "pending clinical sign-off"
 }`;
 
-/**
- * "Soon": a recorded legal form due within the due-soon window, or already past it. It reads the
- * current due time, as Delays' Form due view does, so "Open in Delays" lists the same people.
- */
+/** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return false;
@@ -298,7 +296,7 @@ export function PriorityQueue({
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
             const { score, factors } = operationalScore(movement, now, dueSoonThresholds);
-            const legalDueAt = movement.legalForm?.dueAt;
+            const legalDueAt = currentLegalDueAt(movement);
             const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);

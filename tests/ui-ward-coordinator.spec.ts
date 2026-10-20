@@ -488,10 +488,17 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await queue.getByTestId("ward-queue-show-all").click();
     await expect(queue.getByTestId("ward-queue-show-all")).toHaveAttribute("aria-expanded", "true");
     const before = await queue.locator('[data-testid^="ward-queue-row-"]').count();
+    // The tile counts people physically waiting in the department; the filtered queue lists every
+    // queued movement that came from it, including one already moving on. So the queue is compared
+    // with its own unfiltered rows for that origin, and the tile may not exceed it.
+    const expectedFiltered = await queue
+      .locator(`[data-testid^="ward-queue-row-"][data-origin-ed="${worstEdId}"]`)
+      .count();
     await worst.click();
     await expect(queue).toContainText("Filtered to");
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
-    await expect(rows).toHaveCount(worstWaiting);
+    await expect(rows).toHaveCount(expectedFiltered);
+    expect(worstWaiting).toBeLessThanOrEqual(expectedFiltered);
     const originIds = await rows.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-origin-ed")));
     for (const originId of originIds) {
       expect(originId).toBe(worstEdId);

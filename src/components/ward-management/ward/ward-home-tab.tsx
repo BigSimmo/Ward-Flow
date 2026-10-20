@@ -51,10 +51,10 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { edById } from "@/components/ward-management/ward-sites";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { pullBlockedReason } from "./ward-arrivals-corridor";
+import { pullBlockedReason } from "./ward-pull-blocked";
 import {
   useWalkRound,
   WalkRoundRowMarks,

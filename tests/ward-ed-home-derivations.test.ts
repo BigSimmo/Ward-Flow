@@ -178,6 +178,21 @@ describe("edOpenSummaries", () => {
   const eds = allEmergencyDepartments();
   const [edA] = eds;
 
+  it("counts physical inpatient-bed waits, excluding ward transfers and collected journeys", () => {
+    const summary = edOpenSummaries(
+      [
+        movement({ id: "WF-here", originEdId: edA.id }),
+        movement({ id: "WF-ward", originEdId: edA.id, sourceAdmissionId: "AD-source" }),
+        movement({ id: "WF-moving", originEdId: edA.id, stage: "moving" }),
+        movement({ id: "WF-left", originEdId: edA.id, leftDepartmentAt: NOW - 10 }),
+        movement({ id: "WF-outcome", originEdId: edA.id, edOutcome: "for_discharge" }),
+      ],
+      NOW,
+    ).find((item) => item.ed.id === edA.id);
+    expect(summary?.open.map((item) => item.id)).toEqual(["WF-here"]);
+    expect(summary?.waiting).toBe(1);
+  });
+
   it("computes waiting/longestWaitMinutes/detained identically to edHomeSummaries, with no target argument at all", () => {
     const movements: Movement[] = [
       movement({ id: "WF-026", originEdId: edA.id, legalStatus: "Involuntary inpatient", openedAt: NOW - 90 }),

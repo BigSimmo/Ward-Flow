@@ -6,7 +6,7 @@ import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
-import { formatInstant, formatInstantWithDay } from "../ward-clock";
+import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay, type Instant } from "../ward-clock";
 import { wardChromeRole } from "../ward-chrome-role";
 import type { WardFlowRole } from "../ward-flow-events";
 import { canDispatch } from "../ward-role-permissions";
@@ -41,6 +41,20 @@ const DAY_ITEMS: { id: ToldDay; label: string }[] = [
   { id: "1", label: "Yesterday" },
   { id: "2", label: "2 days ago" },
 ];
+
+/**
+ * Smart features idea 9 (19 Oct 2026): one tap for "told a little while ago". Each fills the time
+ * and day, which stay editable; nothing is saved until Save. Minutes before the board clock.
+ */
+const TOLD_AGO_MINUTES = [15, 30, 60] as const;
+
+export function toldAgo(now: Instant, minutes: number): { time: string; day: ToldDay } {
+  const toldAt = (now - minutes) as Instant;
+  return {
+    time: formatInstant(toldAt),
+    day: String(Math.floor(now / MINUTES_PER_DAY) - Math.floor(toldAt / MINUTES_PER_DAY)) as ToldDay,
+  };
+}
 
 function recordTone(record: SupportNotificationRecord | undefined): WfTone {
   if (!record) return "warning";
@@ -266,6 +280,25 @@ export function SupportNotificationChecklist({
                           }}
                         />
                       </Field>
+                      <div className={styles.agoChips} role="group" aria-label="Told a little while ago">
+                        {TOLD_AGO_MINUTES.map((minutes) => (
+                          <Button
+                            key={minutes}
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const told = toldAgo(now, minutes);
+                              editingRevisionRef.current += 1;
+                              setTime(told.time);
+                              setDay(told.day);
+                              setTimeError(null);
+                            }}
+                          >
+                            {`${minutes} min ago`}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <Field label="Reason">

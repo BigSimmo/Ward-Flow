@@ -90,6 +90,7 @@ describe("clinical values file", () => {
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
+      missedRequestWindow: 120,
       wardAnswerTarget: 120,
       transferAcceptanceTarget: 240,
       transportBookedTarget: 60,

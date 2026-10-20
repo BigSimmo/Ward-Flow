@@ -5,7 +5,8 @@ import { useState, type ReactNode } from "react";
 
 import { Card, CardHead, Segmented, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formatReminderHours } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -136,8 +137,9 @@ export function PressureStrip({
           const serviceAcronym = healthServiceAcronym(rawService);
 
           const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])
-            .filter((movement) => movement.legalForm?.dueAt !== undefined)
-            .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
+            .map(currentLegalDueAt)
+            .filter((dueAt): dueAt is Instant => dueAt !== undefined)
+            .map((dueAt) => clockState(dueAt, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
 
@@ -145,22 +147,22 @@ export function PressureStrip({
             row.breaching > 0
               ? `${row.breaching} overdue`
               : critical > 0
-                ? `${critical} due < ${DUE_SOON_URGENT_MINUTES / 60}h`
+                ? `${critical} due ≤ ${formatReminderHours(thresholds.urgentMinutes / 60)}`
                 : due > 0
-                  ? `${due} due < ${DUE_SOON_MINUTES / 60}h`
+                  ? `${due} due ≤ ${formatReminderHours(thresholds.soonMinutes / 60)}`
                   : deadlines.length > 0
                     ? `${deadlines.length} on track`
                     : row.waiting > 0
-                      ? "None due"
+                      ? "No deadline recorded"
                       : "No patients waiting";
 
           const deadlineAccessible =
             row.breaching > 0
               ? `${row.breaching} overdue`
               : critical > 0
-                ? `${critical} due within ${DUE_SOON_URGENT_MINUTES / 60}h (your default)`
+                ? `${critical} due within ${formatReminderHours(thresholds.urgentMinutes / 60)} (your setting)`
                 : due > 0
-                  ? `${due} due within ${DUE_SOON_MINUTES / 60}h (your default)`
+                  ? `${due} due within ${formatReminderHours(thresholds.soonMinutes / 60)} (your setting)`
                   : deadlines.length > 0
                     ? `${deadlines.length} deadline${deadlines.length === 1 ? "" : "s"} on track`
                     : row.waiting > 0

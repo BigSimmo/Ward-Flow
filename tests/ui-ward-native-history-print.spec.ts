@@ -9,7 +9,10 @@ async function settled(page: Page) {
 }
 
 async function navigate(page: Page, route: string) {
-  await page.locator(`a[href="${HOME}${route}"]:visible`).first().click();
+  const link = page.locator(`a[href="${HOME}${route}"]:visible`).first();
+  // B1 (19 Oct 2026): the rail lists the desk's own pages; the rest are under More.
+  if ((await link.count()) === 0) await page.getByTestId("ward-rail-more").click();
+  await link.click();
   await expect(page).toHaveURL(new RegExp(`${HOME}${route}$`));
   await settled(page);
 }
@@ -332,7 +335,8 @@ test.describe("native history and handover print @mockup", () => {
     for (const paper of await pages.all()) {
       const attribution = paper.getByTestId("ward-print-attribution");
       await expect(attribution).toBeVisible();
-      await expect(attribution).toContainText("Printed by Flow coordinator, Statewide, at");
+      // Nothing has been prepared yet (Print was not pressed), so the sheet says it is a preview.
+      await expect(attribution).toContainText("Preview opened by Flow coordinator, Statewide, at");
       await expect(attribution).toContainText("Synthetic data.");
       expect(await paper.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     }

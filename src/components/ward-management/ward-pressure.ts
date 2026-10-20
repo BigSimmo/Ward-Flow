@@ -1,4 +1,5 @@
 // src/components/ward-management/ward-pressure.ts
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";
@@ -67,15 +68,16 @@ export function edPressure(now: Instant, movements: Movement[]): EdPressure[] {
       longestWaitMinutes: summary.longestWaitMinutes,
       // "Breached" already has one definition, owned by ward-clock.ts: `clockState` returns
       // "breached" exactly when the deadline has passed. Reuse it rather than re-deriving the
-      // same condition inline, so the two never quietly drift apart. A form with no `dueAt` is
-      // never breached — `undefined` must never reach `clockState`'s arithmetic. As of the
-      // 2026-08-23 product-owner correction, neither a Form 1A nor a Form 3B carries one any
-      // longer (Task 6A first established this for 3B; see `LegalForm`'s doc comment in
-      // ward-model.ts) — only the transport/transfer forms (4A/4C) still do, and none of those
-      // are due in the past on today's fixture, so this evaluates to 0 today.
-      breaching: summary.open.filter(
-        (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
-      ).length,
+      // same condition inline, so the two never quietly drift apart. A form with no current
+      // deadline is never breached — `undefined` must never reach `clockState`'s arithmetic. As
+      // of the 2026-08-23 product-owner correction, neither a Form 1A nor a Form 3B carries a
+      // `dueAt` any longer (Task 6A first established this for 3B; see `LegalForm`'s doc comment
+      // in ward-model.ts) — only the transport/transfer forms (4A/4C) still do.
+      // Ended forms keep their typed expiry as history, never as a current breach.
+      breaching: summary.open.filter((movement) => {
+        const dueAt = currentLegalDueAt(movement);
+        return dueAt !== undefined && isClockBreached(dueAt, now);
+      }).length,
     }))
     .sort((a, b) => b.breaching - a.breaching || b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
 }

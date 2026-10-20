@@ -1,7 +1,7 @@
 // tests/ward-flow-diagram-status-truthfulness.test.ts
 import { describe, expect, it } from "vitest";
 
-import { hubStatusText } from "../src/components/ward-management/coordinator/flow-diagram";
+import { hubStatusText } from "../src/components/ward-management/coordinator/flow-status";
 import { eligibleCandidatesAmong } from "../src/components/ward-management/ward-derivations";
 import { eligibility } from "../src/components/ward-management/ward-eligibility";
 import { PARALLEL_REFERRAL_CAP } from "../src/components/ward-management/ward-model";
