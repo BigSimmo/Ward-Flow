@@ -1,5 +1,17 @@
 # Routes, shell, navigation and shared UI
 
+## Header Back — 20 October 2026
+
+`shell/ward-back.ts` decides which screens are drill-downs (patient, movement, ward answer, new
+referral, add patient, statistics detail, bed meeting agenda, reports, and a ward, ED or team page
+that is not the desk's own home) and the parent each falls back to. On those screens
+`shell/ward-bar-controls.tsx` draws `WardBarBack`: on a phone it takes the Menu button's place
+(the Menu sheet stays mounted for the dock); on tablet and desktop it leads the bar beside Menu or
+the rail. Back follows the browser history only after the tab has moved between Ward Flow screens
+(`noteWardRoute`, called by the bar), so a page opened from a link or new tab goes to its parent
+instead of leaving the app. The in-page back links on Patient Now and the ward answer were
+removed. `tests/ward-back.test.ts` and `tests/ward-header-back.dom.test.tsx` cover it.
+
 ## Smart defaults — 19 October 2026
 
 `shell/use-device-choice.ts` remembers one page-layout choice per device (`ward_flow_choice_*` keys),

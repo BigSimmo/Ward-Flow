@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Star } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -74,8 +74,6 @@ type HomeBedflowProps = {
   service: HealthService | null;
 };
 
-type Candidate = ReturnType<typeof eligibleCandidatesAmong>[number];
-
 function unitKind(unit: Unit) {
   const category = wardCategory(unit);
   return category === "Locked" ? "secure" : category.toLowerCase();
@@ -84,8 +82,8 @@ function unitKind(unit: Unit) {
 /**
  * Home's State bedflow card (direction A, owner 10 Oct 2026): every inpatient ward, grouped by
  * health service, with its ready, pulled, closed and occupied beds. With a patient in Placement the
- * card names them on one line with how many wards fit, marks the best fit on its row, and puts
- * Offer on each ward that fits. "Fits first" lifts those wards to the top of each group. Wards that
+ * card names them on one line with how many wards fit and puts Offer on each ward that fits. No ward
+ * is marked as the best or first choice (owner, 20 Oct 2026: the "Best fit" star is removed). "Fits first" lifts those wards to the top of each group. Wards that
  * do not fit are dimmed, never hidden: the whole network stays on screen.
  *
  * Every ward row keeps the old diagram's hooks (`ward-diagram-unit-<id>`, `aria-pressed`,
@@ -116,7 +114,6 @@ export function HomeBedflow({
   );
   const byUnitId = useMemo(() => new Map(shortlist.map((candidate) => [candidate.unit.id, candidate])), [shortlist]);
   const fits = shortlist.filter((candidate) => candidate.verdict.eligible);
-  const bestFit: Candidate | undefined = fits[0];
   const [fitsFirst, setFitsFirst] = useState(false);
 
   // FitHighlight (`home-fit.ts`): every ward in the network that fits this patient, not only the
@@ -210,7 +207,6 @@ export function HomeBedflow({
     const optionFit = fitByUnitId.get(unit.id);
     const dim = movement !== undefined && !candidate && !optionFit && !isAccepted && !isReferred;
     const selected = selectedUnitId === unit.id;
-    const isBest = fit && bestFit?.unit.id === unit.id;
     // A gentle tint marks where this patient can go: fitting wards, the recorded destination and
     // outstanding referrals. Everything else stays plain or dimmed.
     const highlight = isAccepted
@@ -263,14 +259,6 @@ export function HomeBedflow({
               <span className={styles.unitNameText} title={unit.name}>
                 {unit.name}
               </span>
-              {/* A glyph, not a word pill, so the ward name keeps its width (device audit, 11 Oct
-                  2026: "Mental He..." was cut beside "Best fit"). */}
-              {isBest ? (
-                <span className={styles.unitBestGlyph} title="Best fit">
-                  <Star size={12} aria-hidden="true" />
-                  <span className="sr-only">Best fit</span>
-                </span>
-              ) : null}
             </span>
             <span className={styles.unitSub}>
               {unit.cohort} {unitKind(unit)} · {unit.beds} beds
@@ -362,7 +350,7 @@ export function HomeBedflow({
           </div>
           {/* Where this patient stands, once a destination or referral is recorded, or when no
               candidate is eligible (the line then names how many were excluded). */}
-          {movement.acceptedUnitId || movement.referredUnitIds.length > 0 || !bestFit ? (
+          {movement.acceptedUnitId || movement.referredUnitIds.length > 0 || fits.length === 0 ? (
             // The name already leads the line above, so the status drops it (device audit, 11 Oct
             // 2026: the repeated name pushed this onto two lines).
             <p className={styles.forStatus}>

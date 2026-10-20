@@ -73,6 +73,9 @@ describe("State bedflow's fitting wards for the selected patient", () => {
     expect(subject).toHaveTextContent(`${bed.size} fit`);
     expect(subject).toHaveTextContent(`${noBed.size} no bed`);
     expect(subject).toHaveTextContent(/\d+ review/u);
+    // Owner, 20 Oct 2026: no ward is singled out as the best fit or best match. Fits and Offer stay.
+    expect(bedflow).not.toHaveTextContent(/best fit|best match|recommended|top pick/iu);
+    expect(within(bedflow).queryByTitle(/best/iu)).toBeNull();
     for (const unitId of bed) {
       const row = within(bedflow).getByTestId(`ward-diagram-unit-${unitId}`).closest("li")!;
       expect(["fit", "referred", "accepted"]).toContain(row.getAttribute("data-highlight"));

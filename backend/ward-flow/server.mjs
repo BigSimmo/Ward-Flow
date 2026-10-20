@@ -11,6 +11,42 @@ import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
 
 const BODY_LIMIT = 1_048_576;
+/** `/healthz` asks the database at most this often, so an unauthenticated caller cannot load it. */
+const DATABASE_CHECK_INTERVAL_MS = 30_000;
+const DATABASE_CHECK_TIMEOUT_MS = 5_000;
+
+/**
+ * A cached database reachability answer for unauthenticated `/healthz`: "ok" or "unavailable",
+ * never the reason. One check runs at a time and its result is reused for 30 seconds.
+ */
+export function databaseHealth(store, { now = () => Date.now(), timeoutMs = DATABASE_CHECK_TIMEOUT_MS } = {}) {
+  let checkedAt = -Infinity;
+  let status = "unavailable";
+  let pending = null;
+  return async () => {
+    if (!store) return "not_configured";
+    if (pending) return pending;
+    if (now() - checkedAt < DATABASE_CHECK_INTERVAL_MS) return status;
+    let timer;
+    pending = Promise.race([
+      Promise.resolve()
+        .then(() => store.ready())
+        .then(() => "ok"),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+      }),
+    ])
+      .catch(() => "unavailable")
+      .then((result) => {
+        clearTimeout(timer);
+        status = result;
+        checkedAt = now();
+        pending = null;
+        return result;
+      });
+    return pending;
+  };
+}
 
 async function readBody(request) {
   if (Number(request.headers.get("content-length")) > BODY_LIMIT) throw new Error("too_large");
@@ -52,6 +88,7 @@ export function createHandler({
         log,
       })
     : null;
+  const database = databaseHealth(sharedStore);
   /** `meta.clientAddress` comes from `listen()`; it keys the sign-in check limit. */
   return async (request, meta = {}) => {
     const path = new URL(request.url).pathname;
@@ -95,7 +132,10 @@ export function createHandler({
     }
     // Shared routes with the shared workspace switched off: still logged, with a request ID.
     if (route === "workspace") return respond(503, { error: "Shared workspace is not configured" }, "not_configured");
-    if (path === "/healthz" && request.method === "GET") return respond(200, { service: "ward-flow-backend" });
+    // Always 200 while the process runs, so a database outage does not fail Railway's health check
+    // and restart a healthy server; the uptime workflow reads `database` instead.
+    if (path === "/healthz" && request.method === "GET")
+      return respond(200, { service: "ward-flow-backend", database: await database() });
     if (path !== "/readyz") return respond(404, { error: "Not found" });
     if (request.method === "OPTIONS" && origin)
       return respond(204, null, "preflight", {

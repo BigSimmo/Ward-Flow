@@ -27,7 +27,7 @@ import { groupDischarges } from "@/components/ward-management/discharges/dischar
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
+import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -58,6 +58,7 @@ export type TvJourneyRow = {
   name: string;
   where: string;
   stage: string;
+  /** Since the journey opened, shown as "8h 00m waiting"; a transit time is in `stage`. */
   waitMinutes: number;
 };
 
@@ -88,6 +89,18 @@ function waitingOnWard(movement: Movement, unitId: string): boolean {
     movement.referredUnitIds.includes(unitId) &&
     !waitlistStands(movement, unitId)
   );
+}
+
+/**
+ * Overall review (20 Oct 2026): a collected patient's stage says how long they have been on the
+ * road ("In transit 4m"), so the row's wait, which runs from when the journey opened, is not read
+ * as hours in an ambulance. Any other row keeps its stage label.
+ */
+function stageText(movement: Movement, label: string, now: Instant): string {
+  const collectedAt = movement.transport?.collectedAt;
+  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
+    return label;
+  return `In transit ${splitDuration(Math.max(0, now - collectedAt))}`;
 }
 
 function edLabel(edId: string): string {
@@ -136,7 +149,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     id: movement.id,
     name: nameOf(movement),
     where: edLabel(movement.originEdId),
-    stage,
+    stage: stageText(movement, stage, now),
     waitMinutes: elapsedOpenMinutes(movement, now),
   });
   const incoming = open
@@ -204,7 +217,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
   const people = summary.open
     .map((movement) => {
       const destination = unitName(movement.acceptedUnitId);
-      const stage = ED_STAGE_LABELS[movement.stage];
+      const stage = stageText(movement, ED_STAGE_LABELS[movement.stage], now);
       return {
         id: movement.id,
         name: nameOf(movement),

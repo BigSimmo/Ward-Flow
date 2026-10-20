@@ -38,7 +38,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -160,7 +160,7 @@ describe("the bed meeting TV view", () => {
     const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
       .getAllByRole("term")
       .map((term) => term.firstElementChild?.textContent);
-    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Delayed"]);
+    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Still open"]);
     // Every box says its state in words as well as colour.
     for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
       expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);
@@ -272,6 +272,10 @@ describe("the bed meeting TV view", () => {
     expect(within(tv).getByRole("link", { name: "Leave TV view" })).toHaveAttribute("href", "/ward-flow/capacity");
     expect(tv).toHaveTextContent("Synthetic prototype");
     expect(tv).toHaveTextContent("Not approved for clinical use");
+    // Overall review (20 Oct 2026): the footer names the shift the rest of the app shows, and the
+    // standard scenario is a day, so it never reads "Standard night" beside "Day shift".
+    expect(tv).toHaveTextContent("Day shift · Scenario: Standard day");
+    expect(tv).not.toHaveTextContent("Standard night");
     const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
     expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
     expect(layoutCss).toMatch(/\.shellContent:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-bar"\]/u);
@@ -311,6 +315,29 @@ describe("the ward and ED TV views", () => {
     for (const service of tvHealthServices(state.units)) {
       expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
     }
+  });
+
+  it("says what each time measures: the whole wait, and for a collected patient, the time on the road", () => {
+    const { state, inputs } = seedInputs();
+    // Overall review (20 Oct 2026): "In transit · 8h 00m" read as 8 hours in an ambulance.
+    const collected = state.movements.find(
+      (movement) =>
+        movement.acceptedUnitId !== undefined &&
+        movement.transport?.collectedAt !== undefined &&
+        movement.transport.cancelledAt === undefined &&
+        movement.stage !== "arrived" &&
+        movement.closure === undefined,
+    );
+    if (!collected?.acceptedUnitId || collected.transport?.collectedAt === undefined)
+      throw new Error("the seed has no collected patient");
+    const unit = state.units.find((candidate) => candidate.id === collected.acceptedUnitId);
+    if (!unit) throw new Error("the collected patient's ward is missing");
+    const sheet = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const row = sheet.coming.rows.find((candidate) => candidate.id === collected.id);
+    expect(row?.stage).toBe(`In transit ${splitDuration(NOW_ANCHOR - collected.transport.collectedAt)}`);
+    renderTv({ ward: unit.id });
+    const items = within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem");
+    for (const item of items) expect(item).toHaveTextContent(/\d+m waiting/u);
   });
 
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
@@ -486,7 +513,9 @@ describe("the one tap demo reset", () => {
       fireEvent.click(screen.getByTestId(testId));
       // It asks first: the shared workspace has no undo.
       expect(screen.getByTestId("scenario")).toHaveTextContent(before ?? "");
-      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent("replaces the demo data for everyone");
+      expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent(
+        "replaces the demo data in this browser only",
+      );
       expect(screen.getByTestId("ward-demo-reset-confirm-load")).toHaveFocus();
       fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
       expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();

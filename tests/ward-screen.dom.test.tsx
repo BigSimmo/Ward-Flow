@@ -218,13 +218,17 @@ describe("ward screen live unit capacity", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent(
+      "1 bed free for a new patient",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "confirm rph-adult-secure capacity at zero" }));
 
     // After a real CONFIRM_CAPACITY dispatch updates state.units, the screen must show the new
     // live count — resolving from the frozen fixture would keep showing 1 forever.
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("0 allocatable");
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent(
+      "0 beds free for a new patient",
+    );
   });
 
   it("claims no roster figure it does not hold", () => {

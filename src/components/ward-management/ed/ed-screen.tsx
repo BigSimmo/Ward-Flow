@@ -1,6 +1,7 @@
 "use client";
 
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 
 import { useMemo, useRef, type FormEvent } from "react";
@@ -362,6 +363,8 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...actions,
   };
 
+  const boardSplit = waitingSplit(patients);
+
   return (
     <div
       className={styles.screen}
@@ -399,6 +402,10 @@ export function EdScreen({ edId }: EdScreenProps) {
             };
           })}
           onBoard={patients.length}
+          // Overall review, 20 Oct 2026: the board holds people still in transit and recorded
+          // outcomes as well, so the title says how its count splits ("5 waiting, 1 in transit") and
+          // the "waiting" part is this department's tile figure in the strip below.
+          onBoardParts={[`${boardSplit.waiting} waiting`, ...notWaitingParts(boardSplit)]}
           chips={heroChips}
           highlight={heroHighlight}
           onHighlight={setHeroHighlight}

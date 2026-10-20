@@ -1,8 +1,7 @@
 "use client";
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
-import { ContextualBackLink } from "@/components/contextual-back-link";
+import { ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -638,10 +637,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           foot={
             isPhone ? undefined : (
               <span className={styles.heroFoot}>
-                <ContextualBackLink fallbackHref={`/ward-flow/ward/${unit.id}`} className={styles.backLink}>
-                  <ArrowLeft size={14} aria-hidden="true" />
-                  <span>Ward overview</span>
-                </ContextualBackLink>
                 <span className={styles.heroFootMeta}>
                   {unit.name}
                   {oldestWaiting ? (

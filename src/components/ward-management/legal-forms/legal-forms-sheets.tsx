@@ -18,7 +18,6 @@ import {
   type SupportNotificationParty,
 } from "@/components/ward-management/ward-support-notifications";
 
-import { actPeriodFor, actPeriodSentence } from "./act-periods-demo";
 import {
   CATALOGUE,
   STANDING_TONE,
@@ -88,9 +87,9 @@ function parseExtensionExpiry(value: string, now: Instant, currentDue?: Instant)
 }
 
 /**
- * REQUIREMENTS. One place to read what each form is, what this prototype records for it, and the
- * labelled Act-period demo (D-29). It states nothing that the register, the demo file or the
- * engine does not already hold.
+ * REQUIREMENTS. One place to read what each form is and what this prototype records for it. It
+ * states nothing that the register or the engine does not already hold, and no Act period (owner,
+ * 20 Oct 2026: the only due time is the one a person records from the form).
  */
 export function RequirementsSheet({
   code,
@@ -102,7 +101,6 @@ export function RequirementsSheet({
   onClose: () => void;
 }) {
   const current = CATALOGUE.find((entry) => entry.code === code) ?? CATALOGUE[0]!;
-  const period = actPeriodFor(current.code);
   const records = [
     ...(isOwnedLegalFormCode(current.code) ? ["Time written on the form"] : []),
     ...(receiptEventAccepts(current.code) ? ["Form received"] : []),
@@ -151,14 +149,10 @@ export function RequirementsSheet({
           ) : (
             <p className={styles.note}>Nothing is recorded for this form in Ward Flow yet.</p>
           )}
-          <h4 className={styles.sectionHead}>Period</h4>
-          {period ? (
-            <p className={styles.demoNote} data-testid="ward-legal-requirements-period">
-              {actPeriodSentence(period)}
-            </p>
-          ) : (
-            <p className={styles.note}>No period is held for this form in the demo.</p>
-          )}
+          <h4 className={styles.sectionHead}>Due time</h4>
+          <p className={styles.note} data-testid="ward-legal-requirements-due">
+            Only the due time someone records from the form is shown. Ward Flow does not work out when a form ends.
+          </p>
         </section>
       </div>
     </Sheet>
