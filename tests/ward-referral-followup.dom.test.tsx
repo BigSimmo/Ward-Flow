@@ -114,4 +114,32 @@ describe("referral receipts and what we still need", () => {
     fireEvent.click(provided);
     expect(screen.getByTestId("copy")).toHaveTextContent("drug_screen:open");
   });
+
+  it("offers no tick-off once the ward has answered", () => {
+    const referral = seed.referrals[0]!;
+    const asked = { need: "drug_screen" as const, at: NOW_ANCHOR - 60, by: "Ward" };
+    const arm = (state: "queued" | "declined") => ({
+      destination: {
+        kind: "psychiatric_ward" as const,
+        unitId: WARD.id,
+        sex: "Female" as const,
+        secureBedNeeded: false,
+        involuntaryBedNeeded: false,
+        highAcuityNursingNeeded: false,
+      },
+      state,
+      informationNeeds: [asked],
+    });
+    const { container, rerender } = render(
+      <ReferralInformationNeedsPanel referral={{ ...referral, destinations: [arm("declined")] }} now={NOW_ANCHOR} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+    rerender(
+      <ReferralInformationNeedsPanel
+        referral={{ ...referral, destinations: [{ ...arm("queued"), withdrawnAt: NOW_ANCHOR - 1 }] }}
+        now={NOW_ANCHOR}
+      />,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
 });
