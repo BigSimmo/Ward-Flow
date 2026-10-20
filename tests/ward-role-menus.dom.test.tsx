@@ -9,8 +9,10 @@ import postcss from "postcss";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const nav = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => nav.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -78,6 +80,7 @@ function railMenu() {
 
 afterEach(() => {
   cleanup();
+  nav.pathname = "/ward-flow";
   installMatchMediaStub(false);
   act(() => setWardFeatureFlagOnDevice("role-access", null));
   resetWardAccessStoreForTests();
@@ -195,6 +198,14 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
     expect(rules).toEqual([
       '(min-width: 1201px) .rail[data-rail="open"]:not([data-tablet]) .countdownTwin display: none',
     ]);
+  });
+
+  it("keeps the menu's Handover, with its active state, while you are on the handover board", () => {
+    nav.pathname = "/ward-flow/handover";
+    render(wrap(<WardRail />));
+    const item = screen.getAllByRole("link", { name: "Handover" }).map((link) => link.closest("li"));
+    expect(item).toHaveLength(1);
+    expect(item[0]).not.toHaveAttribute("data-countdown-twin");
   });
 
   it("does not repeat Handover under the Menu sheet's countdown", () => {

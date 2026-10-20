@@ -973,7 +973,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               {menu.main.map((item) =>
                 renderItem(item, {
                   compactExtra: !compactPrimaryIds.has(item.id),
-                  countdownTwin: handoverCardLinks && item.id === HANDOVER_MENU_ID,
+                  // On the handover board itself the menu keeps Handover, so the active page shows.
+                  countdownTwin:
+                    handoverCardLinks && item.id === HANDOVER_MENU_ID && activeEntry?.id !== HANDOVER_MENU_ID,
                 }),
               )}
             </ul>
