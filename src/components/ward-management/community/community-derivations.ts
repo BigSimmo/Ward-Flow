@@ -188,8 +188,8 @@ function isDischargeIntoTheCommunity(admission: Admission): boolean {
  *
  * ⚠️ **ARRAYS RATHER THAN COUNTS, so a count above a list and the list beneath it cannot disagree.**
  * Every figure on the screen is `something.length` of the array rendered directly below it. This
- * project has already shipped a heading counting one array over a list rendering another
- * (`queueStageSummaries`); returning only arrays makes that unrepresentable here.
+ * project has already shipped a heading counting one array over a list rendering another (on a
+ * queue screen since removed); returning only arrays makes that unrepresentable here.
  *
  * ⚠️ **NOTHING IS SORTED.** The fixture's own order, exactly as the out-of-area ledger keeps it and
  * for the same reason: an ordering on any of these lists reads as a priority — who to visit first,
