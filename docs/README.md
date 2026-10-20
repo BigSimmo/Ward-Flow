@@ -64,7 +64,7 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 
 - [`../SECURITY.md`](../SECURITY.md) — repository security policy, synthetic-data-only boundary, and vulnerability reporting
 - [`ward-flow/governance/CLINICAL-SAFETY-CASE.md`](ward-flow/governance/CLINICAL-SAFETY-CASE.md) — ISO 14971 / DCB0129 clinical hazard log and safety case (stakeholder reference per Prototype Operating Mode §2)
-- [`ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md`](ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md) — WA Mental Health Act 2014 statutory boundary and D5 / D-29 compliance reference
+- [`ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md`](ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md) — WA Mental Health Act 2014 statutory boundary and D5 / D-70 compliance reference
 - [`ward-flow/governance/ABORIGINAL-CULTURAL-SAFETY-CHARTER.md`](ward-flow/governance/ABORIGINAL-CULTURAL-SAFETY-CHARTER.md) — Aboriginal cultural safety charter, ALO coordination, and country/kinship design safeguards
 - [`ward-flow/governance/PRODUCTION-READINESS.md`](ward-flow/governance/PRODUCTION-READINESS.md) — prototype vs production-pilot boundary and parked external review gates
 - [`ward-flow/pre-pilot-site-checklist.md`](ward-flow/pre-pilot-site-checklist.md) — pre-pilot site readiness checklist for WA Health hospital deployments

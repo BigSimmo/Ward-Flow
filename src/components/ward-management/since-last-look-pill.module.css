@@ -1,17 +1,28 @@
+/*
+ * The slot keeps its width so the header never jumps when an update arrives. Overall review (20 Oct
+ * 2026): the button inside it fits its words and sits at the slot's end, beside the header's other
+ * buttons, instead of filling the slot as a large, mostly empty white box. A touch screen keeps the
+ * 48px tap height.
+ */
 .slot {
   display: inline-flex;
   flex: 0 0 15rem;
   inline-size: 15rem;
   max-inline-size: 100%;
-  min-block-size: max(3rem, var(--ward-tap, 3rem));
   align-items: center;
+  justify-content: flex-end;
 }
 .pill {
-  inline-size: 100%;
-  min-block-size: max(3rem, var(--ward-tap, 3rem));
-  min-inline-size: max(3rem, var(--ward-tap, 3rem));
+  max-inline-size: 100%;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+@media (pointer: coarse) {
+  .slot,
+  .pill {
+    min-block-size: max(3rem, var(--ward-tap, 3rem));
+  }
 }
 
 /*

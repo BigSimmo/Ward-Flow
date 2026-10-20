@@ -72,6 +72,9 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // top of the queue at rest.
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
     expect(atRest[0]).toMatch(/^\d+ waiting in ED, \d+ beds? ready$/u);
+    // Overall review, 20 Oct 2026: the queue also lists people already in transit, so the hero names
+    // them beside the title, and its figures add up to the queue's Patients count.
+    expect(screen.getByTestId("ward-home-hero-not-waiting")).toHaveTextContent(/^\d+ more in transit$/u);
     expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "State bedflow", "Placement"]);
     expect(screen.getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));

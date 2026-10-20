@@ -2914,17 +2914,16 @@
   }
 }
 
-/* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Movements and Copy handover as
- * two equal buttons, then Journey so far, Destination, the facts and Who to call on the page.
- * These classes render only on phone. */
+/* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Copy handover as one full-width
+ * button (Back moved to the header, 20 Oct 2026), then Journey so far, Destination, the facts and
+ * Who to call on the page. These classes render only on phone. */
 .phHeroActions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--wf-s-2);
   width: 100%;
 }
 
-.phHeroActions > a,
 .phHeroActions > button {
   box-sizing: border-box;
   width: 100%;

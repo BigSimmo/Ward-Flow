@@ -7,7 +7,10 @@ import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { examinationRevokedWhileBedHeld } from "@/components/ward-management/ward-derivations";
+import {
+  EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
+  examinationRevokedWhileBedHeld,
+} from "@/components/ward-management/ward-derivations";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
@@ -204,6 +207,30 @@ export function renderEdBoardTableRow(
             </>
           )}
         </span>
+        {isTabletPortrait ? null : (
+          /* Overall review (20 Oct 2026): at 1365 px and below the Cleared and Review columns step
+             aside (DA-06), so this compact line keeps medical clearance and review readable at a
+             glance. Hidden above that width, where the columns themselves show it. */
+          <span className={styles.a2Checks} data-testid={`ward-ed-row-checks-${movement.id}`}>
+            <span className={styles.a2Value}>
+              <StatusGlyph tone={clearedTone} size={8} />
+              {medicalClearance === undefined ? "Clearance pending" : clearedWords}
+            </span>
+            {/* PR #489 review: a revoked examination with a bed still held is a warning, never a
+                plain "Reviewed", here as in the Review column (whose notice is hidden with it). */}
+            {examinationRevokedWhileBedHeld(movement) ? (
+              <span className={styles.a2Value} data-level="warning">
+                <StatusGlyph tone="warning" size={8} />
+                {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
+              </span>
+            ) : (
+              <span className={styles.a2Value}>
+                <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
+                {reviewWords}
+              </span>
+            )}
+          </span>
+        )}
         <span className={styles.a2Facts}>
           {readmissionFact}
           {patientFactsTail}

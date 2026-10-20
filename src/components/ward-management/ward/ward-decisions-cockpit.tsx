@@ -278,9 +278,10 @@ function Queue({
       id: "rollup",
       group: "act",
       tone: "danger",
-      title: `${rollupTimeLabel} morning bed rollup overdue`,
+      // Overall review (20 Oct 2026): "morning bed rollup" was project jargon.
+      title: `Morning bed numbers not confirmed, due ${rollupTimeLabel}`,
       sub: staffingFact,
-      phoneTitle: `Rollup overdue · due ${rollupTimeLabel}`,
+      phoneTitle: `Bed numbers due ${rollupTimeLabel}`,
       detail: staffingFact,
       testId: "ward-morning-rollup-overdue-banner",
       actions: onConfirmRollup ? (
@@ -290,7 +291,7 @@ function Queue({
           data-testid="ward-confirm-morning-rollup-btn"
           onClick={onConfirmRollup}
         >
-          Confirm rollup
+          Confirm bed numbers
         </button>
       ) : (
         <span className={styles.unwired}>Not wired in this prototype.</span>
@@ -301,7 +302,7 @@ function Queue({
       id: "rollup",
       group: "wait",
       tone: "neutral",
-      title: `Morning bed rollup due ${rollupTimeLabel}`,
+      title: `Morning bed numbers due ${rollupTimeLabel}`,
       sub: staffingFact,
     });
   }
@@ -310,7 +311,7 @@ function Queue({
       id: "rollup-done",
       group: "done",
       tone: "success",
-      title: `${rollupTimeLabel} morning bed rollup confirmed`,
+      title: `Morning bed numbers confirmed (due ${rollupTimeLabel})`,
       sub: `${plannedDischarges} discharges scheduled today`,
       testId: "ward-morning-rollup-confirmed-banner",
     });

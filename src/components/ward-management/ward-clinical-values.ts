@@ -16,8 +16,8 @@ import {
  * recorded source (D-56), and two more with a national source (D-58). On 16 Oct 2026 he signed the rest,
  * changing two of them (D-63). Signing is for
  * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
- * is a legal limit (D-22) and none comes from the Mental Health Act: Act periods live only in
- * `legal-forms/act-periods-demo.ts` (D-29).
+ * is a legal limit (D-22) and none comes from the Mental Health Act. Ward Flow holds no Act periods:
+ * the only form due time is the one a person records (D-70, which replaced D-29).
  *
  * Where two screens used different figures for the same rule, the figure the main app runs on was
  * kept and the other is listed under `alternatives`, so Josh can sign one. The constants the screens

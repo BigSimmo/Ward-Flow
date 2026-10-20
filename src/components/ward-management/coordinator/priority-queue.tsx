@@ -147,7 +147,7 @@ type PriorityQueueProps = {
    * A), 10 on desktop Home, where the page scrolls once (Home placement redesign, Josh 19 Oct 2026).
    */
   rowCap?: number;
-  /** Phone (v10 Home, direction A): the switch reads "ED" and "Referrals". */
+  /** Phone (v10 Home, direction A): the queue's phone layout. The switch reads "Patients" and "Referrals". */
   phone?: boolean;
   /** Movements pinned on top for an active act-now task (`queueOrder`), marked `data-pinned`. */
   pinnedIds?: ReadonlySet<string>;
@@ -243,7 +243,9 @@ export function PriorityQueue({
           items={[
             {
               id: "patients",
-              label: phone ? "ED" : "Patients",
+              // Overall review, 20 Oct 2026: "ED 70" sat under "62 waiting in ED"; the list also holds
+              // people already in transit, so the phone names it Patients, as the desktop does.
+              label: "Patients",
               count: movements.length === 0 ? "none" : movements.length,
             },
             { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
@@ -531,9 +533,13 @@ export function PriorityQueue({
                   <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
                   <span className={styles.queueMarks}>
                     {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-                    <span className={styles.queueMark}>
-                      {referral.atsCategory === undefined ? "ATS not recorded" : `ATS ${referral.atsCategory}`}
-                    </span>
+                    {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
+                        out of sight (screen readers still hear it); a recorded ATS shows. */}
+                    {referral.atsCategory === undefined ? (
+                      <SrOnly>ATS not recorded</SrOnly>
+                    ) : (
+                      <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
+                    )}
                   </span>
                 </span>
                 <span className={styles.queueWait}>

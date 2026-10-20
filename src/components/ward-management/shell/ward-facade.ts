@@ -80,7 +80,8 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
  * derivation lives: `delayGroups` sorts EVERY open movement into a cause (`awaiting_coordinator` is
  * its fallback), so "open delays" is the open-movement count by construction, identical to
  * `openMovements` forever, with two different labels over it. `wardNavCounts` counts the three
- * severe causes instead — the number somebody acts on — and this wraps that. A field here called
+ * severe causes instead — the number somebody acts on — as the Waiting count's `need`, and this
+ * wraps that. A field here called
  * `openDelays` would have promised the refused figure and delivered the other one.
  *
  * ⚠️ **THE RAIL CARRIES A SIXTH COUNT THIS LIST DOES NOT.** `wardNavCounts` also returns
@@ -184,10 +185,23 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     return { value: count.value, noun: count.noun };
   }
 
+  function severeDelays(): ShellFigure {
+    const need = counts.delays?.need;
+    if (need === undefined) {
+      throw new Error(
+        'ward-facade: wardNavCounts returned no severe "delays" figure. A shell figure with no derivation behind ' +
+          "it must not be shown as 0.",
+      );
+    }
+    return { value: need.value, noun: need.noun };
+  }
+
   return {
     bedsAvailable: required("capacity"),
     openMovements: required("movements"),
-    delaysNeedingAttention: required("delays"),
+    // The Waiting badge now shows Waiting's own title figure (overall review, 20 Oct 2026); the
+    // severe causes this figure has always meant travel as that count's `need`.
+    delaysNeedingAttention: severeDelays(),
     referralsWaiting: required("referrals"),
     // The same list the Tasks badge, drawer, Alerts and Home read (`taskItems`), so absence and
     // decision-target rows count here too.

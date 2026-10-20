@@ -127,28 +127,6 @@
   flex-wrap: wrap;
 }
 
-.backLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 500;
-  text-decoration: none;
-  border-radius: var(--r2);
-  padding: 0.25rem 0.5rem;
-  transition: background 0.12s ease;
-}
-
-.backLink:hover {
-  background: var(--sunk);
-}
-
-.backLink:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 .headerTitle {
   display: flex;
   align-items: center;
@@ -1112,21 +1090,6 @@
     padding: var(--wf-s-3) clamp(0.75rem, 2vw, 1.5rem) 0;
   }
 
-  .answerTop .backLink {
-    padding: 0;
-    color: var(--wf-hero-ink-2);
-    font-size: var(--wf-fs-13);
-  }
-
-  .answerTop .backLink:hover {
-    background: transparent;
-    color: var(--wf-hero-ink);
-  }
-
-  .answerTop .backLink:focus-visible {
-    outline-color: var(--wf-hero-ink);
-  }
-
   .panelTitle {
     font-size: var(--wf-fs-14);
     letter-spacing: 0;
@@ -1776,29 +1739,10 @@
   }
 }
 
-/* Phone polish (8 Oct 2026): the answer band is title, then one row with the back arrow on the
- * left and Accept in principle on the right. The back link keeps its words as its accessible name
- * and a full 48px target. The page foot keeps the 12px gutter. Desktop is unchanged. */
+/* Phone polish (8 Oct 2026): the answer band is title, then one row with Accept in principle on the
+ * right (Back is in the header since 20 Oct 2026). The page foot keeps the 12px gutter. Desktop is
+ * unchanged. */
 @media screen and (max-width: 48rem) {
-  .answerTop .backLink {
-    min-width: var(--spacing-tap, 3rem);
-    min-height: var(--spacing-tap, 3rem);
-    justify-content: center;
-    box-sizing: border-box;
-    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-    border-radius: var(--wf-r-md);
-    color: var(--wf-hero-ink);
-  }
-
-  .answerTop .backLink > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
   .answerScreen > footer {
     width: auto;
     align-self: stretch;
