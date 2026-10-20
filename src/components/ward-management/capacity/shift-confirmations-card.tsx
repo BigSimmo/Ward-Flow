@@ -9,13 +9,14 @@ import { unitHref } from "../shell/ward-facade";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { Unit } from "../ward-model";
-import { shiftConfirmations } from "./shift-confirmations";
+import { UNCHANGED_SHIFTS_LISTED, shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
 import styles from "./shift-confirmations.module.css";
 
 /**
  * Smart features idea 6 (19 Oct 2026), the coordinator's half of "beds still correct": how many
  * wards have confirmed their numbers since this shift began, and which have not, so their figures
- * can be chased before the bed meeting. Behind the `shift-confirmations` switch.
+ * can be chased before the bed meeting. Behind the `shift-confirmations` switch. Under it, the wards
+ * that have confirmed the same number unchanged for a day or more (`unchangedConfirmations`).
  */
 export function ShiftConfirmationsCard({ units, now }: { units: readonly Unit[]; now: Instant }) {
   const enabled = useWardFeatureFlag("shift-confirmations");
@@ -28,6 +29,7 @@ function ShiftConfirmationsBody({ units, now }: { units: readonly Unit[]; now: I
   const listId = useId();
   const summary = shiftConfirmations(units, now);
   const allDone = summary.waiting.length === 0;
+  const unchanged = unchangedConfirmations(units);
   return (
     <section className={styles.section} aria-labelledby={`${listId}-title`} data-testid="shift-confirmations">
       <div className={styles.header}>
@@ -68,6 +70,22 @@ function ShiftConfirmationsBody({ units, now }: { units: readonly Unit[]; now: I
           ) : null}
         </>
       )}
+      {/* Idea 6's safety note: confirmed with no changes many shifts running. Listed by name only. */}
+      {unchanged.length > 0 ? (
+        <div className={styles.unchanged} data-testid="shift-confirmations-unchanged">
+          <p className={styles.note}>
+            Same number confirmed {UNCHANGED_SHIFTS_LISTED} or more shifts in a row, worth a look:
+          </p>
+          <ul className={styles.list}>
+            {unchanged.map(({ unit, shifts }) => (
+              <li key={unit.id} className={styles.item}>
+                <Link href={unitHref(unit.id)}>{unit.name}</Link>
+                <span className={styles.when}>{shifts} shifts</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

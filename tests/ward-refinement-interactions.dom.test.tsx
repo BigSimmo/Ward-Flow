@@ -89,7 +89,10 @@ describe("Q004 refinement interaction regressions", () => {
     // Direction A (owner, 10 Oct 2026): at rest Placement shows the top of the queue, labelled so,
     // with no Close and no queue row pressed. Nothing is selected until a coordinator picks a row.
     const atRest = screen.getByLabelText("Placement");
-    expect(within(atRest).getByTestId("ward-placement-top-of-queue")).toHaveTextContent("Top of queue");
+    // Audit 1, Josh 20 Oct (WP-06): labelled as the first in the list, never as a recommendation.
+    expect(within(atRest).getByTestId("ward-placement-top-of-queue")).toHaveTextContent(
+      "First in list, not a recommendation",
+    );
     expect(within(atRest).queryByRole("button", { name: "Close shortlist and clear selection" })).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
@@ -114,26 +117,32 @@ describe("Q004 refinement interaction regressions", () => {
     const topId = top.getAttribute("data-testid")!.replace("ward-queue-row-", "");
     expect(top).toHaveAttribute("aria-pressed", "false");
 
+    const before = screen.getByTestId("ward-refinement-domain-state").textContent;
     const bedflow = screen.getByRole("region", { name: "State Bedflow" });
     fireEvent.click(within(bedflow).getAllByRole("button", { name: /^Offer / })[0]!);
 
     expect(top).toHaveAttribute("aria-pressed", "true");
+    // Audit 1, Josh 20 Oct (WP-06): the first tap on the preview only chooses; nothing is offered.
+    expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
     const placement = screen.getByLabelText("Placement");
     expect(placement).toHaveAttribute("data-subject-movement", topId);
     expect(within(placement).queryByTestId("ward-placement-top-of-queue")).toBeNull();
   });
 
-  it("selects the top-of-queue patient as soon as the coordinator reaches into the preview", () => {
+  // Audit 1, Josh 20 Oct (WP-06): a tap in the preview chooses the patient and does nothing else.
+  it("selects the top-of-queue patient on the first tap in the preview, without acting", () => {
     renderCoordinator();
     const queue = screen.getByRole("region", { name: "Priority queue" });
     const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const placement = screen.getByLabelText("Placement");
     expect(within(placement).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
 
-    fireEvent.pointerDown(within(placement).getAllByRole("button")[0]!);
+    const before = screen.getByTestId("ward-refinement-domain-state").textContent;
+    fireEvent.click(within(placement).getAllByRole("button")[0]!);
 
     expect(top).toHaveAttribute("aria-pressed", "true");
     expect(within(screen.getByLabelText("Placement")).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+    expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {

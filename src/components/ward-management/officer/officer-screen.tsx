@@ -62,6 +62,7 @@ import styles from "./officer.module.css";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import type { TransportExceptionInput } from "@/components/ward-management/ward-flow-events";
 import { collectionGaps } from "@/components/ward-management/ward-transport-checks";
+import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
 import {
   type HighlightPill,
   type HistoryTab,
@@ -596,7 +597,9 @@ export function OfficerScreen() {
         : "no ETA";
       return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
     });
+    // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = [
+      SYNTHETIC_COPY_LINE,
       `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
       ...lines,
     ].join("\n");

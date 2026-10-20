@@ -155,6 +155,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // "estimated" time that reads as already passed, or hours ahead of the booking that produced it.
   "estimatedAt",
   "estimatedArrivalAt",
+  // The latest edit to an arrival plan (`MovementArrivalDetails.updatedAt`, 20 Oct 2026).
+  "updatedAt",
   "uploadedAt",
   "arrivalLateNotifiedAt",
   "openWarningAt",

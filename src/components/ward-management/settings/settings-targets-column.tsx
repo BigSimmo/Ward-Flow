@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { Card, CardHead, StatusGlyph, buttonClass } from "@/components/wf";
 import { PreviewTag, RuleRow } from "./settings-rows";
 import styles from "./settings.module.css";
@@ -98,69 +99,73 @@ export function SettingsTargetsColumn({
         })}
       </Card>
 
-      <Card aria-labelledby="more-title">
-        <CardHead iconPlain id="more-title" icon={SlidersHorizontal} title="More thresholds" aside={<PreviewTag />} />
-        <RuleRow
-          unavailableReason={unavailableReason}
-          setting="occupancy"
-          title="Occupancy alert"
-          sub="Bed alerts dot from"
-          value={BED_ALERT_THRESHOLD_PERCENT}
-          saved={BED_ALERT_THRESHOLD_PERCENT}
-          display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
-          noun="occupancy alert"
-          range={{
-            min: 80,
-            max: 95,
-            step: 1,
-            minLabel: "80%",
-            maxLabel: "95%",
-          }}
-          onChange={() => onPreview("Occupancy alert")}
-          preview
-          previewTag={false}
-        />
-        <RuleRow
-          unavailableReason={unavailableReason}
-          setting="tier-one"
-          title="Tier 1 overdue after"
-          sub="Referral queue"
-          value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-          saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-          display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
-          noun="tier 1 overdue time"
-          range={{
-            min: 30,
-            max: 240,
-            step: 30,
-            minLabel: "30m",
-            maxLabel: "4h",
-          }}
-          onChange={() => onPreview("Tier 1 overdue after")}
-          preview
-          previewTag={false}
-        />
-        <RuleRow
-          unavailableReason={unavailableReason}
-          setting="ward-silent"
-          title="Ward not answering"
-          sub="First reminder after"
-          value={SILENT_WARD_FIRST_REMINDER_MINUTES}
-          saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
-          display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
-          noun="ward reminder time"
-          range={{
-            min: 30,
-            max: 240,
-            step: 30,
-            minLabel: "30m",
-            maxLabel: "4h",
-          }}
-          onChange={() => onPreview("Ward not answering")}
-          preview
-          previewTag={false}
-        />
-      </Card>
+      {/* Overall review, 20 Oct 2026: every threshold here is Preview, so the card shows only in a
+          local development build, not as an empty "Preview" card in demo or production. */}
+      <UnwiredPreview>
+        <Card aria-labelledby="more-title">
+          <CardHead iconPlain id="more-title" icon={SlidersHorizontal} title="More thresholds" aside={<PreviewTag />} />
+          <RuleRow
+            unavailableReason={unavailableReason}
+            setting="occupancy"
+            title="Occupancy alert"
+            sub="Bed alerts dot from"
+            value={BED_ALERT_THRESHOLD_PERCENT}
+            saved={BED_ALERT_THRESHOLD_PERCENT}
+            display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
+            noun="occupancy alert"
+            range={{
+              min: 80,
+              max: 95,
+              step: 1,
+              minLabel: "80%",
+              maxLabel: "95%",
+            }}
+            onChange={() => onPreview("Occupancy alert")}
+            preview
+            previewTag={false}
+          />
+          <RuleRow
+            unavailableReason={unavailableReason}
+            setting="tier-one"
+            title="Tier 1 overdue after"
+            sub="Referral queue"
+            value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
+            saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
+            display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
+            noun="tier 1 overdue time"
+            range={{
+              min: 30,
+              max: 240,
+              step: 30,
+              minLabel: "30m",
+              maxLabel: "4h",
+            }}
+            onChange={() => onPreview("Tier 1 overdue after")}
+            preview
+            previewTag={false}
+          />
+          <RuleRow
+            unavailableReason={unavailableReason}
+            setting="ward-silent"
+            title="Ward not answering"
+            sub="First reminder after"
+            value={SILENT_WARD_FIRST_REMINDER_MINUTES}
+            saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
+            display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
+            noun="ward reminder time"
+            range={{
+              min: 30,
+              max: 240,
+              step: 30,
+              minLabel: "30m",
+              maxLabel: "4h",
+            }}
+            onChange={() => onPreview("Ward not answering")}
+            preview
+            previewTag={false}
+          />
+        </Card>
+      </UnwiredPreview>
 
       <Card aria-labelledby="changes-title" data-testid="ward-settings-recent-changes" data-setting="recent-changes">
         <CardHead

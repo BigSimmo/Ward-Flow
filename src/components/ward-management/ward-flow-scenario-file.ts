@@ -98,7 +98,9 @@ export function buildScenarioFile(
   // than none.
   if (readScenarioFile(json, stateVersion).ok !== true)
     return { ok: false, reason: "This scenario could not be saved safely. Nothing was saved." };
-  const stamp = `${savedAt.getFullYear()}-${pad(savedAt.getMonth() + 1)}-${pad(savedAt.getDate())}-${pad(savedAt.getHours())}${pad(savedAt.getMinutes())}`;
+  // Perth wall time, whatever the device's zone (Audit 1, TM-2, Josh 20 Oct).
+  const perth = new Date(savedAt.getTime() + 8 * 60 * 60_000);
+  const stamp = `${perth.getUTCFullYear()}-${pad(perth.getUTCMonth() + 1)}-${pad(perth.getUTCDate())}-${pad(perth.getUTCHours())}${pad(perth.getUTCMinutes())}`;
   return { ok: true, json, fileName: `ward-flow-scenario-${stamp}.json` };
 }
 

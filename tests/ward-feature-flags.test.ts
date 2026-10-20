@@ -63,20 +63,57 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
-  it("defaults new features on for development and demo, and keeps only signed off flags on in production", () => {
-    for (const environment of ["development", "demo"] as const) {
+  it("keeps the make-room mockup to local builds, whatever a device or the server says (Audit 1, D-71)", () => {
+    for (const environment of ["demo", "production"] as const) {
+      const resolved = resolveWardFeatureFlags({
+        environment,
+        server: { "make-room-chains": true },
+        device: { "make-room-chains": true },
+      });
+      expect(flag(resolved, "make-room-chains")).toMatchObject({ on: false, deviceCanChange: false });
+    }
+    const local = resolveWardFeatureFlags({ environment: "development", server: {}, device: {} });
+    expect(flag(local, "make-room-chains").on).toBe(true);
+  });
+
+  it("turns every finished feature on in all environments (Josh, 20 Oct 2026), leaving only the held-back flags off", () => {
+    const allOn = [
+      "bed-meeting-tv",
+      "referral-opened-receipts",
+      "referral-information-needs",
+      "ward-closure-mode",
+      "shift-confirmations",
+      "bed-meeting-actions",
+      "pilot-measures",
+      "missed-requests-check",
+      "awol-bed-hold-review",
+      "top25-criteria-led-discharge",
+    ] as const;
+    for (const environment of ["development", "demo", "production"] as const) {
       const resolved = resolveWardFeatureFlags({ environment, server: {}, device: {} });
-      expect(flag(resolved, "bed-meeting-tv")).toMatchObject({ on: true, source: "default" });
-      expect(flag(resolved, "demo-reset")).toMatchObject({ on: true, source: "default" });
+      for (const name of allOn) expect(flag(resolved, name), `${name} in ${environment}`).toMatchObject({ on: true });
     }
     expect(
       flag(resolveWardFeatureFlags({ environment: "development", server: {}, device: {} }), "role-access").on,
     ).toBe(false);
     expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
-    const onInProduction = production.filter((entry) => entry.on).map((entry) => entry.name);
-    expect(onInProduction).toEqual(["role-access", "top25-criteria-led-discharge"]);
-    expect(flag(production, "awol-bed-hold-review").on).toBe(false);
+    expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual([
+      "demo-reset",
+      "make-room-chains",
+    ]);
+  });
+
+  it("keeps demo reset off on the live site, which runs as demo, and on for a local build (Josh, 20 Oct 2026)", () => {
+    const at = (environment: "development" | "demo" | "production") =>
+      flag(resolveWardFeatureFlags({ environment, server: {}, device: {} }), "demo-reset").on;
+    expect(at("development")).toBe(true);
+    expect(at("demo")).toBe(false);
+    expect(at("production")).toBe(false);
+    // Make room plans stay a local-build mockup.
+    const makeRoom = (environment: "development" | "demo" | "production") =>
+      flag(resolveWardFeatureFlags({ environment, server: {}, device: {} }), "make-room-chains").on;
+    expect([makeRoom("development"), makeRoom("demo"), makeRoom("production")]).toEqual([true, false, false]);
   });
 
   it("keeps role access on in production whatever the server setting says (review item 14)", () => {

@@ -37,6 +37,7 @@ import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /**
  * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
@@ -529,16 +530,18 @@ export function MovementDrawer({
             </Link>
           ) : null}
           {open ? <PullNowButton movement={movement} /> : null}
-          <button
-            type="button"
-            className={buttonClass({ variant: "sec", size: "sm", className: d.preview })}
-            aria-disabled="true"
-            title={`Preview. ${NOT_WIRED}`}
-            onClick={ignoreUnavailableActivation}
-          >
-            <PhoneCall size={14} aria-hidden="true" />
-            Call ward desk
-          </button>
+          <UnwiredPreview>
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm", className: d.preview })}
+              aria-disabled="true"
+              title={`Preview. ${NOT_WIRED}`}
+              onClick={ignoreUnavailableActivation}
+            >
+              <PhoneCall size={14} aria-hidden="true" />
+              Call ward desk
+            </button>
+          </UnwiredPreview>
         </div>
         <div className={d.urgent}>
           <p className={d.urgentLine}>

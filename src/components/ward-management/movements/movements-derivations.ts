@@ -10,9 +10,7 @@
 // second; nothing here re-derives what a stage or a transport leg IS — both borrow the real
 // vocabulary (`stageCopy`, `transportLeg`) so this screen can never quietly disagree with the
 // screens it replaces about what a given patient's state actually is.
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import {
-  clockState,
   dayOf,
   type DueSoonThresholds,
   formatInstantWithDay,
@@ -55,41 +53,16 @@ export type JourneyStage = {
   id: MovementStage;
   label: string;
   blurb: string;
-  /** Every movement at this stage, longest-waiting first (design lock §5.4) — except a movement
-   *  whose legal detention authority is breached or running out, which sorts first regardless of
-   *  wait. See `legalUrgencyRank` below; that exception is what "outranks everything"
-   *  means in the design lock and it is not scoped to the Delays screen alone. */
+  /** Every movement at this stage, longest-waiting first. Audit 1, Josh 20 Oct (CS-04, NB-6c): an
+   *  expiring legal authority no longer sorts first; the row's act-now edge still marks it. */
   movements: Movement[];
 };
 
-/**
- * "Is this movement's legal authority to be detained already breached, or about to run out" — the
- * one exception design lock §5.4 names as outranking wait order everywhere in this fold, not only
- * on the Delays screen. Mirrors the judgement `delayGroups` (`delays/delays-derivations.ts`) makes
- * for its own `legal_breached`/`legal_expiring` causes: "running out" reads as `clockState`
- * `"breached"` or `"critical"` (under an hour, or already past), and deliberately excludes `"due"`
- * (under three hours) for the same reason that file gives — a band wide enough to catch a third of
- * the fixture points nowhere. Written again here, rather than imported, because `delayGroups` does
- * not export this as its own predicate; kept to the identical two-state reading so the two screens
- * cannot silently start disagreeing about which patients are actually running out of time.
- *
- * A movement with no `legalForm.dueAt` at all (every Form 1A and 3B in this model) has no legal
- * clock to be running out, so it never qualifies — absence is not urgency.
- */
-/** 2 when the legal authority is already breached, 1 when it runs out within the hour, else 0. A
- *  breached order outranks one with time left (audit 13 Oct 2026: exactly 60m left now counts). */
-function legalUrgencyRank(movement: Movement, now: Instant, thresholds: DueSoonThresholds): number {
-  // A form that ended at the examination or on arrival is history, not a live deadline (S-6).
-  const dueAt = currentLegalDueAt(movement);
-  if (dueAt === undefined) return 0;
-  const state = clockState(dueAt, now, thresholds);
-  return state === "breached" ? 2 : state === "critical" ? 1 : 0;
-}
-
-/** The shared ordering for both lists this file returns: an expiring legal authority first,
- *  regardless of anything else, then longest-waiting (earliest `openedAt`) first. */
-function byUrgencyThenWait(a: Movement, b: Movement, now: Instant, thresholds: DueSoonThresholds): number {
-  return legalUrgencyRank(b, now, thresholds) - legalUrgencyRank(a, now, thresholds) || a.openedAt - b.openedAt;
+/** The shared ordering for both lists this file returns: longest-waiting (earliest `openedAt`)
+ *  first, then the id. Audit 1, Josh 20 Oct (CS-04, NB-6c): an expiring legal authority used to
+ *  sort first; re-sorting the waiting list is on the never-build list, so it is a highlight only. */
+function byWait(a: Movement, b: Movement): number {
+  return a.openedAt - b.openedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
 /**
@@ -194,13 +167,13 @@ export function reconciliationSentence({
 }
 
 export function journeyStages(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): JourneyStage[] {
+  void now; // `now` and `thresholds` are kept so existing callers compile; the order reads neither.
+  void thresholds;
   return MOVEMENT_STAGES.map((id) => ({
     id,
     label: stageCopy[id].label,
     blurb: STAGE_BLURBS[id],
-    movements: movements
-      .filter((movement) => movement.stage === id)
-      .sort((a, b) => byUrgencyThenWait(a, b, now, thresholds)),
+    movements: movements.filter((movement) => movement.stage === id).sort(byWait),
   }));
 }
 
@@ -280,11 +253,11 @@ export type TransportLegRow = {
  * for itself rather than have the choice buried in this derivation — the same shape `bedKindGaps`
  * uses, where the open/closed filter lives at the call site.
  *
- * Sorted the same way as `journeyStages`: an expiring legal authority first, then longest since
- * booked. These are the same patients as the stage strip above, and a coordinator reading both
+ * Sorted the same way as `journeyStages`: longest wait first (Audit 1, Josh 20 Oct). These are the same patients as the stage strip above, and a coordinator reading both
  * should never see one order on one panel and a different order on the other for the same person.
  */
 export function transportLegs(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): TransportLegRow[] {
+  void thresholds; // Kept so existing callers compile; the order reads no legal clock.
   const legs: TransportLegRow[] = [];
   for (const movement of movements) {
     const transport = movement.transport;
@@ -299,7 +272,7 @@ export function transportLegs(movements: Movement[], now: Instant, thresholds: D
       minutesSinceBooked: now - bookedAt,
     });
   }
-  return legs.sort((a, b) => byUrgencyThenWait(a.movement, b.movement, now, thresholds));
+  return legs.sort((a, b) => byWait(a.movement, b.movement));
 }
 
 /**
@@ -446,19 +419,13 @@ export function waitedMinutes(movement: Movement, now: Instant): number {
  * marked (owner ruling, 2026-09-05, "MARK IT, DO NOT FILTER IT"), so an ordering that quietly
  * dropped the closed rows would reverse that ruling through the back door.
  *
- * 🔴 **AN EXPIRING LEGAL AUTHORITY OUTRANKS THE WAIT, AND IT IS NOT A FLOURISH — IT IS THE SAME
- * PRECEDENCE `journeyStages` ALREADY APPLIES** through `byUrgencyThenWait`. The first version of
- * this function omitted it, and the screen's footer sentence — *"an expiring legal authority
- * outranks every order above"* — would then have been TRUE under the stage order and FALSE under
- * this one, on the same screen, with the reader given no way to tell which order they were looking
- * at. **One sentence covering two orderings is only honest if both honour it.**
+ * Audit 1, Josh 20 Oct (CS-04, NB-6c): an expiring legal authority no longer outranks the wait
+ * here or in `journeyStages`; both orders are wait only, and the row's act-now edge marks it.
  */
 export function byLongestWait(movements: Movement[], now: Instant, thresholds: DueSoonThresholds): Movement[] {
+  void thresholds; // Kept so existing callers compile; the order reads no legal clock.
   return [...movements].sort(
-    (a, b) =>
-      legalUrgencyRank(b, now, thresholds) - legalUrgencyRank(a, now, thresholds) ||
-      waitedMinutes(b, now) - waitedMinutes(a, now) ||
-      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    (a, b) => waitedMinutes(b, now) - waitedMinutes(a, now) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
 }
 

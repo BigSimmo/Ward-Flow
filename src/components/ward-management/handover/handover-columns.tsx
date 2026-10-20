@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { durMinutes, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import {
   dueParts,
   destinationText,
@@ -80,7 +81,9 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
           <StatusGlyph tone={rowTone(row, ctx)} />
           <span className={styles.trunc}>{STAGE_LABEL[row.stage]}</span>
         </span>
-        <span className={styles.sub}>{row.ownerShort}</span>
+        <span className={styles.sub}>
+          <SpelledCodes text={row.ownerShort} />
+        </span>
       </span>
     ),
     paper: (row) => `${STAGE_LABEL[row.stage]}, ${row.ownerShort}`,
@@ -104,8 +107,13 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 140,
     cell: (row) => (
       <span className={styles.two}>
-        <span className={styles.trunc}>{row.edShort}</span>
-        <span className={`${styles.sub} ${styles.trunc}`}>{destinationText(row)}</span>
+        {/* DA-17: hospital codes carry their full name (`ward-abbreviations.tsx`). */}
+        <span className={styles.trunc}>
+          <SpelledCodes text={row.edShort} />
+        </span>
+        <span className={`${styles.sub} ${styles.trunc}`}>
+          <SpelledCodes text={destinationText(row)} />
+        </span>
       </span>
     ),
     paper: (row) => `${row.edShort} to ${destinationText(row)}`,

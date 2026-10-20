@@ -632,6 +632,27 @@ describe("shared workspace connection", () => {
     expect(view?.error).toBe("No allocatable bed on this ward. Nothing was changed.");
     client.dispose();
   });
+  it("says which ward was not asked when Refer to wards went to only some of them (audit E-05)", async () => {
+    let view: SharedView | undefined;
+    const reason = "FSH Adult Secure is not eligible for movement UM100023 — failed gate cohort.";
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json({ outcome: "partly", commandRevision: 2, error: reason, snapshot: snapshot(2) })
+          : Response.json({ snapshot: snapshot(1) }),
+    });
+    await client.refresh();
+    const outcome = await client.dispatch(event);
+    expect(outcome.status).toBe("accepted");
+    expect(outcome.partly).toBe(reason);
+    expect(view?.error).toBe(`Sent to the suitable wards only. ${reason}`);
+    client.dispose();
+  });
   it("never sends a referral's chart files to the shared board (audit F-01)", async () => {
     const bodies: string[] = [];
     const client = new SharedWorkspaceClient({

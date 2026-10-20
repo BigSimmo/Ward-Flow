@@ -128,12 +128,13 @@ export function deriveStepDownSwapCandidates(input: {
       verdict: eligibility(incomingMovement, fromUnit, input.now),
     }))
     .filter((candidate) => candidate.verdict.eligible)
-    .sort((a, b) => {
-      const aAcuityOrSecure = a.incomingMovement.security === "Secure" || a.incomingMovement.highAcuity ? 1 : 0;
-      const bAcuityOrSecure = b.incomingMovement.security === "Secure" || b.incomingMovement.highAcuity ? 1 : 0;
-      if (bAcuityOrSecure !== aAcuityOrSecure) return bAcuityOrSecure - aAcuityOrSecure;
-      return a.incomingMovement.openedAt - b.incomingMovement.openedAt;
-    });
+    // Audit 1, Josh 20 Oct (CS-04, NB-7): longest wait first, then the id. Secure or high-acuity
+    // patients used to sort first; acuity and security are shown on the row instead.
+    .sort(
+      (a, b) =>
+        a.incomingMovement.openedAt - b.incomingMovement.openedAt ||
+        (a.incomingMovement.id < b.incomingMovement.id ? -1 : a.incomingMovement.id > b.incomingMovement.id ? 1 : 0),
+    );
   return {
     candidates: matches.filter((candidate) => !needsGenderPlacementReview(candidate.incomingMovement, fromUnit.id)),
     placementReview: matches
@@ -168,7 +169,8 @@ export function deriveStepDownBoard(input: {
         readyBeds: boundedBedAvailability(unit).available,
       }))
       .filter((ward) => ward.verdict.eligible && ward.readyBeds > 0)
-      .sort((a, b) => b.readyBeds - a.readyBeds || a.unit.name.localeCompare(b.unit.name));
+      // Audit 1, Josh 20 Oct: a fixed order by name, not most Ready beds first.
+      .sort((a, b) => a.unit.name.localeCompare(b.unit.name));
     const transferMovement = input.movements.find(
       (movement) =>
         movement.sourceAdmissionId === admission.id &&

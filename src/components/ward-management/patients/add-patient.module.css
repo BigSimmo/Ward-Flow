@@ -51,11 +51,6 @@
   font-weight: 600;
 }
 
-.d4Notice {
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -469,10 +464,6 @@
   white-space: nowrap;
 }
 
-.heroActions .d4Notice {
-  color: var(--wf-hero-ink-2);
-}
-
 .heroBar {
   display: flex;
   flex-direction: column;
@@ -569,10 +560,6 @@
 }
 
 @media (max-width: 48rem) {
-  .desktopOnly {
-    display: none;
-  }
-
   .heroActions {
     flex-wrap: nowrap;
   }

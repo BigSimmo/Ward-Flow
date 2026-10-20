@@ -40,3 +40,21 @@
   gap: var(--wf-s-2) var(--wf-s-3);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* "Checked, all accounted for": the tap, then who ticked it and when. */
+.check {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+  min-height: var(--wf-row-default);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.list + .check {
+  margin-top: var(--wf-s-2);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}

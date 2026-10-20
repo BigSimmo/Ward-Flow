@@ -22,6 +22,7 @@ import {
 } from "./on-call-directory";
 
 import styles from "./on-call.module.css";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 /** What a row or card can ask the screen to do. One set of handlers serves desktop and phone. */
 export type ContactActions = {
@@ -473,16 +474,21 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
   );
 }
 
-/** Call, copy and email for one contact. Calling never dials: it copies and says so. */
+/**
+ * Call, copy and email for one contact. Calling never dials: it copies and says so, so the Call
+ * button shows only in a local development build (overall review, 20 Oct 2026).
+ */
 function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
   const number = numberAt(entry, actions.minute);
   return (
     <div className={styles.callRow}>
       {number ? (
         <>
-          <Button variant="pri" icon={PhoneCall} className={styles.callButton} onClick={() => actions.onCall(entry)}>
-            Call <span className={styles.mono}>{number}</span>
-          </Button>
+          {showsUnwiredPreviews() ? (
+            <Button variant="pri" icon={PhoneCall} className={styles.callButton} onClick={() => actions.onCall(entry)}>
+              Call <span className={styles.mono}>{number}</span>
+            </Button>
+          ) : null}
           <Button
             variant="sec"
             icon={Copy}

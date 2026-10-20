@@ -10,6 +10,7 @@ import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf
 import type { CallRow } from "./patient-call-list";
 import type { PatientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import styles from "./patient-now-layouts.module.css";
 
 /**
@@ -99,7 +100,9 @@ export function PatientNowLayout({
 
 function CallButton({ row }: { row: CallRow }) {
   const toast = useOptionalToast();
-  if (!row.number) return null;
+  // Calling only copies the number (shown beside it), so the button is left out of demo and
+  // production builds (overall review, 20 Oct 2026).
+  if (!row.number || !showsUnwiredPreviews()) return null;
   const number = row.number;
   return (
     <button

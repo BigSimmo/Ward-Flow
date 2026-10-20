@@ -163,8 +163,12 @@ describe("ward command feedback follows its own completion", () => {
       const { occupied, record } = renderWard(reply);
       fireEvent.click(occupied);
       const leave = screen.getByRole("button", { name: /^Record that they have left/ });
+      // Audit 1 (CS-07): each tap asks once before it records; a second confirm still records once.
       fireEvent.click(leave);
+      fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
       fireEvent.click(leave);
+      if (screen.queryByRole("button", { name: "Record departure" }))
+        fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
       expect(record).toHaveBeenCalledTimes(1);
       expect(screen.getByRole("button", { name: /^Record that they have left/ })).toBeInTheDocument();
       expect(screen.queryByText(/Recorded: .* has left the ward/)).not.toBeInTheDocument();
@@ -180,6 +184,7 @@ describe("ward command feedback follows its own completion", () => {
     const { occupied, record } = renderWard(reply);
     fireEvent.click(occupied);
     fireEvent.click(screen.getByRole("button", { name: /^Record that they have left/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
     const admissionId = record.mock.calls[0][0] as string;
     await act(async () =>
       reply.resolve({

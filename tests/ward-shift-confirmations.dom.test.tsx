@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ShiftConfirmationsCard } from "@/components/ward-management/capacity/shift-confirmations-card";
+import type { CountedFigure } from "@/components/ward-management/capacity/shift-confirmations";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -37,6 +38,21 @@ describe("Confirmed this shift card", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     const link = screen.getByRole("link", { name: b!.name });
     expect(link).toHaveAttribute("href", `/ward-flow/ward/${encodeURIComponent(b!.id)}`);
+  });
+
+  it("lists wards that have confirmed the same number for a day or more, with the count", () => {
+    const allocatable: CountedFigure = { ...a!.allocatable, confirmedAt: since, unchangedShifts: 4 };
+    const steady: Unit = { ...a!, allocatable };
+    render(<ShiftConfirmationsCard units={[steady, confirmedAt(b!, since)]} now={NOW_ANCHOR} />);
+    const list = screen.getByTestId("shift-confirmations-unchanged");
+    expect(list).toHaveTextContent("Same number confirmed 3 or more shifts in a row");
+    expect(list).toHaveTextContent(`${a!.name}4 shifts`);
+    expect(list).not.toHaveTextContent(b!.name);
+  });
+
+  it("shows no such list when no ward has a run of unchanged confirmations", () => {
+    render(<ShiftConfirmationsCard units={[confirmedAt(a!, since), confirmedAt(b!, since)]} now={NOW_ANCHOR} />);
+    expect(screen.queryByTestId("shift-confirmations-unchanged")).toBeNull();
   });
 
   it("says so when every ward has confirmed, with nothing to open", () => {

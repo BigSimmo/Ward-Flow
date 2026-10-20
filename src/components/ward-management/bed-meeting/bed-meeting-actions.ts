@@ -64,3 +64,27 @@ export function openMeetingAction(
 ): BedMeetingAction | undefined {
   return actions?.find((action) => action.kind === kind && action.doneAt === undefined);
 }
+
+/**
+ * THE OWNER'S "NEEDS YOU" ROW FOR AN OPEN ACTION (overall review, 20 Oct 2026). One row per open
+ * action, `meeting-action-<kind>-<movement|admission>-<record id>`, so the reducer can tell which
+ * action a snooze or "take" names without reading the derivations. Kind ids hold no hyphen.
+ */
+export const BED_MEETING_ACTION_INBOX_PREFIX = "meeting-action-";
+
+export function meetingActionInboxId(subject: BedMeetingSubject, kind: BedMeetingActionKind): string {
+  return `${BED_MEETING_ACTION_INBOX_PREFIX}${kind}-${subject.kind}-${subject.id}`;
+}
+
+/** The subject and kind a row id names, or `undefined` when it is not a well-formed action row id. */
+export function meetingActionOfInboxId(
+  inboxItemId: string,
+): { subject: BedMeetingSubject; kind: BedMeetingActionKind } | undefined {
+  if (!inboxItemId.startsWith(BED_MEETING_ACTION_INBOX_PREFIX)) return undefined;
+  const match = /^([a-z_]+)-(movement|admission)-(.+)$/.exec(inboxItemId.slice(BED_MEETING_ACTION_INBOX_PREFIX.length));
+  if (!match || !BED_MEETING_ACTION_KIND_IDS.includes(match[1]!)) return undefined;
+  return {
+    kind: match[1] as BedMeetingActionKind,
+    subject: { kind: match[2] as BedMeetingSubject["kind"], id: match[3]! },
+  };
+}

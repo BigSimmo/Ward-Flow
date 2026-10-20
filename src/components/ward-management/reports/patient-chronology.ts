@@ -217,6 +217,7 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Form expiry recorded": ["RECORD_LEGAL_FORM_EXPIRY", "RECORD_LEGAL_FORM_CONTINUATION"],
     "Form receipt time corrected": ["CORRECT_LEGAL_FORM_RECEIPT"],
     "Arrival details recorded": ["SET_ARRIVAL_DETAILS"],
+    "Arrival details updated": ["SET_ARRIVAL_DETAILS"],
     "Left the emergency department": ["RECORD_LEFT_DEPARTMENT"],
     "Movement closed": ["PATIENT_ARRIVED", "WITHDRAW_REFERRAL", "RECORD_ED_OUTCOME"],
     "Referral raised": ["RECEIVE_REFERRAL", "RAISE_REFERRAL"],
@@ -428,6 +429,14 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       who: whoLabel(movement.arrivalDetails.recordedBy),
       action: "Arrival details recorded",
     });
+    // Only the latest edit is kept on the record, so earlier edits between the two are not listed.
+    if (movement.arrivalDetails.updatedAt !== undefined) {
+      add({
+        recordedAt: finite(movement.arrivalDetails.updatedAt),
+        who: whoLabel(movement.arrivalDetails.updatedBy),
+        action: "Arrival details updated",
+      });
+    }
   }
   if (movement.transportNeed) {
     add({

@@ -79,6 +79,7 @@ function openAndChoose(admissionId: string, destination: string) {
   fireEvent.click(card as HTMLElement);
   fireEvent.change(screen.getByLabelText(/Where are they going/i), { target: { value: destination } });
   fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
 }
 
 describe("the ward screen's leave list shows no internal id and nothing about the person", () => {
