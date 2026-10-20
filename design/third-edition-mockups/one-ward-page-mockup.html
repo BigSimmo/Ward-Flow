@@ -1798,14 +1798,15 @@
         function change(text, fn) {
           var before = snapshot();
           fn();
-          closeDrawer();
+          /* Rebuild first, then close: closing refocuses the opener, which must be the rebuilt one. */
           renderAll();
+          closeDrawer();
           toast(text, function () {
             /* An open drawer still shows the state before Undo; close it so its buttons can't act on it. */
-            closeDrawer();
             chosenBed = null;
             restore(before);
             renderAll();
+            closeDrawer();
           });
         }
         function confirmBox(title, text, okLabel, onOk) {
