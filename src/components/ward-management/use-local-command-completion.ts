@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, type RefObject } from "react";
+import { commandMetadata } from "./ward-command-metadata";
 import type { WardCommandOutcome } from "./ward-shared-client";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -57,6 +58,7 @@ export function localCommandOutcome(
   const accepted = !refusal || refusal === before.rejections.at(-1);
   return {
     status: accepted ? "accepted" : "refused",
+    ...(accepted ? commandMetadata(before, next) : {}),
     message: accepted ? undefined : refusal?.reason,
     undoRecords: next.undoRecords,
     generation: next.worldGeneration,

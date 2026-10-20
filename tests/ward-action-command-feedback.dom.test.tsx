@@ -109,7 +109,7 @@ describe("Ward command feedback", () => {
       await act(async () => control.refuse(status));
       expect(screen.queryByText(/^Recorded: .* has left the ward/)).toBeNull();
       expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
-      // The ward screen (main's toastAfterCommand path) shows the refusal reason, wherever it renders it.
+      // The ward screen (its confirmed-command feedback) shows the refusal reason, wherever it renders it.
       expect(screen.getByText(/Review the shared board/)).toBeInTheDocument();
     },
   );

@@ -405,6 +405,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "movementId"
   | "teamId"
   | "unitId"
+  // Explicit accepted-referral continuation resolves this id against the live accepted ward.
+  | "acceptedUnitId"
   // MARK_REFERRAL_INFORMATION_MET: the ward whose referral copy asked, a unit id like `unitId`.
   | "wardUnitId"
   | "admissionId"

@@ -194,6 +194,12 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
             : "Not recorded"}
         </dd>
       </dl>
+      {record.identity.kind !== "linked" && ["occupied", "departed"].includes(record.admissionState) && (
+        <p data-testid="care-journey-link-first">
+          Link the patient to their record first. A revocation or any other care step can only be recorded for a linked
+          patient.
+        </p>
+      )}
       {editable && (
         <>
           {!dead &&
