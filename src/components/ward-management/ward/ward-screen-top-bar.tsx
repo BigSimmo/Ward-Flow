@@ -242,7 +242,10 @@ export function WardScreenTopBar({
             returnFocusRef={notificationTriggerRef}
             data-testid="ward-notifications-sheet"
           >
-            <div ref={notificationCenterRef} data-testid="ward-notification-center-wrap">
+            {/* No notificationCenterRef here: the ward screen's click-outside listener is for the desktop
+                popover, and the sheet's title and handle sit outside this div, so a press on them would
+                close it. The sheet closes from its own Close, scrim and Escape. */}
+            <div data-testid="ward-notification-center-wrap">
               <WardNotificationCenter
                 inSheet
                 unitId={unit.id}
