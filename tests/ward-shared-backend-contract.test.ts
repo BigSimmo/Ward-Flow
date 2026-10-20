@@ -443,7 +443,7 @@ describe("Frontend-to-backend shared workspace contract", () => {
     await vi.waitFor(() => {
       expect(viewA?.status).toBe("ready");
       expect(viewA?.snapshot?.revision).toBe(2);
-      expect(viewA?.error).toContain("Someone else changed this first");
+      expect(viewA?.error).toContain("This record changed while you were looking");
     });
 
     // Client A adopted Coordinator B's committed +15 min state rather than its own +30 min state.
