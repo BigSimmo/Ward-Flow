@@ -396,7 +396,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
       bodyClassName={styles.body}
       footer={
         <p className={styles.keys} aria-hidden="true" data-kbd-hint="">
-          <Kbd>Enter</Kbd> Preview <Kbd>Double click</Kbd> Open <Kbd>Esc</Kbd> Close
+          {/* Overall review (20 Oct 2026): plain words, not "Enter Preview · Double click Open". */}
+          <Kbd>Enter</Kbd> shows what a desk does · <Kbd>Double click</Kbd> goes to it · <Kbd>Esc</Kbd> closes
         </p>
       }
       footerClassName={styles.foot}
