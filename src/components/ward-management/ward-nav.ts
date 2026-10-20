@@ -132,7 +132,7 @@ export type WardViewItem = {
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
   { id: "command", href: "/ward-flow", label: "Home" },
-  { id: "delays", href: "/ward-flow/delays", label: "Delays" },
+  { id: "delays", href: "/ward-flow/waiting", label: "Waiting" },
   { id: "capacity", href: "/ward-flow/capacity", label: "Capacity" },
   { id: "movements", href: "/ward-flow/movements", label: "Movements" },
   { id: "governance", href: "/ward-flow/governance", label: "Governance" },
@@ -493,20 +493,24 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   /* The next three entries were added by MERGE 01 (owner-approved 2026-09-05), which folded the
    * priority queue, the exceptions inbox and the escalation board into one screen, `DelaysScreen`
-   * at /ward-flow/delays. Each of the three old routes now redirects there rather than
+   * at /ward-flow/delays (renamed /ward-flow/waiting in B4 step 3). Each of the three old routes now redirects there rather than
    * being deleted, so an existing bookmark or deep link does not 404 — the same reasoning
    * `/constellation` above already sets for a retired route kept as a redirect stub. */
   [
     "/ward-flow/queue",
-    "A deliberate redirect to /delays (MERGE 01), documented in its own route file (queue/page.tsx) — not a destination in its own right.",
+    "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (queue/page.tsx) — not a destination in its own right.",
   ],
   [
     "/ward-flow/exceptions",
-    "A deliberate redirect to /delays (MERGE 01), documented in its own route file (exceptions/page.tsx) — not a destination in its own right.",
+    "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (exceptions/page.tsx) — not a destination in its own right.",
+  ],
+  [
+    "/ward-flow/delays",
+    "A deliberate redirect to /waiting with its query kept (B4 step 3, Josh 19 Oct 2026), documented in its own route file (delays/page.tsx) — not a destination in its own right.",
   ],
   [
     "/ward-flow/escalation",
-    "A deliberate redirect to /delays (MERGE 01), documented in its own route file (escalation/page.tsx) — not a destination in its own right.",
+    "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (escalation/page.tsx) — not a destination in its own right.",
   ],
   /* MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into `MovementsScreen`.
    * The old route now redirects there rather than being deleted, for the same bookmark/deep-link
@@ -635,7 +639,7 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/delays",
+    route: "/ward-flow/waiting",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
@@ -792,7 +796,8 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/community")) return "Community";
   if (isUnder("/ward-flow/movements")) return "Movements";
   if (isUnder("/ward-flow/statistics")) return "Statistics";
-  if (isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue") return "Delays";
+  if (isUnder("/ward-flow/waiting") || isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue")
+    return "Waiting";
   if (isUnder("/ward-flow/capacity")) return "Capacity";
   if (isUnder("/ward-flow/network")) return "Network";
   if (isUnder("/ward-flow/governance")) return "Governance";

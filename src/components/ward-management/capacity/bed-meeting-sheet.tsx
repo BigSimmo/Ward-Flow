@@ -221,8 +221,8 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
       </div>
 
       <p className={styles.footer}>
-        Figures come from the Capacity, Discharges, ED and Delays screens at the moment above. Legal time limits are not
-        checked in this prototype.
+        Figures come from the Capacity, Discharges, ED and Waiting screens at the moment above. Legal time limits are
+        not checked in this prototype.
       </p>
     </article>
   );

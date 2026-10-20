@@ -755,7 +755,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     ).toBeGreaterThan(15);
 
     // The plain case.
-    expect(destinations.get("Delays")).toBe("/ward-flow/delays");
+    expect(destinations.get("Waiting")).toBe("/ward-flow/waiting");
 
     /*
      * 🔴 **THE REGRESSION CONTROL FOR A MIS-PAIRING THAT WOULD HAVE INVENTED A FINDING.** The first

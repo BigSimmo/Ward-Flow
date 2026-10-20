@@ -102,7 +102,7 @@ describe("Ward Flow synthetic prototype", () => {
     const hrefs = wardModeHrefs();
     // MERGE 01 (2026-09-05): the fold at e31c9c462 combined "Priority queue" and "Exceptions"
     // into one view. It keeps the id `queue`, but its label is now "Delays" and it points at
-    // `/ward-flow/delays`, so the original eight routes became seven — the old `/queue`
+    // `/ward-flow/waiting`, so the original eight routes became seven — the old `/queue`
     // and `/exceptions` destinations are gone and `/delays` replaces both.
     //
     // ⚠️ MERGE 03 (2026-09-05) then took `/ward-flow/transport` out of the nav, folding the
@@ -120,7 +120,7 @@ describe("Ward Flow synthetic prototype", () => {
     // redirects to Home, so SIX becomes FIVE for the same reason `transport` left.
     expect(hrefs).toEqual([
       "/ward-flow",
-      "/ward-flow/delays",
+      "/ward-flow/waiting",
       "/ward-flow/capacity",
       "/ward-flow/movements",
       "/ward-flow/governance",

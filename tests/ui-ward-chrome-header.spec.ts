@@ -61,7 +61,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * change as this rewrite:
  *
  *   1. The search results popup was clipped and unclickable at every width. At 1440x900 on
- *      `/ward-flow/delays` with a query typed, the popup ran from y=108 to y=492 while its
+ *      `/ward-flow/waiting` with a query typed, the popup ran from y=108 to y=492 while its
  *      scroll-container ancestor was only 114.5px tall — 377px of the popup was clipped, and
  *      `document.elementFromPoint` at the popup's own centre resolved to the sidebar, not the
  *      popup. 12 results existed; 0 were reachable by mouse. Asserted below as an actual
@@ -89,7 +89,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-smoke` flake that reintroducing 44px caused) — asserted with `toBeGreaterThanOrEqual` so a
  * legitimately taller control never reddens this file.
  *
- * FIXTURE: `/ward-flow/delays` is the exact route the original audit measured faults 1-3
+ * FIXTURE: `/ward-flow/waiting` is the exact route the original audit measured faults 1-3
  * against. The click test searches "Halloway", the family name on PT-001 (Talia Halloway,
  * `ward-patients-seed.ts`). A single letter "a" now ranks word-start names ahead of a buried
  * match and keeps six people, so Talia is no longer in that short list. The family name still
@@ -99,7 +99,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-ward-*.spec.ts`) or ARIA role/name, never a CSS Module class name, because those are hashed.
  */
 
-const DELAYS_ROUTE = "/ward-flow/delays";
+const DELAYS_ROUTE = "/ward-flow/waiting";
 const PUBLISHED_CHECKS_ROUTE = "/ward-flow/movements";
 
 /**
@@ -280,7 +280,7 @@ test.describe("@mockup Ward shell bar", () => {
   // swaps the registers rail for the person panel, so that swap is what must leave the shell alone.
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto("/ward-flow/delays", { waitUntil: "networkidle" });
+    await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
     // The hero registers its band after hydration. Reading the unhydrated glass
     // colour compared initial loading with a ready page, rather than the panel swap.
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
@@ -746,7 +746,7 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
-  await gotoWardChrome(page, "/ward-flow/delays");
+  await gotoWardChrome(page, "/ward-flow/waiting");
   const toolsTrigger = page.getByTestId(PHONE_MENU[0]);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools", exact: true });

@@ -708,7 +708,7 @@ describe("Wave 4 item 15 — Delays alias pedagogy banners", () => {
     renderScreen("queue");
     const banner = screen.getByTestId("ward-delays-alias-banner");
     expect(banner).toHaveAttribute("data-from", "queue");
-    expect(banner).toHaveTextContent("Opened from a Queue bookmark — that board is now Delays.");
+    expect(banner).toHaveTextContent("Opened from a Queue bookmark — that board is now Waiting.");
   });
 
   it("dismisses the alias banner without leaving the Delays board", () => {
@@ -729,7 +729,7 @@ describe("the Menu's Delays row lands on its own figure (shell-9)", () => {
     const severe = delayGroups(seededMovements, allUnits(), NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)
       .filter((group) => SEVERE_CAUSES.includes(group.cause))
       .reduce((total, group) => total + group.movements.length, 0);
-    window.history.replaceState(null, "", "/ward-flow/delays?show=severe");
+    window.history.replaceState(null, "", "/ward-flow/waiting?show=severe");
     try {
       renderScreen();
       expect(screen.getAllByText(`At a time limit or nowhere to go · ${severe}`).length).toBeGreaterThan(0);

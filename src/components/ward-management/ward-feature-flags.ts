@@ -153,7 +153,7 @@ export const WARD_FEATURE_FLAGS = {
   },
   "missed-requests-check": {
     label: "Daily missed request check",
-    description: "Delays shows coordinators a daily check for missed or doubled bed requests.",
+    description: "Waiting shows coordinators a daily check for missed or doubled bed requests.",
     owner: "Josh",
     added: "2026-10-19",
     defaults: { development: true, demo: true, production: false },
