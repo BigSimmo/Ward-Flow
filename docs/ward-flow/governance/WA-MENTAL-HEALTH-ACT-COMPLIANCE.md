@@ -31,10 +31,10 @@ This correction does not silently convert existing records to another form.
 
 - Typed expiry from the signed form remains the record. Software never creates a
   binding expiry or automatically detains, treats, discharges or changes legal status.
-- D-29 permits sourced advisory periods only in
-  `src/components/ward-management/legal-forms/act-periods-demo.ts`, labelled
-  **Synthetic demo, not legally checked**. This pack does not introduce another
-  period table or repeat unverified section numbers/durations.
+- No screen computes an Act period. D-70 (20 October 2026) removed the D-29
+  synthetic demo period table; only the due time a person records is shown. This
+  pack does not introduce a period table or repeat unverified section
+  numbers/durations.
 - Existing destination eligibility checks are engineering controls over synthetic
   unit/legal-status data. They are not evidence of gazettal, legal interpretation,
   current hospital authority or real-world compliance.

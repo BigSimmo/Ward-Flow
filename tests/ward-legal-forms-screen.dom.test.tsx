@@ -9,7 +9,6 @@ import {
   legalFormBreakdown,
   legalFormGroupRows,
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { actPeriodFor } from "@/components/ward-management/legal-forms/act-periods-demo";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -26,13 +25,16 @@ const rows = [...withDeadline, ...noDeadline];
 const openMovements = seededMovements.filter(isOpen);
 const breakdown = legalFormBreakdown(rows, NOW);
 
-/** Selects the first row whose form has a labelled Act-period demo, opening its side panel. */
-function selectRowWithActPeriod() {
-  const target = rows.find((movement) => actPeriodFor(movement.legalForm?.code ?? "") !== undefined);
-  if (!target) throw new Error("the fixture no longer carries a form with an Act-period demo");
+/** Selects the first row with no due time recorded, opening its side panel. */
+function selectRowWithoutDueTime() {
+  const target = noDeadline[0];
+  if (!target) throw new Error("the fixture no longer carries a form with no due time recorded");
   const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
   fireEvent.click(within(row).getAllByRole("button")[0]!);
 }
+
+/** Any wording of the removed Act-period countdown (owner, 20 Oct 2026). */
+const COMPUTED_ACT_PERIOD = /would end|Synthetic demo|Act period|under-18 period|demo period|count from/iu;
 
 function renderScreen() {
   return render(
@@ -216,28 +218,35 @@ describe("the Forms screen", () => {
 
 describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
   // v6 (LegalForms.png): the reminder sentence became the Warning windows card ("Your defaults,
-  // not legal limits") plus a "Within Nh" state beside each typed expiry; the selected form's
-  // Act-period note carries the "not legally checked" label.
+  // not legal limits") plus a "Within Nh" state beside each typed expiry.
   // Forms (9 Oct 2026): the Warning windows block sits in the summary panel shown while nobody is
-  // selected; choosing a patient swaps it for their form, which carries the labelled demo period.
-  it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as a synthetic, not legally checked demo", () => {
+  // selected; choosing a patient swaps it for their form.
+  it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as not legal limits", () => {
     renderScreen();
     const banner = screen.getByTestId("ward-legal-expiry-reminder");
     expect(banner).toHaveTextContent("Warning windows");
     expect(banner).toHaveTextContent("not legal limits");
     expect(screen.getAllByText(/^Within \dh$/).length).toBeGreaterThan(0);
-    selectRowWithActPeriod();
-    expect(screen.getByTestId("ward-legal-selected")).toHaveTextContent("not legally checked");
+    expect(screen.getByTestId("ward-legal-summary")).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
   });
 });
 
-describe("LegalFormsScreen Act period demo (owner ruling D-29)", () => {
-  it("labels every Act period line as a synthetic demo that is not legally checked", () => {
+describe("LegalFormsScreen shows only a recorded due time (owner, 20 Oct 2026, replacing D-29)", () => {
+  it("says no deadline is recorded for a form with no due time, and works out no Act period", () => {
     renderScreen();
-    selectRowWithActPeriod();
-    const lines = screen.getAllByTestId("ward-legal-act-period");
-    expect(lines.length).toBeGreaterThan(0);
-    for (const line of lines) expect(line).toHaveTextContent(/^Synthetic demo, not legally checked: /);
+    selectRowWithoutDueTime();
+    const panel = screen.getByTestId("ward-legal-selected");
+    expect(panel).toHaveTextContent("No deadline recorded");
+    expect(panel).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
+    expect(screen.queryByTestId("ward-legal-act-period")).toBeNull();
+
+    fireEvent.click(within(panel).getByRole("button", { name: /^Form \w+$/ }));
+    const sheet = screen.getByTestId("ward-legal-requirements");
+    expect(within(sheet).getByTestId("ward-legal-requirements-due")).toHaveTextContent(
+      "Ward Flow does not work out when a form ends",
+    );
+    expect(sheet).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
+    expect(sheet).not.toHaveTextContent(/\bs \d+/u);
   });
 });
 

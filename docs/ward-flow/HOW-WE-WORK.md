@@ -170,11 +170,11 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 ## 6. Owner rules that fail builds or reviews
 
 - **D4:** an unconnected control says exactly "Not wired in this prototype."
-- **D5:** no Mental Health Act section numbers or computed legal limits, except the
-  [owner-approved D-29 synthetic demo](decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026).
-  Only sourced periods and section references in `legal-forms/act-periods-demo.ts` and its
-  permitted test are exempt. Show "Synthetic demo, not legally checked". Typed expiry remains
-  the record; the engine never writes computed `dueAt`. Everything else in D5 is unchanged.
+- **D5:** no Mental Health Act section numbers or computed legal limits, with no exception.
+  [D-70](decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)
+  removed the D-29 Act period demo: screens show only the due time a person recorded
+  (`legalForm.dueAt`), or say none is recorded. Never compute an end, expiry or under-18 period,
+  and never order a list by a computed time. Everything else in D5 is unchanged.
 - **No typed text in browser storage** (called D-11 in helper briefs; owner ruling D-11 itself is the
   two-ledger rule). New events are classified in `ward-flow-persistence-classification.ts`, and any id
   or free-text field needs review. [D-67](decisions.md#d-67-recover-synthetic-form-drafts-within-the-browser-session-17-october-2026)

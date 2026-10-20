@@ -320,6 +320,15 @@
   white-space: nowrap;
 }
 
+/* Overall review (20 Oct 2026): a desk page opened by its link says whose desk it is and as whom
+   it is viewed, so the person above is not mistaken for that desk's own staff. */
+.shiftViewing {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: var(--wf-lh-11);
+}
+
 .shiftLiveClockRow {
   display: flex;
   align-items: center;

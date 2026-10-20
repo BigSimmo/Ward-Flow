@@ -125,7 +125,9 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           </label>
         ) : null}
         <span className={styles.draftNote} role="status">
-          {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
+          {/* Overall review (20 Oct 2026): says something only when there is something unsaved;
+              "Draft fields · This screen only" meant nothing to a clinician. */}
+          {hasBoardDrafts ? "Unsaved changes · This screen only" : null}
         </span>
         <span className={styles.boardResult} role="status">
           <span className={styles.boardHint}>Filters highlight, everyone stays</span> <b>{boardMatchCount}</b> of{" "}

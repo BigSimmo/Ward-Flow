@@ -214,6 +214,14 @@ export async function goToDesk(
 ) {
   const phone = isPhoneLayout(page);
   if (phone) {
+    // On a phone drill-down the header Back takes Menu's place (20 Oct 2026), so step back to a
+    // starting page first, as a person would.
+    const back = page.getByTestId("ward-bar-phone-back");
+    for (let step = 0; step < 5 && (await back.isVisible()); step += 1) {
+      const from = page.url();
+      await back.click();
+      await page.waitForURL((url) => url.href !== from, { timeout: 15_000 });
+    }
     await page.getByTestId("ward-bar-phone-menu").click();
     await page.getByTestId("ward-phone-menu-switch-workstation").click();
   } else {

@@ -248,8 +248,9 @@ function phoneMenuModel(
  * Needs you (device audit option A, 11 Oct 2026) holds only what is act-now or overdue. The first
  * row is the act-now tasks: the same red rows Tasks leads with (`activeActNowItems`), which the
  * notifier and phone push also read. Home's "Overdue" counts queue referrals past their wait, a
- * different thing, so this row keeps its own noun. Then Delays and Discharges while their count is
- * urgent. Movements' "still open" and Referrals' "awaiting a decision" stay in their groups.
+ * different thing, so this row keeps its own noun. Then Waiting's severe causes (its count's `need`,
+ * so Waiting also keeps its own row and badge) and Discharges while its count is urgent. Movements'
+ * "still open" and Referrals' "awaiting a decision" stay in their groups.
  */
 type NeedRow = {
   id: string;
@@ -269,13 +270,17 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
   for (const id of OVERDUE_NEED_IDS) {
     const entry = byId.get(id);
     const count = countIn(counts, id);
-    if (entry && count?.urgent && count.value > 0) {
+    // A badge that leads with its screen's own figure carries the act-on figure as `need`
+    // (Waiting: the severe causes); otherwise the badge itself is the figure while it is urgent.
+    const need = count?.need ?? (count?.urgent ? count : undefined);
+    if (entry && need && need.value > 0) {
       rows.push({
         id,
-        entryId: id,
+        // A `need` is a different figure from the badge, so the page keeps its own row and badge.
+        entryId: count?.need ? undefined : id,
         label: entry.label,
-        meta: count.noun,
-        count: count.value,
+        meta: need.noun,
+        count: need.value,
         // shell-9: Delays opens filtered to the severe causes this row counts.
         href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
         icon: entry.icon,
