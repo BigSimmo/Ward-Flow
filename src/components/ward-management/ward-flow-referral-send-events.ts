@@ -302,7 +302,9 @@ export function reduceReferralSendEvent(
         overrides: [],
         stage: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested",
         owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department.name,
-        referredUnitIds: continuedAcceptance ? [event.acceptedUnitId!] : [],
+        // Acceptance empties the live requests, as ACCEPT_IN_PRINCIPLE does: the accepted ward lives
+        // in `acceptedUnitId`, so WITHDRAW_WARD_REQUEST cannot take it back (review: CodeRabbit).
+        referredUnitIds: [],
         ...(continuedAcceptance
           ? {
               acceptedUnitId: event.acceptedUnitId,

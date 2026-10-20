@@ -247,6 +247,26 @@ describe("accepted direct referral continuation", () => {
     expect(pulled.movements.find((m) => m.id === movement.id)?.stage).toBe("pulled");
   });
 
+  it("records the accepted ward as accepted, not as a live request a withdrawal could take back", () => {
+    const { state, event, unit } = acceptedDirectReferral();
+    const started = apply(state, event);
+    const movement = started.movements.at(-1)!;
+    expect(movement.referredUnitIds).toEqual([]);
+    const withdrawn = wardFlowReducer(started, {
+      type: "WITHDRAW_WARD_REQUEST",
+      role: "coordinator",
+      now: now + 2,
+      movementId: movement.id,
+      unitId: unit.id,
+      reason: "no_answer_from_the_ward",
+    });
+    expect(withdrawn.rejections.at(-1)?.reason).toContain("does not hold a live referral");
+    expect(withdrawn.movements.find((m) => m.id === movement.id)).toMatchObject({
+      acceptedUnitId: unit.id,
+      stage: "accepted_awaiting_bed",
+    });
+  });
+
   it("scopes the accepting ward and never lets it past the ED scope check", () => {
     const { state, event, unit } = acceptedDirectReferral();
     const options = { now, places: wardPlaceLookup(state.units) };
