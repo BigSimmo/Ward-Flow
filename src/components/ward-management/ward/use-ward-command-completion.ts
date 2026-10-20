@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { UndoStepType } from "../ward-undo";
-import { useOptionalToast } from "@/components/wf/toast-provider";
+import { useOptionalToast } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import type { Rejection } from "@/components/ward-management/ward-model";
