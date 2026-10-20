@@ -137,7 +137,9 @@ describe("the auth adapter reports a session ending", () => {
     expect(onSessionEnded).toHaveBeenCalledTimes(1);
     auth.dispose();
 
-    const expired = memoryStorage({ [WARD_AUTH_STORAGE_KEY]: JSON.stringify({ ...session, expiresAt: 0 }) });
+    const expired = memoryStorage({
+      [WARD_AUTH_STORAGE_KEY]: JSON.stringify({ ...session, expiresAt: 0, recovery: false }),
+    });
     const ended = vi.fn();
     const refused = vi.fn(async () => new Response(null, { status: 400 }));
     const restored = new SupabaseWardAuth({
@@ -148,6 +150,7 @@ describe("the auth adapter reports a session ending", () => {
       onSessionEnded: ended,
     });
     await expect(restored.restore()).rejects.toMatchObject({ kind: "session" });
+    expect(refused).toHaveBeenCalledTimes(1);
     expect(ended).toHaveBeenCalledTimes(1);
     expect(expired.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     restored.dispose();

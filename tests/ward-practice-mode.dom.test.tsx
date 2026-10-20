@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardPracticeMode } from "@/components/ward-management/demo-reset/ward-practice-mode";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -87,5 +88,14 @@ describe("practice mode session", () => {
     expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
     expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
     show(true);
+  });
+
+  it("ends when the person signs out, so the next person sees Start practice", () => {
+    renderPractice();
+    fireEvent.click(screen.getByTestId("ward-practice-start"));
+    expect(screen.getByTestId("ward-practice-steps")).toBeInTheDocument();
+    act(() => endWardFlowBrowserSession());
+    expect(screen.queryByTestId("ward-practice-steps")).toBeNull();
+    expect(screen.getByTestId("ward-practice-start")).toBeInTheDocument();
   });
 });

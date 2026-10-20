@@ -7,6 +7,7 @@ import { useId, useMemo, useSyncExternalStore } from "react";
 import { Button } from "@/components/wf";
 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
@@ -27,6 +28,9 @@ function setSession(next: PracticeSession | null) {
   session = next;
   for (const listener of listeners) listener();
 }
+
+// A practice belongs to the person running it, so signing out ends it (PR #487).
+onWardSessionEnd(() => setSession(null));
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
