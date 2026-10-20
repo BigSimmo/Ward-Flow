@@ -706,11 +706,17 @@
           width: min(300px, 86vw);
           z-index: 50;
           transform: translateX(-102%);
-          transition: transform 200ms;
+          /* Hidden once slid away, so its buttons leave the tab order. */
+          visibility: hidden;
+          transition:
+            transform 200ms,
+            visibility 0s linear 200ms;
           overflow: auto;
         }
         .rail.open {
           transform: none;
+          visibility: visible;
+          transition: transform 200ms;
           box-shadow: var(--wf-e3);
         }
         .icon-btn.menu-btn {
@@ -1795,6 +1801,9 @@
           closeDrawer();
           renderAll();
           toast(text, function () {
+            /* An open drawer still shows the state before Undo; close it so its buttons can't act on it. */
+            closeDrawer();
+            chosenBed = null;
             restore(before);
             renderAll();
           });
@@ -2090,8 +2099,17 @@
 
         /* ─── drawer for a bed or an answer ─── */
         var lastFocus = null;
+        var lastFocusSel = null;
         function openDrawer(html, key) {
-          lastFocus = document.activeElement;
+          /* Remember the opener only on first open; later steps redraw the drawer itself. */
+          if ($("drawer").hidden) {
+            lastFocus = document.activeElement;
+            lastFocusSel = null;
+            if (lastFocus && lastFocus.hasAttribute("data-bed"))
+              lastFocusSel = '[data-bed="' + lastFocus.getAttribute("data-bed") + '"]';
+            else if (lastFocus && lastFocus.hasAttribute("data-ask"))
+              lastFocusSel = '[data-ask="' + lastFocus.getAttribute("data-ask") + '"]';
+          }
           ui.open = key;
           $("drawer").innerHTML = html;
           $("drawer").hidden = false;
@@ -2107,7 +2125,16 @@
           $("drawer").innerHTML = "";
           $("scrim").hidden = true;
           renderBeds();
-          if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+          /* The lists were redrawn, so find the opener again by its key (never the drawer itself). */
+          var back = lastFocus && document.body.contains(lastFocus) ? lastFocus : null;
+          if (!back && lastFocusSel) {
+            var found = document.querySelectorAll(lastFocusSel);
+            for (var i = 0; i < found.length && !back; i++) {
+              if (!$("drawer").contains(found[i])) back = found[i];
+            }
+          }
+          if (back) back.focus();
+          else $("main").focus();
         }
         function drawerHead(kicker, title, sub) {
           return (
@@ -2510,6 +2537,7 @@
           $("rail").classList.remove("open");
           $("menuBtn").setAttribute("aria-expanded", "false");
           if ($("drawer").hidden) $("scrim").hidden = true;
+          $("menuBtn").focus();
         }
         $("menuBtn").addEventListener("click", function () {
           $("rail").classList.add("open");

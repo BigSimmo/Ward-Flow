@@ -706,11 +706,17 @@
           width: min(300px, 86vw);
           z-index: 50;
           transform: translateX(-102%);
-          transition: transform 200ms;
+          /* Hidden once slid away, so its buttons leave the tab order. */
+          visibility: hidden;
+          transition:
+            transform 200ms,
+            visibility 0s linear 200ms;
           overflow: auto;
         }
         .rail.open {
           transform: none;
+          visibility: visible;
+          transition: transform 200ms;
           box-shadow: var(--wf-e3);
         }
         .icon-btn.menu-btn {
@@ -1708,12 +1714,14 @@
           return window.matchMedia("(max-width: 1100px)").matches;
         }
         var lastFocus = null;
+        var lastOpenId = null;
         function openPanel(id) {
           var n = needs.find(function (x) {
             return x.id === id;
           });
           if (!n) return;
-          lastFocus = document.activeElement;
+          if ($("panel").hidden) lastFocus = document.activeElement;
+          lastOpenId = id;
           state.open = id;
           state.chosenWard = null;
           state.onlyType = true;
@@ -1740,7 +1748,12 @@
           $("scrim").hidden = true;
           $("homeGrid").classList.remove("with-panel");
           renderList();
-          if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+          /* The list was redrawn, so find the opener again by its id; a done row has gone, so fall back. */
+          var back = lastOpenId && $("needsList").querySelector('[data-open="' + lastOpenId + '"]');
+          if (back) back.focus();
+          else if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+          else $("main").focus();
+          lastOpenId = null;
         }
 
         function head(n, kicker) {
@@ -2009,6 +2022,7 @@
           $("rail").classList.remove("open");
           $("menuBtn").setAttribute("aria-expanded", "false");
           if ($("panel").hidden) $("scrim").hidden = true;
+          $("menuBtn").focus();
         }
         $("menuBtn").addEventListener("click", function () {
           $("rail").classList.add("open");
