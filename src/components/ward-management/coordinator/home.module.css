@@ -2195,3 +2195,14 @@ button.registerRow:hover {
   align-items: center;
   color: var(--wf-ink-2);
 }
+
+/* DA-25: on a touch tablet, "Open in Delays" and Clear gain the same invisible 16px above and
+ * below as on the phone, a 48px tap area in the same layout. */
+@media (pointer: coarse) {
+  .footLink,
+  .footButton {
+    display: inline-block;
+    margin-block: calc(-1 * var(--wf-s-4));
+    padding-block: var(--wf-s-4);
+  }
+}
