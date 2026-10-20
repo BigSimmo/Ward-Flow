@@ -191,36 +191,40 @@ export function WardScreenTopBar({
 
       {isPhone ? (
         <>
-          <ScrollRow className={styles.phoneChips} role="toolbar" aria-label="Ward actions">
-            <button
-              type="button"
-              className={styles.phoneChip}
-              aria-haspopup="dialog"
-              onClick={() => {
-                selectActiveTab("attn");
-                setPhonePanel("shift");
-              }}
-              data-testid="ward-phone-chip-shift"
-            >
-              <ListChecks size={16} aria-hidden="true" />
-              This shift
-              {phoneTodoCount !== undefined ? <span className={styles.phoneChipCount}>{phoneTodoCount}</span> : null}
-            </button>
-            <button
-              type="button"
-              className={styles.phoneChip}
-              aria-haspopup="dialog"
-              onClick={() => {
-                selectActiveTab("attn");
-                setPhonePanel("flow");
-              }}
-              data-testid="ward-phone-chip-flow"
-            >
-              <ArrowLeftRight size={16} aria-hidden="true" />
-              Ward flow
-            </button>
+          {/* More sits outside the scrolling row: a scrolling row clips anything that opens out of it,
+              so its menu showed only its first item. */}
+          <div className={styles.phoneChipRow} role="toolbar" aria-label="Ward actions">
+            <ScrollRow className={styles.phoneChips}>
+              <button
+                type="button"
+                className={styles.phoneChip}
+                aria-haspopup="dialog"
+                onClick={() => {
+                  selectActiveTab("attn");
+                  setPhonePanel("shift");
+                }}
+                data-testid="ward-phone-chip-shift"
+              >
+                <ListChecks size={16} aria-hidden="true" />
+                This shift
+                {phoneTodoCount !== undefined ? <span className={styles.phoneChipCount}>{phoneTodoCount}</span> : null}
+              </button>
+              <button
+                type="button"
+                className={styles.phoneChip}
+                aria-haspopup="dialog"
+                onClick={() => {
+                  selectActiveTab("attn");
+                  setPhonePanel("flow");
+                }}
+                data-testid="ward-phone-chip-flow"
+              >
+                <ArrowLeftRight size={16} aria-hidden="true" />
+                Ward flow
+              </button>
+            </ScrollRow>
             {wardMoreMenu(styles.phoneChip, false)}
-          </ScrollRow>
+          </div>
           {raiseReferralGate.note}
           {wardRoleLockNote}
           {notificationCenterOpen ? (

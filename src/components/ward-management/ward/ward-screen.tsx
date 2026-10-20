@@ -1939,6 +1939,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       <Menu
         label="Switch ward"
         align="start"
+        className={styles.wardSwitchAnchor}
         items={switchUnits.map((candidate) => ({
           id: candidate.id,
           label: candidate.name,

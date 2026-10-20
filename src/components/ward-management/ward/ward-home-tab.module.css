@@ -966,12 +966,14 @@ label.todoMain:has(.todoTick:focus-visible) {
    glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
    unchanged. */
 @media (max-width: 48rem) {
-  .areaBeds > div:first-child {
+  /* Named, not ".areaBeds > div:first-child": on a phone the card has no head, so that selector
+     wrapped the walk round instead and laid its bed strip and list out side by side, off screen. */
+  .areaBeds > .bedsHead {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
   }
 
-  .areaBeds > div:first-child > div:last-child {
+  .areaBeds > .bedsHead > div:last-child {
     flex: 1 1 100%;
     min-width: 0;
     margin-left: 0;
