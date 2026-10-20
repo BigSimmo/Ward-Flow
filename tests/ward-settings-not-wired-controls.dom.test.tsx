@@ -220,8 +220,8 @@ describe("settings screen: Preview controls show only in a development build", (
     vi.unstubAllEnvs();
   });
 
-  // Every Preview row the find index names, plus Surge ends, which it does not.
-  const PREVIEW_TARGETS = [...SETTINGS_SEARCH_ENTRIES.filter((entry) => entry.preview).map((e) => e.id), "surge-ends"];
+  // Every Preview row the find index names.
+  const PREVIEW_TARGETS = SETTINGS_SEARCH_ENTRIES.filter((entry) => entry.preview).map((e) => e.id);
   // Cards whose every row is Preview: Live data and boards, Notifications, Privacy, Handover, More thresholds.
   const PREVIEW_CARDS = ["live-title", "notify-title", "privacy-title", "handover-title", "more-title"];
 
@@ -266,6 +266,7 @@ describe("settings screen: Preview controls show only in a development build", (
   it("find a setting offers no Preview row outside development, and every result it offers is on screen", () => {
     vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "production");
     expect(findSettings("quiet hours")).toEqual([]);
+    expect(findSettings("surge ends")).toEqual([]);
     expect(findSettings("handover").map((entry) => entry.id)).toEqual([]);
 
     renderSettings();
