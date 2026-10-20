@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-import { useBreakGlassPatientIds } from "../shell/ward-access";
+import { useIsBreakGlassRecord } from "../shell/ward-access";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { useWardFlowSelect } from "../ward-flow-provider";
@@ -26,7 +26,7 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const enabled = useWardFeatureFlag("bed-meeting-actions");
   const access = useEffectiveWardAccess();
   const { previewOf } = useWardAccessSnapshot();
-  const glass = useBreakGlassPatientIds();
+  const isBreakGlass = useIsBreakGlassRecord();
   const { movements, admissions } = useWardFlowSelect("movements", "admissions");
   if (!enabled || !subject || previewOf !== null) return null;
   const record =
@@ -36,7 +36,7 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const desk = deskRole(access);
   if (!desk) return null;
   // The scope layer's own read-only set: patients this desk sees only through break glass.
-  if (record?.patientId && glass.has(record.patientId)) return null;
+  if (isBreakGlass(record)) return null;
   const due = (record?.meetingActions ?? []).filter(
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action),
   );

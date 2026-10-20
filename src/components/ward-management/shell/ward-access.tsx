@@ -98,8 +98,17 @@ export function useWardRecordActors(): readonly WardRecordActor[] {
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
-export function useBreakGlassPatientIds(): ReadonlySet<string> {
+function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
+}
+
+/**
+ * Whether a movement or stay belongs to a person this desk sees only through break glass. The
+ * patient link is read here, inside the D-14 allowlist, so callers never touch it themselves.
+ */
+export function useIsBreakGlassRecord(): (record: { patientId?: string | null } | undefined) => boolean {
+  const glass = useBreakGlassPatientIds();
+  return useCallback((record) => Boolean(record?.patientId && glass.has(record.patientId)), [glass]);
 }
 
 /**
