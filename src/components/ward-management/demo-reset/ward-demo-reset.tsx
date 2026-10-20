@@ -129,8 +129,8 @@ export function WardDemoReset({
           data-testid="ward-demo-reset-confirm"
         >
           <p>
-            Load {scenarioLabels[pending]}? This replaces the demo data {demoDataReach(shared?.enabled === true)}. There is no
-            undo.
+            Load {scenarioLabels[pending]}? This replaces the demo data {demoDataReach(shared?.enabled === true)}. There
+            is no undo.
           </p>
           <Button
             ref={loadButton}
