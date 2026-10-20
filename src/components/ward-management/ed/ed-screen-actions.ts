@@ -68,7 +68,7 @@ export function edScreenActions({
     // This IS a real <form>, so Enter inside a field submits it whatever the button advertises —
     // the same bypass the raise-referral form guards. An `aria-disabled` control alone would not
     // catch it, and the reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
-    if (legalStatusDraft.reason === undefined) return;
+    if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
     raise("CHANGE_LEGAL_STATUS", {
       movementId,
       legalStatus: legalStatusDraft.legalStatus,
