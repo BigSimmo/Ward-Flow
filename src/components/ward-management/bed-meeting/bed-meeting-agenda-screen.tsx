@@ -12,6 +12,7 @@ import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { WARD_CAPACITY_HREF } from "../ward-nav";
+import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
@@ -140,9 +141,6 @@ function BedMeetingAgenda() {
     </main>
   );
 }
-
-/** How long after one Done the list ignores another, longer than a double click. */
-const DONE_PAUSE_MS = 1000;
 
 function ActionRow({
   row,
