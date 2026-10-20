@@ -9,11 +9,11 @@ import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { MISSED_REQUEST_LABELS, missedRequestCheck } from "./missed-requests-check";
+import { MISSED_REQUEST_LABELS, dailyCheckId, dailyCheckRecord, missedRequestCheck } from "./missed-requests-check";
 import styles from "./missed-requests-panel.module.css";
 
 /**
@@ -21,11 +21,21 @@ import styles from "./missed-requests-panel.module.css";
  * never appear on ward screens). Lists what `missedRequestCheck` finds across the whole network,
  * whatever service filter the page has, with each person named and their UMRN beside the name so
  * the coordinator confirms who it is before acting. It links to the records; it changes nothing.
+ *
+ * Overall review (20 Oct 2026): once worked through, the coordinator taps "Checked, all accounted
+ * for", which records the role and the time for today (`dailyCheckRecord`). The tap closes nothing
+ * and hides nothing: the list keeps showing whatever the rules still find.
  */
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
   const enabled = useWardFeatureFlag("missed-requests-check");
-  const { movements, referrals, patients } = useWardFlowSelect("movements", "referrals", "patients");
+  const { movements, referrals, patients, inboxCompletions, dispatch } = useWardFlowSelect(
+    "movements",
+    "referrals",
+    "patients",
+    "inboxCompletions",
+    "dispatch",
+  );
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
   const listId = useId();
@@ -37,6 +47,8 @@ export function MissedRequestsPanel() {
   );
 
   if (!enabled || access.role !== "coordinator") return null;
+
+  const checked = dailyCheckRecord(inboxCompletions, now);
 
   const who = (subject: Parameters<typeof patientOf>[0]) => {
     const person = patientOf(subject);
@@ -77,8 +89,8 @@ export function MissedRequestsPanel() {
           ) : undefined
         }
       />
-      {items.length > 0 && open ? (
-        <CardBody>
+      <CardBody>
+        {items.length > 0 && open ? (
           <ul id={listId} className={styles.list} data-testid="ward-missed-check-list">
             {items.map((item) => (
               <li key={item.key} className={styles.item} data-kind={item.kind}>
@@ -102,8 +114,27 @@ export function MissedRequestsPanel() {
               </li>
             ))}
           </ul>
-        </CardBody>
-      ) : null}
+        ) : null}
+        <p className={styles.check} data-testid="ward-missed-check-confirmation">
+          {checked ? (
+            <>
+              <StatusGlyph tone="success" size={9} />
+              {`Checked, all accounted for · ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
+            </>
+          ) : (
+            <Button
+              variant="sec"
+              size="sm"
+              onClick={() => {
+                dispatch({ type: "COMPLETE_INBOX_ITEM", role: "coordinator", now, inboxItemId: dailyCheckId(now) });
+              }}
+              data-testid="ward-missed-check-done"
+            >
+              Checked, all accounted for
+            </Button>
+          )}
+        </p>
+      </CardBody>
     </Card>
   );
 }

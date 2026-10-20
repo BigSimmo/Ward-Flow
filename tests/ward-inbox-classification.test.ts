@@ -30,6 +30,14 @@ const KINDS: readonly InboxItemKind[] = ["fact", "commitment"];
 const ABSENCE_CATEGORIES = 1;
 /** Audit F-19: `duplicateBedRequestInboxItems` (`ward-act-now-items.ts`) emits one category. */
 const DUPLICATE_CATEGORIES = 1;
+/**
+ * Overall review (20 Oct 2026): the daily check is a commitment the coordinator ticks off once a
+ * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
+ */
+const NON_ROW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = ["daily_check"];
+const ROW_CATEGORIES = Object.keys(INBOX_CATEGORIES).filter(
+  (key) => !(NON_ROW_CATEGORIES as readonly string[]).includes(key),
+);
 
 /**
  * A real, valid, open fixture movement to spread from — same template and the same `Object.assign`
@@ -227,7 +235,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
     // "silently returning nothing" failure. Five categories, at least one row each.
     expect(items.length, "the injected movements no longer populate the inbox at all").toBeGreaterThanOrEqual(
-      Object.keys(INBOX_CATEGORIES).length,
+      ROW_CATEGORIES.length,
     );
 
     const unclassified = items.filter((item) => categoryKeyOf(item) === undefined);
@@ -249,7 +257,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     // no row can produce would otherwise sit here unexercised, and a category deleted from the
     // builder while its entry remained would pass silently.
     const covered = new Set(items.map((item) => categoryKeyOf(item)));
-    expect([...covered].sort()).toEqual(Object.keys(INBOX_CATEGORIES).sort());
+    expect([...covered].sort()).toEqual([...ROW_CATEGORIES].sort());
   });
 
   /**
@@ -290,7 +298,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     expect(
       pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length - ABSENCE_CATEGORIES - DUPLICATE_CATEGORIES);
+    ).toBe(ROW_CATEGORIES.length - targetCategories.length - ABSENCE_CATEGORIES - DUPLICATE_CATEGORIES);
   });
 
   /**

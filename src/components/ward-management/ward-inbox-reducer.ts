@@ -95,6 +95,10 @@ export const INBOX_CATEGORIES = {
    *  (Josh, 19 Oct). Leaves when one is answered or withdrawn. Remainder is the patient id
    *  (`ward-duplicate-bed-requests.ts`). */
   duplicate_bed_request: { idPrefix: "duplicate-bed-request-", kind: "fact" },
+  /** Overall review (20 Oct 2026): the coordinator's daily "nobody missed" check, ticked off with
+   *  "Checked, all accounted for" (`COMPLETE_INBOX_ITEM`), which records the role and the time. A
+   *  commitment, never a row on any list. Remainder is `day-` and the demo day (`dailyCheckId`). */
+  daily_check: { idPrefix: "daily-check-", kind: "commitment" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -318,6 +322,13 @@ export function reduceInboxEvent(
             ? `inbox row ${inboxItemId} states a live fact, not a commitment — a fact leaves this list when it stops being true, never because it was ticked off`
             : `inbox row ${inboxItemId} is not a classified inbox category, so it cannot be ticked off`,
         );
+      }
+      // The daily check names one day, never anything else.
+      if (
+        inboxItemId.startsWith(INBOX_CATEGORIES.daily_check.idPrefix) &&
+        !/^day-(?:0|-?[1-9]\d*)$/.test(inboxItemId.slice(INBOX_CATEGORIES.daily_check.idPrefix.length))
+      ) {
+        return reject(state, event, `inbox row ${inboxItemId} does not name a day for the daily check`);
       }
       const history = state.inboxCompletions[inboxItemId];
       if (inboxItemCompletionState(history) === "complete") {
