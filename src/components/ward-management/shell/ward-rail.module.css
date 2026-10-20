@@ -1719,17 +1719,6 @@
   }
 }
 
-.moreSheetPolicy {
-  color: var(--wf-accent-ink);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.moreSheetPolicy:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 /* ── Desktop, fine pointer: v6 control heights ─────────────────────────────────────────────── */
 
 @media (min-width: 1001px) and (pointer: fine) {

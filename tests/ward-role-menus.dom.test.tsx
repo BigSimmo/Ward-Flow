@@ -206,9 +206,9 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
       .filter((link) => link.getAttribute("href") === "/ward-flow/handover");
     expect(toHandover).toHaveLength(1);
     expect(toHandover[0]).toHaveTextContent(/^Handover(in .+|due now)$/u);
-    expect(within(within(sheet).getByRole("region", { name: "Bed coordinator" })).getAllByRole("link")[0]).toHaveAccessibleName(
-      "Needs you",
-    );
+    expect(
+      within(within(sheet).getByRole("region", { name: "Bed coordinator" })).getAllByRole("link")[0],
+    ).toHaveAccessibleName("Needs you");
   });
 });
 
@@ -227,12 +227,19 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
     expect(screen.getByRole("link", { name: "Ward Flow WA — home" })).toHaveAttribute("href", "/ward-flow");
   });
 
-  it("shows the policy version as text, not a Governance link, on an ED desk", () => {
+  it("offers an ED desk no Governance link from the rail's More sheet", () => {
+    // A7 moved the policy version (once a Governance link here) to Settings, Data and about.
     atDesk(ED_DESK);
     render(wrap(<WardRail />));
     fireEvent.click(screen.getByTestId("ward-rail-more"));
     const sheet = screen.getByRole("dialog", { name: "More pages" });
-    expect(within(sheet).getByText("Policy 2026.3").closest("a")).toBeNull();
+    expect(within(sheet).queryByText(/Policy 2026\.3/u)).toBeNull();
+    expect(
+      within(sheet)
+        .queryAllByRole("link")
+        .filter((link) => link.getAttribute("href") === "/ward-flow/governance"),
+    ).toHaveLength(0);
+    expect(within(sheet).getByText("Synthetic prototype")).toBeInTheDocument();
   });
 
   it("asks the same role filter as the menu for Capacity, Governance and the TV", () => {

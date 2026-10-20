@@ -406,9 +406,12 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   chevron turns down while its menu is open; reduced-motion preferences suppress transitions.
   Contextual decision, contact and export actions use the same unboxed label, divider and chevron;
   their route-specific labels and existing popover behaviour remain intact.
-- **`shell/ward-rail.tsx`** (1,230 lines) — the left rail: four fixed groups (Operations, Service
-  Hubs, Care Coordination, Oversight) built from `ward-nav.ts`'s lists and reordered within each
-  group by role (`ward-nav-role-order.ts`), open/closed state (`localStorage`, open by default —
+- **`shell/ward-rail.tsx`** (1,358 lines) — the left rail: the desk's own short menu from
+  `ROLE_MENUS` in `shell/ward-rail-entries.ts` (B1; the bed coordinator's reads Needs you, Beds,
+  Movements, Referrals, Handover), with every other page under More in `RAIL_GROUPS` order and
+  ranked by role (`ward-nav-role-order.ts`). Above 1200px the open rail's handover countdown card
+  stands in for the menu's Handover item, which CSS hides there (A5); the Menu sheet leaves it out
+  under its own countdown. The policy version is in Settings, Data and about (A7). Open/closed state (`localStorage`, open by default —
   the opposite default from the deleted `use-ward-sidebar-collapsed.ts`), the appearance toggle, and
   a service dot beside the current health service (a dot next to a _word_, never a bare colour bar —
   owner ruling Q-11 forbids the drawing's own brass "you are here" edge bar and its `.svcStripe`

@@ -33,7 +33,7 @@ import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/compo
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
-import { WARD_CAPACITY_HREF, WARD_HOME_HREF, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
@@ -130,7 +130,6 @@ const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
  * at 1000px and below the tablet portrait and phone shapes take over.
  */
 export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
-const GOVERNANCE_HREF = WARD_VIEWS.find((view) => view.id === "governance")?.href ?? WARD_HOME_HREF;
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.
@@ -603,7 +602,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         {options.sheet ? <ChevronRight aria-hidden="true" className={styles.sheetChevron} /> : null}
       </Link>
     );
-    const itemClass = [options.compactExtra ? styles.compactExtra : "", options.countdownTwin ? styles.countdownTwin : ""]
+    const itemClass = [
+      options.compactExtra ? styles.compactExtra : "",
+      options.countdownTwin ? styles.countdownTwin : "",
+    ]
       .filter(Boolean)
       .join(" ");
     return (
@@ -1177,15 +1179,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               </button>
             </div>
             <div className={styles.moreFootLine}>
+              {/* A7 (overall review, 20 Oct 2026): the policy version moved to Settings, Data and about. */}
               <span>Synthetic prototype</span>
-              {/* DA-09: the policy version links to Governance only for a desk that may open it. */}
-              {canOpen(GOVERNANCE_HREF) ? (
-                <Link href={GOVERNANCE_HREF} className={styles.moreSheetPolicy} onClick={() => setMoreOpen(false)}>
-                  Policy 2026.3
-                </Link>
-              ) : (
-                <span>Policy 2026.3</span>
-              )}
             </div>
           </>
         }
