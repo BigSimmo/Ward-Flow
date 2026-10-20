@@ -248,3 +248,48 @@ describe("candidate placement documentation", () => {
     expect(onAccept).toHaveBeenCalledExactlyOnceWith(unit.id, OVERRIDE_REASONS[0]);
   });
 });
+
+describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () => {
+  it("names the person and UMRN, and records nothing on Cancel", () => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((m) => m.acceptedUnitId)!;
+    const unit = state.units.find((u) => u.id === movement.acceptedUnitId)!;
+    const dispatch = vi.fn();
+    render(
+      <WardArrivalsCorridor
+        unit={unit}
+        accepted={[]}
+        heldAfterStop={[movement]}
+        now={NOW_ANCHOR}
+        resolvePatientIdentity={() => ({
+          displayName: "Synthetic patient",
+          formalName: "PATIENT, Synthetic",
+          initials: "SP",
+          umrn: "UM000001",
+        })}
+        releaseOpenFor={undefined}
+        toggleRelease={vi.fn()}
+        releaseReason={undefined}
+        setReleaseReason={vi.fn()}
+        submitRelease={vi.fn()}
+        lastActionRejection={undefined}
+        dispatch={dispatch}
+        setCheckToken={vi.fn()}
+        priorRejectionCountRef={{ current: 0 }}
+        rejections={[]}
+        overrideReasonForm={() => null}
+      />,
+    );
+    fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-release-stopped-identity")).toHaveTextContent(
+      "Check: PATIENT, Synthetic · UM000001",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(dispatch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
+    fireEvent.click(screen.getByRole("button", { name: "Release held bed" }));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_HELD_BED", movementId: movement.id });
+  });
+});

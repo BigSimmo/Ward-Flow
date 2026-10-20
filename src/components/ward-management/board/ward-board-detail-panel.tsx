@@ -37,6 +37,7 @@ export function WardBoardDetailPanel({
   dialogTriggerRef,
   dispatchAndReport,
   emptyTileCount,
+  identity,
   leavingDestination,
   movements,
   nameFor,
@@ -66,6 +67,11 @@ export function WardBoardDetailPanel({
   dialogTriggerRef: RefObject<HTMLElement | null>;
   dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => void;
   emptyTileCount: number;
+  /**
+   * Audit 1, Josh 20 Oct (CS-09): the chosen tile's "name · UMRN · Bed n" line (the parent's
+   * `identityFor`), carried into the departure and ED-transfer confirms as their "Check:" line.
+   */
+  identity?: string;
   leavingDestination: LeavingDestination;
   movements: Movement[];
   nameFor: (admissionId: string | undefined) => string;
@@ -92,7 +98,13 @@ export function WardBoardDetailPanel({
   >;
   setLeavingDestination: Dispatch<SetStateAction<LeavingDestination>>;
   setPendingConfirm: Dispatch<
-    SetStateAction<{ kind: "leaving" | "away_at_ed"; who: string; item?: ShiftTileItem; admissionId?: string } | null>
+    SetStateAction<{
+      kind: "leaving" | "away_at_ed";
+      who: string;
+      identity?: string;
+      item?: ShiftTileItem;
+      admissionId?: string;
+    } | null>
   >;
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
   unit: Unit;
@@ -215,6 +227,7 @@ export function WardBoardDetailPanel({
                         setPendingConfirm({
                           kind: "leaving",
                           who: selectedTile.who || nameFor(selectedTile.key),
+                          identity,
                           admissionId: selectedTile.key,
                         });
                       }}
@@ -357,6 +370,7 @@ export function WardBoardDetailPanel({
                             setPendingConfirm({
                               kind: "away_at_ed",
                               who: nameFor(selectedTile.key),
+                              identity,
                               admissionId: selectedTile.key,
                             });
                           }}
