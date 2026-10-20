@@ -117,7 +117,7 @@ function edLabel(edId: string): string {
  */
 export type TvBedCountAge = { wards: number; notConfirmed: number; oldestAt: Instant | undefined };
 
-export function bedCountAge(units: Unit[], now: Instant): TvBedCountAge {
+function bedCountAge(units: Unit[], now: Instant): TvBedCountAge {
   const late = units.filter((unit) => !isConfirmationFresh(unit, now));
   const counted = late.length > 0 ? late : units;
   const oldestAt = counted.length === 0 ? undefined : Math.min(...counted.map((unit) => unit.allocatable.confirmedAt));

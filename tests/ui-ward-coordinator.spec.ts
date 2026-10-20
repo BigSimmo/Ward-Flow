@@ -100,7 +100,11 @@ async function expectReferralSheetFromRefer(page: Page, movementId: string) {
  * (never fall back to a different record on a miss).
  */
 function requireMovement(movementId: string | undefined | null): Movement {
-  const movement = movementId ? movementById(movementId) : undefined;
+  // The rulings-demo overlay's movements (WF-RD…) are only in the seeded state, and wait order
+  // (Audit 1, D-71) can put one at the top of the queue.
+  const movement = movementId
+    ? (movementById(movementId) ?? seedWardFlowState().movements.find((candidate) => candidate.id === movementId))
+    : undefined;
   if (!movement) throw new Error(`Fixture is missing movement ${String(movementId)}`);
   return movement;
 }
@@ -1008,7 +1012,11 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // accident of ineligibility — it can only be the missing human selection. Pinned against the
     // real fixture so this test fails loudly rather than passing vacuously if that changes.
     const wf017 = requireMovement("WF-017");
-    const wf017Default = eligibleCandidatesAmong(wf017, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP)[0];
+    // Candidates are in a fixed order (Audit 1, D-71), so the first may be the ward WF-017 is
+    // already referred to; the test needs one nobody has asked yet.
+    const wf017Default = eligibleCandidatesAmong(wf017, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP).find(
+      (candidate) => !wf017.referredUnitIds.includes(candidate.unit.id),
+    )!;
     expect(wf017Default, "fixture assumption: WF-017 has at least one candidate").toBeTruthy();
     expect(
       wf017Default.verdict.eligible,
@@ -1073,11 +1081,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // one patient off a single tap.
     const wf004 = requireMovement("WF-004");
     expect(wf004.acceptedUnitId, "fixture assumption: WF-004 has an accepted destination").toBeTruthy();
-    const wf004Default = eligibleCandidatesAmong(wf004, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP)[0];
+    const wf004Other = eligibleCandidatesAmong(wf004, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP).find(
+      (candidate) => candidate.unit.id !== wf004.acceptedUnitId,
+    );
     expect(
-      wf004Default.unit.id,
-      "fixture assumption: WF-004's default candidate is NOT its accepted destination",
-    ).not.toBe(wf004.acceptedUnitId);
+      wf004Other,
+      "fixture assumption: WF-004 has an eligible ward other than its accepted destination",
+    ).toBeTruthy();
 
     await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);

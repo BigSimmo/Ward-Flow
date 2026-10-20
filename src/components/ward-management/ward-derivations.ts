@@ -1288,7 +1288,7 @@ export function deriveAfternoonDischarges(admissions: readonly Admission[], now:
   });
 }
 
-export interface CompatibleWardCandidate {
+interface CompatibleWardCandidate {
   unit: Unit;
   availableNow: number;
   failingGates: EligibilityGate[];
