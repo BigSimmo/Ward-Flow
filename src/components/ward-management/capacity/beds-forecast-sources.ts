@@ -86,6 +86,8 @@ type ForecastQuietWard = {
 type ForecastClosedWard = { unitId: string; name: string; line: string; reopenExpectedAt: Instant | null };
 
 export type BedsForecastSources = {
+  /** The length of the look-ahead in hours: one day from now, never a typed figure. */
+  hours: number;
   /** "Day Shift", "Evening Shift" or "Night Shift". */
   shiftName: string;
   shiftStart: Instant;
@@ -124,10 +126,16 @@ export function bedsForecastSources(
   const nextShiftEnd = thisShiftEnd + shiftLength(nextShift.startMinute, nextShift.endMinute);
   const dayEnd = now + MINUTES_PER_DAY;
   const todayStart = dayOf(now) * MINUTES_PER_DAY;
+  const hours = MINUTES_PER_DAY / 60;
   const bounds: { id: ForecastSourceWindowId; label: string; from: Instant | null; until: Instant }[] = [
     { id: "this_shift", label: shiftLabel(shift.name), from: todayStart - 1, until: thisShiftEnd },
     { id: "next_shift", label: shiftLabel(nextShift.name), from: thisShiftEnd, until: Math.min(nextShiftEnd, dayEnd) },
-    { id: "rest_of_day", label: "Rest of the 24 hours", from: Math.min(nextShiftEnd, dayEnd), until: dayEnd },
+    {
+      id: "rest_of_day",
+      label: `Rest of the ${hours} hours`,
+      from: Math.min(nextShiftEnd, dayEnd),
+      until: dayEnd,
+    },
     { id: "overdue", label: "Overdue from an earlier day", from: null, until: todayStart },
   ];
 
@@ -238,6 +246,7 @@ export function bedsForecastSources(
     }));
 
   return {
+    hours,
     shiftName: shift.name,
     shiftStart,
     windows,

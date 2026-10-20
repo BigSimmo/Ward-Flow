@@ -61,7 +61,7 @@ export function BedsForecastSourcesList({ sources, now }: { sources: BedsForecas
         tabIndex={0}
       >
         <p className={styles.caption}>
-          What each ward has recorded for the next 24 hours, with who said it and when. Not a prediction.
+          {`What each ward has recorded for the next ${sources.hours} hours, with who said it and when. Not a prediction.`}
         </p>
         <p
           className={sources.notUpdatedThisShift > 0 ? styles.sourcesStale : styles.caption}
@@ -76,7 +76,7 @@ export function BedsForecastSourcesList({ sources, now }: { sources: BedsForecas
         ))}
         {sources.quietWards.length > 0 ? (
           <p className={styles.sourcesNote} data-testid="ward-capacity-beds-forecast-sources-quiet">
-            <span className={styles.sourcesNoteLead}>Nothing flagged in the next 24 hours: </span>
+            <span className={styles.sourcesNoteLead}>{`Nothing flagged in the next ${sources.hours} hours: `}</span>
             {sources.quietWards
               .map((ward) => (ward.updatedThisShift ? ward.name : `${ward.name} (no update this shift)`))
               .join(", ")}
@@ -101,7 +101,7 @@ export function BedsForecastSourcesList({ sources, now }: { sources: BedsForecas
         ) : null}
         {sources.laterFlagged > 0 ? (
           <p className={styles.caption}>
-            {count(sources.laterFlagged, "more discharge", "more discharges")} flagged for after the next 24 hours.
+            {`${count(sources.laterFlagged, "more discharge", "more discharges")} flagged for after the next ${sources.hours} hours.`}
           </p>
         ) : null}
       </div>
