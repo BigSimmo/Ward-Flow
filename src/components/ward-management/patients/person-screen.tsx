@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { type PatientId, patientAgeYears, patientDisplayName } from "@/components/ward-management/ward-patients";
@@ -180,6 +181,7 @@ const RECORD_TABS = [
   { id: "documents", label: "Documents" },
 ] as const;
 type RecordTabId = (typeof RECORD_TABS)[number]["id"];
+const RECORD_TAB_IDS: readonly RecordTabId[] = RECORD_TABS.map((tab) => tab.id);
 
 /**
  * ⚠️ **THIS ONE REALLY DOES TAKE A PERSON**, and its prop is typed `PatientId` to say so. The pair
@@ -193,7 +195,8 @@ export function PersonScreen({ patientId }: { patientId: PatientId }) {
 
   // "The record" — the tablist's own accessible name, copied from the drawing (§A3 of the
   // companion facts doc), not "Tabs". Three tabs are built; see the doc comment above `RECORD_TABS`.
-  const [activeTab, setActiveTab] = useState<RecordTabId>("now");
+  // DA-15: the chosen tab is kept in the address (`?tab=details`), so a reload keeps it. Fixed ids only.
+  const [activeTab, setActiveTab] = useAddressTab<RecordTabId>("tab", RECORD_TAB_IDS, "now");
 
   /**
    * Left/Right move the selection and focus follows, the same roving-tabindex shape
