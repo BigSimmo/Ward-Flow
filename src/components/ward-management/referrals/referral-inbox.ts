@@ -7,6 +7,10 @@ export type WardReferralInboxEntry = {
   patientId: Referral["patientId"];
   raisedAt: number;
   urgency: Referral["urgency"];
+  /** Placement facts from this sender, never another recipient's answer. */
+  ageBand?: Referral["ageBand"];
+  originSiteCode?: Referral["originSiteCode"];
+  atsCategory?: Referral["atsCategory"];
   history: string;
   intake?: ReferralIntakeDetails;
   state: ReferralAddressing["state"];
@@ -42,7 +46,9 @@ export function referralInboxName(entry: Pick<WardReferralInboxEntry, "patientId
 export function wardReferralInboxEntries(referrals: readonly Referral[], unitId: string): WardReferralInboxEntry[] {
   return referrals.flatMap((referral) => {
     const arm = referral.destinations.find(
-      (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.destination.unitId === unitId,
+      (addressing) =>
+        addressing.destination.kind === "psychiatric_ward" &&
+        (addressing.acceptedUnitId ?? addressing.destination.unitId) === unitId,
     );
     if (!arm || arm.destination.kind !== "psychiatric_ward") return [];
     return [
@@ -51,6 +57,9 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         patientId: referral.patientId,
         raisedAt: referral.raisedAt,
         urgency: referral.urgency,
+        ageBand: referral.ageBand,
+        originSiteCode: referral.originSiteCode,
+        atsCategory: referral.atsCategory,
         history: referral.history,
         intake: referral.intake,
         state: arm.state,

@@ -257,15 +257,24 @@ export function reduceTransportEvent(
         stage: "moving",
         transport: {
           ...movement.transport,
-          collectedAt: event.now,
+          collectedAt: movement.transport.collectedAt ?? event.now,
           ...(collectedException ? { exceptions: [...(movement.transport.exceptions ?? []), collectedException] } : {}),
         },
         // Nothing is blocking a patient who is in a vehicle — and the SEED already says so in these
         // exact words on its two `moving` movements. Reused verbatim rather than reworded.
         blocker: STAGE_TRANSITION_BLOCKERS.collected,
-        // `transport.collectedAt` above and this entry's `at` are the same `event.now` — see
-        // `StageChange`'s doc comment.
-        stageChanges: [...movement.stageChanges, { at: event.now, from: movement.stage, to: "moving", by: event.role }],
+        // A stage correction can keep the original physical collection fact. Restoring the
+        // recorded stage is a new entry, not a second collection at a later time.
+        stageChanges: [
+          ...movement.stageChanges,
+          {
+            at: event.now,
+            from: movement.stage,
+            to: "moving",
+            by: event.role,
+            ...(movement.transport.collectedAt === undefined ? {} : { reason: "Restored after stage correction" }),
+          },
+        ],
       };
       return replaceMovement(state, movement.id, updated);
     }

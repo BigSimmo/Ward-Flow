@@ -377,6 +377,7 @@ const admission = z.looseObject({
   patientId: nullableText,
   referralId: nullableText,
   movementId: nullableText,
+  plannedLegalStatus: z.optional(z.custom(isPlannedAdmissionLegalStatus)),
   homeRegion: nullableText,
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,

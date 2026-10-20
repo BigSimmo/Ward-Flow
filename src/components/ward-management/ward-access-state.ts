@@ -19,6 +19,7 @@ import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
+import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -297,7 +298,7 @@ export function scopeWardFlowState(
   if (state.supportNotifications === undefined) delete next.supportNotifications;
   if (state.undoRecords === undefined) delete next.undoRecords;
   return {
-    state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state),
+    state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,
     scoped,
   };
@@ -350,6 +351,7 @@ function closeReferences(
   scoped: WardFlowState,
   datesOnlyAdmissionIds: ReadonlySet<string>,
   whole: WardFlowState,
+  includePlannedLegalStatus: boolean,
 ): WardFlowState {
   const wholeMovements = new Map<string, WardFlowState["movements"][number]>(
     whole.movements.map((movement) => [movement.id, movement]),
@@ -399,13 +401,25 @@ function closeReferences(
       ),
     ),
     admissions: scoped.admissions.map((admission) => {
+      // Older converted bookings predate the admission's retained status. Carry the joined
+      // provenance before this projection drops the ward's bookings or movement references.
+      // Executive and dates-only views never carry it, even when the admission already does:
+      // take it out of the spread and add it back only for a view allowed to see it.
+      const { plannedLegalStatus: retained, ...rest } = admission;
+      const plannedLegalStatus =
+        includePlannedLegalStatus && !datesOnlyAdmissionIds.has(admission.id)
+          ? plannedAdmissionLegalStatus(whole, admission)
+          : undefined;
       const referralId =
         admission.referralId !== null && !referrals.has(admission.referralId) ? null : admission.referralId;
       const movementId =
         admission.movementId !== null && !movements.has(admission.movementId) ? null : admission.movementId;
-      return referralId === admission.referralId && movementId === admission.movementId
+      return referralId === admission.referralId &&
+        movementId === admission.movementId &&
+        plannedLegalStatus === retained &&
+        (plannedLegalStatus !== undefined || !Object.hasOwn(admission, "plannedLegalStatus"))
         ? admission
-        : { ...admission, referralId, movementId };
+        : { ...rest, referralId, movementId, ...(plannedLegalStatus === undefined ? {} : { plannedLegalStatus }) };
     }),
     plannedAdmissions: scoped.plannedAdmissions.filter(
       (booking) =>
@@ -513,7 +527,7 @@ export function commandScopeRefusal(
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
   if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
-  const targets = [command.unitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
+  const targets = [command.unitId, command.acceptedUnitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)
     if (
       typeof target === "string" &&
@@ -521,6 +535,8 @@ export function commandScopeRefusal(
       !(access.role === "coordinator" && target === COORDINATOR_DESK_ACKNOWLEDGER_ID)
     )
       return outside;
+  // The named ED is always in scope, including on an accepted referral's continuation: the
+  // accepting ward does not get past the ED check because it accepted (owner, 19 Oct 2026).
   for (const from of [command.actingPlaceId, command.edId])
     if (typeof from === "string" && !actsFrom(from)) return outside;
   if (typeof command.actingTeamId === "string" && !teamIsOwn(access, command.actingTeamId, places)) return outside;

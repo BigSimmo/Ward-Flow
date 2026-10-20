@@ -5,6 +5,7 @@ import type {
   findReferral,
   findUnit,
   heldBedRefusal,
+  movementSourceAdmission,
   reject,
   replaceAdmission,
   replaceReferral,
@@ -25,6 +26,7 @@ import {
 } from "./ward-undo";
 import { type Admission, bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { sameLinkedPatient } from "./ward-flow-bed-events";
 
 /**
  * UNDO_* events: take back a recent step exactly, using the records kept in `ward-undo.ts`.
@@ -60,6 +62,7 @@ export type UndoEventHelpers = {
   findReferral: typeof findReferral;
   findUnit: typeof findUnit;
   heldBedRefusal: typeof heldBedRefusal;
+  movementSourceAdmission: typeof movementSourceAdmission;
   reject: typeof reject;
   replaceAdmission: typeof replaceAdmission;
   replaceReferral: typeof replaceReferral;
@@ -78,6 +81,7 @@ export function reduceUndoEvent(
     findReferral,
     findUnit,
     heldBedRefusal,
+    movementSourceAdmission,
     reject,
     replaceAdmission,
     replaceReferral,
@@ -186,6 +190,48 @@ export function reduceUndoEvent(
         (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
       if (refusal) return reject(state, event, refusal);
       const undone = applyStepUndo(state, record);
+      // Unchanged original rows do not prove that a later, independent stay is absent.
+      // Check the restored claims against the current world before committing any part of Undo.
+      for (const admission of undone.admissions) {
+        if (!bedIsOccupied(admission)) continue;
+        const current = state.admissions.find((candidate) => candidate.id === admission.id);
+        if (current && sameRecord(current, admission)) continue;
+        if (
+          undone.admissions.some(
+            (other) =>
+              other.id !== admission.id &&
+              sameLinkedPatient(other, admission) &&
+              bedIsOccupied(other) &&
+              // A recorded transfer may keep the source occupied while the destination is
+              // pulled. Undoing its arrival must be able to restore that legitimate hold.
+              !undone.movements.some((movement) => {
+                if (movement.closure) return false;
+                const source = movementSourceAdmission(undone, movement);
+                const target = undone.admissions.find((a) => a.id === movement.admissionId);
+                return (
+                  source?.state === "occupied" &&
+                  target?.state === "pulled" &&
+                  ((source.id === admission.id && target.id === other.id) ||
+                    (source.id === other.id && target.id === admission.id))
+                );
+              }),
+          )
+        )
+          return reject(state, event, "This patient now occupies or holds another bed, so this step cannot be undone");
+        const unit = findUnit(undone, admission.unitId);
+        if (unit && admission.bedNumber !== undefined) {
+          const conflict =
+            bedNumberRefusal(undone, unit, admission.bedNumber, admission.id) ??
+            heldBedRefusal(
+              undone,
+              unit,
+              admission.bedNumber,
+              admission.movementId ?? undefined,
+              admission.referralId ?? undefined,
+            );
+          if (conflict) return reject(state, event, `${conflict}, so this step cannot be undone`);
+        }
+      }
       // An arrival can also depart a sending stay. Every undo that restores a bed must recheck
       // ownership, including rows a later command changed outside this step's snapshot.
       for (const change of record.changes) {

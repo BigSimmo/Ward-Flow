@@ -49,6 +49,7 @@ function book(
     now: NOW,
     initials: "ab",
     sex: "Female",
+    gender: "Female",
     reason: "respite",
     unitId: UNIT,
     expectedArrivalAt: NOW + MINUTES_PER_DAY,
@@ -328,7 +329,12 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
     // fsh-adult-secure is Male only. This booking records no gender, so the gender_designation gate
     // cannot pass there, exactly as it refuses a movement with no gender recorded. Recorded sex is
     // never read in its place.
-    const booked = book(seedWardFlowState(), { unitId: "fsh-adult-secure", sex: "Male", initials: "cd" });
+    const booked = book(seedWardFlowState(), {
+      unitId: "fsh-adult-secure",
+      sex: "Male",
+      gender: undefined,
+      initials: "cd",
+    });
     const refused = apply(booked, {
       type: "CONVERT_PLANNED_ADMISSION",
       role: "coordinator",
@@ -846,6 +852,7 @@ describe("review follow-up: history finds planned admission events", () => {
         now: NOW,
         initials: "AB",
         sex: "Female",
+        gender: "Female",
         reason: "respite",
         unitId: UNIT,
         expectedArrivalAt: NOW + 60,
@@ -1038,7 +1045,7 @@ describe("bookings record gender, and a single-sex ward takes a matching one (Jo
   });
 
   it("changes an initials-only booking's gender, keeps it when a change names none, and refuses an unlisted one", () => {
-    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Male", initials: "cd" });
+    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Male", gender: undefined, initials: "cd" });
     expect(newest(booked).gender).toBeUndefined();
     expect(lastRejection(convert(booked))).toMatch(/failed gate gender_designation/);
 

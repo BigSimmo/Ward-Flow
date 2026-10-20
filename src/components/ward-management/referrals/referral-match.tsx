@@ -132,7 +132,14 @@ export function ReferralMatchView({
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
-  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases", "referrals");
+  const turnaroundState = useOptionalWardFlowSelect(
+    "admissions",
+    "patients",
+    "movements",
+    "bedReleases",
+    "referrals",
+    "plannedAdmissions",
+  );
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
   const turnaroundRejection =

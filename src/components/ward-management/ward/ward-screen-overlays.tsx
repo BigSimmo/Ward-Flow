@@ -10,13 +10,13 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import styles from "./ward.module.css";
+import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
-import { toastAfterCommand } from "./ward-screen-helpers";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -200,8 +200,6 @@ type WardScreenBedDrawerProps = {
   dispatch: WardCommandDispatch;
   now: number;
   criteriaLedOn: boolean;
-  movements: Movement[];
-  patients: Patient[];
   criteriaGate: RoleGate;
   raiseAsRouteRole: WardRaise;
 };
@@ -235,13 +233,24 @@ export function WardScreenBedDrawer({
   dispatch,
   now,
   criteriaLedOn,
-  movements,
-  patients,
   criteriaGate,
   raiseAsRouteRole,
 }: WardScreenBedDrawerProps) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
+  // The legal-status helpers read the arrived booking too (review: CodeRabbit).
+  const legalRecords = useWardFlowSelect("movements", "patients", "plannedAdmissions");
+  const completeCommand = useWardCommandCompletion();
+  function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
+    completeCommand(`bed:${selectedBed}`, record, (outcome) => {
+      // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
+      if (outcome?.status === "refused")
+        setToastMessage(
+          `Not recorded: ${(outcome.message ?? "The change was refused").replace(/\.$/, "")}. Nothing was changed.`,
+        );
+      else setToastMessage(wardCommandFailure(outcome) ?? success);
+    });
+  }
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
@@ -269,43 +278,36 @@ export function WardScreenBedDrawer({
               !pathname || routeRole === "ward"
                 ? (admissionId, blocker) => {
                     const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
-                    const stay = admissions?.find((a) => a.id === admissionId);
-                    if (blocker === null) {
-                      // A blocked release clears the stay's reason with it; otherwise the stay's own
-                      // reason is cleared, so nothing is refused as a no-op.
-                      let cleared: ReturnType<WardRaise> = undefined;
-                      if (pendingRelease && pendingRelease.blocker !== null) {
-                        cleared = raise("CLEAR_BED_RELEASE_BLOCK", {
-                          releaseId: pendingRelease.id,
-                          actingUnitId: unitId,
-                        });
-                      } else if (stay && stay.blockReason !== null) {
-                        cleared = raise("CLEAR_STAY_DISCHARGE_BLOCKER", {
+                    const stay = admissions.find((a) => a.id === admissionId);
+                    recordFeedback(
+                      () => {
+                        if (blocker === null) {
+                          if (pendingRelease && pendingRelease.blocker !== null) {
+                            return raise("CLEAR_BED_RELEASE_BLOCK", {
+                              releaseId: pendingRelease.id,
+                              actingUnitId: unitId,
+                            });
+                          }
+                          if (stay && stay.blockReason !== null) {
+                            return raise("CLEAR_STAY_DISCHARGE_BLOCKER", { admissionId, actingUnitId: unitId });
+                          }
+                          return { commandId: "", status: "refused", message: "No discharge blocker is recorded." };
+                        }
+                        if (pendingRelease) {
+                          return raise("BLOCK_BED_RELEASE", {
+                            releaseId: pendingRelease.id,
+                            actingUnitId: unitId,
+                            blocker: blocker as BedReleaseBlocker,
+                          });
+                        }
+                        return raise("RECORD_STAY_DISCHARGE_BLOCKER", {
                           admissionId,
                           actingUnitId: unitId,
+                          blocker: blocker as BedReleaseBlocker,
                         });
-                      }
-                      toastAfterCommand(cleared, "Discharge blocker cleared.", setToastMessage);
-                      return;
-                    }
-                    const validBlocker = blocker as BedReleaseBlocker;
-                    // With a bed release the release event keeps the stay's reason in step; without
-                    // one the stay records it directly.
-                    let recorded: ReturnType<WardRaise>;
-                    if (pendingRelease) {
-                      recorded = raise("BLOCK_BED_RELEASE", {
-                        releaseId: pendingRelease.id,
-                        actingUnitId: unitId,
-                        blocker: validBlocker,
-                      });
-                    } else {
-                      recorded = raise("RECORD_STAY_DISCHARGE_BLOCKER", {
-                        admissionId,
-                        actingUnitId: unitId,
-                        blocker: validBlocker,
-                      });
-                    }
-                    toastAfterCommand(recorded, `Discharge blocker recorded: ${blocker}`, setToastMessage);
+                      },
+                      blocker === null ? "Discharge blocker cleared." : `Discharge blocker recorded: ${blocker}`,
+                    );
                   }
                 : undefined
             }
@@ -320,36 +322,37 @@ export function WardScreenBedDrawer({
                 );
                 return;
               }
-              toastAfterCommand(
-                raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
-                  admissionId: selectedBedItem.admissionId,
-                  actingUnitId: unitId,
-                }),
+              recordFeedback(
+                () =>
+                  raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
+                    admissionId: selectedBedItem.admissionId!,
+                    actingUnitId: unitId,
+                  }),
                 `Bed ${bedNum} patient marked away at ED.`,
-                setToastMessage,
               );
             }}
             onMarkBack={(bedNum) => {
-              const returned = selectedBedItem?.admissionId
-                ? raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
-                    admissionId: selectedBedItem.admissionId,
+              if (!selectedBedItem?.admissionId) return;
+              recordFeedback(
+                () =>
+                  raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
+                    admissionId: selectedBedItem.admissionId!,
                     actingUnitId: unitId,
-                  })
-                : undefined;
-              toastAfterCommand(returned, `Bed ${bedNum} patient marked returned to ward.`, setToastMessage);
+                  }),
+                `Bed ${bedNum} patient marked returned to ward.`,
+              );
             }}
             onMarkReady={() => {
-              // A4-24: one tap clears the release this bed is being made ready for.
               const releaseId = selectedBedItem?.preparingReleaseId;
               if (!releaseId) return;
-              toastAfterCommand(
-                raise("SET_BED_PREPARATION", {
-                  releaseId,
-                  actingUnitId: unitId,
-                  preparing: false,
-                }),
+              recordFeedback(
+                () =>
+                  raise("SET_BED_PREPARATION", {
+                    releaseId,
+                    actingUnitId: unitId,
+                    preparing: false,
+                  }),
                 "Bed marked Ready. It is offered again.",
-                setToastMessage,
               );
             }}
             bedDrawerRef={bedDrawerRef}
@@ -365,24 +368,24 @@ export function WardScreenBedDrawer({
             onSetBarrier={
               barrierGate.allowed
                 ? (admissionId, barrier) => {
-                    toastAfterCommand(
-                      dispatch({
-                        type: "SET_DISCHARGE_BARRIER",
-                        role: routeRole,
-                        now,
-                        actingUnitId: unitId,
-                        admissionId,
-                        barrier,
-                      }),
+                    recordFeedback(
+                      () =>
+                        dispatch({
+                          type: "SET_DISCHARGE_BARRIER",
+                          role: routeRole,
+                          now,
+                          actingUnitId: unitId,
+                          admissionId,
+                          barrier,
+                        }),
                       barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
-                      setToastMessage,
                     );
                   }
                 : undefined
             }
             criteriaEligibility={
               criteriaLedOn && selectedAdmission
-                ? admissionCriteriaEligibility({ movements, patients }, selectedAdmission)
+                ? admissionCriteriaEligibility(legalRecords, selectedAdmission)
                 : undefined
             }
             onSetCriteria={
