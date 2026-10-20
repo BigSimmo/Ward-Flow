@@ -105,8 +105,13 @@ describe("Ready beds by road time", () => {
       const ranked = rows.filter((row) => row.ready > 0 && routeFrom(d.id, row) !== null);
       return d.id !== departments[0]!.id && ranked.length > 0;
     })!;
+    // The phone shows a 13px copy of the chosen department over the invisible 16px select.
+    const shown = () => select.parentElement?.nextElementSibling;
+    expect(shown()?.getAttribute("aria-hidden")).toBe("true");
+    expect(shown()?.textContent).toBe(`${departments[0]!.siteCode} ED`);
     await user.selectOptions(select, other.id);
     expect(select.value).toBe(other.id);
+    expect(shown()?.textContent).toBe(`${other.siteCode} ED`);
     expect(listedNames(card)).not.toEqual(before);
 
     await user.click(within(within(card).getByRole("list")).getAllByRole("button")[0]!);

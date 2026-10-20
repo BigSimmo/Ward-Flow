@@ -14,6 +14,75 @@
   color: var(--wf-ink-2);
 }
 
+/* The "From" picker. Desktop shows the shared select as it is; the copied value is phone only. */
+.picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pickerValue {
+  display: none;
+}
+
+/* Phone: the shared select is 44px tall with 16px text, larger than every other line in the card.
+   It keeps that size as the invisible tap target, and a 32px, 13px semibold copy of its value shows
+   instead, the same size and weight as the ward names. */
+@media (max-width: 48rem) {
+  .from {
+    min-height: 44px;
+    padding-block: 0;
+  }
+
+  .picker {
+    min-height: 44px;
+  }
+
+  .picker .pickerBox {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    height: auto;
+    opacity: 0;
+  }
+
+  .pickerValue {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-1);
+    height: 32px;
+    padding: 0 var(--wf-s-2);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .pickerValue > svg {
+    color: var(--wf-ink-3);
+  }
+
+  .picker:focus-within .pickerValue {
+    border-color: var(--wf-accent);
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 48rem) and (forced-colors: active) {
+  .pickerValue {
+    border-color: CanvasText;
+  }
+
+  .picker:focus-within .pickerValue {
+    outline-color: CanvasText;
+  }
+}
+
 .list {
   margin: 0;
   padding: 0;
