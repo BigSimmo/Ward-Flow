@@ -204,6 +204,21 @@ export function renderEdBoardTableRow(
             </>
           )}
         </span>
+        {isTabletPortrait ? null : (
+          /* Overall review (20 Oct 2026): at 1365 px and below the Cleared and Review columns step
+             aside (DA-06), so this compact line keeps medical clearance and review readable at a
+             glance. Hidden above that width, where the columns themselves show it. */
+          <span className={styles.a2Checks} data-testid={`ward-ed-row-checks-${movement.id}`}>
+            <span className={styles.a2Value}>
+              <StatusGlyph tone={clearedTone} size={8} />
+              {medicalClearance === undefined ? "Clearance pending" : clearedWords}
+            </span>
+            <span className={styles.a2Value}>
+              <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
+              {reviewWords}
+            </span>
+          </span>
+        )}
         <span className={styles.a2Facts}>
           {readmissionFact}
           {patientFactsTail}
