@@ -36,6 +36,7 @@ import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-manageme
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
+import { useSharedRefreshLate } from "@/components/wf";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -950,7 +951,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   // DA-07 (design audit): with no connection the TV stops claiming it updates on its own. CS-13
   // (Audit 1, Josh 20 Oct 2026): nor while the shared workspace says its refresh is unavailable.
   const online = useOnlineStatus();
-  const sharedDown = shared?.enabled === true && shared.status === "unavailable";
+  // A hung refresh counts too, once its last good snapshot is past the Live chip's limit.
+  const refreshLate = useSharedRefreshLate(shared?.enabled === true);
+  const sharedDown = shared?.enabled === true && (shared.status === "unavailable" || refreshLate);
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);

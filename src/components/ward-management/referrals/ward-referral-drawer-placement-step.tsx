@@ -40,8 +40,8 @@ import { wardReferralDestinations } from "./ward-referral-drawer-model";
 /**
  * Audit 1 (CS-06, Josh 20 Oct): the engine's own referral check for one listed ward, in plain words,
  * so the list never says "Bed ready" for a ward that will refuse this person. `undefined` when no
- * suitability gate fails. The ready count and the confirmed time say capacity and freshness, so
- * neither is repeated here. The probe is a question about a bed, never stored, as in
+ * suitability gate fails. The ready count says capacity, so it is not repeated here; a stale count
+ * reads "Count out of date" so it never shows as a green "Bed ready". The probe is a question about a bed, never stored, as in
  * `referral-destination-options.ts`.
  */
 export function wardRefusalWords(
@@ -80,6 +80,9 @@ export function wardRefusalWords(
       return "No locked bed free";
     case "sex_mix":
       return "No same-sex patients and only one bed ready";
+    // Codex review of #504: a stale count is not "Bed ready". The confirmed time beside it says when.
+    case "capacity_freshness":
+      return "Count out of date";
     default:
       return undefined;
   }

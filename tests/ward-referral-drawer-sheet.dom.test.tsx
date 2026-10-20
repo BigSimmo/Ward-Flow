@@ -403,6 +403,8 @@ describe("referral letter text", () => {
 
   it("says Not recorded for anything left blank rather than inventing it", () => {
     const text = referralLetterText(input, "10:46");
+    // Audit 1 (CS-12): the synthetic line comes before the letter's heading.
+    expect(text.split("\n")[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
     expect(text).toContain("Reason: Not recorded");
     expect(text).toContain("Referrer: Not recorded");
     expect(text).toContain("Risks: None selected");

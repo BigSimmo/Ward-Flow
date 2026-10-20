@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { cx } from "./cx";
 import { clk, dur } from "./format";
@@ -85,6 +85,36 @@ function subscribeLiveRefresh(listener: () => void) {
   };
 }
 
+/**
+ * CS-13: whether the last good shared refresh is older than its limit. Re-checked at that deadline
+ * (a few seconds), not on the minute, so a hung refresh turns Stale on time (Codex review of #504).
+ * Off when `active` is false or nothing is published (local mode).
+ */
+export function useSharedRefreshLate(active = true): boolean {
+  const refresh = useSyncExternalStore(
+    subscribeLiveRefresh,
+    () => liveRefresh,
+    () => undefined,
+  );
+  const deadline =
+    active && refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined
+      ? refresh.receivedAt + refresh.staleAfterMs
+      : undefined;
+  const [lateAt, setLateAt] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (deadline === undefined) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      const wait = deadline - Date.now();
+      if (wait < 0) setLateAt(deadline);
+      else timer = setTimeout(check, wait + 1);
+    };
+    check();
+    return () => clearTimeout(timer);
+  }, [deadline]);
+  return deadline !== undefined && lateAt === deadline;
+}
+
 const WORD: Record<LiveState, string> = {
   live: "Demo",
   paused: "Paused",
@@ -127,12 +157,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
     () => liveRefresh,
     () => undefined,
   );
-  const timed = refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined;
-  const wallNow = useMinuteNow({ paused: requested !== "live" || !timed });
-  const late =
-    refresh?.receivedAt !== undefined &&
-    refresh.staleAfterMs !== undefined &&
-    wallNow - refresh.receivedAt > refresh.staleAfterMs;
+  const late = useSharedRefreshLate(requested === "live");
   const state: LiveState =
     requested !== "live" ? requested : !online ? "offline" : refresh?.unavailable || late ? "stale" : "live";
   const word = WORD[state];

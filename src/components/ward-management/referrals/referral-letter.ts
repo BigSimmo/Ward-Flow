@@ -46,8 +46,8 @@ function value(text: string): string {
 export function referralLetterText(input: ReferralTextInput, draftedAt: string): string {
   const referrer = [input.referrer.name, input.referrer.role, input.referrer.phone].map((part) => part.trim());
   return [
-    `Mental health referral to ${input.destinationPhrase}`,
     `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} AWST.`,
+    `Mental health referral to ${input.destinationPhrase}`,
     "",
     "PERSON",
     `Name: ${value(input.patientName)}`,

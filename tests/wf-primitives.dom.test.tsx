@@ -248,6 +248,21 @@ describe("LiveChip", () => {
       act(() => publishLiveRefresh(undefined));
     }
   });
+
+  it("turns Stale at the refresh deadline, not on the next minute, when a refresh hangs", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-10-07T10:26:00+08:00"));
+      act(() => publishLiveRefresh({ unavailable: false, receivedAt: Date.now(), staleAfterMs: 6000 }));
+      render(<LiveChip state="live" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
+      act(() => vi.advanceTimersByTime(7000));
+      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+    } finally {
+      act(() => publishLiveRefresh(undefined));
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("Donut", () => {

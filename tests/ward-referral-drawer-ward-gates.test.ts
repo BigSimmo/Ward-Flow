@@ -23,6 +23,13 @@ describe("referral form ward refusals in words", () => {
     );
   });
 
+  it("says the count is out of date rather than Bed ready when the ward's count is stale", () => {
+    const stale = unit("ger-adult-open").allocatable.confirmedAt + 7 * 24 * 60;
+    expect(
+      wardRefusalWords(unit("ger-adult-open"), ward("ger-adult-open", "Female", "Voluntary"), "Adult", stale),
+    ).toBe("Count out of date");
+  });
+
   it("says nothing when the engine accepts", () => {
     expect(
       wardRefusalWords(unit("ger-adult-open"), ward("ger-adult-open", "Female", "Voluntary"), "Adult", 0),
