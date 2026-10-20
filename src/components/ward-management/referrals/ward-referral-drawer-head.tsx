@@ -343,18 +343,34 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
       ) : (
         <div className={styles.inboxPicker}>
           <span className={styles.inboxPickerLabel}>Ward</span>
-          <div className={styles.headTabs} role="group" aria-label="Recipient ward">
-            {inboxWards.map((ward) => (
-              <button
-                key={ward.unit.unitId}
-                type="button"
-                aria-pressed={inboxWard?.unit.unitId === ward.unit.unitId}
-                onClick={() => setInboxUnitId(ward.unit.unitId)}
-              >
-                {ward.unit.name} <span className={styles.count}>{ward.toDecide}</span>
-              </button>
-            ))}
-          </div>
+          {/* Phone (Josh, 20 Oct 2026): a dropdown, as nine ward names do not fit one row. */}
+          {isPhone ? (
+            <select
+              className={styles.fieldSelect}
+              aria-label="Recipient ward"
+              value={inboxWard?.unit.unitId}
+              onChange={(event) => setInboxUnitId(event.target.value)}
+            >
+              {inboxWards.map((ward) => (
+                <option key={ward.unit.unitId} value={ward.unit.unitId}>
+                  {ward.unit.name} · {ward.toDecide} to decide
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className={styles.headTabs} role="group" aria-label="Recipient ward">
+              {inboxWards.map((ward) => (
+                <button
+                  key={ward.unit.unitId}
+                  type="button"
+                  aria-pressed={inboxWard?.unit.unitId === ward.unit.unitId}
+                  onClick={() => setInboxUnitId(ward.unit.unitId)}
+                >
+                  {ward.unit.name} <span className={styles.count}>{ward.toDecide}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
