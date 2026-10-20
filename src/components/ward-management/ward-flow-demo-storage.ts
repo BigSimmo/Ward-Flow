@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -119,16 +119,12 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
       parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
     )
       return { recoveryNotice: SAVE_REJECTED };
-    // absoluteWallClockMinutes encodes Perth's wall calendar (audit F-22), offset included.
-    // Reading that value through UTC preserves the recorded Perth time without adding an offset twice.
-    const savedAt = new Intl.DateTimeFormat("en-AU", {
-      timeZone: "UTC",
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(parsed.savedAtAbsolute * 60_000));
+    // DA-27 (overall review, 20 Oct 2026): the notice names the save by the board's own clock, the
+    // time shown beside it in the header, never the device's real time, which read as a different
+    // day and hour next to a demo clock.
     return {
       saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${savedAt} (Perth time). Later changes may not have been saved.`,
+      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstant(parsed.now)} on the board clock. Later changes may not have been saved.`,
     };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.

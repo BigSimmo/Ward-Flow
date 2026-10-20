@@ -31,7 +31,10 @@ describe("successful save identity after storage failure", () => {
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(retained);
     const restored = tryReadDemoState(dayZero, savedAt + 30);
     expect(restored.saved?.now).toBe(NOW_ANCHOR);
-    expect(restored.recoveryNotice).toMatch(/last successful save from 16 Oct 2026.*10:00.*Perth time/);
+    // DA-27: named by the board clock at the save (10:42), not the device's real time (10:00 here).
+    expect(restored.recoveryNotice).toBe(
+      "Restored the last successful save from 10:42 on the board clock. Later changes may not have been saved.",
+    );
     expect(STORAGE_UNAVAILABLE).toContain("Changes stay in memory and may be lost");
   });
 });
@@ -55,14 +58,9 @@ it("shows the retained successful save label alongside the storage warning after
       <Reset />
     </WardFlowProvider>,
   );
-  // The save was stamped 30 minutes before "now" in Perth wall-clock minutes (UTC+8, no daylight
-  // saving), so the notice shows that Perth time whatever the test machine's zone (F-22).
-  const savedWall = (((10 * 60 - 30 + 8 * 60) % 1440) + 1440) % 1440;
-  const savedClock = `${Math.floor(savedWall / 60) % 12 || 12}:${String(savedWall % 60).padStart(2, "0")} ${
-    savedWall < 720 ? "am" : "pm"
-  }`;
+  // DA-27: the save is named by the board clock it was made at (10:42), whatever the device's time.
   expect(screen.getByRole("status").textContent).toMatch(
-    new RegExp(`Demo storage is unavailable.*last successful save from.*, ${savedClock}`),
+    /Demo storage is unavailable.*last successful save from 10:42 on the board clock\./,
   );
   fireEvent.click(screen.getByText("Reset"));
   expect(screen.getByRole("status").textContent).not.toContain("Restored the last successful save");
