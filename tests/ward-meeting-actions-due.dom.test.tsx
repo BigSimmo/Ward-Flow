@@ -43,20 +43,30 @@ const MOVEMENT: BedMeetingSubject = { kind: "movement", id: "WF-009" };
 const ADMISSION: BedMeetingSubject = { kind: "admission", id: seed.admissions[0]!.id };
 
 /** The chair records the action first, as the agenda does. Test set-up only, never a screen. */
-function RecordAtMeeting({ subject, owner }: { subject: BedMeetingSubject; owner: "ward" | "ed" }) {
+function RecordAtMeeting({
+  subject,
+  owner,
+  action = "book_transport",
+  testId = "record",
+}: {
+  subject: BedMeetingSubject;
+  owner: "ward" | "ed";
+  action?: "book_transport" | "chase_ndis";
+  testId?: string;
+}) {
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   return (
     <>
       <button
         type="button"
-        data-testid="record"
+        data-testid={testId}
         onClick={() =>
           dispatch({
             type: "RECORD_BED_MEETING_ACTION",
             role: "coordinator",
             now: NOW_ANCHOR,
             subject,
-            action: "book_transport",
+            action,
             owner,
             ...(owner === "ward" ? { unitId: ownerWard } : {}),
             dueAt: NOW_ANCHOR + 240,
@@ -144,6 +154,26 @@ describe("bed meeting actions due on a record", () => {
     fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+  });
+
+  it("closes only the tapped action on a double click (Audit 7 NB-02)", () => {
+    asDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordAtMeeting subject={ADMISSION} owner="ed" />
+        <RecordAtMeeting subject={ADMISSION} owner="ed" action="chase_ndis" testId="record-second" />
+        <MeetingActionsDue subject={ADMISSION} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("record"));
+    fireEvent.click(screen.getByTestId("record-second"));
+    expect(screen.getAllByTestId("meeting-action-mark-done")).toHaveLength(2);
+
+    fireEvent.click(screen.getAllByTestId("meeting-action-mark-done")[0]!, { detail: 1 });
+    // The row has gone, so the second click of the pair lands on the other action's button.
+    fireEvent.click(screen.getAllByTestId("meeting-action-mark-done")[0]!, { detail: 2 });
+    fireEvent.click(screen.getAllByTestId("meeting-action-mark-done")[0]!, { detail: 1 });
+    expect(screen.getAllByTestId("meeting-action-mark-done")).toHaveLength(1);
   });
 
   it("shows nothing while the coordinator previews the owning ward, because a preview is read only", () => {
