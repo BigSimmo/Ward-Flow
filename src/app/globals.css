@@ -640,16 +640,6 @@
   --safe-area-right: env(safe-area-inset-right, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
-  /* Phone/sm header chrome inset; matches mode-home px-4. Referenced by both
-     the layered .edge-glass-header base and the unlayered max-width:639px
-     guard so the values cannot drift apart. lg overrides to 1.5rem. */
-  --header-edge-pad: 1rem;
-  /* Distance from `.mode-nav__bar`'s box edge to the first tab's INK: the
-     bar's own `px-1` plus the slot's `px-3`. It happens to equal the base
-     header gutter, which is why phone alignment was already correct. The mode
-     nav subtracts it from its gutter and adds it back to its max-width so the
-     ink — not the box — lands on the header's content edge at every width. */
-  --mode-nav-ink-offset: 1rem;
   /* Borderless app-shell/header height: the `min-h-14` bar plus its `pb-2`, and
      NOT the bar's own `pt-[max(0.5rem, var(--safe-area-top))]`. The header's
      in-flow box is therefore taller than this token by that top pad.
@@ -684,27 +674,6 @@
   --phone-overlay-chrome-h: calc(max(0.5rem, var(--safe-area-top)) + var(--shell-header-h));
   /* Keep in sync with mobile-composer-reserve.ts (phone dock clearance). */
   --keyboard-height: 0px;
-  --phone-dock-hidden-pad: 0rem;
-  --phone-dock-differentials-compare-clearance: 12.5rem;
-  --phone-dock-differentials-compare-compact-clearance: 12.25rem;
-  /* Patient details is a single ~3rem row + 0.5rem gap above the pill, so it
-     clears roughly 3.5rem less than the Compare bar. */
-  --phone-dock-patient-details-clearance: 9rem;
-  --phone-dock-patient-details-compact-clearance: 8.75rem;
-  /* Therapy compare tray: one row + 0.5rem gap, same geometry as Patient
-     details. The tray is required to stay exactly one row tall (its expanded
-     state is a sheet), which is what lets a single static number stay correct. */
-  --phone-dock-therapy-compare-clearance: 9rem;
-  --phone-dock-therapy-compare-compact-clearance: 8.75rem;
-  --patient-details-fab-gap: 0.5rem;
-  --patient-details-fab-padding: 0.3125rem 0.5rem 0.3125rem 1rem;
-  --patient-details-fab-count-size: 1.625rem;
-  --patient-details-fab-count-padding: 0.375rem;
-  --therapy-compare-tray-gap: 0.5rem;
-  --therapy-compare-tray-pip-gap: 0.125rem;
-  --therapy-compare-tray-pip-size: 1.5rem;
-  --therapy-compare-tray-padding: 0.25rem 0.5rem;
-  --therapy-compare-tray-summary-inset: 0.25rem;
   /* Radius tokens are the single source of truth in @theme above (they also
      generate the rounded-* utilities); do not redefine them here or var() and
      the utilities drift apart. */
@@ -1125,34 +1094,6 @@ select {
   outline-offset: 0;
 }
 
-/* Same caret contract as `.chat-composer-input` (see the note there), for the
-   standalone field recipe: `fieldControl` is fixed to `h-tap` and sets no
-   leading, so its inputs — the document-scope filter and the other filter and
-   picker search boxes — inherited the 1.5 body leading, a 24px line box around
-   an 18px glyph box at `text-sm`. The caret is drawn off the glyph box, so it
-   rendered taller than the text it sits in. `textarea.field-control` is
-   deliberately excluded: it is genuinely multi-line and wants the inherited
-   prose leading. */
-input.field-control {
-  line-height: normal;
-}
-
-/* Standalone field recipe (`fieldControl`). Tailwind `outline-none` loses to
-   the unlayered rule above; this is the real owner. Focus is a quiet border
-   shift — no second outline. */
-input.field-control:focus-visible,
-textarea.field-control:focus-visible,
-select.field-control:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--clinical-accent) 38%, var(--border-strong));
-}
-
-input.field-control[aria-invalid="true"]:focus-visible,
-textarea.field-control[aria-invalid="true"]:focus-visible,
-select.field-control[aria-invalid="true"]:focus-visible {
-  border-color: var(--danger);
-}
-
 /* Nested search: the rounded shell owns focus. Inner `outline-none` utilities
    cannot suppress the shared field rule, which is why compare / filter /
    catalogue pickers grew a bright rectangle around the text. Border only —
@@ -1160,12 +1101,6 @@ select.field-control[aria-invalid="true"]:focus-visible {
    the same failure the composer comment forbids. */
 .search-shell:focus-within {
   border-color: color-mix(in srgb, var(--clinical-accent) 34%, var(--border-strong));
-}
-
-.search-shell-input:focus,
-.search-shell-input:focus-visible {
-  outline: none;
-  box-shadow: none;
 }
 
 button,
@@ -1209,58 +1144,6 @@ summary::-webkit-details-marker {
  * chrome is owned by the unlayered semantic classes below. Recipe exports only
  * name those classes; they no longer duplicate size, state, or paint utilities.
  */
-@layer components {
-  .edge-glass-header {
-    isolation: isolate;
-    /* Uses --header-edge-pad (1rem) so phone icons align with mode-home px-4.
-       Keep safe-area max() so notched devices never under-inset. The unlayered
-       max-width:639px block below must also use this token — unlayered rules
-       beat @layer components, so a literal there would reintroduce drift. */
-    padding-left: max(var(--header-edge-pad), var(--safe-area-left));
-    padding-right: max(var(--header-edge-pad), var(--safe-area-right));
-    /* Wide layouts retain the glass treatment. Phones override this with a
-       solid surface below: a translucent scrim extending past the bar veils
-       mode-home titles instead of behaving like bounded chrome. */
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
-    box-shadow: none;
-  }
-
-  .universal-header {
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
-  }
-
-  .universal-header-mode-button {
-    border-color: var(--border);
-    background: var(--surface);
-    box-shadow: var(--e1);
-  }
-
-  .dark .universal-header-mode-button {
-    box-shadow: var(--e1);
-  }
-
-  /* Desktop header padding (moved in from the shared @media blocks below so
-   the whole .edge-glass-header class is layered together). Base/sm share
-   --header-edge-pad. */
-  @media (min-width: 1024px) {
-    .edge-glass-header {
-      padding-left: max(1.5rem, var(--safe-area-left));
-      padding-right: max(1.5rem, var(--safe-area-right));
-    }
-  }
-
-  /* InPageNavHeader portals into the collapse addon — a sibling of
-     .edge-glass-header — so none of that gutter is inherited. Tokenize the
-     phone inset here; sm+ keeps Tailwind sm:px-6 / lg:px-8, so this must not
-     apply above 639px. The unlayered max-width:639px guard below repeats the
-     same tokens so a later literal cannot pin the action pill to the bezel. */
-  @media (max-width: 639px) {
-    .inpage-nav-header {
-      padding-left: max(var(--header-edge-pad), var(--safe-area-left));
-      padding-right: max(var(--header-edge-pad), var(--safe-area-right));
-    }
-  }
-}
 
 /* Shared-home hero copy reserve.
  *
@@ -1302,10 +1185,6 @@ summary::-webkit-details-marker {
   }
 }
 
-/* Composer pill surface — LAYERED. The form carries the semantic
- * chat-composer-shell-base class plus this contextual surface. Interior input
- * and button chrome stays unlayered in the single-owner block below. */
-
 /* Phone dock: full-bleed footer with progressive blur scrim behind pill + chips. */
 .answer-footer-search-dock {
   --footer-scrim-height: max(10rem, calc(var(--safe-area-bottom) + 8.5rem));
@@ -1315,168 +1194,12 @@ summary::-webkit-details-marker {
   --footer-scrim-height: max(7rem, calc(var(--safe-area-bottom) + 5.5rem));
 }
 
-.differentials-mobile-compare-fab__button {
-  pointer-events: auto;
-  display: inline-flex;
-  min-height: 3.25rem;
-  max-width: min(100%, 36rem);
-  align-items: center;
-  gap: 0.625rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--clinical-accent), white 14%);
-  background:
-    radial-gradient(
-      circle at 82% 0%,
-      color-mix(in srgb, var(--clinical-accent-contrast) 20%, transparent),
-      transparent 34%
-    ),
-    linear-gradient(135deg, color-mix(in srgb, var(--clinical-accent), white 7%), var(--clinical-accent));
-  padding: 0.375rem 0.625rem 0.375rem 1.25rem;
-  color: var(--clinical-accent-contrast);
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  box-shadow: 0 18px 42px rgb(0 0 0 / 24%);
-  touch-action: manipulation;
-  /* 160ms has no duration rung — do not invent one; nearest is --duration-quick (150ms). */
-  transition:
-    transform 160ms var(--ease-spring),
-    background-color 160ms var(--ease-out-soft),
-    box-shadow 160ms var(--ease-out-soft);
-}
-
-.differentials-mobile-compare-fab__button:active {
-  transform: translateY(1px) scale(0.99);
-  transition: transform 160ms var(--ease-spring);
-}
-
-.differentials-mobile-compare-fab__button:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
-}
-
-.differentials-mobile-compare-fab__button--empty {
-  border-color: var(--border-strong);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  color: var(--text-muted);
-  font-weight: 800;
-}
-
-/* Medication surfaces: Patient details sits above the search pill in the dock,
-   the same in-flow trick as the Compare bar so scroll-hide moves both together.
-   Deliberately one row shorter and quieter than Compare: Compare is the primary
-   call to action on its surface, this is a persistent context control. */
-.patient-details-fab {
-  pointer-events: none;
-  position: relative;
-  z-index: var(--z-raised);
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  margin-bottom: var(--patient-details-fab-gap);
-}
-
-.patient-details-fab__button {
-  pointer-events: auto;
-  display: inline-flex;
-  /* 3rem is --spacing-tap, the production tap floor. Never reduce below it. */
-  min-height: 3rem;
-  max-width: min(100%, 36rem);
-  align-items: center;
-  gap: var(--patient-details-fab-gap);
-  border-radius: var(--radius-pill, 9999px);
-  border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  padding: var(--patient-details-fab-padding);
-  color: var(--text-heading);
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  box-shadow: var(--e3);
-  touch-action: manipulation;
-  transition:
-    transform var(--duration-quick) var(--ease-spring),
-    background-color var(--duration-quick) var(--ease-out-soft),
-    border-color var(--duration-quick) var(--ease-out-soft),
-    box-shadow var(--duration-quick) var(--ease-out-soft);
-}
-
-/* Populated profile: the control becomes the accent so "a patient is loaded"
-   is legible at a glance without reading the count. */
-.patient-details-fab__button--active {
-  border-color: color-mix(in srgb, var(--clinical-accent), white 14%);
-  background:
-    radial-gradient(
-      circle at 82% 0%,
-      color-mix(in srgb, var(--clinical-accent-contrast) 18%, transparent),
-      transparent 34%
-    ),
-    linear-gradient(135deg, color-mix(in srgb, var(--clinical-accent), white 7%), var(--clinical-accent));
-  color: var(--clinical-accent-contrast);
-}
-
-.patient-details-fab__button:active {
-  transform: translateY(1px) scale(0.99);
-  transition: transform var(--duration-quick) var(--ease-spring);
-}
-
-.patient-details-fab__button:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
-}
-
-.patient-details-fab__count {
-  display: grid;
-  height: var(--patient-details-fab-count-size);
-  min-width: var(--patient-details-fab-count-size);
-  place-items: center;
-  border-radius: var(--radius-pill, 9999px);
-  background: color-mix(in srgb, var(--clinical-accent-contrast) 20%, transparent);
-  padding-inline: var(--patient-details-fab-count-padding);
-  font-size: 0.75rem;
-  font-weight: 800;
-}
-
 .answer-footer-search-dock[data-command-open="true"] {
   --footer-scrim-height: max(22rem, calc(var(--safe-area-bottom) + 20rem));
 }
 
 .answer-footer-search-dock[data-command-open="true"][data-footer-variant="compact"] {
   --footer-scrim-height: max(18rem, calc(var(--safe-area-bottom) + 16rem));
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  /* Layered so call-site utilities keep winning (the header-chrome layering
-     contract above); same-layer source order beats the translucent base. */
-  @layer components {
-    .edge-glass-header,
-    .universal-header {
-      background: var(--surface);
-    }
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  /* Layered so call-site utilities keep winning (the header-chrome layering
-     contract above); the fallback only needs to beat the layered translucent
-     base, which same-layer source order gives it. */
-  @layer components {
-    .edge-glass-header,
-    .universal-header {
-      background: var(--surface);
-    }
-  }
-}
-
-.mode-action-surface {
-  --mode-action-max-height: min(72dvh, 34rem);
-  --mode-action-body-max-height: min(54dvh, 24rem);
-  transform-origin: center bottom;
-}
-
-.mode-action-panel {
-  max-height: var(--mode-action-max-height);
-  backdrop-filter: blur(18px) saturate(140%);
 }
 
 /* Composer primitives are intentionally unlayered because inputs/buttons are
@@ -1501,33 +1224,6 @@ summary::-webkit-details-marker {
 
    Never set line-height to 0. An inline-block with zero line-height has a
    zero-height padding box, which collapsed the mark to a sliver the first time. */
-/* The in-prose source mark's own metrics. Component metrics, not scale steps:
-   they are em-based and mutually dependent — the box has to clear the prose
-   without growing the line box — so they sit here rather than in @theme, where
-   they would generate a `leading-mark` utility with one consumer and a stepped
-   scale that reads as though the mark were a typographic role.
-
-   Declared on :root because the mark is drawn from three places that are not
-   nested: `.answer-source-mark` and `.answer-source-mark-overflow` below, and
-   the cluster spacing in answer-source-mark.tsx.
-     --answer-mark-leading    the mark box takes its own line and nothing more
-     --answer-mark-gap-lead   first mark of a cluster, closer to the word
-     --answer-mark-gap        every later mark, and the "+N" overflow count
-     --answer-mark-gap-star   the partial-support glyph against its digit */
-:root {
-  --answer-mark-leading: 1;
-  --answer-mark-gap-lead: 0.28em;
-  --answer-mark-gap: 0.34em;
-  --answer-mark-gap-star: 0.03em;
-}
-
-.chat-composer-shell-base {
-  display: flex;
-  align-items: center;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 999px;
-}
 
 .chat-composer-shell-delta {
   min-height: 3.5rem;
@@ -1548,248 +1244,6 @@ summary::-webkit-details-marker {
   outline: none;
 }
 
-/* Composer text field. This is the typographic owner for EVERY composer in the
-   app; `.answer-footer-search-input` only re-sizes it per breakpoint.
-
-   `line-height: normal` is load-bearing, not a default worth tidying into a
-   leading token. A single-line control has exactly one line, so leading buys
-   nothing — but the moment its CSS line box stops matching its glyph box, the
-   caret and the text are placed off two different boxes: the engine centres the
-   glyphs on the line box while the caret is drawn from the font's own ascent
-   and descent. Desktop engines paper over the difference; mobile Safari does
-   not, and rendered the caret taller than the text and hanging below it in
-   every search bar (reported 2026-09-04 on iPhone).
-
-   This field was diverging in both directions at once. `.chat-composer-input`
-   set no leading at all, so a standalone composer inherited the 1.5 body
-   leading — a 24px line box around a 21px glyph box. The footer composer then
-   overrode that with the fluid display heading's 1.12 companion, which is
-   TIGHTER than the glyph box: 17.92px against 21px at 16px, and 20.16px against
-   23px at the ≥431px 18px step, so the text overflowed its own line box by ~3px
-   and the negative half-leading pushed the caret low. `normal` makes the two
-   boxes identical, so there is one box for every engine to centre.
-
-   Never give this field a leading token. Heights come from `--spacing-tap` and
-   are unaffected either way, so a leading value here changes nothing except
-   whether the caret lands on the text. */
-.chat-composer-input {
-  min-width: 0;
-  min-height: var(--spacing-tap);
-  flex: 1 1 0%;
-  border: 0;
-  background: transparent;
-  padding-inline: 0.5rem;
-  color: var(--text);
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: normal;
-  outline: none;
-}
-
-.chat-composer-input::placeholder {
-  color: var(--text-placeholder);
-}
-
-.chat-composer-icon-button,
-.chat-send-button {
-  display: grid;
-  width: var(--spacing-tap);
-  height: var(--spacing-tap);
-  flex: none;
-  place-items: center;
-  border-radius: 999px;
-  transition:
-    background-color var(--duration-quick) var(--ease-out-soft),
-    color var(--duration-quick) var(--ease-out-soft),
-    box-shadow var(--duration-quick) var(--ease-out-soft),
-    transform var(--duration-quick) var(--ease-spring);
-}
-
-.chat-composer-icon-button {
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  box-shadow: none;
-}
-
-.chat-composer-icon-button:hover:not(:disabled),
-.chat-composer-icon-button[aria-expanded="true"] {
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-
-.chat-send-button {
-  border: 0;
-  background: var(--clinical-accent);
-  color: var(--clinical-accent-contrast);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--clinical-accent) 32%, transparent);
-}
-
-.chat-send-button:hover:not(:disabled) {
-  background: var(--clinical-accent-hover);
-  box-shadow: 0 5px 14px color-mix(in srgb, var(--clinical-accent) 38%, transparent);
-}
-
-.chat-send-button:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.chat-composer-icon-button:focus-visible,
-.chat-send-button:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.chat-composer-icon-button:disabled,
-.chat-send-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Small-phone pin for the composer: hold a 44px tap target (and a 1.1rem glyph
-   on the icon/send buttons) below 431px, where the base rules above would
-   otherwise apply the 48px --spacing-tap knob to the input and the buttons.
-   This is the design system's one sanctioned exception to the 48px floor
-   (SPEC §4.10): the phone composer is an edge-to-edge dock whose height is
-   part of the search-chrome contract, and growing the input plus three
-   buttons by 4px each re-tunes the dock reserve and the phone CLS budget for
-   no accessibility gain — 44px already clears WCAG 2.5.5. Single source of
-   truth — do not re-add a second max-width:430px block for these. The
-   mode-action popover only renders ≥1024px, so this holds no .mode-action-*
-   overrides. */
-@media (max-width: 430px) {
-  .chat-composer-input {
-    min-height: 2.75rem;
-    padding-inline-end: 0.75rem;
-    text-overflow: ellipsis;
-  }
-
-  .chat-composer-input::placeholder {
-    text-overflow: ellipsis;
-  }
-
-  .chat-composer-icon-button,
-  .chat-send-button {
-    height: 2.75rem;
-    width: 2.75rem;
-    min-height: 2.75rem;
-    min-width: 2.75rem;
-  }
-
-  /* 1.1rem was 17.6px: lucide draws on a 24-unit grid with a 2px stroke, so a
-     fractional box lands every stroke on a sub-pixel boundary and the "+" and
-     send glyphs render visibly soft. --spacing-icon-lg is 20px — integer, on
-     the icon scale, and the same size these glyphs already use from 431px up.
-     20px inside the 44px button leaves the pinned tap target and the dock
-     height this block exists to protect untouched. */
-  .chat-composer-icon-button svg,
-  .chat-send-button svg {
-    height: var(--spacing-icon-lg);
-    width: var(--spacing-icon-lg);
-  }
-}
-/* Mirrors the `motion-safe` variant: animate when the OS allows it, and also when
-   the in-app Motion preference explicitly opts in over an OS reduce request. */
-/* 170ms has no duration rung — do not invent one; nearest is --duration-base (180ms). */
-
-/* Idle/inactive send: a calm neutral chip, not a faded-teal button. The
-   shared disabled opacity over the accent fill +
-   colour glow read as muddy/half-broken on the empty hero. Unlayered so it
-   beats that layered utility; the button turns accent the moment a query makes
-   it actionable. */
-.answer-footer-search-send:disabled {
-  opacity: 1;
-  background: var(--surface-subtle);
-  color: var(--disabled);
-  border: 1px solid color-mix(in srgb, var(--border-strong) 42%, transparent);
-  box-shadow: none;
-}
-
-/* Mobile-only trailing fade. Scoped to a max-width query (rather than an
-   unconditional mask plus a min-width:640px reset) because Lightning CSS
-   collapses a base rule whose only media override is the mask, dropping the
-   gradient entirely — the sibling .answer-suggestion-chips-scroll survives only
-   because its override also changes other properties. A single mobile-scoped
-   rule leaves nothing for the compiler to merge away. */
-@media (max-width: 639px) {
-  /* Phone baseline: a full-width opaque header. Controls still respect the
-     side safe areas, but no blur or tint extends below the actual bar. */
-  .edge-glass-header,
-  .universal-header {
-    background: var(--surface);
-    backdrop-filter: none;
-  }
-}
-
-/* Medication results keep the dashboard's phone gutter so the search band,
-   patient details, and result-card edges remain visibly complete. Content also
-   honours device safe areas without expanding the workspace beyond its owner. */
-
-/* Wide phones in landscape can cross the sm breakpoint while still exposing
-   substantial left/right cutout insets. Preserve the normal tablet card gutter,
-   then add only the safe-area remainder so text never sits beneath a notch. */
-
-.smart-search-phone-ticker {
-  display: grid;
-  width: 100%;
-  --smart-search-phone-ticker-gap: 0.75rem;
-  --smart-search-phone-ticker-inline-padding: 0.25rem;
-  --smart-search-phone-ticker-vertical-padding: 0.375rem;
-
-  min-height: var(--spacing-tap);
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--smart-search-phone-ticker-gap);
-  overflow: hidden;
-  border: 0;
-  background: transparent;
-  padding-block: var(--smart-search-phone-ticker-vertical-padding);
-  padding-inline: var(--smart-search-phone-ticker-inline-padding);
-  color: var(--text-heading);
-  text-align: left;
-  box-shadow: none;
-}
-
-.smart-search-phone-ticker-kicker {
-  display: inline-flex;
-  align-items: center;
-  --smart-search-phone-ticker-kicker-gap: 0.25rem;
-  gap: var(--smart-search-phone-ticker-kicker-gap);
-  color: var(--clinical-accent);
-  font-size: 0.625rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.smart-search-phone-ticker-query {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 0.75rem;
-  font-weight: 700;
-  --smart-search-phone-ticker-line-height: 1.1rem;
-  line-height: var(--smart-search-phone-ticker-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* BEGIN mode-home prompt rail one-line */
-/* The mode-home Prompts rail is a single scrolling line at EVERY width from
-   640px up, so all sixteen mode homes render the one composer stack the reserve
-   tokens are sized for.
-
-   From 640px up, `.answer-suggestion-chips-scroll` deliberately relaxes to a
-   wrapping row for the answer-thread follow-up chips. This rule re-imposes the
-   one-line scroller for the mode-home rail only, and until 2026-09-06 it lived
-   inside the 640-1279.98px band below — so above 1280px the rail was free to
-   wrap. Fifteen modes hid that: their three prompts fit the 576px rail on one
-   line. Specifiers did not ("depressed but racing thoughts", "returns every
-   winter", "much better but not fully recovered" total 613px), so its home
-   alone settled at 199px against a 160px stack and an 88px pending reserve.
-   Scope this rule to the band and the wrap comes straight back for whichever
-   mode's prompt copy grows next. */
-/* END mode-home prompt rail one-line */
-
 /* BEGIN tablet mode-home composer geometry */
 /* Across 640-1279px the settled one-line surface is 160px: example ticker
    line (24px), composer, gaps, and prompt rail. Every mode home renders that
@@ -1803,79 +1257,6 @@ summary::-webkit-details-marker {
   }
 }
 /* END tablet mode-home composer geometry */
-
-/* BEGIN sm+ hero home canvas alignment */
-/* Mode homes optically centre a ~160px composer. The 432px × ~383px
-   bottom-right install card overlaps that band on constrained 640–1919px
-   viewports (Production UI `ui-pwa`), so keep the canvas top-aligned from
-   first paint while the viewport is shorter than 1280px. Taller desktop
-   windows have enough vertical clearance for the complete home and install
-   surface, and must retain the default centred placement instead of leaving
-   most of the usable canvas empty below the primary action. At 1920px+ the
-   horizontal separation already clears a centred composer. A dynamic
-   `body:has(.pwa-notice-stack)` canvas restyle caused 0.12 CLS, so the stable
-   first-paint media gate remains the owner. Phones stay centred. */
-@media (min-width: 640px) and (max-width: 1919.98px) and (max-height: 1279.98px) {
-  #main-content[data-phone-footer-owner="hero"] [data-mode-home-canvas] {
-    place-items: start center;
-    align-content: start;
-  }
-}
-/* END sm+ hero home canvas alignment */
-
-.answer-suggestion-label {
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-/* Touch devices: suggestion/follow-up chips are primary tap targets (the
-   follow-ups sit directly under the composer and each fires a new search).
-   Meet the --spacing-tap floor and widen the gap so neighbouring chips in the
-   horizontal scroll row don't invite mis-taps. Fine-pointer (mouse) users keep
-   the compact 32px chip — no desktop visual change. */
-
-.answer-suggestion-chip-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (min-width: 640px) {
-  /* Result-view page slots (GlobalSearchShell and the dashboard result slot)
-     host the compact pill alone: 80px settled at every sm+ width (py-3 form
-     padding around the 56px pill; no ticker, prompt rail, or privacy line).
-     They share the mode-home token so the pending/filled gating stays one
-     contract, but the mode-home value is sized for the hero stack: 160px in
-     the tablet band left a blank band under every result composer, and 88px
-     at 1280px+ over-reserved too. Override the token on the page slot to the
-     exact height. */
-  .desktop-page-composer-slot {
-    --spacing-mode-home-composer-wide: 5rem;
-  }
-
-  .answer-footer-search-send {
-    height: 3rem;
-    width: 3rem;
-  }
-}
-
-@media (max-width: 639px) {
-  /* Unlayered on purpose: a prior max(0px, safe-area) here beat the layered
-     inset and pinned new-chat to the phone bezel. Keep the tokenized phone
-     value so unlayered media cannot reintroduce a 0px override or drift from
-     the @layer components base. */
-  .edge-glass-header {
-    padding-left: max(var(--header-edge-pad), var(--safe-area-left));
-    padding-right: max(var(--header-edge-pad), var(--safe-area-right));
-  }
-
-  .inpage-nav-header {
-    padding-left: max(var(--header-edge-pad), var(--safe-area-left));
-    padding-right: max(var(--header-edge-pad), var(--safe-area-right));
-  }
-}
 
 /* Tablet rail range: the collapsed icon rail occupies the left edge from md
    until the full sidebar takes over at lg, so fixed composers must centre on
@@ -1895,53 +1276,10 @@ summary::-webkit-details-marker {
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
 }
 
-/* Global PWA notices sit above the phone composer and home indicator without
-   taking page scroll ownership. Install is a compact surface, not a modal:
-   central search stays usable and the wide-screen card remains lower-right. */
-.pwa-notice-stack {
-  --pwa-notice-bottom-gap: calc(max(0.75rem, var(--safe-area-bottom)) + 5rem);
-  /* PWA-only geometry and typography roles. Keep the component's exact
-     measured proportions while consuming the shared radius, spacing, and motion
-     ladders wherever a matching step exists. */
-  --pwa-notice-gap: var(--radius-lg);
-  --pwa-card-radius: var(--radius-xl);
-  --pwa-control-radius: var(--radius-md);
-  --pwa-inset-xs: var(--radius-xs);
-  --pwa-inset-sm: var(--radius-sm);
-  --pwa-inset-md: var(--radius-md);
-  --pwa-inset-lg: var(--radius-lg);
-  --pwa-inset-xl: var(--spacing-icon-md);
-  --pwa-grip-height: calc(var(--spacing-icon-sm) + var(--radius-xs));
-  --pwa-grip-width: calc(var(--spacing-icon-xl) + var(--radius-lg));
-  --pwa-grip-thickness: 0.1875rem;
-  --pwa-header-min-height: calc(4 * var(--radius-xl));
-  --pwa-row-min-height: calc(2 * var(--radius-xl) + 2 * var(--radius-xs));
-  --pwa-row-padding-block: 0.4375rem;
-  --pwa-line-height-control: 1;
-  --pwa-line-height-tagline: 1.35rem;
-  --pwa-line-height-copy: var(--spacing-icon-lg);
-  --pwa-line-height-support: var(--pwa-grip-height);
-  --pwa-motion-enter: 280ms;
-
-  position: fixed;
-  z-index: var(--z-popover);
-  left: max(0.5rem, var(--safe-area-left));
-  right: max(0.5rem, var(--safe-area-right));
-  bottom: var(--pwa-notice-bottom-gap);
-  display: grid;
-  gap: var(--pwa-notice-gap);
-  pointer-events: none;
-}
-
 /* The phone home composer sits near the viewport centre: keep global notices
    below it without moving page content. Gates on ONE :has() only, the static
    hero-composer ownership attribute on #main-content (see PR #2219). */
 /* BEGIN post-hydration PWA main-content selector allowlist */
-@media (max-width: 639.98px) {
-  body:has(#main-content[data-phone-footer-owner="hero"]) .pwa-notice-stack {
-    --pwa-notice-bottom-gap: max(0.5rem, var(--safe-area-bottom));
-  }
-}
 /* END post-hydration PWA main-content selector allowlist */
 
 @keyframes pwa-notice-in {
@@ -1950,12 +1288,6 @@ summary::-webkit-details-marker {
   }
   to {
     opacity: 1;
-  }
-}
-
-@media (display-mode: standalone) {
-  .pwa-notice-stack {
-    --pwa-notice-bottom-gap: calc(max(0.75rem, var(--safe-area-bottom)) + 5.5rem);
   }
 }
 
@@ -1977,87 +1309,6 @@ td,
 [data-numeric] {
   font-variant-numeric: tabular-nums;
 }
-
-@utility search-results-main {
-  container-type: inline-size;
-  container-name: search-results-main;
-  min-width: 0;
-}
-
-/* ── Mode navigation ──────────────────────────────────────────────────────
-   The bar carrying one mode's own pages. `ModeNavHeaderPortal` moves it into
-   the universal header's collapse track, so it hides and reveals as one object
-   with the header at every width and owns no scroll listener of its own.
-
-   Two elements, and which one carries what is load-bearing: `.mode-nav-rail`
-   is full-bleed and owns the paint plus the header's inline gutter, and the
-   `.mode-nav` element inside it is capped to the header's own column and owns
-   the container query. See the note above `@utility mode-nav` for why the
-   query cannot live on the rail.
-
-   Density is chosen by CONTAINER width in `rem` — never by device width, and
-   never by runtime measurement. The unit is the mechanism: raising the browser
-   or OS text size grows the root font, so a phone crosses a threshold exactly
-   when its labels would stop fitting. Each declared label family has a
-   calibrated profile: short Specifier labels can use space that Therapy's
-   longer labels cannot, without either set changing under the user at runtime.
-
-   The collapsed control is the DEFAULT and the bar is the enhancement, so
-   anything unmeasured, unsupported or mid-load renders the one state that
-   cannot overflow at any width or text size (WCAG 1.4.4 Resize Text, 1.4.10
-   Reflow).
-
-   Slots size to their CONTENT at every band, never to equal `1fr` tracks.
-   Equal tracks make the widest slot set what every slot needs, and the label's
-   `truncate` then hides the shortfall — silently, because nothing overflows and
-   nothing fails. Measured in Chromium on 2026-07-29 against the Therapy set,
-   that clipped at every phone width: 320px showed 15 of Compare's 56px, and
-   430px was WORSE at three of four labels clipped, because crossing a band adds
-   a slot to the same space. See ledger #113.
-
-   The thresholds retain font-metric headroom rather than sitting on one local
-   rasterisation. `ui-mode-nav-density.spec.ts` loads every consumer at every
-   profile boundary and fails if a complete label clips, the bar scrolls, or a
-   destination disappears. Adding or renaming a destination therefore requires
-   deliberate profile calibration instead of inheriting an unsafe default.
-   ───────────────────────────────────────────────────────────────────────── */
-
-/* The centred column, and the ONLY container-query container. Measuring the
-   full-bleed rail instead would report a width the slots do not have — on a
-   1920px desktop it reads 1920px while the bar has 1312px — so density would
-   be decided against a width that does not exist. This element carries no
-   padding of its own, so its inline-size is unambiguous.
-
-   80rem is the header row's own `max-w-7xl`; the ink offset is added back on
-   both sides because the bar's first tab sits that far inside its box. Below
-   `lg` the rail's gutter computes to zero, so the container is exactly the
-   viewport and every calibrated profile reads the same available width on
-   phone and tablet. */
-@utility mode-nav {
-  container-type: inline-size;
-  container-name: mode-nav;
-  min-width: 0;
-  width: 100%;
-  margin-inline: auto;
-  max-width: calc(80rem + 2 * var(--mode-nav-ink-offset));
-}
-
-/* All five Therapy destinations, still without icons. Five wordmarks plus the
-   bar's own padding measure ~394px; 28rem (448px) keeps the ~1.14 font-metric
-   headroom the other profiles' top bands ship with. More is hidden here, so
-   the active page always owns its own slot and its own rule. */
-
-/* The icons come back. Five slots wearing them measure ~514px, and 42rem
-   (672px) is the number this profile's top band already carried for exactly
-   that content — reused rather than re-derived. Below this the bar is words
-   only; see the note on `.mode-nav__icon` above. */
-/* `extended-counted`: the label family for a counted-label rail (icon + label +
-   count badge), currently only `InPageSectionRail`'s medication adopter. Its
-   bands are a fixed copy of `extended`'s pre-2026-09-06 thresholds — icons
-   always visible, band 4 at 33rem, band 5 at 42rem — kept as its own profile
-   so Therapy's icon-hiding trade-off above never reaches a rail that never
-   opted into it. Do not fold this back into `extended`; that coupling is the
-   exact bug this profile exists to prevent. */
 
 /* Motion keyframes (suppressed under prefers-reduced-motion below) */
 @keyframes fade-up {
@@ -2198,28 +1449,6 @@ td,
  * those unlayered classes, check the class body first; the class wins.
  */
 @layer components {
-  /* The arriving source rail fades at its right edge instead of clipping a card
-     mid-word, the same mechanism .answer-suggestion-chips-scroll already ships.
-     The mask is static and never animated. */
-  .answer-sources-arriving {
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 1.75rem), transparent);
-    mask-image: linear-gradient(90deg, #000 calc(100% - 1.75rem), transparent);
-  }
-
-  .answer-sources-arriving::-webkit-scrollbar {
-    display: none;
-  }
-
-  .app-edge-backdrop {
-    background: var(--background);
-  }
-
-  .mobile-app-shell {
-    min-height: 100svh;
-    height: 100svh;
-  }
-
   /*
    * Safari only collapses its browser chrome for document scrolling, so phone
    * browser tabs keep the shared shell in normal flow and let the document own
@@ -2232,160 +1461,6 @@ td,
    * scroll surface. Controls alone consume safe-area padding; hidden chrome
    * never adds a content-facing reserve here.
    */
-  @media (max-width: 639px) {
-    .mobile-app-shell,
-    .phone-viewport-shell {
-      min-height: 100svh;
-      height: auto;
-    }
-
-    .phone-viewport-shell {
-      position: relative;
-      inset: auto;
-      width: 100%;
-      overflow: visible;
-    }
-
-    .phone-viewport-frame {
-      min-height: 100svh;
-      height: auto;
-      overflow: visible;
-    }
-
-    .phone-scroll-surface {
-      overflow-x: clip;
-      overflow-y: visible;
-    }
-
-    .phone-sticky-header-stack {
-      position: sticky;
-      top: 0;
-      /* Between raised (10) and chrome (60); no named rung. Do not retune. */
-      z-index: 30;
-    }
-
-    .phone-footer-layer {
-      position: fixed;
-    }
-
-    .phone-overlay-header {
-      position: fixed;
-      inset-inline: 0;
-      top: 0;
-      width: 100%;
-    }
-
-    html:has([data-chrome-transitioning="true"]),
-    html:has([data-reserve-transitioning="true"]),
-    html:has([data-chrome-transitioning="true"]) body,
-    html:has([data-reserve-transitioning="true"]) body,
-    .phone-scroll-surface[data-chrome-transitioning="true"],
-    .phone-scroll-surface[data-reserve-transitioning="true"],
-    .phone-scroll-surface:has([data-reserve-transitioning="true"]) {
-      overflow-anchor: none;
-    }
-
-    /* Browser tabs scroll the document, while installed PWAs scroll this
-       surface. Focus targets therefore own their clearance via scroll-margin,
-       which follows whichever ancestor is the active scroller. Keep the
-       scroll-padding utilities on the surface as the standalone enhancement. */
-    .phone-scroll-surface
-      :where(
-        a[href],
-        button,
-        input,
-        select,
-        textarea,
-        [contenteditable="true"],
-        [tabindex]:not([tabindex="-1"])
-      ):focus {
-      scroll-margin-block-start: calc(4.5rem + max(0.5rem, var(--safe-area-top)));
-      scroll-margin-block-end: var(--phone-focus-bottom-clearance, var(--mobile-composer-reserve, 0rem));
-    }
-  }
-
-  @media (max-width: 639px) and (display-mode: standalone) {
-    .mobile-app-shell,
-    .phone-viewport-shell {
-      min-height: 100vh;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .phone-viewport-frame {
-      position: relative;
-      min-height: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    .phone-scroll-surface {
-      min-height: 0;
-      overflow-x: hidden;
-      overflow-y: auto;
-      overscroll-behavior-y: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .phone-overlay-header {
-      position: absolute;
-    }
-
-    .phone-sticky-header-stack {
-      position: static;
-    }
-
-    .phone-sticky-header-stack.phone-overlay-header {
-      position: absolute;
-    }
-
-    .phone-footer-layer {
-      position: absolute;
-    }
-  }
-
-  /* iOS Safari cannot put a plain document element in the browser fullscreen
-     top layer, so DocumentFrame uses a fixed fallback. Remove every app-owned
-     header/footer layer while that fallback is active: leaving the universal
-     header visible above an otherwise fullscreen reader is both visually false
-     and gives background controls pointer access. The document frame keeps its
-     own compact toolbar and opaque surface, including safe-area padding. */
-  html:has([data-document-frame][data-fullscreen-fallback="on"]),
-  html:has([data-document-frame][data-fullscreen-fallback="on"]) body {
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  html:has([data-document-frame][data-fullscreen-fallback="on"]) .phone-scroll-surface {
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  html:has([data-document-frame][data-fullscreen-fallback="on"])
-    :is(.phone-sticky-header-stack, .universal-header, [data-document-sticky-header], .document-viewer-composer) {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  @supports (height: 100dvh) {
-    @media (min-width: 640px) {
-      .mobile-app-shell {
-        min-height: 100dvh;
-        height: 100dvh;
-      }
-    }
-  }
-
-  /* Underline-tab focus: an inset rounded ring that hugs the label instead of the
-     default full-height box, which collides with the tablist border. */
-  .focus-ring-tab {
-    border-radius: var(--radius-md);
-  }
-  .focus-ring-tab:focus-visible {
-    outline: 2px solid var(--focus) !important;
-    outline-offset: -4px !important;
-    box-shadow: none !important;
-  }
 
   .polished-scroll {
     scrollbar-color: var(--wf-line-2) transparent;
@@ -2439,44 +1514,6 @@ td,
    the indicator is a dot rather than a spinner.
    `html:not([data-motion="full"])` is what lets the in-app Motion preference opt
    back IN over the OS request; a Tailwind `motion-safe:` variant could not. */
-
-/* IMP-04: Compositor-thread sweep used by .animate-skeleton-shimmer::after. */
-@keyframes shimmer-sweep {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* IMP-02: Staggered cascade entrance for search results and card grids.
-   Apply .stagger-item to each list child and set --stagger-index via inline style
-   or a :nth-child selector to sequence each card entrance at 35ms intervals.
-   Reduced-motion guard stops the animation while keeping items fully visible. */
-@keyframes cascade-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* The answer wait's source rail arrives one card at a time, and the pacing is NOT here.
-
-   This used to be a `--stagger-cascade-wide` delay override, because every card mounted at
-   once and only an animation delay could separate them. Six cards then landed inside 450ms —
-   correct to the millisecond, and over before a reader looking at an otherwise still screen
-   registered that anything had happened. The rail is now revealed a card at a time by
-   `useProgressiveReveal` in `answer-status.tsx`, one per `--duration-moderate`, so each card
-   animates on mount with the shared `.stagger-item` rule and no delay of its own. The cards
-   deliberately set no `--stagger-index`: mount timing and an animation delay would compound,
-   and the last card would arrive at twice the intended distance.
-
-   The pacing owner moved, not the reduced-motion contract. The hook returns the full count
-   immediately when motion is suppressed, and both reduced-motion paths below independently set
-   `animation: none !important` on `.stagger-item`. Suppressing motion must never withhold
-   content on this surface — that is the rule this rail was built under. */
 
 /* User preference and alternate output modes.
    `html:not([data-motion="full"])` is what lets the in-app Motion preference opt
@@ -2609,15 +1646,6 @@ html[data-motion="reduced"] *::after {
   select {
     forced-color-adjust: auto;
   }
-
-  /* Glass header: color-mix(Canvas, transparent) would thin system-color
-     contrast, so force a solid Canvas bar and drop the scrim blur entirely.
-     Deliberately UNLAYERED (unlike the other fallbacks): in forced-colors
-     mode even call-site utilities must not restore a translucent bar. */
-  .edge-glass-header,
-  .universal-header {
-    background: Canvas;
-  }
 }
 
 /* =========================================================================
@@ -2679,17 +1707,6 @@ html[data-motion="reduced"] *::after {
   }
 }
 
-@media print {
-  /* Print only the portaled clean sheet. Removing every other <body> subtree from
-   * layout flow (display:none — NOT visibility:hidden) means the full-height shell
-   * chrome (sidebar <aside>, composer) and the tall screen article no longer
-   * paginate into trailing blank PDF pages. The print sheet keeps normal static
-   * flow inside its portal so it paginates correctly across pages. */
-  html.factsheets-printing body > *:not(.factsheet-print-portal) {
-    display: none !important;
-  }
-}
-
 /* Ward Flow morning bed-meeting sheet (capacity/bed-meeting-sheet.tsx) print page.
  * While the sheet is open its module hides every other <body> child; this clears the page
  * itself so a dark screen theme does not print a dark edge around the sheet. Kept here
@@ -2747,39 +1764,6 @@ html[data-motion="reduced"] *::after {
    marker is active (hide and reveal). Mode/route flips of
    --mobile-composer-reserve (hero ↔ dock) must snap — those clear the marker
    immediately. DocumentViewer keeps its own Tailwind duration classes. */
-@media (max-width: 639px) {
-  #main-content[data-reserve-transitioning="true"] {
-    will-change: padding-bottom;
-    transition: padding-bottom var(--duration-slow) var(--ease-out-soft);
-  }
-  #main-content[data-reserve-transitioning="true"] [data-testid="mobile-composer-reserve-pad"] {
-    will-change: padding-bottom;
-    transition: padding-bottom var(--duration-slow) var(--ease-out-soft);
-  }
-  [data-testid="document-viewer-content"][data-reserve-transitioning="true"] {
-    will-change: padding-bottom;
-    transition: padding-bottom var(--duration-slow) var(--ease-out-soft);
-  }
-  /* A page-owned reserve changes scroll height below the current viewport.
-     Suspend browser anchoring only for that transition so Chrome cannot turn
-     the intended padding release into a synthetic upward scroll/reveal loop. */
-  #main-content:has([data-reserve-owner][data-reserve-transitioning="true"]) {
-    overflow-anchor: none;
-  }
-  [data-reserve-owner][data-reserve-transitioning="true"] {
-    will-change: padding-bottom;
-    transition: padding-bottom var(--duration-slow) var(--ease-out-soft);
-  }
-}
-
-@media (max-width: 639px) and (prefers-reduced-motion: reduce) {
-  #main-content[data-reserve-transitioning="true"],
-  #main-content[data-reserve-transitioning="true"] [data-testid="mobile-composer-reserve-pad"],
-  [data-testid="document-viewer-content"][data-reserve-transitioning="true"],
-  [data-reserve-owner][data-reserve-transitioning="true"] {
-    transition: none;
-  }
-}
 
 /* Theme switch: snap every surface in one frame (was Improvement 2.2's crossfade).
 
@@ -2834,52 +1818,6 @@ html.theme-transitioning *:after {
   }
 }
 
-/* ─── SEARCH RESULTS BAND ──────────────────────────────────────────────────
-   Weight comes down across this surface: nothing is bold. The one-line anatomy
-   split the two apart rather than sharing a step — the figure carries 600 and
-   the query 450, so the count leads and the query reads as its subject. They
-   are separated by tabular numerals and a hairline rather than by shouting.
-   (This said "the heaviest step is 580, and the query and the figure share it"
-   until the redesign; both numbers changed and the sentence did not.)
-   Expressed here as numeric
-   `font-weight` on named classes rather than Tailwind arbitrary values because
-   (a) that is the existing idiom in this file, and (b) `check:type-scale
-   --strict` is a zero gate on arbitrary `text-[Npx]` utilities. Geist is a
-   variable face, so these interpolate instead of snapping to 700. */
-/* Deliberately UNLAYERED. Tailwind's utilities layer outranks @layer
-   components regardless of selector specificity, and the band root also
-   carries the `border` / `border-[color:var(--border)]` utilities — inside a
-   layer these rules lose and the accent rail silently renders as a neutral
-   1px border. Verify with computed styles, not class presence. */
-/* Small enough to read as a label rather than a control, which is what stops a
-   row of accent chips reading as a second bank of buttons. */
-.search-band-shelf-label {
-  font-size: 0.625rem;
-  font-weight: 560;
-  letter-spacing: 0.1em;
-}
-/* The count and its noun are the same size and differ only by weight, so the
-   pair reads as one phrase rather than as a number with a caption. Tabular, so
-   the line does not reflow as the digit count changes under a live region. */
-.search-band-count {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.014em;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-/* A zero is a real answer, but it is not news; it steps down in weight and
-   colour rather than shouting a result that is not there. */
-.search-band-count[data-zero="true"] {
-  font-weight: 470;
-  color: var(--text-muted);
-}
-@media (min-width: 40rem) {
-  .search-band-count {
-    font-size: 1rem;
-  }
-}
-
 /* MUST remain the last rules in this stylesheet. At equal specificity a later
    rule wins, so a forced-colors block placed earlier is silently overridden
    while still looking correct in review. Rendering (not reading) exposed three
@@ -2891,11 +1829,6 @@ html.theme-transitioning *:after {
     background: Highlight;
     color: HighlightText;
     forced-color-adjust: none;
-  }
-  /* --warning-border is not remapped by the token block above, so pin it here
-     or the fault panel keeps a raw hex border under forced colors. */
-  .search-band-fault-panel {
-    border-color: CanvasText;
   }
 }
 
@@ -3022,64 +1955,7 @@ html.theme-transitioning *:after {
 [data-print-provenance] {
   display: none;
 }
-.clinical-ask-workspace {
-  margin: var(--spacing-icon-md) auto;
-  max-width: 56rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-icon-md);
-  background: var(--surface);
-}
-.clinical-ask-output-actions {
-  display: flex;
-  align-items: center;
-  gap: calc(2 * var(--radius-xs));
-}
-.clinical-ask-output-actions {
-  flex-wrap: wrap;
-}
-.clinical-ask-workspace button,
-.clinical-ask-output-actions button {
-  min-height: var(--spacing-tap);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--radius-md) var(--spacing-icon-sm);
-}
-.clinical-ask-field {
-  display: grid;
-  gap: var(--radius-sm);
-  margin-block: var(--spacing-icon-xs);
-}
-.clinical-ask-field input {
-  min-height: var(--spacing-tap);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding-inline: var(--spacing-icon-xs);
-  background: var(--surface);
-  color: var(--text);
-}
-.clinical-ask-state-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-icon-xs);
-  margin-block-start: var(--spacing-icon-xs);
-}
-.clinical-ask-workspace button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-@media (prefers-reduced-motion: reduce) {
-  .clinical-ask-workspace * {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 @media (forced-colors: active) {
-  .clinical-ask-workspace,
-  .clinical-ask-workspace button {
-    border: 1px solid CanvasText;
-  }
-
   /* Quiet default-mode focus is a border shift / color-mix outline. Forced
      colors remaps `--focus` to Highlight; restore that ring so keyboard users
      do not lose the only system-color affordance. Nested search inputs stay
@@ -3090,17 +1966,9 @@ html.theme-transitioning *:after {
     outline-offset: 2px;
   }
 
-  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select):focus-visible,
-  input.field-control:focus-visible,
-  textarea.field-control:focus-visible,
-  select.field-control:focus-visible {
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select):focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
-  }
-
-  .search-shell-input:focus,
-  .search-shell-input:focus-visible {
-    outline: none;
   }
 }
 
