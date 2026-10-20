@@ -2,6 +2,7 @@
 
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
+import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
@@ -889,6 +890,10 @@ export function MovementsScreen() {
                   {attentionCore.length} of {tierOneOpen.length} Tier 1
                 </span>
               ) : null}
+              {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}
+              <Link href={waitingHref("needs-me")} className={buttonClass({ variant: "ghost", size: "sm" })}>
+                All in Delays
+              </Link>
             </div>
             {attentionMovements.length === 0 ? (
               <p className={styles.attentionEmpty}>No open Tier 1 movement needs calling out.</p>

@@ -58,6 +58,15 @@ describe("the Delays board keeps its filters and order in the address", () => {
     expect(orderButton("By blocker")).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("clearing the last filter from a link leaves the address bare", () => {
+    window.history.replaceState(null, "", "/ward-flow/delays?owner=wards");
+    renderBoard();
+    expect(pressed("delays-owner-wards")).toBe("true");
+    fireEvent.click(screen.getByTestId("delays-owner-wards"));
+    expect(pressed("delays-owner-wards")).toBe("false");
+    expect(window.location.search).toBe("");
+  });
+
   it("follows the address when it changes underneath (Back, Forward, a link)", async () => {
     window.history.replaceState(null, "", "/ward-flow/delays");
     renderBoard();
