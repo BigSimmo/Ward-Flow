@@ -5,9 +5,8 @@
 // it has already derived.
 import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
 import Link from "next/link";
-import { BedDouble, Check, ChevronLeft, Clock, Copy, FileText, Scale } from "lucide-react";
+import { BedDouble, Check, Clock, Copy, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
-import { ContextualBackLink } from "@/components/contextual-back-link";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
@@ -172,14 +171,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         phoneFoot={
           phoneMovement ? (
             <div className={styles.phHeroActions}>
-              <ContextualBackLink
-                fallbackHref="/ward-flow/movements"
-                className={buttonClass({ variant: "onHero" })}
-                data-testid="ward-patient-phone-movements-back"
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
-                Movements
-              </ContextualBackLink>
               <Button variant="onHero" icon={Copy} onClick={handleCopySummary}>
                 {copied ? "Copied" : "Copy handover"}
               </Button>

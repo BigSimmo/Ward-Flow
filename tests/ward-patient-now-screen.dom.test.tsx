@@ -11,8 +11,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const mockBack = vi.fn();
-const mockReplace = vi.fn();
 vi.mock("next/navigation", () => ({
   // D-39: an old raw-id link is redirected; the stand-in throws so a test can read where it went.
   redirect: (url: string) => {
@@ -21,18 +19,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/people/WF-009",
   useRouter: () => ({
     push: vi.fn(),
-    replace: mockReplace,
-    back: mockBack,
+    replace: vi.fn(),
+    back: vi.fn(),
     prefetch: vi.fn(),
   }),
 }));
-
-function setCanGoBack(value: boolean | undefined) {
-  Object.defineProperty(window, "navigation", {
-    configurable: true,
-    value: value === undefined ? undefined : { canGoBack: value },
-  });
-}
 
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -337,27 +328,11 @@ describe("the patient-now screen", () => {
     expect(within(root).queryByText("12:42")).not.toBeInTheDocument();
   });
 
-  it("provides an accessible back arrow button that links back contextually", () => {
-    mockBack.mockClear();
-    mockReplace.mockClear();
-    setCanGoBack(true);
+  it("leaves Back to the header: the record has no back control of its own", () => {
     renderScreen();
     const root = screen.getByTestId("ward-person-screen");
-    const backBtn = within(root).getByTestId("ward-patient-back-button");
-    expect(backBtn).toBeInTheDocument();
-    expect(backBtn).toHaveAttribute("href", "/ward-flow");
-    expect(backBtn).toHaveAttribute("aria-label", "Back to previous page");
-
-    fireEvent.click(backBtn);
-    expect(mockBack).toHaveBeenCalledTimes(1);
-    expect(mockReplace).not.toHaveBeenCalled();
-
-    // Direct entry fallback
-    mockBack.mockClear();
-    mockReplace.mockClear();
-    setCanGoBack(false);
-    fireEvent.click(backBtn);
-    expect(mockReplace).toHaveBeenCalledWith("/ward-flow");
+    expect(within(root).queryByTestId("ward-patient-back-button")).not.toBeInTheDocument();
+    expect(within(root).queryByTestId("ward-patient-phone-movements-back")).not.toBeInTheDocument();
   });
 });
 

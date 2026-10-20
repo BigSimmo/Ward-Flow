@@ -21,8 +21,9 @@ function canNavigateBack(): boolean {
 function navigateContextuallyBack(
   router: Pick<ReturnType<typeof useRouter>, "back" | "replace">,
   fallbackHref: string,
+  canUseHistory: () => boolean,
 ) {
-  if (canNavigateBack()) {
+  if (canUseHistory() && canNavigateBack()) {
     router.back();
     return;
   }
@@ -44,6 +45,8 @@ export type ContextualBackLinkProps = Omit<ComponentProps<typeof Link>, "href" |
   fallbackHref: string;
   /** Return false to keep the user on the current page. */
   onBeforeNavigate?: () => boolean;
+  /** Return false to go to the fallback even when the tab has history (it may lead off the app). */
+  canUseHistory?: () => boolean;
   onClick?: ComponentProps<typeof Link>["onClick"];
 };
 
@@ -54,6 +57,7 @@ export type ContextualBackLinkProps = Omit<ComponentProps<typeof Link>, "href" |
 export function ContextualBackLink({
   fallbackHref,
   onBeforeNavigate,
+  canUseHistory = () => true,
   onClick,
   children,
   ...props
@@ -73,7 +77,7 @@ export function ContextualBackLink({
         }
         if (!isUnmodifiedPrimaryClick(event)) return;
         event.preventDefault();
-        navigateContextuallyBack(router, fallbackHref);
+        navigateContextuallyBack(router, fallbackHref, canUseHistory);
       }}
     >
       {children}

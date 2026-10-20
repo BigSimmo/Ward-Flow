@@ -4,6 +4,7 @@
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import Link from "next/link";
 import {
+  ArrowLeft,
   Bell,
   Hospital,
   Plus,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import type { RefObject } from "react";
 
+import { ContextualBackLink } from "@/components/contextual-back-link";
 import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import type {
@@ -28,6 +30,7 @@ import type {
 
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
+import { hasMovedInWardFlow } from "./ward-back";
 import { openWardMenu } from "./ward-drawer-bus";
 import type { WardActivityContent, WardPrimaryAction } from "./ward-shell-types";
 import {
@@ -40,10 +43,41 @@ import {
 import styles from "./ward-bar.module.css";
 
 /**
+ * The header's Back control (`ward-back.ts`): the previous Ward Flow screen, else `parentHref`.
+ * `phone` draws it in the Menu button's place on a phone; otherwise it leads the tablet and desktop bar.
+ */
+export function WardBarBack({
+  parentHref,
+  phone,
+  liveOverSheet = false,
+}: {
+  parentHref: string;
+  phone: boolean;
+  liveOverSheet?: boolean;
+}) {
+  return (
+    <ContextualBackLink
+      fallbackHref={parentHref}
+      canUseHistory={hasMovedInWardFlow}
+      className={phone ? `${styles.phoneOnly} ${styles.phoneBack}` : styles.deskBack}
+      aria-label="Back"
+      data-testid={phone ? "ward-bar-phone-back" : "ward-bar-back"}
+      data-sheet-inert-skip={liveOverSheet ? "" : undefined}
+    >
+      <ArrowLeft aria-hidden="true" strokeWidth={phone ? 1.75 : 2} />
+      {phone ? null : <span>Back</span>}
+    </ContextualBackLink>
+  );
+}
+
+/**
  * The phone bar's Menu button and the phone menu it opens. The menu opens only on the phone; above
- * 48rem the rail's own sheet answers Menu.
+ * 48rem the rail's own sheet answers Menu. On a phone's drill-down screen (`backHref`) Back takes
+ * the button's place; a tablet keeps Menu beside the bar's own Back. The menu stays mounted, as it
+ * also draws the dock.
  */
 export function PhoneMenuEntry({
+  backHref,
   menuRef,
   tasksCount,
   activityUnread,
@@ -52,6 +86,8 @@ export function PhoneMenuEntry({
   onOpenReferral,
   liveOverSheet,
 }: {
+  /** The parent page on a drill-down screen, where Back replaces Menu. */
+  backHref?: string;
   /** Keeps Menu tappable while a sheet sits below the bar (see `headerLiveOverSheet`). */
   liveOverSheet: boolean;
   menuRef: RefObject<HTMLButtonElement | null>;
@@ -63,6 +99,7 @@ export function PhoneMenuEntry({
 }) {
   return (
     <>
+      {backHref ? <WardBarBack parentHref={backHref} phone liveOverSheet={liveOverSheet} /> : null}
       <button
         type="button"
         ref={menuRef}
@@ -71,6 +108,7 @@ export function PhoneMenuEntry({
         aria-haspopup="dialog"
         aria-controls="ward-phone-menu"
         data-testid="ward-bar-phone-menu"
+        data-back-replaced={backHref ? "" : undefined}
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
         onClick={(event) => openWardMenu(event.currentTarget)}
       >

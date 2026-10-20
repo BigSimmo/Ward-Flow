@@ -72,7 +72,8 @@ import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
-import { useAccessNavFilter } from "./ward-access";
+import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
+import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
   REFERRAL_BOARD_HREF,
@@ -97,6 +98,7 @@ import {
 import { useBandScrolled, useBarScrolled } from "./ward-bar-scroll";
 import {
   PhoneMenuEntry,
+  WardBarBack,
   WardBarDrawerTriggers,
   WardBarPrimaryAction,
   WardBarServiceSelector,
@@ -410,6 +412,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const place = wardPlaceFor(pathname, units);
   const routeTitle = wardBarRouteTitle(pathname, place, isPhone);
+  // Back (Josh, 20 Oct 2026): drill-down screens lead with Back; rail and dock pages keep Menu.
+  const deskHomeHref = useDeskHomeHref();
+  const backHref = wardBackParent(pathname, deskHomeHref);
+  useEffect(() => noteWardRoute(pathname), [pathname]);
 
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
@@ -1069,6 +1075,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     >
       {/* Phone (Josh, 10 Oct 2026, locked lean bar): Menu, title over the service line, Search, Tasks. */}
       <PhoneMenuEntry
+        backHref={backHref}
         menuRef={phoneMenuRef}
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
@@ -1081,6 +1088,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
           button, which stays the one keyboard and screen-reader control; taps inside the button's
           own container (the button itself, the sheet and its scrim) are left to it. */}
+      {backHref ? <WardBarBack parentHref={backHref} phone={false} /> : null}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
         className={styles.title}

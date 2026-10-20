@@ -1,0 +1,66 @@
+import { beforeEach, describe, expect, it } from "vitest";
+
+import {
+  hasMovedInWardFlow,
+  noteWardRoute,
+  resetWardRouteHistory,
+  wardBackParent,
+} from "@/components/ward-management/shell/ward-back";
+
+const COORDINATOR_HOME = "/ward-flow";
+const NURSE_HOME = "/ward-flow/ward/rph-adult-secure";
+
+describe("the header's Back control (Josh, 20 Oct 2026)", () => {
+  it.each([
+    ["/ward-flow/people/PX-1a2b", "/ward-flow/movements"],
+    ["/ward-flow/people/new", "/ward-flow/search"],
+    ["/ward-flow/movements/MV-1a2b", "/ward-flow/movements"],
+    ["/ward-flow/ward/rph-adult-secure/answer", "/ward-flow/ward/rph-adult-secure"],
+    ["/ward-flow/referrals/new", "/ward-flow/referrals"],
+    ["/ward-flow/statistics/ward/rph-adult-secure", "/ward-flow/statistics"],
+    ["/ward-flow/statistics/service/east-metro", "/ward-flow/statistics"],
+    ["/ward-flow/bed-meeting/agenda", "/ward-flow/capacity"],
+    ["/ward-flow/reports/downtime", "/ward-flow"],
+    ["/ward-flow/ward/rph-adult-secure", "/ward-flow/wards"],
+    ["/ward-flow/board/rph-adult-secure", "/ward-flow/wards"],
+    ["/ward-flow/ed/peel-ed", "/ward-flow/ed"],
+    ["/ward-flow/community/armadale", "/ward-flow/community"],
+  ])("%s is a drill-down for the coordinator and falls back to %s", (pathname, parent) => {
+    expect(wardBackParent(pathname, COORDINATOR_HOME)).toBe(parent);
+  });
+
+  it.each([
+    "/ward-flow",
+    "/ward-flow/waiting",
+    "/ward-flow/movements",
+    "/ward-flow/capacity",
+    "/ward-flow/wards",
+    "/ward-flow/ed",
+    "/ward-flow/statistics",
+    "/ward-flow/statistics/overview",
+    "/ward-flow/handover",
+    "/ward-flow/settings",
+  ])("%s is a starting point and keeps Menu", (pathname) => {
+    expect(wardBackParent(pathname, COORDINATOR_HOME)).toBeUndefined();
+  });
+
+  it("keeps Menu on the desk's own place, its bed board included, but not on another ward", () => {
+    expect(wardBackParent(NURSE_HOME, NURSE_HOME)).toBeUndefined();
+    expect(wardBackParent("/ward-flow/board/rph-adult-secure", NURSE_HOME)).toBeUndefined();
+    expect(wardBackParent("/ward-flow/ward/graylands-older-adult", NURSE_HOME)).toBe("/ward-flow/wards");
+    expect(wardBackParent("/ward-flow/ed/peel-ed", "/ward-flow/ed/peel-ed")).toBeUndefined();
+    expect(wardBackParent("/ward-flow/community/armadale", "/ward-flow/community/armadale")).toBeUndefined();
+  });
+
+  describe("in-app history", () => {
+    beforeEach(() => resetWardRouteHistory());
+
+    it("does not trust the browser history until the tab has moved between Ward Flow screens", () => {
+      noteWardRoute("/ward-flow/people/PX-1a2b");
+      noteWardRoute("/ward-flow/people/PX-1a2b");
+      expect(hasMovedInWardFlow()).toBe(false);
+      noteWardRoute("/ward-flow/movements");
+      expect(hasMovedInWardFlow()).toBe(true);
+    });
+  });
+});

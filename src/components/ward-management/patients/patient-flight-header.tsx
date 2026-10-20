@@ -1,7 +1,5 @@
-import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
-import { ContextualBackLink } from "@/components/contextual-back-link";
-import { Hero, buttonClass, useIsPhone } from "@/components/wf";
+import { Hero, useIsPhone } from "@/components/wf";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now.module.css";
 
@@ -150,22 +148,10 @@ export function PatientFlightHeader({
 }
 
 /**
- * The back button and the record tabs. On a phone Patient Now renders this row as a sibling of
+ * The record tabs (Back is in the header, `shell/ward-back.ts`). On a phone Patient Now renders this row as a sibling of
  * the record (not inside the hero) and adds the shared `pinnedSwitch` class, so it sticks under
  * the phone header while the record scrolls (Josh, 12 Oct 2026).
  */
 export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
-  return (
-    <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>
-      <ContextualBackLink
-        fallbackHref="/ward-flow"
-        className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
-        aria-label="Back to previous page"
-        data-testid="ward-patient-back-button"
-      >
-        <ArrowLeft size={16} aria-hidden="true" />
-      </ContextualBackLink>
-      {tabs}
-    </div>
-  );
+  return <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>{tabs}</div>;
 }
