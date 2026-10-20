@@ -10,7 +10,9 @@ import { isAwaitingAnswer, referralDestinationLabel, referralState } from "@/com
  * a referral still waiting for answers, naming the desks that have it in hand so two people do not
  * ring the same wards about the same person:
  *   - a desk that CLAIMED it: the current owner of an action-list row about this referral's bed
- *     request (`TAKE_INBOX_ITEM_OWNERSHIP`), shown by its desk name, never a person;
+ *     request (`TAKE_INBOX_ITEM_OWNERSHIP`), shown by its desk name, never a person. Only while
+ *     that row is still on the task list: claims are never released, so a claim on a row that has
+ *     since cleared names nobody (`rowIsLive`, from the current `taskItems` ids);
  *   - a ward that OPENED it and has not answered yet (`MARK_REFERRAL_OPENED`).
  *
  * Not a lock and not an answer: anyone can still act, and the decision clock keeps running. Read
@@ -22,6 +24,8 @@ export function referralWorkedOnBy(
     movements: readonly Movement[];
     inboxOwnership: Readonly<Record<string, readonly InboxOwnershipEntry[]>>;
     units: readonly Pick<Unit, "id" | "name">[];
+    /** True while a task row with this id is on the list now. */
+    rowIsLive: (rowId: string) => boolean;
   },
 ): string[] {
   if (referralState(referral) !== "queued") return [];
@@ -36,6 +40,7 @@ export function referralWorkedOnBy(
     if (movement.referralId !== referral.id || movement.closure !== undefined) continue;
     for (const category of Object.values(INBOX_CATEGORIES)) {
       const rowId = `${category.idPrefix}${movement.id}`;
+      if (!records.rowIsLive(rowId)) continue;
       const owner = currentInboxOwner(records.inboxOwnership[rowId], inboxOccurrenceSince(movement, rowId));
       if (owner) claims.push(owner);
     }

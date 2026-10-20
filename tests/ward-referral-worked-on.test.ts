@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { referralWorkedOnBy, workedOnLine } from "@/components/ward-management/referrals/referral-worked-on";
+import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -29,29 +30,32 @@ function fixture() {
       },
     ],
   };
-  // A bed request raised from this referral, still waiting on a ward's answer.
-  const template = seeded.movements.find((movement) => !movement.closure)!;
-  const movement: Movement = {
-    ...template,
-    id: "WF-T-WORKED" as Movement["id"],
-    referralId: base.id,
-    stage: "destination_review",
-    referredAt: NOW - 30,
-    referralDecisionOpenedAt: undefined,
-    closure: undefined,
-  };
+  // A bed request raised from this referral that has a row on the task list now, so a desk can
+  // claim that row.
+  const live = taskItems(seeded, NOW).map((item) => item.id);
+  const template = seeded.movements.find(
+    (movement) => !movement.closure && live.some((id) => id.endsWith(`-${movement.id}`)),
+  )!;
+  const rowId = live.find((id) => id.endsWith(`-${template.id}`))!;
+  const movement: Movement = { ...template, referralId: base.id };
   const state: WardFlowState = {
     ...seeded,
     referrals: seeded.referrals.map((candidate) => (candidate.id === base.id ? referral : candidate)),
-    movements: [...seeded.movements, movement],
+    movements: seeded.movements.map((candidate) => (candidate.id === movement.id ? movement : candidate)),
   };
-  return { state, referralId: base.id, unit, movement };
+  return { state, referralId: base.id, unit, movement, rowId };
 }
 
-const desksOf = (state: WardFlowState, referralId: string) =>
+/** The records the note reads, with the task rows on the list at `now` as the live rows. */
+const recordsOf = (state: WardFlowState, now: number = NOW) => {
+  const live = new Set(taskItems(state, now).map((item) => item.id));
+  return { ...state, rowIsLive: (rowId: string) => live.has(rowId) };
+};
+
+const desksOf = (state: WardFlowState, referralId: string, now: number = NOW) =>
   referralWorkedOnBy(
     state.referrals.find((referral) => referral.id === referralId)!,
-    state,
+    recordsOf(state, now),
   );
 
 describe("referralWorkedOnBy", () => {
@@ -82,7 +86,7 @@ describe("referralWorkedOnBy", () => {
       type: "TAKE_INBOX_ITEM_OWNERSHIP",
       role: "coordinator",
       now: NOW,
-      inboxItemId: `target-pending-referral-decision-${f.movement.id}`,
+      inboxItemId: f.rowId,
     });
     expect(taken.rejections).toEqual([]);
     expect(desksOf(taken, f.referralId)).toEqual(["Bed coordinator"]);
@@ -113,6 +117,21 @@ describe("referralWorkedOnBy", () => {
       ...referral,
       destinations: referral.destinations.map((arm) => ({ ...arm, state: "declined" as const, decidedAt: NOW + 5 })),
     };
-    expect(referralWorkedOnBy(answered, opened)).toEqual([]);
+    expect(referralWorkedOnBy(answered, recordsOf(opened))).toEqual([]);
+  });
+
+  it("names nobody for a claim on a task row that has since cleared (claims are never released)", () => {
+    const f = fixture();
+    const rowId = f.rowId;
+    const taken = wardFlowReducer(f.state, {
+      type: "TAKE_INBOX_ITEM_OWNERSHIP",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: rowId,
+    });
+    expect(taken.rejections).toEqual([]);
+    const referral = taken.referrals.find((candidate) => candidate.id === f.referralId)!;
+    const cleared = { ...recordsOf(taken), rowIsLive: (id: string) => id !== rowId };
+    expect(referralWorkedOnBy(referral, cleared)).toEqual([]);
   });
 });

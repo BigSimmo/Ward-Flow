@@ -41,7 +41,7 @@ function waitingReferral(openedAt?: number) {
       },
     ],
   };
-  const value = { movements: seeded.movements, inboxOwnership: {}, units: seeded.units };
+  const value = { ...seeded, inboxOwnership: {}, now: NOW };
   return { referral, unit, value: value as unknown as React.ContextType<typeof WardFlowContext> };
 }
 

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { dailyCheckId, dailyCheckRecord } from "@/components/ward-management/coordinator/daily-check";
 import {
-  dailyCheckId,
-  dailyCheckRecord,
   missedRequestCheck,
   openRequestsByPerson,
 } from "@/components/ward-management/coordinator/missed-requests-check";

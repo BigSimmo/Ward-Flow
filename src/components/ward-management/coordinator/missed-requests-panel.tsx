@@ -11,9 +11,11 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { MISSED_REQUEST_LABELS, dailyCheckId, dailyCheckRecord, missedRequestCheck } from "./missed-requests-check";
+import { dailyCheckId, dailyCheckRecord } from "./daily-check";
+import { MISSED_REQUEST_LABELS, missedRequestCheck } from "./missed-requests-check";
 import styles from "./missed-requests-panel.module.css";
 
 /**
@@ -29,13 +31,13 @@ import styles from "./missed-requests-panel.module.css";
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
   const enabled = useWardFeatureFlag("missed-requests-check");
-  const { movements, referrals, patients, inboxCompletions, dispatch } = useWardFlowSelect(
+  const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
     "movements",
     "referrals",
     "patients",
     "inboxCompletions",
-    "dispatch",
   );
+  const raise = useWardRaise("coordinator");
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
   const listId = useId();
@@ -126,7 +128,7 @@ export function MissedRequestsPanel() {
               variant="sec"
               size="sm"
               onClick={() => {
-                dispatch({ type: "COMPLETE_INBOX_ITEM", role: "coordinator", now, inboxItemId: dailyCheckId(now) });
+                raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) });
               }}
               data-testid="ward-missed-check-done"
             >
