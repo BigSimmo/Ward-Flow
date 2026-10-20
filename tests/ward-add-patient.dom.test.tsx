@@ -754,7 +754,6 @@ describe("AddPatientForm safety regressions", () => {
       target: { value: "other" },
     });
     fireEvent.change(screen.getByLabelText("Clinical intake notes"), { target: { value: "Invented intake note" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
     expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
@@ -780,8 +779,14 @@ describe("AddPatientForm safety regressions", () => {
       expect(radio).toHaveAttribute("aria-checked", "false");
     }
     expect(screen.getByLabelText("Presenting complaint")).toHaveValue("assessment");
-    expect(screen.queryByTestId("ward-add-patient-d4-notice")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("hides Print and Save draft, which only ever said they were not wired (overall review, 20 Oct 2026)", () => {
+    renderForm();
+    expect(screen.queryByRole("button", { name: "Print" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save draft" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Not wired in this prototype.")).not.toBeInTheDocument();
   });
 
   it.each(["Indigenous status", "Triage urgency", "Legal status", "Presenting complaint"])(

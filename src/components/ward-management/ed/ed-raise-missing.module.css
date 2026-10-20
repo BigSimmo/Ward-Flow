@@ -1,0 +1,32 @@
+/* The ED "Raise into a movement" form after a blocked raise: each unanswered question is marked by
+ * a red edge and the words "Not answered", never by colour alone, and the list under the button
+ * names them all (overall review, 20 Oct 2026; same idea as the registration form, DA-12). */
+
+.missing select,
+.missing input[type="text"],
+.missing input[type="date"],
+.missing input[type="time"] {
+  border-color: var(--wf-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-danger) 12%, transparent);
+}
+
+/* A pair of radios has no box of its own, so the group gets the red edge. */
+fieldset.missing {
+  border-radius: var(--wf-r-md);
+  outline: 2px solid var(--wf-danger);
+  outline-offset: 2px;
+}
+
+.note {
+  color: var(--wf-danger-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.list {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--wf-danger-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}

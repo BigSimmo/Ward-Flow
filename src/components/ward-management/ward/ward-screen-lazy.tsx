@@ -56,6 +56,8 @@ export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m
 // phone, so while it loads it holds about the space its cards will take. That keeps the buttons
 // below it from moving under a finger. A ward with no entries holds no space, as the inbox shows none.
 // Heights are the rendered card's at phone width (header and one entry); a wider screen settles shorter.
+// The holder is a plain hidden box, not a named section: a screen reader must not meet an empty
+// "Ward referral inbox" before the real one arrives (overall review, 20 Oct 2026).
 const INBOX_HEADER_REM = 3;
 const INBOX_ENTRY_REM = 10.5;
 function WardReferralInboxPlaceholder() {
@@ -64,9 +66,9 @@ function WardReferralInboxPlaceholder() {
   const count = unitId ? (wardReferralInbox?.(unitId)?.length ?? 0) : 0;
   if (!count) return null;
   return (
-    <section
-      aria-label="Ward referral inbox"
-      aria-busy="true"
+    <div
+      aria-hidden="true"
+      data-testid="ward-referral-inbox-placeholder"
       style={{ minBlockSize: `${INBOX_HEADER_REM + count * INBOX_ENTRY_REM}rem` }}
     />
   );

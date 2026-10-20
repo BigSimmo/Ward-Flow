@@ -414,7 +414,7 @@ export const CLINICAL_VALUES = {
     value: 4 * MINUTES_PER_HOUR,
     unit: "minutes",
     source:
-      "D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service. Review warning paused by D-65 (flag awol-bed-hold-review)",
+      "D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service. Review warning paused by D-65, then switched on again on 20 Oct 2026 when Josh turned on all features (flag awol-bed-hold-review)",
   },
   ctoFollowUpWindow: {
     ...SIGNED_BY_JOSH,

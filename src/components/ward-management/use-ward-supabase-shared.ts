@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
+import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
@@ -92,12 +93,18 @@ const workingAs = {
     }
   },
 };
+// The next account at this tab picks its own role, even after an expiry rather than a sign-out.
+onWardSessionEnd(() => {
+  workingAsInMemory = null;
+});
 const defaultCreateAuth = (): WardBrowserAuthAdapter =>
   new SupabaseWardAuth({
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
     publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
     storage: window.sessionStorage,
     coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
+    // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
+    onSessionEnded: endWardFlowBrowserSession,
   });
 export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBrowserAuthAdapter = defaultCreateAuth) {
   const [view, setView] = useState<SharedView>(emptyView);
@@ -293,6 +300,9 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
             workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
+            // Clear Ward Flow's saved browser data (bed keys, recents, snapshots, filters, drafts)
+            // here too, so it goes even when the session had already ended or auth was swapped.
+            endWardFlowBrowserSession();
             setForm({ open: false, recovery: false, busy: false, message: null });
             // The next account on a shared phone never sees this one's act-now count, even when
             // the session has expired and the phone alert cleanup below cannot run.

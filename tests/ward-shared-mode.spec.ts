@@ -161,7 +161,7 @@ test("a clash: two desks change the same record from the same revision, and the 
   await chooseOtherTier(two.page, tierTwo, first);
   await placement(two.page).getByRole("button", { name: "Record urgency change" }).click();
   await expect(sharedStatus(two.page)).toContainText(
-    "Someone else changed this first. Your action was not applied; review the latest state.",
+    "This record changed while you were looking. Your action was not applied; review the latest details and try again.",
   );
   // The refusal carried the latest board, so desk two now shows desk one's change, not its own.
   await expect(queueRow(two.page)).toContainText(first);

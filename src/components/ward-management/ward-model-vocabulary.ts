@@ -154,8 +154,17 @@ export type MovementArrivalDetails = {
   modeOfArrival?: string;
   trackingNumber?: string;
   estimatedArrivalAt: Instant;
+  /** When the arrival plan was FIRST recorded, and by whom. Later edits never move these. */
   recordedAt: Instant;
   recordedBy: WardFlowRole;
+  /**
+   * The latest edit after the first recording, when there has been one. Absent on a plan recorded
+   * once, and on plans saved before 20 Oct 2026 (overall review: edits used to overwrite
+   * `recordedAt`, so the ED timeline, chronology and pilot measures showed the latest edit as the
+   * first recording).
+   */
+  updatedAt?: Instant;
+  updatedBy?: WardFlowRole;
 };
 
 export type MovementUploadedForm = {
@@ -342,8 +351,8 @@ export type LegalForm = {
   /** Setting recorded from the current paper, never inferred from geography. */
   region?: "metro" | "country";
   /**
-   * Age band recorded from the current paper (review 18 Oct 2026, item 1). The Act period
-   * countdown uses it when the linked patient has no date of birth. Never inferred.
+   * Age band recorded from the current paper (review 18 Oct 2026, item 1). Kept as recorded; no
+   * Act period is computed from it (D-70). Never inferred.
    */
   ageBand?: "adult" | "under_18";
   /**
