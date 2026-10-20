@@ -186,7 +186,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero from
     // its Exceptions count, so the toggle is clicked first. Scrolled into view before the
     // visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
-    await page.getByRole("button", { name: /Alerts/, expanded: false }).click();
+    await page
+      .getByTestId("ward-coordinator-body")
+      .getByRole("button", { name: /Alerts/, expanded: false })
+      .click();
     const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
     await registers.scrollIntoViewIfNeeded();
     await expect(registers).toBeVisible();
@@ -264,7 +267,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Opens on the Exceptions tab by default. At this width the registers start closed and open
     // from the hero's Exceptions count (owner, 8 Oct 2026).
-    await page.getByRole("button", { name: /Alerts/, expanded: false }).click();
+    await page
+      .getByTestId("ward-coordinator-body")
+      .getByRole("button", { name: /Alerts/, expanded: false })
+      .click();
     const drawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await drawer.scrollIntoViewIfNeeded();
     await expect(drawer).toBeVisible();
@@ -347,6 +353,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
     // is reachable without a long scroll.
     await page
+      .getByTestId("ward-coordinator-body")
       .getByRole("button", { name: /Alerts/ })
       .first()
       .click();
@@ -1412,7 +1419,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
     // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
     // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    await page.getByRole("button", { name: /Alerts/, expanded: false }).click();
+    await page
+      .getByTestId("ward-coordinator-body")
+      .getByRole("button", { name: /Alerts/, expanded: false })
+      .click();
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
     await refusedTab.click();
