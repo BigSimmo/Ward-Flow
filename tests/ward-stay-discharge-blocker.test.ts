@@ -12,7 +12,9 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 const NOW = NOW_ANCHOR;
 
 function anOccupantWithNoBlocker(state: WardFlowState) {
-  const found = state.admissions.find((a) => a.state === "occupied" && a.blockReason === null);
+  const found = state.admissions.find(
+    (a) => a.state === "occupied" && a.blockReason === null && !state.bedReleases.some((r) => r.admissionId === a.id),
+  );
   if (!found) throw new Error("the seed has nobody in a bed without a recorded blocker");
   return found;
 }

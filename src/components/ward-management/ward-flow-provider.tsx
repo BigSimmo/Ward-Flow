@@ -1,5 +1,6 @@
 "use client";
 
+import { whenStreamRevealed } from "./when-stream-revealed";
 import { localCommandOutcome, useLocalCommandCompletion, type LocalCommandState } from "./use-local-command-completion";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 
@@ -673,13 +674,11 @@ export function WardFlowProvider({ children, initialNow, initialDayZero }: WardF
      * is precisely what made every ward route capable of failing hydration. The adoption has to
      * happen after the first paint or it is not a fix at all.
      *
-     * It costs exactly one extra render, once per mount, before any interaction is possible — and
-     * removing the disable by restructuring would reintroduce the mismatch it exists to close. If a
-     * future change makes the clock deterministic across server and client, delete the effect
-     * rather than the comment.
+     * It costs one extra render per mount. If a future change makes the clock deterministic across
+     * server and client, delete the effect rather than the comment.
      */
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above: the wall clock cannot be read during render without breaking hydration
-    setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
+    const adopt = () => setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
+    return whenStreamRevealed(adopt); // not while the streamed page is pending: React would duplicate it
   }, [initialNow]);
 
   /*

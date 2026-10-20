@@ -382,6 +382,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-sex-cell.test.ts`** (90 lines) — the referral board's Sex column
 - **`tests/ward-referral-suburb-pin.test.ts`** (261 lines) — the suburb note, and the model fact that is the only reason it is true
 - **`tests/ward-referral-suburb.test.ts`** (183 lines) — a referral records its suburb
+- **`tests/ward-referral-unknown-legal-status-bed.test.ts`** (37 lines) — D-69: a referral with no legal status needs an involuntary-capable bed until a status is set; Voluntary clears it, Involuntary keeps it, on the helper and the drawer's ward destinations
 - **`tests/ward-referral-visibility.test.ts`** (3021 lines) — FD-23 — a ward cannot see where else a patient has been referred
 - **`tests/ward-referral-wait-line.test.ts`** (111 lines) — the wait figure the referral board and match view print
 - **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — T11 — the nav count drops when a referral is withdrawn

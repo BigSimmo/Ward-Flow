@@ -3,11 +3,11 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Referral, TurnaroundPriority, Unit } from "./ward-model";
 import type { EligibilityVerdict } from "./ward-eligibility";
 import { unitHasLockedBeds } from "./ward-bed-designation";
-import { admissionCriteriaEligibility } from "./ward-discharge-records";
+import { admissionCriteriaEligibility, type LegalStatusRecords } from "./ward-discharge-records";
 import { dischargeCriteriaStatus } from "./ward-discharge-criteria";
 import { resolveWardFeatureFlags, serverWardFeatureFlags, wardEnvironment } from "./ward-feature-flags";
 
-type CldState = Pick<WardFlowState, "admissions" | "patients" | "movements">;
+type CldState = Pick<WardFlowState, "admissions"> & LegalStatusRecords;
 type TurnaroundState = CldState & Pick<WardFlowState, "bedReleases">;
 
 /** Staging may wait for capacity; every receiving clinical/legal capability must already fit. */

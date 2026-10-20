@@ -182,7 +182,13 @@ export function PriorityQueue({
   units = [],
 }: PriorityQueueProps) {
   const dueSoonThresholds = useDueSoonThresholds();
-  const turnaroundState = useOptionalWardFlowSelect("admissions", "patients", "movements", "bedReleases");
+  const turnaroundState = useOptionalWardFlowSelect(
+    "admissions",
+    "patients",
+    "movements",
+    "bedReleases",
+    "plannedAdmissions",
+  );
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const turnaroundLabel = (preference: TurnaroundPriority | undefined) => {
     const live = turnaroundState && liveTurnaroundPreference(turnaroundState, preference, now, cldEnabled);

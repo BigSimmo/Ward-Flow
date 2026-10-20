@@ -1,6 +1,7 @@
 // The ward screen's pure derivations: the alerts its Home tab lists and the bed roster its board
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
@@ -50,6 +51,8 @@ type WardBedRosterInputs = {
   now: number;
   criteriaLedOn: boolean;
   patients: Patient[];
+  /** The arrived booking still names an older converted stay's legal status (review: CodeRabbit). */
+  plannedAdmissions?: PlannedAdmission[];
   dayZero: Date;
   wardReferralInbox: (unitId: string) => WardReferralInboxEntry[];
 };
@@ -66,6 +69,7 @@ export function wardBedRoster({
   now,
   criteriaLedOn,
   patients,
+  plannedAdmissions,
   dayZero,
   wardReferralInbox,
 }: WardBedRosterInputs) {
@@ -175,14 +179,16 @@ export function wardBedRoster({
     // D-64, behind the criteria led discharge flag: the Legal tile reads the same records as the
     // criteria card, so the two agree. With the flag off the tile is unchanged.
     const recordLegalStatus =
-      criteriaLedOn && admission ? admissionLegalStatus({ movements, patients }, admission) : undefined;
+      criteriaLedOn && admission
+        ? admissionLegalStatus({ movements, patients, plannedAdmissions }, admission)
+        : undefined;
     const patientLegalStatus = recordLegalStatus ?? linkedMovement?.legalStatus;
     const criteriaLedChip =
       criteriaLedOn && admission?.state === "occupied"
         ? criteriaLedTileChip(
             dischargeCriteriaStatus(
               admission.dischargeCriteria,
-              admissionCriteriaEligibility({ movements, patients }, admission),
+              admissionCriteriaEligibility({ movements, patients, plannedAdmissions }, admission),
               now,
             ),
           )

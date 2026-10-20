@@ -76,6 +76,7 @@ import { recordIdFromParam } from "@/components/ward-management/shell/ward-recor
 import {
   type MockPatientProfile,
   NOT_RECORDED,
+  wardReferralDestinations,
   SAMPLE_PATIENTS,
   NO_PATIENT_KEY,
   PATIENT_KEY_PREFIX,
@@ -739,15 +740,13 @@ export function useWardReferralDrawerState({
   const offeredUnitIds = selectedUnitIds.filter((id) => realTimeMatch.sortedUnits.some((unit) => unit.unitId === id));
   const selectedDestinations: ReferralDestination[] =
     destType === "ward"
-      ? offeredUnitIds.map((unitId) => ({
-          kind: "psychiatric_ward",
-          unitId,
+      ? wardReferralDestinations(offeredUnitIds, {
           sex: referralSex,
-          gender: referralGender || undefined,
-          secureBedNeeded: security === "Secure",
-          involuntaryBedNeeded: legalStatus !== "Voluntary",
-          highAcuityNursingNeeded: highAcuity,
-        }))
+          gender: referralGender,
+          security,
+          legalStatus,
+          highAcuity,
+        })
       : !selectedRecipient
         ? []
         : destType === "community"

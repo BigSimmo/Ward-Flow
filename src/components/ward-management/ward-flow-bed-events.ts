@@ -53,6 +53,14 @@ export type BedEvent = Extract<
   }
 >;
 
+/**
+ * Whether two stays belong to the same linked patient. Kept here, on the patient-link allowlist,
+ * so Undo can refuse restoring a second bed for one person without reading the link itself.
+ */
+export function sameLinkedPatient(a: Pick<Admission, "patientId">, b: Pick<Admission, "patientId">): boolean {
+  return a.patientId !== null && a.patientId === b.patientId;
+}
+
 export function reduceBedEvent(
   state: WardFlowState,
   event: BedEvent,

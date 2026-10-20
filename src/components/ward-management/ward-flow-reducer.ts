@@ -38,6 +38,8 @@ import {
 } from "./ward-undo";
 import {
   admissionCriteriaEligibility,
+  plannedAdmissionLegalStatus,
+  stayLegalStatusIsInvoluntary,
   dischargeIdentity,
   dischargeMovement,
   readOpenedDischargeRecord,
@@ -48,6 +50,7 @@ import {
   uniqueRecord,
   validRecordActor,
   type WardRecordActor,
+  type LegalStatusRecords,
 } from "./ward-discharge-records";
 // D-64: these two live beside the discharge records so the Discharges list can use them too.
 export { admissionCriteriaEligibility, dischargeMovement };
@@ -1301,6 +1304,10 @@ type ProtectedRecordEvent = Extract<
   }
 >;
 
+/** Shown when a care step, such as a revocation, is attempted on a stay with no linked patient. */
+export const UNLINKED_CARE_REFUSAL =
+  "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
+
 function protectedRefusal(
   state: WardFlowState,
   event: ProtectedRecordEvent,
@@ -1335,14 +1342,8 @@ export function patientRecordIsInvoluntary(legalStatus: string | undefined): boo
   return legalStatusIsDetained(legalStatus);
 }
 
-/**
- * The legal status the bed panel shows for a stay, read from the same two records as
- * `admissionCriteriaEligibility`, so the Legal tile and the criteria led discharge card agree.
- */
-export function admissionLegalStatus(
-  state: Pick<WardFlowState, "movements" | "patients">,
-  admission: Admission,
-): string | undefined {
+/** The ward's legal status uses the same patient, current movement and booking sources as criteria eligibility. */
+export function admissionLegalStatus(state: LegalStatusRecords, admission: Admission): string | undefined {
   const patient = uniqueRecord(state.patients, admission.patientId);
   const patientStatus = patient?.legalStatus;
   // A Form 5A in force excludes criteria led discharge even when the typed status was not changed.
@@ -1357,7 +1358,9 @@ export function admissionLegalStatus(
   if (recordClass === "cto" || recordClass === "detained" || recordClass === "referred") {
     return patientStatus;
   }
-  return dischargeMovement(state, admission)?.legalStatus ?? patientStatus;
+  return (
+    dischargeMovement(state, admission)?.legalStatus ?? plannedAdmissionLegalStatus(state, admission) ?? patientStatus
+  );
 }
 
 /** A collected journey whose vehicle has not yet arrived or been stood down. */
@@ -1512,6 +1515,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   if (!unit || !admission || !uniqueRecord(state.units, admission.unitId)) return deny("missing-or-inaccessible");
   if (admission.unitId !== unit.id) return deny("scope");
   const identity = dischargeIdentity(state, admission);
+  // A care record (a revocation included) needs a linked patient (owner, 20 Oct 2026): say so plainly.
+  if (identity.kind !== "linked" && event.type === "RECORD_ADMISSION_CARE")
+    return deny("identity-link", "denied", UNLINKED_CARE_REFUSAL);
   if (identity.kind !== "linked" || identity.patient.id !== event.patientId) return deny("identity-link");
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
@@ -1546,9 +1552,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       event.change.authority === "none" &&
       ["ambulance", "service_vehicle", "police", "rfds"].includes(event.change.mode)
     ) {
-      const movement = dischargeMovement(state, admission);
       const patient = uniqueRecord(state.patients, admission.patientId);
-      if (patientRecordIsInvoluntary(patient?.legalStatus) || (movement && movement.legalStatus !== "Voluntary"))
+      if (patientRecordIsInvoluntary(patient?.legalStatus) || stayLegalStatusIsInvoluntary(state, admission))
         return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
     }
     if (event.change.kind === "legal" && event.change.authority === "5B") {
@@ -1585,6 +1590,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       const movement = dischargeMovement(state, admission);
       if (
         !receiving ||
+        receiving.isClosed ||
         !safeCounter(receiving.empty.value) ||
         receiving.empty.value <= 0 ||
         !movement ||
@@ -1724,7 +1730,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const linkedMovement = dischargeMovement(state, admission);
   if (
     patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
-    (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
+    stayLegalStatusIsInvoluntary(state, admission, linkedMovement)
   ) {
     if (
       event.leavingDestination === "discharged-to-the-community" ||
@@ -2658,6 +2664,7 @@ const UNDO_EVENT_HELPERS: UndoEventHelpers = {
   findReferral,
   findUnit,
   heldBedRefusal,
+  movementSourceAdmission,
   reject,
   replaceAdmission,
   replaceReferral,

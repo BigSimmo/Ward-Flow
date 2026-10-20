@@ -420,6 +420,9 @@ export type Admission = {
    * null = seeded historical occupancy or no live movement — cancel UI must hide / no-op.
    */
   movementId: MovementId | null;
+  /** Checked booking status retained for an arrival without an inbound movement.
+   * Optional for earlier saves; never inferred from an unrelated stay or patient record. */
+  plannedLegalStatus?: LegalStatus;
   /**
    * ⚠️ **THE JOIN D-14 ADDS — A POINTER TO THE EXISTING PATIENT RECORD, NEVER A COPY.**
    *
@@ -730,6 +733,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   referralId: true,
   patientId: true,
   movementId: true,
+  plannedLegalStatus: true,
   sex: true,
   gender: true,
   homeRegion: true,

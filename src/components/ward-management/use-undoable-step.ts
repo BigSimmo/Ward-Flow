@@ -135,6 +135,7 @@ export function useUndoableStep({
   useEffect(() => {
     if (token === 0) return;
     for (const pending of pendingRef.current.splice(0)) {
+      if (pending.outcome?.isCurrent && !pending.outcome.isCurrent()) continue;
       const refused = pending.outcome
         ? undefined
         : rejections.length > pending.prior
@@ -177,10 +178,13 @@ export function useUndoableStep({
         subjectId: undoStepSubjectId(offered),
         priorSeq: pending.priorSeq,
       };
+      const ownStep = pending.outcome?.undoStep;
       watch.seq =
         pending.guard === false && !pending.outcome
           ? undefined
-          : newRecordSeq(pending.outcome ? pending.outcome.undoRecords : undoRecords, watch);
+          : ownStep?.undoType === watch.undoType && ownStep.subjectId === watch.subjectId
+            ? ownStep.seq
+            : newRecordSeq(pending.outcome ? pending.outcome.undoRecords : undoRecords, watch);
       if (pending.outcome && UNDO_STEP_TYPES.includes(undoType as UndoStepType) && watch.seq === undefined) {
         sink.push({ tone: "info", title: pending.success, body: "No Undo record is available for this step." });
         continue;

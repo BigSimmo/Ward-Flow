@@ -59,6 +59,19 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import {
+  focusWardArrival,
+  newWardMovementRefusal,
+  useWardCommandCompletion,
+  wardCommandFailure,
+  wardCommandRefusal,
+  wardCommandUndoSeq,
+  wardUndoBlocked,
+  type WardDischargeCheck,
+  type WardMovementCheck,
+  wardCommandKey,
+} from "./use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -105,10 +118,7 @@ import {
   type BoardCheck,
   boardUndoEvent,
   CENSUS_BED_OPENER_TARGET,
-  afterCommand,
   censusBedOpenerTarget,
-  commandNotRecorded,
-  commandUnconfirmed,
   ownHistoryState,
   shiftLine,
   unavailablePatientIdentity,
@@ -120,6 +130,7 @@ import {
 import { WardAnswerView, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
+import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
@@ -131,26 +142,9 @@ type WardScreenProps = {
 };
 
 /**
- * Task 8: one inpatient unit's own view — the ward answering what the coordinator refers,
- * never a filtered copy of the coordinator's statewide screen. Everything here is scoped to
- * exactly one `Unit`, resolved from the provider's live `units`. An id that resolves to nothing
- * renders an explicit empty state naming the id (Global Constraint, addendum R40) — never a
- * substituted unit, never `?? allUnits()[0]`.
- *
- * Every figure is derived fresh from the live `movements`/`units` the provider hands back on
- * every render, never cached in local state — the same discipline `ward-flow-queue-selection`
- * proves for the coordinator screen. Once a referral is accepted, it disappears from "incoming"
- * and appears under "accepted, pulled or en route" on the very next render, because both lists are
- * plain filters over the same live array; there is no local "it worked" flag anywhere in this
- * file for the reasons `shortlist-panel.tsx`'s own comment on `OverrideRecord` explains.
- *
- * Whole-branch review Critical 1: this screen used to resolve `unit` via `unitById(unitId)` —
- * `ward-sites.ts`'s frozen fixture — so this ward's own bed grid, its "Currently confirmed"
- * line, its capacity-input default and `pullBlockedReason`'s allocatable check never moved even
- * after this exact screen dispatched `CONFIRM_CAPACITY` against itself. `unit` now resolves from
- * the provider's live `units`, the same collection `CONFIRM_CAPACITY`/`PULL_PATIENT`/`PATIENT_ARRIVED`
- * all write to, so a ward reading its own action back is now structurally the same read as
- * anyone else reading it.
+ * One inpatient unit's scoped view, derived from the provider's live records. Unknown units
+ * render an explicit empty state. Command feedback waits for that command's confirmed outcome;
+ * counters and patient lists continue to come from authoritative state.
  */
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
@@ -185,6 +179,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
     wardReferralInbox,
     patients,
+    plannedAdmissions,
   } = useWardFlowSelect(
     "movements",
     "resolvePatientIdentity",
@@ -202,9 +197,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "dayZero",
     "wardReferralInbox",
     "patients",
+    "plannedAdmissions",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
+  const completeCommand = useWardCommandCompletion();
 
   // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
   // takes it from a ward only as source `psychiatric_ward` with this ward as the sender.
@@ -269,32 +266,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  // Each settled departure waits here for the effect below, so two in flight both get their answer.
-  const dischargeChecksRef = useRef<
-    {
-      prior: number;
-      success: string;
-      who: string;
-      codes: string[];
-      /** Audit A1-12: the stay a recorded departure can take back from its toast. */
-      undoAdmissionId?: string;
-      /** Audit F-02: the command's answer; in shared mode the local refusal list never grows. */
-      outcome?: Parameters<typeof commandNotRecorded>[0];
-    }[]
-  >([]);
+  const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
-  // Audit F-02 (19 Oct 2026): a departure message waits for the command's answer, so a refusal from
-  // the shared server is never shown as done.
-  const settleDischarge = useCallback(
-    (check: (typeof dischargeChecksRef.current)[number], result: ReturnType<typeof raise>) => {
-      afterCommand(result, (outcome) => {
-        check.outcome = outcome;
-        dischargeChecksRef.current.push(check);
-        setDischargeToken((token) => token + 1);
-      });
-    },
-    [],
-  );
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
@@ -313,7 +286,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setActiveTab(next);
       });
     },
-    [startTransition],
+    [startTransition, setActiveTab],
   );
   const selectBedFilter = useCallback(
     (next: WardBedFilter) => {
@@ -364,16 +337,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardSay, setBoardSay] = useState("");
   const [placedBed, setPlacedBed] = useState<number | null>(null);
   // Each settled place or undo waits here for the effect below, so two in flight both get their answer.
-  const boardChecksRef = useRef<BoardCheck[]>([]);
+  const boardChecksRef = useRef<(BoardCheck & { outcome?: WardCommandOutcome })[]>([]);
   const [boardToken, setBoardToken] = useState(0);
-  // Audit F-02: a Bed board place or undo says what happened only once the command has an answer.
-  const settleBoard = useCallback((check: BoardCheck, result: ReturnType<typeof raise>) => {
-    afterCommand(result, (outcome) => {
-      check.outcome = outcome;
-      boardChecksRef.current.push(check);
-      setBoardToken((token) => token + 1);
-    });
-  }, []);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const routeRole = useRouteRole();
@@ -472,107 +437,135 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const notificationCenterRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
-  // The outcome of "Discharged" (Josh, 1A): a refusal shows its reason; only an accepted departure
-  // shows the success message.
+  function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
+    // Keyed by subject: a repeat on the same bed or Undo says it is still saving; another bed is not held up.
+    return completeCommand(check.key ?? wardCommandKey("board", check.bed), record, (outcome) => {
+      boardChecksRef.current.push({ ...check, outcome });
+      if (!outcome || outcome.status === "accepted") onAccepted?.();
+      setBoardToken((token) => token + 1);
+    });
+  }
+
+  // Departure feedback follows its confirmed command.
   useEffect(() => {
-    if (dischargeToken === 0) return;
-    for (const check of dischargeChecksRef.current.splice(0)) {
-      const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
-      if (unconfirmed !== null) {
-        setToastMessage(unconfirmed);
-        continue;
-      }
-      const refused =
-        rejections.length > check.prior
-          ? rejections[rejections.length - 1]?.reason
-          : (commandNotRecorded(check.outcome) ?? undefined);
-      // A refusal names the person the way the success message does (Josh, 26 Sept 2026): the
-      // engine's reason quotes record codes, so each code of this person's is shown as their name.
-      const reason = refused
-        ? check.codes.reduce((text, code) => text.split(code).join(check.who), refused)
-        : undefined;
-      // Protected refusals deliberately omit identifiers; retain the name already shown on this scoped card.
-      const namedReason =
-        reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
-          ? `${check.who}: ${reason}`
-          : reason;
-      if (namedReason !== undefined) {
-        setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
-        continue;
-      }
-      // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
-      // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
-      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-      const successText =
-        offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
-      const undoAdmissionId = check.undoAdmissionId;
-      if (!toast || undoAdmissionId === undefined) {
-        setToastMessage(successText);
-        continue;
-      }
-      const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
-      toast.push({
-        tone: "success",
-        title: successText,
-        ...(undoLimit
-          ? { body: `Undo: ${undoLimit}` }
-          : {
-              undo: {
-                durationMs: UNDO_TOAST_MS,
-                onUndo: () => {
-                  const undoCheck = {
-                    prior: rejectionCountRef.current,
-                    success: `Undone. ${check.who} is back in their bed.`,
-                    who: check.who,
-                    codes: check.codes,
-                  };
-                  settleDischarge(
-                    undoCheck,
+    const check = dischargeCheckRef.current;
+    if (dischargeToken === 0 || check === null) return;
+    dischargeCheckRef.current = null;
+    if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
+    const failure = wardCommandFailure(check.outcome);
+    if (failure && check.outcome?.status !== "refused") {
+      setToastMessage(failure);
+      return;
+    }
+    const refused = wardCommandRefusal(check.outcome, rejections, check.prior);
+    // A refusal names the person the way the success message does (Josh, 26 Sept 2026): the
+    // engine's reason quotes record codes, so each code of this person's is shown as their name.
+    const reason = refused
+      ? check.codes.reduce((text, code) => text.split(code).join(check.who), refused.reason)
+      : undefined;
+    // Protected refusals deliberately omit identifiers; retain the name already shown on this scoped card.
+    const namedReason =
+      reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
+        ? `${check.who}: ${reason}`
+        : reason;
+    if (namedReason !== undefined) {
+      setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
+      return;
+    }
+    // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
+    // A1-18 (audit 13 Oct 2026): a departure recorded offline says it has not gone anywhere.
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    const successText =
+      offline && toast?.savesOnDevice?.() ? `${check.success} ${WARD_OFFLINE_SAVED_NOTE}` : check.success;
+    const undoAdmissionId = check.undoAdmissionId;
+    const recordSeq =
+      undoAdmissionId === undefined ? undefined : wardCommandUndoSeq(check.outcome, "UNDO_DEPARTURE", undoAdmissionId);
+    if (!toast || undoAdmissionId === undefined || (check.outcome && recordSeq === undefined)) {
+      setToastMessage(successText);
+      return;
+    }
+    const undoLimit = roleLimitReason(routeRole, "UNDO_DEPARTURE");
+    toast.push({
+      tone: "success",
+      title: successText,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: UNDO_TOAST_MS,
+              onUndo: () => {
+                if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                return completeCommand(
+                  wardCommandKey("undo-departure", undoAdmissionId),
+                  () =>
                     dispatch({
                       type: "UNDO_DEPARTURE",
                       role: "ward",
                       now: nowRef.current,
                       admissionId: undoAdmissionId,
+                      recordSeq,
                       actingUnitId: unitId,
                     }),
-                  );
-                },
+                  (outcome) => {
+                    dischargeCheckRef.current = {
+                      prior: rejectionCountRef.current,
+                      success: `Undone. ${check.who} is back in their bed.`,
+                      who: check.who,
+                      codes: check.codes,
+                      outcome,
+                    };
+                    setDischargeToken((token) => token + 1);
+                  },
+                );
               },
-            }),
-      });
-    }
+            },
+          }),
+    });
     // `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life; the token drives this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dischargeToken, rejections]);
 
-  // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers
-  // Undo on the toast, gated by the route's role like any other control.
+  // Board feedback follows this command, including its Undo.
   useEffect(() => {
     if (boardToken === 0) return;
-    for (const check of boardChecksRef.current.splice(0)) {
-      const refused =
-        rejections.length > check.prior
-          ? rejections[rejections.length - 1]?.reason
-          : (commandNotRecorded(check.outcome) ?? undefined);
-      const unconfirmed = rejections.length > check.prior ? null : commandUnconfirmed(check.outcome);
-      if (refused || unconfirmed !== null) {
-        const said = unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`;
+    for (const check of boardChecksRef.current.splice(0)) reportBoardCheck(check);
+    function reportBoardCheck(check: BoardCheck & { outcome?: WardCommandOutcome }) {
+      if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
+      const notRecorded =
+        check.outcome !== undefined && check.outcome.status !== "accepted" && check.outcome.status !== "failed";
+      const failure = wardCommandFailure(check.outcome);
+      if (failure && !notRecorded) {
+        setBoardSay(failure);
+        setToastMessage(failure);
+        return;
+      }
+      const refused = wardCommandRefusal(check.outcome, rejections, check.prior, true);
+      if (refused) {
+        const said = `Not recorded: ${refused.reason.replace(/\.$/, "")}. Nothing was changed.`;
         setBoardSay(said);
         if (toast) toast.push({ tone: "warning", title: said });
-        continue;
+        return;
       }
       setBoardSay(check.success);
       setPlacedBed(check.undo ? check.bed : null);
       if (!toast) {
         setToastMessage(check.success);
-        continue;
+        return;
       }
       const undo = check.undo;
       if (!undo) {
         toast.push({ tone: "info", title: check.success });
-        continue;
+        return;
       }
-      const undoLimit = roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type);
+      const recordSeq =
+        undo.kind === "movement"
+          ? wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId)
+          : undefined;
+      const undoLimit =
+        roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type) ??
+        (check.outcome && undo.kind === "movement" && recordSeq === undefined
+          ? "No Undo record is available for this step."
+          : undefined);
       toast.push({
         tone: "success",
         title: check.success,
@@ -582,39 +575,44 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
-                  const undoCheck: BoardCheck = {
-                    prior: rejectionCountRef.current,
-                    bed: check.bed,
-                    success: "Undone. The bed and the person are back where they were.",
-                  };
-                  // Literal types, one per kind, so the override-surface guard reads each one.
-                  const at = nowRef.current;
-                  let result: ReturnType<typeof dispatch>;
-                  if (undo.kind === "stay")
-                    result = dispatch({
-                      type: "UNDO_PLACE_IN_BED",
-                      role: "ward",
-                      now: at,
-                      admissionId: undo.admissionId,
-                      actingUnitId: undo.unitId,
-                    });
-                  else if (undo.kind === "movement")
-                    result = dispatch({
-                      type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                      role: "ward",
-                      now: at,
-                      movementId: undo.movementId,
-                      actingUnitId: undo.unitId,
-                    });
-                  else
-                    result = dispatch({
-                      type: "UNDO_REFERRAL_DECISION",
-                      role: "ward",
-                      now: at,
-                      referralId: undo.referralId,
-                      actingUnitId: undo.unitId,
-                    });
-                  settleBoard(undoCheck, result);
+                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                  return runBoardCommand(
+                    () => {
+                      // Literal types, one per kind, so the override-surface guard reads each one.
+                      const at = nowRef.current;
+                      if (undo.kind === "stay")
+                        return dispatch({
+                          type: "UNDO_PLACE_IN_BED",
+                          role: "ward",
+                          now: at,
+                          admissionId: undo.admissionId,
+                          actingUnitId: undo.unitId,
+                        });
+                      else if (undo.kind === "movement")
+                        return dispatch({
+                          type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                          role: "ward",
+                          now: at,
+                          movementId: undo.movementId,
+                          recordSeq,
+                          actingUnitId: undo.unitId,
+                        });
+                      else
+                        return dispatch({
+                          type: "UNDO_REFERRAL_DECISION",
+                          role: "ward",
+                          now: at,
+                          referralId: undo.referralId,
+                          actingUnitId: undo.unitId,
+                        });
+                    },
+                    {
+                      prior: rejectionCountRef.current,
+                      bed: check.bed,
+                      key: wardCommandKey("undo-board", check.bed),
+                      success: "Undone. The bed and the person are back where they were.",
+                    },
+                  );
                 },
               },
             }),
@@ -691,7 +689,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }, 0);
       }
     },
-    [selectedBed, router, unitId, activeTab],
+    [selectedBed, router, unitId, activeTab, setSelectedBed],
   );
 
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
@@ -799,98 +797,95 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
   }
 
-  /*
-   * THE WARD'S OWN REFUSAL SURFACE for `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` — until now this
-   * screen dispatched both and never read `rejections` at all, so a ward whose accept or pull was
-   * refused (the reducer's own bed-readiness, specialling or already-accepted gates, none of
-   * which `referralAnswerBlocked`/`pullBlockedReason` above mirror) saw nothing happen and had no
-   * way to tell a refusal from a slow render.
-   *
-   * Same async-detection pattern as `referral-match.tsx`'s `checkToken`/`priorRejectionCountRef`
-   * pair and `ed-screen.tsx`'s `declineRejection`: `dispatch` never reports whether the reducer
-   * accepted or refused an event, so the only way to know is to compare `rejections` before and
-   * after, on the next render. `checkToken === 0` guards the same case `ed-screen.tsx`'s own
-   * comment names — nothing has been dispatched from this screen yet, so a rejection already in
-   * state belongs to somebody else and must not be surfaced here.
-   *
-   * Held as ONE `Rejection`, not two — a ward user presses one button at a time — and matched
-   * everywhere it is rendered by `movementId` ALONE, never narrowed to "only in the section the
-   * button that caused it lives in": `Rejection.movementId` is the movement id for both these
-   * events (the default case of `subjectId` in `ward-flow-reducer.ts`), and a refusal does not
-   * stop being true because the movement's row has since moved to the other list — the exact
-   * shape of a second `ACCEPT_IN_PRINCIPLE` refused as already-accepted, which lands the movement
-   * in "accepted" before its own refusal is even rendered.
-   */
   const priorRejectionCountRef = useRef(rejections.length);
-  const [checkToken, setCheckToken] = useState(0);
   const [lastActionRejection, setLastActionRejection] = useState<Rejection | undefined>(undefined);
-  // A1-8 (audit round 2): an accept from the Ward flow list offers Undo on its toast, as the Ward
-  // answer view and the Bed board already do. Set by the accept, read once by the check below.
-  const acceptUndoRef = useRef<{ movementId: string; unitId: string } | null>(null);
-  // Design audit DA-11: a pull says it worked, and focus stays with the arrival it changed.
-  const pulledRef = useRef<string | null>(null);
-
+  const [checkToken, setCheckToken] = useState(0);
+  const movementCheckRef = useRef<WardMovementCheck | null>(null);
+  function runMovementCommand(
+    movementId: string,
+    attempted: string,
+    record: () => ReturnType<WardCommandDispatch>,
+    undo?: { movementId: string; unitId: string },
+  ) {
+    const prior = rejections.length;
+    completeCommand(`movement:${movementId}`, record, (outcome) => {
+      movementCheckRef.current = { prior, movementId, attempted, outcome, undo };
+      setCheckToken((token) => token + 1);
+    });
+  }
   useEffect(() => {
+    const check = movementCheckRef.current;
     if (checkToken === 0) return;
-    const acceptUndo = acceptUndoRef.current;
-    acceptUndoRef.current = null;
-    const pulledId = pulledRef.current;
-    pulledRef.current = null;
-    if (rejections.length > priorRejectionCountRef.current) {
-      const newest = rejections[rejections.length - 1];
-      setLastActionRejection(
-        newest.attempted === "ACCEPT_IN_PRINCIPLE" ||
-          newest.attempted === "PULL_PATIENT" ||
-          newest.attempted === "RELEASE_HELD_BED"
-          ? newest
-          : undefined,
-      );
-    } else {
-      setLastActionRejection(undefined);
-      if (pulledId !== null) {
-        toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
-        // The Pull a bed button has gone, so focus would fall to the page. Keep it on the arrival.
-        const row = document.getElementById(`ward-arrival-${pulledId}`);
-        if (row && (document.activeElement === null || document.activeElement === document.body)) {
-          if (!row.hasAttribute("tabindex")) row.setAttribute("tabindex", "-1");
-          row.focus({ preventScroll: true });
-        }
-      }
-      if (acceptUndo && toast) {
-        const success = "Accepted in principle.";
-        const undoLimit = roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE");
-        toast.push({
-          tone: "success",
-          title: success,
-          ...(undoLimit
-            ? { body: `Undo: ${undoLimit}` }
-            : {
-                undo: {
-                  durationMs: UNDO_TOAST_MS,
-                  onUndo: () => {
-                    const undoCheck: BoardCheck = {
-                      prior: rejectionCountRef.current,
-                      bed: 0,
-                      success: "Acceptance undone. The referral is back with this ward.",
-                    };
-                    settleBoard(
-                      undoCheck,
+    if (!check) {
+      const own = newWardMovementRefusal(rejections, priorRejectionCountRef.current);
+      priorRejectionCountRef.current = rejections.length;
+      if (own) setLastActionRejection(own);
+      return;
+    }
+    movementCheckRef.current = null;
+    priorRejectionCountRef.current = rejections.length;
+    if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
+    const failure = wardCommandFailure(check.outcome);
+    if (failure && check.outcome?.status !== "refused") {
+      setToastMessage(failure);
+      return;
+    }
+    const refusal = wardCommandRefusal(check.outcome, rejections, check.prior);
+    const refused: Rejection | undefined =
+      check.outcome && refusal
+        ? {
+            id: check.outcome.commandId,
+            at: nowRef.current,
+            attempted: check.attempted,
+            movementId: check.movementId,
+            reason: refusal.reason,
+          }
+        : (refusal as Rejection | undefined);
+    setLastActionRejection(refused);
+    // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
+    if (!refused && check.attempted === "PULL_PATIENT") {
+      toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
+      focusWardArrival(check.movementId);
+    }
+    if (!refused && check.undo && toast) {
+      const undo = check.undo;
+      const recordSeq = wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId);
+      const undoLimit =
+        roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE") ??
+        (check.outcome && recordSeq === undefined ? "No Undo record is available for this step." : undefined);
+      toast.push({
+        tone: "success",
+        title: "Accepted in principle.",
+        ...(undoLimit
+          ? { body: `Undo: ${undoLimit}` }
+          : {
+              undo: {
+                durationMs: UNDO_TOAST_MS,
+                onUndo: () => {
+                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                  return runBoardCommand(
+                    () =>
                       dispatch({
                         type: "UNDO_ACCEPT_IN_PRINCIPLE",
                         role: "ward",
                         now: nowRef.current,
-                        movementId: acceptUndo.movementId,
-                        actingUnitId: acceptUndo.unitId,
+                        movementId: undo.movementId,
+                        recordSeq,
+                        actingUnitId: undo.unitId,
                       }),
-                    );
-                  },
+                    {
+                      prior: rejectionCountRef.current,
+                      bed: 0,
+                      key: wardCommandKey("undo-accept", undo.movementId),
+                      success: "Acceptance undone. The referral is back with this ward.",
+                    },
+                  );
                 },
-              }),
-        });
-      }
+              },
+            }),
+      });
     }
-    priorRejectionCountRef.current = rejections.length;
-    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
+    // Read the committed local fallback only after this command's completion.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
@@ -1110,13 +1105,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleConfirmMorningRollup() {
     if (!unit) return;
-    raise("CONFIRM_MORNING_ROLLUP", {
-      unitId: unit.id,
-      actingUnitId: unit.id,
-      expectedDischarges: releasesCountedToday.length,
-    });
-    setToastMessage(
-      `${morningRollupTimeLabel} Morning Bed Rollup confirmed: ${releasesCountedToday.length} discharges planned today.`,
+    completeCommand(
+      "rollup",
+      () =>
+        raise("CONFIRM_MORNING_ROLLUP", {
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          expectedDischarges: releasesCountedToday.length,
+        }),
+      (outcome) =>
+        setToastMessage(
+          wardCommandFailure(outcome) ??
+            `${morningRollupTimeLabel} Morning Bed Rollup confirmed: ${releasesCountedToday.length} discharges planned today.`,
+        ),
     );
   }
 
@@ -1174,6 +1175,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     now,
     criteriaLedOn,
     patients,
+    plannedAdmissions,
     dayZero,
     wardReferralInbox,
   });
@@ -1235,45 +1237,44 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? ({ kind: "named", name: patientRecord.suburb } as const)
         : ({ kind: "unknown", reason: "not_known" } as const);
 
-    const result = dispatch({
-      type: "RECEIVE_REFERRAL",
-      role: "ward",
-      now,
-      ...(verifiedPatientId ? { patientId: verifiedPatientId } : {}),
-      ageBand: unit.cohort,
-      destinations: [
-        {
-          kind: "psychiatric_ward",
-          sex: derivedSex,
-          ...(targetBed?.gender ? { gender: targetBed.gender } : {}),
-          secureBedNeeded,
-          involuntaryBedNeeded,
-          highAcuityNursingNeeded,
-        },
-      ],
-      homeRegion: derivedHomeRegion,
-      suburb: derivedSuburb,
-      source: "psychiatric_ward",
-      originUnitId: unit.id,
-      actingUnitId: unit.id,
-      urgency: 2,
-      originSiteCode: unit.siteCode,
-      transportNeeded: false,
-      history: "",
-    });
+    const record = () =>
+      dispatch({
+        type: "RECEIVE_REFERRAL",
+        role: "ward",
+        now,
+        ...(verifiedPatientId ? { patientId: verifiedPatientId } : {}),
+        ageBand: unit.cohort,
+        destinations: [
+          {
+            kind: "psychiatric_ward",
+            sex: derivedSex,
+            ...(targetBed?.gender ? { gender: targetBed.gender } : {}),
+            secureBedNeeded,
+            involuntaryBedNeeded,
+            highAcuityNursingNeeded,
+          },
+        ],
+        homeRegion: derivedHomeRegion,
+        suburb: derivedSuburb,
+        source: "psychiatric_ward",
+        originUnitId: unit.id,
+        actingUnitId: unit.id,
+        urgency: 2,
+        originSiteCode: unit.siteCode,
+        transportNeeded: false,
+        history: "",
+      });
     const referralFormHref = fullWardReferralHref(verifiedPatientId);
     const raisedMessage = targetBed?.patientAlias
       ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
       : `Ward referral raised from ${unit.name}.`;
-    const raisedFromBed = selectedBed;
-    afterCommand(result, (outcome) => {
-      const unconfirmed = commandUnconfirmed(outcome);
-      const refused = commandNotRecorded(outcome);
-      if (unconfirmed !== null || refused !== null) {
-        setToastMessage(unconfirmed ?? `Not recorded: ${refused}. Nothing was changed.`);
+    completeCommand(wardCommandKey("raise-referral", targetBed?.bedNumber ?? unit.id), record, (outcome) => {
+      const failure = wardCommandFailure(outcome);
+      if (failure) {
+        setToastMessage(failure);
         return;
       }
-      setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: raisedFromBed });
+      setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: selectedBed });
       setToastMessage(raisedMessage);
     });
   }
@@ -1351,11 +1352,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       return;
     }
     const pick = boardPick;
+    // Main (29215abf): the pick is released once sent, so another bed can be moved while this one
+    // waits; its answer still arrives through the queued board check.
     setBoardPick(null);
-    let check: BoardCheck;
-    let result: ReturnType<typeof raise>;
     if (pick.kind === "stay") {
-      check = {
+      const check: BoardCheck = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Moved ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bedNumberLabel(bedNumber)}.`,
@@ -1365,14 +1366,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      result = raise("PLACE_IN_BED", {
-        admissionId: pick.admissionId,
-        bedNumber,
-        actingUnitId: boardUnitId,
-      });
+      runBoardCommand(
+        () =>
+          raise("PLACE_IN_BED", {
+            admissionId: pick.admissionId,
+            bedNumber,
+            actingUnitId: boardUnitId,
+          }),
+        check,
+      );
     } else if (pick.kind === "movement") {
       // v10 pass 3: a coordinator-sent person, accepted in principle into this numbered bed.
-      check = {
+      const check: BoardCheck = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
@@ -1382,14 +1387,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      result = raise("ACCEPT_IN_PRINCIPLE", {
-        movementId: pick.movementId,
-        unitId: boardUnitId,
-        actingUnitId: boardUnitId,
-        bedNumber,
-      });
+      runBoardCommand(
+        () =>
+          raise("ACCEPT_IN_PRINCIPLE", {
+            movementId: pick.movementId,
+            unitId: boardUnitId,
+            actingUnitId: boardUnitId,
+            bedNumber,
+          }),
+        check,
+      );
     } else {
-      check = {
+      const check: BoardCheck = {
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
@@ -1399,15 +1408,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unitId: boardUnitId,
         },
       };
-      result = raise("ACCEPT_REFERRAL", {
-        referralId: pick.referralId,
-        destinationKind: "psychiatric_ward",
-        unitId: boardUnitId,
-        actingUnitId: boardUnitId,
-        bedNumber,
-      });
+      runBoardCommand(
+        () =>
+          raise("ACCEPT_REFERRAL", {
+            referralId: pick.referralId,
+            destinationKind: "psychiatric_ward",
+            unitId: boardUnitId,
+            actingUnitId: boardUnitId,
+            bedNumber,
+          }),
+        check,
+      );
     }
-    settleBoard(check, result);
   }
 
   /**
@@ -1448,14 +1460,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function submitDecline(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!canSubmitDecline(declineReason)) return;
-    raise("DECLINE", {
-      movementId,
-      unitId: wardUnitId,
-      actingUnitId: wardUnitId,
-      reason: declineReason,
-    });
-    setDeclineOpenFor(undefined);
-    setDeclineReason(undefined);
+    completeCommand(
+      `movement:${movementId}`,
+      () =>
+        raise("DECLINE", {
+          movementId,
+          unitId: wardUnitId,
+          actingUnitId: wardUnitId,
+          reason: declineReason,
+        }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) {
+          setToastMessage(failure);
+          return;
+        }
+        setDeclineOpenFor(undefined);
+        setDeclineReason(undefined);
+      },
+    );
   }
 
   /**
@@ -1466,29 +1489,29 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * different action than the one on screen.
    */
   function handleAcceptInPrinciple(movementId: string, unitId: string) {
-    const targetUnit = units.find((u) => u.id === unitId);
-    if (!targetUnit) return;
-    priorRejectionCountRef.current = rejections.length;
-    acceptUndoRef.current = { movementId, unitId };
-    raise("ACCEPT_IN_PRINCIPLE", {
+    if (!units.some((u) => u.id === unitId)) return;
+    runMovementCommand(
       movementId,
-      unitId,
-      actingUnitId: unitId,
-    });
-    setCheckToken((token) => token + 1);
+      "ACCEPT_IN_PRINCIPLE",
+      () =>
+        raise("ACCEPT_IN_PRINCIPLE", {
+          movementId,
+          unitId,
+          actingUnitId: unitId,
+        }),
+      { movementId, unitId },
+    );
   }
 
   function handlePullPatient(movementId: string, unitId: string) {
-    const targetUnit = units.find((u) => u.id === unitId);
-    if (!targetUnit) return;
-    priorRejectionCountRef.current = rejections.length;
-    pulledRef.current = movementId;
-    raise("PULL_PATIENT", {
-      movementId,
-      unitId,
-      actingUnitId: unitId,
-    });
-    setCheckToken((t) => t + 1);
+    if (!units.some((u) => u.id === unitId)) return;
+    runMovementCommand(movementId, "PULL_PATIENT", () =>
+      raise("PULL_PATIENT", {
+        movementId,
+        unitId,
+        actingUnitId: unitId,
+      }),
+    );
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -1503,33 +1526,29 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // `overrideReasonForm`'s own doc comment.
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
     if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
-    priorRejectionCountRef.current = rejections.length;
-    // ⚠️ TWO LITERAL DISPATCHES RATHER THAN ONE COMPUTED `type: attempted`, AND THE GUARD IS WHY.
-    // The computed form was what I wrote first, and `ward-override-surfaces.test.ts` refused it on
-    // the spot: a computed type is invisible to every literal scan, so this surface would have
-    // become unreadable to the very check that decides whether it can record a reason — the
-    // allowlist entry could never have come off, because nothing could see the fix. Verbosity here
-    // buys visibility to the static guards, which is the trade this file should always take.
-    if (attempted === "ACCEPT_IN_PRINCIPLE") {
-      raise("ACCEPT_IN_PRINCIPLE", {
-        movementId,
-        unitId: wardUnitId,
-        actingUnitId: wardUnitId,
-        overrideReason,
-      });
-    } else {
-      pulledRef.current = movementId;
-      raise("PULL_PATIENT", {
-        movementId,
-        unitId: wardUnitId,
-        actingUnitId: wardUnitId,
-        overrideReason,
-        // Absent, never `false`, when this refusal is not the one the tick answers — see
-        // `Override.numConsulted`'s own doc comment on that discipline.
-        numConsulted: isAcuityRefusal && numConsulted ? true : undefined,
-      });
-    }
-    setCheckToken((token) => token + 1);
+    // Keep literal event names visible to the override-surface guards.
+    runMovementCommand(
+      movementId,
+      attempted,
+      () => {
+        if (attempted === "ACCEPT_IN_PRINCIPLE") {
+          return raise("ACCEPT_IN_PRINCIPLE", {
+            movementId,
+            unitId: wardUnitId,
+            actingUnitId: wardUnitId,
+            overrideReason,
+          });
+        }
+        return raise("PULL_PATIENT", {
+          movementId,
+          unitId: wardUnitId,
+          actingUnitId: wardUnitId,
+          overrideReason,
+          numConsulted: isAcuityRefusal && numConsulted ? true : undefined,
+        });
+      },
+      attempted === "ACCEPT_IN_PRINCIPLE" ? { movementId, unitId: wardUnitId } : undefined,
+    );
     setOverrideReason(undefined);
     setNumConsulted(false);
   }
@@ -1650,23 +1669,44 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       setToastMessage("Capacity has changed. Refresh the current bed count before confirming.");
       return;
     }
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      raise("CONFIRM_CAPACITY", {
-        unitId: wardUnitId,
-        actingUnitId: unitId,
-        value: Math.floor(parsed),
-        expectedRevision: capacityRevision,
-      });
-    }
-    if (!isRollupConfirmedToday) {
-      raise("CONFIRM_MORNING_ROLLUP", {
-        unitId: unit.id,
-        actingUnitId: unit.id,
-        expectedDischarges: releasesCountedToday.length,
-      });
-    }
-    setToastMessage(
-      `Capacity & ${morningRollupTimeLabel} morning roll-up confirmed (${releasesCountedToday.length} discharges planned today).`,
+    completeCommand(
+      "capacity-rollup",
+      () =>
+        raise("CONFIRM_CAPACITY", {
+          unitId: wardUnitId,
+          actingUnitId: unitId,
+          value: parsed,
+          expectedRevision: capacityRevision,
+        }),
+      (capacityOutcome) => {
+        const failure = wardCommandFailure(capacityOutcome);
+        if (failure) {
+          setToastMessage(failure);
+          return;
+        }
+        const confirmed = () =>
+          setToastMessage(
+            `Capacity & ${morningRollupTimeLabel} morning roll-up confirmed (${releasesCountedToday.length} discharges planned today).`,
+          );
+        if (isRollupConfirmedToday) {
+          confirmed();
+          return;
+        }
+        completeCommand(
+          "capacity-rollup",
+          () =>
+            raise("CONFIRM_MORNING_ROLLUP", {
+              unitId: unit.id,
+              actingUnitId: unit.id,
+              expectedDischarges: releasesCountedToday.length,
+            }),
+          (rollupOutcome) => {
+            const rollupFailure = wardCommandFailure(rollupOutcome);
+            if (rollupFailure) setToastMessage(`Capacity saved. Morning roll-up is not confirmed. ${rollupFailure}`);
+            else confirmed();
+          },
+        );
+      },
     );
   }
 
@@ -1762,16 +1802,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
-  // Josh, 26 Sept 2026 (1A). RELEASE_BED can no longer be accepted while the person is in the bed,
-  // and a departure completes the release in the same write, so "Discharged" records the named
-  // person leaving (RECORD_LEAVING) with the destination the ward chose. The refusal, if any, is
-  // read back from `rejections` on the next render and shown, never replaced by a success message.
-  // Josh, 26 Sept 2026 ("go ahead with all recommendations"): a bed release is named by its person,
-  // never by an internal id. No bed number is recorded for a release (the Beds tab places occupants
-  // by position, which is layout, not a record), so the label says so. Leave-bed rows show "Bed not
-  // recorded" and no name: the leave list promises to show nothing about the person on leave. Beds
-  // freed by someone who has already left (turnaround cards, the ward log) show no name either:
-  // cleaning a bed needs none, and those rows stay for the whole session (privacy review, 26 Sept).
+  // Name departures through the scoped resolver. Released beds retain no patient label.
   function bedRecordLabel(admissionId: string): string {
     const who = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId)).displayName;
     return `${who} (bed not recorded)`;
@@ -1790,17 +1821,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
       undoAdmissionId: admissionId,
     };
-    settleDischarge(
-      check,
-      recordWardDeparture
-        ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination)
-        : raise("RECORD_LEAVING", {
-            admissionId,
-            actingUnitId: unitId,
-            leavingDestination: drawerLeavingDestination,
-          }),
+    completeCommand(
+      wardCommandKey("departure", admissionId),
+      () =>
+        recordWardDeparture
+          ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination)
+          : raise("RECORD_LEAVING", {
+              admissionId,
+              actingUnitId: unitId,
+              leavingDestination: drawerLeavingDestination,
+            }),
+      (outcome) => {
+        dischargeCheckRef.current = { ...check, outcome };
+        setDischargeToken((token) => token + 1);
+        if (!outcome || outcome.status === "accepted") closeBedDrawer();
+      },
     );
-    closeBedDrawer();
   }
 
   // Task 5 addendum (binding spec's Data flow section: "Leave beds follow the same path with a
@@ -1872,13 +1908,24 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!releaseReason) return;
     // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` above —
     // it states which ward the caller says it is; it does not prove it.
-    raise("RELEASE_PULL", {
-      movementId,
-      actingUnitId: unitId,
-      reason: releaseReason,
-    });
-    setReleaseOpenFor(undefined);
-    setReleaseReason(undefined);
+    completeCommand(
+      `movement:${movementId}`,
+      () =>
+        raise("RELEASE_PULL", {
+          movementId,
+          actingUnitId: unitId,
+          reason: releaseReason,
+        }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) {
+          setToastMessage(failure);
+          return;
+        }
+        setReleaseOpenFor(undefined);
+        setReleaseReason(undefined);
+      },
+    );
   }
 
   function openArrival(movementId: string) {
@@ -2299,6 +2346,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             />
           );
         })()}
+        {activeTab === "board" ? (
+          <WardAcceptedReferralPlacement
+            unitId={unitId}
+            onMessage={setToastMessage}
+            onStarted={() => {
+              setActiveTab("attn");
+              setFlowTab("admissions");
+            }}
+          />
+        ) : null}
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <WardScreenHomeSection
           activeTab={activeTab}
@@ -2451,8 +2508,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           dispatch={dispatch}
           now={now}
           criteriaLedOn={criteriaLedOn}
-          movements={movements}
-          patients={patients}
           criteriaGate={criteriaGate}
           raiseAsRouteRole={raiseAsRouteRole}
         />
