@@ -934,6 +934,16 @@ export type Movement = {
     clearedAt?: Instant;
     clearedBy?: WardFlowRole;
   };
+  /**
+   * Earlier expect flags, oldest first. Raising a new flag after one was cleared moves the cleared
+   * one here, so its record is kept (Audit 1 TS-9, 20 Oct 2026). Absent until that first happens.
+   */
+  expectFlagHistory?: {
+    raisedAt: Instant;
+    kind: "voluntary_48h" | "involuntary_7d";
+    clearedAt?: Instant;
+    clearedBy?: WardFlowRole;
+  }[];
   /** Bed allocated to this movement, if any. */
   allocatedBed?: string | number;
   /** Statutory examination revoked flag, protected from generic clear. */
