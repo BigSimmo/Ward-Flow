@@ -209,7 +209,7 @@ export function ownerTiles(rows: readonly BoardRow[]): OwnerTile[] {
 
 /* ---------- filters ---------- */
 
-export const WAIT_THRESHOLDS = [0, OVER_8H, OVER_12H, OVER_24H] as const;
+const WAIT_THRESHOLDS = [0, OVER_8H, OVER_12H, OVER_24H] as const;
 export const WAIT_THRESHOLD_LABELS = ["All", "8h+", "12h+", "24h+"] as const;
 type WaitThreshold = 0 | 1 | 2 | 3;
 

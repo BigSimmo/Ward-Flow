@@ -426,7 +426,7 @@ describe("waitingSplit", () => {
 describe("DELAY_OWNERS and ownerOf", () => {
   it("names the five headings in the owner's own words, in order", () => {
     expect(DELAY_OWNERS).toEqual([
-      { id: "yours", name: "Yours", subLine: "Your decision, or a legal form's due time running out" },
+      { id: "yours", name: "Waiting on you", subLine: "Your decision, or a legal form's due time running out" },
       { id: "wards", name: "Wards", subLine: "Waiting on a ward to answer or a bed to be ready" },
       { id: "ed", name: "ED", subLine: "Waiting on the referring department" },
       { id: "transport", name: "Transport", subLine: "Waiting on a vehicle or an escort" },
