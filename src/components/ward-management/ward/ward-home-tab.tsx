@@ -34,7 +34,7 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   PATIENT_ARRIVED: "Confirm Arrival",
 };
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { ArrowLeftRight, BedDouble, LayoutGrid, List, ListChecks } from "lucide-react";
+import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import {
   Button,
   buttonClass,
@@ -58,6 +58,7 @@ import { pullBlockedReason } from "./ward-pull-blocked";
 import {
   useWalkRound,
   WalkRoundRowMarks,
+  WalkRoundTick,
   WardWalkRound,
   bedStripWord,
   type WalkRoundBed,
@@ -228,8 +229,6 @@ interface WardHomeTabProps {
    */
   phonePanel?: "shift" | "flow" | null;
   onPhonePanelChange?: (panel: "shift" | "flow" | null) => void;
-  /** Reports This shift's open to do count, for the phone's This shift chip. */
-  onTodoCount?: (count: number) => void;
   /** Phone: the hero's foot facts (shift, cohort, roster, checking), kept in Ward figures. */
   phoneHeroFoot?: React.ReactNode;
   /** Phone: the one line under Ward figures, right now, while it is closed. */
@@ -238,6 +237,10 @@ interface WardHomeTabProps {
   phoneFind?: React.ReactNode;
   /** Phone: the shift name and hours, under the This shift sheet's title. */
   phoneShiftLabel?: string;
+  /** Phone: tells the screen a bed's card is open in the round, so the ward card steps aside. */
+  onWalkingChange?: (walking: boolean) => void;
+  /** Phone: opens Bed board, the map of who is where. */
+  onOpenBoard?: () => void;
 }
 
 export function WardHomeTab({
@@ -292,11 +295,12 @@ export function WardHomeTab({
   bedArea,
   phonePanel,
   onPhonePanelChange,
-  onTodoCount,
   phoneHeroFoot,
   phoneFiguresSummary,
   phoneFind,
   phoneShiftLabel,
+  onWalkingChange,
+  onOpenBoard,
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
@@ -339,7 +343,6 @@ export function WardHomeTab({
   };
   const [boardView, setBoardView] = useState<"board" | "list">("board");
   const isPhone = useIsPhone();
-  const [showSettled, setShowSettled] = useState(false);
 
   function focusAwaiting() {
     setFlowTab("referrals");
@@ -606,55 +609,8 @@ export function WardHomeTab({
     pulled: bedRows.filter((row) => row.bed.status === "incoming").length,
     closed: bedRows.filter((row) => row.bed.status === "closed").length,
   };
-  // Phone (v10 build guide): every bed grouped by state, worst first. Settled beds sit behind Show
-  // all. Each bed appears once, in the first group it belongs to. Filters still highlight and dim.
-  const phoneGroups = (() => {
-    const used = new Set<number | string>();
-    const take = (test: (row: (typeof bedRows)[number]) => boolean) =>
-      bedRows.filter((row) => {
-        if (used.has(row.bed.bedNumber) || !test(row)) return false;
-        used.add(row.bed.bedNumber);
-        return true;
-      });
-    const groups: { id: string; title: string; tone: WfTone | null; rows: typeof bedRows }[] = [
-      // Audit A3-1: absent without leave is its own red group at the top, never under On leave.
-      {
-        id: "awol",
-        title: "Absent without leave",
-        tone: "danger",
-        rows: take((row) => row.bed.statusText === "Absent without leave"),
-      },
-      { id: "act", title: "Act now", tone: "danger", rows: take((row) => row.glyph === "danger") },
-      { id: "risk", title: "At risk", tone: "warning", rows: take((row) => row.glyph === "warning") },
-      // Beds due out today that are not already listed under Act now or At risk, so the heading
-      // names that narrower set rather than repeating the Due out filter's wider count.
-      { id: "leaving", title: "Due out, on track", tone: "info", rows: take((row) => row.leaving) },
-      { id: "free", title: "Free", tone: "success", rows: take((row) => row.free) },
-      {
-        id: "preparing",
-        title: BED_STATE_LABELS.beingMadeReady,
-        tone: "neutral",
-        rows: take((row) => row.bed.status === "ready"),
-      },
-      { id: "pulled", title: "Pulled", tone: "info", rows: take((row) => row.bed.status === "incoming") },
-      { id: "leave", title: "On leave", tone: "neutral", rows: take((row) => row.bed.status === "leave") },
-      // S-24 (audit round 2): a bed admitted today sorts to the top of Settled, so a new arrival is
-      // never folded away behind Show all. The sort is stable, so the rest keep bed order.
-      {
-        id: "settled",
-        title: "Settled",
-        tone: null,
-        rows: take((row) => row.bed.status === "occupied").sort(
-          (left, right) => Number(right.bed.stayDays === 0) - Number(left.bed.stayDays === 0),
-        ),
-      },
-      { id: "closed", title: "Closed", tone: "closed", rows: take(() => true) },
-    ];
-    return groups.filter((group) => group.rows.length > 0);
-  })();
-
-  // Phone grouped bed list. With the walk round on, a row starts the walk from that bed and shows
-  // its reviewed and changed marks.
+  // Option B (Josh, 20 Oct 2026): Ward home is the run-through, one bed at a time in bed order;
+  // Bed board is the map. The round's list is plain bed order, never grouped or re-sorted.
   // Item 23: the walk round's state sits here, above the phone and desktop branch, so turning the
   // phone to landscape and back keeps the round.
   const walkBeds: WalkRoundBed[] = bedRows.map((row) => ({
@@ -682,86 +638,68 @@ export function WardHomeTab({
   }));
   const [walkRound, setWalkRound] = useWalkRound(unit.id, walkBeds);
   const walkRowLabel = (name: string, marks: WalkRoundMark) =>
-    [name, marks.changed ? "changed this round" : "", marks.reviewed ? "reviewed" : "", "walk from this bed"]
+    [name, marks.changed ? "changed this round" : "", marks.reviewed ? "reviewed" : "", "open in the round"]
       .filter(Boolean)
       .join(", ");
-  const phoneGroupList = (mark?: (bedNumber: number) => WalkRoundMark, walkFrom?: (bedNumber: number) => void) => (
-    <div className={styles.phoneGroups} data-testid="ward-phone-bed-groups">
-      {phoneGroups.map((group) => {
-        const settledFolded = group.id === "settled" && !showSettled && !highlighting;
-        const arrivedToday = group.rows.filter((row) => row.bed.stayDays === 0).length;
-        const rows = settledFolded ? group.rows.slice(0, Math.max(3, arrivedToday)) : group.rows;
-        return (
-          <section key={group.id} aria-label={`${group.title}, ${group.rows.length}`}>
-            <h3 className={styles.phoneGroupHead}>
-              {group.tone ? <StatusGlyph tone={group.tone} size={9} /> : null}
-              <span>{group.title}</span>
-              <Count n={group.rows.length} />
-            </h3>
-            <ul className={styles.phoneRows}>
-              {rows.map((row) => (
-                <li key={row.bed.bedNumber}>
-                  <button
-                    type="button"
-                    className={styles.phoneRow}
-                    data-act={row.glyph === "danger" ? "true" : undefined}
-                    data-dim={isLit(row) ? undefined : "true"}
-                    aria-haspopup={walkFrom ? undefined : "dialog"}
-                    aria-label={
-                      mark ? walkRowLabel(row.accessibleName, mark(Number(row.bed.bedNumber))) : row.accessibleName
-                    }
-                    ref={(element) => registerBedTrigger?.(Number(row.bed.bedNumber), element)}
-                    onClick={() => {
-                      if (walkFrom) walkFrom(Number(row.bed.bedNumber));
-                      else onSelectBed?.(Number(row.bed.bedNumber));
-                    }}
-                  >
-                    <span className={styles.phoneRowNo} aria-hidden="true">
-                      {row.number}
-                    </span>
-                    <span className={styles.phoneRowText} aria-hidden="true">
-                      <span className={styles.phoneRowName}>{row.name}</span>
-                      {mark ? <WalkRoundRowMarks mark={mark(Number(row.bed.bedNumber))} /> : null}
-                      <span className={styles.phoneRowNote}>
-                        {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
-                        <span>
-                          {group.id === "settled" && row.bed.stayDays === 0 && row.note === row.stateWord
-                            ? "Arrived today"
-                            : row.note === row.name
-                              ? row.free
-                                ? "Ready"
-                                : row.bed.status === "closed"
-                                  ? "Not offered"
-                                  : row.stateWord
-                              : row.note}
-                        </span>
-                        {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
-                      </span>
-                    </span>
-                    <span className={styles.phoneRowDays} aria-hidden="true">
-                      {row.days || (row.free ? "Free" : "")}
-                      {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {settledFolded && group.rows.length > rows.length ? (
+  const walkingOnPhone = isPhone && phoneSheets && walkRound.walking !== null;
+  useEffect(() => {
+    onWalkingChange?.(walkingOnPhone);
+  }, [onWalkingChange, walkingOnPhone]);
+  const phoneRoundList = (mark: (bedNumber: number) => WalkRoundMark, walkFrom: (bedNumber: number) => void) => (
+    <ul
+      className={styles.phoneRows}
+      aria-label={`Beds at ${unit.name}, in bed order`}
+      data-testid="ward-phone-round-list"
+    >
+      {[...bedRows]
+        .sort((left, right) => Number(left.bed.bedNumber) - Number(right.bed.bedNumber))
+        .map((row) => {
+          const marks = mark(Number(row.bed.bedNumber));
+          return (
+            <li key={row.bed.bedNumber}>
               <button
                 type="button"
-                className={styles.phoneMore}
-                aria-expanded="false"
+                className={styles.phoneRow}
+                data-act={row.glyph === "danger" ? "true" : undefined}
+                data-dim={isLit(row) ? undefined : "true"}
+                data-reviewed={marks.reviewed ? "true" : undefined}
+                aria-label={walkRowLabel(row.accessibleName, marks)}
                 onClick={() => {
-                  setShowSettled(true);
+                  walkFrom(Number(row.bed.bedNumber));
                 }}
               >
-                Show all {group.rows.length} settled beds
+                <span className={styles.phoneRowNo} aria-hidden="true">
+                  {row.number}
+                </span>
+                <span className={styles.phoneRowText} aria-hidden="true">
+                  <span className={styles.phoneRowName}>{row.name}</span>
+                  <WalkRoundRowMarks mark={marks} />
+                  <span className={styles.phoneRowNote}>
+                    {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
+                    <span>
+                      {row.bed.stayDays === 0 && row.note === row.stateWord
+                        ? "Arrived today"
+                        : row.note === row.name
+                          ? row.free
+                            ? "Ready"
+                            : row.bed.status === "closed"
+                              ? "Not offered"
+                              : row.stateWord
+                          : row.note}
+                    </span>
+                    {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
+                  </span>
+                </span>
+                <span className={styles.phoneRowDays} aria-hidden="true">
+                  {row.days || (row.free ? "Free" : "")}
+                  {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
+                </span>
+                <WalkRoundTick mark={marks} />
               </button>
-            ) : null}
-          </section>
-        );
-      })}
-    </div>
+            </li>
+          );
+        })}
+    </ul>
   );
 
   const bedByAdmission = (admissionId: string | undefined) =>
@@ -1104,9 +1042,6 @@ export function WardHomeTab({
     (at === null ? laterToday : doneRows).push(row);
   }
   const todoOpen = actNow.length + laterToday.length;
-  useEffect(() => {
-    onTodoCount?.(todoOpen);
-  }, [onTodoCount, todoOpen]);
 
   // Length of stay: people in beds now, grouped by recorded stay in days.
   const stayDays = bedRows
@@ -1767,66 +1702,116 @@ export function WardHomeTab({
     <div className={styles.homeWrap}>
       <span className="sr-only">{pendingPreparation} being made ready</span>
 
-      {phoneSheets && !bedArea ? (
-        <section className={styles.phoneSection} aria-labelledby="ward-phone-awaiting">
+      {phoneSheets && !bedArea && !walkingOnPhone ? (
+        <section className={styles.phoneSection} aria-labelledby="ward-phone-needs">
+          {/* Option B (Josh, 20 Oct 2026): what needs this ward in one card. The answers waiting,
+              then This shift and Ward flow as rows, which were chips above the tabs. */}
           <h2 className={styles.phoneSectionHead}>
-            <span id="ward-phone-awaiting">{presentation === "answer" ? "Bed request" : "Awaiting your answer"}</span>
-            <Count n={incoming.length} />
+            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "Needs you"}</span>
           </h2>
-          {incoming.length === 0 ? (
-            <div className={styles.phoneClear} data-testid="ward-phone-all-clear">
-              {/* A1-22 (audit round 2): one line when nothing is waiting, so Act now sits higher. */}
-              <p className={styles.phoneClearTitle}>
-                <StatusGlyph tone="success" size={12} />
-                All clear
-                <span className={styles.phoneClearText}>
-                  · Answered {recentAnswers.length}
-                  {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
+          <div className={styles.needsCard}>
+            {incoming.length === 0 ? (
+              <div className={styles.phoneClear} data-testid="ward-phone-all-clear">
+                {/* A1-22 (audit round 2): one line when nothing is waiting. */}
+                <p className={styles.phoneClearTitle}>
+                  <StatusGlyph tone="success" size={12} />
+                  Awaiting your answer: all clear
+                  <span className={styles.phoneClearText}>
+                    · Answered {recentAnswers.length}
+                    {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3 className={styles.needsLabel}>
+                  <span id="ward-phone-awaiting">Awaiting your answer</span>
+                  <Count n={incoming.length} />
+                </h3>
+                <ul className={styles.phoneAwaitList}>
+                  {incoming.map((movement, index) => (
+                    <li key={movement.id}>
+                      <button
+                        type="button"
+                        className={styles.phoneAwaitRow}
+                        aria-haspopup="dialog"
+                        onClick={() => {
+                          setFlowTab("referrals");
+                          onPhonePanelChange?.("flow");
+                        }}
+                      >
+                        <span className={styles.phoneAwaitText}>
+                          {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
+                          <span className={styles.phoneAwaitName}>
+                            Request {index + 1} · {movement.cohort}
+                          </span>
+                          <span className={styles.phoneAwaitMeta}>
+                            {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </span>
+                        <span className={styles.phoneAwaitWait}>
+                          <b>{durMinutes(Math.max(0, now - movement.openedAt))}</b>
+                          <span>waiting</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <button
+              type="button"
+              className={styles.needsRow}
+              aria-haspopup="dialog"
+              onClick={() => {
+                onPhonePanelChange?.("shift");
+              }}
+              data-testid="ward-phone-row-shift"
+            >
+              <span className={styles.needsIcon} data-tone="warning" aria-hidden="true">
+                <ListChecks size={18} aria-hidden="true" />
+              </span>
+              <span className={styles.needsText}>
+                <b>This shift</b>
+                <span>
+                  {todoOpen} to do{actNow.length > 0 ? ` · ${actNow.length} due now` : ""}
                 </span>
-              </p>
-            </div>
-          ) : (
-            <ul className={styles.phoneAwaitList}>
-              {incoming.map((movement, index) => (
-                <li key={movement.id}>
-                  <button
-                    type="button"
-                    className={styles.phoneAwaitRow}
-                    aria-haspopup="dialog"
-                    onClick={() => {
-                      setFlowTab("referrals");
-                      onPhonePanelChange?.("flow");
-                    }}
-                  >
-                    <span className={styles.phoneAwaitText}>
-                      {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
-                      <span className={styles.phoneAwaitName}>
-                        Request {index + 1} · {movement.cohort}
-                      </span>
-                      <span className={styles.phoneAwaitMeta}>
-                        {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </span>
-                    <span className={styles.phoneAwaitWait}>
-                      <b>{durMinutes(Math.max(0, now - movement.openedAt))}</b>
-                      <span>waiting</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+              </span>
+              <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
+            </button>
+            <button
+              type="button"
+              className={styles.needsRow}
+              aria-haspopup="dialog"
+              onClick={() => {
+                onPhonePanelChange?.("flow");
+              }}
+              data-testid="ward-phone-row-flow"
+            >
+              <span className={styles.needsIcon} data-tone="info" aria-hidden="true">
+                <ArrowLeftRight size={18} aria-hidden="true" />
+              </span>
+              <span className={styles.needsText}>
+                <b>Ward flow</b>
+                <span>
+                  {incoming.length} referrals · {expectedRows.length + leaveRows.length} admissions · {outRows.length}{" "}
+                  discharges
+                </span>
+              </span>
+              <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
+            </button>
+          </div>
         </section>
       ) : null}
 
       <div className={styles.homeTop} data-board={bedArea ? "true" : undefined}>
         {bedArea ? <div className={styles.boardArea}>{bedArea}</div> : null}
-        {phoneSheets && !bedArea ? (
+        {phoneSheets && !bedArea && !walkingOnPhone ? (
           <div className={styles.phoneBedsHead}>
             <h2 className={styles.phoneSectionHead}>
-              <span id="ward-home-every-bed">Every bed</span>
+              <span id="ward-home-every-bed">Round</span>
               <Count n={bedRows.length} />
             </h2>
             {phoneFind}
@@ -1835,6 +1820,7 @@ export function WardHomeTab({
         <Card
           hidden={bedArea ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
+          data-walking={walkingOnPhone ? "true" : undefined}
           id="bed-capacity"
           tabIndex={-1}
           aria-labelledby="ward-home-every-bed"
@@ -1927,7 +1913,7 @@ export function WardHomeTab({
               setRound={setWalkRound}
               registerTrigger={registerBedTrigger}
               onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
-              renderList={(mark, walkFrom) => phoneGroupList(mark, walkFrom)}
+              renderList={phoneRoundList}
             />
           ) : boardView === "board" ? (
             <ul className={styles.bedTiles} aria-label={`Beds at ${unit.name}`}>
@@ -2027,7 +2013,15 @@ export function WardHomeTab({
           {phoneSheets ? null : bedKeyBlock}
           {!phoneSheets && figures ? <div className={styles.bedFigures}>{figures}</div> : null}
         </Card>
-        {phoneSheets && !bedArea ? (
+        {phoneSheets && !bedArea && !walkingOnPhone && onOpenBoard ? (
+          <p className={styles.phoneBoardHint}>
+            Want the layout?{" "}
+            <button type="button" className={styles.phoneBoardLink} onClick={onOpenBoard}>
+              Bed board shows where everyone is
+            </button>
+          </p>
+        ) : null}
+        {phoneSheets && !bedArea && !walkingOnPhone ? (
           <details className={styles.phoneFigures} data-testid="ward-phone-figures">
             <summary>
               {/* Audit 11 Oct 2026: the bed counts here repeated the hero and the group headings, so
