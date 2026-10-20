@@ -35,9 +35,16 @@ const serviceScopeChangeEvent = "ward-flow-service-change";
 // services" (chosen deliberately, not merely unset).
 let serviceInMemoryFallback: HealthService | null | undefined;
 // The service filter is one person's choice; a session ending drops it with its stored copy (PR #487).
+// The stored copy goes first: subscribers re-read on the event, and the later storage sweep fires none.
 onWardSessionEnd(() => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(SERVICE_SCOPE_STORAGE_KEY);
+  } catch {
+    // Storage unreachable: nothing stored to clear.
+  }
   serviceInMemoryFallback = undefined;
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(serviceScopeChangeEvent));
+  window.dispatchEvent(new Event(serviceScopeChangeEvent));
 });
 
 function isHealthService(value: string): value is HealthService {

@@ -1,3 +1,4 @@
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { referralDraftMemory } from "@/components/ward-management/referrals/referral-draft-lifecycle";
@@ -20,6 +21,7 @@ import {
   resetWardAccessStoreForTests,
   startAccessPreview,
 } from "@/components/ward-management/shell/ward-access-store";
+import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
@@ -79,6 +81,16 @@ describe("a signed-in session ending forgets per-account memory", () => {
     expect(takeHandedOffPatientSearchText()).toBeUndefined();
     expect(lastDowntimePack()).toBeNull();
     expect(referralDraftMemory.lastReferrer).toBeNull();
+  });
+
+  it("tells the Service selector the choice is gone at the moment it happens", () => {
+    // Gitar on PR #487: the change event fired while the stored copy was still in sessionStorage,
+    // so the selector re-read the previous account's service and kept showing it.
+    const { result } = renderHook(() => useServiceScope());
+    act(() => setServiceScope("South Metro"));
+    expect(result.current).toBe("South Metro");
+    act(() => endWardFlowBrowserSession());
+    expect(result.current).toBeNull();
   });
 
   it("clears Ward Flow storage as part of the same step", () => {
