@@ -264,9 +264,10 @@ export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" 
     const sheet = page.getByRole("dialog", { name: "Ward flow" });
     if (!(await sheet.isVisible())) {
       // Option B (20 Oct 2026): Ward flow is a row in Ward home's "Needs you" card, not a chip.
-      const home = page.locator("#tabBtn-attn");
-      if ((await home.getAttribute("aria-selected")) !== "true") await home.click();
-      await page.getByTestId("ward-phone-row-flow").click();
+      // The Home tab also stays selected on a full Arrivals or Discharges list, which hides the row.
+      const row = page.getByTestId("ward-phone-row-flow");
+      if (!(await row.isVisible())) await page.locator("#tabBtn-attn").click();
+      await row.click();
     }
     await expect(sheet).toBeVisible();
   } else {
