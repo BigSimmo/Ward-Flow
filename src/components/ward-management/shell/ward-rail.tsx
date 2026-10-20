@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
+import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -226,7 +227,8 @@ function viewingDeskLine(
         : pageRole === "officer"
           ? "the transport desk"
           : pageRole === "community"
-            ? "a community team"
+            ? // PR #489 review: the team by name when its page names one; the index has none.
+              ((deskId ? communityTeamById(deskId)?.name : undefined) ?? "a community team")
             : CHROME_ROLE_LABELS[pageRole];
   return `Viewing ${place} as ${personaLabel}`;
 }

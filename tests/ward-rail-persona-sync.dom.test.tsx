@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
@@ -174,6 +175,17 @@ describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
     renderAt("/ward-flow/transport/officer");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(
       "Viewing the transport desk as Bed coordinator",
+    );
+  });
+
+  it("names a community team by its own name, and stays general on the team index", () => {
+    const team = COMMUNITY_TEAM_PAGES[0];
+    renderAt(`/ward-flow/community/${team.id}`);
+    expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(`Viewing ${team.name} as Bed coordinator`);
+    cleanup();
+    renderAt("/ward-flow/community/no-such-team");
+    expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(
+      "Viewing a community team as Bed coordinator",
     );
   });
 
