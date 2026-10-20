@@ -14,7 +14,7 @@ import { clearSessionDrafts } from "./ward-session-drafts";
  * person and the next person at the device expects the screen to look the same. "Hide names"
  * (`ward-flow-discreet-names`) is kept on purpose: clearing it would show names to the next person.
  */
-export const WARD_FLOW_STORAGE_PREFIXES = ["ward-", "ward_", "wardflow", "wf-"] as const;
+const WARD_FLOW_STORAGE_PREFIXES = ["ward-", "ward_", "wardflow", "wf-"] as const;
 
 /** Device display settings kept at sign-out. Exact names, or a prefix ending in `_`. */
 export const WARD_FLOW_DEVICE_SETTING_KEYS = [
@@ -39,7 +39,7 @@ export function isWardFlowStorageKey(key: string): boolean {
 }
 
 /** Whether a Ward Flow key is a device display setting kept at sign-out. */
-export function isWardFlowDeviceSetting(key: string): boolean {
+function isWardFlowDeviceSetting(key: string): boolean {
   return (
     (WARD_FLOW_DEVICE_SETTING_KEYS as readonly string[]).includes(key) ||
     WARD_FLOW_DEVICE_SETTING_PREFIXES.some((prefix) => key.startsWith(prefix))
