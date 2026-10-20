@@ -8,7 +8,10 @@ import {
   decisionTargetInboxItems,
 } from "../src/components/ward-management/ward-decision-targets";
 import { absenceInboxItems } from "../src/components/ward-management/ward-absence-tasks";
-import { duplicateBedRequestInboxItems } from "../src/components/ward-management/ward-act-now-items";
+import {
+  bedMeetingActionInboxItems,
+  duplicateBedRequestInboxItems,
+} from "../src/components/ward-management/ward-act-now-items";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
   INBOX_CATEGORIES,
@@ -30,6 +33,8 @@ const KINDS: readonly InboxItemKind[] = ["fact", "commitment"];
 const ABSENCE_CATEGORIES = 1;
 /** Audit F-19: `duplicateBedRequestInboxItems` (`ward-act-now-items.ts`) emits one category. */
 const DUPLICATE_CATEGORIES = 1;
+/** Overall review (20 Oct 2026): `bedMeetingActionInboxItems` emits one category. */
+const MEETING_ACTION_CATEGORIES = 1;
 /**
  * Overall review (20 Oct 2026): the daily check is a commitment the coordinator ticks off once a
  * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
@@ -131,7 +136,27 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
       referrals: duplicateRequestRecords(),
       patients: seedWardFlowState().patients,
     }),
+    ...bedMeetingActionInboxItems(meetingActionRecords(), NOW),
   ];
+}
+
+/** One open action agreed at the bed meeting, on a seed bed request. */
+function meetingActionRecords() {
+  const seed = seedWardFlowState();
+  const [first, ...rest] = seed.movements;
+  return {
+    movements: [
+      {
+        ...first!,
+        meetingActions: [
+          { kind: "book_transport" as const, owner: "coordinator" as const, dueAt: NOW + 60, recordedAt: NOW },
+        ],
+      },
+      ...rest,
+    ],
+    units: allUnits(),
+    admissions: seed.admissions,
+  };
 }
 
 /** Two seed referrals pointed at one person, each still awaiting a ward answer (audit F-19). */
@@ -298,7 +323,13 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     expect(
       pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(ROW_CATEGORIES.length - targetCategories.length - ABSENCE_CATEGORIES - DUPLICATE_CATEGORIES);
+    ).toBe(
+      ROW_CATEGORIES.length -
+        targetCategories.length -
+        ABSENCE_CATEGORIES -
+        DUPLICATE_CATEGORIES -
+        MEETING_ACTION_CATEGORIES,
+    );
   });
 
   /**
