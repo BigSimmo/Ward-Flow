@@ -4094,7 +4094,7 @@
   background: var(--wf-danger);
   font: 600 var(--wf-fs-11, 11px) / 1.2 var(--wf-mono);
   text-align: center;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 
 /* The phone's ward name is the Switch ward button: the name and a chevron in one 44px target. */
