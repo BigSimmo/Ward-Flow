@@ -7,7 +7,6 @@ import { useId, useMemo, useSyncExternalStore } from "react";
 import { Button } from "@/components/wf";
 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
@@ -39,11 +38,12 @@ const serverSession = () => null;
 
 /**
  * PRACTICE MODE in Tools (smart features idea 10): a guided placement on the demo data. Shown
- * wherever the one tap Demo reset is (`demo-reset` flag), since practice only makes sense on data
- * that can be reset. The steps tick off from the shared record; progress lives in this browser tab only.
+ * wherever the Tools demo panel is. It used to follow the one tap Demo reset (`demo-reset` flag),
+ * but Josh asked for every feature on (20 Oct 2026) while that reset stays off on the live site, so
+ * practice no longer depends on it: no step needs the whole-network reset, and Stop then Start begins
+ * a fresh practice. The steps tick off from the shared record; progress lives in this browser tab only.
  */
 export function WardPracticeMode({ className, headingClassName }: { className?: string; headingClassName?: string }) {
-  const enabled = useWardFeatureFlag("demo-reset");
   const { movements, scenario, worldGeneration } = useWardFlowSelect("movements", "scenario", "worldGeneration");
   const current = useSyncExternalStore(subscribe, readSession, serverSession);
   const startedWith =
@@ -53,8 +53,6 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
     () => (startedWith ? practiceProgress(movements, startedWith) : null),
     [movements, startedWith],
   );
-  if (!enabled) return null;
-
   const finished = progress !== null && progress.next === undefined;
   return (
     <section
@@ -113,7 +111,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
           </ol>
           <p className={styles.intro} role="status">
             {finished
-              ? "All six steps done. Reset the demo to practise again."
+              ? "All six steps done. Stop practice, then start again to practise once more."
               : progress.movementId
                 ? "Following the bed request you raised."
                 : "Waiting for a new bed request."}
