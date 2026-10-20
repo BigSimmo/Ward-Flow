@@ -224,7 +224,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setPanelWasPhone(isPhone);
     if (!isPhone) setPhonePanel(null);
   }
-  const [phoneTodoCount, setPhoneTodoCount] = useState<number | undefined>(undefined);
+  const [phoneWalking, setPhoneWalking] = useState(false);
   const [dismissedBuzzes, setDismissedBuzzes] = useState<string[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a
   // sentence only."). A hook, so it is read unconditionally, before the not-found early return
@@ -1984,6 +1984,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             unitHealthService(candidate) === unitHealthService(unit),
         );
 
+  const phoneCardOpen = isPhone && phoneWalking && activeTab === "attn"; // Option B: a bed's card has the page
   const wardSwitchMenu =
     switchUnits.length > 0 ? (
       <Menu
@@ -2004,11 +2005,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           <button
             type="button"
             {...props}
-            className={styles.wardSwitch}
+            className={isPhone ? styles.wardSwitchName : styles.wardSwitch}
             aria-label={`Switch ward, now ${unit.name}`}
             data-testid="ward-switch-btn"
           >
-            <ChevronDown size={16} aria-hidden="true" />
+            {isPhone ? <span className={styles.phoneHeroName}>{unit.name}</span> : null}
+            <ChevronDown size={isPhone ? 18 : 16} aria-hidden="true" />
           </button>
         )}
       />
@@ -2144,16 +2146,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 onSelect: handleRaiseWardReferral,
               },
             ]),
-      ]}
+      ].filter((item) => tablet || !isPhone || item.id !== "notices")}
       trigger={(props) => (
         <button
           type="button"
           {...props}
           className={triggerClassName}
+          aria-label={tablet ? undefined : "More ward actions"}
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
-          <MoreHorizontal size={16} aria-hidden="true" />
-          More
+          <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />
+          {tablet ? "More" : null}
         </button>
       )}
     />
@@ -2262,55 +2265,55 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ) : null}
 
         <WardReferralInbox unitId={unit.id} />
-        <WardScreenTopBar
-          unit={unit}
-          isPhone={isPhone}
-          site={site}
-          wardSwitchMenu={wardSwitchMenu}
-          states={states}
-          online={online}
-          now={now}
-          confirmTriggerRef={confirmTriggerRef}
-          openCapacityModal={openCapacityModal}
-          wardRibbon={wardRibbon}
-          wardHeroFoot={wardHeroFoot}
-          wardHeroFootAside={wardHeroFootAside}
-          selectActiveTab={selectActiveTab}
-          setPhonePanel={setPhonePanel}
-          phoneTodoCount={phoneTodoCount}
-          wardMoreMenu={wardMoreMenu}
-          raiseReferralGate={raiseReferralGate}
-          wardRoleLockNote={wardRoleLockNote}
-          notificationCenterOpen={notificationCenterOpen}
-          notificationCenterRef={notificationCenterRef}
-          movements={movements}
-          notices={notices}
-          refreshRequests={refreshRequests}
-          isRollupConfirmedToday={isRollupConfirmedToday}
-          morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-          morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-          handleConfirmMorningRollup={handleConfirmMorningRollup}
-          handleAcknowledgeNotice={handleAcknowledgeNotice}
-          handleDismissBuzz={handleDismissBuzz}
-          setNotificationCenterOpen={setNotificationCenterOpen}
-          notificationTriggerRef={notificationTriggerRef}
-          tabHome={tabHome}
-          tabDecisions={tabDecisions}
-          tabBoard={tabBoard}
-          bedQuery={bedQuery}
-          setBedQuery={setBedQuery}
-          activeTab={activeTab}
-          unreadAlertsCount={unreadAlertsCount}
-          setDailySheetOpen={setDailySheetOpen}
-          tvViewsOn={tvViewsOn}
-          handoverHref={handoverHref}
-          handleRaiseWardReferral={handleRaiseWardReferral}
-          raisedReferral={raisedReferral}
-          selectedBed={selectedBed}
-          fullWardReferralHref={fullWardReferralHref}
-          bedsList={bedsList}
-        />
-        {isPhone ? (
+        {phoneCardOpen ? null : (
+          <WardScreenTopBar
+            unit={unit}
+            isPhone={isPhone}
+            site={site}
+            wardSwitchMenu={wardSwitchMenu}
+            states={states}
+            online={online}
+            now={now}
+            confirmTriggerRef={confirmTriggerRef}
+            openCapacityModal={openCapacityModal}
+            wardRibbon={wardRibbon}
+            wardHeroFoot={wardHeroFoot}
+            wardHeroFootAside={wardHeroFootAside}
+            selectActiveTab={selectActiveTab}
+            wardMoreMenu={wardMoreMenu}
+            raiseReferralGate={raiseReferralGate}
+            wardRoleLockNote={wardRoleLockNote}
+            notificationCenterOpen={notificationCenterOpen}
+            notificationCenterRef={notificationCenterRef}
+            movements={movements}
+            notices={notices}
+            refreshRequests={refreshRequests}
+            isRollupConfirmedToday={isRollupConfirmedToday}
+            morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+            morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+            handleConfirmMorningRollup={handleConfirmMorningRollup}
+            handleAcknowledgeNotice={handleAcknowledgeNotice}
+            handleDismissBuzz={handleDismissBuzz}
+            setNotificationCenterOpen={setNotificationCenterOpen}
+            notificationTriggerRef={notificationTriggerRef}
+            tabHome={tabHome}
+            tabDecisions={tabDecisions}
+            tabBoard={tabBoard}
+            bedQuery={bedQuery}
+            setBedQuery={setBedQuery}
+            activeTab={activeTab}
+            unreadAlertsCount={unreadAlertsCount}
+            setDailySheetOpen={setDailySheetOpen}
+            tvViewsOn={tvViewsOn}
+            handoverHref={handoverHref}
+            handleRaiseWardReferral={handleRaiseWardReferral}
+            raisedReferral={raisedReferral}
+            selectedBed={selectedBed}
+            fullWardReferralHref={fullWardReferralHref}
+            bedsList={bedsList}
+          />
+        )}
+        {isPhone && !phoneCardOpen ? (
           /* Phone (v10): the three views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
           <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
@@ -2366,7 +2369,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           isPhone={isPhone}
           phonePanel={phonePanel}
           setPhonePanel={setPhonePanel}
-          setPhoneTodoCount={setPhoneTodoCount}
+          setPhoneWalking={setPhoneWalking}
           now={now}
           wardHeroFoot={wardHeroFoot}
           wardHeroFootAside={wardHeroFootAside}

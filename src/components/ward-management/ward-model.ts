@@ -526,14 +526,8 @@ export type Movement = {
    * scoped it deliberately small: **"For now just have a feature that flags the patient. I will
    * build on it later."**
    *
-   * So this is ADDITIVE AND REVERSIBLE. It sits above `urgency` in `queueOrder`.
-   *
-   * ⚠️ **PART OF "LATER" ARRIVED 2026-09-17 — ITEM 37.** `queueOrder`'s third key is no longer
-   * `operationalScore`: it is now the wait itself, uncapped, on the owner's own fuller ruling
-   * ("otherwise go by time for the main level of urgency"). See `queueOrder`'s own doc comment
-   * (`ward-priority.ts`) for what changed and what did not — `operationalScore` itself is
-   * untouched and still drives the factor breakdown shown elsewhere; it simply no longer orders
-   * this queue.
+   * So this is ADDITIVE AND REVERSIBLE. Since Audit 1 (Josh 20 Oct, D-71) it is a highlight
+   * only: `queueOrder` is wait order and a flag never moves a row.
    *
    * Carries no reason ON THIS FIELD — see `urgentFlag` immediately below for the reason, author
    * and instant that field now carries. `flaggedUrgent` itself stays a plain boolean because 129
@@ -544,9 +538,9 @@ export type Movement = {
   /**
    * WHO FLAGGED THIS, WHEN, AND WHY — the part of "I will build on it later" that arrived
    * 2026-09-17 (item 37). `undefined` alongside `flaggedUrgent: true` means exactly what it says:
-   * a movement flagged before this field existed (the fixture's own WF-018, hand-authored on
-   * 2026-08-30 with no provenance to recover), never a bug to paper over with an invented author
-   * or instant. `undefined` alongside `flaggedUrgent: false` is the ordinary unflagged case.
+   * a movement flagged before this field existed (a saved or restored record with no provenance
+   * to recover), never a bug to paper over with an invented author or instant. The synthetic
+   * fixture's WF-018 and WF-030 carry their own (overall review, 20 Oct 2026). `undefined` alongside `flaggedUrgent: false` is the ordinary unflagged case.
    *
    * `FLAG_MOVEMENT_URGENT` writes this together with `flaggedUrgent: true`; `CLEAR_MOVEMENT_URGENT_FLAG`
    * clears both together, so the two fields can never disagree about whether a flag is live —
@@ -572,9 +566,8 @@ export type Movement = {
    * `FLAG_MOVEMENT_URGENT` appends one entry with `clearedAt`/`clearedBy` both absent.
    * `CLEAR_MOVEMENT_URGENT_FLAG` fills those two fields on the OPEN entry — the last one with no
    * `clearedAt` — rather than appending a second entry, so one flag-then-clear cycle is one row,
-   * not two. Absent (`undefined`) entirely on a movement never flagged through either event; the
-   * fixture's WF-018 is flagged with no history, the same "flagged before this existed" case
-   * `urgentFlag` above documents.
+   * not two. Absent (`undefined`) entirely on a movement never flagged through either event, and
+   * on one flagged before this existed, the same case `urgentFlag` above documents.
    */
   urgentFlagHistory?: {
     raisedAt: Instant;
@@ -759,9 +752,9 @@ export type Movement = {
    * a blank rather than storing one, because a blank would be indistinguishable from a field
    * nobody had reached yet, which is the exact ambiguity this field spent its life in.
    *
-   * ⚠️ Read by `operationalScore` (ward-priority.ts), which awards ten points for an ACTIVE
-   * blocker and recognises the `"None — …"` and `"No blocker"` shapes as inactive. A new inactive
-   * phrasing must be taught to `hasActiveBlocker` there, or it scores as a live obstruction.
+   * ⚠️ Read by `waitFactors` (ward-priority.ts), which lists an ACTIVE blocker as a reason and
+   * recognises the `"None — …"` and `"No blocker"` shapes as inactive. A new inactive phrasing
+   * must be taught to `hasActiveBlocker` there, or it shows as a live obstruction.
    */
   blocker: string;
   closure?: MovementClosure;
@@ -941,6 +934,16 @@ export type Movement = {
     clearedAt?: Instant;
     clearedBy?: WardFlowRole;
   };
+  /**
+   * Earlier expect flags, oldest first. Raising a new flag after one was cleared moves the cleared
+   * one here, so its record is kept (Audit 1 TS-9, 20 Oct 2026). Absent until that first happens.
+   */
+  expectFlagHistory?: {
+    raisedAt: Instant;
+    kind: "voluntary_48h" | "involuntary_7d";
+    clearedAt?: Instant;
+    clearedBy?: WardFlowRole;
+  }[];
   /** Bed allocated to this movement, if any. */
   allocatedBed?: string | number;
   /** Statutory examination revoked flag, protected from generic clear. */

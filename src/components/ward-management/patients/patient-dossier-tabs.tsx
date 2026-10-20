@@ -31,6 +31,7 @@ import { formTimeLeft } from "../legal-forms/legal-form-time-left";
 import { standingWord } from "../legal-forms/legal-forms-view";
 import { useDueSoonThresholds } from "../ward-flow-provider";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
 
@@ -529,25 +530,27 @@ export function PatientCommunityTab({
               A recorded catchment does not confirm current case management or an active appointment.
             </p>
           </Card>
-          <Card className={styles.dashed}>
-            <CardHead
-              level={2}
-              icon={Users}
-              title="Family and carers"
-              aside={<span className={styles.preview}>Preview, not in the record yet</span>}
-            />
-            <div className={styles.rows}>
-              <Row k="Next of kin">
-                <span className={styles.nr}>Needs a record field</span>
-              </Row>
-              <Row k="Carer">
-                <span className={styles.nr}>Needs a record field</span>
-              </Row>
-              <Row k="Guardian">
-                <span className={styles.nr}>Needs a record field</span>
-              </Row>
-            </div>
-          </Card>
+          <UnwiredPreview>
+            <Card className={styles.dashed}>
+              <CardHead
+                level={2}
+                icon={Users}
+                title="Family and carers"
+                aside={<span className={styles.preview}>Preview, not in the record yet</span>}
+              />
+              <div className={styles.rows}>
+                <Row k="Next of kin">
+                  <span className={styles.nr}>Needs a record field</span>
+                </Row>
+                <Row k="Carer">
+                  <span className={styles.nr}>Needs a record field</span>
+                </Row>
+                <Row k="Guardian">
+                  <span className={styles.nr}>Needs a record field</span>
+                </Row>
+              </div>
+            </Card>
+          </UnwiredPreview>
         </div>
         <div className={styles.col}>
           <Card>

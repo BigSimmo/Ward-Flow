@@ -42,7 +42,8 @@ type WardScreenHomeSectionProps = {
   isPhone: boolean;
   phonePanel: "shift" | "flow" | null;
   setPhonePanel: Dispatch<SetStateAction<"shift" | "flow" | null>>;
-  setPhoneTodoCount: Dispatch<SetStateAction<number | undefined>>;
+  /** Phone: a bed's card is open in the round, so the ward card and view tabs step aside. */
+  setPhoneWalking: Dispatch<SetStateAction<boolean>>;
   now: number;
   wardHeroFoot: ReactElement;
   wardHeroFootAside: ReactElement;
@@ -151,7 +152,7 @@ export function WardScreenHomeSection({
   isPhone,
   phonePanel,
   setPhonePanel,
-  setPhoneTodoCount,
+  setPhoneWalking,
   now,
   wardHeroFoot,
   wardHeroFootAside,
@@ -236,7 +237,10 @@ export function WardScreenHomeSection({
         absencesOnOrder={absencesOnOrder}
         phonePanel={isPhone ? phonePanel : undefined}
         onPhonePanelChange={setPhonePanel}
-        onTodoCount={setPhoneTodoCount}
+        onWalkingChange={isPhone ? setPhoneWalking : undefined}
+        onOpenBoard={() => {
+          selectActiveTab("board");
+        }}
         phoneShiftLabel={shiftLine(now)}
         phoneHeroFoot={
           isPhone ? (

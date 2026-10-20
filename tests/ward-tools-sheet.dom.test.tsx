@@ -172,7 +172,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     // Its three scenarios load from the reset, after a confirm, so the picker does not repeat them.
     const picker = within(panel).getByRole("radiogroup", { name: "Demo scenario" });
     expect(within(picker).queryByRole("radio", { name: /Winter surge/u })).toBeNull();
-    expect(within(picker).getByRole("radio", { name: /Standard night/u })).toBeTruthy();
+    expect(within(picker).getByRole("radio", { name: /Standard day/u })).toBeTruthy();
   });
 
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {

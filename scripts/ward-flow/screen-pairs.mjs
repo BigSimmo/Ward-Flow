@@ -93,6 +93,10 @@ export const PAIRS = [
   ["delays-perfected-third-edition.html", null, null, false],
   ["notification-popup-third-edition.html", null, null, false],
   ["ward-before-after-redesign.html", null, null, false],
+  // Added 2026-10-20: clickable try-out mockups for UX simplification ideas B5 and B2, for the
+  // owner to try before any app change. Reference only, no route and no build contract.
+  ["needs-you-now-home-mockup.html", null, null, false],
+  ["one-ward-page-mockup.html", null, null, false],
 ];
 
 /** Superseded drawings — named so they are never treated as current. */

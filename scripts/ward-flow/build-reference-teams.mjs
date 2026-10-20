@@ -5,9 +5,14 @@
  *
  * WHAT THIS CARRIES AND WHAT IT DELIBERATELY DOES NOT.
  *
- * It carries the PUBLISHED CONTACT DETAILS of a real WA community mental health service — the phone
- * number, the opening hours and the referral email a directory prints — plus the date that record
- * was taken and whether the service is listed publicly.
+ * It carries the contact details held for a real WA community mental health service — the phone
+ * number, the opening hours and the referral email — plus the date that record was taken and
+ * whether the service is listed publicly.
+ *
+ * 🔴 THE PHONE NUMBERS AND MAILBOXES ARE INVENTED (owner, 20 Oct 2026). The pack's real published
+ * numbers and WA Health mailboxes were replaced with numbers in the reserved fictitious range
+ * 08 5550 0xxx and addresses on the reserved example.invalid domain, so nobody can ring or email a
+ * real service from the demo. Service names, hours and addresses are unchanged.
  *
  * 🔴 It carries NO NUMERIC CAPACITY FIELD OF ANY KIND, for the same structural reason
  * `ward-reference-registry.ts` carries none: a figure that cannot be generated into `src/` cannot
@@ -91,10 +96,10 @@ function render(teams) {
 // Generator: scripts/ward-flow/build-reference-teams.mjs  (npm run ward:reference:build)
 // Drift gate: npm run check:ward-reference
 //
-// 🔴 PUBLISHED CONTACT DETAIL FOR REAL WA COMMUNITY MENTAL HEALTH SERVICES. NOT CALL-TESTED.
-// Every record here is \`operationally_ratified: false\` in the pack, and the pack's own note on
-// these rows says "2023 PDF footer contacts may be obsolete". Whatever renders one of these must
-// say so beside it, with \`recordedOn\`.
+// 🔴 INVENTED PHONE NUMBERS AND MAILBOXES FOR REAL WA COMMUNITY MENTAL HEALTH SERVICES.
+// Owner, 20 Oct 2026: every number is in the fictitious range 08 5550 0xxx and every mailbox is on
+// example.invalid, so nobody can ring or email a real service from the demo. Whatever renders one
+// of these must say so beside it, with \`recordedOn\`.
 //
 // 🔴 NO NUMERIC CAPACITY FIELD EXISTS HERE, BY CONSTRUCTION - the same guarantee
 // ward-reference-registry.ts makes. A bed count that is never generated into src/ cannot leak into
@@ -134,7 +139,7 @@ export const REFERENCE_TEAM_NAMES: readonly string[] = [...TEAMS.keys()];
 
 /** Render this beside any detail above. It is the whole caveat, in one sentence. */
 export const REFERENCE_TEAM_CAVEAT =
-  "Published contact detail from a service directory. Not call-tested, and not confirmed by the service.";
+  "Invented phone number and mailbox for the demo, not the service's real ones. Not call-tested, and not confirmed by the service.";
 `;
 }
 

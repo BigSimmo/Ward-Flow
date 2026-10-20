@@ -1,3 +1,5 @@
+import { useCallback } from "react";
+
 import { createBrowserStore } from "@/lib/client-store-factory";
 
 /**
@@ -57,3 +59,27 @@ export function replaceSearchParams(updates: Readonly<Record<string, string | nu
 
 /** The address's query string (`?a=1`), kept current. Empty on the server and during hydration. */
 export const useLocationSearch = createBrowserStore(subscribeToLocation, () => window.location.search, "");
+
+/**
+ * DA-15 (overall review, 20 Oct 2026): a screen's chosen tab, kept in the web address under `key`,
+ * so a reload or a shared link opens the same tab. Only a fixed id from `allowed` is ever written or
+ * read, never a name or typed text (D-11). An unknown or missing value reads as `fallback`, and
+ * choosing `fallback` removes the key, so the plain address stays plain. Like Waiting's filters, the
+ * address is read once the page is running: the first paint shows `fallback`.
+ */
+export function useAddressTab<T extends string>(
+  key: string,
+  allowed: readonly T[],
+  fallback: T,
+): [T, (next: T) => void] {
+  const search = useLocationSearch();
+  const value = new URLSearchParams(search).get(key);
+  const chosen = value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+  const choose = useCallback(
+    (next: T) => {
+      replaceSearchParams({ [key]: next === fallback ? null : next });
+    },
+    [key, fallback],
+  );
+  return [chosen, choose];
+}

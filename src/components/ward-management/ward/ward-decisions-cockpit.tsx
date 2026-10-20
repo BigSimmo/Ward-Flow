@@ -6,6 +6,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 export { openDecisionCount };
 
@@ -159,6 +160,8 @@ export function WardDecisionsCockpit({
     departures.length > 0 ||
     leaves.length > 0;
   if (!live) {
+    // Overall review (20 Oct 2026): the illustrative cockpit shows only in a local development build.
+    if (!showsUnwiredPreviews()) return null;
     return (
       <section className={styles.container} aria-label="Ward decision controls">
         <h2>Decision cockpit</h2>
@@ -278,9 +281,10 @@ function Queue({
       id: "rollup",
       group: "act",
       tone: "danger",
-      title: `${rollupTimeLabel} morning bed rollup overdue`,
+      // Overall review (20 Oct 2026): "morning bed rollup" was project jargon.
+      title: `Morning bed numbers not confirmed, due ${rollupTimeLabel}`,
       sub: staffingFact,
-      phoneTitle: `Rollup overdue · due ${rollupTimeLabel}`,
+      phoneTitle: `Bed numbers due ${rollupTimeLabel}`,
       detail: staffingFact,
       testId: "ward-morning-rollup-overdue-banner",
       actions: onConfirmRollup ? (
@@ -290,18 +294,18 @@ function Queue({
           data-testid="ward-confirm-morning-rollup-btn"
           onClick={onConfirmRollup}
         >
-          Confirm rollup
+          Confirm bed numbers
         </button>
-      ) : (
+      ) : showsUnwiredPreviews() ? (
         <span className={styles.unwired}>Not wired in this prototype.</span>
-      ),
+      ) : undefined,
     });
   } else if (!rollupConfirmed && onConfirmRollup) {
     items.staffing.push({
       id: "rollup",
       group: "wait",
       tone: "neutral",
-      title: `Morning bed rollup due ${rollupTimeLabel}`,
+      title: `Morning bed numbers due ${rollupTimeLabel}`,
       sub: staffingFact,
     });
   }
@@ -310,7 +314,7 @@ function Queue({
       id: "rollup-done",
       group: "done",
       tone: "success",
-      title: `${rollupTimeLabel} morning bed rollup confirmed`,
+      title: `Morning bed numbers confirmed (due ${rollupTimeLabel})`,
       sub: `${plannedDischarges} discharges scheduled today`,
       testId: "ward-morning-rollup-confirmed-banner",
     });
@@ -338,9 +342,9 @@ function Queue({
         >
           Accept
         </button>
-      ) : (
+      ) : showsUnwiredPreviews() ? (
         <span className={styles.unwired}>Not wired in this prototype.</span>
-      ),
+      ) : undefined,
     });
   }
   for (const entry of doneHere("accept")) {
@@ -726,7 +730,9 @@ function Queue({
                 </ul>
               ) : null}
               {children}
-              {!wired && !onConfirmRollup ? <p className={styles.unwiredLine}>Not wired in this prototype.</p> : null}
+              {!wired && !onConfirmRollup && showsUnwiredPreviews() ? (
+                <p className={styles.unwiredLine}>Not wired in this prototype.</p>
+              ) : null}
             </div>
           ) : null}
 

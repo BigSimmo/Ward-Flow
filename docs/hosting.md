@@ -73,13 +73,13 @@ tested. Two services were added to the same Ward Flow project and environment, S
 both following `BigSimmo/Ward-Flow` `main`. The open public demo (`ward-flow`) is unchanged and
 stays in local mode, because shared mode puts a sign-in screen in front of every page.
 
-| Item     | Backend                                                      | Signed-in site                                              |
-| -------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`) | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
-| Address  | https://ward-flow-backend-production.up.railway.app          | https://ward-flow-shared-production.up.railway.app          |
-| Port     | 8080                                                         | 8080                                                        |
-| Health   | `/healthz` (liveness only; `/readyz` checks the database)    | `/api/health`                                               |
-| Sleeping | Off                                                          | On                                                          |
+| Item     | Backend                                                                                                | Signed-in site                                              |
+| -------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`)                                           | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
+| Address  | https://ward-flow-backend-production.up.railway.app                                                    | https://ward-flow-shared-production.up.railway.app          |
+| Port     | 8080                                                                                                   | 8080                                                        |
+| Health   | `/healthz` (no sign-in; always 200, with `database` "ok" or "unavailable", checked at most every 30 s) | `/api/health`                                               |
+| Sleeping | Off                                                                                                    | On                                                          |
 
 Backend settings (Railway dashboard):
 

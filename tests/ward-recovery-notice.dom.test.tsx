@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WardRecoveryNotice, WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { RESTORED_NOTICE_PREFIX } from "@/components/ward-management/ward-flow-demo-storage";
 
-const ROUTINE = `${RESTORED_NOTICE_PREFIX} 10:42 (Perth time). Later changes may not have been saved.`;
+const ROUTINE = `${RESTORED_NOTICE_PREFIX} 10:42 on the board clock. Later changes may not have been saved.`;
 
 function renderNotice(notice: string) {
   return render(
@@ -34,18 +34,29 @@ describe("restore notice (simplification A3)", () => {
     expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
   });
 
-  it("shows again if the page was left before the pause ended", () => {
+  it("does not come back on the next page when the page was left within a few seconds (DA-27)", () => {
     const first = renderNotice(ROUTINE);
     act(() => vi.advanceTimersByTime(3_000));
     first.unmount();
 
     renderNotice(ROUTINE);
-    expect(screen.getByTestId("ward-recovery-notice")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
   });
 
-  it("keeps a failure notice on screen", () => {
+  it("closes from its close button and stays closed in this tab (DA-27)", () => {
+    const first = renderNotice(ROUTINE);
+    fireEvent.click(screen.getByRole("button", { name: "Close notice" }));
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
+    first.unmount();
+
+    renderNotice(ROUTINE);
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
+  });
+
+  it("keeps a failure notice on screen, with no close button", () => {
     renderNotice("The last save could not be read. Nothing was restored.");
     act(() => vi.advanceTimersByTime(60_000));
     expect(screen.getByTestId("ward-recovery-notice")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Close notice" })).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/wf";
+import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
 import type {
   Unit,
@@ -33,7 +33,13 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import {
+  patientIdentityLine,
+  resolveSubjectPatient,
+  type ResolvedPatientInfo,
+} from "@/components/ward-management/ward-patient-resolver";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
 
 export { pullBlockedReason };
@@ -96,19 +102,40 @@ export function WardArrivalsCorridor({
   // Audit r1 item 4: the journey whose arrival is waiting on the fit to travel warning.
   const [arriveCheckId, setArriveCheckId] = React.useState<string | null>(null);
   const arriveCheckMovement = accepted.find((movement) => movement.id === arriveCheckId);
+  // Audit 1, Josh 20 Oct (CS-07): releasing a stopped transport's held bed asks first, naming the person.
+  const [releaseHeldId, setReleaseHeldId] = React.useState<string | null>(null);
+  const releaseHeldMovement = heldAfterStop.find((movement) => movement.id === releaseHeldId);
+  // CS-07: Confirm arrival goes through the undo-offering step, so a mis-tap can be taken back
+  // (`UNDO_TRANSPORT_STEP`). A refusal is still said inline by the card, as before.
+  const routeRole = useRouteRole();
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const confirmArrival = (
     movement: Movement,
     exception?: { gaps: TransportExceptionGap[]; reason: TransportExceptionReason },
   ) => {
     priorRejectionCountRef.current = rejections.length;
-    dispatch({
-      type: "PATIENT_ARRIVED",
-      role: "ward",
-      now,
-      movementId: movement.id,
-      actingUnitId: unit.id,
-      ...(exception ? { exception } : {}),
-    });
+    const unitId = unit.id;
+    runStep(
+      {
+        type: "PATIENT_ARRIVED",
+        role: "ward",
+        now,
+        movementId: movement.id,
+        actingUnitId: unitId,
+        ...(exception ? { exception } : {}),
+      },
+      {
+        success: `Arrival recorded for ${resolvePatientIdentity(movement).displayName}.`,
+        undo: (at) => ({
+          type: "UNDO_TRANSPORT_STEP",
+          role: "ward",
+          now: at,
+          movementId: movement.id,
+          actingUnitId: unitId,
+        }),
+        refusalShownInline: true,
+      },
+    );
     setCheckToken((t) => t + 1);
   };
   return (
@@ -479,17 +506,7 @@ export function WardArrivalsCorridor({
                     aria-label={`Release held bed for ${patient.displayName} ${patientDistinction}`}
                     className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
                     data-testid={`ward-release-stopped-bed-${movement.id}`}
-                    onClick={() => {
-                      priorRejectionCountRef.current = rejections.length;
-                      dispatch({
-                        type: "RELEASE_HELD_BED",
-                        role: "ward",
-                        now,
-                        movementId: movement.id,
-                        actingUnitId: unit.id,
-                      });
-                      setCheckToken((t) => t + 1);
-                    }}
+                    onClick={() => setReleaseHeldId(movement.id)}
                   >
                     Release held bed
                   </button>
@@ -505,6 +522,37 @@ export function WardArrivalsCorridor({
         <strong>Operational Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but
         not offered; it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
       </div>
+      <Dialog
+        open={releaseHeldMovement !== undefined}
+        onClose={() => setReleaseHeldId(null)}
+        size="sm"
+        title="Release held bed?"
+        description={`The bed held for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
+        secondary={[{ label: "Cancel", onAction: () => setReleaseHeldId(null) }]}
+        primary={{
+          label: "Release held bed",
+          onAction: () => {
+            setReleaseHeldId(null);
+            if (!releaseHeldMovement) return;
+            priorRejectionCountRef.current = rejections.length;
+            dispatch({
+              type: "RELEASE_HELD_BED",
+              role: "ward",
+              now,
+              movementId: releaseHeldMovement.id,
+              actingUnitId: unit.id,
+            });
+            setCheckToken((t) => t + 1);
+          },
+        }}
+        data-testid="ward-release-stopped-confirm"
+      >
+        {releaseHeldMovement ? (
+          <p data-testid="ward-release-stopped-identity">
+            Check: {patientIdentityLine(resolvePatientIdentity(releaseHeldMovement))}
+          </p>
+        ) : null}
+      </Dialog>
       <TransportExceptionDialog
         open={arriveCheckMovement !== undefined}
         who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).displayName : "this patient"}

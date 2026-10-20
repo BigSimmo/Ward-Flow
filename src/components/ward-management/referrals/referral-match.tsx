@@ -842,7 +842,10 @@ export function ReferralMatchView({
     bandGroups.forEach((group) =>
       group.candidates.forEach((candidate) => bandOf.set(candidate.unit.id, travelBandGroupLabel(group.band))),
     );
-    const pick = candidates.find((c) => c.unit.id === phonePick) ?? tier1Candidates[0] ?? candidates[0];
+    // Audit 1, Josh 20 Oct (CS-03, WP-05): no ward starts picked. Accept waits for the coordinator's tap.
+    const pick = phonePick === undefined ? undefined : candidates.find((c) => c.unit.id === phonePick);
+    const acceptUnavailable =
+      candidates.length === 0 ? "No unit to accept at in this network." : "Choose a ward first.";
     const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
     const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
     const FIT_CAP = 3;
@@ -1078,7 +1081,7 @@ export function ReferralMatchView({
                 variant="pri"
                 size="md"
                 data-placement-action
-                disabledReason={pick === undefined ? "No unit to accept at in this network." : undefined}
+                disabledReason={pick === undefined ? acceptUnavailable : undefined}
                 reasonDisplay="tooltip"
                 type="button"
                 data-testid="ward-referral-match-phone-accept"
@@ -1090,7 +1093,9 @@ export function ReferralMatchView({
                       : revealPickForm
                 }
               >
-                <span className={ph.ell}>{pick ? `Accept at ${pick.unit.name}` : "Accept"}</span>
+                <span className={ph.ell}>
+                  {pick ? `Accept at ${pick.unit.name}` : candidates.length === 0 ? "Accept" : "Choose a ward first"}
+                </span>
               </Button>
             </>
           )}

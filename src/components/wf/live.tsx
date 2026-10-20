@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { cx } from "./cx";
 import { clk, dur } from "./format";
@@ -57,6 +57,64 @@ function useLiveClock(): string | undefined {
   );
 }
 
+/*
+ * Audit 1 (CS-13, Josh 20 Oct): whether the shared board's refresh is failing or late. The app shell
+ * publishes it (`publishLiveRefresh`) in shared mode; with nothing published (local mode) a live
+ * chip follows the browser's connection flag alone. `receivedAt` is the last good refresh (epoch
+ * ms), and the chip reads Stale "as at" it once it is older than `staleAfterMs`.
+ */
+export type LiveRefresh = { unavailable: boolean; receivedAt?: number; staleAfterMs?: number };
+let liveRefresh: LiveRefresh | undefined;
+const liveRefreshListeners = new Set<() => void>();
+
+export function publishLiveRefresh(value: LiveRefresh | undefined) {
+  if (
+    value?.unavailable === liveRefresh?.unavailable &&
+    value?.receivedAt === liveRefresh?.receivedAt &&
+    value?.staleAfterMs === liveRefresh?.staleAfterMs
+  )
+    return;
+  liveRefresh = value;
+  for (const listener of liveRefreshListeners) listener();
+}
+
+function subscribeLiveRefresh(listener: () => void) {
+  liveRefreshListeners.add(listener);
+  return () => {
+    liveRefreshListeners.delete(listener);
+  };
+}
+
+/**
+ * CS-13: whether the last good shared refresh is older than its limit. Re-checked at that deadline
+ * (a few seconds), not on the minute, so a hung refresh turns Stale on time (Codex review of #504).
+ * Off when `active` is false or nothing is published (local mode).
+ */
+export function useSharedRefreshLate(active = true): boolean {
+  const refresh = useSyncExternalStore(
+    subscribeLiveRefresh,
+    () => liveRefresh,
+    () => undefined,
+  );
+  const deadline =
+    active && refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined
+      ? refresh.receivedAt + refresh.staleAfterMs
+      : undefined;
+  const [lateAt, setLateAt] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (deadline === undefined) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      const wait = deadline - Date.now();
+      if (wait < 0) setLateAt(deadline);
+      else timer = setTimeout(check, wait + 1);
+    };
+    check();
+    return () => clearTimeout(timer);
+  }, [deadline]);
+  return deadline !== undefined && lateAt === deadline;
+}
+
 const WORD: Record<LiveState, string> = {
   live: "Demo",
   paused: "Paused",
@@ -68,7 +126,8 @@ const WORD: Record<LiveState, string> = {
 /**
  * Live chip (rule 9: live and honest). Live pulses once as it turns live (none under reduced motion),
  * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "as at HH:MM", and
- * Offline a grey dot (a live chip turns Offline by itself while the browser has no connection). A `role="status"` line announces state changes only, never the ticking age.
+ * Offline a grey dot (a live chip turns Offline by itself while the browser has no connection, and
+ * Stale while the shared refresh it is told about is failing or late). A `role="status"` line announces state changes only, never the ticking age.
  */
 function subscribeOnline(onChange: () => void) {
   window.addEventListener("online", onChange);
@@ -92,9 +151,18 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
   // connection, so no page shows a live dot over a session that is not updating.
   const online = useBrowserOnline();
-  const state: LiveState = requested === "live" && !online ? "offline" : requested;
+  // CS-13: and Stale while the shared refresh is failing or its last good refresh is too old.
+  const refresh = useSyncExternalStore(
+    subscribeLiveRefresh,
+    () => liveRefresh,
+    () => undefined,
+  );
+  const late = useSharedRefreshLate(requested === "live");
+  const state: LiveState =
+    requested !== "live" ? requested : !online ? "offline" : refresh?.unavailable || late ? "stale" : "live";
   const word = WORD[state];
-  const asAtText = state === "stale" && asAt != null ? `as at ${clk(asAt)}` : null;
+  const staleAt = asAt ?? refresh?.receivedAt;
+  const asAtText = state === "stale" && staleAt != null ? `as at ${clk(staleAt)}` : null;
   const paused = state === "paused";
   const isPhone = useIsPhone();
   const clock = useLiveClock();

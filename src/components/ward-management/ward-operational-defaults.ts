@@ -45,6 +45,10 @@ export const UNDO_TOAST_MS = 8000;
  *  clinical figure). Add patient waits this long for its new record before finishing without it. */
 export const SHARED_REFRESH_MS = 3000;
 
+/** How long after one Done a list of actions ignores another, longer than a double click, so the
+ *  second click never lands on the row that moved up (Audit 7 NB-02). A software setting. */
+export const DONE_PAUSE_MS = 1000;
+
 /** All EDs trend (RowSpark) window: 12 hours, one point every 2 hours, the last point now. A display
  *  window chosen for the prototype, not a clinical target. */
 export const ED_TREND_SPAN_MINUTES = 12 * MINUTES_PER_HOUR;

@@ -145,7 +145,7 @@ export function WardScreenTabSections({
           rollupTimeLabel={morningRollupTimeLabel}
           plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
           onConfirmRollup={handleConfirmMorningRollup}
-          staffingFact={`${unit.allocatable.value} allocatable`}
+          staffingFact={`${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`}
           intakes={intakeDecisions}
           departures={departureDecisions}
           leaves={leaveDecisions}

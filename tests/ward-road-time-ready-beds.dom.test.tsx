@@ -52,6 +52,12 @@ function listedNames(card: HTMLElement) {
 }
 
 describe("Ready beds by road time", () => {
+  // Decision 6 (Audit 1, Josh 20 Oct): the card says the order is distance, not suitability.
+  it("captions the list as distance only, not suitability", () => {
+    const { card } = renderCard(rows);
+    expect(within(card).getByText("Distance only, not suitability.")).toBeVisible();
+  });
+
   it("lists at most five wards, nearest first, each with a ready bed", () => {
     const { card } = renderCard(rows);
     const buttons = within(within(card).getByRole("list")).getAllByRole("button");

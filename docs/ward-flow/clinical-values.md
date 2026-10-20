@@ -20,9 +20,9 @@ governance sign-off before real patient use (D-54).
 - **Unknown legal status (D-69):** on 20 Oct 2026 (2:02 PM AWST) Josh ruled, in his own words:
   "Needs an involuntary-capable bed until status is set." A referral with no legal status recorded needs an involuntary-capable bed and
   never defaults to Voluntary. This is an allocation rule, not a threshold, so it is not in the table.
-- Mental Health Act periods are not here. They live only in
-  `src/components/ward-management/legal-forms/act-periods-demo.ts` (D-29). Legal form titles come
-  from the Chief Psychiatrist register, not from this list.
+- Mental Health Act periods are not here, and Ward Flow holds none (D-70, which replaced D-29). The
+  only form due time is the one a person records. Legal form titles come from the Chief Psychiatrist
+  register, not from this list.
 - `tests/ward-clinical-values.test.ts` fails if a threshold is typed as a number elsewhere in the ward
   code, or if the table below drifts from the source file. Do not edit the table by hand. Run
   `UPDATE_CLINICAL_VALUES_DOC=1 npx vitest run tests/ward-clinical-values.test.ts` to rewrite it.
@@ -68,7 +68,7 @@ governance sign-off before real patient use (D-54).
 | Discharge, leave and absence | Discharge prep prompt opens before the expected discharge | 24 hours | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice; matches the pre-discharge medical review window in the WACHS Criteria Led Discharge Guideline | None recorded | `dischargePrepWindow` |
 | Discharge, leave and absence | Criteria led discharge criteria need a fresh psychiatrist review after | 24 hours | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), WACHS Criteria Led Discharge Guideline (16 Apr 2026), s 2.5 and s 3: a medical review within this window before discharge. Shortened from the D-60 figure | None recorded | `dischargeCriteriaValidity` |
 | Discharge, leave and absence | Leave bed flagged to consider opening after | 24 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | D-23 (26 Sep 2026), Josh's default | None recorded | `leaveOpenWarning` |
-| Discharge, leave and absence | Bed held for a person absent without leave flagged for review after | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service. Review warning paused by D-65 (flag awol-bed-hold-review) | None recorded | `awolBedHoldWarning` |
+| Discharge, leave and absence | Bed held for a person absent without leave flagged for review after | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice; MP 0012/16 leaves AWOL procedures to each health service. Review warning paused by D-65, then switched on again on 20 Oct 2026 when Josh turned on all features (flag awol-bed-hold-review) | None recorded | `awolBedHoldWarning` |
 | Discharge, leave and absence | Community treatment order follow up booked within, after departure | 7 days | Signed for the prototype by Josh (product owner), 2026-10-15 | D-58 (15 Oct 2026), 7 days from the national KPI for community care within 7 days of discharge (AIHW). The KPI counts a completed contact after discharge from a public acute mental health unit. This check looks for a booking within the window on every discharge, with extra items for a CTO patient | None recorded | `ctoFollowUpWindow` |
 | Discharge, leave and absence | Stay long enough to prompt a discharge plan, and escalation dossier, from | 7 days | Signed for the prototype by Josh (product owner), 2026-10-15 | Ward board long stay line; no decision recorded for the Top 25 dossier | None recorded | `longStayPrompt` |
 | Discharge, leave and absence | Delayed discharge escalated, by recorded hours, after more than | 72 hours | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice, counted from the typed expected date | None recorded | `delayedDischargeEscalation` |

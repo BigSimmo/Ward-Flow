@@ -22,6 +22,8 @@ export type SearchQuestion = {
   /** The group heading the answer is listed under, e.g. "Waiting over 24 hours". */
   heading: string;
   test: (row: CensusRow) => boolean;
+  /** Answered only when the census was given that record ("leave": the leave beds). */
+  needs?: "leave";
 };
 
 type QuestionDefinition = SearchQuestion & { phrases: RegExp };
@@ -81,6 +83,46 @@ const QUESTIONS: readonly QuestionDefinition[] = [
     phrases: /^(?:on (?:a )?forms?|forms? recorded|with (?:a )?forms?)$/,
     test: (row) => row.formCode !== null,
   },
+  /*
+   * Overall review (20 Oct 2026): the questions the review found unanswered. Each is a filter on a
+   * fact the census already reads; none orders anyone differently.
+   */
+  {
+    id: "transport-not-booked",
+    heading: "Transport not booked",
+    phrases:
+      /^(?:transport not booked|not booked|no transport(?: booked)?|transport (?:still )?to (?:be )?book(?:ed)?|needs? transport(?: booked)?|unbooked transport)$/,
+    test: (row) => row.transportNotBooked === true,
+  },
+  {
+    // A clinical escort, as the person booking answered it. Police escorts are not recorded.
+    id: "escort",
+    heading: "Clinical escort needed",
+    phrases: /^(?:escorts?|escorted|escort (?:needed|required)|needs? (?:an )?escort|with (?:an )?escort)$/,
+    test: (row) => row.escort,
+  },
+  {
+    // "Today" means who the ward expects to go home today: the recorded expected discharge date.
+    id: "today",
+    heading: "Expected discharge today",
+    phrases:
+      /^(?:today|due today|leaving today|going home today|discharges? today|discharging today|expected (?:discharges? )?today)$/,
+    test: (row) => row.leavingToday === true,
+  },
+  {
+    id: "leave",
+    heading: "On leave",
+    phrases: /^(?:leave|on leave|away on leave|leave beds?|people on leave)$/,
+    test: (row) => row.onLeave === true,
+    needs: "leave",
+  },
+  {
+    id: "awol",
+    heading: "Absent without leave",
+    phrases: /^(?:awol|a\.w\.o\.l|absent without leave|absconded)$/,
+    test: (row) => row.absentWithoutLeave === true,
+    needs: "leave",
+  },
 ];
 
 /** Lower case, single spaces, no "?" and no leading "who is" / "show me" / "patients". */
@@ -127,6 +169,8 @@ export function answerQuestion(
   if (!census) return undefined;
   const question = questionFor(query);
   if (!question) return undefined;
+  // Never "0 on leave" from a census that was not told who is on leave.
+  if (question.needs === "leave" && !census.leaveKnown) return undefined;
   const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false);
   return { question, rows: rows.slice(0, limit), total: rows.length };
 }

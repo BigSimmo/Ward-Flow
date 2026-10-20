@@ -1249,6 +1249,48 @@
       "after": 0,
       "reason": "Josh approved deleting the unused pressure strip and flow diagram on 20 October 2026 (project thread, 06:04 UTC, \"Yes, delete those 7 files\"). No route had drawn PressureStrip since the Network screen was retired (19 Oct 2026) or FlowDiagram since the v6 Home (#113, 7 Oct 2026). Its one case rendered FlowDiagram to check it showed Confirmed/Expected rather than the raw potential figure; with the diagram gone there is no surface left for it to check. Hub status wording stays pinned by ward-flow-diagram-status-truthfulness.test.ts.",
       "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-act-periods-demo.test.ts",
+      "before": 16,
+      "after": 0,
+      "reason": "Josh approved removing the computed Mental Health Act period countdowns on 20 October 2026 (overall review 20 Oct 2026, section 1 item 1, recorded as D-70, replacing D-29). The file tested only legal-forms/act-periods-demo.ts, which worked out when each Act period would end, picked the under-18 period from age and ordered the Time not written group by share of a computed period. That module is deleted with it, so there is nothing left for these cases to check. The replacement behaviour (only a recorded due time is shown, with 'No deadline recorded' otherwise, and no Act period wording anywhere) is pinned in tests/ward-legal-forms-screen.dom.test.tsx, and the section-citation guard now exempts no file.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-audit-legal-group.test.ts",
+      "before": 13,
+      "after": 11,
+      "reason": "Same owner decision (20 October 2026, D-70). Two cases tested the Act period line beside a typed expiry (audit A3-5) and one the Time not written order by share of a computed Act period (A3-6). The line and the computed order are removed. The A3-6 case is replaced by one that pins the group to arrival order (longest wait in ED first), so the net drop is two.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-priority.test.ts",
+      "before": 28,
+      "after": 25,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): the 0 to 100 points score (operationalScore) was removed as a never-build severity score; the three cases that pinned point values and the flag/tier re-sort have nothing left to test. Wait order and the plain wait reasons are pinned by the remaining cases.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-console-controls.dom.test.tsx",
+      "before": 71,
+      "after": 68,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): the unreachable \"Other wards, ranked\" cockpit panel was removed as a never-build ranked ward suggestion; its three cases tested that panel only.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-shortlist-candidates.test.ts",
+      "before": 22,
+      "after": 20,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): catchment-first tiers were replaced by a fixed order (fit, then service, then name); the two tier-ordering cases no longer describe any behaviour.",
+      "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-console-record-gender.dom.test.tsx",
+      "before": 1,
+      "after": 0,
+      "reason": "Audit 1, Josh 20 Oct 2026 (D-71): its one case drove a control inside the removed ranked-wards cockpit panel; recording sex when it is missing stays covered by tests/ward-bed-matching-recorded-sex.test.ts and tests/ward-eligibility.test.ts.",
+      "approvedOn": "2026-10-20"
     }
   ]
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 
 import { useMemo, useRef, type FormEvent } from "react";
@@ -146,7 +147,11 @@ export function EdScreen({ edId }: EdScreenProps) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {
       success: edStepSaid(event),
-      undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, ...subject }),
+      // Audit 1 CS-07: a Form 1A receipt is taken back by the legal form undo, as on Legal forms.
+      undo: (at) =>
+        event.type === "RECORD_LEGAL_FORM_RECEIVED"
+          ? { type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: event.movementId }
+          : { type: "UNDO_ED_STEP", role: "ed", now: at, ...subject },
       undone: "Undone. Back as it was.",
     });
   }
@@ -362,6 +367,8 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...actions,
   };
 
+  const boardSplit = waitingSplit(patients);
+
   return (
     <div
       className={styles.screen}
@@ -399,6 +406,10 @@ export function EdScreen({ edId }: EdScreenProps) {
             };
           })}
           onBoard={patients.length}
+          // Overall review, 20 Oct 2026: the board holds people still in transit and recorded
+          // outcomes as well, so the title says how its count splits ("5 waiting, 1 in transit") and
+          // the "waiting" part is this department's tile figure in the strip below.
+          onBoardParts={[`${boardSplit.waiting} waiting`, ...notWaitingParts(boardSplit)]}
           chips={heroChips}
           highlight={heroHighlight}
           onHighlight={setHeroHighlight}

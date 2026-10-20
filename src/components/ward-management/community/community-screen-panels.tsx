@@ -320,7 +320,7 @@ export function communitySinceElement(view: CommunityScreenView) {
   return sinceElement;
 }
 
-/** How to reach this team, from the published contact register only. */
+/** How to reach this team, from the contact register only (invented numbers and mailboxes). */
 export function communityHowToReachPanel(view: CommunityScreenView) {
   const { team, isDemoMode } = view;
   const howToReachPanel = (
@@ -332,7 +332,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
           <section className={v6.sideCard} aria-label="How to reach this team" data-testid="ward-community-contact">
             <div className={v6.sideHead}>
               <h3 className={v6.sideTitle}>How to reach</h3>
-              {contact === null ? null : <span className={v6.sideMeta}>Published, not call-tested</span>}
+              {contact === null ? null : <span className={v6.sideMeta}>Invented for the demo</span>}
             </div>
             <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
               {contact === null ? (
@@ -650,7 +650,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
                 </div>
                 <div className={styles.factsRow}>
                   <dt>Hours, contacts, staffing</dt>
-                  <dd>Published contacts held; roster not held</dd>
+                  <dd>Invented demo contacts held; roster not held</dd>
                 </div>
               </dl>
             </div>

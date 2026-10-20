@@ -1116,7 +1116,12 @@ function EdLanes({
               {
                 id: "form",
                 label: "Form",
-                value: picked.person.movement.legalForm ? legalStatusShort(picked.person.movement) : "None",
+                // Audit 1 (CS-14, Josh 20 Oct): "None" only for a voluntary person.
+                value: picked.person.movement.legalForm
+                  ? legalStatusShort(picked.person.movement)
+                  : picked.person.movement.legalStatus === "Voluntary"
+                    ? "None"
+                    : "Not recorded",
               },
               {
                 id: "tier",

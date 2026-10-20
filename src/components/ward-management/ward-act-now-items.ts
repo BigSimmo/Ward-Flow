@@ -12,9 +12,18 @@
  * act now is the red subset of the same active list, so the figures cannot drift apart again.
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, ClipboardList } from "lucide-react";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  BED_MEETING_AGENDA_HREF,
+  bedMeetingActionLabel,
+  meetingActionInboxId,
+  type BedMeetingAction,
+  type BedMeetingSubject,
+} from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
@@ -80,6 +89,7 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
     }),
     ...decisionTargetInboxItems(open, now, source.configuration),
     ...duplicateBedRequestInboxItems(source),
+    ...bedMeetingActionInboxItems(source, now),
   ];
 }
 
@@ -125,6 +135,77 @@ export function duplicateBedRequestInboxItems(
       since,
     };
   });
+}
+
+/** The owner words for each bed meeting owner, read back to roles by `inboxOwnerRoles`. */
+const MEETING_OWNER_WORDS = {
+  coordinator: "Bed coordinator",
+  ed: "ED team",
+  community: "Community team",
+} as const;
+
+/**
+ * BED MEETING ACTIONS IN THE OWNER'S NEEDS YOU (overall review, 20 Oct 2026; smart features idea
+ * 5): one amber row per action the meeting agreed and nobody has marked done yet, owned by the role
+ * the chair named (a ward action by that ward's name). Overdue is said, never escalated: the row
+ * stays amber and is never an act-now alert. The chair's rows open the agenda, where it is marked
+ * done; everyone else's open the record it is about. Listed by due time, as the agenda lists them.
+ */
+export function bedMeetingActionInboxItems(
+  source: Pick<TaskSource, "movements" | "units" | "admissions" | "patients" | "referrals">,
+  now: Instant,
+): InboxItem[] {
+  const lookup = { patients: source.patients ?? [], referrals: source.referrals ?? [], movements: source.movements };
+  const unitName = (unitId: string | undefined) => source.units.find((unit) => unit.id === unitId)?.name;
+  const rows: { subject: BedMeetingSubject; action: BedMeetingAction; personId?: string }[] = [
+    ...source.movements.flatMap((movement) =>
+      (movement.meetingActions ?? []).map((action) => ({
+        subject: { kind: "movement" as const, id: movement.id },
+        action,
+      })),
+    ),
+    ...(source.admissions ?? []).flatMap((admission) => {
+      const actions = admission.meetingActions ?? [];
+      // The person through the one resolver, only for a stay that has an action.
+      const personId = actions.length > 0 ? resolveSubjectPatient(admission, lookup).patient?.id : undefined;
+      return actions.map((action) => ({
+        subject: { kind: "admission" as const, id: admission.id },
+        action,
+        ...(personId ? { personId } : {}),
+      }));
+    }),
+  ];
+  return rows
+    .filter(({ action }) => action.doneAt === undefined)
+    .sort((a, b) => a.action.dueAt - b.action.dueAt)
+    .map(({ subject, action, personId }) => {
+      const owner =
+        action.owner === "ward" ? (unitName(action.ownerUnitId) ?? "Ward") : MEETING_OWNER_WORDS[action.owner];
+      const due = formatInstantWithDay(action.dueAt, now);
+      const href =
+        action.owner === "coordinator"
+          ? BED_MEETING_AGENDA_HREF
+          : subject.kind === "movement"
+            ? duplicateMovementHref(subject.id)
+            : personId
+              ? patientHref(personId)
+              : undefined;
+      return {
+        id: meetingActionInboxId(subject, action.kind),
+        kind: INBOX_CATEGORIES.bed_meeting_action.kind,
+        tone: "warning" as const,
+        icon: ClipboardList,
+        title: `Bed meeting action: ${bedMeetingActionLabel(action.kind)}`,
+        detail:
+          action.dueAt < now ? `Agreed at the bed meeting. Was due ${due}.` : `Agreed at the bed meeting. Due ${due}.`,
+        owner,
+        movementId: subject.kind === "movement" ? subject.id : "",
+        ...(personId ? { personId } : {}),
+        ...(href ? { href } : {}),
+        dueAt: action.dueAt,
+        since: action.recordedAt,
+      };
+    });
 }
 
 /** The active (not snoozed) task rows at `now`: the header's Tasks badge and Home's Exceptions. */

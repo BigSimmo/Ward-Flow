@@ -9,9 +9,10 @@ import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import styles from "./next-ward-after-refusal.module.css";
 
 /**
- * Next best ward after a refusal (Top 25 item 3). Shown in the shortlist
- * once a ward has declined and none has accepted. It lists the wards nobody has asked yet that pass
- * every eligibility gate (`deriveNextWardsAfterRefusal`) and adds a chosen ward to the shortlist's
+ * Wards not yet asked after a refusal (Top 25 item 3). Shown in the shortlist once a ward has
+ * declined and none has accepted. It lists every ward nobody has asked yet that passes every
+ * eligibility gate (`deriveNextWardsAfterRefusal`), in a fixed order (health service, then name)
+ * with no cap and no pick (Audit 1, Josh 20 Oct), and adds a chosen ward to the shortlist's
  * own referral selection, so the existing Refer button sends `REFER_TO_UNITS` with all of its
  * usual checks. Nothing is referred from here directly.
  */
@@ -38,8 +39,12 @@ export function NextWardAfterRefusal({
   const reason = declineReasonLabels[next.latestDecline.reason] ?? "Reason not recorded";
 
   return (
-    <section className={styles.block} aria-label="Next wards to ask" data-testid="ward-next-ward-after-refusal">
-      <h4 className={styles.heading}>Next wards to ask</h4>
+    <section
+      className={styles.block}
+      aria-label="Wards not yet asked that pass every check"
+      data-testid="ward-next-ward-after-refusal"
+    >
+      <h4 className={styles.heading}>Wards not yet asked that pass every check</h4>
       <p className={styles.note}>
         Last refusal: {declinedUnit ? declinedUnit.name : "Unresolved unit"}, {reason.toLowerCase()}.
       </p>
@@ -75,7 +80,7 @@ export function NextWardAfterRefusal({
               );
             })}
           </ul>
-          <p className={styles.note}>Send the referral with Refer.</p>
+          <p className={styles.note}>Listed by health service, then name. Send the referral with Refer.</p>
         </>
       )}
     </section>

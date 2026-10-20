@@ -131,11 +131,11 @@ describe("the on-call screen holds no people and nothing to ring", () => {
       "Ext. 22",
       "pager 1234",
       "+61 400 000 000",
-      "9224 2244",
+      "5550 0155",
       // 🔴 The carve-out must not swallow these: date-SHAPED is not date.
       "tel:2026-09-12",
       "2026-09-123456",
-      "oncall@health.wa.gov.au",
+      "oncall@example.test",
     ];
     for (const specimen of mustMatch) {
       expect(

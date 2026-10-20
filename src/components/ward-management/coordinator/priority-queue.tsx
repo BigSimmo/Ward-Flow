@@ -36,11 +36,7 @@ import {
   type Referral,
   type TurnaroundPriority,
 } from "@/components/ward-management/ward-model";
-import {
-  FORM_TIMING_FACTOR_LABEL,
-  operationalScore,
-  urgencyTierLabel,
-} from "@/components/ward-management/ward-priority";
+import { FORM_TIMING_FACTOR_LABEL, urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -147,17 +143,17 @@ type PriorityQueueProps = {
    * A), 10 on desktop Home, where the page scrolls once (Home placement redesign, Josh 19 Oct 2026).
    */
   rowCap?: number;
-  /** Phone (v10 Home, direction A): the switch reads "ED" and "Referrals". */
+  /** Phone (v10 Home, direction A): the queue's phone layout. The switch reads "Patients" and "Referrals". */
   phone?: boolean;
-  /** Movements pinned on top for an active act-now task (`queueOrder`), marked `data-pinned`. */
+  /** Movements with an active act-now task: marked `data-pinned` and an "Act now" mark. They are not
+   *  moved (Audit 1, Josh 20 Oct: the queue is wait order). */
   pinnedIds?: ReadonlySet<string>;
 };
 
 /**
  * Home's priority queue card (v6 Home mockup). Patients and Referrals switch which list is on
  * screen and nothing else: the shortlist's subject is the screen's own state and a switch never
- * touches it. Rows keep their hooks (`ward-queue-row-<id>`, `aria-pressed`, `data-score`,
- * `data-wait`) and every fact the old rows carried: the urgent flag and who set it, the tier, the
+ * touches it. Rows keep their hooks (`ward-queue-row-<id>`, `aria-pressed`, `data-wait`) and every fact the old rows carried: the urgent flag and who set it, the tier, the
  * wait, cohort, security and origin, declines, the pull hold, transport and a passed legal form.
  */
 export function PriorityQueue({
@@ -243,7 +239,9 @@ export function PriorityQueue({
           items={[
             {
               id: "patients",
-              label: phone ? "ED" : "Patients",
+              // Overall review, 20 Oct 2026: "ED 70" sat under "62 waiting in ED"; the list also holds
+              // people already in transit, so the phone names it Patients, as the desktop does.
+              label: "Patients",
               count: movements.length === 0 ? "none" : movements.length,
             },
             { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
@@ -301,7 +299,7 @@ export function PriorityQueue({
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
-            const { score, factors } = operationalScore(movement, now, dueSoonThresholds);
+            const factors = waitFactors(movement, now, dueSoonThresholds);
             const legalDueAt = currentLegalDueAt(movement);
             const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
@@ -340,7 +338,6 @@ export function PriorityQueue({
                 type="button"
                 data-testid={`ward-queue-row-${movement.id}`}
                 data-origin-ed={movement.originEdId}
-                data-score={score}
                 data-wait={waitedMinutes}
                 data-overdue={level === "over" ? "true" : undefined}
                 data-pinned={pinnedIds?.has(movement.id) ? "true" : undefined}
@@ -375,11 +372,15 @@ export function PriorityQueue({
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
                       {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
                     </span>
-                    {/* Device audit, 11 Oct 2026: the visible "Op" score token is gone from the row;
-                        the screen-reader line still says the operational score in full. */}
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
+                    {pinnedIds?.has(movement.id) ? (
+                      <span className={styles.queueMark} data-testid={`ward-queue-act-now-${movement.id}`}>
+                        <StatusGlyph tone="danger" size={9} />
+                        Act now
+                      </span>
+                    ) : null}
                     {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
                     {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
                     {movement.atsCategory === undefined ? (
@@ -443,8 +444,7 @@ export function PriorityQueue({
                       {flagDetail}
                     </span>
                   ) : null}
-                  {/* U3 (site review, 12 Oct 2026): the "Operational 23" leftover is gone; the score
-                      stays on `data-score` for the ordering journey only. */}
+                  {/* Audit 1, Josh 20 Oct (CS-05): no points score on the row, seen or hidden. */}
                   <SrOnly>{urgencyTierLabel(movement.urgency)}.</SrOnly>
                 </span>
                 <span className={styles.queueWait}>
@@ -531,9 +531,13 @@ export function PriorityQueue({
                   <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
                   <span className={styles.queueMarks}>
                     {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-                    <span className={styles.queueMark}>
-                      {referral.atsCategory === undefined ? "ATS not recorded" : `ATS ${referral.atsCategory}`}
-                    </span>
+                    {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
+                        out of sight (screen readers still hear it); a recorded ATS shows. */}
+                    {referral.atsCategory === undefined ? (
+                      <SrOnly>ATS not recorded</SrOnly>
+                    ) : (
+                      <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
+                    )}
                   </span>
                 </span>
                 <span className={styles.queueWait}>
@@ -562,7 +566,7 @@ export function PriorityQueue({
           </span>
         ) : (
           <span className={styles.footMeta} title={activeTab === "referrals" ? undefined : TIER_TARGETS_NOTE}>
-            {activeTab === "referrals" ? "Longest wait first" : "Flagged and act now first, then longest wait"}
+            Longest wait first
           </span>
         )}
         {activeTab === "patients" && highlight && onClearHighlight ? (

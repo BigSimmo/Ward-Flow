@@ -173,6 +173,24 @@ describe("stable bed numbers (audit A1-1)", () => {
     expect(bedsByStay().get(OTHER.id)).toBe(before.get(OTHER.id));
   });
 
+  it("asks before recording a departure, naming the person, UMRN, bed and destination (Audit 1, CS-07)", () => {
+    renderWard();
+    const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
+    fireEvent.click(card as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    const confirm = screen.getByRole("dialog", { name: "Confirm patient departure" });
+    expect(confirm).toHaveTextContent(/Going to Discharged to the community/);
+    const patient = wardPatients.find(
+      (candidate) => candidate.id === wardAdmissions.find((a) => a.id === RELEASE.admissionId)?.patientId,
+    )!;
+    expect(within(confirm).getByTestId("ward-drawer-confirm-identity")).toHaveTextContent(
+      new RegExp(`^Check: .+ · ${patient.umrn} · Bed \\d+$`),
+    );
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog", { name: "Confirm patient departure" })).toBeNull();
+    expect(screen.getByTestId("named-state")).toHaveTextContent("occupied");
+  });
+
   it("keeps every other stay in its bed when one person leaves, and Undo puts them back", () => {
     renderWard();
     const before = bedsByStay();
@@ -181,6 +199,8 @@ describe("stable bed numbers (audit A1-1)", () => {
     // The destination is shown plainly before it is recorded.
     expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Discharged to the community/);
     fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    // Audit 1 (CS-07): the drawer asks once, naming the person, before it records.
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed");
     expectNobodyElseMoved(before, RELEASE.admissionId);
 

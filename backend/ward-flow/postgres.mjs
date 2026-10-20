@@ -1500,7 +1500,9 @@ export function createWorkspaceStore(
       }
       const supplied = event;
       event = engine.storableCommand(event);
-      if (!engine.validCommand(event)) throw new Error("invalid-command");
+      // Audit E-06: a guard refusal is a refusal with its reason, like any other, not a bad request.
+      const privacyRefusal = engine.privacyRefusal(event);
+      if (!privacyRefusal && !engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprintOf = (value) =>
         createHash("sha256")
@@ -1542,12 +1544,17 @@ export function createWorkspaceStore(
           ? "Someone else changed this record first. Review the latest board before trying again."
           : "The workspace changed. Review the latest board before trying again.";
         let code = null;
+        let partly = null;
         const priorRevision = Number(row.revision);
         // The sender's own role and place, checked before the revision, so a desk never learns
         // whether a record outside its place changed. A refusal can still show that an id
         // exists, because ids it cannot find fall through to the engine's own not-found reply.
         const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
-        if (scopeRefusal) {
+        if (privacyRefusal) {
+          outcome = "denied";
+          status = 422;
+          reason = privacyRefusal;
+        } else if (scopeRefusal) {
           outcome = "denied";
           status = 422;
           reason = scopeRefusal;
@@ -1578,6 +1585,7 @@ export function createWorkspaceStore(
             });
           if (!stale) {
             ({ outcome, changes, reason } = applied);
+            partly = applied.partly ?? null;
             completion = applied.completion ?? {};
             status = outcome === "accepted" ? 200 : 422;
           }
@@ -1601,11 +1609,13 @@ export function createWorkspaceStore(
             }
           }
         }
+        // Audit E-05: a partly refused "Refer to wards" is saved and audited as accepted (the audit
+        // row's domain audit holds each ward's outcome); the sender is told which ward was held back.
         const result = {
-          outcome,
+          outcome: outcome === "accepted" && partly ? "partly" : outcome,
           commandRevision: Number(row.revision),
           ...(outcome === "accepted" ? completion : {}),
-          ...(reason ? { error: reason } : {}),
+          ...(reason ? { error: reason } : outcome === "accepted" && partly ? { error: partly } : {}),
           ...(code ? { code } : {}),
         };
         await audit(client, view, actorId, {

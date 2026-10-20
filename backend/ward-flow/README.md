@@ -8,7 +8,9 @@ _Updated 2026-10-19 - schema 11, sign-out and access guidance checked against so
 > must never connect to PsychSift's Supabase or Railway resources.
 
 This package is the optional shared synthetic workspace. It is a plain Node HTTP server
-(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. The provider is chosen by
+(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. `/healthz` needs no sign-in,
+always answers 200 while the server runs, and reports `database` as `ok` or `unavailable` (never the
+reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
 to `005` and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->.

@@ -297,7 +297,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
                       <span>
                         {isPhone && key === "blocked" && population === "releases"
-                          ? "Blocked"
+                          ? "Held up"
                           : kpiCardLabel(key, population)}
                       </span>
                     </span>

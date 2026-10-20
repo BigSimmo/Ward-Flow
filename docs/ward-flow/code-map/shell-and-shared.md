@@ -1,5 +1,17 @@
 # Routes, shell, navigation and shared UI
 
+## Header Back — 20 October 2026
+
+`shell/ward-back.ts` decides which screens are drill-downs (patient, movement, ward answer, new
+referral, add patient, statistics detail, bed meeting agenda, reports, and a ward, ED or team page
+that is not the desk's own home) and the parent each falls back to. On those screens
+`shell/ward-bar-controls.tsx` draws `WardBarBack`: on a phone it takes the Menu button's place
+(the Menu sheet stays mounted for the dock); on tablet and desktop it leads the bar beside Menu or
+the rail. Back follows the browser history only after the tab has moved between Ward Flow screens
+(`noteWardRoute`, called by the bar), so a page opened from a link or new tab goes to its parent
+instead of leaving the app. The in-page back links on Patient Now and the ward answer were
+removed. `tests/ward-back.test.ts` and `tests/ward-header-back.dom.test.tsx` cover it.
+
 ## Smart defaults — 19 October 2026
 
 `shell/use-device-choice.ts` remembers one page-layout choice per device (`ward_flow_choice_*` keys),
@@ -394,9 +406,12 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   chevron turns down while its menu is open; reduced-motion preferences suppress transitions.
   Contextual decision, contact and export actions use the same unboxed label, divider and chevron;
   their route-specific labels and existing popover behaviour remain intact.
-- **`shell/ward-rail.tsx`** (1,230 lines) — the left rail: four fixed groups (Operations, Service
-  Hubs, Care Coordination, Oversight) built from `ward-nav.ts`'s lists and reordered within each
-  group by role (`ward-nav-role-order.ts`), open/closed state (`localStorage`, open by default —
+- **`shell/ward-rail.tsx`** (1,358 lines) — the left rail: the desk's own short menu from
+  `ROLE_MENUS` in `shell/ward-rail-entries.ts` (B1; the bed coordinator's reads Needs you, Beds,
+  Movements, Referrals, Handover), with every other page under More in `RAIL_GROUPS` order and
+  ranked by role (`ward-nav-role-order.ts`). Above 1200px the open rail's handover countdown card
+  stands in for the menu's Handover item, which CSS hides there (A5); the Menu sheet leaves it out
+  under its own countdown. The policy version is in Settings, Data and about (A7). Open/closed state (`localStorage`, open by default —
   the opposite default from the deleted `use-ward-sidebar-collapsed.ts`), the appearance toggle, and
   a service dot beside the current health service (a dot next to a _word_, never a bare colour bar —
   owner ruling Q-11 forbids the drawing's own brass "you are here" edge bar and its `.svcStripe`

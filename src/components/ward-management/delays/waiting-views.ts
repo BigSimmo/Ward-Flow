@@ -43,7 +43,7 @@ export function waitingViewLabel(view: WaitingViewId, thresholds: DueSoonThresho
 export function waitingViewHint(view: WaitingViewId, thresholds: DueSoonThresholds): string {
   const soon = windowText(thresholds.soonMinutes);
   if (view === "needs-me")
-    return `Your decision is due, a recorded form time is within ${soon} or passed, or the journey is flagged urgent`;
+    return `Waiting on you, plus anyone with a recorded form time within ${soon} or passed, or flagged urgent`;
   if (view === "form") return `A recorded form due time within ${soon}, or already passed`;
   return "Anything to act on now, plus anything due before the next handover";
 }

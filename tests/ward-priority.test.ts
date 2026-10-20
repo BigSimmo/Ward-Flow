@@ -1,11 +1,7 @@
 // tests/ward-priority.test.ts
 import { describe, expect, it } from "vitest";
 
-import {
-  FORM_TIMING_FACTOR_LABEL,
-  operationalScore,
-  queueOrder,
-} from "../src/components/ward-management/ward-priority";
+import { FORM_TIMING_FACTOR_LABEL, queueOrder, waitFactors } from "../src/components/ward-management/ward-priority";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { isOpen } from "../src/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -18,22 +14,29 @@ function movementById(id: string) {
   return found;
 }
 
-describe("operational score", () => {
-  it("never reads urgency — two movements differing only in tier score identically", () => {
+// Audit 1, Josh 20 Oct (CS-05): `operationalScore` became `waitFactors`. The plain reasons stay;
+// the points and the 0 to 100 total are gone (never-build item 1).
+describe("wait factors", () => {
+  it("never reads urgency — two movements differing only in tier give identical reasons", () => {
     const base = movementById("WF-001");
     const tierOne: Movement = { ...base, urgency: 1 };
     const tierThree: Movement = { ...base, urgency: 3 };
-    expect(operationalScore(tierOne, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBe(
-      operationalScore(tierThree, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    expect(waitFactors(tierOne, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)).toEqual(
+      waitFactors(tierThree, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS),
     );
   });
 
-  it("scores a longer wait above a shorter one, all else equal", () => {
-    const base = movementById("WF-001");
-    const waitedLonger: Movement = { ...base, openedAt: base.openedAt - 240 };
-    expect(operationalScore(waitedLonger, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBeGreaterThan(
-      operationalScore(base, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
-    );
+  it("carries a label and a sentence only: no points and no total", () => {
+    let seen = 0;
+    for (const movement of wardMovements) {
+      for (const factor of waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)) {
+        seen += 1;
+        expect(Object.keys(factor).sort()).toEqual(["detail", "label"]);
+        expect(factor.label.length).toBeGreaterThan(0);
+        expect(factor.detail.length).toBeGreaterThan(0);
+      }
+    }
+    expect(seen, "the fixture produced no factor, so this proves nothing").toBeGreaterThan(0);
   });
 
   /**
@@ -49,9 +52,9 @@ describe("operational score", () => {
   it("states the Time waiting factor in the model's own words, 'in ED', never 'since the placement request'", () => {
     const base = movementById("WF-001");
     const waited: Movement = { ...base, openedAt: base.openedAt - 240 };
-    const { factors } = operationalScore(waited, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const factors = waitFactors(waited, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const waitFactor = factors.find((factor) => factor.label === "Time waiting");
-    expect(waitFactor, "fixture assumption: a 240-minute-older openedAt scores Time waiting points").toBeDefined();
+    expect(waitFactor, "fixture assumption: a 240-minute-older openedAt gives a Time waiting reason").toBeDefined();
     expect(waitFactor?.detail).toMatch(/ in ED$/);
     expect(waitFactor?.detail).not.toMatch(/placement request/);
   });
@@ -66,7 +69,7 @@ describe("operational score", () => {
   // side of `NOW_ANCHOR`; they are NOT Mental Health Act figures and nothing derives them from
   // one. After this correction these two movements are the only positive proof left that the
   // breach-scoring path scores at all, which is why they are relabelled rather than deleted.
-  it("scores a breached legal deadline above a clear one", () => {
+  it("reports a breached legal deadline and not a clear one", () => {
     const base = movementById("WF-001");
     const breached: Movement = {
       ...base,
@@ -76,51 +79,36 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "4A", kind: "transport", dueAt: NOW_ANCHOR + 400 },
     };
-    expect(operationalScore(breached, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBeGreaterThan(
-      operationalScore(clear, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
-    );
-
     // Fix wave 1, finding 7: before this, `"passed its deadline"` (ward-priority.ts) was pinned
     // by no unit test at all — deleting or renaming it would have gone undetected, because the
     // only test that mentioned the string was the new whole-page ABSENCE assertion in Playwright,
     // which a deletion makes *more* likely to pass. Assert the rendered factor positively here.
-    const breachFactor = operationalScore(breached, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
+    const breachFactor = waitFactors(breached, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(breachFactor, "a past-due form must produce a Form due time factor").toBeDefined();
     expect(breachFactor?.detail).toBe("Form 4A passed its deadline 30m ago");
-    // Fix wave 2, finding 6. Closing the gap disclosed in fix wave 1: the comparison above is an
-    // ORDERING claim against a form scoring zero, so any positive value satisfied it and dropping
-    // the breached tier from 30 to 10 survived as a mutation. This pins the statutory tiers
-    // outright. No clinical or statutory figure is involved — these are the model's own
-    // operational priority weights.
-    expect(breachFactor?.points).toBe(30);
 
-    // A +400 deadline is "clear" under `clockState` (>= 180 min remaining), which scores zero
-    // points and so pushes no factor at all. Pinning that explicitly is the honest assertion —
-    // and it is what makes the comparison above meaningful rather than a comparison of two
-    // scored states.
-    const clearFactor = operationalScore(clear, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
+    // A +400 deadline is "clear" under `clockState` (>= 180 min remaining), so it gives no reason.
+    const clearFactor = waitFactors(clear, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
-    expect(clearFactor, "a deadline still 400 min away must score no Form due time points").toBeUndefined();
+    expect(clearFactor, "a deadline still 400 min away must give no Form due time reason").toBeUndefined();
 
     // The forward-counting branch of the same line. 90 min remaining is "due" under `clockState`
-    // (remaining < 180 is "due"; < 60 is "critical"; < 0 is "breached"), which scores 10 points
-    // and therefore renders. 90 is arbitrary test scaffolding on a transport order, not a legal
+    // (remaining < 180 is "due"; < 60 is "critical"; < 0 is "breached"), so it renders. 90 is arbitrary test scaffolding on a transport order, not a legal
     // figure.
     const approaching: Movement = {
       ...base,
       legalForm: { code: "4A", kind: "transport", dueAt: NOW_ANCHOR + 90 },
     };
-    const approachingFactor = operationalScore(approaching, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors.find(
+    const approachingFactor = waitFactors(approaching, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(approachingFactor?.detail).toBe("Form 4A due in 1h 30m");
-    expect(approachingFactor?.points).toBe(10);
   });
 
-  it("awards no Form due time points to a legal form with no dueAt", () => {
+  it("gives no Form due time reason for a legal form with no dueAt", () => {
     // Task 6A: a Form 3B carries no dueAt — the clinician settled that the post-examination
     // clock counts up, so none is recorded. This must never score as breached, critical or due — the
     // patient's priority rides on "Time waiting" alone, which is precisely the clinician's rule,
@@ -130,11 +118,11 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "3B", kind: "detention" },
     };
-    const { factors } = operationalScore(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const factors = waitFactors(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL)).toBeUndefined();
   });
 
-  it("awards no Form due time points to a legal form with no dueAt", () => {
+  it("gives no Form due time reason for a legal form with no dueAt", () => {
     // Task 6A: a Form 3B honestly carries no dueAt — the clinician, asked directly, settled that
     // the post-examination clock is elapsed ED wait counting up, not a countdown, so this model
     // records no deadline for a 3B. This must never score as breached, critical or due — the
@@ -145,7 +133,7 @@ describe("operational score", () => {
       ...base,
       legalForm: { code: "3B", kind: "detention" },
     };
-    const { factors } = operationalScore(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const factors = waitFactors(noDeadline, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL)).toBeUndefined();
   });
 
@@ -163,7 +151,7 @@ describe("operational score", () => {
   it("scores no factor for having been examined or reviewed", () => {
     const forbidden = /exam|review|assess|bed need/i;
     for (const movement of wardMovements) {
-      for (const factor of operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors) {
+      for (const factor of waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)) {
         expect(factor.label, `${movement.id} scored a factor labelled for review: ${factor.label}`).not.toMatch(
           forbidden,
         );
@@ -174,57 +162,37 @@ describe("operational score", () => {
     const base = movementById("WF-001");
     for (const outcome of ["inpatient_order", "community_order", "revoked"] as const) {
       const examined: Movement = { ...base, examination: { at: NOW_ANCHOR - 30, outcome } };
-      for (const factor of operationalScore(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).factors) {
+      for (const factor of waitFactors(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)) {
         expect(factor.label, `outcome ${outcome} scored a factor labelled for review`).not.toMatch(forbidden);
       }
     }
   });
 
-  it("scores an examined movement exactly as it scores the same movement unexamined", () => {
+  it("gives an examined movement exactly the reasons of the same movement unexamined", () => {
     const unexamined = movementById("WF-001");
     expect(unexamined.examination, "fixture assumption: WF-001 carries no examination").toBeUndefined();
-    const before = operationalScore(unexamined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const before = waitFactors(unexamined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
 
     for (const outcome of ["inpatient_order", "community_order", "revoked"] as const) {
       const examined: Movement = { ...unexamined, examination: { at: NOW_ANCHOR - 30, outcome } };
-      const after = operationalScore(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
-      expect(after.score, `recording ${outcome} must not move the score`).toBe(before.score);
-      expect(after.factors, `recording ${outcome} must not add or alter a factor`).toEqual(before.factors);
+      const after = waitFactors(examined, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+      expect(after, `recording ${outcome} must not add or alter a factor`).toEqual(before);
     }
 
     // The same identity from the other direction: WF-009 carries a real `inpatient_order`
-    // examination in the fixture, and stripping it must leave its score untouched.
+    // examination in the fixture, and stripping it must leave its reasons untouched.
     const examinedFixture = movementById("WF-009");
     expect(examinedFixture.examination?.outcome, "fixture assumption: WF-009 was examined").toBe("inpatient_order");
     const stripped: Movement = { ...examinedFixture, examination: undefined };
-    expect(operationalScore(stripped, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score).toBe(
-      operationalScore(examinedFixture, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
+    expect(waitFactors(stripped, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)).toEqual(
+      waitFactors(examinedFixture, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS),
     );
-  });
-
-  it("explains itself — every point scored is attributed to a named factor", () => {
-    for (const movement of wardMovements) {
-      const { score, factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
-      expect(factors.reduce((sum, factor) => sum + factor.points, 0)).toBe(score);
-      for (const factor of factors) {
-        expect(factor.label.length).toBeGreaterThan(0);
-        expect(factor.detail.length).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it("stays inside its stated range so it cannot be read as a percentage of anything", () => {
-    for (const movement of wardMovements) {
-      const { score } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
-      expect(score).toBeGreaterThanOrEqual(0);
-      expect(score).toBeLessThanOrEqual(100);
-    }
   });
 
   it("does not report a blocker for a movement whose blocker field says there is none", () => {
     for (const id of ["WF-006", "WF-007", "WF-014"]) {
       const movement = movementById(id);
-      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+      const factors = waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Active blocker")).toBeUndefined();
     }
   });
@@ -232,13 +200,13 @@ describe("operational score", () => {
   it("does not report a blocker for a value that only happens to start with 'None'", () => {
     const base = movementById("WF-001");
     const realBlocker: Movement = { ...base, blocker: "None of the secure units can take him" };
-    const { factors } = operationalScore(realBlocker, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const factors = waitFactors(realBlocker, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.find((factor) => factor.label === "Active blocker")).toBeDefined();
   });
 
   it("states the decline count without a self-contradictory fraction against the parallel cap", () => {
     const movement = movementById("WF-009");
-    const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+    const factors = waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
     const declineFactor = factors.find((factor) => factor.label === "Destinations declined");
     expect(declineFactor).toBeDefined();
     expect(declineFactor?.detail).not.toContain(" of 3");
@@ -248,7 +216,7 @@ describe("operational score", () => {
   it("does not claim a transport delay for a movement already en route", () => {
     for (const movement of wardMovements) {
       if (movement.transport?.enRouteAt === undefined) continue;
-      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+      const factors = waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Transport delay")).toBeUndefined();
     }
   });
@@ -256,74 +224,58 @@ describe("operational score", () => {
   it("still claims a transport delay for a movement accepted but not yet departed", () => {
     for (const id of ["WF-005", "WF-015"]) {
       const movement = movementById(id);
-      const { factors } = operationalScore(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+      const factors = waitFactors(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
       expect(factors.find((factor) => factor.label === "Transport delay")).toBeDefined();
     }
   });
 });
 
+// Audit 1, Josh 20 Oct (CS-04, NB-6a), superseding D-32 of 12 Oct: the queue is wait order only.
+// The flag, an act-now task and the tier are badges on the row; none of them moves it.
 describe("queue order", () => {
-  /**
-   * Narrowed to the UNFLAGGED on 2026-08-30, when the urgent flag landed above the tiers. It read
-   * "every tier 1 above every tier 2" over the whole queue, and a flagged tier-3 patient leading
-   * the board is exactly what the flag is for.
-   *
-   * Narrowed rather than removed: the tier ladder still governs everyone without a flag, and
-   * deleting this would have left that unasserted at the moment something was placed above it.
-   */
-  /**
-   * D-32 on Home (decision 4, site review 12 Oct 2026, Josh approved): beneath the flag and the
-   * act-now pins the queue is longest wait first, as the Referrals board is, and the tier only
-   * breaks a tie on wait. This replaced "every tier 1 above every tier 2, among the unflagged".
-   */
-  it("orders the unflagged longest wait first, with the tier breaking a tie (D-32)", () => {
-    const ordered = queueOrder(wardMovements, NOW_ANCHOR).filter((movement) => !movement.flaggedUrgent);
-    expect(ordered.length, "the fixture must still hold unflagged movements to order").toBeGreaterThan(1);
+  it("orders everyone longest wait first, with the id breaking a tie", () => {
+    const ordered = queueOrder(wardMovements, NOW_ANCHOR);
+    expect(ordered.length, "the fixture must still hold movements to order").toBeGreaterThan(1);
     for (let index = 1; index < ordered.length; index += 1) {
-      const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
-      const laterWait = NOW_ANCHOR - ordered[index].openedAt;
-      expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
-      if (earlierWait === laterWait) expect(ordered[index - 1].urgency).toBeLessThanOrEqual(ordered[index].urgency);
+      const earlier = ordered[index - 1];
+      const later = ordered[index];
+      expect(earlier.openedAt).toBeLessThanOrEqual(later.openedAt);
+      if (earlier.openedAt === later.openedAt) expect(earlier.id < later.id).toBe(true);
     }
     const tiers = new Set(ordered.map((movement) => movement.urgency));
-    expect(tiers.size, "tiers must interleave for the wait-first order to mean anything").toBeGreaterThan(1);
+    expect(tiers.size, "tiers must interleave for the wait order to mean anything").toBeGreaterThan(1);
   });
 
-  it("breaks a tie on wait by tier: tier 1 before tier 3", () => {
+  it("breaks a tie on wait by id, never by tier", () => {
     const base = movementById("WF-001");
-    const tierThree: Movement = { ...base, id: "WF-TIE-T3", urgency: 3, openedAt: NOW_ANCHOR - 300 };
-    const tierOne: Movement = { ...base, id: "WF-TIE-T1", urgency: 1, openedAt: NOW_ANCHOR - 300 };
-    expect(queueOrder([tierThree, tierOne], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
-      "WF-TIE-T1",
-      "WF-TIE-T3",
+    const tierThree: Movement = { ...base, id: "WF-TIE-A", urgency: 3, openedAt: NOW_ANCHOR - 300 };
+    const tierOne: Movement = { ...base, id: "WF-TIE-B", urgency: 1, openedAt: NOW_ANCHOR - 300 };
+    expect(queueOrder([tierOne, tierThree], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
+      "WF-TIE-A",
+      "WF-TIE-B",
     ]);
   });
 
-  it("pins act-now movements above a longer wait, beneath the flag", () => {
+  it("does not lift a flagged or act-now movement above a longer wait", () => {
     const base = movementById("WF-001");
     const longWait: Movement = { ...base, id: "WF-LONG", flaggedUrgent: false, urgency: 1, openedAt: NOW_ANCHOR - 900 };
     const actNow: Movement = { ...base, id: "WF-ACT", flaggedUrgent: false, urgency: 3, openedAt: NOW_ANCHOR - 20 };
     const flagged: Movement = { ...base, id: "WF-FLAG", flaggedUrgent: true, urgency: 3, openedAt: NOW_ANCHOR - 5 };
-    expect(queueOrder([longWait, actNow, flagged], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
-      "WF-FLAG",
+    expect(queueOrder([flagged, actNow, longWait], NOW_ANCHOR).map((movement) => movement.id)).toEqual([
       "WF-LONG",
       "WF-ACT",
+      "WF-FLAG",
     ]);
-    expect(
-      queueOrder([longWait, actNow, flagged], NOW_ANCHOR, new Set(["WF-ACT"])).map((movement) => movement.id),
-    ).toEqual(["WF-FLAG", "WF-ACT", "WF-LONG"]);
   });
 
   /**
-   * ITEM 37, RESOLVED 2026-09-17. This used to read "orders by operational score within a tier,
-   * highest first" -- `queueOrder`'s third key is no longer `operationalScore`. Since D-32 reached
-   * Home (12 Oct 2026) the wait leads outright, so within a tier it still reads longest first.
+   * ITEM 37, RESOLVED 2026-09-17, then Audit 1 (20 Oct 2026): the wait leads outright, so within a
+   * tier it still reads longest first.
    */
   it("orders by wait, longest first, within a tier", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR);
     for (let index = 1; index < ordered.length; index += 1) {
       if (ordered[index].urgency !== ordered[index - 1].urgency) continue;
-      if (ordered[index].flaggedUrgent !== ordered[index - 1].flaggedUrgent) continue;
       const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
       const laterWait = NOW_ANCHOR - ordered[index].openedAt;
       expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
@@ -351,7 +303,7 @@ describe("queue order", () => {
    * than every existing tier-1 wait, so it leads the tier; every other id and its own wait are
    * unchanged (re-derived, not assumed).
    */
-  it("orders tier 1 on wait alone, now that operational score no longer orders the queue", () => {
+  it("orders tier 1 on wait alone", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR);
     const tierOneIds = ordered.filter((movement) => movement.urgency === 1).map((movement) => movement.id);
     expect(
@@ -382,10 +334,8 @@ describe("queue order", () => {
 
   /**
    * ITEM 37's own failing-test list, verbatim: "swapping legal status and form between equal
-   * patients changes nothing". `queueOrder`'s comparator reads only the flag, `urgency` and
-   * `openedAt` -- `legalStatus` and `legalForm` never appear in it -- so two movements tied on all
-   * three of those must keep their INPUT order (a stable sort touching nothing) no matter what
-   * either one's legal status or form says.
+   * patients changes nothing". `queueOrder`'s comparator reads only `openedAt` and the id --
+   * `legalStatus` and `legalForm` never appear in it.
    */
   it("swapping legal status and form between two equal-tier, equal-wait patients changes nothing", () => {
     const base = movementById("WF-001");
@@ -394,13 +344,13 @@ describe("queue order", () => {
       ...base,
       id: "WF-EQ-B",
       legalStatus: "Involuntary inpatient",
-      // Breached, per the "scores a breached legal deadline above a clear one" test above -- if
+      // Breached, per the "reports a breached legal deadline" test above -- if
       // this comparator read legal form at all, a breached one is the value most likely to move it.
       legalForm: { code: "4A", kind: "transport", dueAt: NOW_ANCHOR - 30 },
     };
 
     const order1 = queueOrder([a, b], NOW_ANCHOR).map((movement) => movement.id);
-    expect(order1, "a and b tie on flag, tier and wait, so array order must survive").toEqual(["WF-EQ-A", "WF-EQ-B"]);
+    expect(order1, "a and b tie on wait, so the id decides").toEqual(["WF-EQ-A", "WF-EQ-B"]);
 
     // Swap legal status and form between them, keep the same array order, and check nothing moved.
     const swappedA: Movement = { ...a, legalStatus: b.legalStatus, legalForm: b.legalForm };
@@ -415,9 +365,8 @@ describe("queue order", () => {
   /**
    * ITEM 37, RESOLVED 2026-09-17. This closes the half of D9-1 this file used to pin as a known,
    * deliberate gap: two patients on the same tier, one waiting ten hours and one waiting thirty,
-   * used to tie in `queueOrder` because its third key was `operationalScore`, which stops counting
-   * a wait at ten hours (`Math.min(40, ...)`). `queueOrder`'s third key is no longer that score --
-   * see `waitedMinutesUncapped` (`ward-priority.ts`) -- so the two must now separate.
+   * used to tie in `queueOrder` because it read a score capped at ten hours. It reads `openedAt`
+   * itself now, so the two must separate.
    */
   it("waits beyond ten hours now separate the queue -- the deferred half, resolved", () => {
     const base = movementById("WF-001");
@@ -433,27 +382,12 @@ describe("queue order", () => {
 });
 
 /**
- * THE URGENT FLAG -- who gets the next bed, and the ranking decision the owner deferred and has now
- * partly built on.
- *
- * Owner, 2026-08-30: "A long wait always is prioritised... however... in certain cases patients can be
- * marked as urgent for many reasons which outranks everything." Asked how far to take it, he scoped
- * it small on purpose: "For now just have a feature that flags the patient. I will build on it
- * later."
- *
- * WARNING: ITEM 37 (2026-09-17) IS THAT "LATER", IN PART. The ranking below the flag -- three tiers,
- * then a composite operational score -- used to be an explicitly deferred stage, pinned here so a
- * reader could not mistake it for settled. The owner's fuller ruling, "otherwise go by time for the
- * main level of urgency", is now what `queueOrder` does beneath the flag: tier, then the wait
- * itself, uncapped. `operationalScore` and its factor breakdown are UNCHANGED and still render on
- * the coordinator queue as an explanation of how badly a movement is going operationally -- they
- * simply no longer decide the order.
- *
- * The flag itself also gained provenance this task: `FLAG_MOVEMENT_URGENT` now requires a reason
- * from `URGENT_MARK_REASONS` and records who raised it and when, on `Movement.urgentFlag`. See
- * `tests/ward-urgent-flag.test.ts` for that half; this file stays scoped to ordering.
+ * THE URGENT FLAG. Owner, 2026-08-30: patients "can be marked as urgent for many reasons". Until
+ * Audit 1 the flag lifted a patient above every tier and every wait (D-32, 12 Oct). Josh, 20 Oct
+ * 2026, superseding that: the queue is wait order by default; the flag is a badge on the row and
+ * moves nothing. `tests/ward-urgent-flag.test.ts` covers the flag's own provenance.
  */
-describe("the urgent flag, and the ranking decision partly resolved beneath it", () => {
+describe("the urgent flag is a highlight, not an order", () => {
   function pairAround(now: Instant) {
     const base = movementById("WF-001");
     const flaggedButNewer: Movement = {
@@ -473,85 +407,36 @@ describe("the urgent flag, and the ranking decision partly resolved beneath it",
     return { flaggedButNewer, unflaggedButOlder };
   }
 
-  it("puts a flagged patient above an unflagged one with a higher tier and twenty times the wait", () => {
+  it("keeps a flagged patient below an unflagged one with twenty times the wait", () => {
     const { flaggedButNewer, unflaggedButOlder } = pairAround(NOW_ANCHOR);
     expect(
-      queueOrder([unflaggedButOlder, flaggedButNewer], NOW_ANCHOR).map((movement) => movement.id),
-      "the flag outranks everything: a tier-3 patient thirty minutes in must lead a tier-1 patient " + "ten hours in",
-    ).toEqual(["WF-FLAGGED-NEW", "WF-UNFLAGGED-OLD"]);
-  });
-
-  it("REVERSES when the flag is taken off, which is what proves the flag did the work", () => {
-    const { flaggedButNewer, unflaggedButOlder } = pairAround(NOW_ANCHOR);
-    const noLongerFlagged: Movement = { ...flaggedButNewer, flaggedUrgent: false };
-    expect(
-      queueOrder([noLongerFlagged, unflaggedButOlder], NOW_ANCHOR).map((movement) => movement.id),
-      "with the flag off, the old ranking returns and tier 1 leads tier 3. If this does not flip, " +
-        "the assertion above was passing on argument order, sort stability, or the tier comparator " +
-        "-- anything but the flag.",
+      queueOrder([flaggedButNewer, unflaggedButOlder], NOW_ANCHOR).map((movement) => movement.id),
+      "the longer wait leads; the flag does not move a row",
     ).toEqual(["WF-UNFLAGGED-OLD", "WF-FLAGGED-NEW"]);
   });
 
-  // T2r fix round, finding 5 (2026-09-17 sample-data pass): WF-030 joined WF-018 as a second
-  // `flaggedUrgent: true` row (see that row's own comment in ward-movements.ts — "clinically
-  // ordinary rather than contrived, same reasoning as WF-018's own"). Queue order is flag, then
-  // tier, then uncapped wait — both are tier 3, so between the two flagged movements the longer
-  // wait leads: WF-030 at 60 minutes beats WF-018 at 40. The flag still did the work (both sit
-  // above every tier-1 patient who has waited hours); it is just no longer the only flagged row.
-  it("leads the real fixture with WF-030, which nothing but the flag (and its longer wait than WF-018) could have put there", () => {
-    const ordered = queueOrder(wardMovements, NOW_ANCHOR);
-    const leader = ordered[0];
-    expect(leader.id, "the flagged movement must lead the live queue").toBe("WF-030");
-    expect(leader.flaggedUrgent).toBe(true);
+  it("gives the same order with the flag on or off", () => {
+    const { flaggedButNewer, unflaggedButOlder } = pairAround(NOW_ANCHOR);
+    const noLongerFlagged: Movement = { ...flaggedButNewer, flaggedUrgent: false };
+    expect(queueOrder([noLongerFlagged, unflaggedButOlder], NOW_ANCHOR).map((movement) => movement.id)).toEqual(
+      queueOrder([flaggedButNewer, unflaggedButOlder], NOW_ANCHOR).map((movement) => movement.id),
+    );
+  });
 
-    // And it could not have arrived there any other way: lowest tier, shortest wait of any seeded
-    // movement. Asserted rather than asserted-in-a-comment, so a fixture edit that made WF-030
-    // ordinarily top of the queue would fail here instead of hollowing out the test above.
-    expect(leader.urgency, "WF-030 must stay the LOWEST tier or it could lead on tier alone").toBe(3);
-    const others = ordered.filter((movement) => movement.id !== "WF-030");
-    expect(others.every((movement) => movement.openedAt >= leader.openedAt || !movement.flaggedUrgent)).toBe(true);
+  it("leads the real fixture with the longest wait, not with a flagged movement", () => {
+    const ordered = queueOrder(wardMovements, NOW_ANCHOR);
+    const longest = Math.min(...wardMovements.filter(isOpen).map((movement) => movement.openedAt));
+    expect(ordered[0].openedAt).toBe(longest);
     expect(
-      others.some((movement) => movement.urgency === 1),
-      "the queue must contain tier-1 patients for leading it to mean anything",
+      wardMovements.some((movement) => isOpen(movement) && movement.flaggedUrgent),
+      "the fixture must hold a flagged movement for this to mean anything",
     ).toBe(true);
   });
 
-  it("changes NOTHING beneath the flag -- the wait, then the tier, still order the rest", () => {
-    // The additive half of the ruling, asserted directly: strip the flag from the fixture and the
-    // queue must still order everyone by the ranking `queueOrder` uses beneath the flag today --
-    // longest wait first, tier breaking a tie (D-32 on Home, 12 Oct 2026).
+  it("orders the fixture identically with every flag stripped", () => {
     const unflagged = wardMovements.map((movement) => ({ ...movement, flaggedUrgent: false, urgentFlag: undefined }));
-    const ordered = queueOrder(unflagged, NOW_ANCHOR);
-    for (let index = 1; index < ordered.length; index += 1) {
-      const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
-      const laterWait = NOW_ANCHOR - ordered[index].openedAt;
-      expect(
-        earlierWait,
-        "with no flags, the wait must order the queue -- the flag was supposed to sit ABOVE the existing " +
-          "ranking, not replace it",
-      ).toBeGreaterThanOrEqual(laterWait);
-      if (earlierWait === laterWait) expect(ordered[index - 1].urgency).toBeLessThanOrEqual(ordered[index].urgency);
-    }
-  });
-
-  /**
-   * WARNING: WHAT ITEM 37 DELIBERATELY DID NOT TOUCH. `operationalScore` itself -- the factor
-   * breakdown `priority-queue.tsx` still renders beside every row -- keeps its own ten-hour cap on
-   * the "Time waiting" factor (`Math.min(40, ...)`). That cap now has nothing to do with ordering
-   * (see `tests/ward-priority.test.ts`'s "waits beyond ten hours now separate the queue" above,
-   * in the `queueOrder`-only describe block): it is purely a display choice about how a wait is
-   * SCORED for the factor a coordinator reads, scoped as "The factors below explain a wait; they
-   * do not order the queue." Pinned here so a future change to `operationalScore`'s own cap is a
-   * deliberate, visible edit rather than a side effect of touching ordering.
-   */
-  it("operationalScore's own ten-hour cap is untouched, and is no longer about ordering", () => {
-    const base = movementById("WF-001");
-    const tenHours: Movement = { ...base, openedAt: NOW_ANCHOR - 600 };
-    const thirtyHours: Movement = { ...base, openedAt: NOW_ANCHOR - 1800 };
-    expect(
-      operationalScore(tenHours, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score,
-      "operationalScore's own wait cap has moved. If that was deliberate, say so here and check " +
-        "whether the factor breakdown priority-queue.tsx renders still reads honestly.",
-    ).toBe(operationalScore(thirtyHours, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).score);
+    expect(queueOrder(unflagged, NOW_ANCHOR).map((movement) => movement.id)).toEqual(
+      queueOrder(wardMovements, NOW_ANCHOR).map((movement) => movement.id),
+    );
   });
 });

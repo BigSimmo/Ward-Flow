@@ -97,7 +97,10 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             <h3 className={styles.refCardTitle}>
               {referralInboxName(entry, patient.displayName)} · {patient.umrn}
             </h3>
-            <p className={styles.refCardSubtitle}>
+            <p
+              className={styles.refCardSubtitle}
+              data-state={entry.withdrawnAt === undefined ? entry.state : "withdrawn"}
+            >
               {entry.withdrawnAt !== undefined
                 ? "Withdrawn by referrer"
                 : entry.waitlistedAt !== undefined && live

@@ -1,17 +1,26 @@
 name: Ward Flow backend uptime
 
-# Audit F-06 (approved by Josh, 19 October 2026). Every 30 minutes, asks the hosted shared backend
-# whether it is up. When it stays down across three tries, opens one "backend down" issue that
-# @mentions the owner, so GitHub emails him; when it answers again, comments and closes that issue.
-# An issue is used because GitHub sends a failed scheduled run's own email only to whoever last
-# edited the schedule, which may not be the owner. Only the backend is checked: the signed-in site
-# sleeps when idle, and a check every 30 minutes would keep it awake. `/healthz` shows the server is
-# running; it does not check the database (`/readyz` needs a sign-in). Public repository: free.
-# GitHub turns scheduled workflows off after 60 days without repository activity.
+# Audit F-06 (approved by Josh, 19 October 2026; database check and test alert approved 20 October).
+# Every 30 minutes, asks the hosted shared backend whether it is up and can reach its database.
+# When either stays down across three tries, opens one "backend down" issue that @mentions the
+# owner, so GitHub emails him; when both answer again, comments and closes that issue. An issue is
+# used because GitHub sends a failed scheduled run's own email only to whoever last edited the
+# schedule, which may not be the owner. Only the backend is checked: the signed-in site sleeps when
+# idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in and reports
+# `database` as "ok" or "unavailable" from a check it repeats at most every 30 seconds (`/readyz`
+# needs a sign-in). Run it by hand with "Send one test alert" ticked to check the email arrives: it
+# opens and at once closes one clearly labelled test issue and skips the real check.
+# Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
+# activity.
 on:
   schedule:
     - cron: "7,37 * * * *"
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: Send one test alert (opens and closes a labelled test issue; skips the real check)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,30 +42,50 @@ jobs:
       LABEL: backend-down
       OWNER: BigSimmo
     steps:
-      - name: Ask the backend whether it is up
+      - name: Send one test alert
+        if: ${{ inputs.test_alert }}
+        run: |
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh label create uptime-test --color C5DEF5 --description "Uptime alert test; no action needed" --force
+          url=$(gh issue create --label uptime-test --title "TEST ONLY: Ward Flow backend alert check (no action needed)" --body "@$OWNER This is a test of the backend uptime alert, sent by hand ($run). Nothing is wrong. If you got this as an email, real alerts will reach you too. This issue closes itself straight away.")
+          gh issue close "$url" --comment "Test finished; closed automatically."
+      - name: Ask the backend whether it is up and can reach its database
+        if: ${{ !inputs.test_alert }}
         id: check
         run: |
-          up=false
+          state=down
           for attempt in 1 2 3; do
             body=$(curl --silent --show-error --max-time 20 --fail "$BACKEND_URL/healthz" || true)
-            if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then up=true; break; fi
-            [ "$attempt" -lt 3 ] && sleep 30
+            if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then
+              database=$(printf '%s' "$body" | jq -r '.database // "ok"' 2>/dev/null || echo unavailable)
+              # A server deployed before the database check reports no `database`; count it as up.
+              if [ "$database" = "ok" ]; then state=up; break; fi
+              state=database
+            else
+              state=down
+            fi
+            [ "$attempt" -lt 3 ] && sleep 31
           done
-          echo "up=$up" >> "$GITHUB_OUTPUT"
-          echo "Backend up: $up"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "Backend state: $state"
       - name: Raise or close the backend-down issue
+        if: ${{ !inputs.test_alert }}
         run: |
           open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
           run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          if [ "${{ steps.check.outputs.up }}" = "true" ]; then
+          if [ "${{ steps.check.outputs.state }}" = "up" ]; then
             if [ -n "$open" ]; then
-              gh issue comment "$open" --body "@$OWNER The shared backend is answering again ($run)."
+              gh issue comment "$open" --body "@$OWNER The shared backend and its database are answering again ($run)."
               gh issue close "$open"
             fi
             exit 0
           fi
           if [ -z "$open" ]; then
             gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force
-            gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again."
+            if [ "${{ steps.check.outputs.state }}" = "database" ]; then
+              gh issue create --label "$LABEL" --title "Shared backend cannot reach its database" --body "@$OWNER The hosted Ward Flow backend answered, but reported its database unavailable three times in a row ($BACKEND_URL/healthz, $run). Shared mode will not load or save until the database is back. Check the Supabase project and the ward-flow-backend service in Railway. This issue closes itself when both answer again."
+            else
+              gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again."
+            fi
           fi
           exit 1

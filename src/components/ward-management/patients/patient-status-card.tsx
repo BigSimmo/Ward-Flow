@@ -130,8 +130,9 @@ export interface PatientStatusContext {
    */
   acceptedReferral?: { unitName: string; boardHref: string };
   /**
-   * D-65 (flag `awol-bed-hold-review`, paused): with the tracker on, whether it also asks for a review
-   * of the held bed past `awolBedHoldWarning`. Off, the tracker shows the time away only.
+   * Flag `awol-bed-hold-review` (paused by D-65, on everywhere since Josh's 20 Oct 2026 "turn on all
+   * features"): with the tracker on, whether it also asks for a review of the held bed past
+   * `awolBedHoldWarning`. Off, the tracker shows the time away only.
    */
   awolHoldReview?: boolean;
 }

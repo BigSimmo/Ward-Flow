@@ -115,6 +115,91 @@ describe("common questions", () => {
   });
 });
 
+describe("the questions the overall review found unanswered (20 Oct 2026)", () => {
+  it.each([
+    ["transport not booked", "transport-not-booked"],
+    ["no transport booked", "transport-not-booked"],
+    ["escort", "escort"],
+    ["needs an escort", "escort"],
+    ["today", "today"],
+    ["who is leaving today?", "today"],
+    ["on leave", "leave"],
+    ["leave", "leave"],
+    ["AWOL", "awol"],
+    ["absent without leave", "awol"],
+  ])("reads %s as %s", (query, id) => {
+    expect(questionFor(query)?.id).toBe(id);
+  });
+
+  it("filters to exactly the rows the census flags, and never reorders them", () => {
+    for (const [query, flagged] of [
+      ["transport not booked", (row: (typeof census.rows)[number]) => row.next === "Book transport"],
+      ["escort", (row: (typeof census.rows)[number]) => row.escort],
+      ["today", (row: (typeof census.rows)[number]) => row.leavingToday === true],
+    ] as const) {
+      const answer = answerQuestion(query, census)!;
+      expect(answer.rows.map((row) => row.key).sort(), query).toEqual(
+        census.rows
+          .filter(flagged)
+          .map((row) => row.key)
+          .sort(),
+      );
+      const waits = answer.rows.map((row) => row.waitMinutes ?? -1);
+      expect(waits, query).toEqual([...waits].sort((left, right) => right - left));
+    }
+  });
+
+  it("answers leave and absence from the leave beds, and not at all without them", () => {
+    const stays = state.admissions.filter((admission) => admission.state === "occupied");
+    const [onLeave, absent] = [stays[0]!, stays[1]!];
+    const leaveBeds = [
+      {
+        id: "LB-Q1",
+        unitId: onLeave.unitId,
+        admissionId: onLeave.id,
+        expectedReturn: NOW_ANCHOR + 60,
+        confirmedAt: NOW_ANCHOR - 30,
+        confirmedBy: "Ward",
+      },
+      {
+        id: "LB-Q2",
+        unitId: absent.unitId,
+        admissionId: absent.id,
+        expectedReturn: NOW_ANCHOR + 60,
+        confirmedAt: NOW_ANCHOR - 30,
+        confirmedBy: "Ward",
+        absentWithoutLeave: { since: NOW_ANCHOR - 20, steps: [] },
+      },
+    ];
+    const base = {
+      ...state,
+      now: NOW_ANCHOR,
+      thresholds: dueSoonThresholdsOf(state.configuration),
+      dayZero: demoDayZero(new Date("2026-10-19T00:00:00Z")),
+    };
+    const withLeave = buildCensus({ ...base, leaveBeds });
+    const keyOf = (admissionId: string) => `adm:${admissionId}`;
+    const leaveKeys = answerQuestion("on leave", withLeave)!.rows.map((row) => row.key);
+    const awolKeys = answerQuestion("awol", withLeave)!.rows.map((row) => row.key);
+    // Each stay appears on its own list only, if the census shows it as a ward row at all.
+    for (const [keys, mine, other] of [
+      [leaveKeys, onLeave.id, absent.id],
+      [awolKeys, absent.id, onLeave.id],
+    ] as const) {
+      expect(keys).not.toContain(keyOf(other));
+      const shown = withLeave.rows.some((row) => row.key === keyOf(mine));
+      expect(keys.includes(keyOf(mine))).toBe(shown);
+    }
+    expect(leaveKeys.length + awolKeys.length).toBeGreaterThan(0);
+
+    const { leaveBeds: _unused, ...withoutLeaveState } = base;
+    void _unused;
+    const noLeave = buildCensus(withoutLeaveState);
+    expect(answerQuestion("on leave", noLeave)).toBeUndefined();
+    expect(answerQuestion("awol", noLeave)).toBeUndefined();
+  });
+});
+
 describe("where a person is now, and where a result opens", () => {
   it("opens each kind of census row where its record lives", () => {
     for (const row of census.rows.slice(0, 400)) {

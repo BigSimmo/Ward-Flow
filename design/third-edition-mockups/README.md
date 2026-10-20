@@ -156,6 +156,26 @@ artifact is currently the broken version on a phone.**
 
 ---
 
+## Two try-out mockups added on 20 October 2026
+
+Clickable mockups of ideas B5 and B2 from the UX simplification review of 19 October 2026, built for
+the owner to try (overall review of 20 October 2026, suggested order item 5). They are **not a build
+contract and not the third-edition standard**: they copy the current app's v9 tokens
+(`src/app/ward-flow-v9-tokens.css`) and look, so the change being tried is the layout, not the
+style. Each is one self-contained file: no network requests, no browser storage, nothing saves.
+Invented data only. Open either file straight in a browser, at desktop or phone width.
+
+| Mockup                                        | File                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| B5, "Needs you now" Home (bed coordinator)    | [`needs-you-now-home-mockup.html`](needs-you-now-home-mockup.html) |
+| B2, one ward page (nurse in charge, Dabakarn) | [`one-ward-page-mockup.html`](one-ward-page-mockup.html)           |
+
+Both keep the never-build list: no scores, no ranking, no suggested ward or bed, no automatic
+placement, no computed legal times, and no hold released without a person pressing Release.
+Controls outside the tried flow say "Not wired in this prototype."
+
+---
+
 ## Proving a page
 
 Every command runs **from the repository root**, not from this folder.

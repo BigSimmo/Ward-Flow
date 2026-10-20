@@ -35,7 +35,7 @@ import {
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
@@ -104,6 +104,17 @@ export type CensusRow = {
   longWait: boolean;
   pastExpected: boolean;
   awayAtEd: boolean;
+  /**
+   * Overall review (20 Oct 2026), the search questions: set only on the rows they can be true of.
+   * A bed request whose next step is booking transport (none booked, or the booking cancelled).
+   */
+  transportNotBooked?: boolean;
+  /** A ward stay whose recorded expected discharge falls on today's date. */
+  leavingToday?: boolean;
+  /** A ward stay with its bed held for leave (`leaveBeds`), absent without leave not included. */
+  onLeave?: boolean;
+  /** A ward stay recorded absent without leave (`LeaveBed.absentWithoutLeave`). */
+  absentWithoutLeave?: boolean;
   reservedTimePassed: boolean;
   /** The accepted ward on a reservation that has passed, for the shift summary. */
   acceptedUnitName: string | null;
@@ -124,7 +135,12 @@ export type ClosedTodayRow = {
   patientRecordId: string | null;
 };
 
-export type Census = { rows: CensusRow[]; closedToday: ClosedTodayRow[] };
+export type Census = {
+  rows: CensusRow[];
+  closedToday: ClosedTodayRow[];
+  /** Whether leave beds were given, so "on leave" and absence questions have an honest answer. */
+  leaveKnown?: boolean;
+};
 
 const OWNER_WORDS: Record<DelayOwnerId, string> = {
   yours: "Bed desk",
@@ -195,11 +211,14 @@ export function buildCensus(state: {
   patients: Patient[];
   admissions: readonly Admission[];
   plannedAdmissions?: readonly PlannedAdmission[];
+  /** Beds held for leave; without them no row says whether a person is on leave. */
+  leaveBeds?: readonly LeaveBed[];
   now: Instant;
   thresholds: DueSoonThresholds;
   dayZero: Date;
 }): Census {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], now, dayZero } = state;
+  const leaveByAdmission = new Map((state.leaveBeds ?? []).map((bed) => [bed.admissionId, bed]));
   const resolve = createPatientResolver({ patients, referrals, movements, plannedAdmissions });
   const unitOf = new Map(units.map((unit) => [unit.id, unit]));
   const today = new Date(dayZero.getTime() + Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY * 60_000);
@@ -285,6 +304,7 @@ export function buildCensus(state: {
           ? `${declines} declined`
           : "",
       next,
+      transportNotBooked: next === "Book transport",
       nextWho: cause ? OWNER_WORDS[ownerOf(cause)] : "Bed desk",
       glyph,
       legal: form ? `Form ${form.code}` : shortLegal(movement.legalStatus),
@@ -435,6 +455,7 @@ export function buildCensus(state: {
           : ["On ward", "done"];
     const edd = admission.expectedDischargeAt;
     const since = admission.arrivedAt !== null ? Math.max(0, now - admission.arrivedAt) : null;
+    const leave = leaveByAdmission.get(admission.id);
     rows.push({
       key: `adm:${admission.id}`,
       kind: "admission",
@@ -469,6 +490,9 @@ export function buildCensus(state: {
       longWait: false,
       pastExpected: past,
       awayAtEd: away,
+      leavingToday: edd !== null && dayOf(edd) === dayOf(now),
+      onLeave: leave !== undefined && leave.absentWithoutLeave === undefined,
+      absentWithoutLeave: leave?.absentWithoutLeave !== undefined,
       reservedTimePassed: false,
       acceptedUnitName: null,
       timeline:
@@ -559,7 +583,7 @@ export function buildCensus(state: {
   }
   closedToday.sort((a, b) => b.at - a.at);
 
-  return { rows, closedToday };
+  return { rows, closedToday, leaveKnown: state.leaveBeds !== undefined };
 }
 
 /** Highlight chips. They tint and lift matching rows; they never hide one. */
