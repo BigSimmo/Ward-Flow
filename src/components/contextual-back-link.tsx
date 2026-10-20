@@ -18,7 +18,7 @@ function canNavigateBack(): boolean {
   return typeof canGoBack === "boolean" ? canGoBack : window.history.length > 1;
 }
 
-function navigateContextuallyBack(
+export function navigateContextuallyBack(
   router: Pick<ReturnType<typeof useRouter>, "back" | "replace">,
   fallbackHref: string,
   canUseHistory: () => boolean,

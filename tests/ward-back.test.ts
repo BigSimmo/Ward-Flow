@@ -76,5 +76,18 @@ describe("the header's Back control (Josh, 20 Oct 2026)", () => {
       noteWardRoute("/ward-flow/movements");
       expect(hasMovedInWardFlow()).toBe(true);
     });
+
+    it("without the Navigation API, takes a return to the screen below as a step back", () => {
+      noteWardRoute("/ward-flow/people/PX-1a2b"); // landed here from another site
+      noteWardRoute("/ward-flow/movements");
+      noteWardRoute("/ward-flow/movements/MV-1");
+      expect(hasMovedInWardFlow()).toBe(true);
+      noteWardRoute("/ward-flow/movements"); // browser Back
+      expect(hasMovedInWardFlow()).toBe(true);
+      noteWardRoute("/ward-flow/people/PX-1a2b"); // browser Back to the landing page
+      expect(hasMovedInWardFlow()).toBe(false);
+      noteWardRoute("/ward-flow/movements"); // browser Forward
+      expect(hasMovedInWardFlow()).toBe(true);
+    });
   });
 });

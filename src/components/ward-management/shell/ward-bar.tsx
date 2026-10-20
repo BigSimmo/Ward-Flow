@@ -382,6 +382,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
   // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
   const phoneMenuRef = useRef<HTMLButtonElement>(null);
+  // On a phone drill-down Back replaces Menu, so focus returns to whichever of the two is showing.
+  const phoneBackRef = useRef<HTMLButtonElement>(null);
+  const phoneReturnTarget = useMemo<RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        const back = phoneBackRef.current;
+        return isPhone && back?.isConnected ? back : phoneMenuRef.current;
+      },
+    }),
+    [isPhone],
+  );
   // Read when Tools closes: the Board time pill that opened it, else the button that opens Tools.
   const toolsReturnTarget = useMemo<RefObject<HTMLElement | null>>(
     () => ({
@@ -389,10 +400,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         // A pill that has left the page cannot take focus, so fall back to the Tools button.
         const pill = toolsReturnFocusRef.current;
         if (pill?.isConnected) return pill;
-        return isPhone ? phoneMenuRef.current : toolsTriggerRef.current;
+        return isPhone ? phoneReturnTarget.current : toolsTriggerRef.current;
       },
     }),
-    [isPhone],
+    [isPhone, phoneReturnTarget],
   );
   const referralReturnFocusRef = useRef<HTMLElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
@@ -1077,6 +1088,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       <PhoneMenuEntry
         backHref={backHref}
         menuRef={phoneMenuRef}
+        backRef={phoneBackRef}
+        returnFocusRef={phoneReturnTarget}
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
         roleCategory={roleCategory}
@@ -1231,7 +1244,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={isPhone ? phoneMenuRef : activityTriggerRef}
+        returnFocusRef={isPhone ? phoneReturnTarget : activityTriggerRef}
         descriptionContent={
           isPhone ? (
             // v10 Activity sheet (phone): one quiet line, then the list.
@@ -1383,7 +1396,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           onNewReferral={(destination = "ward") =>
             openReferral(
               { category: roleCategory, destination },
-              isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
+              isPhone ? phoneReturnTarget.current : toolsTriggerRef.current,
             )
           }
           openRequest={toolsOpenRequest}

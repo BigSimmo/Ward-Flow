@@ -3,6 +3,7 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import type { RefObject } from "react";
 
-import { ContextualBackLink } from "@/components/contextual-back-link";
+import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
 import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import type {
@@ -44,28 +45,46 @@ import styles from "./ward-bar.module.css";
 
 /**
  * The header's Back control (`ward-back.ts`): the previous Ward Flow screen, else `parentHref`.
- * `phone` draws it in the Menu button's place on a phone; otherwise it leads the tablet and desktop bar.
+ * `phone` draws it as a button in the Menu button's place on a phone, where `buttonRef` makes it the
+ * phone sheets' focus return; otherwise it is a link leading the tablet and desktop bar.
  */
 export function WardBarBack({
   parentHref,
   phone,
   liveOverSheet = false,
+  buttonRef,
 }: {
   parentHref: string;
   phone: boolean;
   liveOverSheet?: boolean;
+  buttonRef?: RefObject<HTMLButtonElement | null>;
 }) {
+  const router = useRouter();
+  if (phone) {
+    return (
+      <button
+        type="button"
+        ref={buttonRef}
+        className={`${styles.phoneOnly} ${styles.phoneBack}`}
+        aria-label="Back"
+        data-testid="ward-bar-phone-back"
+        data-sheet-inert-skip={liveOverSheet ? "" : undefined}
+        onClick={() => navigateContextuallyBack(router, parentHref, hasMovedInWardFlow)}
+      >
+        <ArrowLeft aria-hidden="true" strokeWidth={1.75} />
+      </button>
+    );
+  }
   return (
     <ContextualBackLink
       fallbackHref={parentHref}
       canUseHistory={hasMovedInWardFlow}
-      className={phone ? `${styles.phoneOnly} ${styles.phoneBack}` : styles.deskBack}
+      className={styles.deskBack}
       aria-label="Back"
-      data-testid={phone ? "ward-bar-phone-back" : "ward-bar-back"}
-      data-sheet-inert-skip={liveOverSheet ? "" : undefined}
+      data-testid="ward-bar-back"
     >
-      <ArrowLeft aria-hidden="true" strokeWidth={phone ? 1.75 : 2} />
-      {phone ? null : <span>Back</span>}
+      <ArrowLeft aria-hidden="true" strokeWidth={2} />
+      <span>Back</span>
     </ContextualBackLink>
   );
 }
@@ -78,6 +97,8 @@ export function WardBarBack({
  */
 export function PhoneMenuEntry({
   backHref,
+  backRef,
+  returnFocusRef,
   menuRef,
   tasksCount,
   activityUnread,
@@ -88,6 +109,9 @@ export function PhoneMenuEntry({
 }: {
   /** The parent page on a drill-down screen, where Back replaces Menu. */
   backHref?: string;
+  backRef: RefObject<HTMLButtonElement | null>;
+  /** Whichever of Back and Menu the phone shows: where the menu's sheets return focus. */
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
   /** Keeps Menu tappable while a sheet sits below the bar (see `headerLiveOverSheet`). */
   liveOverSheet: boolean;
   menuRef: RefObject<HTMLButtonElement | null>;
@@ -99,7 +123,7 @@ export function PhoneMenuEntry({
 }) {
   return (
     <>
-      {backHref ? <WardBarBack parentHref={backHref} phone liveOverSheet={liveOverSheet} /> : null}
+      {backHref ? <WardBarBack parentHref={backHref} phone liveOverSheet={liveOverSheet} buttonRef={backRef} /> : null}
       <button
         type="button"
         ref={menuRef}
@@ -115,11 +139,11 @@ export function PhoneMenuEntry({
         <MenuIcon aria-hidden="true" strokeWidth={1.75} />
       </button>
       <WardPhoneMenu
-        returnFocusRef={menuRef}
+        returnFocusRef={returnFocusRef}
         tasksCount={tasksCount}
         activityUnread={activityUnread}
         onOpenDrawer={onOpenDrawer}
-        onNewReferral={() => onOpenReferral({ category: roleCategory }, menuRef.current)}
+        onNewReferral={() => onOpenReferral({ category: roleCategory }, returnFocusRef.current)}
       />
     </>
   );

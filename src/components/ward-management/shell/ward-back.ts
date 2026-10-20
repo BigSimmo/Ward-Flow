@@ -72,12 +72,12 @@ export function wardBackParent(pathname: string, deskHomeHref: string): string |
  * Whether there is a Ward Flow screen behind this one in the tab's history. Without it, Back on a
  * page opened from an email or another site would follow the browser history out of Ward Flow.
  * Where the browser has the Navigation API, the current history entry must sit after the one the
- * tab landed on (so browser Back to the landing page counts as no history). Elsewhere it falls back
- * to whether the route has changed since the page loaded.
+ * tab landed on (so browser Back to the landing page counts as no history). Elsewhere a stack of
+ * the routes seen stands in for it: a move to the route just below the top is taken as a step back.
+ * A guess the wrong way only sends Back to the parent page, which stays inside Ward Flow.
  */
-let firstPathname: string | undefined;
 let landingIndex: number | undefined;
-let movedInApp = false;
+let routeStack: string[] = [];
 
 function historyIndex(): number | undefined {
   const index = (globalThis as { navigation?: { currentEntry?: { index?: number } | null } }).navigation?.currentEntry
@@ -87,21 +87,20 @@ function historyIndex(): number | undefined {
 
 /** Called by the bar on every route change. */
 export function noteWardRoute(pathname: string): void {
-  if (firstPathname === undefined) {
-    firstPathname = pathname;
-    landingIndex = historyIndex();
-  } else if (pathname !== firstPathname) movedInApp = true;
+  if (routeStack.length === 0) landingIndex = historyIndex();
+  if (routeStack.at(-1) === pathname) return;
+  if (routeStack.at(-2) === pathname) routeStack.pop();
+  else routeStack.push(pathname);
 }
 
 export function hasMovedInWardFlow(): boolean {
   const index = historyIndex();
   if (index !== undefined && landingIndex !== undefined) return index > landingIndex;
-  return movedInApp;
+  return routeStack.length > 1;
 }
 
 /** Tests only: forget the routes seen so far. */
 export function resetWardRouteHistory(): void {
-  firstPathname = undefined;
   landingIndex = undefined;
-  movedInApp = false;
+  routeStack = [];
 }
