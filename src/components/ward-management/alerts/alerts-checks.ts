@@ -57,7 +57,7 @@ export function alertChecks({
       label: "No eligible bed",
       n: countKind("nobed"),
       scope:
-        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waitlist and the bed coordinator is notified.",
+        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waitlist and this is shown to the bed coordinator.",
     },
     {
       key: "hold",

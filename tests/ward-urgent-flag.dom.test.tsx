@@ -54,17 +54,15 @@ describe("the urgent flag is visible on the row it moved", () => {
     }
   });
 
-  it("shows the flag on the row that LEADS, which is the whole point of showing it", () => {
+  // Audit 1, Josh 20 Oct (CS-04): the queue is wait order; the flag marks its row wherever it sits.
+  it("shows the flag on the flagged row, which keeps its place in wait order", () => {
     renderQueue();
-    const leader = queueOrder(wardMovements, NOW_ANCHOR)[0];
-    expect(leader.flaggedUrgent, "precondition: the flagged movement leads the queue").toBe(true);
-    // The label and the position must be on the same row. A flag rendered somewhere else on the
-    // screen would satisfy a naive "is it visible" check while explaining nothing about the order.
-    const row = screen.getByTestId(`ward-queue-row-${leader.id}`);
+    const ordered = queueOrder(wardMovements, NOW_ANCHOR);
+    expect(ordered[0].flaggedUrgent, "the longest wait leads, not the flag").toBe(false);
+    const flagged = ordered.find((movement) => movement.flaggedUrgent)!;
+    const row = screen.getByTestId(`ward-queue-row-${flagged.id}`);
     expect(row).toHaveTextContent(/flagged urgent/i);
-    expect(row, "and the row must still say the tier it would otherwise have been ranked by").toHaveTextContent(
-      /tier 3/i,
-    );
+    expect(row, "and the row still says its tier").toHaveTextContent(/tier 3/i);
   });
 
   /**
@@ -228,7 +226,8 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
 });
 
 describe("the queue footer states the order of the tab on show", () => {
-  it("says flagged and act now first, then longest wait, for patients and longest wait first for referrals (D-32)", () => {
+  // Audit 1, Josh 20 Oct (CS-04): both tabs are longest wait first.
+  it("says longest wait first for patients and for referrals", () => {
     render(
       <PriorityQueue
         movements={wardMovements}
@@ -239,9 +238,9 @@ describe("the queue footer states the order of the tab on show", () => {
         onClearFilter={() => {}}
       />,
     );
-    expect(screen.getByText("Flagged and act now first, then longest wait")).toBeInTheDocument();
+    expect(screen.getByText("Longest wait first")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
     expect(screen.getByText("Longest wait first")).toBeInTheDocument();
-    expect(screen.queryByText("Flagged and act now first, then longest wait")).toBeNull();
+    expect(screen.queryByText(/Flagged and act now first/u)).toBeNull();
   });
 });

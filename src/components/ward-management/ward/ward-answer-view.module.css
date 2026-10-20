@@ -1403,10 +1403,6 @@
     flex-wrap: wrap;
   }
 
-  .askButton {
-    margin-right: auto;
-  }
-
   /* Lower row: three equal cards. */
   .lowerRow {
     display: grid;
@@ -2129,10 +2125,6 @@ details[open] > summary > .phoneFoldChevron {
     background: var(--wf-surface);
   }
 
-  .decisionArea > .askButton {
-    display: none;
-  }
-
   /* The page's last rows scroll clear of the pinned bar as well as the dock. */
   .answerScreen:has(.decisionArea) {
     padding-bottom: 5rem;
@@ -2178,7 +2170,8 @@ details[open] > summary > .phoneFoldChevron {
 
   .decisionArea > button {
     justify-content: center;
-    min-height: var(--wf-touch);
+    /* DA-19 (design audit): the project's 48 px touch size, not 44 px. */
+    min-height: var(--spacing-tap, 3rem);
     border-radius: var(--wf-r-ctl);
   }
 }

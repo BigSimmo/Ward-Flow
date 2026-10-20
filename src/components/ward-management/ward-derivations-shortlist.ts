@@ -210,10 +210,8 @@ export type ShortlistCandidate = {
   unit: Unit;
   verdict: ReturnType<typeof eligibility>;
   availability: ShortlistAvailability;
-  tier?: 1 | 2 | 3 | 4;
-  priorityTier?: 1 | 2 | 3 | 4;
+  /** A fact, not an order: an in-catchment ward of the same cohort with no bed free now. */
   waitlist?: boolean;
-  waitlistTier?: string;
 };
 
 function isCatchmentUnit(movement: Movement, unit: Unit): boolean {
@@ -256,33 +254,10 @@ function isCatchmentUnit(movement: Movement, unit: Unit): boolean {
  */
 export function shortlistCandidates(movement: Movement, units: Unit[], now: Instant): ShortlistCandidate[] {
   /*
-   * 🔴 CATCHMENT-PRIORITY ORDERING IS SCOPED TO SECURE-BED PATIENTS, AND DELIBERATELY NOT TO
-   * INVOLUNTARY ONES. Owner ruling, 2026-09-18: no catchment-priority ordering for detained
-   * patients "for now". Reaffirmed on 2026-09-19 through a peer session, after a build had
-   * changed it and it was returned.
-   *
-   * ⚠️ THIS CONDITION USED TO CARRY A SECOND COMPARISON, AND IT BAITED TWO SESSIONS INTO
-   * "FIXING" IT: `movement.legalStatus === "Involuntary"`. `LegalStatus` has no such member --
-   * it holds `Voluntary`, `Referred for psychiatric examination`, `Detained awaiting examination`
-   * and `Involuntary inpatient` -- so that comparison was dead and this expression already meant
-   * exactly what the one line below now says. **Correcting the spelling would not have been a
-   * repair.** It would have turned the ordering ON for involuntary inpatients, whom the owner
-   * excluded, and OFF for a patient detained awaiting examination in a secure unit, who has it
-   * today. One population swapped for another, wearing a typo -- and it read as a tidy-up, because
-   * the dead string also sat behind a cast that hid it from the compiler.
-   *
-   * ✅ The dead comparison and its cast are now gone, so there is nothing left here that looks
-   * broken and is not. The live rule is one honest line, and the ruling is recorded rather than
-   * implied. If the ordering is ever wanted for a legal status, the question to bring back is
-   * WHICH STATUSES -- answered by naming them here, beside this note, never by repairing a string.
-   *
-   * The version set aside that night is preserved whole under
-   * `Backups/claude-work/ward-derivations-uncommitted-*`; nothing of it was discarded.
-   *
-   * Guarded by `tests/ward-shortlist-candidates.test.ts` -- "catchment-priority ordering".
+   * Audit 1, Josh 20 Oct (NB-4): grouped by fit, then a fixed neutral order inside each group
+   * (health service, then ward name). The catchment and free-bed tiers that used to order a
+   * secure-bed patient's wards (owner ruling 18-19 Sept) are gone: never-build item 2.
    */
-  const catchmentPriorityApplies = movement.security === "Secure";
-
   return units
     .map((unit) => {
       const verdict = closureAwareVerdict(unit, eligibility(movement, unit, now));
@@ -325,41 +300,22 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
               "previously_declined";
 
       const available = movement.security === "Secure" ? lockedBedsFree(unit) : unit.allocatable.value;
-      const isCatchment = isCatchmentUnit(movement, unit);
-
-      const cohortMatches = unit.cohort === movement.cohort;
-      let tier: 1 | 2 | 3 | 4;
-      if (cohortMatches && isCatchment && available > 0) {
-        tier = 1;
-      } else if (cohortMatches && !isCatchment && available > 0) {
-        tier = 2;
-      } else if (cohortMatches && isCatchment && available === 0) {
-        tier = 3;
-      } else {
-        tier = 4;
-      }
-
-      // 3-Tier Involuntary Waitlist Priority Hierarchy:
-      // For involuntary placements, in-catchment wards with 0 vacant locked beds are never
-      // rejected/disqualified; surfaced via tier 3 and waitlist properties.
 
       return {
         unit,
         verdict,
         availability,
-        tier,
-        priorityTier: tier,
-        waitlist: tier === 3,
-        waitlistTier: tier === 3 ? "Tier 3" : undefined,
+        // In catchment, same cohort, no bed now: shown as "waitlist for a locked bed". Never an order.
+        waitlist: unit.cohort === movement.cohort && isCatchmentUnit(movement, unit) && available === 0,
       };
     })
-    .sort((a, b) => {
-      if (catchmentPriorityApplies) {
-        const tierDiff = (a.tier ?? 4) - (b.tier ?? 4);
-        if (tierDiff !== 0) return tierDiff;
-      }
-      return rankOf(a.availability) - rankOf(b.availability);
-    });
+    .sort((a, b) => rankOf(a.availability) - rankOf(b.availability) || byServiceThenName(a.unit, b.unit));
+}
+
+/** The one fixed, neutral order inside a group: health service, then ward name. Nothing is ranked. */
+function byServiceThenName(a: Unit, b: Unit): number {
+  const service = (unit: Unit) => siteByCode(unit.siteCode)?.service ?? "";
+  return service(a).localeCompare(service(b)) || a.name.localeCompare(b.name);
 }
 
 /**
@@ -403,8 +359,8 @@ function closureAwareVerdict(unit: Unit, verdict: ReturnType<typeof eligibility>
   };
 }
 
-/** Eligible first, then what a reason can buy, then what nothing can. Stable within each group, so
- *  the order inside a group is `units`' own and nothing is ranked against its neighbours. */
+/** Eligible first, then what a reason can buy, then what nothing can. Inside each group the order is
+ *  `byServiceThenName`, so nothing is ranked against its neighbours. */
 function rankOf(availability: ShortlistAvailability): number {
   if (availability === "eligible") return 0;
   // A ward that only declined before needs nothing recorded, so it sits above one that does.
@@ -414,31 +370,15 @@ function rankOf(availability: ShortlistAvailability): number {
   return 4;
 }
 
+/**
+ * Same-cohort wards, eligible first, then a fixed neutral order (health service, then ward name),
+ * cut to `limit`. Audit 1, Josh 20 Oct (NB-4): the "least restrictive first" reorder is gone; a
+ * coordinator is not steered toward one eligible ward over another.
+ */
 export function eligibleCandidatesAmong(movement: Movement, units: Unit[], now: Instant, limit = 3) {
-  // Eligible-first cut FIRST, restrictiveness reorder SECOND, deliberately in two passes rather
-  // than one combined sort. A single combined sort could pull in a unit that was previously
-  // outside the top `limit` (a candidate ranked 4th purely because it is restrictive would climb
-  // into a 3-slot shortlist ahead of one that was already in it) — a real membership change, not
-  // just a reorder, and Home's placement panel shows this same shortlist. Truncating on
-  // eligibility alone first keeps the returned SET identical to before this ordering rule
-  // existed; only the ORDER within that set can move.
-  const eligibleFirst = units
+  return units
     .filter((unit) => unit.cohort === movement.cohort)
     .map((unit) => ({ unit, verdict: closureAwareVerdict(unit, eligibility(movement, unit, now)) }))
-    .sort((a, b) => Number(b.verdict.eligible) - Number(a.verdict.eligible))
+    .sort((a, b) => Number(b.verdict.eligible) - Number(a.verdict.eligible) || byServiceThenName(a.unit, b.unit))
     .slice(0, limit);
-  // Within that fixed set, a candidate matching the movement's own security requirement is
-  // ranked ahead of one `restrictionNotice` flags as tighter than required (Task 5) — a locked
-  // ward can still genuinely hold an open-status patient, it just should not be the one a
-  // coordinator is steered toward first. Eligibility stays the primary key here too, so this
-  // pass can never demote an eligible candidate below an ineligible one. `Array.prototype.sort`
-  // is stable, so any remaining tie falls back to the eligible-first cut's own order, which is
-  // itself `units`' own array order.
-  return [...eligibleFirst].sort((a, b) => {
-    const eligibleDiff = Number(b.verdict.eligible) - Number(a.verdict.eligible);
-    if (eligibleDiff !== 0) return eligibleDiff;
-    const aRestricted = restrictionNotice(movement, a.unit) ? 1 : 0;
-    const bRestricted = restrictionNotice(movement, b.unit) ? 1 : 0;
-    return aRestricted - bRestricted;
-  });
 }

@@ -12,7 +12,7 @@ import type { LegalStatus } from "@/components/ward-management/ward-model";
  * - `referred`: on a referral for psychiatric examination, not yet an involuntary patient.
  * - `detained`: detained awaiting examination, or an involuntary patient (any "Involuntary ..." text).
  * - `cto`: a community treatment order.
- * - `not_recorded`: nothing recorded.
+ * - `not_recorded`: nothing recorded, or the words "Not recorded" (Audit 1, TS-8, Josh 20 Oct).
  * - `unrecognised`: text that is none of the above. Never guessed into a class: each reader below
  *   decides which way an unknown status fails, and says so.
  */
@@ -20,7 +20,7 @@ export type LegalStatusClass = "voluntary" | "referred" | "detained" | "cto" | "
 
 export function classifyLegalStatus(status: LegalStatus | string | undefined): LegalStatusClass {
   const text = status?.trim() ?? "";
-  if (text === "") return "not_recorded";
+  if (text === "" || /^not recorded$/i.test(text)) return "not_recorded";
   // Involuntary text is read first, so "Involuntary inpatient (community treatment order revoked)"
   // stays detained and keeps the discharge guard.
   if (/^involuntary\b/i.test(text) || /^detained awaiting examination$/i.test(text)) return "detained";
@@ -40,9 +40,11 @@ export function legalStatusIsDetained(status: LegalStatus | string | undefined):
 
 /**
  * On an order: any recorded status that is not voluntary, including a referral, a community
- * treatment order and unknown text. Not recorded is not assumed either way.
+ * treatment order and unknown text. A blank status is not assumed either way. The words "Not
+ * recorded" are read as on an order, as they were before they were classed `not_recorded`, so a
+ * missing status never shows as Voluntary or drops the missing-person steps (fail-safe).
  */
 export function legalStatusIsOnOrder(status: LegalStatus | string | undefined): boolean {
   const kind = classifyLegalStatus(status);
-  return kind !== "voluntary" && kind !== "not_recorded";
+  return kind !== "voluntary" && (kind !== "not_recorded" || (status?.trim() ?? "") !== "");
 }

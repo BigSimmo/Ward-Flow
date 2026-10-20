@@ -122,6 +122,24 @@ describe("canonical placement actions", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  // Audit 1, Josh 20 Oct (CS-03, WP-05): the phone sheet starts with no ward picked.
+  it("starts the phone sheet with no ward picked and Accept waiting for a choice", () => {
+    const dispatch = renderReferral(true);
+    const accept = screen.getByTestId("ward-referral-match-phone-accept");
+    expect(accept).toHaveTextContent("Choose a ward first");
+    expect(accept).toHaveAccessibleDescription("Choose a ward first.");
+    expect(screen.queryByText(/^Accept at /u)).toBeNull();
+    const radios = screen.getAllByRole("radio");
+    expect(radios.length).toBeGreaterThan(0);
+    expect(radios.every((radio) => radio.getAttribute("aria-checked") === "false")).toBe(true);
+    fireEvent.click(accept);
+    expect(dispatch).not.toHaveBeenCalled();
+
+    fireEvent.click(radios[0]!);
+    expect(radios[0]).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("ward-referral-match-phone-accept")).toHaveTextContent(/^Accept at /u);
+  });
+
   it("keeps a blocked Pull focusable and explains actual bed availability", () => {
     const { onPullPatient, dispatch, unit } = renderPull(false);
     const pull = screen.getByRole("button", { name: "Pull a bed" });
@@ -228,5 +246,50 @@ describe("candidate placement documentation", () => {
     accept = screen.getByTestId(`ward-referral-match-override-accept-${unit.id}`);
     fireEvent.click(accept);
     expect(onAccept).toHaveBeenCalledExactlyOnceWith(unit.id, OVERRIDE_REASONS[0]);
+  });
+});
+
+describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () => {
+  it("names the person and UMRN, and records nothing on Cancel", () => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((m) => m.acceptedUnitId)!;
+    const unit = state.units.find((u) => u.id === movement.acceptedUnitId)!;
+    const dispatch = vi.fn();
+    render(
+      <WardArrivalsCorridor
+        unit={unit}
+        accepted={[]}
+        heldAfterStop={[movement]}
+        now={NOW_ANCHOR}
+        resolvePatientIdentity={() => ({
+          displayName: "Synthetic patient",
+          formalName: "PATIENT, Synthetic",
+          initials: "SP",
+          umrn: "UM000001",
+        })}
+        releaseOpenFor={undefined}
+        toggleRelease={vi.fn()}
+        releaseReason={undefined}
+        setReleaseReason={vi.fn()}
+        submitRelease={vi.fn()}
+        lastActionRejection={undefined}
+        dispatch={dispatch}
+        setCheckToken={vi.fn()}
+        priorRejectionCountRef={{ current: 0 }}
+        rejections={[]}
+        overrideReasonForm={() => null}
+      />,
+    );
+    fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-release-stopped-identity")).toHaveTextContent(
+      "Check: PATIENT, Synthetic · UM000001",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(dispatch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
+    fireEvent.click(screen.getByRole("button", { name: "Release held bed" }));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_HELD_BED", movementId: movement.id });
   });
 });

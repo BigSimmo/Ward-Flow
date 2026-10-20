@@ -6,7 +6,7 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
@@ -59,7 +59,7 @@ export function renderEdBoardTableRow(
     unavailableFacts,
     withdrawUnavailableFact,
   } = facts;
-  const { accessTarget, isBoardRowDim, isTabletPortrait, setPhoneSheetReason, setPhoneSheetFor } = ctx;
+  const { accessTarget, isBoardRowDim, isTabletPortrait, setPhoneSheetReason, setPhoneSheetFor, now, thresholds } = ctx;
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
   const overTarget = minutesInDepartment >= accessTarget;
@@ -68,7 +68,18 @@ export function renderEdBoardTableRow(
     setPhoneSheetReason(undefined);
     setPhoneSheetFor(movement.id);
   };
-  const formWords = movement.legalForm ? `Form ${movement.legalForm.code}` : "No form";
+  // CS-14 (Audit 1, Josh 20 Oct 2026): no form is "None" only for a voluntary patient; for anyone
+  // else nothing is recorded, which is not the same as no form.
+  const noFormWords = movement.legalStatus === "Voluntary" ? "None" : "Not recorded";
+  const formWords = movement.legalForm
+    ? `Form ${movement.legalForm.code}`
+    : movement.legalStatus === "Voluntary"
+      ? "No form"
+      : "Form not recorded";
+  // CS-11 (Audit 1, Josh 20 Oct 2026): past the expiry typed on the form shows in words with the
+  // danger mark, never the same amber dot as "close". The typed time only: nothing is computed.
+  const formExpiryPassed =
+    movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "breached";
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
   const clearedTone =
@@ -81,17 +92,27 @@ export function renderEdBoardTableRow(
   const destinationName = acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
   // U4 (site review 12 Oct 2026): the form reads "Form 4A" on one line, the same chip
   // wording as New referral; its register name, typed expiry and any warning sit in the
-  // title and for screen readers, so the cell never wraps to three lines.
+  // title and for screen readers, so the cell never wraps to three lines. A passed expiry
+  // also says so on a second line (CS-11).
   const formTitle = movement.legalForm
     ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
     : undefined;
   const formCell = (
-    <span className={styles.a2Value} title={formTitle}>
-      {formExpiryWarningText !== undefined ? <StatusGlyph tone="warning" size={8} /> : null}
-      <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
-        {movement.legalForm ? legalStatusShort(movement) : "None"}
+    <>
+      <span className={styles.a2Value} title={formTitle}>
+        {formExpiryWarningText !== undefined ? (
+          <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
+        ) : null}
+        <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
+          {movement.legalForm ? legalStatusShort(movement) : noFormWords}
+        </span>
       </span>
-    </span>
+      {formExpiryPassed ? (
+        <span className={styles.a2Sub} aria-hidden="true" data-testid={`ward-ed-form-passed-${movement.id}`}>
+          Past form expiry
+        </span>
+      ) : null}
+    </>
   );
   const formFacts = <span className="sr-only">{formExpiryFacts}</span>;
   const clearedCell = (
@@ -192,20 +213,19 @@ export function renderEdBoardTableRow(
         >
           {patientInfo.formalName}
         </button>
+        {/* CS-16 (Audit 1, Josh 20 Oct 2026): the UMRN leads this line at every width, so a row
+            never rests on the name alone. */}
         <span className={styles.a2Sub}>
-          {isTabletPortrait ? (
-            [
-              phoneBay,
-              formWords,
-              medicalClearance === undefined ? "Clearance due" : clearedWords,
-              movement.examination ? "Reviewed" : "Review due",
-            ].join(" · ")
-          ) : (
-            <>
-              <span className="sr-only">UMRN </span>
-              {`${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
-            </>
-          )}
+          <span className="sr-only">UMRN </span>
+          {isTabletPortrait
+            ? [
+                patientInfo.umrn,
+                phoneBay,
+                formWords,
+                medicalClearance === undefined ? "Clearance due" : clearedWords,
+                movement.examination ? "Reviewed" : "Review due",
+              ].join(" · ")
+            : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
         </span>
         {isTabletPortrait ? null : (
           /* Overall review (20 Oct 2026): at 1365 px and below the Cleared and Review columns step

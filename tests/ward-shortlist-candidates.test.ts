@@ -16,7 +16,7 @@ import {
 } from "../src/components/ward-management/ward-derivations";
 import { fitKind } from "../src/components/ward-management/coordinator/home-fit";
 import { SUITABILITY_GATES, seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
 const state = seedWardFlowState();
 const NOW = NOW_ANCHOR;
@@ -232,13 +232,14 @@ describe("shortlistCandidates — ordering", () => {
     expect(ranks, "never a lower group before a higher one").toEqual([...ranks].sort((a, b) => a - b));
   });
 
+  // Audit 1, Josh 20 Oct (NB-4): inside each group, a fixed neutral order (health service, then name).
   it("does not rank wards against each other inside a group", () => {
-    // Between groups is not ranking — those are different claims. Within a group the order is the
-    // network's own, so no ward is presented as the better choice than its neighbour.
     for (const availability of ["eligible", "previously_declined", "overridable", "unavailable"] as const) {
-      const group = all.filter((c) => c.availability === availability).map((c) => c.unit.id);
-      const networkOrder = state.units.filter((u) => group.includes(u.id)).map((u) => u.id);
-      expect(group, `${availability} follows the network's own order`).toEqual(networkOrder);
+      const keys = all
+        .filter((c) => c.availability === availability)
+        .map((c) => [siteByCode(c.unit.siteCode)?.service ?? "", c.unit.name] as const);
+      const sorted = [...keys].sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+      expect(keys, `${availability} follows health service, then ward name`).toEqual(sorted);
     }
   });
 });
@@ -279,49 +280,33 @@ describe("blockingGate — the reason shown against a ward nothing can buy", () 
   });
 });
 
-describe("catchment-priority ordering — scoped to secure-bed patients, by owner ruling", () => {
-  // 🔴 OWNER RULING, 2026-09-18, REAFFIRMED 2026-09-19: no catchment-priority ordering for
-  // detained patients "for now". `shortlistCandidates` therefore applies its tier ordering when the
-  // patient needs a SECURE bed, and never because of their legal status.
-  //
-  // ⚠️ THIS IS GUARDED BECAUSE THE CODE IMPLEMENTING IT READ LIKE A MISTAKE AND WAS TWICE
-  // "CORRECTED". The correction is a clinical change, not a tidy-up: it hands the ordering to
-  // involuntary inpatients, whom the owner excluded, and takes it from a patient detained awaiting
-  // examination in a secure unit, who has it today. A comment asking people not to do that is not a
-  // check. This is.
+// Audit 1, Josh 20 Oct (NB-4): the catchment and free-bed tiers that used to order a secure-bed
+// patient's wards are removed. Security and legal status buy no ordering at all.
+describe("no catchment-priority ordering, for any patient", () => {
+  const ids = (list: typeof all) => list.map((candidate) => candidate.unit.id);
   const secure = shortlistCandidates({ ...movement, security: "Secure" }, state.units, NOW);
   const involuntary = shortlistCandidates(
     { ...movement, security: "Open", legalStatus: "Involuntary inpatient" },
     state.units,
     NOW,
   );
-  const tiersOf = (list: typeof all) => list.map((candidate) => candidate.tier ?? 4);
-  const ascending = (values: number[]) => values.every((value, i) => i === 0 || values[i - 1] <= value);
 
-  it("can tell the two orderings apart at all, so neither assertion below is vacuous", () => {
-    // Anti-vacuity. If every ward landed in one tier, "ordered by tier" and "not ordered by tier"
-    // would be the same list and both tests below would pass while measuring nothing.
-    expect(new Set(tiersOf(involuntary)).size, "the seeded network spans more than one tier").toBeGreaterThan(1);
-    expect(new Set(tiersOf(secure)).size).toBeGreaterThan(1);
+  it("orders a secure-bed patient's wards by fit group, then health service and name only", () => {
+    const rank = { eligible: 0, previously_declined: 1, overridable: 2, waitlist: 3, unavailable: 4 } as const;
+    const keys = secure.map(
+      (c) => [rank[c.availability], siteByCode(c.unit.siteCode)?.service ?? "", c.unit.name] as const,
+    );
+    const sorted = [...keys].sort((a, b) => a[0] - b[0] || a[1].localeCompare(b[1]) || a[2].localeCompare(b[2]));
+    expect(keys).toEqual(sorted);
   });
 
-  it("orders a secure-bed patient's wards by catchment tier", () => {
-    expect(ascending(tiersOf(secure)), "tier ordering is live for a patient needing a secure bed").toBe(true);
-  });
-
-  it("does NOT order an involuntary inpatient's wards by catchment tier", () => {
-    // 🔴 The assertion that reddens if the dead `legalStatus === "Involuntary"` comparison is ever
-    // restored and spelled correctly. Legal status must buy no ordering at all.
-    expect(ascending(tiersOf(involuntary)), "legal status must not buy catchment ordering").toBe(false);
-  });
-
-  it("gives two different non-voluntary statuses the same order, so only security decides", () => {
+  it("gives two different non-voluntary statuses the same order, so legal status decides nothing", () => {
     const detained = shortlistCandidates(
       { ...movement, security: "Open", legalStatus: "Detained awaiting examination" },
       state.units,
       NOW,
     );
-    expect(detained.map((candidate) => candidate.unit.id)).toEqual(involuntary.map((candidate) => candidate.unit.id));
+    expect(ids(detained)).toEqual(ids(involuntary));
   });
 });
 
