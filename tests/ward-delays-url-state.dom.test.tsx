@@ -48,6 +48,16 @@ describe("the Delays board keeps its filters and order in the address", () => {
     expect(new URLSearchParams(window.location.search).get("order")).toBe("longest");
   });
 
+  it("writes the order with a filter, so a copied link opens in the sender's order", () => {
+    window.localStorage.setItem("ward_flow_delays_order", "blocker");
+    window.history.replaceState(null, "", "/ward-flow/delays");
+    renderBoard();
+    expect(window.location.search).toBe("");
+    fireEvent.click(screen.getByTestId("delays-owner-wards"));
+    expect(new URLSearchParams(window.location.search).get("order")).toBe("blocker");
+    expect(orderButton("By blocker")).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("follows the address when it changes underneath (Back, Forward, a link)", async () => {
     window.history.replaceState(null, "", "/ward-flow/delays");
     renderBoard();
