@@ -1,0 +1,2036 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow mockup · Needs you now Home (B5)</title>
+    <!--
+      Clickable mockup of idea B5 from the UX simplification review (19 October 2026), approved for a
+      try-out in the overall review of 20 October 2026, "Suggested order" item 5.
+      Self-contained: no network requests, no browser storage, nothing saves. Invented data only.
+      Colour and size values are copied from src/app/ward-flow-v9-tokens.css (v9 tokens) and are only
+      declared on :root; every component reads them through var(). Not a build contract.
+    -->
+    <style>
+      :root {
+        --wf-canvas: #e8ecf0;
+        --wf-surface: #fdfdfe;
+        --wf-surface-2: #f6f8fa;
+        --wf-track: #eceff3;
+        --wf-hover: #f2f5f8;
+        --wf-selected: #eef3f8;
+        --wf-line: rgba(22, 30, 40, 0.08);
+        --wf-line-2: rgba(22, 30, 40, 0.15);
+        --wf-line-3: rgba(22, 30, 40, 0.26);
+        --wf-ink-1: #161a20;
+        --wf-ink-2: #414953;
+        --wf-ink-3: #5b646f;
+        --wf-line-ctl: #808892;
+        --wf-accent: #245a8c;
+        --wf-accent-tint: #e3eef9;
+        --wf-accent-ink: #1f4d7a;
+        --wf-on-accent: #fff;
+        --wf-pri-1: #2f6aa3;
+        --wf-pri-2: #234f7a;
+        --wf-pri-edge: #1d4569;
+        --wf-hero-1: #22384d;
+        --wf-hero-2: #1c2f41;
+        --wf-hero-ink: #fff;
+        --wf-hero-ink-2: #c3d1de;
+        --wf-hero-ink-3: #a3b8cc;
+        --wf-hero-line: rgba(255, 255, 255, 0.16);
+        --wf-hero-chip: rgba(255, 255, 255, 0.08);
+        --wf-danger: #c4513f;
+        --wf-danger-ink: #9a3424;
+        --wf-danger-tint: #fcf0ee;
+        --wf-warning: #ac720a;
+        --wf-warning-ink: #7a5208;
+        --wf-warning-tint: #fbf5e6;
+        --wf-success: #2f8a5f;
+        --wf-success-ink: #1c6343;
+        --wf-success-tint: #e2f0e8;
+        --wf-info: #4f7398;
+        --wf-scrim: rgba(22, 30, 40, 0.32);
+        --wf-e1:
+          0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
+          0 12px 28px -20px rgba(16, 24, 40, 0.22);
+        --wf-e3:
+          0 0 0 0.5px rgba(16, 24, 40, 0.14), 0 2px 4px rgba(16, 24, 40, 0.06), 0 24px 48px -12px rgba(16, 24, 40, 0.3);
+        --wf-r-sm: 10px;
+        --wf-r-md: 12px;
+        --wf-r-lg: 16px;
+        --wf-r-xl: 22px;
+        --wf-r-pill: 999px;
+        --wf-r-ctl: 12px;
+        --wf-r-tag: 6px;
+        --wf-fs-12: 12px;
+        --wf-fs-13: 13px;
+        --wf-fs-14: 14px;
+        --wf-fs-16: 16px;
+        --wf-fs-20: 20px;
+        --wf-fs-28: 28px;
+        --wf-row: 52px;
+        --wf-tap: 44px;
+        --wf-font: Geist, "Segoe UI", system-ui, -apple-system, sans-serif;
+        --wf-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --wf-canvas: #0d141b;
+          --wf-surface: #141d26;
+          --wf-surface-2: #18232e;
+          --wf-track: #223040;
+          --wf-hover: #1b2733;
+          --wf-selected: #1f2e3c;
+          --wf-line: rgba(255, 255, 255, 0.07);
+          --wf-line-2: rgba(255, 255, 255, 0.13);
+          --wf-line-3: rgba(255, 255, 255, 0.24);
+          --wf-ink-1: #e9eef3;
+          --wf-ink-2: #bcc8d4;
+          --wf-ink-3: #93a4b5;
+          --wf-line-ctl: #6e7d8d;
+          --wf-accent: #8cbcf0;
+          --wf-accent-tint: #1d3349;
+          --wf-accent-ink: #b7d3f0;
+          --wf-pri-1: #3a72a8;
+          --wf-pri-2: #2c5c8c;
+          --wf-pri-edge: #5a8fc4;
+          --wf-hero-1: #22374d;
+          --wf-hero-2: #1c2e41;
+          --wf-danger: #e27a68;
+          --wf-danger-ink: #f2a495;
+          --wf-danger-tint: #3a211d;
+          --wf-warning: #d9a441;
+          --wf-warning-ink: #f0cc85;
+          --wf-warning-tint: #33291a;
+          --wf-success: #4cb383;
+          --wf-success-ink: #8fd6b3;
+          --wf-success-tint: #17322a;
+          --wf-info: #7fa3c8;
+          --wf-scrim: rgba(0, 0, 0, 0.5);
+          --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+          --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --wf-canvas: #0d141b;
+        --wf-surface: #141d26;
+        --wf-surface-2: #18232e;
+        --wf-track: #223040;
+        --wf-hover: #1b2733;
+        --wf-selected: #1f2e3c;
+        --wf-line: rgba(255, 255, 255, 0.07);
+        --wf-line-2: rgba(255, 255, 255, 0.13);
+        --wf-line-3: rgba(255, 255, 255, 0.24);
+        --wf-ink-1: #e9eef3;
+        --wf-ink-2: #bcc8d4;
+        --wf-ink-3: #93a4b5;
+        --wf-line-ctl: #6e7d8d;
+        --wf-accent: #8cbcf0;
+        --wf-accent-tint: #1d3349;
+        --wf-accent-ink: #b7d3f0;
+        --wf-pri-1: #3a72a8;
+        --wf-pri-2: #2c5c8c;
+        --wf-pri-edge: #5a8fc4;
+        --wf-hero-1: #22374d;
+        --wf-hero-2: #1c2e41;
+        --wf-danger: #e27a68;
+        --wf-danger-ink: #f2a495;
+        --wf-danger-tint: #3a211d;
+        --wf-warning: #d9a441;
+        --wf-warning-ink: #f0cc85;
+        --wf-warning-tint: #33291a;
+        --wf-success: #4cb383;
+        --wf-success-ink: #8fd6b3;
+        --wf-success-tint: #17322a;
+        --wf-info: #7fa3c8;
+        --wf-scrim: rgba(0, 0, 0, 0.5);
+        --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+        --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+        color-scheme: dark;
+      }
+
+      /* ─── shared shell (same block in one-ward-page-mockup.html) ─── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--wf-canvas);
+        color: var(--wf-ink-1);
+        font-family: var(--wf-font);
+        font-size: var(--wf-fs-14);
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      a {
+        color: var(--wf-accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 2px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .skip {
+        position: absolute;
+        left: 8px;
+        top: -60px;
+        background: var(--wf-surface);
+        padding: 8px 12px;
+        border-radius: var(--wf-r-sm);
+        z-index: 60;
+      }
+      .skip:focus {
+        top: 8px;
+      }
+      .mono {
+        font-family: var(--wf-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .proto-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--wf-warning-tint);
+        color: var(--wf-warning-ink);
+        border-bottom: 1px solid var(--wf-line-2);
+        font-size: var(--wf-fs-13);
+      }
+      .proto-strip strong {
+        font-weight: 600;
+      }
+      .proto-strip .spacer {
+        flex: 1;
+      }
+      .linkish {
+        background: none;
+        border: 0;
+        padding: 0;
+        color: var(--wf-accent);
+        text-decoration: underline;
+        font-size: inherit;
+        min-height: 24px;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        min-height: calc(100vh - 38px);
+      }
+      .rail {
+        background: var(--wf-surface-2);
+        border-right: 1px solid var(--wf-line-2);
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: var(--wf-fs-16);
+      }
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--wf-r-sm);
+        background: var(--wf-pri-1);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-tag);
+        padding: 1px 6px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface);
+        white-space: nowrap;
+      }
+      .shift-card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 12px;
+        box-shadow: var(--wf-e1);
+        font-size: var(--wf-fs-13);
+      }
+      .shift-card b {
+        font-size: var(--wf-fs-14);
+      }
+      .shift-card .row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        color: var(--wf-ink-3);
+      }
+      .nav-label {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        margin: 4px 8px 0;
+      }
+      .nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        padding: 8px 10px;
+        min-height: 40px;
+        color: var(--wf-ink-2);
+      }
+      .nav button:hover {
+        background: var(--wf-hover);
+      }
+      .nav button[aria-current="page"] {
+        background: var(--wf-accent-tint);
+        border-color: var(--wf-line-2);
+        color: var(--wf-accent-ink);
+        font-weight: 600;
+      }
+      .nav .count {
+        margin-left: auto;
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+      }
+      .nav small {
+        display: block;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+        font-weight: 400;
+      }
+      .ico {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .rail .who {
+        margin-top: auto;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 10px;
+        font-size: var(--wf-fs-13);
+      }
+      .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--wf-r-pill);
+        background: var(--wf-pri-2);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        flex: none;
+      }
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        background: var(--wf-hero-1);
+        color: var(--wf-hero-ink);
+        border-bottom: 1px solid var(--wf-hero-line);
+      }
+      .bar h1,
+      .bar .title {
+        font-size: var(--wf-fs-16);
+        font-weight: 600;
+        margin: 0;
+      }
+      .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        color: var(--wf-hero-ink);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 10px;
+        min-height: 32px;
+        font-size: var(--wf-fs-13);
+        font-weight: 600;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: var(--wf-r-pill);
+        background: var(--wf-success);
+        display: inline-block;
+        flex: none;
+      }
+      .dot.warn {
+        background: var(--wf-warning);
+      }
+      .dot.danger {
+        background: var(--wf-danger);
+      }
+      .search {
+        flex: 1;
+        max-width: 360px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        border-radius: var(--wf-r-ctl);
+        padding: 0 12px;
+        min-height: 36px;
+        color: var(--wf-hero-ink-2);
+        text-align: left;
+      }
+      .bar .spacer {
+        flex: 1;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: var(--wf-r-ctl);
+        border: 1px solid var(--wf-line-ctl);
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        padding: 6px 14px;
+        min-height: 36px;
+        font-weight: 600;
+        font-size: var(--wf-fs-13);
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--wf-hover);
+      }
+      .btn.primary {
+        background: var(--wf-pri-1);
+        border-color: var(--wf-pri-edge);
+        color: var(--wf-on-accent);
+      }
+      .btn.primary:hover {
+        background: var(--wf-pri-2);
+      }
+      .btn.danger {
+        color: var(--wf-danger-ink);
+        border-color: var(--wf-danger);
+      }
+      .btn.quiet {
+        border-color: var(--wf-line-2);
+      }
+      .btn[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .btn.on-hero {
+        background: var(--wf-hero-chip);
+        color: var(--wf-hero-ink);
+        border-color: var(--wf-hero-line);
+      }
+      .btn.on-hero.primary {
+        background: var(--wf-pri-1);
+        border-color: var(--wf-pri-edge);
+      }
+      .hero {
+        background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+        color: var(--wf-hero-ink);
+        padding: 18px 24px 44px;
+      }
+      .eyebrow {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--wf-hero-ink-2);
+        font-weight: 600;
+      }
+      .sheet {
+        background: var(--wf-canvas);
+        border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+        margin-top: -26px;
+        position: relative;
+        padding: 20px 24px 40px;
+      }
+      .card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        box-shadow: var(--wf-e1);
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .card-head h2,
+      .card-head h3 {
+        margin: 0;
+        font-size: var(--wf-fs-16);
+      }
+      .muted {
+        color: var(--wf-ink-3);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--wf-line-2);
+        background: var(--wf-surface);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 10px;
+        min-height: 32px;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--wf-accent-tint);
+        border-color: var(--wf-accent);
+        color: var(--wf-accent-ink);
+        font-weight: 600;
+      }
+      .chip .n {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        background: var(--wf-track);
+        border-radius: var(--wf-r-tag);
+        padding: 0 5px;
+        color: var(--wf-ink-1);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: var(--wf-r-tag);
+        padding: 1px 6px;
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        border: 1px solid var(--wf-line-2);
+        color: var(--wf-ink-2);
+        white-space: nowrap;
+      }
+      .badge.warn {
+        color: var(--wf-warning-ink);
+        background: var(--wf-warning-tint);
+        border-color: transparent;
+      }
+      .badge.danger {
+        color: var(--wf-danger-ink);
+        background: var(--wf-danger-tint);
+        border-color: transparent;
+      }
+      .badge.good {
+        color: var(--wf-success-ink);
+        background: var(--wf-success-tint);
+        border-color: transparent;
+      }
+      .badge.info {
+        color: var(--wf-accent-ink);
+        background: var(--wf-accent-tint);
+        border-color: transparent;
+      }
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: var(--wf-scrim);
+        z-index: 40;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        z-index: 70;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        background: var(--wf-ink-1);
+        color: var(--wf-surface);
+        border-radius: var(--wf-r-md);
+        padding: 10px 14px;
+        box-shadow: var(--wf-e3);
+        font-size: var(--wf-fs-13);
+        max-width: calc(100vw - 32px);
+      }
+      .toast[hidden] {
+        display: none;
+      }
+      .toast button {
+        background: none;
+        border: 1px solid currentColor;
+        border-radius: var(--wf-r-sm);
+        color: inherit;
+        padding: 4px 10px;
+        min-height: 32px;
+        font-weight: 600;
+      }
+      dialog {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-lg);
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        box-shadow: var(--wf-e3);
+        padding: 0;
+        max-width: min(520px, calc(100vw - 32px));
+        width: 100%;
+      }
+      dialog::backdrop {
+        background: var(--wf-scrim);
+      }
+      .dlg-body {
+        padding: 18px 20px;
+      }
+      .dlg-body h2 {
+        margin: 0 0 8px;
+        font-size: var(--wf-fs-16);
+      }
+      .dlg-body ul {
+        padding-left: 18px;
+        margin: 8px 0;
+      }
+      .dlg-body li {
+        margin: 4px 0;
+      }
+      .dlg-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 10px 0;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .field select {
+        min-height: 40px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: var(--wf-r-ctl);
+        background: var(--wf-surface);
+        padding: 0 10px;
+        font-size: var(--wf-fs-14);
+      }
+      .dock {
+        display: none;
+      }
+      .icon-btn.menu-btn {
+        display: none;
+      }
+      .icon-btn {
+        background: none;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        min-width: 36px;
+        min-height: 36px;
+        display: inline-grid;
+        place-items: center;
+        color: inherit;
+      }
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: fixed;
+          inset: 0 auto 0 0;
+          height: auto;
+          width: min(300px, 86vw);
+          z-index: 50;
+          transform: translateX(-102%);
+          transition: transform 200ms;
+          overflow: auto;
+        }
+        .rail.open {
+          transform: none;
+          box-shadow: var(--wf-e3);
+        }
+        .icon-btn.menu-btn {
+          display: inline-grid;
+        }
+        .bar {
+          padding: 8px 12px;
+          gap: 8px;
+        }
+        .bar .wide-only,
+        .proto-strip .long {
+          display: none;
+        }
+        .search {
+          flex: 0 0 auto;
+          max-width: none;
+          min-width: var(--wf-tap);
+          justify-content: center;
+          padding: 0;
+        }
+        .search .label {
+          display: none;
+        }
+        .hero {
+          padding: 14px 16px 40px;
+        }
+        .sheet {
+          padding: 16px 12px 96px;
+        }
+        .dock {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 30;
+          background: var(--wf-surface);
+          border-top: 1px solid var(--wf-line-2);
+          padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+        }
+        .dock button {
+          background: none;
+          border: 0;
+          min-height: 52px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          font-size: var(--wf-fs-12);
+          color: var(--wf-ink-2);
+        }
+        .dock button[aria-current="page"] {
+          color: var(--wf-accent);
+          font-weight: 600;
+        }
+        .dock .plus span.ring {
+          width: 48px;
+          height: 48px;
+          border-radius: var(--wf-r-pill);
+          background: var(--wf-pri-1);
+          color: var(--wf-on-accent);
+          display: grid;
+          place-items: center;
+          margin-top: -18px;
+          box-shadow: var(--wf-e3);
+        }
+        .toast {
+          bottom: 84px;
+        }
+        .btn,
+        .chip {
+          min-height: var(--wf-tap);
+        }
+      }
+
+      /* ─── this screen only ─── */
+      .hero-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .hero h2 {
+        margin: 6px 0 4px;
+        font-size: var(--wf-fs-28);
+        line-height: 1.15;
+      }
+      .hero .sub {
+        color: var(--wf-hero-ink-2);
+        font-size: var(--wf-fs-16);
+      }
+      .hero .sub b {
+        color: var(--wf-hero-ink);
+      }
+      .hero .confirm {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        color: var(--wf-hero-ink-3);
+        font-size: var(--wf-fs-13);
+      }
+      .hero .confirm span {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .hero-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .home-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .home-grid.with-panel {
+        grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+      }
+      .order-note {
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-3);
+        padding: 8px 16px 0;
+      }
+      .needs-list {
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+      }
+      .need {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) auto;
+        gap: 4px 14px;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .need:first-child {
+        border-top: 0;
+      }
+      .need.selected {
+        background: var(--wf-selected);
+      }
+      .need .when {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-3);
+      }
+      .need .when small {
+        display: block;
+        font-family: var(--wf-font);
+        font-size: var(--wf-fs-12);
+      }
+      .need .what {
+        font-size: var(--wf-fs-12);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .need .who {
+        background: none;
+        border: 0;
+        padding: 2px 0;
+        text-align: left;
+        font-size: var(--wf-fs-16);
+        font-weight: 600;
+        color: var(--wf-ink-1);
+        text-decoration: underline;
+        text-decoration-color: var(--wf-line-3);
+        text-underline-offset: 3px;
+      }
+      .need .who:hover {
+        text-decoration-color: currentColor;
+      }
+      .need .detail {
+        color: var(--wf-ink-2);
+        font-size: var(--wf-fs-13);
+      }
+      .need .act {
+        display: flex;
+        gap: 8px;
+      }
+      .empty {
+        padding: 28px 16px;
+        text-align: center;
+        color: var(--wf-ink-3);
+      }
+      .done-list {
+        list-style: none;
+        margin: 0;
+        padding: 0 16px 8px;
+      }
+      .done-list li {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 0;
+        border-top: 1px solid var(--wf-line);
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .done-list li:first-child {
+        border-top: 0;
+      }
+      .done-list .tick {
+        color: var(--wf-success);
+        font-weight: 700;
+      }
+      details.done > summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: 600;
+        list-style-position: inside;
+        min-height: var(--wf-tap);
+      }
+      .elsewhere {
+        margin-top: 16px;
+        padding: 14px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        align-items: center;
+        font-size: var(--wf-fs-14);
+      }
+      .elsewhere .fig b {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-16);
+      }
+      .elsewhere .links {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .panel {
+        position: sticky;
+        top: 72px;
+        max-height: calc(100vh - 90px);
+        overflow: auto;
+      }
+      .panel[hidden] {
+        display: none;
+      }
+      .panel .close {
+        margin-left: auto;
+      }
+      .p-sec {
+        padding: 14px 16px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .p-sec:first-of-type {
+        border-top: 0;
+      }
+      .p-sec h4 {
+        margin: 0 0 8px;
+        font-size: var(--wf-fs-12);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--wf-ink-3);
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        overflow: hidden;
+      }
+      .facts div {
+        padding: 8px 10px;
+        border-right: 1px solid var(--wf-line);
+        border-bottom: 1px solid var(--wf-line);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .facts div b {
+        display: block;
+        font-size: var(--wf-fs-14);
+        color: var(--wf-ink-1);
+      }
+      .facts div:nth-child(3n) {
+        border-right: 0;
+      }
+      .facts div:nth-last-child(-n + 3) {
+        border-bottom: 0;
+      }
+      .ward-filters {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 10px;
+        font-size: var(--wf-fs-13);
+      }
+      .ward-filters label {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-height: 32px;
+      }
+      .ward-filters input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--wf-accent);
+      }
+      .region {
+        font-size: var(--wf-fs-12);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        margin: 12px 0 4px;
+      }
+      .ward-opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--wf-line-2);
+        background: var(--wf-surface);
+        border-radius: var(--wf-r-md);
+        padding: 8px 12px;
+        min-height: var(--wf-tap);
+        margin: 4px 0;
+      }
+      .ward-opt[aria-checked="true"] {
+        border-color: var(--wf-accent);
+        background: var(--wf-accent-tint);
+      }
+      .ward-opt .ready {
+        margin-left: auto;
+        font-family: var(--wf-mono);
+        white-space: nowrap;
+      }
+      .ward-opt small {
+        display: block;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+      }
+      .panel-foot {
+        position: sticky;
+        bottom: 0;
+        background: var(--wf-surface);
+        border-top: 1px solid var(--wf-line-2);
+        padding: 12px 16px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .panel-foot .btn {
+        flex: 1;
+      }
+      .note {
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface-2);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-md);
+        padding: 8px 10px;
+        margin: 8px 0 0;
+      }
+      @media (max-width: 1100px) {
+        .home-grid.with-panel {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .panel {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top: auto;
+          max-height: 88vh;
+          z-index: 45;
+          border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+        }
+      }
+      @media (max-width: 900px) {
+        .hero h2 {
+          font-size: var(--wf-fs-20);
+        }
+        .hero .sub {
+          font-size: var(--wf-fs-14);
+        }
+        .hero-actions {
+          margin-left: 0;
+        }
+        .need {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 4px;
+        }
+        .need .when {
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
+        }
+        .need .when small {
+          display: inline;
+        }
+        .need .act .btn {
+          flex: 1;
+        }
+        .need .act {
+          margin-top: 6px;
+        }
+        .elsewhere .links {
+          margin-left: 0;
+        }
+        .chips.scroll {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 2px;
+        }
+        .chips.scroll .chip {
+          flex: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the list</a>
+    <div class="proto-strip" role="note">
+      <strong>Mockup B5: "Needs you now" Home.</strong>
+      <span>Invented data, not for clinical use.</span>
+      <span class="long">Nothing here saves; reload to start again.</span>
+      <span class="spacer"></span>
+      <button class="linkish" type="button" id="aboutBtn">What changed from today?</button>
+      <a href="one-ward-page-mockup.html">Open the B2 ward page mockup</a>
+    </div>
+
+    <div class="app">
+      <nav class="rail" id="rail" aria-label="Main menu">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">+</span> Ward Flow <span class="tag">WA</span>
+        </div>
+        <div class="shift-card">
+          <b>Day shift</b> <span class="mono">07:00–15:00</span>
+          <div class="muted">Dr S. Chen · Bed coordinator</div>
+          <div class="row">
+            <span><span class="dot"></span> Board time</span><span class="mono">10:42 AWST</span>
+          </div>
+        </div>
+        <div class="nav-label">Bed coordinator</div>
+        <ul class="nav">
+          <li>
+            <button type="button" aria-current="page">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />
+              </svg>
+              <span>Home<small>needs you now</small></span
+              ><span class="count" data-bind="needCount">6</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 18V8M3 14h18v4M7 11h4v3M21 18v-5a2 2 0 0 0-2-2h-6v3" />
+              </svg>
+              <span>Beds<small>ready now</small></span
+              ><span class="count" data-bind="readyTotal">12</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h12l-3-3M20 17H8l3 3" /></svg>
+              <span>Movements<small>everyone waiting</small></span
+              ><span class="count">38</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>
+              <span>Referrals<small>awaiting a decision</small></span
+              ><span class="count" data-bind="refCount">1</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 4h8v3H8zM6 6H5v15h14V6h-1M9 12h6M9 16h4" />
+              </svg>
+              <span>Handover</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01" /></svg>
+              <span>More</span>
+            </button>
+          </li>
+        </ul>
+        <div class="who">
+          <span class="avatar" aria-hidden="true">SC</span
+          ><span><b>Dr S. Chen</b><br /><span class="muted">Bed coordinator</span></span>
+        </div>
+      </nav>
+
+      <div>
+        <header class="bar">
+          <button
+            class="icon-btn menu-btn"
+            type="button"
+            id="menuBtn"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="rail"
+          >
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+          <span class="title">Home</span>
+          <span class="hero-chip wide-only"><span class="dot"></span> Statewide</span>
+          <button class="search" type="button" data-unwired aria-label="Search">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6" />
+              <path d="M20 20l-4.5-4.5" />
+            </svg>
+            <span class="label">Search</span>
+          </button>
+          <span class="spacer"></span>
+          <button class="btn on-hero wide-only" type="button" data-unwired>Alerts <span class="mono">12</span></button>
+          <button class="btn on-hero wide-only" type="button" id="themeBtn">Dark or light</button>
+          <button class="btn on-hero primary wide-only" type="button" data-unwired>+ New referral</button>
+        </header>
+
+        <section class="hero" aria-labelledby="heroTitle">
+          <div class="hero-row">
+            <div>
+              <div class="eyebrow">Statewide · mental health beds · day shift</div>
+              <h2 id="heroTitle">
+                <span data-bind="needCount">6</span> <span data-bind="needWord">things need</span> you now
+              </h2>
+              <div class="sub"><b>38</b> waiting in ED · <b data-bind="readyTotal">12</b> beds ready</div>
+              <div class="confirm">
+                <span><span class="dot"></span> Figures confirmed 10:22</span>
+                <span
+                  ><span class="dot warn"></span>
+                  <span><span data-bind="notReporting">1 ward</span> not reporting</span></span
+                >
+                <span>Not checked: private hospitals, no feed</span>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <span class="hero-chip"><span class="dot"></span> Demo <span class="mono">10:42</span></span>
+              <button class="btn" type="button" data-unwired>Start handover</button>
+            </div>
+          </div>
+        </section>
+
+        <main class="sheet" id="main" tabindex="-1">
+          <div class="home-grid" id="homeGrid">
+            <section class="card" aria-labelledby="needsTitle">
+              <div class="card-head">
+                <h3 id="needsTitle">Needs you now</h3>
+                <span class="muted mono" data-bind="shownLine">6 of 6</span>
+                <div
+                  class="chips scroll"
+                  role="group"
+                  aria-label="Show only"
+                  id="filters"
+                  style="margin-left: auto"
+                ></div>
+              </div>
+              <p class="order-note">
+                In the order each was raised, oldest first. Ward Flow does not rank people or pick wards.
+              </p>
+              <ul class="needs-list" id="needsList"></ul>
+              <details class="done" id="doneBox">
+                <summary>Done this shift (<span data-bind="doneCount">0</span>)</summary>
+                <ul class="done-list" id="doneList"></ul>
+              </details>
+            </section>
+
+            <aside class="card panel" id="panel" hidden aria-labelledby="panelTitle"></aside>
+          </div>
+
+          <section class="card elsewhere" aria-label="Everything else, in one line">
+            <span class="fig"><b>38</b> waiting in ED</span>
+            <span class="fig"><b data-bind="readyTotal">12</b> beds ready</span>
+            <span class="fig"><b data-bind="northReady">4</b> North Metro</span>
+            <span class="fig"><b data-bind="eastReady">5</b> East Metro</span>
+            <span class="fig"><b data-bind="southReady">3</b> South Metro</span>
+            <span class="links">
+              <button class="btn quiet" type="button" data-unwired>See everyone waiting</button>
+              <button class="btn quiet" type="button" data-unwired>See all beds</button>
+            </span>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <nav class="dock" aria-label="Phone menu">
+      <button type="button" aria-current="page">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z" /></svg>Home
+      </button>
+      <button type="button" data-unwired>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>Referrals
+      </button>
+      <button type="button" class="plus" data-unwired aria-label="New referral">
+        <span class="ring"
+          ><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg
+        ></span>
+      </button>
+      <button type="button" data-unwired>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4" /></svg
+        >Alerts
+      </button>
+      <button type="button" id="dockTheme">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z" /></svg
+        >Theme
+      </button>
+    </nav>
+
+    <div class="scrim" id="scrim" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+      <span id="toastText"></span><button type="button" id="toastUndo" hidden>Undo</button>
+    </div>
+
+    <dialog id="confirmDlg" aria-labelledby="confirmTitle">
+      <form method="dialog">
+        <div class="dlg-body">
+          <h2 id="confirmTitle"></h2>
+          <p id="confirmText"></p>
+        </div>
+        <div class="dlg-foot">
+          <button class="btn" value="cancel">Cancel</button
+          ><button class="btn primary" value="ok" id="confirmOk">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="aboutDlg" aria-labelledby="aboutTitle">
+      <form method="dialog">
+        <div class="dlg-body">
+          <h2 id="aboutTitle">What this mockup changes</h2>
+          <p>
+            Today Home shows a gauge, five number buttons, a "Checking" line, ten hospital cards and three columns
+            (queue, state bed flow and placement).
+          </p>
+          <ul>
+            <li>
+              The top of Home is now one short list: the things that need the bed coordinator now, each with one button.
+            </li>
+            <li>The list is in the order each item was raised. Nothing is ranked, scored or re-sorted.</li>
+            <li>
+              The placement panel opens only when you choose a person. You pick the ward yourself; filters only hide
+              wards, they never suggest one.
+            </li>
+            <li>A held bed is only released when a person presses Release. Nothing is released automatically.</li>
+            <li>The ten hospital cards become one line of figures, with links to the full lists.</li>
+          </ul>
+          <p class="muted">Try it: choose "Choose a ward" on the first row, or tap a name.</p>
+        </div>
+        <div class="dlg-foot"><button class="btn primary" value="ok">Close</button></div>
+      </form>
+    </dialog>
+
+    <script>
+      (function () {
+        "use strict";
+        var NOT_WIRED = "Not wired in this prototype.";
+
+        /* Invented wards. Ready counts are plain recorded counts; no ward is ever ranked or starred. */
+        var wards = [
+          { id: "gas", region: "North Metro", name: "Graylands Adult Secure", type: "Adult secure", ready: 1 },
+          {
+            id: "goa",
+            region: "North Metro",
+            name: "Graylands Older Adult",
+            type: "Older adult open",
+            ready: 0,
+            notReporting: true,
+          },
+          { id: "mhu", region: "North Metro", name: "Mental Health Unit (SCGH)", type: "Adult open", ready: 2 },
+          { id: "scoa", region: "North Metro", name: "SCGH Older Adult", type: "Older adult open", ready: 1 },
+          { id: "sjgs", region: "North Metro", name: "SJGS Adult Secure", type: "Adult secure", ready: 0 },
+          { id: "btas", region: "East Metro", name: "BTY Adult Secure", type: "Adult secure", ready: 1 },
+          { id: "btoa", region: "East Metro", name: "BTY Older Adult", type: "Older adult open", ready: 0 },
+          { id: "dab", region: "East Metro", name: "Dabakarn (RPH)", type: "Adult secure", ready: 1 },
+          { id: "moo", region: "East Metro", name: "Moodjar (Armadale)", type: "Adult open", ready: 1 },
+          { id: "rpoa", region: "East Metro", name: "RPH Older Adult", type: "Older adult open", ready: 0 },
+          { id: "sjgm", region: "East Metro", name: "SJGM Adult Open", type: "Adult open", ready: 2 },
+          { id: "fsas", region: "South Metro", name: "FSH Adult Secure", type: "Adult secure", ready: 0 },
+          { id: "fsoa", region: "South Metro", name: "FSH Older Adult", type: "Older adult open", ready: 1 },
+          { id: "maa", region: "South Metro", name: "Maali (Fremantle)", type: "Adult open", ready: 1 },
+          { id: "rgh", region: "South Metro", name: "RGH Adult Secure", type: "Adult secure", ready: 1 },
+        ];
+
+        /* The things that need the coordinator. `raised` is the recorded time each was raised. */
+        var needs = [
+          {
+            id: "n1",
+            kind: "offer",
+            raised: "03:42",
+            ago: "7h 0m",
+            label: "Needs a bed offer",
+            person: "Kwame Vandersloot",
+            umrn: "UM100008",
+            detail: "At RPH ED · adult secure · tier T1 recorded by ED · no ward has accepted yet",
+            action: "Choose a ward",
+            bedType: "Adult secure",
+            at: "Royal Perth ED",
+            sex: "Male",
+            age: "Adult",
+            legal: "Involuntary (recorded by ED)",
+          },
+          {
+            id: "n2",
+            kind: "offer",
+            raised: "03:52",
+            ago: "6h 50m",
+            label: "Needs a bed offer",
+            person: "Rowena Kestrel",
+            umrn: "UM100014",
+            detail: "At SCGH ED · older adult open · tier T2 recorded by ED · declined by 2 wards today (no bed)",
+            action: "Choose a ward",
+            bedType: "Older adult open",
+            at: "Sir Charles Gairdner ED",
+            sex: "Female",
+            age: "Older adult",
+            legal: "Voluntary",
+          },
+          {
+            id: "n3",
+            kind: "hold",
+            raised: "06:40",
+            ago: "4h 2m",
+            label: "Bed held, not yet used",
+            person: "Maya Ashgrove",
+            umrn: "UM100012",
+            detail: "Bed 12 at BTY Adult Secure held for her since 06:40 · she is still at FSH ED",
+            action: "Check the hold",
+            ward: "BTY Adult Secure",
+            bed: "12",
+          },
+          {
+            id: "n4",
+            kind: "ward",
+            raised: "07:10",
+            ago: "3h 32m",
+            label: "Ward not reporting",
+            person: "Graylands Older Adult",
+            umrn: "",
+            detail: "Bed numbers last confirmed at 07:10 · its ready count may be out of date",
+            action: "Ask ward to confirm",
+          },
+          {
+            id: "n5",
+            kind: "referral",
+            raised: "08:55",
+            ago: "1h 47m",
+            label: "Referral to answer",
+            person: "Bao Davenport",
+            umrn: "UM100009",
+            detail: "From Fremantle community team · asks for an adult open bed · at home with family",
+            action: "Answer referral",
+            from: "Fremantle Community Team",
+            ask: "Adult open bed for admission",
+          },
+          {
+            id: "n6",
+            kind: "transport",
+            raised: "09:10",
+            ago: "1h 32m",
+            label: "Accepted, no transport booked",
+            person: "Feodora Blennerhast",
+            umrn: "UM100007",
+            detail: "Accepted to Dabakarn (RPH) at 09:10 · at SJGM ED · bed 18 pulled for her",
+            action: "Book transport",
+            ward: "Dabakarn (RPH)",
+          },
+        ];
+
+        var KIND_LABEL = {
+          offer: "Bed offers",
+          hold: "Holds",
+          ward: "Wards",
+          referral: "Referrals",
+          transport: "Transport",
+        };
+        var state = {
+          filter: "all",
+          open: null,
+          chosenWard: null,
+          onlyType: true,
+          onlyReady: false,
+          done: [],
+          undo: null,
+        };
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+        function esc(s) {
+          return String(s).replace(/[&<>"]/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+          });
+        }
+        function open() {
+          return needs.filter(function (n) {
+            return !n.done;
+          });
+        }
+        function bindAll(key, value) {
+          document.querySelectorAll('[data-bind="' + key + '"]').forEach(function (el) {
+            el.textContent = value;
+          });
+        }
+
+        /* Toast with optional undo. */
+        var toastTimer = null;
+        function toast(text, undoFn) {
+          $("toastText").textContent = text;
+          $("toastUndo").hidden = !undoFn;
+          state.undo = undoFn || null;
+          $("toast").hidden = false;
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(
+            function () {
+              $("toast").hidden = true;
+              state.undo = null;
+            },
+            undoFn ? 7000 : 3500,
+          );
+        }
+        $("toastUndo").addEventListener("click", function () {
+          if (state.undo) state.undo();
+          $("toast").hidden = true;
+        });
+
+        function confirmBox(title, text, okLabel, onOk) {
+          $("confirmTitle").textContent = title;
+          $("confirmText").textContent = text;
+          $("confirmOk").textContent = okLabel;
+          var dlg = $("confirmDlg");
+          dlg.returnValue = "";
+          dlg.onclose = function () {
+            if (dlg.returnValue === "ok") onOk();
+          };
+          dlg.showModal();
+        }
+
+        function renderFigures() {
+          var total = 0,
+            regions = { "North Metro": 0, "East Metro": 0, "South Metro": 0 };
+          wards.forEach(function (w) {
+            total += w.ready;
+            regions[w.region] += w.ready;
+          });
+          bindAll("readyTotal", total);
+          bindAll("northReady", regions["North Metro"]);
+          bindAll("eastReady", regions["East Metro"]);
+          bindAll("southReady", regions["South Metro"]);
+          var nr = wards.filter(function (w) {
+            return w.notReporting;
+          }).length;
+          bindAll("notReporting", nr === 1 ? "1 ward" : nr + " wards");
+        }
+
+        function renderFilters() {
+          var o = open();
+          var kinds = ["all", "offer", "referral", "hold", "transport", "ward"];
+          $("filters").innerHTML = kinds
+            .map(function (k) {
+              var n =
+                k === "all"
+                  ? o.length
+                  : o.filter(function (x) {
+                      return x.kind === k;
+                    }).length;
+              if (k !== "all" && n === 0 && state.filter !== k) return "";
+              var lab = k === "all" ? "All" : KIND_LABEL[k];
+              return (
+                '<button type="button" class="chip" data-filter="' +
+                k +
+                '" aria-pressed="' +
+                (state.filter === k) +
+                '">' +
+                lab +
+                ' <span class="n">' +
+                n +
+                "</span></button>"
+              );
+            })
+            .join("");
+        }
+
+        function renderList() {
+          var o = open();
+          var shown = o.filter(function (n) {
+            return state.filter === "all" || n.kind === state.filter;
+          });
+          bindAll("needCount", o.length);
+          bindAll("needWord", o.length === 1 ? "thing needs" : "things need");
+          bindAll("shownLine", shown.length + " of " + o.length);
+          bindAll(
+            "refCount",
+            o.filter(function (n) {
+              return n.kind === "referral";
+            }).length,
+          );
+          bindAll("doneCount", state.done.length);
+          if (!shown.length) {
+            $("needsList").innerHTML =
+              '<li class="empty">' +
+              (o.length
+                ? "Nothing of this kind needs you now."
+                : "Nothing needs you now. Everything raised this shift has been answered.") +
+              "</li>";
+          } else {
+            $("needsList").innerHTML = shown
+              .map(function (n) {
+                var badge = n.kind === "offer" ? "danger" : n.kind === "hold" || n.kind === "ward" ? "warn" : "info";
+                return (
+                  '<li class="need' +
+                  (state.open === n.id ? " selected" : "") +
+                  '">' +
+                  '<div class="when">' +
+                  n.raised +
+                  "<small>" +
+                  n.ago +
+                  " ago</small></div>" +
+                  '<div><div class="what"><span class="badge ' +
+                  badge +
+                  '">' +
+                  esc(n.label) +
+                  "</span>" +
+                  (n.umrn ? '<span class="mono">' + n.umrn + "</span>" : "") +
+                  "</div>" +
+                  '<button type="button" class="who" data-open="' +
+                  n.id +
+                  '">' +
+                  esc(n.person) +
+                  "</button>" +
+                  '<div class="detail">' +
+                  esc(n.detail) +
+                  "</div></div>" +
+                  '<div class="act"><button type="button" class="btn primary" data-open="' +
+                  n.id +
+                  '">' +
+                  esc(n.action) +
+                  "</button></div>" +
+                  "</li>"
+                );
+              })
+              .join("");
+          }
+          $("doneList").innerHTML = state.done.length
+            ? state.done
+                .map(function (d) {
+                  return (
+                    '<li><span class="tick" aria-hidden="true">✓</span><span class="mono">' +
+                    d.time +
+                    "</span><span>" +
+                    esc(d.text) +
+                    "</span></li>"
+                  );
+                })
+                .join("")
+            : '<li class="muted">Nothing yet.</li>';
+          renderFilters();
+        }
+
+        function markDone(n, text) {
+          n.done = true;
+          var entry = { id: n.id, time: "10:42", text: text };
+          state.done.unshift(entry);
+          closePanel();
+          renderList();
+          toast(text, function () {
+            n.done = false;
+            state.done = state.done.filter(function (d) {
+              return d !== entry;
+            });
+            if (n.onUndo) n.onUndo();
+            renderList();
+            renderFigures();
+          });
+        }
+
+        /* ─── side panel (bottom sheet on phone) ─── */
+        function isNarrow() {
+          return window.matchMedia("(max-width: 1100px)").matches;
+        }
+        var lastFocus = null;
+        function openPanel(id) {
+          var n = needs.find(function (x) {
+            return x.id === id;
+          });
+          if (!n) return;
+          lastFocus = document.activeElement;
+          state.open = id;
+          state.chosenWard = null;
+          state.onlyType = true;
+          state.onlyReady = false;
+          renderPanel(n);
+          $("panel").hidden = false;
+          $("homeGrid").classList.add("with-panel");
+          if (isNarrow()) {
+            $("scrim").hidden = false;
+            $("panel").setAttribute("role", "dialog");
+            $("panel").setAttribute("aria-modal", "true");
+          } else {
+            $("panel").removeAttribute("role");
+            $("panel").removeAttribute("aria-modal");
+          }
+          renderList();
+          var h = $("panelTitle");
+          if (h) h.focus();
+        }
+        function closePanel() {
+          state.open = null;
+          $("panel").hidden = true;
+          $("panel").innerHTML = "";
+          $("scrim").hidden = true;
+          $("homeGrid").classList.remove("with-panel");
+          renderList();
+          if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+        }
+
+        function head(n, kicker) {
+          return (
+            '<div class="card-head"><div><div class="muted" style="font-size:var(--wf-fs-12);text-transform:uppercase;letter-spacing:.06em;font-weight:600">' +
+            esc(kicker) +
+            "</div>" +
+            '<h3 id="panelTitle" tabindex="-1">' +
+            esc(n.person) +
+            "</h3>" +
+            (n.umrn ? '<div class="muted mono">' + n.umrn + "</div>" : "") +
+            "</div>" +
+            '<button type="button" class="icon-btn close" data-close aria-label="Close panel"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button></div>'
+          );
+        }
+
+        function wardOptions(n) {
+          var list = wards.filter(function (w) {
+            return (!state.onlyType || w.type === n.bedType) && (!state.onlyReady || w.ready > 0);
+          });
+          var html = "";
+          ["North Metro", "East Metro", "South Metro"].forEach(function (r) {
+            var inR = list.filter(function (w) {
+              return w.region === r;
+            });
+            if (!inR.length) return;
+            html += '<div class="region">' + r + "</div>";
+            html += inR
+              .map(function (w) {
+                var ready = w.ready === 1 ? "1 ready" : w.ready + " ready";
+                return (
+                  '<button type="button" class="ward-opt" role="radio" aria-checked="' +
+                  (state.chosenWard === w.id) +
+                  '" data-ward="' +
+                  w.id +
+                  '">' +
+                  "<span><b>" +
+                  esc(w.name) +
+                  "</b><small>" +
+                  esc(w.type) +
+                  (w.notReporting ? " · not reporting since 07:10" : "") +
+                  "</small></span>" +
+                  '<span class="ready">' +
+                  ready +
+                  "</span></button>"
+                );
+              })
+              .join("");
+          });
+          return html || '<p class="muted">No ward matches these filters. Clear a filter to see more.</p>';
+        }
+
+        function renderPanel(n) {
+          var p = $("panel");
+          if (n.kind === "offer") {
+            var chosen = wards.find(function (w) {
+              return w.id === state.chosenWard;
+            });
+            var count = wards.filter(function (w) {
+              return (!state.onlyType || w.type === n.bedType) && (!state.onlyReady || w.ready > 0);
+            }).length;
+            p.innerHTML =
+              head(n, "Choose a ward") +
+              '<div class="p-sec"><div class="facts">' +
+              "<div>At<b>" +
+              esc(n.at) +
+              "</b></div><div>Waiting<b>" +
+              n.ago +
+              "</b></div><div>Since<b>" +
+              n.raised +
+              "</b></div>" +
+              "<div>Sex<b>" +
+              n.sex +
+              "</b></div><div>Age group<b>" +
+              n.age +
+              "</b></div><div>Bed type<b>" +
+              esc(n.bedType) +
+              "</b></div></div>" +
+              '<p class="note">Legal status: ' +
+              esc(n.legal) +
+              ". Ward Flow shows only what was recorded; it works out no legal times.</p></div>" +
+              '<div class="p-sec"><h4>Wards (' +
+              count +
+              " of " +
+              wards.length +
+              ")</h4>" +
+              '<div class="ward-filters">' +
+              '<label><input type="checkbox" id="fType"' +
+              (state.onlyType ? " checked" : "") +
+              " /> Only " +
+              esc(n.bedType.toLowerCase()) +
+              " wards</label>" +
+              '<label><input type="checkbox" id="fReady"' +
+              (state.onlyReady ? " checked" : "") +
+              " /> Only wards with a ready bed</label></div>" +
+              '<p class="muted" style="font-size:var(--wf-fs-13);margin:0">Listed by region, then by name. Ward Flow does not suggest a ward.</p>' +
+              '<div role="radiogroup" aria-label="Ward to offer">' +
+              wardOptions(n) +
+              "</div></div>" +
+              '<div class="panel-foot"><button type="button" class="btn" data-unwired>Open full record</button>' +
+              '<button type="button" class="btn primary" id="sendOffer"' +
+              (chosen ? "" : " disabled") +
+              ">" +
+              (chosen ? "Ask " + esc(chosen.name) + " to accept" : "Choose a ward first") +
+              "</button></div>";
+          } else if (n.kind === "hold") {
+            p.innerHTML =
+              head(n, "Held bed") +
+              '<div class="p-sec"><div class="facts"><div>Ward<b>' +
+              esc(n.ward) +
+              "</b></div><div>Bed<b>" +
+              n.bed +
+              "</b></div><div>Held since<b>" +
+              n.raised +
+              "</b></div>" +
+              "<div>Held for<b>" +
+              n.ago +
+              "</b></div><div>Person is at<b>FSH ED</b></div><div>Transport<b>Not booked</b></div></div>" +
+              '<p class="note">A hold is never released automatically. It stays until somebody releases it or the person arrives.</p></div>' +
+              '<div class="p-sec"><h4>What happens next</h4><p style="margin:0">Keep the hold if she is still coming. Release it if the plan has changed, and bed 12 shows as ready again.</p></div>' +
+              '<div class="panel-foot"><button type="button" class="btn" id="keepHold">Keep holding</button><button type="button" class="btn danger" id="releaseHold">Release bed 12</button></div>';
+          } else if (n.kind === "ward") {
+            p.innerHTML =
+              head(n, "Ward not reporting") +
+              '<div class="p-sec"><p style="margin:0">Graylands Older Adult last confirmed its bed numbers at <b>07:10</b>. Its ready count (0) may be out of date.</p>' +
+              '<p class="note">Asking sends the ward a message in Ward Flow. It does not change any number.</p></div>' +
+              '<div class="panel-foot"><button type="button" class="btn" data-unwired>Call the ward</button><button type="button" class="btn primary" id="askWard">Ask ward to confirm</button></div>';
+          } else if (n.kind === "referral") {
+            p.innerHTML =
+              head(n, "Referral to answer") +
+              '<div class="p-sec"><div class="facts"><div>From<b>' +
+              esc(n.from) +
+              "</b></div><div>Raised<b>" +
+              n.raised +
+              "</b></div><div>Waiting<b>" +
+              n.ago +
+              "</b></div>" +
+              "<div>Asks for<b>Adult open</b></div><div>Now at<b>Home</b></div><div>Legal status<b>Voluntary</b></div></div>" +
+              '<p class="note">Reason given (invented): low mood over three weeks, family can no longer support at home, community team asks for admission.</p></div>' +
+              '<div class="p-sec"><h4>Your answer</h4><label class="field">If you decline, why?<select id="declineWhy"><option value="">Choose a reason</option><option>No adult open bed in the area</option><option>Needs a different kind of bed</option><option>Community team to keep supporting</option></select></label></div>' +
+              '<div class="panel-foot"><button type="button" class="btn" data-unwired>Ask a question</button><button type="button" class="btn danger" id="declineRef">Decline</button><button type="button" class="btn primary" id="acceptRef">Accept, add to waiting list</button></div>';
+          } else if (n.kind === "transport") {
+            p.innerHTML =
+              head(n, "Book transport") +
+              '<div class="p-sec"><div class="facts"><div>From<b>SJGM ED</b></div><div>To<b>Dabakarn</b></div><div>Bed<b>18 (pulled)</b></div>' +
+              "<div>Accepted<b>09:10</b></div><div>Waiting<b>" +
+              n.ago +
+              "</b></div><div>Transport<b>Not booked</b></div></div></div>" +
+              '<div class="p-sec"><h4>Booking</h4><label class="field">Pick-up time<select id="pickTime"><option>11:30</option><option>12:00</option><option>12:30</option><option>13:00</option></select></label>' +
+              '<label class="field">Booked with<select id="pickWho"><option>Patient transport service</option><option>Ward escort</option><option>Family</option></select></label></div>' +
+              '<div class="panel-foot"><button type="button" class="btn primary" id="bookTransport">Mark transport booked</button></div>';
+          }
+        }
+
+        $("panel").addEventListener("click", function (e) {
+          var t = e.target.closest("button");
+          if (!t) return;
+          var n = needs.find(function (x) {
+            return x.id === state.open;
+          });
+          if (t.hasAttribute("data-close")) return closePanel();
+          if (t.hasAttribute("data-ward")) {
+            state.chosenWard = t.getAttribute("data-ward");
+            renderPanel(n);
+            var again = $("panel").querySelector('[data-ward="' + state.chosenWard + '"]');
+            if (again) again.focus();
+            return;
+          }
+          if (t.id === "sendOffer") {
+            var w = wards.find(function (x) {
+              return x.id === state.chosenWard;
+            });
+            return markDone(
+              n,
+              "Asked " + w.name + " to accept " + n.person + ". Nothing is placed until the ward accepts.",
+            );
+          }
+          if (t.id === "keepHold") return markDone(n, "Kept the hold on bed 12 at BTY Adult Secure (checked 10:42).");
+          if (t.id === "releaseHold") {
+            return confirmBox(
+              "Release bed 12?",
+              "Maya Ashgrove will no longer have bed 12 at BTY Adult Secure kept for her. The bed shows as ready again.",
+              "Release bed",
+              function () {
+                var ward = wards.find(function (x) {
+                  return x.id === "btas";
+                });
+                ward.ready += 1;
+                n.onUndo = function () {
+                  ward.ready -= 1;
+                };
+                renderFigures();
+                markDone(n, "Released bed 12 at BTY Adult Secure.");
+              },
+            );
+          }
+          if (t.id === "askWard") return markDone(n, "Asked Graylands Older Adult to confirm its numbers.");
+          if (t.id === "acceptRef")
+            return markDone(n, "Accepted the referral for " + n.person + ". Added to the waiting list.");
+          if (t.id === "declineRef") {
+            var why = $("declineWhy");
+            if (!why.value) {
+              why.focus();
+              return toast("Choose a reason before declining.");
+            }
+            return markDone(n, "Declined the referral for " + n.person + ": " + why.value.toLowerCase() + ".");
+          }
+          if (t.id === "bookTransport")
+            return markDone(n, "Transport booked for " + n.person + ", pick-up " + $("pickTime").value + ".");
+        });
+        $("panel").addEventListener("change", function (e) {
+          var n = needs.find(function (x) {
+            return x.id === state.open;
+          });
+          if (e.target.id === "fType") state.onlyType = e.target.checked;
+          else if (e.target.id === "fReady") state.onlyReady = e.target.checked;
+          else return;
+          if (state.chosenWard) {
+            var still = wards.find(function (w) {
+              return (
+                w.id === state.chosenWard &&
+                (!state.onlyType || w.type === n.bedType) &&
+                (!state.onlyReady || w.ready > 0)
+              );
+            });
+            if (!still) state.chosenWard = null;
+          }
+          var id = e.target.id;
+          renderPanel(n);
+          $(id).focus();
+        });
+
+        $("needsList").addEventListener("click", function (e) {
+          var t = e.target.closest("[data-open]");
+          if (t) openPanel(t.getAttribute("data-open"));
+        });
+        $("filters").addEventListener("click", function (e) {
+          var t = e.target.closest("[data-filter]");
+          if (!t) return;
+          state.filter = t.getAttribute("data-filter");
+          renderList();
+          var again = $("filters").querySelector('[data-filter="' + state.filter + '"]');
+          if (again) again.focus();
+        });
+        $("scrim").addEventListener("click", function () {
+          if (!$("panel").hidden) closePanel();
+          closeRail();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "Escape") return;
+          if (!$("panel").hidden) closePanel();
+          closeRail();
+        });
+
+        /* Anything not part of this mockup says so, in the app's own words (owner rule D4). */
+        document.addEventListener("click", function (e) {
+          var t = e.target.closest("[data-unwired]");
+          if (t) toast(NOT_WIRED);
+        });
+
+        /* Phone menu. */
+        function closeRail() {
+          if (!$("rail").classList.contains("open")) return;
+          $("rail").classList.remove("open");
+          $("menuBtn").setAttribute("aria-expanded", "false");
+          if ($("panel").hidden) $("scrim").hidden = true;
+        }
+        $("menuBtn").addEventListener("click", function () {
+          $("rail").classList.add("open");
+          $("menuBtn").setAttribute("aria-expanded", "true");
+          $("scrim").hidden = false;
+          var first = $("rail").querySelector("button");
+          if (first) first.focus();
+        });
+
+        /* Theme: follows the device until you press the button. Held in memory only. */
+        function flipTheme() {
+          var root = document.documentElement;
+          var dark = root.getAttribute("data-theme")
+            ? root.getAttribute("data-theme") === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          root.setAttribute("data-theme", dark ? "light" : "dark");
+        }
+        $("themeBtn").addEventListener("click", flipTheme);
+        $("dockTheme").addEventListener("click", flipTheme);
+
+        $("aboutBtn").addEventListener("click", function () {
+          $("aboutDlg").showModal();
+        });
+
+        renderFigures();
+        renderList();
+      })();
+    </script>
+  </body>
+</html>
