@@ -30,8 +30,23 @@ describe("the local board's answer to Refer to wards (audit E-05)", () => {
     expect(next.movements.find((row) => row.id === "WF-009")?.referredUnitIds).toContain("rph-adult-secure");
     const outcome = localCommandOutcome(before, next);
     expect(outcome.status).toBe("accepted");
-    expect(outcome.partly).toBe(next.rejections.at(-1)?.reason);
+    expect(outcome.partly).toContain(next.rejections.at(-1)!.reason);
     expect(outcome.partly).toMatch(/FSH Adult Secure/u);
+  });
+
+  it("names every ward held back, not just the last", () => {
+    const before = onlyOneWardSuits();
+    const otherCohort = before.units.find((unit) => unit.id === "fsh-adult-secure")!.cohort;
+    const twoHeldBack = {
+      ...before,
+      units: before.units.map((unit) => (unit.id === "brm-adult-secure" ? { ...unit, cohort: otherCohort } : unit)),
+    };
+    const next = wardFlowReducer(twoHeldBack, refer(["fsh-adult-secure", "brm-adult-secure", "rph-adult-secure"]));
+    const outcome = localCommandOutcome(twoHeldBack, next);
+    expect(outcome.status).toBe("accepted");
+    expect(next.rejections.length - twoHeldBack.rejections.length).toBe(2);
+    for (const rejection of next.rejections.slice(twoHeldBack.rejections.length))
+      expect(outcome.partly).toContain(rejection.reason);
   });
 
   it("stays refused when no ward could be referred, and carries no note when every ward was", () => {

@@ -67,7 +67,15 @@ export function localCommandOutcome(
   return {
     status: accepted ? "accepted" : "refused",
     ...(accepted ? commandMetadata(before, next) : {}),
-    ...(partly ? { partly: refusal.reason } : {}),
+    // Every ward this command held back, not just the last, so none is silently left out.
+    ...(partly
+      ? {
+          partly: next.rejections
+            .slice(before.rejections.length)
+            .map(({ reason }) => (/[.!?…]$/u.test(reason) ? reason : `${reason}.`))
+            .join(" "),
+        }
+      : {}),
     message: accepted ? undefined : refusal?.reason,
     undoRecords: next.undoRecords,
     generation: next.worldGeneration,

@@ -559,7 +559,11 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
         // by UMRN at most, never typed text, and only a desk allowed to act on the record gets here.
         reason: refusalReason(rawNext.rejections.at(-1)?.reason),
       };
-    partly = refusalReason(rawNext.rejections.at(-1)?.reason);
+    // Every ward this command held back, not just the last, so none is silently left out.
+    partly = rawNext.rejections
+      .slice(world.state.rejections.length)
+      .map((rejection) => endSentence(refusalReason(rejection.reason)))
+      .join(" ");
   }
   // Refusal messages are transient (D-18). A partial referral's coded denied targets remain in audit.
   const next = serialise({ ...rawNext, rejections: [] });
@@ -580,6 +584,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
 
 const REFUSAL_FALLBACK = "The workflow rules did not permit this action.";
 const REFUSAL_MAX = 500;
+const endSentence = (text: string) => (/[.!?…]$/u.test(text) ? text : `${text}.`);
 function refusalReason(reason: unknown): string {
   if (typeof reason !== "string" || !reason.trim()) return REFUSAL_FALLBACK;
   const trimmed = reason.trim();

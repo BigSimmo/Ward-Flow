@@ -2482,4 +2482,10 @@ test("a partly refused Refer to wards is saved and says which ward was held back
   // An ordinary accepted command carries no such note.
   const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
   assert.equal(engine.applyCommand(world, refresh, at).partly, null);
+  // Every ward held back is named, not just the last.
+  world.state.units.find((unit) => unit.id === "brm-adult-secure").cohort = secure.cohort;
+  const two = engine.applyCommand(world, { ...event, unitIds: [...event.unitIds, "brm-adult-secure"] }, at);
+  assert.equal(two.outcome, "accepted");
+  for (const name of [secure.name, world.state.units.find((unit) => unit.id === "brm-adult-secure").name])
+    assert.ok(two.partly.includes(name), `names ${name}`);
 });
