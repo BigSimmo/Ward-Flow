@@ -339,13 +339,13 @@
   text-decoration: underline;
 }
 
-/* DA-25: on a touch screen the link gains an invisible 12px above and below, a 44px tap area in
- * the same layout. */
+/* DA-25: on a touch tablet the link reaches the 44px touch size (`--wf-tablet-tap`, 0 elsewhere).
+ * It grows its own row rather than reaching past it, so it never covers a wrapped chip above. */
 @media (pointer: coarse) {
   .highlightLink {
-    display: inline-block;
-    margin-block: calc(-1 * var(--wf-s-3));
-    padding-block: var(--wf-s-3);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-tablet-tap, 0px);
   }
 }
 
