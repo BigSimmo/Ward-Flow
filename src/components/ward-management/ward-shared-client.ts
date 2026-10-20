@@ -70,6 +70,11 @@ export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
+  /**
+   * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
+   * suitable were referred; the person must still be told about the one that was not.
+   */
+  partly?: string;
   undoRecords?: WardFlowState["undoRecords"];
   generation?: number;
   /** Memory-only fence for an accepted toast; never serialized with workspace state. */
@@ -141,6 +146,7 @@ export class SharedWorkspaceClient {
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
     metadata?: WardCommandMetadata,
+    partly?: string,
   ) {
     this.completions.get(commandId)?.({
       commandId,
@@ -148,6 +154,7 @@ export class SharedWorkspaceClient {
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
+      ...(partly ? { partly } : {}),
     });
     this.completions.delete(commandId);
   }
@@ -689,8 +696,14 @@ export class SharedWorkspaceClient {
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
           this.worldEpoch++;
-        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value);
-        this.publish({ status: "ready", error: null });
+        const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
+        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
+        // Audit E-05: the board's message line tells the person which ward was not asked, as the
+        // local board's refusal note does, on whichever screen sent it.
+        this.publish({
+          status: "ready",
+          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
+        });
       }
     } catch {
       if (generation === this.viewGeneration) {

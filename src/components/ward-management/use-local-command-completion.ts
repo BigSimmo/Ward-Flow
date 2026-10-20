@@ -55,10 +55,19 @@ export function localCommandOutcome(
   isCurrent?: () => boolean,
 ): Omit<WardCommandOutcome, "commandId"> {
   const refusal = next.rejections.at(-1);
-  const accepted = !refusal || refusal === before.rejections.at(-1);
+  const refused = !!refusal && refusal !== before.rejections.at(-1);
+  // Audit E-05: a refusal changes only the refusal list (and at most the audit), so a refusal that
+  // came with other changes is a "Refer to wards" that went to the suitable wards and held one back.
+  const partly =
+    refused &&
+    (Object.keys(next) as (keyof WardFlowState)[]).some(
+      (key) => key !== "rejections" && key !== "auditEvents" && key !== "auditSequence" && next[key] !== before[key],
+    );
+  const accepted = !refused || partly;
   return {
     status: accepted ? "accepted" : "refused",
     ...(accepted ? commandMetadata(before, next) : {}),
+    ...(partly ? { partly: refusal.reason } : {}),
     message: accepted ? undefined : refusal?.reason,
     undoRecords: next.undoRecords,
     generation: next.worldGeneration,

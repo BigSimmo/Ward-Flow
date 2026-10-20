@@ -2405,3 +2405,81 @@ test(
     }
   },
 );
+
+test("the synthetic-data guard's refusal names the kind of identifier, never the text", async () => {
+  // Audit E-06. The demo's own numbers are in the fictitious 08 5550 range and pass.
+  const engine = await import("./dist/engine.mjs");
+  const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+  const reason = engine.privacyRefusal({ ...refresh, note: "Ring 0412 345 678" });
+  assert.match(reason, /telephone number/);
+  assert.ok(!reason.includes("0412"));
+  assert.equal(engine.privacyRefusal({ ...refresh, note: "Ring 08 5550 0142" }), null);
+  assert.equal(engine.privacyRefusal({ ...refresh, note: "fine" }), null);
+  // A malformed command is still a bad request, not a guard refusal.
+  assert.equal(engine.privacyRefusal({ ...refresh, role: "ward", note: "Ring 0412 345 678" }), null);
+});
+
+test(
+  "real PostgreSQL: a synthetic-data guard refusal is a 422 with its reason, audited without the text",
+  { skip: !url },
+  async () => {
+    // Audit E-06: it was a 400 with no reason, and the demo's own phone number tripped it.
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actor = "44444444-4444-4444-8444-444444444444";
+    const workspaceId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date("2026-10-07T10:00:00Z") });
+    const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+    try {
+      await migrate(pool);
+      await store.ready();
+      const seed = await store.read(actor);
+      const commandId = randomUUID();
+      const refused = await store.command(actor, commandId, seed.revision, { ...refresh, note: "Ring 0412 345 678" });
+      assert.equal(refused.status, 422);
+      assert.equal(refused.body.outcome, "denied");
+      assert.match(refused.body.error, /telephone number/);
+      const replay = await store.command(actor, commandId, seed.revision, { ...refresh, note: "Ring 0412 345 678" });
+      assert.equal(replay.status, 422);
+      assert.equal(replay.body.replayed, true);
+      const kept = await pool.query(
+        "SELECT (SELECT string_agg(a::text, '') FROM ward_flow.audit a WHERE workspace_id=$1) AS audit, (SELECT string_agg(c::text, '') FROM ward_flow.commands c WHERE workspace_id=$1) AS receipts",
+        [workspaceId],
+      );
+      assert.ok(!`${kept.rows[0].audit}${kept.rows[0].receipts}`.includes("345 678"));
+      const accepted = await store.command(actor, randomUUID(), seed.revision, {
+        ...refresh,
+        note: "Ring 08 5550 0142",
+      });
+      assert.equal(accepted.status, 200, JSON.stringify(accepted.body.error ?? null));
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test("a partly refused Refer to wards is saved and says which ward was held back", async () => {
+  // Audit E-05: the suitable ward is referred, the other held back, and the sender is now told.
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const movement = world.state.movements.find((row) => row.id === "WF-009");
+  movement.gender = "Male";
+  const secure = world.state.units.find((unit) => unit.id === "fsh-adult-secure");
+  secure.cohort = world.state.units.find((unit) => unit.cohort !== movement.cohort).cohort;
+  const event = {
+    type: "REFER_TO_UNITS",
+    role: "coordinator",
+    movementId: "WF-009",
+    unitIds: ["rph-adult-secure", "fsh-adult-secure"],
+  };
+  const applied = engine.applyCommand(world, event, at);
+  assert.equal(applied.outcome, "accepted");
+  assert.equal(typeof applied.partly, "string");
+  assert.ok(applied.partly.length > 0);
+  const referred = applied.world.state.movements.find((row) => row.id === "WF-009").referredUnitIds;
+  assert.ok(referred.includes("rph-adult-secure") && !referred.includes("fsh-adult-secure"));
+  // An ordinary accepted command carries no such note.
+  const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+  assert.equal(engine.applyCommand(world, refresh, at).partly, null);
+});

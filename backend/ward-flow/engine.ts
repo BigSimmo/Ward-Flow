@@ -84,6 +84,16 @@ export function validCommand(value: unknown): value is Record<string, unknown> &
   return validSharedCommand(value) && checkSyntheticPayload(value).safe;
 }
 
+/**
+ * Audit E-06: why the synthetic-data guard refuses a well-formed command, naming only the kind of
+ * identifier it looks like, never the text itself; null when the guard has nothing to say.
+ */
+export function privacyRefusal(value: unknown): string | null {
+  if (!validSharedCommand(value)) return null;
+  const check = checkSyntheticPayload(value);
+  return check.safe ? null : `${check.reason}. Ward Flow takes synthetic details only.`;
+}
+
 /** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
 export function demoOnlyCommand(value: unknown): boolean {
   const type = (value as { type?: unknown } | null)?.type;
@@ -520,6 +530,8 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     if (error instanceof TypeError || error instanceof RangeError) throw new Error("invalid-command");
     throw error;
   }
+  // Audit E-05: why a partly refused "Refer to wards" held a ward back, for the sender to be told.
+  let partly: string | null = null;
   if (rawNext.rejections.length > world.state.rejections.length) {
     // Referral suitability is deliberately decided per ward. Commit the permitted subset only
     // when this command's fresh audit records both outcomes; an earlier partial is no authority.
@@ -547,6 +559,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
         // by UMRN at most, never typed text, and only a desk allowed to act on the record gets here.
         reason: refusalReason(rawNext.rejections.at(-1)?.reason),
       };
+    partly = refusalReason(rawNext.rejections.at(-1)?.reason);
   }
   // Refusal messages are transient (D-18). A partial referral's coded denied targets remain in audit.
   const next = serialise({ ...rawNext, rejections: [] });
@@ -561,6 +574,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     completion: commandMetadata(world.state, next),
     changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
     reason: null,
+    partly,
   };
 }
 
