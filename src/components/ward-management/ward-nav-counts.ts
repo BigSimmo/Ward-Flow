@@ -4,8 +4,17 @@ import { serviceRollup } from "@/components/ward-management/ward-morning-rollup"
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
-import type { BedRelease, LeaveBed, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  HealthService,
+  LeaveBed,
+  Movement,
+  Referral,
+  Site,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
+import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 
 /**
@@ -68,6 +77,8 @@ export type WardNavCountInput = {
   leaveBeds: readonly LeaveBed[];
   now: Instant;
   thresholds: DueSoonThresholds;
+  /** The service chosen in the header (`useServiceScope`); Waiting's badge follows it as its title does. */
+  service?: HealthService | null;
 };
 
 /**
@@ -84,10 +95,15 @@ export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardN
   input.leaveBeds,
   input.now,
   input.thresholds,
+  input.service,
 ]);
 
 function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds } = input;
+  const { movements, units, sites, referrals, bedReleases, leaveBeds, now, thresholds, service } = input;
+  // Waiting's screen filters to the chosen service before titling itself, so its badge counts the same people.
+  const waitingMovements = service
+    ? movements.filter((movement) => movementBelongsToService(movement, service, units))
+    : movements;
 
   const open = movements.filter(isOpen);
   const rollup = serviceRollup(sites, units, [...bedReleases], [...leaveBeds], now);
@@ -107,7 +123,7 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     // Overall review, 20 Oct 2026: the badge is Waiting's own title figure, in its words. The severe
     // causes (Josh, 25 Sept 2026) stay as the Needs you figure, which opens Waiting filtered to them.
     delays: {
-      value: waitingInEds(movements, now).total,
+      value: waitingInEds(waitingMovements, now).total,
       noun: "waiting in ED",
       urgent: false,
       need: { value: severe, noun: "at a time limit or with nowhere to go" },

@@ -13,6 +13,7 @@ import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooz
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
@@ -115,6 +116,26 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
     // The severe causes stay available for the phone menu's Needs you row, under their own noun.
     expect(counts.delays?.need?.noun).toBe("at a time limit or with nowhere to go");
     expect(counts.delays?.need?.value).toBe(rows.filter((row) => row.severe).length);
+  });
+
+  it("badges: with a service chosen, the Waiting badge counts the same people as Waiting's title", () => {
+    const statewide = wardNavCounts({ ...state, now, sites: wardSites, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).delays
+      ?.value;
+    let narrower = 0;
+    for (const service of HEALTH_SERVICES) {
+      const scoped = state.movements.filter((movement) => movementBelongsToService(movement, service, state.units));
+      const rows = boardRows(delayGroups(scoped, state.units, now, DEFAULT_DUE_SOON_THRESHOLDS), now);
+      const counts = wardNavCounts({
+        ...state,
+        now,
+        sites: wardSites,
+        thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+        service,
+      });
+      expect(counts.delays?.value, service).toBe(waitingSplit(rows.map((row) => row.movement)).waiting);
+      if (counts.delays?.value !== statewide) narrower += 1;
+    }
+    expect(narrower, "the seed spreads waiting people across services").toBeGreaterThan(0);
   });
 
   it("act now: the Alerts screen's Act now group is the menu's act-now count, row for row", () => {
