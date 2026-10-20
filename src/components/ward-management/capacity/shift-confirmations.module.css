@@ -63,3 +63,11 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
 }
+
+/* Confirmed with no changes many shifts running (overall review, 20 Oct 2026). */
+.unchanged {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  width: 100%;
+}

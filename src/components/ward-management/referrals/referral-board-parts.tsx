@@ -36,6 +36,7 @@ import { ReferralDocumentLinks } from "./referral-flow-panels";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
@@ -461,6 +462,8 @@ export function DecisionClock({ referral, now }: { referral: Referral; now: Inst
       >
         <i style={{ width: `${used}%` }} />
       </div>
+      {/* Smart features idea 3: who has this in hand. A courtesy note; the clock keeps running. */}
+      <ReferralWorkedOn referral={referral} />
     </div>
   );
 }

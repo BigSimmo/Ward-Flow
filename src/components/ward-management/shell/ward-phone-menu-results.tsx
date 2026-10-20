@@ -40,7 +40,7 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
-  const { movements, patients, units, referrals, plannedAdmissions, admissions, dayZero, configuration } =
+  const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
     useWardFlowSelect(
       "movements",
       "patients",
@@ -48,6 +48,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
       "referrals",
       "plannedAdmissions",
       "admissions",
+      "leaveBeds",
       "dayZero",
       "configuration",
     );
@@ -83,6 +84,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
               patients,
               admissions,
               plannedAdmissions,
+              leaveBeds,
               now,
               thresholds: dueSoonThresholdsOf(configuration),
               dayZero,
@@ -123,6 +125,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     referrals,
     plannedAdmissions,
     admissions,
+    leaveBeds,
     dayZero,
     configuration,
     now,
