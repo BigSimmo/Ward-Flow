@@ -69,17 +69,37 @@ describe("the urgent flag is visible on the row it moved", () => {
 
   /**
    * Item 37 (2026-09-17), widened by the review fix-forward (item 5) to name the reason too:
-   * "Who flagged this, when and why was not recorded." WF-018 is the fixture's one hand-authored
-   * flag, seeded before `Movement.urgentFlag` existed — see that field's own doc comment — so it
-   * is the one live case this sentence has to cover honestly rather than inventing an author,
-   * instant or reason for it.
+   * "Who flagged this, when and why was not recorded." A flag saved before `Movement.urgentFlag`
+   * existed still says so honestly rather than inventing an author, instant or reason. The
+   * synthetic fixture's own flags now carry provenance (overall review, 20 Oct 2026), so this
+   * builds a flagged movement without it.
    */
-  it("reads 'Who flagged this, when and why was not recorded' for WF-018, which carries no provenance", () => {
-    renderQueue();
+  it("reads 'Who flagged this, when and why was not recorded' for a flag that carries no provenance", () => {
     const wf018 = wardMovements.find((movement) => movement.id === "WF-018");
-    expect(wf018?.urgentFlag, "precondition: WF-018 carries no urgentFlag record").toBeUndefined();
+    if (!wf018) throw new Error("fixture lost WF-018");
+    const legacy: Movement = { ...wf018, urgentFlag: undefined, urgentFlagHistory: undefined };
+    render(
+      <PriorityQueue
+        movements={[legacy]}
+        now={NOW_ANCHOR}
+        selectedId={undefined}
+        onSelect={() => {}}
+        filterEdId={undefined}
+        onClearFilter={() => {}}
+      />,
+    );
     const detail = screen.getByTestId("ward-queue-flag-detail-WF-018");
     expect(detail).toHaveTextContent("Who flagged this, when and why was not recorded.");
+  });
+
+  it("names who flagged each seeded urgent row, so the first rows of Home explain themselves", () => {
+    renderQueue();
+    for (const movement of wardMovements.filter((candidate) => candidate.flaggedUrgent && !candidate.closure)) {
+      expect(movement.urgentFlag, `${movement.id} is flagged without provenance`).toBeDefined();
+      const detail = screen.getByTestId(`ward-queue-flag-detail-${movement.id}`);
+      expect(detail).toHaveTextContent(/^Flagged urgent by .+ at .+: .+\.$/u);
+      expect(detail).not.toHaveTextContent("was not recorded");
+    }
   });
 
   /**
