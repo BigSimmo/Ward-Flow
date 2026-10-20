@@ -533,9 +533,13 @@ export function PriorityQueue({
                   <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
                   <span className={styles.queueMarks}>
                     {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-                    <span className={styles.queueMark}>
-                      {referral.atsCategory === undefined ? "ATS not recorded" : `ATS ${referral.atsCategory}`}
-                    </span>
+                    {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
+                        out of sight (screen readers still hear it); a recorded ATS shows. */}
+                    {referral.atsCategory === undefined ? (
+                      <SrOnly>ATS not recorded</SrOnly>
+                    ) : (
+                      <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
+                    )}
                   </span>
                 </span>
                 <span className={styles.queueWait}>
