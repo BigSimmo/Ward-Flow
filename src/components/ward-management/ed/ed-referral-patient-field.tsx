@@ -16,21 +16,30 @@ export function EdReferralPatientField({
   patientId,
   unidentified,
   onChange,
+  invalid = false,
+  className,
 }: {
   patients: readonly Patient[];
   patientId: Patient["id"] | undefined;
   unidentified: boolean;
   onChange: (next: { patientId: Patient["id"] | undefined; unidentified: boolean }) => void;
+  /** Marks the name box after a blocked raise with nobody chosen (the form's missing-field pass). */
+  invalid?: boolean;
+  className?: string;
 }) {
   const id = useId();
   const chosen = patients.find((patient) => patient.id === patientId);
   const [typed, setTyped] = useState(() => (chosen ? referralPatientLabel(chosen) : ""));
   return (
-    <div className={styles.referralField} data-testid="ward-ed-referral-patient-field">
+    <div
+      className={className ? `${styles.referralField} ${className}` : styles.referralField}
+      data-testid="ward-ed-referral-patient-field"
+    >
       <label htmlFor={`${id}-patient`}>Patient</label>
       <input
         id={`${id}-patient`}
         type="text"
+        aria-invalid={invalid || undefined}
         list={`${id}-patients`}
         data-testid="ward-ed-referral-patient"
         placeholder="Name or UMRN"
