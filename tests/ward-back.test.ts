@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   hasMovedInWardFlow,
@@ -54,6 +54,20 @@ describe("the header's Back control (Josh, 20 Oct 2026)", () => {
 
   describe("in-app history", () => {
     beforeEach(() => resetWardRouteHistory());
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("uses the history entry's place when the browser reports it, so Back never leaves from the landing page", () => {
+      const navigation = { currentEntry: { index: 3 } };
+      vi.stubGlobal("navigation", navigation);
+      noteWardRoute("/ward-flow/people/PX-1a2b"); // landed here from another site (entry 3)
+      navigation.currentEntry = { index: 4 };
+      noteWardRoute("/ward-flow/movements");
+      expect(hasMovedInWardFlow()).toBe(true);
+      // Browser Back returns to the landing entry: nothing in Ward Flow sits behind it.
+      navigation.currentEntry = { index: 3 };
+      noteWardRoute("/ward-flow/people/PX-1a2b");
+      expect(hasMovedInWardFlow()).toBe(false);
+    });
 
     it("does not trust the browser history until the tab has moved between Ward Flow screens", () => {
       noteWardRoute("/ward-flow/people/PX-1a2b");

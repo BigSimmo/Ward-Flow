@@ -59,24 +59,39 @@ export function wardBackParent(pathname: string, deskHomeHref: string): string |
 }
 
 /*
- * Whether this tab has moved between Ward Flow screens since it loaded. Without it, Back on a page
- * opened from an email or another site would follow the browser history out of Ward Flow.
+ * Whether there is a Ward Flow screen behind this one in the tab's history. Without it, Back on a
+ * page opened from an email or another site would follow the browser history out of Ward Flow.
+ * Where the browser has the Navigation API, the current history entry must sit after the one the
+ * tab landed on (so browser Back to the landing page counts as no history). Elsewhere it falls back
+ * to whether the route has changed since the page loaded.
  */
 let firstPathname: string | undefined;
+let landingIndex: number | undefined;
 let movedInApp = false;
+
+function historyIndex(): number | undefined {
+  const index = (globalThis as { navigation?: { currentEntry?: { index?: number } | null } }).navigation?.currentEntry
+    ?.index;
+  return typeof index === "number" && index >= 0 ? index : undefined;
+}
 
 /** Called by the bar on every route change. */
 export function noteWardRoute(pathname: string): void {
-  if (firstPathname === undefined) firstPathname = pathname;
-  else if (pathname !== firstPathname) movedInApp = true;
+  if (firstPathname === undefined) {
+    firstPathname = pathname;
+    landingIndex = historyIndex();
+  } else if (pathname !== firstPathname) movedInApp = true;
 }
 
 export function hasMovedInWardFlow(): boolean {
+  const index = historyIndex();
+  if (index !== undefined && landingIndex !== undefined) return index > landingIndex;
   return movedInApp;
 }
 
 /** Tests only: forget the routes seen so far. */
 export function resetWardRouteHistory(): void {
   firstPathname = undefined;
+  landingIndex = undefined;
   movedInApp = false;
 }
