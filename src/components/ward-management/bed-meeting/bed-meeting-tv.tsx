@@ -93,8 +93,11 @@ function edName(department: string): string {
   return department.replace(/ Emergency Department$/, "");
 }
 
-/** Causes take two lines each in a quarter-width panel, so fewer fit than journey rows. */
-const DELAY_ROW_LIMIT = 6;
+/**
+ * DA-22 (Josh 20 Oct 2026, "fewer rows"): at 24 px a bed meeting's two narrow panels (longest waits,
+ * delays by cause) take two or three lines a row, so each names three and counts the rest.
+ */
+const MEETING_TV_ROWS = 3;
 
 function Figure({ value }: { value: number | string }) {
   return <>{value === 0 ? "None" : value}</>;
@@ -205,9 +208,10 @@ function Footer({ scope, scenario, now }: { scope: string; scenario: string; now
 }
 
 /** People waiting somewhere, longest first: initials, where, stage and how long they have waited. */
-/** The ED TV shows one row fewer than the other lists: under its tiles, a full list of two-line rows
- *  ran past a 1080p screen (design audit follow-up, 19 Oct 2026). The rest are counted, not lost. */
-const ED_TV_PEOPLE_ROWS = TV_ROW_LIMIT - 1;
+/** The ED TV names fewer people and wards than the other lists: under its tiles, its two-line rows at
+ *  24 px (DA-22) would run past a 1080p screen. The rest are counted, not lost. */
+const ED_TV_PEOPLE_ROWS = 5;
+const ED_TV_WARD_ROWS = 6;
 
 function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number; noun: string }) {
   return (
@@ -284,7 +288,7 @@ function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
           <th scope="col" className={styles.num}>
             Waiting
           </th>
-          <th scope="col" className={styles.num}>
+          <th scope="col" className={styles.numNarrow}>
             Fit
           </th>
           <th scope="col" className={styles.numWide}>
@@ -484,14 +488,14 @@ function BedMeetingTvView({
             <Empty>Nobody waiting.</Empty>
           ) : (
             <JourneyList
-              rows={ed.longestWaits.map((person) => ({
+              rows={ed.longestWaits.slice(0, MEETING_TV_ROWS).map((person) => ({
                 id: person.id,
                 name: person.name,
                 where: "",
                 stage: edName(person.department),
                 waitMinutes: person.waitMinutes,
               }))}
-              more={ed.morePeople}
+              more={ed.morePeople + Math.max(0, ed.longestWaits.length - MEETING_TV_ROWS)}
               noun="waiting"
             />
           )}
@@ -503,7 +507,7 @@ function BedMeetingTvView({
           ) : (
             <>
               <ol className={styles.list}>
-                {delays.groups.slice(0, DELAY_ROW_LIMIT).map((group) => (
+                {delays.groups.slice(0, MEETING_TV_ROWS).map((group) => (
                   <li key={group.cause}>
                     <span className={styles.who}>{group.title}</span>
                     <span className={styles.where}>longest {splitDuration(group.longestWaitMinutes)}</span>
@@ -511,7 +515,7 @@ function BedMeetingTvView({
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, delays.groups.length - DELAY_ROW_LIMIT)} noun="causes" one="cause" />
+              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" />
             </>
           )}
         </Panel>
@@ -751,7 +755,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           ) : (
             <>
               <ol className={styles.list}>
-                {sheet.wards.map((ward) => (
+                {sheet.wards.slice(0, ED_TV_WARD_ROWS).map((ward) => (
                   <li key={ward.id}>
                     <span className={styles.who}>{ward.name}</span>
                     <span className={styles.where}>{ward.lockedReady > 0 ? `${ward.lockedReady} locked` : ""}</span>
@@ -759,7 +763,11 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
                   </li>
                 ))}
               </ol>
-              <More count={sheet.moreWards} noun="wards" one="ward" />
+              <More
+                count={sheet.moreWards + Math.max(0, sheet.wards.length - ED_TV_WARD_ROWS)}
+                noun="wards"
+                one="ward"
+              />
             </>
           )}
         </Panel>

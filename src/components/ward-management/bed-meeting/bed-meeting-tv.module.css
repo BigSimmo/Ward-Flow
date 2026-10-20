@@ -23,10 +23,10 @@
   container-type: inline-size;
 }
 
-/* DA-22 (design audit): on a ward TV the lists and labels reach 24 px at 1080p, the usual minimum for
- * reading across a room, and every seeded ward still fits one screen. The bed meeting and ED views
- * keep the smaller sizes: they have more to show, and at 24 px they would scroll. */
-.tv[data-view="ward"] {
+/* DA-22 (design audit; Josh 20 Oct 2026, "fewer rows"): every view's lists and labels reach 24 px
+ * at 1080p, the usual minimum for reading across a room. The bed meeting and ED views show fewer
+ * named rows so each still fits one screen; the rest are counted, not lost. */
+.tv {
   --tv-small: clamp(var(--wf-fs-14), 1.25vw, 2rem);
   --tv-row: clamp(var(--wf-fs-15), 1.3vw, 2.25rem);
 }
@@ -364,7 +364,9 @@
 /* A bed meeting: the service or ward table is the widest panel, read first. */
 .panels[data-layout="meeting"] {
   grid-auto-flow: row;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.25fr) repeat(2, minmax(0, 1fr));
+  /* DA-22: at 24 px the ward table gets the most width, so a health service's ward names stay on one
+   * line and every ward still fits one 1080p screen. */
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(0, 0.9fr);
 }
 
 /* A laptop preview beside the side menu: the table takes the full width, the rest pair up below. */
@@ -415,6 +417,10 @@
   inline-size: 4em;
 }
 
+.table thead .numNarrow {
+  inline-size: 2.6em;
+}
+
 .table thead .numWide {
   inline-size: 5.8em;
 }
@@ -447,7 +453,7 @@
   white-space: nowrap;
 }
 
-.table :is(.num, .numWide) {
+.table :is(.num, .numNarrow, .numWide) {
   padding-left: var(--wf-s-2);
   text-align: right;
   white-space: nowrap;

@@ -466,8 +466,9 @@ describe("the ward and ED TV views", () => {
     expect(figure("ed-tv-no-bed")).toBe(shown(sheet.noBed));
     expect(figure("ed-tv-bed-found")).toBe(shown(sheet.held));
     expect(sheet.summary.waiting).toBeGreaterThan(0);
-    // One row fewer than the other lists, so the busiest ED still fits a 1080p screen; the rest are counted.
-    const peopleShown = Math.min(sheet.people.length, TV_ROW_LIMIT - 1);
+    // DA-22 (Josh 20 Oct 2026): at 24 px the ED view names five people so the busiest ED still fits a
+    // 1080p screen; the rest are counted.
+    const peopleShown = Math.min(sheet.people.length, 5);
     expect(within(screen.getByTestId("ed-tv-people-panel")).getAllByRole("listitem").length).toBe(peopleShown);
     const peopleMore = sheet.morePeople + sheet.people.length - peopleShown;
     if (peopleMore > 0) {
