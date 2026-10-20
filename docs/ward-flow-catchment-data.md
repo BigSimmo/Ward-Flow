@@ -368,7 +368,7 @@ definitive hub list:
 5. **INNER CITY CLINIC** — 74 Murray Street, Perth 6000 — 5550 0105
 6. **MIRRABOOKA CLINIC** — 4/14 Chesterfield Road, Mirrabooka 6061 — 5550 0103
 7. **OSBORNE CLINIC** — Osborne Place, Stirling 6021 — 5550 0139
-8. **MIDLAND ADULT COMMUNITY MH SERVICE** — 281 Great Eastern Highway, Midland 6056 — Telephone 92378600, Fax 92378611
+8. **MIDLAND ADULT COMMUNITY MH SERVICE** — 281 Great Eastern Highway, Midland 6056 — Telephone 5550 0107, Fax 5550 0141
 
 Note this list has **no Armadale, Rockingham, Kwinana, Peel or Clarkson entry**, even though all
 five are used as follow-up clinic values in the same document. That is a gap in the source, not
@@ -382,7 +382,7 @@ community team hubs":
 | Team (as written)  | Phone     | Fax       |
 | ------------------ | --------- | --------- |
 | ARMADALE           | 5550 0133 | 5550 0140 |
-| INNER CITY         | 92241720  | 92241702  |
+| INNER CITY         | 5550 0105 | 5550 0157 |
 | MIDLAND            | 5550 0107 | 5550 0141 |
 | ROCKINGHAM KWINANA | 5550 0109 | 5550 0142 |
 | FREMANTLE          | 5550 0143 | 5550 0144 |

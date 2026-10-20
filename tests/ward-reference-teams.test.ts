@@ -1,5 +1,14 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdtempSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -185,6 +194,21 @@ describe("the register's community-team contact detail", () => {
       const detail = referenceTeamDetail(name)!;
       if (detail.publishedPhone !== null) expect(detail.publishedPhone, name).toMatch(/^08 5550 0\d{3}$/u);
       if (detail.referralEmail !== null) expect(detail.referralEmail, name).toMatch(/@example\.invalid$/u);
+    }
+  });
+
+  it("leaves no real Perth phone number in the reference pack or catchment notes, spaced or not", () => {
+    // Perth landlines are 8 digits starting 6 or 9; the invented range starts 5550.
+    const perthNumber = /(?<![\w.])(?:\(08\) ?|08 ?)?[69]\d{3} ?\d{4}(?!\w)/gu;
+    const packDir = "docs/ward-flow/reference-data";
+    const files = [
+      "docs/ward-flow-catchment-data.md",
+      ...readdirSync(path.resolve(packDir))
+        .filter((name) => /\.(?:md|json)$/u.test(name) && name !== "pack_manifest.json")
+        .map((name) => `${packDir}/${name}`),
+    ];
+    for (const file of files) {
+      expect(readFileSync(path.resolve(file), "utf8").match(perthNumber) ?? [], file).toEqual([]);
     }
   });
 
