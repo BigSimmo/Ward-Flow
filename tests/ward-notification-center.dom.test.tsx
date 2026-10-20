@@ -133,6 +133,10 @@ describe("WardNotificationCenter DOM Component", () => {
     // acknowledgement under Show each.
     expect(screen.getByTestId("ward-buzz-group")).toHaveTextContent("×2");
     fireEvent.click(screen.getByRole("button", { name: "Show each" }));
+    // The message has a space; aria-controls must still name one element that exists.
+    const controls = screen.getByRole("button", { name: "Hide each" }).getAttribute("aria-controls") ?? "";
+    expect(controls).not.toMatch(/\s/);
+    expect(document.getElementById(controls)).not.toBeNull();
     const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge" });
     expect(acknowledgeButtons).toHaveLength(2);
     fireEvent.click(acknowledgeButtons[1]);

@@ -442,7 +442,7 @@ export function WardNotificationCenter({
               <p className={styles.emptyState}>No coordinator buzzes for {unitName}.</p>
             ) : (
               <div className={styles.feed}>
-                {buzzGroups.map((group) => {
+                {buzzGroups.map((group, groupIndex) => {
                   const [latest] = group;
                   if (!latest) return null;
                   const { buzz, buzzKey } = latest;
@@ -475,7 +475,8 @@ export function WardNotificationCenter({
                     );
                   }
                   const open = openGroups.has(buzzKey);
-                  const eachId = `${baseId}-each-${buzzKey}`;
+                  // The key can hold message text with spaces, which would split aria-controls; use the place.
+                  const eachId = `${baseId}-each-${groupIndex}`;
                   return (
                     <div
                       key={`buzz-group-${buzzKey}`}
