@@ -33,7 +33,7 @@ test.describe("native history and handover print @mockup", () => {
 
   test("phone Keep draft closes through native history and reopens the referral from memory", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 568 });
-    await page.goto(`${HOME}/delays`);
+    await page.goto(`${HOME}/waiting`);
     await settled(page);
     const originalIndex = await page.evaluate(() => window.history.state.__wfHistoryIndex);
     expect(typeof originalIndex).toBe("number");

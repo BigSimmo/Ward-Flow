@@ -1039,7 +1039,7 @@ export function HandoverPage() {
       </Link>
       {/* B4: act now and due before the next handover, as Delays' For handover view. */}
       <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-        Open in Delays
+        Open in Waiting
       </Link>
       <Popover
         label="Keyboard shortcuts"

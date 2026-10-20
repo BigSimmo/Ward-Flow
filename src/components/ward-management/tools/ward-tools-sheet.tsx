@@ -278,7 +278,7 @@ export function WardToolsSheet({
           <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
         </button>
         <LinkRow
-          href={`${root}/delays`}
+          href={`${root}/waiting`}
           icon={Clock3}
           name="Log a delay"
           detail="Choose the patient, then the reason"

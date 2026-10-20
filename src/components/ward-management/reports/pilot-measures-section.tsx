@@ -233,7 +233,7 @@ export function PilotMeasuresSection({
     <p className={styles.disclosure}>
       The pilot&apos;s agreed measures, counted from the times this prototype records. Targets are still proposals.
       Booking times are not recorded, so transport is measured against the estimate. People waiting in an ED with no bed
-      request at all are not held here; the daily check on Delays lists what the record can show.
+      request at all are not held here; the daily check on Waiting lists what the record can show.
     </p>
   );
 

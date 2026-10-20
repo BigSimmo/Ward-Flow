@@ -107,8 +107,8 @@ export function alertChecks({
       key: "ed",
       label: "ED over a day",
       n: prolongedEdCount,
-      href: "/ward-flow/delays",
-      scope: "Watches open ED waits of a day or more. Opens Delays.",
+      href: "/ward-flow/waiting",
+      scope: "Watches open ED waits of a day or more. Opens Waiting.",
     },
     {
       key: "override",

@@ -169,7 +169,7 @@ describe("WardBar's Service selector, wired to the store", () => {
     expect(within(panel).queryByText("scopes the lists")).not.toBeInTheDocument();
     expect(
       within(panel).getByText(
-        "One service, or all of them. Capacity, Delays and Movements narrow their lists to it. " +
+        "One service, or all of them. Capacity, Waiting and Movements narrow their lists to it. " +
           "The bed shortlist, whole-network figures, the rail counts and the drawers do not. " +
           "Each count is the people waiting in that service's emergency departments; a narrowed list " +
           "also shows people referred to its wards.",
