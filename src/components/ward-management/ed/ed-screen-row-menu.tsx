@@ -25,6 +25,7 @@ export function EdConfirmedStep({
   onConfirm,
   className,
   testId,
+  role,
 }: {
   label: string;
   title: string;
@@ -34,6 +35,8 @@ export function EdConfirmedStep({
   onConfirm: () => void;
   className: string;
   testId: string;
+  /** Set by the row's actions menu, which gives each of its items `menuitem`. */
+  role?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -42,6 +45,7 @@ export function EdConfirmedStep({
         type="button"
         data-testid={testId}
         data-action={testId}
+        role={role}
         className={className}
         onClick={() => setOpen(true)}
       >

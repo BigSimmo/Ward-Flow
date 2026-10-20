@@ -16,6 +16,7 @@ import {
 } from "react";
 import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
 import styles from "./ed-board-controls.module.css";
+import { EdConfirmedStep } from "./ed-screen-row-menu";
 
 type AnchorProps = {
   open: boolean;
@@ -485,10 +486,11 @@ export function EdActionsMenu({
   const other: ReactNode[] = [];
   for (const child of flatten(children)) {
     if (
-      isValidElement<ButtonHTMLAttributes<HTMLButtonElement> & { "data-testid"?: string }>(child) &&
-      child.type === "button"
+      isValidElement<ButtonHTMLAttributes<HTMLButtonElement> & { "data-testid"?: string; testId?: string }>(child) &&
+      (child.type === "button" || child.type === EdConfirmedStep)
     ) {
-      const key = child.props["data-testid"] ?? "";
+      // A confirmed step (Audit 1 CS-07) is a menu item too; it carries its test id as a prop.
+      const key = (child.type === EdConfirmedStep ? child.props.testId : child.props["data-testid"]) ?? "";
       groups[/examine|outcome/.test(key) ? 0 : /handover|transport|arrival-plan/.test(key) ? 1 : 2].items.push(
         cloneElement(child, { role: "menuitem" }),
       );
