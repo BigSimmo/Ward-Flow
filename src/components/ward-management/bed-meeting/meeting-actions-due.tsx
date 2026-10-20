@@ -2,9 +2,10 @@
 
 import dynamic from "next/dynamic";
 
+import { useBreakGlassPatientIds } from "../shell/ward-access";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
-import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowSelect } from "../ward-flow-provider";
 import type { WardAccess } from "../ward-role-access";
 import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting-actions";
 
@@ -17,15 +18,16 @@ const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) =
  * action; a ward desk only its own wards' actions; the ED and community desks only theirs. Nothing
  * shows when there is none, or while the `bed-meeting-actions` switch is off. Nothing shows either
  * while the coordinator previews another desk, or on a record this desk sees only through break
- * glass: both are read only, so the button could never record anything (review on PR #511).
- * Marking one done changes nothing else on the record.
+ * glass (the scope layer's own set, so a grant on a patient already in scope hides nothing). Both
+ * are read only, so the button could never record anything (review on PR #511). Marking one done
+ * changes nothing else on the record.
  */
 export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | undefined }) {
   const enabled = useWardFeatureFlag("bed-meeting-actions");
   const access = useEffectiveWardAccess();
-  const { records, previewOf } = useWardAccessSnapshot();
+  const { previewOf } = useWardAccessSnapshot();
+  const glass = useBreakGlassPatientIds();
   const { movements, admissions } = useWardFlowSelect("movements", "admissions");
-  const now = useWardFlowClock();
   if (!enabled || !subject || previewOf !== null) return null;
   const record =
     subject.kind === "movement"
@@ -33,11 +35,8 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
       : admissions.find((admission) => admission.id === subject.id);
   const desk = deskRole(access);
   if (!desk) return null;
-  const patientId = record?.patientId;
-  const readOnlyGlass = records.some(
-    (grant) => grant.role === access.role && grant.until > now && grant.patientId === patientId,
-  );
-  if (readOnlyGlass) return null;
+  // The scope layer's own read-only set: patients this desk sees only through break glass.
+  if (record?.patientId && glass.has(record.patientId)) return null;
   const due = (record?.meetingActions ?? []).filter(
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action),
   );

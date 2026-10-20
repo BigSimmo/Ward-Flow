@@ -98,7 +98,7 @@ export function useWardRecordActors(): readonly WardRecordActor[] {
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
 const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
 
-function useBreakGlassPatientIds(): ReadonlySet<string> {
+export function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
