@@ -8,6 +8,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -152,6 +153,16 @@ export function reducePlacementEvent(
             state,
             event,
             `${restoreUnit.name} ${HIGH_ACUITY_STAFFING_REFUSAL}. This placement ${OVERRIDE_REASON_REQUIRED} and the nurse unit manager consulted.`,
+          );
+        }
+        // Audit 2 E-03 (Josh, 20 Oct 2026): a legal status change since the bed was held can leave
+        // it at a ward not set up for involuntary admissions. Restoring the hold then needs a
+        // recorded reason, which `pullOverrides` keeps as an `authorisation` override.
+        if (!speciallingAnsweredRestore && heldUnitAuthorisationRefusal(state, movement)) {
+          return reject(
+            state,
+            event,
+            `${restoreUnit.name} is not set up for involuntary admissions and this patient's legal status is now ${movement.legalStatus}. Restoring this bed ${OVERRIDE_REASON_REQUIRED}.`,
           );
         }
         const restored: Movement = {

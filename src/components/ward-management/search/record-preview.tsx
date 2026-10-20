@@ -10,6 +10,7 @@ import type { Movement, Referral, ReferralState, Unit } from "@/components/ward-
 import {
   declinedAddressings,
   referralState,
+  referralWithdrawn,
   referralDestinationLabel,
   referralAddressingStateLabel,
 } from "@/components/ward-management/ward-referrals";
@@ -708,18 +709,21 @@ export function RecordPreview({
     const linkedMovement = linkedOpenMovementFor(referral, movements);
 
     const isComm = isCommunityReferral(referral);
-    const declined = referralState(referral) === "declined" && !linkedMovement;
-    const presenceStatus = declined ? "past" : isComm ? "community" : "live";
-    const bannerTitle = declined
-      ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
-      : isComm
-        ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
-        : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
+    const withdrawn = referralWithdrawn(referral) && !linkedMovement;
+    const declined = !withdrawn && referralState(referral) === "declined" && !linkedMovement;
+    const presenceStatus = declined || withdrawn ? "past" : isComm ? "community" : "live";
+    const bannerTitle = withdrawn
+      ? "REFERRAL WITHDRAWN · BY THE REFERRER"
+      : declined
+        ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
+        : isComm
+          ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
+          : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
       ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
-      : `Queued referral · Age cohort: ${referral.ageBand}`;
+      : `${withdrawn ? "Withdrawn" : "Queued"} referral · Age cohort: ${referral.ageBand}`;
 
     return (
       <WardPanel title={`Selected referral: ${subjectName}`} testId="ward-patient-search-preview" headingLevel={2}>

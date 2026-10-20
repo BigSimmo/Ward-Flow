@@ -183,6 +183,12 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     const b = now[slice];
     if (a === b || typeof b === "number") continue;
     if (Array.isArray(a) && Array.isArray(b) && sameRowsDiffed(slice, a, b, changes)) continue;
+    // A list the step created where there was none: undo removes the key, so the state reads exactly
+    // as before rather than gaining an empty list (Audit 2 E-19 soak, RECORD_SUPPORT_NOTIFICATION).
+    if (a === undefined && Array.isArray(b)) {
+      changes.push({ slice, mode: "whole", before: null, after: b });
+      continue;
+    }
     if (Array.isArray(b) && (a === undefined || Array.isArray(a))) {
       const old = (a ?? []) as unknown[];
       if (old.every(isRow) && b.every(isRow)) {

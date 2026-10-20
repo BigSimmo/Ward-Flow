@@ -244,11 +244,15 @@ export function reduceRecordedFactEvent(
               `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
             );
           }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
+        } else {
+          // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
+          // transport need, the receiving ward included; the origin and coordinator do.
           return reject(
             state,
             event,
-            `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`,
+            movement.acceptedUnitId !== undefined && event.actingUnitId === movement.acceptedUnitId
+              ? `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`
+              : `RECORD_TRANSPORT_NEED was raised acting as ward ${event.actingUnitId}, but this patient did not start on a ward; the sending department or the coordinator records transport need`,
           );
         }
       }

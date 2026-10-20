@@ -715,8 +715,8 @@
     "override": true,
     "refuses": [
       {
-        "when": "No allocatable bed left",
-        "message": "no allocatable bed remains at ${unit} (the ward's allocatable count is ${n})"
+        "when": "No Ready bed left (allocatable or physically empty is 0)",
+        "message": "no Ready bed remains at ${unit} (allocatable ${n}, physically empty ${n})"
       },
       {
         "when": "Every free bed is still being made ready",

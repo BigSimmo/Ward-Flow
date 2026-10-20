@@ -319,7 +319,7 @@ describe("a capacity refusal reports the count it read, not a cause it did not c
       refusal,
       `the pull was refused by a different guard, so this case says nothing about the capacity ` +
         `message. Refusal was: "${refusal}"`,
-    ).toContain("no allocatable bed remains");
+    ).toContain("no Ready bed remains");
 
     expect(
       refusal,

@@ -5,7 +5,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import type { FormEvent } from "react";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Rejection } from "@/components/ward-management/ward-model";
@@ -152,7 +152,7 @@ export function WardScreenTabSections({
           projection={{
             freeNow: capacity.available,
             freeBy: capacity.available + readyByShiftEnd,
-            byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
+            byLabel: formatInstantWithDay(shiftEndInstant(now), now),
           }}
         />
         {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}

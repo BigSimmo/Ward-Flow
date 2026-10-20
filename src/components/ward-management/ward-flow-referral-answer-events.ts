@@ -1,12 +1,7 @@
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { referralIntakeError } from "./referrals/referral-submission";
 import { type AuditDecision } from "./ward-audit";
-import {
-  GENDER_PLACEMENT_REASONS,
-  GENDER_PLACEMENT_REFUSAL,
-  OVERRIDE_REASONS,
-} from "@/components/ward-management/ward-change-reasons";
+import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
@@ -904,31 +899,7 @@ export function reduceReferralAnswerEvent(
           event.now,
         );
         if (acceptRefusal.refusal) return reject(state, event, acceptRefusal.refusal);
-        /**
-         * Audit 2 E-07 (Josh, 20 Oct 2026): an acceptance uses up one of the ward's Ready beds, so
-         * two referrers are not both told yes for the same bed. The `allocatable_bed` gate above
-         * still refuses outright at 0 Ready; here the beds exist but earlier acceptances, not yet
-         * started as a placement, already account for them. A person may accept beyond them with a
-         * recorded reason, since an earlier acceptance can fall through. Never picks a ward.
-         */
-        const ready = boundedBedAvailability(unit).available;
-        const promised = acceptedReferralsAwaitingPlacement(state, unit.id, referral.id);
-        let capacityOverride = false;
-        if (promised >= ready) {
-          if (event.overrideReason === undefined) {
-            return reject(
-              state,
-              event,
-              `${unit.name} has ${ready} Ready ${ready === 1 ? "bed" : "beds"} and has already accepted ${promised} ${promised === 1 ? "referral" : "referrals"} waiting for one. Accepting beyond its Ready beds needs a recorded override reason.`,
-            );
-          }
-          if (!OVERRIDE_REASONS.includes(event.overrideReason)) {
-            return reject(state, event, `${event.type} overrideReason must be chosen from OVERRIDE_REASONS`);
-          }
-          capacityOverride = true;
-        }
-        const overrideApplied = acceptRefusal.overrideApplied || capacityOverride;
-        decision.overrideFactRecorded = overrideApplied;
+        decision.overrideFactRecorded = acceptRefusal.overrideApplied;
         accepted = {
           ...addressing,
           state: "accepted",
@@ -938,7 +909,7 @@ export function reduceReferralAnswerEvent(
           // Written unconditionally, so `...addressing` cannot carry an old reason onto a clean
           // acceptance.
           declineReason: undefined,
-          acceptOverrideReason: overrideApplied ? event.overrideReason : undefined,
+          acceptOverrideReason: acceptRefusal.overrideApplied ? event.overrideReason : undefined,
           ...(event.bedNumber === undefined ? {} : { heldBedNumber: event.bedNumber }),
           ...historyPatch,
           ...latestNotePatch,
@@ -1287,24 +1258,4 @@ export function reduceReferralAnswerEvent(
       ]);
     }
   }
-}
-
-/**
- * Front-door referrals already accepted into this ward that have not yet started as a placement
- * (no movement raised from them). A started placement is counted by the ward's own figures once
- * pulled, so it is not counted again here. `exceptReferralId` is the referral being answered.
- */
-function acceptedReferralsAwaitingPlacement(state: WardFlowState, unitId: string, exceptReferralId: string): number {
-  return state.referrals.filter(
-    (referral) =>
-      referral.id !== exceptReferralId &&
-      !state.movements.some((movement) => movement.referralId === referral.id) &&
-      referral.destinations.some(
-        (arm) =>
-          arm.state === "accepted" &&
-          arm.withdrawnAt === undefined &&
-          arm.destination.kind === "psychiatric_ward" &&
-          (arm.acceptedUnitId ?? arm.destination.unitId) === unitId,
-      ),
-  ).length;
 }

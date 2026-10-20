@@ -137,7 +137,7 @@ describe("physical facts cannot be overridden — no allocatable bed", () => {
     // looser pattern like /allocatable bed/i could also be produced by the `allocatable_bed`
     // eligibility gate's own detail text, which would not prove THIS guard fired.
     expect(state.rejections[0].reason, "the refusal must be the bed guard's own distinctive text").toContain(
-      "no allocatable bed remains at",
+      "no Ready bed remains at",
     );
 
     // Refused means refused: no stage change, no bed handed out.

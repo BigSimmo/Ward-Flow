@@ -2,13 +2,12 @@
  * Board-clock time features that use times the record already holds.
  *
  * Pull holds use `pullExpiresAt`. Transport uses a typed `estimatedAt`. The handover open-work
- * list uses those same moments against the day-shift end (15:00 board time) the sidebar already
- * uses. Nothing here invents a Mental Health Act limit or a night curfew.
+ * list uses those same moments against the end of the current shift, as the sidebar countdown
+ * does. Nothing here invents a Mental Health Act limit or a night curfew.
  */
 
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
-  dayOf,
   formatRemaining,
   minuteOfDay,
   minutesUntil,
@@ -21,11 +20,6 @@ import type { BedRelease, Movement } from "@/components/ward-management/ward-mod
 
 /** Day shift ends at 15:00 on the board clock — same boundary as the sidebar handover countdown. */
 export const DAY_SHIFT_END_MINUTE = 15 * 60;
-
-/** Today's 15:00 as an Instant on the demonstration day that `now` sits on. */
-export function dayShiftEndInstant(now: Instant): Instant {
-  return dayOf(now) * MINUTES_PER_DAY + DAY_SHIFT_END_MINUTE;
-}
 
 /** The shift `now` falls in, on the one shift pattern every screen uses (night wraps midnight). */
 export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {
@@ -45,12 +39,21 @@ export function currentShiftStartInstant(now: Instant): Instant {
 }
 
 /**
- * This ward's discharges still to happen that are expected by the end of today's day shift. The
+ * When the shift `now` falls in ends: 15:00, 23:00, or 07:00 the next morning. Audit 2 E-14: this
+ * replaced today's fixed 15:00, which named a time already past in the evening and overnight.
+ */
+export function shiftEndInstant(now: Instant): Instant {
+  const shift = currentShift(now);
+  return currentShiftStartInstant(now) + ((shift.endMinute - shift.startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY);
+}
+
+/**
+ * This ward's discharges still to happen that are expected by the end of the current shift. The
  * one population behind the ward hero's "Ready by" figure, its bed filter and the Decisions
  * projection, so those numbers cannot drift apart.
  */
 export function releasesDueByShiftEnd(bedReleases: readonly BedRelease[], unitId: string, now: Instant): BedRelease[] {
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   return bedReleases.filter(
     (release) => release.unitId === unitId && release.state !== "discharged" && release.expectedAt <= shiftEnd,
   );
@@ -86,7 +89,7 @@ export type OpenWorkBeforeShiftEndItem = {
  * passed stay on the list — they are the incoming shift's unfinished work.
  */
 export function openWorkBeforeShiftEnd(movements: readonly Movement[], now: Instant): OpenWorkBeforeShiftEndItem[] {
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   const items: OpenWorkBeforeShiftEndItem[] = [];
 
   for (const movement of movements) {
