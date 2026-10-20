@@ -775,3 +775,10 @@ is inferred.
 - **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The audit also recommended showing the referral number on the ward's accept card. That is not built: it conflicts with D-39 (no record numbers printed on screens, Josh, 15 October 2026), which the recommendation missed. The card stays as it is, with no name, UMRN or record number until the ward accepts (D-14, FD-23), until Josh decides between the two.
 - **Boundary:** Before any real patient data, the TV content needs a privacy review: a wall screen in a shared room shows initials, sex and day of stay to anyone who walks past. This decision does not authorise real data.
 - **Why:** The design audit found that ward staff at the bed meeting could not open its view (decision questions), and that the accept card gives the ward nothing to quote when phoning the coordinator (DA-34).
+
+## D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)
+
+- **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, in his own words, at 2:02 PM AWST: "Needs an involuntary-capable bed until status is set."
+- **Decision:** A referral with no legal status recorded is allocated as needing a bed that can hold someone involuntarily until a status is set. It never defaults to Voluntary. Only a recorded Voluntary status clears the need; Involuntary, any form, a blank or "Not recorded" keeps it. The rule lives in `involuntaryBedNeededForLegalStatus` (`src/components/ward-management/referrals/ward-referral-drawer-model.ts`) and is tested in `tests/ward-referral-unknown-legal-status-bed.test.ts`.
+- **Boundary:** This is a prototype allocation rule for synthetic data, not a legal determination about the person, and not clinical governance sign-off (D-54).
+- **Why:** PR #465 made every legal status start blank. Unknown status is the safe direction: it widens nothing and routes to a bed that can hold the person whatever their status turns out to be.

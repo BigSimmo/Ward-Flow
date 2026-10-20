@@ -15,6 +15,7 @@ import {
   type HealthService,
   type Movement,
   type Referral,
+  type ReferralDestination,
 } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
@@ -131,6 +132,38 @@ export type MockPatientProfile = {
 };
 
 export const NOT_RECORDED = "Not recorded";
+
+/**
+ * Whether a ward request needs a bed that can hold someone involuntarily, from the legal status
+ * recorded at referral. Owner ruling D-69 (Josh, 20 Oct 2026, 2:02 PM AWST): "Needs an
+ * involuntary-capable bed until status is set." Only a recorded "Voluntary" clears it; a blank,
+ * "Not recorded" or any other status needs an involuntary-capable bed. Never default to Voluntary.
+ */
+export function involuntaryBedNeededForLegalStatus(legalStatus: string | null | undefined): boolean {
+  return legalStatus?.trim() !== "Voluntary";
+}
+
+/** The ward destinations a referral drawer sends, one per chosen unit, from what the drawer records. */
+export function wardReferralDestinations(
+  unitIds: readonly string[],
+  needs: {
+    sex: RecordedSex;
+    gender: ReferralGender | "";
+    security: string;
+    legalStatus: string | null | undefined;
+    highAcuity: boolean;
+  },
+): Extract<ReferralDestination, { kind: "psychiatric_ward" }>[] {
+  return unitIds.map((unitId) => ({
+    kind: "psychiatric_ward",
+    unitId,
+    sex: needs.sex,
+    gender: needs.gender || undefined,
+    secureBedNeeded: needs.security === "Secure",
+    involuntaryBedNeeded: involuntaryBedNeededForLegalStatus(needs.legalStatus),
+    highAcuityNursingNeeded: needs.highAcuity,
+  }));
+}
 
 /**
  * The drawer's sample patients: four real movements and one unregistered walk-in. Only the form
