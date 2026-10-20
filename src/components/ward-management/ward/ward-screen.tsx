@@ -1978,10 +1978,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     siteUnits.length > 0
       ? siteUnits
       : accessibleUnits.filter(
-          (candidate) =>
-            candidate.id !== unit.id &&
-            unitHealthService(candidate) !== undefined &&
-            unitHealthService(candidate) === unitHealthService(unit),
+          (c) => unitHealthService(c) !== undefined && unitHealthService(c) === unitHealthService(unit),
         );
 
   const phoneCardOpen = isPhone && phoneWalking && activeTab === "attn"; // Option B: a bed's card has the page
