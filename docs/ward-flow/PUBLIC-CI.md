@@ -45,9 +45,9 @@ and contract checks and the secret scan still run on narrow PRs.
 | ----------------------------------------------------------------------------- | --------------------- | ---------------------- | -------------------- | -------------------------- | ---------------- |
 | Recognised Ward Markdown or README                                            | skipped               | skipped                | skipped              | skipped                    | skipped          |
 | Maintained policy and recognised documentation                                | policy contracts only | skipped                | skipped              | skipped                    | skipped          |
-| `backend/ward-flow/**` and recognised documentation                           | yes                   | yes                    | yes                  | skipped                    | skipped          |
-| `tests/**/*.test.ts(x)` and recognised documentation                          | yes                   | yes                    | skipped              | skipped                    | skipped          |
-| Unit tests plus backend and recognised documentation                          | yes                   | yes                    | yes                  | skipped                    | skipped          |
+| `backend/ward-flow/**` and recognised documentation                           | yes                   | yes                    | yes                  | skipped                    | yes              |
+| `tests/**/*.test.ts(x)` and recognised documentation                          | yes                   | yes                    | skipped              | skipped                    | yes              |
+| Unit tests plus backend and recognised documentation                          | yes                   | yes                    | yes                  | skipped                    | yes              |
 | Source, browser specs, tooling, configuration, unknown or unavailable history | yes                   | yes                    | yes                  | yes                        | yes              |
 
 Backend engine and schema changes affect root tests and shared contracts. Backend-only changes

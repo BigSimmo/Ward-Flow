@@ -77,13 +77,13 @@ export function classifyChanges(entries) {
   if (files.every(docsOnly)) return flags({}, "Ward documentation only");
   if (files.every((file) => docsOnly(file) || backendOnly(file))) {
     return flags(
-      { full: true, unit: true, backend: true, frontend_static: true },
+      { full: true, unit: true, backend: true, build: true, frontend_static: true },
       "backend contracts and documentation only",
     );
   }
   if (files.every((file) => docsOnly(file) || backendOnly(file) || unitTest(file))) {
     return flags(
-      { full: true, unit: true, backend: files.some(backendOnly), frontend_static: true },
+      { full: true, unit: true, backend: files.some(backendOnly), build: true, frontend_static: true },
       "unit tests, backend and documentation only",
     );
   }

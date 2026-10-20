@@ -37,10 +37,15 @@ describe("actual Ward local verification plan", () => {
       "test:backend",
     );
   });
-  it("selects production builds for source and unknown scopes without rebuilding unit-only changes", () => {
-    for (const entries of [[{ file: "src/app/page.tsx", status: "M" }], []])
+  it("selects production builds for every executable scope and skips them for documents and policy", () => {
+    for (const entries of [
+      [{ file: "src/app/page.tsx", status: "M" }],
+      [],
+      [{ file: "tests/ward-waitlist.test.ts", status: "M" }],
+      [{ file: "backend/ward-flow/engine.ts", status: "M" }],
+    ])
       expect(selectedScripts({ entries })).toContain("build");
-    for (const file of ["README.md", "AGENTS.md", "tests/ward-waitlist.test.ts", "backend/ward-flow/engine.ts"])
+    for (const file of ["README.md", "AGENTS.md"])
       expect(selectedScripts({ entries: [{ file, status: "M" }] })).not.toContain("build");
     expect(selectedScripts({ frontend_static: true })).toEqual(expect.arrayContaining(["lint", "typecheck"]));
     expect(selectedScripts({ unit: true })).not.toContain("lint");

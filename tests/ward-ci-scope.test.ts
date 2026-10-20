@@ -3,7 +3,7 @@ import { classifyChanges } from "../scripts/ward-ci-public/plan.mjs";
 
 const scope = (...files: string[]) => classifyChanges(files.map((file) => ({ status: "M", file })));
 
-describe("CI scopes follow package consumers without unrelated builds", () => {
+describe("CI scopes follow package consumers and keep the production build for executable changes", () => {
   it.each([
     "backend/ward-flow/engine.ts",
     "backend/ward-flow/command-schemas.ts",
@@ -14,17 +14,17 @@ describe("CI scopes follow package consumers without unrelated builds", () => {
       unit: true,
       backend: true,
       frontend_static: true,
-      build: false,
+      build: true,
       browser: false,
     });
   });
-  it("does not install/test the backend or build the app for a unit-test-only change", () => {
+  it("does not install/test the backend for a unit-test-only change, but still builds the app", () => {
     expect(scope("tests/ward-waitlist.test.ts")).toMatchObject({
       full: true,
       unit: true,
       backend: false,
       frontend_static: true,
-      build: false,
+      build: true,
       browser: false,
     });
   });
