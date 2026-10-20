@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -21,5 +22,7 @@ export default async function EdDepartmentPage({ params }: Props) {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
   const ed = edById(id);
-  return <EdScreen edId={ed ? ed.id : id} />;
+  // DA-32: an address that names no emergency department is a real 404, not a page reporting success.
+  if (!ed) notFound();
+  return <EdScreen edId={ed.id} />;
 }

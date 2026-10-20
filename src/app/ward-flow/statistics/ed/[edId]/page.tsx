@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -14,11 +15,13 @@ export const metadata: Metadata = {
  *
  * `params` is a Promise in this version of Next and is awaited here; `decodeURIComponent` undoes
  * the encoding `edStatisticsHref` applies on the way out. An id that resolves to no department is
- * the screen's own honest not-found state — never a fallback to a different department.
+ * a real 404 (DA-32) — never a fallback to a different department.
  */
 export default async function WardStatisticsEdPage({ params }: { params: Promise<{ edId: string }> }) {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
   const ed = edById(id);
-  return <StatisticsEdScreen edId={ed ? ed.id : id} />;
+  // DA-32: an address that names no emergency department is a real 404, not a page reporting success.
+  if (!ed) notFound();
+  return <StatisticsEdScreen edId={ed.id} />;
 }

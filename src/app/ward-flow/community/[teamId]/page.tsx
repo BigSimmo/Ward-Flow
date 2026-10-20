@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
@@ -18,6 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CommunityTeamPage({ params }: Props) {
-  const { teamId } = await params;
-  return <CommunityScreen teamId={safeDecodeURIComponent(teamId)} />;
+  const teamId = safeDecodeURIComponent((await params).teamId);
+  // DA-32: an address that names no community team is a real 404, not a page reporting success.
+  if (!communityTeamById(teamId)) notFound();
+  return <CommunityScreen teamId={teamId} />;
 }

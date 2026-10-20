@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
+import { isKnownHealthService } from "@/components/ward-management/ward-known-places";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
@@ -14,11 +16,13 @@ export const metadata: Metadata = {
  * `params` is a Promise in this version of Next and is awaited here; `decodeURIComponent` undoes
  * the encoding `serviceStatisticsHref` applies on the way out, so the pair stays symmetric — the
  * same reason `statistics/ward/[unitId]/page.tsx` and `statistics/ed/[edId]/page.tsx` decode
- * before handing the id to their screens. A name that resolves to no health service is the
- * screen's own honest not-found state — never a redirect to a different service, and never an
+ * before handing the id to their screens. A name that resolves to no health service gets a real
+ * 404 (DA-32) — never a redirect to a different service, and never an
  * empty page that reads as a service with nothing to show.
  */
 export default async function StatisticsServicePage({ params }: { params: Promise<{ serviceId: string }> }) {
-  const { serviceId } = await params;
-  return <StatisticsServiceScreen serviceId={safeDecodeURIComponent(serviceId)} />;
+  const serviceId = safeDecodeURIComponent((await params).serviceId);
+  // DA-32: a name that is no health service is a real 404, not a page reporting success.
+  if (!isKnownHealthService(serviceId)) notFound();
+  return <StatisticsServiceScreen serviceId={serviceId} />;
 }

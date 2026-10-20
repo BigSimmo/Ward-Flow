@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
-import { unitById } from "@/components/ward-management/ward-sites";
+import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 /**
@@ -24,7 +25,7 @@ import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-u
  * exact.
  */
 export async function generateMetadata({ params }: { params: Promise<{ unitId: string }> }): Promise<Metadata> {
-  const unit = unitById(safeDecodeURIComponent((await params).unitId));
+  const unit = knownWardUnit(safeDecodeURIComponent((await params).unitId));
   return {
     title: unit ? `Ward — ${unit.name}` : "Ward not found — Ward Flow",
     description: "Synthetic single-unit ward view for the Ward Flow prototype.",
@@ -38,11 +39,8 @@ export default async function WardUnitPage({
   params: Promise<{ unitId: string }>;
   searchParams: Promise<{ tab?: string | string[] }>;
 }) {
-  const { unitId } = await params;
-  return (
-    <WardScreen
-      unitId={safeDecodeURIComponent(unitId)}
-      departurePlanning={(await searchParams).tab === "departure-planning"}
-    />
-  );
+  const unitId = safeDecodeURIComponent((await params).unitId);
+  // DA-32: an address that names no ward in any scenario is a real 404, not a page reporting success.
+  if (!knownWardUnit(unitId)) notFound();
+  return <WardScreen unitId={unitId} departurePlanning={(await searchParams).tab === "departure-planning"} />;
 }

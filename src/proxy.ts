@@ -9,6 +9,7 @@ import {
   isWardFlowPath,
 } from "@/lib/developer-area/headers";
 import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspaceOrigins } from "@/lib/security-headers";
+import { isUnknownWardFlowPlace } from "@/components/ward-management/ward-known-places";
 
 // Next 16 renamed the `middleware` file convention to `proxy` (see
 // node_modules/next/dist/docs/.../file-conventions/proxy.md). Proxy defaults to
@@ -147,6 +148,15 @@ export async function proxy(request: NextRequest) {
 
   if (shouldBlockProductionMockups(pathname)) {
     return withCsp(new NextResponse(null, { status: 404 }));
+  }
+
+  // DA-32: a ward, department, team or service address that names nothing is a real 404. It is
+  // rewritten to an address no route serves, so Next renders its not-found page with a 404 status;
+  // the page's own `notFound()` would come too late, after `loading.tsx` has started a 200.
+  if (isUnknownWardFlowPlace(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/ward-flow/unknown-place";
+    return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeadersWithNonce() } }));
   }
 
   return withCsp(NextResponse.next({ request: { headers: requestHeadersWithNonce() } }));
