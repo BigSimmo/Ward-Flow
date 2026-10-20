@@ -8,7 +8,6 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import {
   NAME_NOT_RECORDED,
   resolveSubjectPatient,
@@ -128,7 +127,7 @@ export function WardNotificationCenter({
 }: WardNotificationCenterProps) {
   // Read the provider when present (the ward screen); a bare render (component tests) has none, and
   // the resolver then falls back exactly as before.
-  const context = useOptionalWardFlowSelect("resolvePatientIdentity", "patients", "referrals");
+  const context = useOptionalWardFlowSelect("resolvePatientIdentity", "patients");
   const resolveIdentity = context?.resolvePatientIdentity;
   const effectivePatients = patients ?? context?.patients;
   // D-39: notices name the patient by UMRN. Inside the provider that comes from its identity
@@ -205,18 +204,16 @@ export function WardNotificationCenter({
     return now > eta + LATE_ARRIVAL_GRACE_MINUTES;
   });
 
-  // Audit 1, CS-14 (20 Oct 2026): read clearance through the shared reader, so a clearance recorded on
-  // the referral counts, and list incoming journeys with nothing recorded on their own card. Before,
-  // only a recorded "not cleared" was listed and the panel could say "No urgent tasks" while no
-  // clearance had been recorded at all. Not recorded is not counted as urgent: it is a gap, not an alarm.
-  const referrals = context?.referrals ?? [];
+  // Audit 1, CS-14 (20 Oct 2026): list incoming journeys with no clearance recorded on their own card.
+  // Before, only a recorded "not cleared" was listed and the panel could say "No urgent tasks" while no
+  // clearance had been recorded at all. A ward screen reads the transfer's own record only: referral
+  // data reaches ward code through the ward-scoped projection (FD-23), which carries no clearance, so
+  // the card says "on the transfer". Not recorded is not counted as urgent: it is a gap, not an alarm.
   const isInbound = (m: Movement) =>
     m.acceptedUnitId === unitId || (m.referredUnitIds !== undefined && m.referredUnitIds.includes(unitId));
-  const missingClearances = movements.filter(
-    (m) => isInbound(m) && recordedMovementMedicalClearance(m, referrals)?.cleared === false,
-  );
+  const missingClearances = movements.filter((m) => isInbound(m) && m.medicalClearance?.cleared === false);
   const unrecordedClearances = movements.filter(
-    (m) => m.closure === undefined && isInbound(m) && recordedMovementMedicalClearance(m, referrals) === undefined,
+    (m) => m.closure === undefined && isInbound(m) && m.medicalClearance === undefined,
   );
 
   // 3. Direct Ward Notices
@@ -406,7 +403,7 @@ export function WardNotificationCenter({
                     <span className={styles.cardFlag}>Medical clearance not recorded</span>
                   </div>
                   <p className={styles.cardMessage}>
-                    No medical clearance is recorded yet for {unrecordedClearances.length} incoming{" "}
+                    No medical clearance is recorded on the transfer for {unrecordedClearances.length} incoming{" "}
                     {unrecordedClearances.length === 1 ? "patient" : "patients"}.
                   </p>
                   <ul className={styles.nameList}>

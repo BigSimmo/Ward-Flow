@@ -307,7 +307,7 @@ describe("WardNotificationCenter DOM Component", () => {
     render(<WardNotificationCenter {...defaultProps} movements={movements} />);
 
     const card = screen.getByTestId("ward-clearance-not-recorded");
-    expect(card).toHaveTextContent("No medical clearance is recorded yet for 1 incoming patient.");
+    expect(card).toHaveTextContent("No medical clearance is recorded on the transfer for 1 incoming patient.");
     expect(card).toHaveTextContent("Synthetic Unrecorded");
     expect(card).not.toHaveTextContent("Synthetic Cleared");
     expect(card).not.toHaveTextContent("Synthetic Closed");
