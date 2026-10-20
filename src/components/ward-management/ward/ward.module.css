@@ -4016,37 +4016,6 @@
   }
 }
 
-/* Phone v10 (11 Oct 2026): the ward's own actions are a row of 44px chips that scrolls sideways
- * above the tabs (This shift, Ward flow, Shift brief, Handover, Raise referral, Tasks), and the
- * tabs are one full-width segmented control: Home, Decisions, Bed board. These classes render
- * only on a phone; the overrides sit under the phone query. */
-.phoneChips {
-  margin: var(--wf-s-1) calc(-1 * var(--wf-s-3)) 0;
-}
-
-.phoneChips > div {
-  gap: var(--wf-s-2);
-  padding: 0 var(--wf-s-3);
-}
-
-.phoneChipRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: var(--wf-s-1) calc(-1 * var(--wf-s-3)) 0;
-  padding-right: var(--wf-s-3);
-}
-
-.phoneChipRow > .phoneChips {
-  flex: 0 1 auto;
-  min-width: 0;
-  margin: 0;
-}
-
-.phoneChipRow > .phoneChips > div {
-  padding-right: 0;
-}
-
 /* An open ward switch or More menu lifts the ward card over the pinned view tabs below it. Only
    while a menu is open, so the tabs still pin over the card as the page scrolls. */
 @media (max-width: 48rem) {
@@ -4057,41 +4026,103 @@
   }
 }
 
-.phoneChip {
-  display: inline-flex;
-  flex: none;
+/* Option B (Josh, 20 Oct 2026): under the hero's numbers, one quiet line with the confirm time,
+   Confirm numbers, the Notices bell and More. These replace the chip row above the tabs. */
+.phoneHeroFoot {
+  display: flex;
   align-items: center;
   gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.phoneHeroConfirmed {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-hero-ink-2);
+}
+
+.phoneHeroAction {
+  flex: none;
   min-height: var(--wf-touch);
-  padding: 0 var(--wf-s-4);
-  border: 1px solid var(--wf-line);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  color: var(--wf-ink-1);
-  text-decoration: none;
+  color: var(--wf-hero-ink);
   white-space: nowrap;
   cursor: pointer;
 }
 
-.phoneChip:focus-visible {
+.phoneHeroAction:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
-.phoneChip[aria-disabled="true"] {
-  color: var(--wf-ink-3);
+.phoneHeroIcon {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--wf-touch);
+  height: var(--wf-touch);
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  border-radius: var(--wf-r-ctl);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+  cursor: pointer;
 }
 
-.phoneChipCount {
+.phoneHeroIcon:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneHeroBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
   min-width: 20px;
-  padding: 2px 6px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-tag);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  padding: 2px 5px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  font: 600 var(--wf-fs-11, 11px) / 1.2 var(--wf-mono);
   text-align: center;
-  color: var(--wf-ink-2);
+  color: #fff;
+}
+
+/* The phone's ward name is the Switch ward button: the name and a chevron in one 44px target. */
+.wardSwitchName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--wf-touch);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wardSwitchName:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.wardSwitchName > svg {
+  flex: none;
 }
 
 .phoneNotificationCenter {
@@ -4102,7 +4133,8 @@
 
 .phoneHeroTitle {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: var(--wf-s-2);
   max-width: 100%;
@@ -4161,34 +4193,20 @@
     min-height: var(--wf-touch);
     font-size: var(--wf-fs-14);
   }
-
-  .phoneHeroTitle .wardSwitch {
-    width: 32px;
-    height: 32px;
-    flex: none;
-  }
 }
 
-/* F-18: the phone's 32px ward switch reaches 48px on touch through a hit area, not a bigger face. */
+/* The phone ward name is the Switch ward button (Option B, 20 Oct 2026). */
 @media (max-width: 48rem) and (pointer: coarse) {
-  /* Above the ward name and meta line, so their text does not swallow the hit area. */
-  .phoneHeroTitle .wardSwitch {
-    position: relative;
-    z-index: 1;
-  }
-
-  .phoneHeroTitle .wardSwitch::after {
-    content: "";
-    position: absolute;
-    /* The inset counts from inside the 1px border, so take that off too. */
-    inset: calc((32px - var(--spacing-tap, 3rem)) / 2 - 1px);
-  }
-
-  /* The hero title clips its overflow, which would clip the hit area too. The ward name keeps
-     its own ellipsis inside the title row. */
+  /* The hero title clips its overflow, which would clip the button's focus ring. The ward name
+     keeps its own ellipsis inside the button. */
   .wardHero :has(> .phoneHeroTitle) {
     overflow: visible;
   }
+}
+
+/* The hero's foot clips its overflow too, which cut the More menu down to its first item. */
+.wardHero :has(> .phoneHeroFoot) {
+  overflow: visible;
 }
 
 /* Phone (v10): the views pin under the stable header on the canvas, full

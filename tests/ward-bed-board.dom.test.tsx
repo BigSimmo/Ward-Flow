@@ -211,8 +211,8 @@ describe("Bed board layout and fit rules", () => {
   });
 });
 
-describe("Ward page on a phone — every bed grouped by state", () => {
-  it("groups beds worst first, keeps settled beds behind Show all, and counts every bed once", () => {
+describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
+  it("lists every bed once in bed order, with what needs the ward above it and no chip row", () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
       matches: query === "(max-width: 48rem)",
@@ -230,17 +230,24 @@ describe("Ward page on a phone — every bed grouped by state", () => {
           <WardScreen unitId={UNIT} />
         </WardFlowProvider>,
       );
-      const groups = within(screen.getByTestId("ward-phone-bed-groups"));
-      const heads = groups.getAllByRole("heading", { level: 3 }).map((head) => head.textContent ?? "");
-      // Each bed once: the group counts add up to the ward's 24 beds.
-      expect(heads.reduce((sum, head) => sum + Number(/(\d+)$/.exec(head)?.[1] ?? 0), 0)).toBe(24);
-      expect(heads.findIndex((head) => head.startsWith("Act now"))).toBeLessThan(
-        heads.findIndex((head) => head.startsWith("Settled")),
-      );
-      const before = groups.getAllByRole("button", { name: /^Bed / }).length;
-      expect(before).toBeLessThan(24);
-      fireEvent.click(groups.getByRole("button", { name: /^Show all \d+ settled beds$/ }));
-      expect(groups.getAllByRole("button", { name: /^Bed / })).toHaveLength(24);
+      const list = within(screen.getByTestId("ward-phone-round-list"));
+      const rows = list.getAllByRole("button", { name: /^Bed / });
+      // Each bed once, all 24, and in bed order: never grouped or re-sorted.
+      expect(rows).toHaveLength(24);
+      const numbers = rows.map((row) => Number(/^Bed (\d+)/.exec(row.getAttribute("aria-label") ?? "")?.[1]));
+      expect(numbers).toEqual([...numbers].sort((left, right) => left - right));
+      expect(screen.queryByTestId("ward-phone-bed-groups")).toBeNull();
+      // This shift and Ward flow are rows under Needs you, not chips above the tabs.
+      expect(screen.getByRole("heading", { name: "Needs you" })).toBeInTheDocument();
+      expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
+      expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
+      expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();
+      // A row opens that bed's card in the round; the back arrow returns to the list.
+      fireEvent.click(rows[0]);
+      expect(screen.getByRole("button", { name: "Back to the round" })).toBeInTheDocument();
+      expect(screen.queryByTestId("ward-phone-round-list")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Back to the round" }));
+      expect(screen.getByTestId("ward-phone-round-list")).toBeInTheDocument();
     } finally {
       window.matchMedia = original;
     }

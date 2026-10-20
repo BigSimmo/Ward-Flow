@@ -1,4 +1,4 @@
-/* Item 23, option D: the phone walk round. Phone only, tokens only. */
+/* Item 23, option D, redrawn as Option B (20 Oct 2026): the phone round. Phone only, tokens only. */
 
 .walk {
   display: flex;
@@ -35,80 +35,49 @@
   background: var(--wf-success);
 }
 
-.strip {
-  display: flex;
-  gap: var(--wf-s-1);
-  overflow-x: auto;
-  padding-bottom: var(--wf-s-1);
-}
-
-.stripBed {
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: var(--wf-row-touch, 52px);
-  min-height: var(--wf-row-touch, 52px);
-  padding: var(--wf-s-1) var(--wf-s-2);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-/* C3 (phone simplification, 19 Oct 2026): the number, then one word for the bed's state, so the
-   edge colour is never the only signal. */
-.stripNo {
-  line-height: 1;
-}
-
-.stripWord {
-  font: 500 var(--wf-fs-11) / 1 var(--wf-font);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.stripBed[data-reviewed="true"] .stripWord {
-  color: var(--wf-ink-3);
-}
-
-.stripBed[data-tone="danger"] {
-  border-color: var(--wf-danger, var(--wf-line-3));
-}
-
-.stripBed[data-tone="warning"] {
-  border-color: var(--wf-warning);
-}
-
-.stripBed[data-reviewed="true"] {
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-3);
-  text-decoration: line-through;
-}
-
-.stripBed[aria-current="true"] {
-  outline: 2px solid var(--wf-accent);
-  outline-offset: 1px;
-}
-
+/* Option B (Josh, 20 Oct 2026): a bed's card takes the page, with a back arrow at the top and
+   Previous and Reviewed, next bed pinned above the phone dock. */
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
+  gap: var(--wf-s-3);
+  min-height: calc(100dvh - var(--wf-header-height, 3.5rem) - var(--wf-dock-clear, 0px));
+  padding: 0 var(--wf-s-1);
+  scroll-margin-top: var(--wf-header-height, 3.5rem);
 }
 
-.cardTop,
-.cardFoot {
+.cardTop {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1);
+  margin-left: calc(-1 * var(--wf-s-2));
+}
+
+.back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--wf-touch);
+  height: var(--wf-touch);
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.cardTitle {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--wf-fs-16, 16px);
+  color: var(--wf-ink-1);
 }
 
 .position {
@@ -117,18 +86,12 @@
 }
 
 .cardName {
-  display: flex;
-  flex-direction: column;
   margin: 0;
-  font-size: var(--wf-fs-16, 16px);
-  font-weight: 600;
+  font-size: var(--wf-fs-20, 20px);
+  font-weight: 650;
+  line-height: 1.2;
   color: var(--wf-ink-1);
-}
-
-.cardNo {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
+  overflow-wrap: anywhere;
 }
 
 .cardNote {
@@ -136,7 +99,7 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  font-size: var(--wf-fs-13);
+  font-size: var(--wf-fs-14);
   color: var(--wf-ink-2);
 }
 
@@ -144,6 +107,21 @@
   margin-left: auto;
   font-family: var(--wf-mono);
   color: var(--wf-ink-3);
+}
+
+.cardFoot {
+  position: sticky;
+  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: auto calc(-1 * var(--wf-s-4)) 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-canvas);
+}
+
+.cardFoot > :last-child {
+  flex: 1;
 }
 
 .marks,
@@ -154,7 +132,8 @@
 }
 
 .changed,
-.done {
+.done,
+.same {
   padding: 1px 6px;
   border-radius: var(--wf-r-tag);
   font-size: var(--wf-fs-11, 11px);
@@ -166,7 +145,13 @@
   color: var(--wf-accent-ink);
 }
 
-.done {
+.done,
+.same {
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
+}
+
+.tick {
+  flex: none;
+  color: var(--wf-success);
 }
