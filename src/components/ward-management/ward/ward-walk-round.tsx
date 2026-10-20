@@ -3,8 +3,8 @@
 /**
  * Item 23, option D (Josh, 15 Oct 2026), redrawn as Option B (Josh, 20 Oct 2026): Ward home is the
  * run-through and Bed board is the map. The round is a plain list of beds in bed order with a tick
- * once reviewed. Carry on, or a tap on a bed, opens that bed's card on its own screen, with a back
- * arrow to the list and Previous and Reviewed, next bed at the foot.
+ * once reviewed. Carry on, or a tap on a bed, opens that bed's card on its own screen, with Close to
+ * go back to the list and Previous and Reviewed, next bed at the foot.
  *
  * Phone only. Reviewed marks and the changed this round marks
  * live in this screen's memory only: nothing is saved, and a reload starts a fresh round. The round
@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowLeft, Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { announceToWardShell } from "../shell/ward-live-region";
@@ -136,7 +136,7 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const lastNumberRef = useRef<string | undefined>(undefined);
   // "Finished" is said once per round; a bed reopened afterwards just goes back to the list.
   const finishSaidRef = useRef(false);
-  // The card's back arrow takes focus when a bed opens, and the Carry on button gets it back when
+  // The card's close button takes focus when a bed opens, and the Carry on button gets it back when
   // the card closes, so a keyboard never lands on nothing.
   const backRef = useRef<HTMLButtonElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -202,24 +202,27 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
         aria-label={`Bed ${current.number}, ${index + 1} of ${ordered.length}`}
         data-testid="ward-walk-round"
       >
+        {/* Close, not a back arrow: the header's Back (shell/ward-back.ts) leaves the ward page on a
+            drill-down, so an arrow here would put two arrows on screen that go different places.
+            The card closes like a sheet does. */}
         <div className={styles.cardTop}>
-          <button
-            ref={backRef}
-            type="button"
-            className={styles.back}
-            aria-label="Back to the round"
-            onClick={() => {
-              setWalking(null);
-            }}
-          >
-            <ArrowLeft size={22} aria-hidden="true" />
-          </button>
           <span className={styles.cardTitle}>
             <b>Bed {current.number}</b>
             <span className={styles.position}>
               {index + 1} of {ordered.length}
             </span>
           </span>
+          <button
+            ref={backRef}
+            type="button"
+            className={styles.back}
+            aria-label="Close, back to the round"
+            onClick={() => {
+              setWalking(null);
+            }}
+          >
+            <X size={22} aria-hidden="true" />
+          </button>
         </div>
         {progress}
         <h3 className={styles.cardName}>{current.name}</h3>

@@ -35,7 +35,7 @@
   background: var(--wf-success);
 }
 
-/* Option B (Josh, 20 Oct 2026): a bed's card takes the page, with a back arrow at the top and
+/* Option B (Josh, 20 Oct 2026): a bed's card takes the page, with Close at the top and
    Previous and Reviewed, next bed pinned above the phone dock. */
 .card {
   display: flex;
@@ -49,8 +49,10 @@
 .cardTop {
   display: flex;
   align-items: center;
-  gap: var(--wf-s-1);
-  margin-left: calc(-1 * var(--wf-s-2));
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-right: calc(-1 * var(--wf-s-2));
+  padding-top: var(--wf-s-2);
 }
 
 .back {

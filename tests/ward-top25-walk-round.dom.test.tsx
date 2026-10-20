@@ -96,9 +96,9 @@ describe("phone round (item 23, redrawn as Option B on 20 Oct 2026)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
     expect(screen.getByRole("region", { name: "Bed 01, 1 of 3" })).toBeTruthy();
-    // The card has the page: the list steps aside, and the back arrow has focus.
+    // The card has the page: the list steps aside, and its Close button has focus.
     expect(screen.queryByText("List bed 01")).toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Back to the round" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close, back to the round" }));
     expect(screen.getByText("No change since the round started")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
@@ -106,7 +106,7 @@ describe("phone round (item 23, redrawn as Option B on 20 Oct 2026)", () => {
     expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
     expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to the round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close, back to the round" }));
     expect(screen.getByText("List bed 02")).toBeTruthy();
     expect(screen.getAllByText("Reviewed")).toHaveLength(1);
     const carryOn = screen.getByRole("button", { name: "Carry on from bed 02" });

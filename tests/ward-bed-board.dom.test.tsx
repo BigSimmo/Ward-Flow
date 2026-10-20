@@ -242,11 +242,11 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
       expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();
-      // A row opens that bed's card in the round; the back arrow returns to the list.
+      // A row opens that bed's card in the round; Close returns to the list.
       fireEvent.click(rows[0]);
-      expect(screen.getByRole("button", { name: "Back to the round" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Close, back to the round" })).toBeInTheDocument();
       expect(screen.queryByTestId("ward-phone-round-list")).toBeNull();
-      fireEvent.click(screen.getByRole("button", { name: "Back to the round" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close, back to the round" }));
       expect(screen.getByTestId("ward-phone-round-list")).toBeInTheDocument();
     } finally {
       window.matchMedia = original;
