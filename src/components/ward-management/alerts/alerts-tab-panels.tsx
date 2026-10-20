@@ -10,6 +10,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 import {
   broadcastKind,
@@ -141,9 +142,16 @@ export function AlertsBroadcastPanel({
               >
                 Extend
               </Button>
-              <Button size="sm" icon={Smartphone} disabledReason="Not wired in this prototype." reasonDisplay="tooltip">
-                Push to phones
-              </Button>
+              <UnwiredPreview>
+                <Button
+                  size="sm"
+                  icon={Smartphone}
+                  disabledReason="Not wired in this prototype."
+                  reasonDisplay="tooltip"
+                >
+                  Push to phones
+                </Button>
+              </UnwiredPreview>
             </div>
           </div>
           <div className={styles.directiveRing}>

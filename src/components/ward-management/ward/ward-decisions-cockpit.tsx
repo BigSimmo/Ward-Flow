@@ -6,6 +6,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 export { openDecisionCount };
 
@@ -159,6 +160,8 @@ export function WardDecisionsCockpit({
     departures.length > 0 ||
     leaves.length > 0;
   if (!live) {
+    // Overall review (20 Oct 2026): the illustrative cockpit shows only in a local development build.
+    if (!showsUnwiredPreviews()) return null;
     return (
       <section className={styles.container} aria-label="Ward decision controls">
         <h2>Decision cockpit</h2>
@@ -293,9 +296,9 @@ function Queue({
         >
           Confirm bed numbers
         </button>
-      ) : (
+      ) : showsUnwiredPreviews() ? (
         <span className={styles.unwired}>Not wired in this prototype.</span>
-      ),
+      ) : undefined,
     });
   } else if (!rollupConfirmed && onConfirmRollup) {
     items.staffing.push({
@@ -339,9 +342,9 @@ function Queue({
         >
           Accept
         </button>
-      ) : (
+      ) : showsUnwiredPreviews() ? (
         <span className={styles.unwired}>Not wired in this prototype.</span>
-      ),
+      ) : undefined,
     });
   }
   for (const entry of doneHere("accept")) {
@@ -727,7 +730,9 @@ function Queue({
                 </ul>
               ) : null}
               {children}
-              {!wired && !onConfirmRollup ? <p className={styles.unwiredLine}>Not wired in this prototype.</p> : null}
+              {!wired && !onConfirmRollup && showsUnwiredPreviews() ? (
+                <p className={styles.unwiredLine}>Not wired in this prototype.</p>
+              ) : null}
             </div>
           ) : null}
 

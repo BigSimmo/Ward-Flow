@@ -16,6 +16,7 @@ import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import { NOT_RECORDED_IN_WARD_FLOW, unitName } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /** The dossier, referral triage and illustrative drawers. Renders nothing while closed. */
 export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
@@ -444,9 +445,11 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Clinician Allocation &amp; Decision</h4>
                 </div>
                 <div className={`${styles.panelBody} ${styles.bodyStack}`}>
-                  <p>
-                    Clinician assignment: <strong>Not wired in this prototype.</strong>
-                  </p>
+                  <UnwiredPreview>
+                    <p>
+                      Clinician assignment: <strong>Not wired in this prototype.</strong>
+                    </p>
+                  </UnwiredPreview>
                   <p>
                     Accepting records this team&apos;s referral decision only. It does not assign a clinician or confirm
                     an appointment.

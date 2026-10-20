@@ -28,6 +28,7 @@ import {
   type TellSubject,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MS_PER_MINUTE = 60_000;
@@ -529,7 +530,10 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
             />
           </Field>
           <p className={styles.note}>
-            Owner notification is not wired in this prototype. Tell {target.owner} separately.
+            {showsUnwiredPreviews()
+              ? "Owner notification is not wired in this prototype."
+              : "Ward Flow does not notify the owner."}{" "}
+            Tell {target.owner} separately.
           </p>
         </div>
       ) : null}

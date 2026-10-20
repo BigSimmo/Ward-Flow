@@ -57,6 +57,7 @@ import {
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
   act: "danger",
@@ -916,19 +917,21 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           />
         </div>
       ) : null}
-      <div className={styles.previewRow}>
-        <button
-          type="button"
-          className={styles.previewButton}
-          onClick={() => setPreviewNote(true)}
-          title="Not wired in this prototype."
-        >
-          <Icon icon={Eye} size={14} />
-          Watch this shift
-        </button>
-        <span className={styles.previewTag}>Preview</span>
-        {previewNote ? <span className={styles.previewNote}>Not wired in this prototype.</span> : null}
-      </div>
+      <UnwiredPreview>
+        <div className={styles.previewRow}>
+          <button
+            type="button"
+            className={styles.previewButton}
+            onClick={() => setPreviewNote(true)}
+            title="Not wired in this prototype."
+          >
+            <Icon icon={Eye} size={14} />
+            Watch this shift
+          </button>
+          <span className={styles.previewTag}>Preview</span>
+          {previewNote ? <span className={styles.previewNote}>Not wired in this prototype.</span> : null}
+        </div>
+      </UnwiredPreview>
       <div className={styles.actions}>
         <Button
           variant="ghost"

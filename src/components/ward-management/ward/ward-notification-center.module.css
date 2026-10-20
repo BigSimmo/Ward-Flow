@@ -293,6 +293,18 @@
   background: var(--ward-danger-soft);
 }
 
+.cardFlag {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--ward-muted);
+}
+
+.nameList {
+  margin: var(--ward-space-4) 0 0;
+  padding-left: var(--ward-space-16);
+  color: var(--ward-muted);
+}
+
 .cardSuccess {
   border-color: var(--ward-success);
   background: var(--ward-success-soft);
@@ -469,4 +481,74 @@
   .confirmButton {
     width: 100%;
   }
+}
+
+/* Phone notices (20 Oct 2026): a run of the same buzz shows once, with how many came. */
+.buzzGroup {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.repeatCount {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.repeatList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4, 4px);
+  margin: var(--ward-space-8) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.repeatList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  font-size: var(--t-0, 0.75rem);
+  color: var(--ward-muted);
+}
+
+.groupActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ward-space-8);
+}
+
+.textButton {
+  min-height: var(--ward-tap, 48px);
+  padding: 0 var(--ward-space-8);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* In the phone sheet the sheet is the frame, so the panel drops its own box and the four filters
+   share the width rather than running off the edge. */
+.panel.inSheet {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.inSheet .tabList {
+  width: 100%;
+}
+
+.inSheet .tabButton {
+  flex: 1 1 0;
+  justify-content: center;
+  padding-inline: var(--ward-space-4);
 }
