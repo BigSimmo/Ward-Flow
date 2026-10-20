@@ -16,7 +16,7 @@ import { generateSeedPatient } from "@/components/ward-management/ward-patients-
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 
 /**
@@ -1813,8 +1813,11 @@ export const wardMovements: Movement[] = [
 
 /**
  * The generated people on routine movements (seed-link plan task T2 names them `PT-G-<movement
- * id>`), built here next to the records they describe. Their index starts at 1,000 so no generated
- * movement patient shares a name or record number with a generated bed occupant.
+ * id>`), built here next to the records they describe. Their index carries on from the last
+ * generated bed occupant's, so no generated movement patient shares a record number with one, nor
+ * a full name while both groups together stay under the 400 name pairs `generateSeedPatient`
+ * cycles through. CS-16 (Audit 1, Josh 20 Oct 2026): the old start of 1,000 wrapped round to the
+ * names of occupants 200 onwards, so every movement patient shared an occupant's full name.
  */
 export const generatedMovementPatients: Patient[] = wardMovements
   .filter((movement) => movement.patientId?.startsWith("PT-G-"))
@@ -1824,7 +1827,7 @@ export const generatedMovementPatients: Patient[] = wardMovements
       sex: movement.sex,
       gender: movement.gender,
       cohort: movement.cohort,
-      index: 1000 + index,
+      index: generatedOccupantPatients.length + index,
     }),
   );
 

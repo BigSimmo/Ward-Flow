@@ -2528,9 +2528,13 @@ export function reduceClinicalEvent(
       if (event.kind !== "voluntary_48h" && event.kind !== "involuntary_7d") {
         return reject(state, event, `RAISE_EXPECT_FLAG kind must be "voluntary_48h" or "involuntary_7d"`);
       }
+      // Audit 1 TS-9: a cleared earlier flag is kept, not overwritten.
       const updated: Movement = {
         ...movement,
         expectFlag: { raisedAt: event.now, kind: event.kind },
+        ...(movement.expectFlag
+          ? { expectFlagHistory: [...(movement.expectFlagHistory ?? []), movement.expectFlag] }
+          : {}),
       };
       return replaceMovement(state, movement.id, updated);
     }

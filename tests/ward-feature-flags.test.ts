@@ -63,6 +63,19 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
+  it("keeps the make-room mockup to local builds, whatever a device or the server says (Audit 1, D-71)", () => {
+    for (const environment of ["demo", "production"] as const) {
+      const resolved = resolveWardFeatureFlags({
+        environment,
+        server: { "make-room-chains": true },
+        device: { "make-room-chains": true },
+      });
+      expect(flag(resolved, "make-room-chains")).toMatchObject({ on: false, deviceCanChange: false });
+    }
+    const local = resolveWardFeatureFlags({ environment: "development", server: {}, device: {} });
+    expect(flag(local, "make-room-chains").on).toBe(true);
+  });
+
   it("turns every finished feature on in all environments (Josh, 20 Oct 2026), leaving only the held-back flags off", () => {
     const allOn = [
       "bed-meeting-tv",

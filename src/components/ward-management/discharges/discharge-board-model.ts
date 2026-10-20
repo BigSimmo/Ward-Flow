@@ -205,7 +205,10 @@ export const WORK_ORDER: WorkStatus[] = ["blocked", "confirmed", "expected", "de
  * "departed" ? "Discharged · 24h" : …}`) — reused rather than re-invented.
  */
 export function kpiCardLabel(status: WorkStatus, population: Population): string {
-  if (status === "blocked") return population === "releases" ? "Blocked releases" : "Blocked records";
+  // DA-16 (overall review, 20 Oct 2026): "Blocked releases" read as beds being blocked. The owner's
+  // own words for this count, approved 6 Sept 2026 for the capacity figure, are "Discharges held up"
+  // (`ward-derivations.ts`), so the board says the same.
+  if (status === "blocked") return population === "releases" ? "Discharges held up" : "Records held up";
   if (status === "departed") return population === "releases" ? "Discharged · 24h" : "Departed";
   return WORK_STATUS_LABELS[status];
 }

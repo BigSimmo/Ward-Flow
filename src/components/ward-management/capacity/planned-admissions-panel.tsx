@@ -99,7 +99,8 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason>(PLANNED_ADMISSION_CANCEL_REASONS[0]);
+  // Audit 1 (WP-12, Josh 20 Oct): no reason is chosen for the coordinator; one must be picked.
+  const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason | "">("");
   const [refusal, setRefusal] = useState<string | null>(null);
   const pending = useRef<{ rejections: number } | null>(null);
   // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
@@ -221,7 +222,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   function openCancel(planned: PlannedAdmission) {
     setRefusal(null);
     setSubmittedInForm(false);
-    setCancelReason(PLANNED_ADMISSION_CANCEL_REASONS[0]);
+    setCancelReason("");
     setForm({ mode: "cancel", id: planned.id });
   }
 
@@ -308,7 +309,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   }
 
   function submitCancel() {
-    if (!form || form.mode !== "cancel" || !cancelling) return;
+    if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
     pending.current = { rejections: rejections.length };
     setSubmittedInForm(true);
     dispatch({
@@ -677,7 +678,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         footer={
           <div className={styles.sheetFoot}>
             <Button onClick={closeForm}>Keep booking</Button>
-            <Button variant="danger" onClick={submitCancel} data-testid="ward-planned-cancel-confirm">
+            <Button
+              variant="danger"
+              onClick={submitCancel}
+              disabledReason={cancelReason === "" ? "Choose a reason first." : undefined}
+              data-testid="ward-planned-cancel-confirm"
+            >
               Cancel booking
             </Button>
           </div>
@@ -693,10 +699,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               <Select
                 value={cancelReason}
                 onChange={(event) => {
-                  setCancelReason(event.target.value as PlannedAdmissionCancelReason);
+                  setCancelReason(event.target.value as PlannedAdmissionCancelReason | "");
                 }}
                 data-testid="ward-planned-cancel-reason"
               >
+                <option value="">Choose a reason</option>
                 {PLANNED_ADMISSION_CANCEL_REASONS.map((reason) => (
                   <option key={reason} value={reason}>
                     {PLANNED_ADMISSION_CANCEL_REASON_LABELS[reason]}

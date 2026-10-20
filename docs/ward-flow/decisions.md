@@ -789,3 +789,16 @@ is inferred.
 - **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, on the overall review of 20 October 2026 (section 1, item 1): "Fix all of these issues ... Go ahead with all recommendations." The recommendation was "Remove the computed countdown. Show only the due time a person recorded."
 - **Decision:** This replaces D-29. The Legal forms screen no longer works out when an Act period ends, never picks an under-18 period from age, and no longer counts down to a computed end or orders a list by one. It shows only the due time a person recorded from the form (`legalForm.dueAt`), and says no deadline is recorded when there is none. `legal-forms/act-periods-demo.ts` and its test are deleted, and the section-citation guard exempts no file. D5 applies everywhere again.
 - **Why:** The standing rule rules out computed Act times and expiry, including the under-18 periods. The legal question pack is unanswered, and the screen itself said the periods were not legally checked.
+
+## D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026)
+
+- **Date:** 20 October 2026 (`2026-10-20`). **Decided by:** Josh, on Audit 1 (clinical safety and the never-build rule, `main` `3ff8503`), at 10:03 PM AWST: "Please go ahead with all recommendations and fix all issues identified."
+- **Decision:** All seven Audit 1 recommendations apply:
+  1. The ward answer view shows no invented clinical summary and no "Admit to" line, only recorded facts or "Not recorded".
+  2. No suggested, ranked, capped or pre-selected ward anywhere: "Suggested destination" goes, wards not yet asked are listed in full in a fixed order, the ED board gives a count only, and the phone accept starts with no ward chosen.
+  3. Waiting lists default to wait order. Flags, act-now and form due times are highlights that do not move rows. This restores D-32 (first in, first out), which the Home queue, Waiting, Movements and step-down lists had drifted from.
+  4. No points score: "Why this wait" gives plain reasons only.
+  5. "Time left" counted down to an expiry a person typed from the form stays: it computes nothing about the Act (D-70 is unchanged).
+  6. Road time "nearest ready beds" stays, captioned "Distance only, not suitability". Make-room chains stay switched off outside local builds. Candidate wards use a fixed order within each fit group, not catchment or free-bed tiers.
+  7. Every copy to the clipboard starts with the synthetic line. Whether real names may appear in copied text is decided before any real data.
+- **Why:** The standing never-build rule (19 October 2026) excludes best-match ward suggestions, automatic placement, re-sorting the ED queue and risk scores, and the audit found these built before the rule. Findings and evidence: `/mnt/project-files/audits/2026-10-20-clinical-safety-audit/`.

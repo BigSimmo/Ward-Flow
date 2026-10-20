@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+import { isReferralSheetPath } from "./ward-bar-model";
 
 /**
  * F-10 (phone review, October 2026): the header's Referrals and Tasks drawers only draw while they
@@ -19,5 +20,10 @@ const loadTasksDrawer = () => import("@/components/ward-management/ward-tasks-dr
 
 export const WardReferralDrawer = dynamic(() => loadReferralDrawer().then((m) => m.WardReferralDrawer));
 export const WardTasksDrawer = dynamic(() => loadTasksDrawer().then((m) => m.WardTasksDrawer));
+
+// DA-13: on the new-referral route the form opens as soon as the page can respond, so its code
+// is fetched while the page is still starting instead of after it, when the drawer asks for it.
+if (typeof window !== "undefined" && isReferralSheetPath(window.location.pathname))
+  void loadReferralDrawer().catch(() => undefined);
 
 preloadWhenIdle(loadReferralDrawer, loadTasksDrawer);

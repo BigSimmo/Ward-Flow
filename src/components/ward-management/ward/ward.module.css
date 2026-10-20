@@ -4125,12 +4125,6 @@
   flex: none;
 }
 
-.phoneNotificationCenter {
-  position: relative;
-  z-index: 5;
-  margin-top: var(--wf-s-2);
-}
-
 .phoneHeroTitle {
   position: relative;
   display: flex;

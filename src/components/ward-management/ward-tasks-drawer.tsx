@@ -61,6 +61,7 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 
 import styles from "./ward-tasks-drawer.module.css";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
@@ -387,7 +388,8 @@ export function WardTasksDrawer({
           {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
           {row.hours ? <span>{row.hours}</span> : null}
         </span>
-        {row.number ? (
+        {/* Calling only copies the number shown beside it: local development builds only (overall review, 20 Oct 2026). */}
+        {row.number && showsUnwiredPreviews() ? (
           <button
             type="button"
             className={`${styles.btn} ${styles.btnIcon}`}

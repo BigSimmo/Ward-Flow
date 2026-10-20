@@ -55,6 +55,8 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import { WF_TABLET_PORTRAIT_QUERY } from "@/components/wf/use-is-phone";
 const NOW = NOW_ANCHOR;
 const seeded = seedWardFlowState();
 const base = seeded.movements.find((movement) => movement.id === "WF-001");
@@ -139,6 +141,19 @@ const separationDueB: Movement = {
   legalForm: { code: "1A", kind: "examination", dueAt: NOW + 5000 },
 };
 
+/** CS-14 (Audit 1): no form recorded, for a detained person and for a voluntary one. */
+const noFormDetained: Movement = {
+  ...base,
+  id: "WF-TEST-NO-FORM-DETAINED",
+  legalStatus: "Referred for psychiatric examination",
+  legalForm: undefined,
+};
+const noFormVoluntary: Movement = {
+  ...noFormDetained,
+  id: "WF-TEST-NO-FORM-VOLUNTARY",
+  legalStatus: "Voluntary",
+};
+
 const mockContext = {
   ...seeded,
   movements: [
@@ -151,6 +166,8 @@ const mockContext = {
     separationOpenedB,
     separationDueA,
     separationDueB,
+    noFormDetained,
+    noFormVoluntary,
   ],
   now: NOW,
   dispatch: vi.fn(),
@@ -213,6 +230,49 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${CLOSE_DUE_ID}`);
     expect(warning).toHaveTextContent("Warning: the expiry written on the form is close.");
     expect(warning).toHaveAttribute("data-level", "warning");
+  });
+
+  it("past the typed expiry says so in words on the board, and close does not (CS-11)", () => {
+    render(<EdScreen edId="arm-ed" />);
+    expect(screen.getByTestId(`ward-ed-form-passed-${PAST_DUE_ID}`)).toHaveTextContent("Past form expiry");
+    // The danger triangle, never the amber dot that "close" uses.
+    const formCell = screen.getByTestId(`ward-ed-patient-${PAST_DUE_ID}`).querySelectorAll("td")[4];
+    expect(formCell.querySelector("svg path")).not.toBeNull();
+    expect(formCell.querySelector("svg circle")).toBeNull();
+    expect(screen.queryByTestId(`ward-ed-form-passed-${CLOSE_DUE_ID}`)).toBeNull();
+    expect(screen.queryByTestId(`ward-ed-form-passed-${CLEAR_DUE_ID}`)).toBeNull();
+  });
+
+  it("no form recorded reads 'Not recorded' unless the person is voluntary (CS-14)", () => {
+    render(<EdScreen edId="arm-ed" />);
+    const formCell = (id: string) => screen.getByTestId(`ward-ed-patient-${id}`).querySelectorAll("td")[4];
+    expect(formCell(noFormDetained.id)).toHaveTextContent(/^Not recorded$/);
+    expect(formCell(noFormVoluntary.id)).toHaveTextContent(/^None$/);
+  });
+
+  it("keeps the UMRN on the row at tablet portrait (CS-16)", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === WF_TABLET_PORTRAIT_QUERY,
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+      })),
+    );
+    try {
+      render(<EdScreen edId="arm-ed" />);
+      const { umrn } = createPatientResolver(seeded)({ movementId: base.id });
+      expect(umrn).toMatch(/^UM\d+$/);
+      const patientCell = screen.getByTestId(`ward-ed-patient-${PAST_DUE_ID}`).querySelectorAll("td")[1];
+      // Tablet portrait folds the form into this line ("Form 1A"), so the check proves the layout.
+      expect(patientCell).toHaveTextContent("Form 1A");
+      expect(patientCell).toHaveTextContent(umrn);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("a dueAt well clear of the warning band shows no warning at all", () => {

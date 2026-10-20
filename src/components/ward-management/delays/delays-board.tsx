@@ -406,7 +406,6 @@ export function DelaysBoard({
   const heroTitle = [`${split.waiting} waiting in ED`, ...notWaitingParts(split)].join(", ");
   const silentCount = rows.filter((row) => row.silent).length;
   const urgentMinutes = thresholds.urgentMinutes;
-  const soonHours = thresholds.soonMinutes / 60;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
@@ -554,6 +553,7 @@ export function DelaysBoard({
         data-severe={row.severe}
         aria-selected={isSelected}
         data-act={isActRow ? "true" : undefined}
+        data-form-due={isPinned(row, thresholds) ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -707,36 +707,9 @@ export function DelaysBoard({
       }
     }
   } else {
-    const pinned = shown.filter((row) => isPinned(row, thresholds)).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
-    const rest = shown.filter((row) => !isPinned(row, thresholds)).sort(byWait);
-    if (pinned.length > 0) {
-      body.push(
-        <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
-          <td role="cell" colSpan={6}>
-            <span className={styles.gin}>
-              <Glyph tone="danger" />
-              <span className={styles.gTitle}>{`Recorded time due within ${soonHours}h`}</span>
-              <span className={styles.k}>{pinned.length}</span>
-              <span className={styles.mut}>Pinned first</span>
-            </span>
-          </td>
-        </tr>,
-        ...pinned.flatMap(renderRow),
-      );
-      if (rest.length > 0)
-        body.push(
-          <tr role="row" key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
-            <td role="cell" colSpan={6}>
-              <span className={styles.gin}>
-                <span className={styles.gTitle}>Everyone else</span>
-                <span className={styles.k}>{rest.length}</span>
-                <span className={styles.mut}>Longest wait first</span>
-              </span>
-            </td>
-          </tr>,
-        );
-    }
-    body.push(...rest.flatMap(renderRow));
+    // Audit 1, Josh 20 Oct (CS-04, NB-6b): longest wait first for everyone. A recorded form time
+    // due soon no longer pins a row; its legal cell and `data-form-due` still mark it.
+    body.push(...[...shown].sort(byWait).flatMap(renderRow));
   }
   // A person filtered out must never look like a person placed. Whenever filters hide anyone, the
   // table says how many, with a way to show everyone (owner ruling, 9 October 2026).

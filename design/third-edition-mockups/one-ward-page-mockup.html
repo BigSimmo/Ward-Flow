@@ -1,0 +1,2568 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow mockup · One ward page (B2)</title>
+    <!--
+      Clickable mockup of idea B2 from the UX simplification review (19 October 2026), approved for a
+      try-out in the overall review of 20 October 2026, "Suggested order" item 5.
+      Self-contained: no network requests, no browser storage, nothing saves. Invented data only.
+      Colour and size values are copied from src/app/ward-flow-v9-tokens.css (v9 tokens) and are only
+      declared on :root; every component reads them through var(). Not a build contract.
+    -->
+    <style>
+      :root {
+        --wf-canvas: #e8ecf0;
+        --wf-surface: #fdfdfe;
+        --wf-surface-2: #f6f8fa;
+        --wf-track: #eceff3;
+        --wf-hover: #f2f5f8;
+        --wf-selected: #eef3f8;
+        --wf-line: rgba(22, 30, 40, 0.08);
+        --wf-line-2: rgba(22, 30, 40, 0.15);
+        --wf-line-3: rgba(22, 30, 40, 0.26);
+        --wf-ink-1: #161a20;
+        --wf-ink-2: #414953;
+        --wf-ink-3: #5b646f;
+        --wf-line-ctl: #808892;
+        --wf-accent: #245a8c;
+        --wf-accent-tint: #e3eef9;
+        --wf-accent-ink: #1f4d7a;
+        --wf-on-accent: #fff;
+        --wf-pri-1: #2f6aa3;
+        --wf-pri-2: #234f7a;
+        --wf-pri-edge: #1d4569;
+        --wf-hero-1: #22384d;
+        --wf-hero-2: #1c2f41;
+        --wf-hero-ink: #fff;
+        --wf-hero-ink-2: #c3d1de;
+        --wf-hero-ink-3: #a3b8cc;
+        --wf-hero-line: rgba(255, 255, 255, 0.16);
+        --wf-hero-chip: rgba(255, 255, 255, 0.08);
+        --wf-danger: #c4513f;
+        --wf-danger-ink: #9a3424;
+        --wf-danger-tint: #fcf0ee;
+        --wf-warning: #ac720a;
+        --wf-warning-ink: #7a5208;
+        --wf-warning-tint: #fbf5e6;
+        --wf-success: #2f8a5f;
+        --wf-success-ink: #1c6343;
+        --wf-success-tint: #e2f0e8;
+        --wf-info: #4f7398;
+        --wf-scrim: rgba(22, 30, 40, 0.14);
+        --wf-e1:
+          0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
+          0 12px 28px -20px rgba(16, 24, 40, 0.22);
+        --wf-e3:
+          0 0 0 0.5px rgba(16, 24, 40, 0.14), 0 2px 4px rgba(16, 24, 40, 0.06), 0 24px 48px -12px rgba(16, 24, 40, 0.3);
+        --wf-r-sm: 10px;
+        --wf-r-md: 12px;
+        --wf-r-lg: 16px;
+        --wf-r-xl: 22px;
+        --wf-r-pill: 999px;
+        --wf-r-ctl: 12px;
+        --wf-r-tag: 6px;
+        --wf-fs-12: 12px;
+        --wf-fs-13: 13px;
+        --wf-fs-14: 14px;
+        --wf-fs-16: 16px;
+        --wf-fs-20: 20px;
+        --wf-fs-28: 28px;
+        --wf-row: 52px;
+        --wf-tap: 44px;
+        --wf-font: Geist, "Segoe UI", system-ui, -apple-system, sans-serif;
+        --wf-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --wf-canvas: #0d141b;
+          --wf-surface: #141d26;
+          --wf-surface-2: #18232e;
+          --wf-track: #223040;
+          --wf-hover: #1b2733;
+          --wf-selected: #1f2e3c;
+          --wf-line: rgba(255, 255, 255, 0.07);
+          --wf-line-2: rgba(255, 255, 255, 0.13);
+          --wf-line-3: rgba(255, 255, 255, 0.24);
+          --wf-ink-1: #e9eef3;
+          --wf-ink-2: #bcc8d4;
+          --wf-ink-3: #93a4b5;
+          --wf-line-ctl: #6e7d8d;
+          --wf-accent: #8cbcf0;
+          --wf-accent-tint: #1d3349;
+          --wf-accent-ink: #b7d3f0;
+          --wf-pri-1: #3a72a8;
+          --wf-pri-2: #2c5c8c;
+          --wf-pri-edge: #5a8fc4;
+          --wf-hero-1: #22374d;
+          --wf-hero-2: #1c2e41;
+          --wf-danger: #e27a68;
+          --wf-danger-ink: #f2a495;
+          --wf-danger-tint: #3a211d;
+          --wf-warning: #d9a441;
+          --wf-warning-ink: #f0cc85;
+          --wf-warning-tint: #33291a;
+          --wf-success: #4cb383;
+          --wf-success-ink: #8fd6b3;
+          --wf-success-tint: #17322a;
+          --wf-info: #7fa3c8;
+          --wf-scrim: rgba(0, 0, 0, 0.4);
+          --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+          --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --wf-canvas: #0d141b;
+        --wf-surface: #141d26;
+        --wf-surface-2: #18232e;
+        --wf-track: #223040;
+        --wf-hover: #1b2733;
+        --wf-selected: #1f2e3c;
+        --wf-line: rgba(255, 255, 255, 0.07);
+        --wf-line-2: rgba(255, 255, 255, 0.13);
+        --wf-line-3: rgba(255, 255, 255, 0.24);
+        --wf-ink-1: #e9eef3;
+        --wf-ink-2: #bcc8d4;
+        --wf-ink-3: #93a4b5;
+        --wf-line-ctl: #6e7d8d;
+        --wf-accent: #8cbcf0;
+        --wf-accent-tint: #1d3349;
+        --wf-accent-ink: #b7d3f0;
+        --wf-pri-1: #3a72a8;
+        --wf-pri-2: #2c5c8c;
+        --wf-pri-edge: #5a8fc4;
+        --wf-hero-1: #22374d;
+        --wf-hero-2: #1c2e41;
+        --wf-danger: #e27a68;
+        --wf-danger-ink: #f2a495;
+        --wf-danger-tint: #3a211d;
+        --wf-warning: #d9a441;
+        --wf-warning-ink: #f0cc85;
+        --wf-warning-tint: #33291a;
+        --wf-success: #4cb383;
+        --wf-success-ink: #8fd6b3;
+        --wf-success-tint: #17322a;
+        --wf-info: #7fa3c8;
+        --wf-scrim: rgba(0, 0, 0, 0.4);
+        --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+        --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+        color-scheme: dark;
+      }
+
+      /* ─── shared shell (same block in one-ward-page-mockup.html) ─── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--wf-canvas);
+        color: var(--wf-ink-1);
+        font-family: var(--wf-font);
+        font-size: var(--wf-fs-14);
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      a {
+        color: var(--wf-accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 2px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .skip {
+        position: absolute;
+        left: 8px;
+        top: -60px;
+        background: var(--wf-surface);
+        padding: 8px 12px;
+        border-radius: var(--wf-r-sm);
+        z-index: 60;
+      }
+      .skip:focus {
+        top: 8px;
+      }
+      .mono {
+        font-family: var(--wf-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .proto-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--wf-warning-tint);
+        color: var(--wf-warning-ink);
+        border-bottom: 1px solid var(--wf-line-2);
+        font-size: var(--wf-fs-13);
+      }
+      .proto-strip strong {
+        font-weight: 600;
+      }
+      .proto-strip .spacer {
+        flex: 1;
+      }
+      .linkish {
+        background: none;
+        border: 0;
+        padding: 0;
+        color: var(--wf-accent);
+        text-decoration: underline;
+        font-size: inherit;
+        min-height: 24px;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        min-height: calc(100vh - 38px);
+      }
+      .rail {
+        background: var(--wf-surface-2);
+        border-right: 1px solid var(--wf-line-2);
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: var(--wf-fs-16);
+      }
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--wf-r-sm);
+        background: var(--wf-pri-1);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-tag);
+        padding: 1px 6px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface);
+        white-space: nowrap;
+      }
+      .shift-card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 12px;
+        box-shadow: var(--wf-e1);
+        font-size: var(--wf-fs-13);
+      }
+      .shift-card b {
+        font-size: var(--wf-fs-14);
+      }
+      .shift-card .row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        color: var(--wf-ink-3);
+      }
+      .nav-label {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        margin: 4px 8px 0;
+      }
+      .nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        padding: 8px 10px;
+        min-height: 40px;
+        color: var(--wf-ink-2);
+      }
+      .nav button:hover {
+        background: var(--wf-hover);
+      }
+      .nav button[aria-current="page"] {
+        background: var(--wf-accent-tint);
+        border-color: var(--wf-line-2);
+        color: var(--wf-accent-ink);
+        font-weight: 600;
+      }
+      .nav .count {
+        margin-left: auto;
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+      }
+      .nav small {
+        display: block;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+        font-weight: 400;
+      }
+      .ico {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .rail .who {
+        margin-top: auto;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 10px;
+        font-size: var(--wf-fs-13);
+      }
+      .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--wf-r-pill);
+        background: var(--wf-pri-2);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        flex: none;
+      }
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        background: var(--wf-hero-1);
+        color: var(--wf-hero-ink);
+        border-bottom: 1px solid var(--wf-hero-line);
+      }
+      .bar h1,
+      .bar .title {
+        font-size: var(--wf-fs-16);
+        font-weight: 600;
+        margin: 0;
+      }
+      .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        color: var(--wf-hero-ink);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 10px;
+        min-height: 32px;
+        font-size: var(--wf-fs-13);
+        font-weight: 600;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: var(--wf-r-pill);
+        background: var(--wf-success);
+        display: inline-block;
+        flex: none;
+      }
+      .dot.warn {
+        background: var(--wf-warning);
+      }
+      .dot.danger {
+        background: var(--wf-danger);
+      }
+      .search {
+        flex: 1;
+        max-width: 360px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        border-radius: var(--wf-r-ctl);
+        padding: 0 12px;
+        min-height: 36px;
+        color: var(--wf-hero-ink-2);
+        text-align: left;
+      }
+      .bar .spacer {
+        flex: 1;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: var(--wf-r-ctl);
+        border: 1px solid var(--wf-line-ctl);
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        padding: 6px 14px;
+        min-height: 36px;
+        font-weight: 600;
+        font-size: var(--wf-fs-13);
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--wf-hover);
+      }
+      .btn.primary {
+        background: var(--wf-pri-1);
+        border-color: var(--wf-pri-edge);
+        color: var(--wf-on-accent);
+      }
+      .btn.primary:hover {
+        background: var(--wf-pri-2);
+      }
+      .btn.danger {
+        color: var(--wf-danger-ink);
+        border-color: var(--wf-danger);
+      }
+      .btn.quiet {
+        border-color: var(--wf-line-2);
+      }
+      .btn[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .btn.on-hero {
+        background: var(--wf-hero-chip);
+        color: var(--wf-hero-ink);
+        border-color: var(--wf-hero-line);
+      }
+      .btn.on-hero.primary {
+        background: var(--wf-pri-1);
+        border-color: var(--wf-pri-edge);
+      }
+      .hero {
+        background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+        color: var(--wf-hero-ink);
+        padding: 18px 24px 44px;
+      }
+      .eyebrow {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--wf-hero-ink-2);
+        font-weight: 600;
+      }
+      .sheet {
+        background: var(--wf-canvas);
+        border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+        margin-top: -26px;
+        position: relative;
+        padding: 20px 24px 40px;
+      }
+      .card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        box-shadow: var(--wf-e1);
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .card-head h2,
+      .card-head h3 {
+        margin: 0;
+        font-size: var(--wf-fs-16);
+      }
+      .muted {
+        color: var(--wf-ink-3);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--wf-line-2);
+        background: var(--wf-surface);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 10px;
+        min-height: 32px;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--wf-accent-tint);
+        border-color: var(--wf-accent);
+        color: var(--wf-accent-ink);
+        font-weight: 600;
+      }
+      .chip .n {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        background: var(--wf-track);
+        border-radius: var(--wf-r-tag);
+        padding: 0 5px;
+        color: var(--wf-ink-1);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: var(--wf-r-tag);
+        padding: 1px 6px;
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        border: 1px solid var(--wf-line-2);
+        color: var(--wf-ink-2);
+        white-space: nowrap;
+      }
+      .badge.warn {
+        color: var(--wf-warning-ink);
+        background: var(--wf-warning-tint);
+        border-color: transparent;
+      }
+      .badge.danger {
+        color: var(--wf-danger-ink);
+        background: var(--wf-danger-tint);
+        border-color: transparent;
+      }
+      .badge.good {
+        color: var(--wf-success-ink);
+        background: var(--wf-success-tint);
+        border-color: transparent;
+      }
+      .badge.info {
+        color: var(--wf-accent-ink);
+        background: var(--wf-accent-tint);
+        border-color: transparent;
+      }
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: var(--wf-scrim);
+        z-index: 40;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        z-index: 70;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        background: var(--wf-ink-1);
+        color: var(--wf-surface);
+        border-radius: var(--wf-r-md);
+        padding: 10px 14px;
+        box-shadow: var(--wf-e3);
+        font-size: var(--wf-fs-13);
+        max-width: calc(100vw - 32px);
+      }
+      .toast[hidden] {
+        display: none;
+      }
+      .toast button {
+        background: none;
+        border: 1px solid currentColor;
+        border-radius: var(--wf-r-sm);
+        color: inherit;
+        padding: 4px 10px;
+        min-height: 32px;
+        font-weight: 600;
+      }
+      dialog {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-lg);
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        box-shadow: var(--wf-e3);
+        padding: 0;
+        max-width: min(520px, calc(100vw - 32px));
+        width: 100%;
+      }
+      dialog::backdrop {
+        background: var(--wf-scrim);
+      }
+      .dlg-body {
+        padding: 18px 20px;
+      }
+      .dlg-body h2 {
+        margin: 0 0 8px;
+        font-size: var(--wf-fs-16);
+      }
+      .dlg-body ul {
+        padding-left: 18px;
+        margin: 8px 0;
+      }
+      .dlg-body li {
+        margin: 4px 0;
+      }
+      .dlg-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 10px 0;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .field select {
+        min-height: 40px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: var(--wf-r-ctl);
+        background: var(--wf-surface);
+        padding: 0 10px;
+        font-size: var(--wf-fs-14);
+      }
+      .dock {
+        display: none;
+      }
+      .icon-btn.menu-btn {
+        display: none;
+      }
+      .icon-btn {
+        background: none;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        min-width: 36px;
+        min-height: 36px;
+        display: inline-grid;
+        place-items: center;
+        color: inherit;
+      }
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: fixed;
+          inset: 0 auto 0 0;
+          height: auto;
+          width: min(300px, 86vw);
+          z-index: 50;
+          transform: translateX(-102%);
+          /* Hidden once slid away, so its buttons leave the tab order. */
+          visibility: hidden;
+          transition:
+            transform 200ms,
+            visibility 0s linear 200ms;
+          overflow: auto;
+        }
+        .rail.open {
+          transform: none;
+          visibility: visible;
+          transition: transform 200ms;
+          box-shadow: var(--wf-e3);
+        }
+        .icon-btn.menu-btn {
+          display: inline-grid;
+        }
+        .bar {
+          padding: 8px 12px;
+          gap: 8px;
+        }
+        .bar .wide-only,
+        .proto-strip .long {
+          display: none;
+        }
+        .search {
+          flex: 0 0 auto;
+          max-width: none;
+          min-width: var(--wf-tap);
+          justify-content: center;
+          padding: 0;
+        }
+        .search .label {
+          display: none;
+        }
+        .hero {
+          padding: 14px 16px 40px;
+        }
+        .sheet {
+          padding: 16px 12px 96px;
+        }
+        .dock {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 30;
+          background: var(--wf-surface);
+          border-top: 1px solid var(--wf-line-2);
+          padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+        }
+        .dock button {
+          background: none;
+          border: 0;
+          min-height: 52px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          font-size: var(--wf-fs-12);
+          color: var(--wf-ink-2);
+        }
+        .dock button[aria-current="page"] {
+          color: var(--wf-accent);
+          font-weight: 600;
+        }
+        .dock .plus span.ring {
+          width: 48px;
+          height: 48px;
+          border-radius: var(--wf-r-pill);
+          background: var(--wf-pri-1);
+          color: var(--wf-on-accent);
+          display: grid;
+          place-items: center;
+          margin-top: -18px;
+          box-shadow: var(--wf-e3);
+        }
+        .toast {
+          bottom: 84px;
+        }
+        .btn,
+        .chip {
+          min-height: var(--wf-tap);
+        }
+      }
+
+      /* ─── this screen only ─── */
+      .hero-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px 28px;
+        flex-wrap: wrap;
+      }
+      .hero h2 {
+        margin: 4px 0 2px;
+        font-size: var(--wf-fs-28);
+        line-height: 1.15;
+      }
+      .hero .sub {
+        color: var(--wf-hero-ink-2);
+      }
+      .big3 {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .big {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        min-width: 128px;
+        padding: 10px 14px;
+        border-radius: var(--wf-r-md);
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        color: var(--wf-hero-ink);
+        text-align: left;
+      }
+      .big b {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-28);
+        line-height: 1;
+      }
+      .big span {
+        color: var(--wf-hero-ink-2);
+        font-size: var(--wf-fs-13);
+      }
+      .big[aria-pressed="true"] {
+        border-color: var(--wf-hero-ink);
+        background: var(--wf-hero-line);
+      }
+      .confirm-box {
+        margin-left: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        color: var(--wf-hero-ink-3);
+        font-size: var(--wf-fs-13);
+      }
+      .confirm-box .line {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .ward-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 16px;
+        align-items: start;
+      }
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 16px 0;
+      }
+      .find {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: var(--wf-r-ctl);
+        padding: 0 10px;
+        min-height: 36px;
+        background: var(--wf-surface);
+        flex: 1 1 200px;
+        max-width: 280px;
+      }
+      .find input {
+        border: 0;
+        background: none;
+        outline: none;
+        min-height: 34px;
+        width: 100%;
+        font-size: var(--wf-fs-14);
+      }
+      .find:focus-within {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 1px;
+      }
+      .tools select {
+        min-height: 36px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: var(--wf-r-ctl);
+        background: var(--wf-surface);
+        padding: 0 8px;
+        font-size: var(--wf-fs-13);
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-ctl);
+        padding: 2px;
+        background: var(--wf-track);
+        gap: 2px;
+      }
+      .seg button {
+        border: 0;
+        background: none;
+        border-radius: var(--wf-r-sm);
+        min-height: 30px;
+        padding: 0 10px;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .seg button[aria-pressed="true"],
+      .seg button[aria-selected="true"] {
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+        box-shadow: var(--wf-e1);
+      }
+      .filters {
+        padding: 10px 16px 0;
+      }
+      .beds {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        padding: 14px 16px;
+      }
+      .bed {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        text-align: left;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        background: var(--wf-surface);
+        padding: 9px 11px;
+        min-height: 92px;
+      }
+      .bed:hover {
+        background: var(--wf-hover);
+      }
+      .bed .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+      }
+      .bed .num {
+        font-family: var(--wf-mono);
+        font-weight: 700;
+        font-size: var(--wf-fs-14);
+      }
+      .bed .name {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .bed .foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+      }
+      .bed .next {
+        font-size: var(--wf-fs-12);
+        color: var(--wf-accent-ink);
+      }
+      .bed.s-free {
+        background: var(--wf-success-tint);
+        border-color: var(--wf-success);
+      }
+      .bed.s-heldup {
+        background: var(--wf-danger-tint);
+      }
+      .bed.s-pastdate {
+        background: var(--wf-warning-tint);
+      }
+      .bed.s-closed {
+        background: var(--wf-surface-2);
+        color: var(--wf-ink-3);
+      }
+      .bed.selected {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 1px;
+      }
+      .state {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        border-radius: var(--wf-r-tag);
+        padding: 0 6px;
+        white-space: nowrap;
+      }
+      .st-free {
+        color: var(--wf-success-ink);
+      }
+      .st-heldup {
+        color: var(--wf-danger-ink);
+      }
+      .st-pastdate {
+        color: var(--wf-warning-ink);
+      }
+      .st-dueout,
+      .st-coming {
+        color: var(--wf-accent-ink);
+        background: var(--wf-accent-tint);
+      }
+      .st-occupied,
+      .st-leave,
+      .st-closed {
+        color: var(--wf-ink-3);
+      }
+      .bed-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--wf-fs-13);
+      }
+      .bed-table th,
+      .bed-table td {
+        text-align: left;
+        padding: 8px 16px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .bed-table th {
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        border-top: 0;
+      }
+      .bed-table button {
+        background: none;
+        border: 0;
+        padding: 4px 0;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--wf-line-3);
+        min-height: 32px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        padding: 10px 16px 14px;
+        border-top: 1px solid var(--wf-line);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .items li {
+        padding: 12px 16px;
+        border-top: 1px solid var(--wf-line);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .items li:first-child {
+        border-top: 0;
+      }
+      .items .k {
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .items .p {
+        font-weight: 600;
+      }
+      .items .d {
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .items .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .items .linkbtn {
+        background: none;
+        border: 0;
+        padding: 0;
+        text-align: left;
+        font-weight: 600;
+        color: var(--wf-ink-1);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--wf-line-3);
+        min-height: 28px;
+      }
+      .pane-tabs {
+        display: none;
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(420px, 100vw);
+        z-index: 45;
+        background: var(--wf-surface);
+        border-left: 1px solid var(--wf-line-2);
+        box-shadow: var(--wf-e3);
+        display: flex;
+        flex-direction: column;
+      }
+      .drawer[hidden] {
+        display: none;
+      }
+      .drawer .body {
+        overflow: auto;
+        flex: 1;
+      }
+      .p-sec {
+        padding: 14px 16px;
+        border-top: 1px solid var(--wf-line);
+      }
+      .p-sec:first-child {
+        border-top: 0;
+      }
+      .p-sec h4 {
+        margin: 0 0 8px;
+        font-size: var(--wf-fs-12);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--wf-ink-3);
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        overflow: hidden;
+      }
+      .facts div {
+        padding: 8px 10px;
+        border-right: 1px solid var(--wf-line);
+        border-bottom: 1px solid var(--wf-line);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .facts div b {
+        display: block;
+        font-size: var(--wf-fs-14);
+        color: var(--wf-ink-1);
+      }
+      .facts div:nth-child(2n) {
+        border-right: 0;
+      }
+      .facts div:nth-last-child(-n + 2) {
+        border-bottom: 0;
+      }
+      .note {
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface-2);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-md);
+        padding: 8px 10px;
+        margin: 8px 0 0;
+      }
+      .drawer-foot {
+        border-top: 1px solid var(--wf-line-2);
+        padding: 12px 16px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .drawer-foot .btn {
+        flex: 1 1 140px;
+      }
+      .bed-choice {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--wf-line-2);
+        background: var(--wf-surface);
+        border-radius: var(--wf-r-md);
+        padding: 8px 12px;
+        min-height: var(--wf-tap);
+        margin: 4px 0;
+      }
+      .bed-choice[aria-checked="true"] {
+        border-color: var(--wf-accent);
+        background: var(--wf-accent-tint);
+      }
+      .bed-choice small {
+        display: block;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+      }
+      @media (max-width: 1100px) {
+        .ward-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 900px) {
+        .hero h2 {
+          font-size: var(--wf-fs-20);
+        }
+        .big {
+          min-width: 0;
+          flex: 1;
+          padding: 8px 10px;
+        }
+        .big b {
+          font-size: var(--wf-fs-20);
+        }
+        .confirm-box {
+          margin-left: 0;
+          align-items: flex-start;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+        .pane-tabs {
+          display: flex;
+          margin: 0 0 12px;
+          width: 100%;
+        }
+        .pane-tabs button {
+          flex: 1;
+          min-height: 40px;
+        }
+        [data-pane][data-hidden-phone] {
+          display: none;
+        }
+        .beds {
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 8px;
+          padding: 12px;
+        }
+        .bed {
+          min-height: 84px;
+          padding: 8px 9px;
+        }
+        .find {
+          max-width: none;
+          min-height: var(--wf-tap);
+        }
+        .tools select,
+        .seg button {
+          min-height: 40px;
+        }
+        .chips.scroll {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 2px;
+        }
+        .chips.scroll .chip {
+          flex: none;
+        }
+        .drawer {
+          top: auto;
+          width: 100%;
+          max-height: 88vh;
+          border-left: 0;
+          border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+        }
+        .bed-table .wide {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the beds</a>
+    <div class="proto-strip" role="note">
+      <strong>Mockup B2: one ward page.</strong>
+      <span>Invented data, not for clinical use.</span>
+      <span class="long">Nothing here saves; reload to start again.</span>
+      <span class="spacer"></span>
+      <button class="linkish" type="button" id="aboutBtn">What changed from today?</button>
+      <a href="needs-you-now-home-mockup.html">Open the B5 Home mockup</a>
+    </div>
+
+    <div class="app">
+      <nav class="rail" id="rail" aria-label="Main menu">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">+</span> Ward Flow <span class="tag">WA</span>
+        </div>
+        <div class="shift-card">
+          <b>Day shift</b> <span class="mono">07:00–15:00</span>
+          <div class="muted">K. Vance RN · Nurse in charge</div>
+          <div class="row">
+            <span><span class="dot"></span> Board time</span><span class="mono">10:42 AWST</span>
+          </div>
+        </div>
+        <div class="nav-label">Nurse in charge</div>
+        <ul class="nav">
+          <li>
+            <button type="button" aria-current="page">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 18V8M3 14h18v4M7 11h4v3M21 18v-5a2 2 0 0 0-2-2h-6v3" />
+              </svg>
+              <span>My ward<small>beds and answers</small></span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h12l-3-3M20 17H8l3 3" /></svg>
+              <span>Coming and going<small>still open</small></span
+              ><span class="count" data-bind="movingCount">6</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>
+              <span>Referrals to answer<small>awaiting a decision</small></span
+              ><span class="count" data-bind="askCount">2</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 4h8v3H8zM6 6H5v15h14V6h-1M9 12h6M9 16h4" />
+              </svg>
+              <span>Handover</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" data-unwired>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01" /></svg>
+              <span>More</span>
+            </button>
+          </li>
+        </ul>
+        <div class="who">
+          <span class="avatar" aria-hidden="true">KV</span
+          ><span><b>K. Vance RN</b><br /><span class="muted">Nurse in charge</span></span>
+        </div>
+      </nav>
+
+      <div>
+        <header class="bar">
+          <button
+            class="icon-btn menu-btn"
+            type="button"
+            id="menuBtn"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="rail"
+          >
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+          <span class="title">Dabakarn</span>
+          <span class="hero-chip wide-only"><span class="dot"></span> East Metro</span>
+          <button class="search" type="button" data-unwired aria-label="Search">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6" />
+              <path d="M20 20l-4.5-4.5" />
+            </svg>
+            <span class="label">Search</span>
+          </button>
+          <span class="spacer"></span>
+          <button class="btn on-hero wide-only" type="button" data-unwired>Handover sheet</button>
+          <button class="btn on-hero wide-only" type="button" id="themeBtn">Dark or light</button>
+          <button class="btn on-hero primary wide-only" type="button" data-unwired>Raise referral</button>
+        </header>
+
+        <section class="hero" aria-labelledby="heroTitle">
+          <div class="hero-row">
+            <div>
+              <div class="eyebrow">Ward · Royal Perth Hospital · East Metro</div>
+              <h2 id="heroTitle">Dabakarn</h2>
+              <div class="sub">20 beds · adult · all locked</div>
+            </div>
+            <div class="big3" role="group" aria-label="Three numbers. Each one filters the beds below.">
+              <button type="button" class="big" data-big="free" aria-pressed="false">
+                <b data-bind="readyNow">1</b><span>Ready now</span>
+              </button>
+              <button type="button" class="big" data-big="coming" aria-pressed="false">
+                <b data-bind="comingIn">2</b><span>Coming in</span>
+              </button>
+              <button type="button" class="big" data-big="dueout" aria-pressed="false">
+                <b data-bind="goingOut">4</b><span>Going out today</span>
+              </button>
+            </div>
+            <div class="confirm-box">
+              <span class="line"
+                ><span class="dot" id="confirmDot"></span>
+                <span id="confirmLine">Numbers confirmed 10:22 by NUM, 20 min ago</span></span
+              >
+              <span class="line"
+                ><span class="hero-chip"><span class="dot"></span> Demo <span class="mono">10:42</span></span
+                ><button class="btn" type="button" id="confirmBtn">Confirm numbers</button></span
+              >
+            </div>
+          </div>
+        </section>
+
+        <main class="sheet" id="main" tabindex="-1">
+          <div class="seg pane-tabs" role="tablist" aria-label="Show">
+            <button
+              type="button"
+              role="tab"
+              id="tab-beds"
+              aria-controls="pane-beds"
+              aria-selected="true"
+              data-tab="beds"
+            >
+              Beds
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-answer"
+              aria-controls="pane-answer"
+              aria-selected="false"
+              data-tab="answer"
+            >
+              To answer <span class="mono" data-bind="askCount">2</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-moving"
+              aria-controls="pane-moving"
+              aria-selected="false"
+              data-tab="moving"
+            >
+              Coming and going
+            </button>
+          </div>
+
+          <div class="ward-grid">
+            <section class="card" id="pane-beds" data-pane="beds" aria-labelledby="bedsTitle">
+              <div class="card-head">
+                <h3 id="bedsTitle">Every bed</h3>
+                <span class="muted mono" id="bedsShown">20 of 20</span>
+              </div>
+              <div class="filters chips scroll" role="group" aria-label="Show only" id="filters"></div>
+              <div class="tools">
+                <label class="find"
+                  ><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6" />
+                    <path d="M20 20l-4.5-4.5" /></svg
+                  ><span class="sr-only">Find a bed or person</span
+                  ><input id="find" type="search" placeholder="Find bed or person" autocomplete="off"
+                /></label>
+                <label
+                  ><span class="sr-only">Order</span
+                  ><select id="order">
+                    <option value="num">Bed number</option>
+                    <option value="days">Longest stay first</option>
+                  </select></label
+                >
+                <span class="seg" role="group" aria-label="View">
+                  <button type="button" data-view="grid" aria-pressed="true">Tiles</button>
+                  <button type="button" data-view="list" aria-pressed="false">List</button>
+                </span>
+              </div>
+              <div id="bedsOut"></div>
+              <div class="legend" aria-label="Key">
+                <span>▲ Held up: ready to leave, waiting on something</span>
+                <span>● Past expected date</span>
+                <span>→ Going out today</span>
+                <span>← Coming in</span>
+                <span>✓ Free</span>
+                <span>× Closed</span>
+              </div>
+            </section>
+
+            <div class="side">
+              <section class="card" id="pane-answer" data-pane="answer" aria-labelledby="askTitle">
+                <div class="card-head">
+                  <h3 id="askTitle">Waiting for your answer</h3>
+                  <span class="badge info mono" data-bind="askCount">2</span>
+                </div>
+                <ul class="items" id="askList"></ul>
+              </section>
+              <section class="card" data-pane="moving" id="pane-moving" aria-labelledby="inTitle">
+                <div class="card-head">
+                  <h3 id="inTitle">Coming in</h3>
+                  <span class="badge mono" data-bind="comingIn">2</span>
+                </div>
+                <ul class="items" id="inList"></ul>
+                <div class="card-head" style="border-top: 1px solid var(--wf-line)">
+                  <h3>Going out today</h3>
+                  <span class="badge mono" data-bind="goingOut">4</span>
+                </div>
+                <ul class="items" id="outList"></ul>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <nav class="dock" aria-label="Phone menu">
+      <button type="button" aria-current="page">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 18V8M3 14h18v4M7 11h4v3M21 18v-5a2 2 0 0 0-2-2h-6v3" /></svg
+        >My ward
+      </button>
+      <button type="button" id="dockAnswer">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>Referrals
+      </button>
+      <button type="button" class="plus" data-unwired aria-label="Raise referral">
+        <span class="ring"
+          ><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg
+        ></span>
+      </button>
+      <button type="button" data-unwired>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 4h8v3H8zM6 6H5v15h14V6h-1M9 12h6M9 16h4" /></svg
+        >Handover
+      </button>
+      <button type="button" id="dockTheme">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z" /></svg
+        >Theme
+      </button>
+    </nav>
+
+    <div class="scrim" id="scrim" hidden></div>
+    <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawerTitle"></aside>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+      <span id="toastText"></span><button type="button" id="toastUndo" hidden>Undo</button>
+    </div>
+
+    <dialog id="confirmDlg" aria-labelledby="confirmTitle">
+      <form method="dialog">
+        <div class="dlg-body">
+          <h2 id="confirmTitle"></h2>
+          <p id="confirmText"></p>
+        </div>
+        <div class="dlg-foot">
+          <button class="btn" value="cancel">Cancel</button
+          ><button class="btn primary" value="ok" id="confirmOk">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="aboutDlg" aria-labelledby="aboutTitle">
+      <form method="dialog">
+        <div class="dlg-body">
+          <h2 id="aboutTitle">What this mockup changes</h2>
+          <p>
+            Today a ward has two pages: Ward home, with one bed grid, and Bed board, with a different bed grid and ten
+            more counts. Their tabs differ too.
+          </p>
+          <ul>
+            <li>
+              One ward page. At the top, three numbers: ready now, coming in, going out today. Each one filters the
+              beds.
+            </li>
+            <li>
+              One bed grid, with the filters from today (Needs a look, Due out, Free) plus Coming in and Long stay. The
+              separate "long stays and held up" list is now a filter.
+            </li>
+            <li>Each bed tile says its state in a word and a symbol, not by colour alone.</li>
+            <li>
+              Referrals and coordinator requests for this ward sit beside the grid. Accepting one asks you to choose the
+              bed yourself.
+            </li>
+            <li>On a phone, the side lists become two tabs next to Beds.</li>
+          </ul>
+          <p class="muted">Try it: tap a bed, or answer the first referral.</p>
+        </div>
+        <div class="dlg-foot"><button class="btn primary" value="ok">Close</button></div>
+      </form>
+    </dialog>
+
+    <script>
+      (function () {
+        "use strict";
+        var NOT_WIRED = "Not wired in this prototype.";
+
+        /* Invented beds for Dabakarn as at 10:42. Dates are recorded dates, not calculated ones. */
+        var beds = [
+          {
+            n: "01",
+            s: "heldup",
+            who: "Arthur Winterthorn",
+            umrn: "UM100018",
+            days: 210,
+            why: "Accommodation",
+            exp: "2 Oct",
+          },
+          { n: "02", s: "pastdate", who: "Teodor Banksiavale", umrn: "UM100033", days: 130, exp: "10 Oct" },
+          { n: "03", s: "occupied", who: "Ewan Shalecroft", umrn: "UM100019", days: 95, exp: "31 Oct" },
+          { n: "04", s: "occupied", who: "Margery Slateridge", umrn: "UM100022", days: 75, exp: "28 Oct" },
+          {
+            n: "05",
+            s: "dueout",
+            who: "Callum Finchgrove",
+            umrn: "UM100021",
+            days: 60,
+            exp: "20 Oct",
+            at: "time not set",
+          },
+          { n: "06", s: "occupied", who: "Elena Rostovska", umrn: "UM100032", days: 45, exp: "Not recorded" },
+          { n: "07", s: "free" },
+          {
+            n: "08",
+            s: "heldup",
+            who: "Ivo Bramblewick",
+            umrn: "UM100024",
+            days: 34,
+            why: "Support package to start",
+            exp: "15 Oct",
+          },
+          { n: "09", s: "occupied", who: "Fiona Gallaglen", umrn: "UM100038", days: 33, exp: "25 Oct" },
+          { n: "10", s: "occupied", who: "Magnus Vancewell", umrn: "UM100034", days: 20, exp: "24 Oct" },
+          { n: "11", s: "occupied", who: "Lucan Jasperwick", umrn: "UM100029", days: 12, exp: "27 Oct" },
+          { n: "12", s: "pastdate", who: "Ines Marrowby", umrn: "UM100003", days: 6, exp: "18 Oct" },
+          { n: "13", s: "dueout", who: "Anselm Heronvale", umrn: "UM100028", days: 5, exp: "20 Oct", at: "14:00" },
+          { n: "14", s: "occupied", who: "Sarah Jenkinwood", umrn: "UM100035", days: 5, exp: "29 Oct" },
+          { n: "15", s: "dueout", who: "Liam Calvermere", umrn: "UM100037", days: 4, exp: "20 Oct", at: "12:00" },
+          {
+            n: "16",
+            s: "dueout",
+            who: "Dominic Barstowen",
+            umrn: "UM100039",
+            days: 3,
+            exp: "20 Oct",
+            at: "time not set",
+          },
+          { n: "17", s: "leave", who: "Luke Daviecroft", umrn: "UM100036", days: 2, exp: "26 Oct", back: "18:00" },
+          {
+            n: "18",
+            s: "coming",
+            who: "Feodora Blennerhast",
+            umrn: "UM100007",
+            from: "SJGM ED",
+            accepted: "09:10",
+            transport: "Not booked",
+          },
+          {
+            n: "19",
+            s: "coming",
+            who: "Gianna Marrowvale",
+            umrn: "UM100013",
+            from: "SCGH ED",
+            accepted: "08:20",
+            transport: "Booked, pick-up 11:30",
+          },
+          { n: "20", s: "closed", why: "Repairs to the window" },
+        ];
+
+        var asks = [
+          {
+            id: "a1",
+            kind: "Bed coordinator asks",
+            time: "10:05",
+            who: "Roshan O'Quinn",
+            umrn: "UM100005",
+            from: "RPH ED",
+            need: "Adult secure",
+            text: "Can Dabakarn take him? He has waited at RPH ED since 02:10.",
+          },
+          {
+            id: "a2",
+            kind: "Referral from Armadale ED",
+            time: "09:31",
+            who: "Sasha Quillcross",
+            umrn: "UM100016",
+            from: "Armadale ED",
+            need: "Adult secure",
+            text: "Asks for an adult secure bed. Moodjar has no secure bed.",
+          },
+        ];
+
+        var STATE = {
+          occupied: { word: "Occupied", sym: "", cls: "st-occupied" },
+          free: { word: "Free", sym: "✓", cls: "st-free" },
+          heldup: { word: "Held up", sym: "▲", cls: "st-heldup" },
+          pastdate: { word: "Past date", sym: "●", cls: "st-pastdate" },
+          dueout: { word: "Going out", sym: "→", cls: "st-dueout" },
+          coming: { word: "Coming in", sym: "←", cls: "st-coming" },
+          leave: { word: "On leave", sym: "", cls: "st-leave" },
+          closed: { word: "Closed", sym: "×", cls: "st-closed" },
+        };
+        var FILTERS = [
+          [
+            "all",
+            "All",
+            function () {
+              return true;
+            },
+          ],
+          [
+            "look",
+            "Needs a look",
+            function (b) {
+              return b.s === "heldup" || b.s === "pastdate";
+            },
+          ],
+          [
+            "dueout",
+            "Going out",
+            function (b) {
+              return b.s === "dueout";
+            },
+          ],
+          [
+            "coming",
+            "Coming in",
+            function (b) {
+              return b.s === "coming" || !!b.next;
+            },
+          ],
+          [
+            "free",
+            "Free",
+            function (b) {
+              return b.s === "free";
+            },
+          ],
+          [
+            "long",
+            "Long stay, over 3 months",
+            function (b) {
+              return (b.days || 0) > 90 && b.who && b.s !== "coming";
+            },
+          ],
+        ];
+        var ui = {
+          filter: "all",
+          view: "grid",
+          order: "num",
+          find: "",
+          open: null,
+          pane: "beds",
+          undo: null,
+          confirmed: "Numbers confirmed 10:22 by NUM, 20 min ago",
+        };
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+        function esc(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+          });
+        }
+        function bindAll(key, value) {
+          document.querySelectorAll('[data-bind="' + key + '"]').forEach(function (el) {
+            el.textContent = value;
+          });
+        }
+        function bed(n) {
+          return beds.find(function (b) {
+            return b.n === n;
+          });
+        }
+        function snapshot() {
+          return JSON.parse(JSON.stringify({ beds: beds, asks: asks }));
+        }
+        function restore(s) {
+          beds = s.beds;
+          asks = s.asks;
+        }
+
+        var toastTimer = null;
+        function toast(text, undoFn) {
+          $("toastText").textContent = text;
+          $("toastUndo").hidden = !undoFn;
+          ui.undo = undoFn || null;
+          $("toast").hidden = false;
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(
+            function () {
+              $("toast").hidden = true;
+              ui.undo = null;
+            },
+            undoFn ? 7000 : 3500,
+          );
+        }
+        $("toastUndo").addEventListener("click", function () {
+          if (ui.undo) ui.undo();
+          $("toast").hidden = true;
+        });
+        /* Every change is undoable: take a copy first, then change, then offer Undo. */
+        function change(text, fn) {
+          var before = snapshot();
+          fn();
+          /* Rebuild first, then close: closing refocuses the opener, which must be the rebuilt one. */
+          renderAll();
+          closeDrawer();
+          toast(text, function () {
+            /* An open drawer still shows the state before Undo; close it so its buttons can't act on it. */
+            chosenBed = null;
+            restore(before);
+            renderAll();
+            closeDrawer();
+          });
+        }
+        function confirmBox(title, text, okLabel, onOk) {
+          $("confirmTitle").textContent = title;
+          $("confirmText").textContent = text;
+          $("confirmOk").textContent = okLabel;
+          var dlg = $("confirmDlg");
+          dlg.returnValue = "";
+          dlg.onclose = function () {
+            if (dlg.returnValue === "ok") onOk();
+          };
+          dlg.showModal();
+        }
+
+        function counts() {
+          return {
+            ready: beds.filter(function (b) {
+              return b.s === "free";
+            }).length,
+            coming: beds.filter(function (b) {
+              return b.s === "coming" || b.next;
+            }).length,
+            out: beds.filter(function (b) {
+              return b.s === "dueout";
+            }).length,
+          };
+        }
+
+        function renderNumbers() {
+          var c = counts();
+          bindAll("readyNow", c.ready);
+          bindAll("comingIn", c.coming);
+          bindAll("goingOut", c.out);
+          bindAll("askCount", asks.length);
+          bindAll("movingCount", c.coming + c.out);
+          document.querySelectorAll("[data-big]").forEach(function (b) {
+            b.setAttribute("aria-pressed", String(ui.filter === b.getAttribute("data-big")));
+          });
+          $("confirmLine").textContent = ui.confirmed;
+        }
+
+        function renderFilters() {
+          $("filters").innerHTML = FILTERS.map(function (f) {
+            var n = beds.filter(f[2]).length;
+            return (
+              '<button type="button" class="chip" data-filter="' +
+              f[0] +
+              '" aria-pressed="' +
+              (ui.filter === f[0]) +
+              '">' +
+              f[1] +
+              ' <span class="n">' +
+              n +
+              "</span></button>"
+            );
+          }).join("");
+        }
+
+        function stateLabel(b) {
+          var st = STATE[b.s];
+          return (
+            '<span class="state ' +
+            st.cls +
+            '">' +
+            (st.sym ? '<span aria-hidden="true">' + st.sym + "</span> " : "") +
+            st.word +
+            "</span>"
+          );
+        }
+        function footText(b) {
+          if (b.s === "free") return ["Ready to offer", ""];
+          if (b.s === "closed") return [b.why, ""];
+          if (b.s === "coming")
+            return [
+              "From " + b.from + (b.transport === "Not booked" ? ", no transport yet" : ", transport booked"),
+              "",
+            ];
+          if (b.s === "heldup") return ["Waiting: " + b.why.toLowerCase(), b.days + "d"];
+          if (b.s === "dueout")
+            return [b.at === "time not set" ? "Today, time not set" : "Today " + b.at, b.days + "d"];
+          if (b.s === "leave") return ["Back by " + b.back, b.days + "d"];
+          if (b.exp === "Not recorded") return ["No expected date", b.days + "d"];
+          return ["Expected " + b.exp, b.days + "d"];
+        }
+        function nameText(b) {
+          if (b.s === "free") return "Free to offer";
+          if (b.s === "closed") return "Closed";
+          return b.who;
+        }
+
+        function shownBeds() {
+          var f = FILTERS.find(function (x) {
+            return x[0] === ui.filter;
+          });
+          var q = ui.find.trim().toLowerCase();
+          var list = beds.filter(f[2]).filter(function (b) {
+            if (!q) return true;
+            return (
+              b.n.indexOf(q) === 0 ||
+              (b.who && b.who.toLowerCase().indexOf(q) !== -1) ||
+              (b.umrn && b.umrn.toLowerCase().indexOf(q) !== -1)
+            );
+          });
+          if (ui.order === "days") {
+            list = list.slice().sort(function (a, b) {
+              return (b.days || -1) - (a.days || -1);
+            });
+          }
+          return list;
+        }
+
+        function renderBeds() {
+          var list = shownBeds();
+          $("bedsShown").textContent = list.length + " of " + beds.length;
+          if (!list.length) {
+            $("bedsOut").innerHTML =
+              '<p class="muted" style="padding:20px 16px">No bed matches. Clear the filter or the search.</p>';
+            return;
+          }
+          if (ui.view === "list") {
+            $("bedsOut").innerHTML =
+              '<table class="bed-table"><thead><tr><th scope="col">Bed</th><th scope="col">State</th><th scope="col">Who</th><th scope="col" class="wide">Detail</th><th scope="col" class="wide">Days</th></tr></thead><tbody>' +
+              list
+                .map(function (b) {
+                  var ft = footText(b);
+                  return (
+                    '<tr><td><button type="button" data-bed="' +
+                    b.n +
+                    '">Bed ' +
+                    b.n +
+                    "</button></td><td>" +
+                    stateLabel(b) +
+                    "</td><td>" +
+                    esc(nameText(b)) +
+                    (b.next ? '<br><span class="muted">Next: ' + esc(b.next.who) + "</span>" : "") +
+                    '</td><td class="wide">' +
+                    esc(ft[0]) +
+                    '</td><td class="wide mono">' +
+                    (b.days ? b.days : "") +
+                    "</td></tr>"
+                  );
+                })
+                .join("") +
+              "</tbody></table>";
+            return;
+          }
+          $("bedsOut").innerHTML =
+            '<div class="beds">' +
+            list
+              .map(function (b) {
+                var ft = footText(b);
+                var label =
+                  "Bed " +
+                  b.n +
+                  ", " +
+                  STATE[b.s].word +
+                  ", " +
+                  nameText(b) +
+                  ", " +
+                  ft[0] +
+                  (ft[1] ? ", " + ft[1].replace("d", " days") : "");
+                return (
+                  '<button type="button" class="bed s-' +
+                  b.s +
+                  (ui.open === b.n ? " selected" : "") +
+                  '" data-bed="' +
+                  b.n +
+                  '" aria-label="' +
+                  esc(label) +
+                  '">' +
+                  '<span class="top"><span class="num">' +
+                  b.n +
+                  "</span>" +
+                  stateLabel(b) +
+                  "</span>" +
+                  '<span class="name">' +
+                  esc(nameText(b)) +
+                  "</span>" +
+                  '<span class="foot"><span>' +
+                  esc(ft[0]) +
+                  '</span><span class="mono">' +
+                  esc(ft[1]) +
+                  "</span></span>" +
+                  (b.next ? '<span class="next">Next: ' + esc(b.next.who) + "</span>" : "") +
+                  "</button>"
+                );
+              })
+              .join("") +
+            "</div>";
+        }
+
+        function renderSide() {
+          $("askList").innerHTML = asks.length
+            ? asks
+                .map(function (a) {
+                  return (
+                    '<li><span class="k"><span>' +
+                    esc(a.kind) +
+                    '</span><span class="mono">' +
+                    a.time +
+                    "</span></span>" +
+                    '<button type="button" class="linkbtn" data-ask="' +
+                    a.id +
+                    '">' +
+                    esc(a.who) +
+                    ' <span class="muted mono">' +
+                    a.umrn +
+                    "</span></button>" +
+                    '<span class="d">' +
+                    esc(a.need) +
+                    " · at " +
+                    esc(a.from) +
+                    ". " +
+                    esc(a.text) +
+                    "</span>" +
+                    '<span class="row"><button type="button" class="btn primary" data-ask="' +
+                    a.id +
+                    '">Answer</button></span></li>'
+                  );
+                })
+                .join("")
+            : '<li class="muted">Nothing is waiting for your answer.</li>';
+          var inc = beds.filter(function (b) {
+            return b.s === "coming" || b.next;
+          });
+          $("inList").innerHTML = inc.length
+            ? inc
+                .map(function (b) {
+                  var p = b.s === "coming" ? b : b.next;
+                  return (
+                    '<li><span class="k"><span>Bed ' +
+                    b.n +
+                    (b.next ? " · after " + esc(b.who) + " leaves" : "") +
+                    '</span><span class="mono">accepted ' +
+                    p.accepted +
+                    "</span></span>" +
+                    '<button type="button" class="linkbtn" data-bed="' +
+                    b.n +
+                    '">' +
+                    esc(p.who) +
+                    "</button>" +
+                    '<span class="d">From ' +
+                    esc(p.from) +
+                    " · transport: " +
+                    esc(p.transport).toLowerCase() +
+                    "</span></li>"
+                  );
+                })
+                .join("")
+            : '<li class="muted">Nobody is on the way.</li>';
+          var out = beds.filter(function (b) {
+            return b.s === "dueout";
+          });
+          $("outList").innerHTML = out.length
+            ? out
+                .map(function (b) {
+                  return (
+                    '<li><span class="k"><span>Bed ' +
+                    b.n +
+                    '</span><span class="mono">' +
+                    (b.at === "time not set" ? "time not set" : b.at) +
+                    "</span></span>" +
+                    '<button type="button" class="linkbtn" data-bed="' +
+                    b.n +
+                    '">' +
+                    esc(b.who) +
+                    "</button></li>"
+                  );
+                })
+                .join("")
+            : '<li class="muted">Nobody is due out today.</li>';
+        }
+
+        function renderPanes() {
+          document.querySelectorAll("[data-pane]").forEach(function (p) {
+            if (p.getAttribute("data-pane") === ui.pane) p.removeAttribute("data-hidden-phone");
+            else p.setAttribute("data-hidden-phone", "");
+          });
+          document.querySelectorAll("[data-tab]").forEach(function (t) {
+            t.setAttribute("aria-selected", String(t.getAttribute("data-tab") === ui.pane));
+          });
+        }
+
+        function renderAll() {
+          renderNumbers();
+          renderFilters();
+          renderBeds();
+          renderSide();
+          renderPanes();
+        }
+
+        /* ─── drawer for a bed or an answer ─── */
+        var lastFocus = null;
+        var lastFocusSel = null;
+        function openDrawer(html, key) {
+          /* Remember the opener only on first open; later steps redraw the drawer itself. */
+          if ($("drawer").hidden) {
+            lastFocus = document.activeElement;
+            lastFocusSel = null;
+            if (lastFocus && lastFocus.hasAttribute("data-bed"))
+              lastFocusSel = '[data-bed="' + lastFocus.getAttribute("data-bed") + '"]';
+            else if (lastFocus && lastFocus.hasAttribute("data-ask"))
+              lastFocusSel = '[data-ask="' + lastFocus.getAttribute("data-ask") + '"]';
+          }
+          ui.open = key;
+          $("drawer").innerHTML = html;
+          $("drawer").hidden = false;
+          $("scrim").hidden = false;
+          renderBeds();
+          var h = $("drawerTitle");
+          if (h) h.focus();
+        }
+        function closeDrawer() {
+          if ($("drawer").hidden) return;
+          ui.open = null;
+          $("drawer").hidden = true;
+          $("drawer").innerHTML = "";
+          $("scrim").hidden = true;
+          renderBeds();
+          /* The lists were redrawn, so find the opener again by its key (never the drawer itself). */
+          var back = lastFocus && document.body.contains(lastFocus) ? lastFocus : null;
+          if (!back && lastFocusSel) {
+            var found = document.querySelectorAll(lastFocusSel);
+            for (var i = 0; i < found.length && !back; i++) {
+              if (!$("drawer").contains(found[i])) back = found[i];
+            }
+          }
+          if (back) back.focus();
+          else $("main").focus();
+        }
+        function drawerHead(kicker, title, sub) {
+          return (
+            '<div class="card-head"><div><div class="muted" style="font-size:var(--wf-fs-12);text-transform:uppercase;letter-spacing:.06em;font-weight:600">' +
+            esc(kicker) +
+            "</div>" +
+            '<h3 id="drawerTitle" tabindex="-1">' +
+            esc(title) +
+            "</h3>" +
+            (sub ? '<div class="muted mono">' + esc(sub) + "</div>" : "") +
+            "</div>" +
+            '<button type="button" class="icon-btn" data-close aria-label="Close" style="margin-left:auto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button></div>'
+          );
+        }
+
+        function openBed(n) {
+          var b = bed(n);
+          var html = "";
+          var acts = "";
+          if (b.s === "free") {
+            html =
+              drawerHead("Bed " + b.n, "Free to offer") +
+              '<div class="body"><div class="p-sec"><p style="margin:0">Bed ' +
+              b.n +
+              " is clean and ready. The bed coordinator sees it as ready now.</p></div>" +
+              '<div class="p-sec"><label class="field">If you close it, why?<select id="closeWhy"><option value="">Choose a reason</option><option>Repairs</option><option>Not enough staff</option><option>Kept for a planned admission</option></select></label></div></div>';
+            acts = '<button type="button" class="btn" id="closeBed">Close bed</button>';
+          } else if (b.s === "closed") {
+            html =
+              drawerHead("Bed " + b.n, "Closed") +
+              '<div class="body"><div class="p-sec"><p style="margin:0">Closed: ' +
+              esc(b.why) +
+              ".</p></div></div>";
+            acts = '<button type="button" class="btn primary" id="reopenBed">Reopen as free</button>';
+          } else if (b.s === "coming") {
+            html =
+              drawerHead("Bed " + b.n + " · coming in", b.who, b.umrn) +
+              '<div class="body"><div class="p-sec"><div class="facts"><div>From<b>' +
+              esc(b.from) +
+              "</b></div><div>Accepted<b>" +
+              b.accepted +
+              "</b></div><div>Transport<b>" +
+              esc(b.transport) +
+              "</b></div><div>Bed<b>" +
+              b.n +
+              " (pulled)</b></div></div>" +
+              '<p class="note">The bed stays pulled for this person until they arrive or somebody changes the plan. Nothing is released automatically.</p></div></div>';
+            acts =
+              '<button type="button" class="btn" data-unwired>Change the plan</button><button type="button" class="btn primary" id="arrived">Arrived on the ward</button>';
+          } else {
+            var facts =
+              '<div class="facts"><div>State<b>' +
+              STATE[b.s].word +
+              "</b></div><div>Days in bed<b>" +
+              b.days +
+              "</b></div><div>Expected out<b>" +
+              esc(b.exp) +
+              "</b></div>";
+            if (b.s === "heldup") facts += "<div>Waiting on<b>" + esc(b.why) + "</b></div>";
+            else if (b.s === "dueout") facts += "<div>Leaving at<b>" + esc(b.at) + "</b></div>";
+            else if (b.s === "leave") facts += "<div>Back by (recorded)<b>" + esc(b.back) + "</b></div>";
+            else facts += "<div>Bed<b>" + b.n + "</b></div>";
+            facts += "</div>";
+            var extra = "";
+            if (b.s === "heldup") {
+              extra =
+                '<div class="p-sec"><h4>What is it waiting on?</h4><label class="field"><span class="sr-only">Waiting on</span><select id="heldWhy">' +
+                [
+                  "Accommodation",
+                  "Support package to start",
+                  "Family or carer",
+                  "Transport",
+                  "Another service to accept",
+                ]
+                  .map(function (o) {
+                    return "<option" + (o === b.why ? " selected" : "") + ">" + o + "</option>";
+                  })
+                  .join("") +
+                "</select></label></div>";
+            }
+            if (b.next)
+              extra +=
+                '<div class="p-sec"><h4>Next in this bed</h4><p style="margin:0">' +
+                esc(b.next.who) +
+                " from " +
+                esc(b.next.from) +
+                ", accepted " +
+                b.next.accepted +
+                ".</p></div>";
+            html =
+              drawerHead("Bed " + b.n, b.who, b.umrn) +
+              '<div class="body"><div class="p-sec">' +
+              facts +
+              "</div>" +
+              extra +
+              "</div>";
+            if (b.s === "dueout")
+              acts =
+                '<button type="button" class="btn" id="notToday">Not going today</button><button type="button" class="btn primary" id="discharged">Has left, bed is free</button>';
+            else if (b.s === "heldup")
+              acts =
+                '<button type="button" class="btn" id="saveWhy">Save reason</button><button type="button" class="btn primary" id="markOut">Going out today</button>';
+            else if (b.s === "leave")
+              acts =
+                '<button type="button" class="btn" data-unwired>Open record</button><button type="button" class="btn primary" id="backOnWard">Back on the ward</button>';
+            else
+              acts =
+                '<button type="button" class="btn" data-unwired>Open record</button><button type="button" class="btn primary" id="markOut">Going out today</button>';
+          }
+          openDrawer(html + '<div class="drawer-foot">' + acts + "</div>", b.n);
+          $("drawer").setAttribute("data-bed", b.n);
+          $("drawer").removeAttribute("data-ask");
+        }
+
+        var chosenBed = null;
+        function openAsk(id, step) {
+          var a = asks.find(function (x) {
+            return x.id === id;
+          });
+          if (!a) return;
+          var html = drawerHead(a.kind + " · " + a.time, a.who, a.umrn);
+          var foot;
+          if (step === "accept") {
+            var free = beds.filter(function (b) {
+              return b.s === "free";
+            });
+            var out = beds.filter(function (b) {
+              return b.s === "dueout" && !b.next;
+            });
+            var opt = function (b, sub) {
+              return (
+                '<button type="button" class="bed-choice" role="radio" aria-checked="' +
+                (chosenBed === b.n) +
+                '" data-choose="' +
+                b.n +
+                '"><span><b>Bed ' +
+                b.n +
+                "</b><small>" +
+                esc(sub) +
+                "</small></span></button>"
+              );
+            };
+            html +=
+              '<div class="body"><div class="p-sec"><h4>Choose the bed</h4><p class="muted" style="margin:0 0 6px">You choose. Ward Flow does not pick a bed.</p><div role="radiogroup" aria-label="Bed for ' +
+              esc(a.who) +
+              '">' +
+              (free.length
+                ? free
+                    .map(function (b) {
+                      return opt(b, "Free now");
+                    })
+                    .join("")
+                : '<p class="muted">No bed is free now.</p>') +
+              (out.length
+                ? '<div class="muted" style="font-size:var(--wf-fs-12);margin-top:10px">After a discharge today</div>' +
+                  out
+                    .map(function (b) {
+                      return opt(
+                        b,
+                        "After " + b.who + " leaves (" + (b.at === "time not set" ? "time not set" : b.at) + ")",
+                      );
+                    })
+                    .join("")
+                : "") +
+              "</div></div></div>";
+            foot =
+              '<button type="button" class="btn" data-backask="' +
+              a.id +
+              '">Back</button><button type="button" class="btn primary" id="doAccept"' +
+              (chosenBed ? "" : " disabled") +
+              ">" +
+              (chosenBed ? "Accept into bed " + chosenBed : "Choose a bed first") +
+              "</button>";
+          } else {
+            chosenBed = null;
+            html +=
+              '<div class="body"><div class="p-sec"><div class="facts"><div>Now at<b>' +
+              esc(a.from) +
+              "</b></div><div>Asked at<b>" +
+              a.time +
+              "</b></div><div>Needs<b>" +
+              esc(a.need) +
+              "</b></div><div>Ready now here<b>" +
+              counts().ready +
+              "</b></div></div>" +
+              '<p class="note">' +
+              esc(a.text) +
+              "</p></div>" +
+              '<div class="p-sec"><label class="field">If you decline, why?<select id="declineWhy"><option value="">Choose a reason</option><option>No bed free today</option><option>Needs a different kind of bed</option><option>Staffing on the ward</option></select></label></div></div>';
+            foot =
+              '<button type="button" class="btn" data-unwired>Ask a question</button><button type="button" class="btn danger" id="doDecline">Decline</button><button type="button" class="btn primary" data-acceptstep="' +
+              a.id +
+              '">Accept…</button>';
+          }
+          openDrawer(html + '<div class="drawer-foot">' + foot + "</div>", "ask-" + a.id);
+          $("drawer").setAttribute("data-ask", a.id);
+          $("drawer").removeAttribute("data-bed");
+        }
+
+        $("drawer").addEventListener("click", function (e) {
+          var t = e.target.closest("button");
+          if (!t) return;
+          if (t.hasAttribute("data-close")) return closeDrawer();
+          var n = $("drawer").getAttribute("data-bed");
+          var askId = $("drawer").getAttribute("data-ask");
+          var b = n ? bed(n) : null;
+          var a = askId
+            ? asks.find(function (x) {
+                return x.id === askId;
+              })
+            : null;
+          if (t.hasAttribute("data-acceptstep")) {
+            chosenBed = null;
+            return openAsk(askId, "accept");
+          }
+          if (t.hasAttribute("data-backask")) return openAsk(askId);
+          if (t.hasAttribute("data-choose")) {
+            chosenBed = t.getAttribute("data-choose");
+            openAsk(askId, "accept");
+            var again = $("drawer").querySelector('[data-choose="' + chosenBed + '"]');
+            if (again) again.focus();
+            return;
+          }
+          if (t.id === "doAccept" && a && chosenBed) {
+            var target = chosenBed;
+            return change("Accepted " + a.who + " into bed " + target + ". The bed coordinator is told.", function () {
+              var tb = bed(target);
+              var person = { who: a.who, umrn: a.umrn, from: a.from, accepted: "10:42", transport: "Not booked" };
+              if (tb.s === "free") {
+                tb.s = "coming";
+                Object.assign(tb, person);
+              } else {
+                tb.next = person;
+              }
+              asks = asks.filter(function (x) {
+                return x.id !== a.id;
+              });
+              chosenBed = null;
+            });
+          }
+          if (t.id === "doDecline" && a) {
+            var why = $("declineWhy");
+            if (!why.value) {
+              why.focus();
+              return toast("Choose a reason before declining.");
+            }
+            return change("Declined " + a.who + ": " + why.value.toLowerCase() + ".", function () {
+              asks = asks.filter(function (x) {
+                return x.id !== a.id;
+              });
+            });
+          }
+          if (!b) return;
+          if (t.id === "markOut")
+            return change("Bed " + b.n + ": " + b.who + " is going out today.", function () {
+              b.s = "dueout";
+              b.at = "time not set";
+              b.exp = "20 Oct";
+            });
+          if (t.id === "notToday")
+            return change("Bed " + b.n + ": " + b.who + " is not going today.", function () {
+              b.s = "occupied";
+              b.exp = "Not recorded";
+            });
+          if (t.id === "saveWhy") {
+            var v = $("heldWhy").value;
+            return change("Bed " + b.n + " is waiting on: " + v.toLowerCase() + ".", function () {
+              b.why = v;
+            });
+          }
+          if (t.id === "backOnWard")
+            return change(b.who + " is back on the ward.", function () {
+              b.s = "occupied";
+            });
+          if (t.id === "arrived")
+            return change(b.who + " has arrived in bed " + b.n + ".", function () {
+              b.s = "occupied";
+              b.days = 0;
+              b.exp = "Not recorded";
+            });
+          if (t.id === "reopenBed")
+            return change("Bed " + b.n + " is free again.", function () {
+              b.s = "free";
+              delete b.why;
+            });
+          if (t.id === "closeBed") {
+            var cw = $("closeWhy");
+            if (!cw.value) {
+              cw.focus();
+              return toast("Choose a reason before closing the bed.");
+            }
+            return change("Bed " + b.n + " closed: " + cw.value.toLowerCase() + ".", function () {
+              b.s = "closed";
+              b.why = cw.value;
+            });
+          }
+          if (t.id === "discharged") {
+            return confirmBox(
+              "Has " + b.who + " left?",
+              "Bed " + b.n + " becomes free" + (b.next ? " and stays pulled for " + b.next.who : "") + ".",
+              "Yes, has left",
+              function () {
+                change(
+                  b.who + " has left. Bed " + b.n + (b.next ? " is pulled for " + b.next.who + "." : " is free."),
+                  function () {
+                    var nx = b.next;
+                    ["who", "umrn", "days", "exp", "at", "why", "next"].forEach(function (k) {
+                      delete b[k];
+                    });
+                    if (nx) {
+                      b.s = "coming";
+                      Object.assign(b, nx);
+                    } else {
+                      b.s = "free";
+                    }
+                  },
+                );
+              },
+            );
+          }
+        });
+
+        /* ─── wiring ─── */
+        $("filters").addEventListener("click", function (e) {
+          var t = e.target.closest("[data-filter]");
+          if (!t) return;
+          ui.filter = t.getAttribute("data-filter");
+          renderAll();
+          $("filters")
+            .querySelector('[data-filter="' + ui.filter + '"]')
+            .focus();
+        });
+        document.querySelectorAll("[data-big]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var f = btn.getAttribute("data-big");
+            ui.filter = ui.filter === f ? "all" : f;
+            ui.pane = "beds";
+            renderAll();
+            $("bedsTitle").scrollIntoView({ block: "start", behavior: "smooth" });
+          });
+        });
+        $("find").addEventListener("input", function (e) {
+          ui.find = e.target.value;
+          renderBeds();
+        });
+        $("order").addEventListener("change", function (e) {
+          ui.order = e.target.value;
+          renderBeds();
+        });
+        document.querySelectorAll("[data-view]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            ui.view = btn.getAttribute("data-view");
+            document.querySelectorAll("[data-view]").forEach(function (o) {
+              o.setAttribute("aria-pressed", String(o === btn));
+            });
+            renderBeds();
+          });
+        });
+        document.addEventListener("click", function (e) {
+          var t = e.target.closest("[data-bed]");
+          if (t && !t.closest("#drawer")) return openBed(t.getAttribute("data-bed"));
+          var a = e.target.closest("[data-ask]");
+          if (a && !a.closest("#drawer")) return openAsk(a.getAttribute("data-ask"));
+          if (e.target.closest("[data-unwired]")) toast(NOT_WIRED);
+        });
+        document.querySelectorAll("[data-tab]").forEach(function (t) {
+          t.addEventListener("click", function () {
+            ui.pane = t.getAttribute("data-tab");
+            renderPanes();
+          });
+        });
+        $("dockAnswer").addEventListener("click", function () {
+          ui.pane = "answer";
+          renderPanes();
+          $("main").scrollIntoView({ block: "start" });
+        });
+        $("confirmBtn").addEventListener("click", function () {
+          var before = ui.confirmed;
+          ui.confirmed = "Numbers confirmed 10:42 by you, just now";
+          renderNumbers();
+          toast("Numbers confirmed at 10:42.", function () {
+            ui.confirmed = before;
+            renderNumbers();
+          });
+        });
+        $("scrim").addEventListener("click", function () {
+          closeDrawer();
+          closeRail();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "Escape") return;
+          /* A modal dialog handles its own Escape; leave the page behind it alone. */
+          if (document.querySelector("dialog[open]")) return;
+          closeDrawer();
+          closeRail();
+        });
+
+        function closeRail() {
+          if (!$("rail").classList.contains("open")) return;
+          $("rail").classList.remove("open");
+          $("menuBtn").setAttribute("aria-expanded", "false");
+          if ($("drawer").hidden) $("scrim").hidden = true;
+          $("menuBtn").focus();
+        }
+        $("menuBtn").addEventListener("click", function () {
+          $("rail").classList.add("open");
+          $("menuBtn").setAttribute("aria-expanded", "true");
+          $("scrim").hidden = false;
+          var first = $("rail").querySelector("button");
+          if (first) first.focus();
+        });
+
+        function flipTheme() {
+          var root = document.documentElement;
+          var dark = root.getAttribute("data-theme")
+            ? root.getAttribute("data-theme") === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          root.setAttribute("data-theme", dark ? "light" : "dark");
+        }
+        $("themeBtn").addEventListener("click", flipTheme);
+        $("dockTheme").addEventListener("click", flipTheme);
+        $("aboutBtn").addEventListener("click", function () {
+          $("aboutDlg").showModal();
+        });
+
+        renderAll();
+      })();
+    </script>
+  </body>
+</html>
