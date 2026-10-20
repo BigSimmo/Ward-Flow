@@ -73,10 +73,10 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   },
   {
     key: "delays",
-    title: "Delays",
-    href: "/ward-flow/delays",
-    keywords: ["delays", "transfer delays", "past due", "wait"],
-    description: "Transfer delays",
+    title: "Waiting",
+    href: "/ward-flow/waiting",
+    keywords: ["waiting", "waiting list", "delays", "transfer delays", "past due", "wait"],
+    description: "Waiting list and transfer delays",
   },
   {
     key: "movements",
@@ -87,10 +87,10 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   },
   {
     key: "escalation",
-    title: "Delays",
+    title: "Waiting",
     href: "/ward-flow/escalation",
     keywords: ["escalation", "desk", "escalation desk", "priority", "alerts"],
-    description: "Same as Delays",
+    description: "Same as Waiting",
   },
   {
     key: "statistics",

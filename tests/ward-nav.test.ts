@@ -915,7 +915,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
   //
   // SEVEN, NOT EIGHT, as of MERGE 01 (owner-approved 2026-09-05): `queue` ("Priority queue") and
   // `exceptions` ("Exceptions") were two entries for the same waiting patients; both are now one
-  // entry, `queue` relabelled "Delays" and pointed at `/ward-flow/delays`. See
+  // entry, `queue` relabelled "Delays" and pointed at `/ward-flow/waiting`. See
   // ward-nav.ts's own comment on `WARD_VIEWS` for the full reasoning.
   // SIX, NOT SEVEN, as of MERGE 03 (owner-approved 2026-09-05): `movements` and `transport` were
   // two entries asking "where is everyone right now" two different ways; both are now one entry,
@@ -1327,7 +1327,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
-  { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
+  { route: `${ROUTE_PREFIX}/waiting`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
@@ -1373,6 +1373,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
       `${ROUTE_PREFIX}/queue`,
       `${ROUTE_PREFIX}/exceptions`,
       `${ROUTE_PREFIX}/escalation`,
+      // B4 step 3 (19 Oct 2026): Delays became Waiting; `delays/page.tsx` redirects to `/waiting`.
+      `${ROUTE_PREFIX}/delays`,
       `${ROUTE_PREFIX}/ed`,
     ]);
     const uncovered = [...scanned].filter((route) => !redirectOnlyRoutes.has(route) && !mapped.has(route));
@@ -1750,7 +1752,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
    */
   const THIRD_EDITION_MOCKUP_ROUTES: readonly string[] = [
     WARD_HOME_HREF, // Command
-    "/ward-flow/delays", // Delays
+    "/ward-flow/waiting", // Delays
     "/ward-flow/capacity", // Capacity
     "/ward-flow/wards", // All wards
     "/ward-flow/ward/[unitId]", // Ward
@@ -1781,7 +1783,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
 
   const REFERRAL_MENU_ROUTES: readonly string[] = [
     WARD_HOME_HREF,
-    "/ward-flow/delays",
+    "/ward-flow/waiting",
     "/ward-flow/capacity",
     "/ward-flow/wards",
     "/ward-flow/ward/[unitId]",

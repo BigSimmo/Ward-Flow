@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**68 mockups · 53 routes · 32 screen folders.**
+**68 mockups · 54 routes · 32 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -14,7 +14,7 @@ UNMAPPED rather than disappearing.
 | Mockup | Route | Screen folder | Route exists |
 |---|---|---|---|
 | `command-third-edition.html` | `/` | `coordinator/` | yes |
-| `delays-third-edition.html` | `/delays` | `delays/` | yes |
+| `delays-third-edition.html` | `/waiting` | `delays/` | yes |
 | `movement-third-edition.html` | `/movements` | `movements/` | yes |
 | `capacity-third-edition.html` | `/capacity` | `capacity/` | yes |
 | `ward-third-edition.html` | `/ward/[unitId]` | `ward/` | yes |
@@ -92,13 +92,14 @@ UNMAPPED rather than disappearing.
 
 ## What the checks found
 
-### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 18
+### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 19
 
 - `/bed-meeting`
 - `/bed-meeting/agenda`
 - `/command`
 - `/community`
 - `/constellation`
+- `/delays`
 - `/ed`
 - `/escalation`
 - `/exceptions`

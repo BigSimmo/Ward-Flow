@@ -935,7 +935,7 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        eyebrow={isPhone ? `Delays · ${service ?? "Statewide"}` : "Delays"}
+        eyebrow={isPhone ? `Waiting · ${service ?? "Statewide"}` : "Waiting"}
         title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
         titleMeta={
           isPhone ? (

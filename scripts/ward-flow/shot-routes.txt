@@ -26,6 +26,7 @@
 /ward-flow/statistics/overview
 /ward-flow/transport
 /ward-flow/transport/officer
+/ward-flow/waiting
 /ward-flow/wards
 /ward-flow/board/rph-adult-secure
 /ward-flow/ward/rph-adult-secure

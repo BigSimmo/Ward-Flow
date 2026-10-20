@@ -18,7 +18,7 @@
  */
 export const PAIRS = [
   ["command-third-edition.html", "/", "coordinator", true],
-  ["delays-third-edition.html", "/delays", "delays", true],
+  ["delays-third-edition.html", "/waiting", "delays", true],
   ["movement-third-edition.html", "/movements", "movements", true],
   ["capacity-third-edition.html", "/capacity", "capacity", true],
   ["ward-third-edition.html", "/ward/[unitId]", "ward", true],
@@ -115,7 +115,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/community", folder: "community", react: "community/community-index.tsx" },
   { route: "/community/[teamId]", folder: "community", react: "community/community-screen.tsx" },
   { route: "/constellation", folder: "network", react: null },
-  { route: "/delays", folder: "delays", react: "delays/delays-screen.tsx" },
+  { route: "/delays", folder: "delays", react: null },
   { route: "/discharges", folder: "discharges", react: "discharges/discharge-board.tsx" },
   { route: "/ed", folder: "ed", react: "ed/ed-index.tsx" },
   { route: "/ed/[edId]", folder: "ed", react: "ed/ed-screen.tsx" },
@@ -161,6 +161,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/statistics/weekly", folder: "reports", react: "reports/weekly-report-screen.tsx" },
   { route: "/transport", folder: "movements", react: null },
   { route: "/transport/officer", folder: "officer", react: "officer/officer-screen.tsx" },
+  { route: "/waiting", folder: "delays", react: "delays/delays-screen.tsx" },
   { route: "/ward/[unitId]", folder: "ward", react: "ward/ward-screen.tsx" },
   { route: "/ward/[unitId]/answer", folder: "ward", react: "ward/ward-screen.tsx" },
   { route: "/wards", folder: "wards", react: "wards/ward-index.tsx" },

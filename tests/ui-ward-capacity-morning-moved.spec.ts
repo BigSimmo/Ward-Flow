@@ -76,10 +76,10 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     await gotoCapacity(page);
 
     // ⚠️ **ANCHORED, NOT EXACT** — the rail's own count labels (`wardNavCountLabel`) append the
-    // figure AND its noun ("Delays, 3 at a time limit or with nowhere to go", "Capacity, 27 beds ready now"), the
+    // figure AND its noun ("Waiting, 3 at a time limit or with nowhere to go", "Capacity, 27 beds ready now"), the
     // same reason `ui-ward-discharges.spec.ts`'s `goToCapacityBoard` gives for its own `^Capacity\b`
     // match. `exact: true` here found nothing and hung the full 60s timeout on the click.
-    await page.getByRole("link", { name: /^Delays\b/u }).click();
+    await page.getByRole("link", { name: /^Waiting\b/u }).click();
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -91,7 +91,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     // and mounted fresh by the navigation back, so this exercises a newly-mounted rail after a
     // client-side return — a different condition from the first click, which was on the rail that
     // came with the server-rendered page. Same property the retired case proved, kept here.
-    await page.getByRole("link", { name: /^Delays\b/u }).click();
+    await page.getByRole("link", { name: /^Waiting\b/u }).click();
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
   });
 });

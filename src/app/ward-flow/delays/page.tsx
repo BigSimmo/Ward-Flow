@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
+import { querySuffix } from "@/components/ward-management/shell/ward-record-address";
 
-export const metadata: Metadata = {
-  title: "Delays — Ward Flow",
-  description:
-    "Synthetic prototype: why each waiting patient is still waiting. Merges the former priority queue, exceptions inbox and escalation board into one list, grouped by cause.",
-};
+type DelaysRedirectProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
-export default function WardDelaysPage() {
-  return <DelaysScreen />;
+/**
+ * B4 step 3 (Josh, 19 Oct 2026) renamed Delays to Waiting. This route stays so an existing
+ * bookmark or shared link still opens the list, with its filters and view (`?view=`, `?owner=`…)
+ * carried across.
+ */
+export default async function WardDelaysRedirect({ searchParams }: DelaysRedirectProps) {
+  redirect(`/ward-flow/waiting${querySuffix(await searchParams)}`);
 }

@@ -892,7 +892,7 @@ export function MovementsScreen() {
               ) : null}
               {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}
               <Link href={waitingHref("needs-me")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-                All in Delays
+                All in Waiting
               </Link>
             </div>
             {attentionMovements.length === 0 ? (

@@ -17,7 +17,7 @@ import {
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/delays",
+  usePathname: () => "/ward-flow/waiting",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
@@ -44,7 +44,7 @@ function HistoryClosingReferral() {
 }
 
 function openTypedReferral() {
-  window.history.replaceState({ __NA: true, wardDrawer: "referral" }, "", "/ward-flow/delays");
+  window.history.replaceState({ __NA: true, wardDrawer: "referral" }, "", "/ward-flow/waiting");
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <HistoryClosingReferral />

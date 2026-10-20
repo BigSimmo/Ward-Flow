@@ -145,8 +145,8 @@ describe("views on the board", () => {
 
 describe("links in", () => {
   it("open the board on one view, or on everyone", () => {
-    expect(waitingHref()).toBe("/ward-flow/delays");
-    expect(waitingHref("needs-me")).toBe("/ward-flow/delays?view=needs-me");
+    expect(waitingHref()).toBe("/ward-flow/waiting");
+    expect(waitingHref("needs-me")).toBe("/ward-flow/waiting?view=needs-me");
     expect(filtersFromSearch(new URL(waitingHref("form"), "https://x.test").search).view).toBe("form");
   });
 });

@@ -136,7 +136,7 @@ type PriorityQueueProps = {
     noRecordedServiceCount: number;
     urgentOutside: { count: number };
   };
-  /** Where "Open in Delays" goes. */
+  /** Where "Open in Waiting" goes. */
   delaysHref?: string;
   /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
   highlight?: QueueHighlight;
@@ -173,7 +173,7 @@ export function PriorityQueue({
   totalMovements,
   serviceScope,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
-  delaysHref = "/ward-flow/delays",
+  delaysHref = "/ward-flow/waiting",
   highlight,
   onClearHighlight,
   rowCap,
@@ -573,7 +573,7 @@ export function PriorityQueue({
           // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
           // B4: with Form due on, Delays opens on its own Form due view.
           <Link href={soonOnly ? waitingHref("form") : delaysHref} className={styles.footLink}>
-            Open in Delays
+            Open in Waiting
           </Link>
         )}
       </div>

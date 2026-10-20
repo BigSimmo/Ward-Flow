@@ -305,6 +305,8 @@ const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   exceptions: "delays",
   escalation: "delays",
   transport: "movements",
+  // B4 step 3 (19 Oct 2026): the Delays screen's address since it was renamed Waiting.
+  waiting: "delays",
 };
 
 /**

@@ -140,7 +140,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     "/ward-flow/community/[teamId]",
     { concrete: `/ward-flow/community/${team.id}`, render: () => <CommunityScreen teamId={team.id} /> },
   ],
-  ["/ward-flow/delays", { concrete: "/ward-flow/delays", render: () => <DelaysScreen /> }],
+  ["/ward-flow/waiting", { concrete: "/ward-flow/waiting", render: () => <DelaysScreen /> }],
   ["/ward-flow/discharges", { concrete: "/ward-flow/discharges", render: () => <DischargeBoard /> }],
   ["/ward-flow/on-call", { concrete: "/ward-flow/on-call", render: () => <OnCallScreen /> }],
   ["/ward-flow/ed", { concrete: "/ward-flow/ed", render: () => <EdIndex /> }],
