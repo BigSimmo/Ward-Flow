@@ -42,7 +42,7 @@ export const DENSITY_LABEL: Record<HandoverDensity, string> = { min: "Compact", 
 /** Status shape for a row: act now, due, moving, or waiting. Shape and colour, never colour alone. */
 export function rowTone(row: HandoverRow, ctx: ColumnContext): WfTone {
   const group = groupOf(row, ctx.now, ctx.cutoff);
-  if (group === "act") return "danger";
+  if (group === "act" || group === "urg") return "danger";
   if (group === "due") return "warning";
   if (isMoving(row)) return "info";
   return "neutral";
