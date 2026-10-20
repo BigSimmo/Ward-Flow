@@ -21,6 +21,18 @@
   overflow: visible;
 }
 
+/* As a phone or tablet sheet the body runs to the screen's bottom edge with no bottom padding (the
+   Refer bar is sticky to that edge), so the last section ended under the home indicator once the
+   destination was settled and the bar had gone (Josh, 20 Oct 2026, iPhone). A trailing spacer, not
+   padding, leaves the sticky bar where it is. */
+@media (max-width: 62.5rem) {
+  .body::after {
+    content: "";
+    flex: 0 0 auto;
+    height: var(--wf-end-space);
+  }
+}
+
 /* Placement (owner, 8 Oct 2026, mockup A "pick then act"). The panel reads in the order a
    coordinator works: who the patient is, which wards fit, then the one action bar. The patient
    block is a plain heading area with one hairline under it, not a second card. */

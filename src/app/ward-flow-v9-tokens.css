@@ -395,6 +395,9 @@
   /* space: 24 and 32 are for layout only */
   --wf-s-6: 24px;
   --wf-s-8: 32px;
+  /* The room under the last content of a sheet or page that runs to the screen's bottom edge: 24px
+     plus the phone's home-indicator inset, so nothing ends under the indicator (Josh, 20 Oct 2026). */
+  --wf-end-space: calc(var(--wf-s-6) + env(safe-area-inset-bottom, 0px));
 
   /* the smallest pointer target on desktop */
   --wf-target: 28px;
