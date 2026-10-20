@@ -852,21 +852,6 @@ export function RecordPreview({
             </div>
           </div>
 
-          {/* D4 Inline Notice Banner */}
-          {actionNotice && (
-            <div className={styles.d4Notice} role="status">
-              <span>{actionNotice}</span>
-              <button
-                type="button"
-                className={styles.d4NoticeDismiss}
-                onClick={() => setActionNotice(null)}
-                aria-label="Dismiss notice"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
           {/* 6. Coordinator Action Bar */}
           <div className={styles.dossierActionBar}>
             <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
@@ -875,22 +860,8 @@ export function RecordPreview({
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </Link>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              title="Not wired in this prototype."
-              onClick={() => setActionNotice("Contact Referrer: Not wired in this prototype.")}
-            >
-              Contact Referrer
-            </button>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              title="Not wired in this prototype."
-              onClick={() => setActionNotice("Cancel Referral: Not wired in this prototype.")}
-            >
-              Cancel Referral
-            </button>
+            {/* Contact Referrer and Cancel Referral are hidden until they work: they only ever said
+                "Not wired in this prototype." (overall review, 20 Oct 2026). */}
           </div>
         </div>
       </WardPanel>

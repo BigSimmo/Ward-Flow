@@ -24,6 +24,7 @@ import {
 
 import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import {
   CORE_SEARCH_VIEWS,
   searchIntentLabel,
@@ -251,6 +252,9 @@ function subscribeRecents(listener: () => void) {
     recentsListeners.delete(listener);
   };
 }
+
+// Recent records name patients, so a session ending forgets them (Codex review on PR #487).
+onWardSessionEnd(() => setSessionRecents(NO_RECENTS));
 
 const recentsSnapshot = () => sessionRecents;
 const serverRecentsSnapshot = () => NO_RECENTS;

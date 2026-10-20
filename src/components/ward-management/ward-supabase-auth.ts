@@ -84,6 +84,12 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       fetch?: typeof fetch;
       timeoutMs?: number;
       coordinatorEmail?: string;
+      /**
+       * Called once whenever a held or saved session ends here: sign-out, expiry, a refused token
+       * or a changed account. The app clears Ward Flow's browser storage with it
+       * (`ward-browser-data.ts`).
+       */
+      onSessionEnded?: () => void;
     },
   ) {
     if (
@@ -103,9 +109,16 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       throw new WardAuthError("cancelled", "Sign-in request cancelled.");
   }
   private clear() {
+    let ended = this.session !== null;
+    try {
+      ended ||= this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY) != null;
+    } catch {
+      // Storage blocked: only the in-memory session can have ended.
+    }
     this.session = null;
     this.email = null;
     this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+    if (ended) this.options.onSessionEnded?.();
   }
   private invalidate() {
     this.generation++;

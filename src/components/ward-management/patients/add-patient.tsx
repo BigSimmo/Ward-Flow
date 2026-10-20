@@ -7,7 +7,6 @@ import {
   FileText,
   History,
   Lock,
-  Printer,
   ShieldCheck,
   Stethoscope,
   UserPlus,
@@ -75,7 +74,8 @@ import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational
  * saved), and one foot with Reset and the single primary, Add patient. The right column carries the
  * live duplicate check, what can follow once the person exists, and the latest records.
  *
- * Owner Rule D4: an unconnected control says exactly "Not wired in this prototype."
+ * Owner Rule D4: an unconnected control says exactly "Not wired in this prototype." Print and Save
+ * draft only ever said that, so they are hidden until they work (overall review, 20 Oct 2026).
  * Owner Rule D5: legal status shows form names only, never Mental Health Act section numbers, and
  * no legal time limit is computed here.
  */
@@ -141,7 +141,6 @@ function answeredDraft(draft: PatientDraft): PatientDraft | undefined {
 }
 
 const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
-const NOT_WIRED = "Not wired in this prototype.";
 /** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
 const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
   ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
@@ -309,7 +308,6 @@ export function AddPatientForm() {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   /** The UMRN of an existing record a save was refused for, so the UMRN field can say so. */
   const [duplicateUmrn, setDuplicateUmrn] = useState<string | null>(null);
-  const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const toast = useOptionalToast();
@@ -422,7 +420,6 @@ export function AddPatientForm() {
     setAttemptedSubmit(false);
     setDuplicateUmrn(null);
     setLastRejection(undefined);
-    setD4Notice(null);
     setIsSubmitting(false);
     priorSubmissionRef.current = null;
     setAcceptedSubmission(null);
@@ -866,11 +863,6 @@ export function AddPatientForm() {
             }
             aside={
               <span className={styles.heroActions}>
-                {d4Notice ? (
-                  <span className={styles.d4Notice} role="status" data-testid="ward-add-patient-d4-notice">
-                    {d4Notice}
-                  </span>
-                ) : null}
                 <Link
                   className={buttonClass({ variant: "onHero", size: "sm" })}
                   href="/ward-flow/search"
@@ -879,18 +871,6 @@ export function AddPatientForm() {
                   <Icon icon={ChevronLeft} size={14} />
                   Patient search
                 </Link>
-                <Button
-                  variant="onHero"
-                  size="sm"
-                  icon={Printer}
-                  className={styles.desktopOnly}
-                  onClick={() => setD4Notice(NOT_WIRED)}
-                >
-                  Print
-                </Button>
-                <Button variant="light" size="sm" onClick={() => setD4Notice(NOT_WIRED)}>
-                  Save draft
-                </Button>
               </span>
             }
             bar={
