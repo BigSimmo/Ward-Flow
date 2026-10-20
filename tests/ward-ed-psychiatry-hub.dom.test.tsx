@@ -696,9 +696,9 @@ describe("the hub's two lists", () => {
   });
 
   /**
-   * The count above a list must read the SAME array as the list — the `queueStageSummaries`
-   * pattern. Asserted against the rendered rows rather than against a number this test computes
-   * separately, so the two cannot agree by both being wrong in the same way.
+   * The count above a list must read the SAME array as the list, a mismatch this project once
+   * shipped on a queue heading. Asserted against the rendered rows rather than against a number
+   * this test computes separately, so the two cannot agree by both being wrong in the same way.
    */
   it("counts the outbox with the array it renders", () => {
     renderHub(BUSY_ED);
