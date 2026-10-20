@@ -259,7 +259,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "planned":
       return { kind: "link", label: "Open bookings", href: item.href ?? "/ward-flow/capacity" };
     case "duplicate":
-      return { kind: "link", label: "Open referrals", href: "/ward-flow/referrals" };
+      return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
     case "notify":
       // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
       return item.admissionId !== undefined
