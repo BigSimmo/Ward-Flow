@@ -72,7 +72,7 @@ import {
   type Desk,
   type DeskRole,
 } from "./workstation-desks";
-import { dispatchPersonaSyncForRole, useShellPersonaRole } from "./persona-sync";
+import { dispatchPersonaSyncForRole, usePersonaDeskId, useShellPersonaRole } from "./persona-sync";
 import styles from "./workstation-switcher.module.css";
 
 export interface OperatorSwitcherModalProps {
@@ -166,6 +166,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   // Overall review (20 Oct 2026): a desk opened by its link is viewed as the person on the rail,
   // so the row says so rather than naming the desk's own role as though it were theirs.
   const viewerRole = useShellPersonaRole();
+  const viewerDeskId = usePersonaDeskId();
   const isPhone = useIsPhone();
   const searching = query.trim().length > 0;
 
@@ -226,6 +227,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   function openAccessDesk(access: WardAccess, href: string) {
     if (!reachable(href)) return;
     takeAccess(access);
+    // PR #489 review: a service coordinator is a coordinator, so the rail's person resets as it does
+    // for the statewide coordinator tile, rather than keeping the last desk's persona.
+    if (access.role === "coordinator" && !keepsSignedInRole) dispatchPersonaSyncForRole("coordinator");
     onClose();
     confirmSwitch(accessPlaceLabel(access, units), ACCESS_ROLE_LABELS[access.role]);
     router.push(href);
@@ -237,7 +241,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
     rememberDesk(desk.id);
     if (!keepsSignedInRole) {
       onSelectRole?.(desk.role);
-      dispatchPersonaSyncForRole(desk.role);
+      dispatchPersonaSyncForRole(desk.role, desk.id);
     }
     onClose();
     confirmSwitch(desk.name, deskRoleLabel(desk.role));
@@ -253,6 +257,17 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   // the browser is already on that desk's own home, so the coordinator home still opens from here.
   // With role access on, the access must match too: a service coordinator shares the statewide
   // home address but can still switch back to the statewide desk (review on PR #330).
+  /**
+   * PR #489 review: "You are here" only for the very desk chosen, not any desk of the same role, so
+   * ward B opened by its link after choosing ward A is still viewed, not "here". A role-access desk
+   * is matched by its access; otherwise by the desk "Go to a desk" last chose.
+   */
+  const isViewersDesk = (desk: Desk) =>
+    viewerRole === desk.role &&
+    (accessOn && currentAccess.role !== "coordinator"
+      ? sameAccess(currentAccess, accessFor(desk))
+      : viewerDeskId === desk.id);
+
   const atHome = (desk: Desk) => pathname === desk.href && (!accessOn || sameAccess(currentAccess, accessFor(desk)));
 
   function go(desk: Desk) {
@@ -420,7 +435,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
             <span className={styles.who}>
               <b>{here.name}</b>
               <span>
-                {viewerRole === here.role
+                {isViewersDesk(here)
                   ? `You are here, ${deskRoleLabel(here.role)}`
                   : `You are viewing this desk as ${deskRoleLabel(viewerRole)}`}
               </span>

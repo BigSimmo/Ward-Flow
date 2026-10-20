@@ -17,6 +17,8 @@ export const WARD_PERSONA_SYNC_EVENT = "ward-flow-persona-sync";
  * until a desk is chosen; a desk opened by its link announces nothing, so the person stays.
  */
 let personaRole: DeskRole = "coordinator";
+/** The one desk chosen with that role, when a desk (not just a role) was chosen (PR #489 review). */
+let personaDeskId: string | undefined;
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void): () => void {
@@ -26,9 +28,14 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-export function dispatchPersonaSyncForRole(role: DeskRole) {
+/**
+ * Announce the desk now in use. `deskId` names the one desk chosen ("Go to a desk"); a switch that
+ * picks only a role (global search's desk commands) passes none, so no single desk counts as theirs.
+ */
+export function dispatchPersonaSyncForRole(role: DeskRole, deskId?: string) {
   if (typeof window === "undefined") return;
   personaRole = role;
+  personaDeskId = deskId;
   for (const listener of listeners) listener();
   window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
 }
@@ -47,4 +54,13 @@ export function useShellPersonaRole(): WardChromeRole {
     () => "coordinator" as const,
   );
   return deskRole === WARD_SHELL_ROLE ? synced : deskRole;
+}
+
+/** The desk last chosen in "Go to a desk", if one was; undefined after a role-only switch. */
+export function usePersonaDeskId(): string | undefined {
+  return useSyncExternalStore(
+    subscribe,
+    () => personaDeskId,
+    () => undefined,
+  );
 }
