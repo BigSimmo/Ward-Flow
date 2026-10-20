@@ -85,6 +85,7 @@ export type WardScreenId =
   | "board"
   | "discharges"
   | "bed-meeting"
+  | "bed-meeting-agenda"
   | "ed"
   | "community"
   | "officer"
@@ -116,6 +117,7 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "board",
   "discharges",
   "bed-meeting",
+  "bed-meeting-agenda",
   "ed",
   "community",
   "officer",
@@ -321,6 +323,9 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
   if (first === undefined) return { screen: "home" };
   if (first === "transport" && second === "officer") return { screen: "officer" };
   if (REDIRECT_TARGETS[first] !== undefined && second === undefined) return { screen: REDIRECT_TARGETS[first] };
+  // The bed meeting agenda (smart features idea 5): coordinator only, because no other role lists it.
+  if (first === "bed-meeting" && second === "agenda")
+    return third === undefined ? { screen: "bed-meeting-agenda" } : undefined;
   switch (first) {
     case "network":
     case "capacity":

@@ -159,6 +159,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CLEAR_BED_RELEASE_BLOCK",
   "CLEAR_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_URGENT_FLAG",
+  "CLOSE_WARD_TO_ADMISSIONS",
+  "REOPEN_WARD_TO_ADMISSIONS",
+  "RECORD_BED_MEETING_ACTION",
+  "COMPLETE_BED_MEETING_ACTION",
   "COMPLETE_INBOX_ITEM",
   "CONFIRM_BED_RELEASE",
   "CONFIRM_CAPACITY",
@@ -175,6 +179,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "FLAG_MOVEMENT_URGENT",
   "HANDOVER_READY",
   "MARK_NOTICE_READ",
+  "MARK_REFERRAL_INFORMATION_MET",
+  "MARK_REFERRAL_OPENED",
   "OPEN_DISCHARGE_RECORD",
   "PATIENT_ARRIVED",
   "PATIENT_COLLECTED",
@@ -295,6 +301,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_REFERRAL_DECISION",
   "UNDO_AUDIT_REVIEW",
   "PLACE_IN_BED",
+  "REQUEST_REFERRAL_INFORMATION",
   "UNDO_PLACE_IN_BED",
   // v10 pass 3, 10 Oct 2026: the step undos. Ids and instants only; an undo restores records the
   // session already held and adds no typed text.
@@ -398,6 +405,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "movementId"
   | "teamId"
   | "unitId"
+  // MARK_REFERRAL_INFORMATION_MET: the ward whose referral copy asked, a unit id like `unitId`.
+  | "wardUnitId"
   | "admissionId"
   | "referralId"
   | "releaseId"

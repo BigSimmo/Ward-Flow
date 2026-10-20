@@ -389,6 +389,8 @@
   align-items: center;
   gap: 6px;
   height: 26px;
+  /* DA-25: touch tablets reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-xs);

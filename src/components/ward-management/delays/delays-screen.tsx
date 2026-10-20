@@ -230,9 +230,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           service={service}
           isOutsideService={isOutsideService}
           onEscalate={escalate}
-          onNotWired={() => {
-            showNotice("Not wired in this prototype.");
-          }}
           banner={banner}
           empty={
             open.length === 0 ? (
