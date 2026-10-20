@@ -234,11 +234,11 @@ safe global key across 30 files.
 | `D-63` | `decisions.md`:729 | D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026) |
 | `D-64` | `decisions.md`:737 | D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026) |
 | `D-65` | `decisions.md`:744 | D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026) |
-| `D-66` | `decisions.md`:758 | D-66. Granted roles work without a second approval (17 October 2026) |
-| `D-67` | `decisions.md`:765 | D-67. Recover synthetic form drafts within the browser session (17 October 2026) |
-| `D-68` | `decisions.md`:772 | D-68. Bed meeting TV content and access (19 October 2026) |
-| `D-69` | `decisions.md`:779 | D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026) |
-| `D-70` | `decisions.md`:786 | D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026) |
+| `D-66` | `decisions.md`:759 | D-66. Granted roles work without a second approval (17 October 2026) |
+| `D-67` | `decisions.md`:766 | D-67. Recover synthetic form drafts within the browser session (17 October 2026) |
+| `D-68` | `decisions.md`:773 | D-68. Bed meeting TV content and access (19 October 2026) |
+| `D-69` | `decisions.md`:780 | D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026) |
+| `D-70` | `decisions.md`:787 | D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -580,11 +580,11 @@ safe global key across 30 files.
 - `D-63` — line 729, heading: "D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026)"
 - `D-64` — line 737, heading: "D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026)"
 - `D-65` — line 744, heading: "D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026)"
-- `D-66` — line 758, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
-- `D-67` — line 765, heading: "D-67. Recover synthetic form drafts within the browser session (17 October 2026)"
-- `D-68` — line 772, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
-- `D-69` — line 779, heading: "D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)"
-- `D-70` — line 786, heading: "D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)"
+- `D-66` — line 759, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
+- `D-67` — line 766, heading: "D-67. Recover synthetic form drafts within the browser session (17 October 2026)"
+- `D-68` — line 773, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
+- `D-69` — line 780, heading: "D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)"
+- `D-70` — line 787, heading: "D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
