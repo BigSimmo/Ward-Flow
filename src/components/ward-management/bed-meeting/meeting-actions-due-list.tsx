@@ -7,6 +7,7 @@ import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import {
   bedMeetingActionLabel,
   type BedMeetingAction,
@@ -78,9 +79,6 @@ export function DueActions({
     </Card>
   );
 }
-
-/** How long after one Mark done the card ignores another, longer than a double click. */
-const DONE_PAUSE_MS = 1000;
 
 /** The agenda's wording: shown when overdue, never escalated. */
 function dueWords(dueAt: Instant, now: Instant): string {
