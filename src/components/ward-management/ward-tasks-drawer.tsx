@@ -1211,12 +1211,12 @@ export function WardTasksDrawer({
             </Link>
           ) : null}
           <Link
-            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/delays"}
+            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
             onClick={onClose}
             data-testid="ward-tasks-jump-delays"
             className={styles.quickJump}
           >
-            Delays board →
+            Waiting list →
           </Link>
           <span aria-hidden="true" className={styles.quickJumpSep}>
             ·

@@ -86,10 +86,10 @@ describe("phone menu search", () => {
     expect(screen.getByRole("region", { name: "Pages" })).toHaveTextContent("Referrals");
   });
 
-  it("lists Delays once, not again as its Escalation alias", () => {
+  it("lists Waiting once, not again as its Escalation alias", () => {
     const input = openMenu();
     fireEvent.change(input, { target: { value: "delays" } });
-    const delays = screen.getAllByRole("link").filter((row) => row.textContent?.startsWith("Delays"));
+    const delays = screen.getAllByRole("link").filter((row) => row.textContent?.startsWith("Waiting"));
     expect(delays).toHaveLength(1);
   });
 

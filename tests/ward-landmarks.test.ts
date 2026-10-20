@@ -182,6 +182,8 @@ const REDIRECT_ONLY_ROUTES = new Set<string>([
   `${ROUTE_PREFIX}/queue`,
   `${ROUTE_PREFIX}/exceptions`,
   `${ROUTE_PREFIX}/escalation`,
+  // B4 step 3 (19 Oct 2026): Delays became Waiting; `delays/page.tsx` redirects to `/waiting`.
+  `${ROUTE_PREFIX}/delays`,
   `${ROUTE_PREFIX}/ed`,
 ]);
 
@@ -283,7 +285,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
-  { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
+  { route: `${ROUTE_PREFIX}/waiting`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },

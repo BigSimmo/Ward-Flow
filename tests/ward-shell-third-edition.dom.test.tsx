@@ -145,7 +145,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       within(menu)
         .getAllByTestId("ward-rail-link")
         .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
-    ).toEqual(["Home", "Capacity", "Movements", "Delays", "Referrals", "Handover"]);
+    ).toEqual(["Home", "Capacity", "Movements", "Waiting", "Referrals", "Handover"]);
     const sheet = await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
     // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).

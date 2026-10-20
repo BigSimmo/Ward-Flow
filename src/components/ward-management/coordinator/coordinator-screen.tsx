@@ -118,7 +118,7 @@ function subscribeHomeEdFilter(onChange: () => void) {
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
-const DELAYS_HREF = "/ward-flow/delays";
+const DELAYS_HREF = "/ward-flow/waiting";
 
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
 const PHONE_QUEUE_ROWS = 20;

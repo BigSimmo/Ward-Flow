@@ -571,7 +571,7 @@ const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = {
 /** Named directly, never through a redirect that would read as another screen's coverage. */
 const TYPE_FLOOR_ROUTES = [
   {
-    route: "/ward-flow/delays",
+    route: "/ward-flow/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
   { route: "/ward-flow", expect: ["command-tier", "banner", "badge"] },
@@ -638,7 +638,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
   // table, with a person open (their panel replaces the rail beside it).
   test("the Delays board keeps its exact declared waiting-column sizes with a person open", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow/delays", { waitUntil: "load" });
+    await page.goto("/ward-flow/waiting", { waitUntil: "load" });
     await expect(page.getByRole("searchbox", { name: "Find a person or ED" })).toBeEnabled();
     const first = page.getByTestId(/^delays-select-/u).first();
     // The searchbox is enabled in the server HTML too, so it does not prove React has hydrated. A
@@ -673,7 +673,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
    */
   test("the badge still meets the floor below 40rem, where a phone override once undid it", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/ward-flow/delays", { waitUntil: "load" });
+    await page.goto("/ward-flow/waiting", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
@@ -701,7 +701,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
 test("@mockup the Delays hidden-count note keeps Show everyone reachable at every width", async ({ page }) => {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/ward-flow/delays", { waitUntil: "networkidle" });
+    await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
     await page.getByTestId("delays-stat-over8").click();

@@ -309,4 +309,4 @@ export function noRecordedServiceMovementCount(movements: Movement[], units: Uni
  * names — left uncorrected here, a reader would go looking for Capacity's scoping code somewhere
  * else on the ward fix line and not find it, because it is already in this file's own worktree.
  */
-export const SERVICE_SCOPED_SCREENS: readonly string[] = ["Capacity", "Delays", "Movements"];
+export const SERVICE_SCOPED_SCREENS: readonly string[] = ["Capacity", "Waiting", "Movements"];
