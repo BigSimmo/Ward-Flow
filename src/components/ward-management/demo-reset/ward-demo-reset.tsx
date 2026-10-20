@@ -64,10 +64,12 @@ export function WardDemoReset({
   const titleId = `${baseId}-title`;
   const ownOffId = `${baseId}-off`;
   const offId = offNoteId ?? ownOffId;
-  const loadButton = useRef<HTMLButtonElement>(null);
+  const cancelButton = useRef<HTMLButtonElement>(null);
   // The confirm takes focus as it opens, so keyboard and screen reader users meet it straight away.
+  // WP-11 (Audit 1, Josh 20 Oct 2026): on Cancel, as the wf Dialog does, never on the Load that
+  // replaces everyone's data, so a second Enter cannot load it.
   useEffect(() => {
-    if (pending) loadButton.current?.focus();
+    if (pending) cancelButton.current?.focus();
   }, [pending]);
   if (!enabled) return null;
 
@@ -132,15 +134,12 @@ export function WardDemoReset({
             Load {scenarioLabels[pending]}? This replaces the demo data {demoDataReach(shared?.enabled === true)}. There
             is no undo.
           </p>
-          <Button
-            ref={loadButton}
-            variant="pri"
-            onClick={() => load(pending)}
-            data-testid="ward-demo-reset-confirm-load"
-          >
+          <Button variant="pri" onClick={() => load(pending)} data-testid="ward-demo-reset-confirm-load">
             Load {scenarioLabels[pending]}
           </Button>
-          <Button onClick={cancel}>Cancel</Button>
+          <Button ref={cancelButton} onClick={cancel}>
+            Cancel
+          </Button>
         </div>
       ) : null}
     </section>

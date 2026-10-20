@@ -18,7 +18,7 @@ import type { BedKindGap, BedKindId } from "@/components/ward-management/capacit
 import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -49,6 +49,7 @@ import {
   wardTvSheet,
   type EdTvSheet,
   type MeetingTvExtras,
+  type TvBedCountAge,
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
@@ -106,10 +107,12 @@ type TvTileProps = {
   tone?: Tone;
   /** A part of a whole, drawn as a bar under the figure: `value` of `max`. */
   meter?: { value: number; max: number };
+  /** When the figure was last confirmed (`bedCountText`), on its own line under the detail. */
+  age?: string;
   testId: string;
 };
 
-function TvTile({ label, value, detail, tone, meter, testId }: TvTileProps) {
+function TvTile({ label, value, detail, tone, meter, age, testId }: TvTileProps) {
   const share = meter && meter.max > 0 ? Math.min(100, Math.round((meter.value / meter.max) * 100)) : null;
   return (
     <div className={styles.tile} data-tone={tone ?? "neutral"} data-testid={testId}>
@@ -126,6 +129,11 @@ function TvTile({ label, value, detail, tone, meter, testId }: TvTileProps) {
         </dd>
       )}
       <dd className={styles.tileDetail}>{detail}</dd>
+      {age ? (
+        <dd className={styles.tileDetail} data-testid={`${testId}-age`}>
+          {age}
+        </dd>
+      ) : null}
     </div>
   );
 }
@@ -251,6 +259,20 @@ function gapText(gap: number): string {
  */
 function preparingSentence(pendingPreparation: number): string {
   return pendingPreparation > 0 ? `. ${pendingPreparation} still being made ready` : "";
+}
+
+/**
+ * CS-10 (Audit 1, Josh 20 Oct 2026): the ready figure's age, by Capacity's own freshness rule
+ * (`bedCountAge`). A meeting allocates against it, so a late count says so rather than looking current.
+ */
+function bedCountText({ wards, notConfirmed, oldestAt }: TvBedCountAge, now: number): string {
+  if (oldestAt === undefined) return "";
+  const at = formatInstantWithDay(oldestAt, now);
+  if (notConfirmed > 0)
+    return wards === 1
+      ? `Not confirmed since ${at}`
+      : `${notConfirmed} ${notConfirmed === 1 ? "ward" : "wards"} not confirmed since ${at}`;
+  return wards === 1 ? `Confirmed ${at}` : `Oldest count confirmed ${at}`;
 }
 
 function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
@@ -409,8 +431,14 @@ function BedMeetingTvView({
             detail: shortKinds.length
               ? `${capacity.lockedReady} locked${preparingSentence(extras.pendingPreparation)}. ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
               : `${capacity.lockedReady} locked, of ${capacity.beds} beds${preparingSentence(extras.pendingPreparation)}`,
-            tone: capacity.ready === 0 ? "danger" : shortKinds.length > 0 ? "warning" : undefined,
+            tone:
+              capacity.ready === 0
+                ? "danger"
+                : shortKinds.length > 0 || extras.bedCount.notConfirmed > 0
+                  ? "warning"
+                  : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
+            age: bedCountText(extras.bedCount, now),
             testId: "bed-meeting-tv-ready",
           },
           {
@@ -516,8 +544,9 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
             label: "Beds ready now",
             value: capacity.ready,
             detail: `of ${capacity.beds} beds, ${capacity.lockedReady} locked${preparingSentence(sheet.pendingPreparation)}`,
-            tone: capacity.ready === 0 ? "danger" : undefined,
+            tone: capacity.ready === 0 ? "danger" : sheet.bedCount.notConfirmed > 0 ? "warning" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
+            age: bedCountText(sheet.bedCount, now),
             testId: "ward-tv-ready",
           },
           {
@@ -715,6 +744,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
         <Panel title={sheet.service ? `Beds ready in ${sheet.service}` : "Beds ready nearby"} testId="ed-tv-beds-panel">
           <p className={styles.panelFigure} data-testid="ed-tv-beds-ready">
             <b>{sheet.readyInService}</b> ready now{preparingSentence(sheet.pendingPreparation)}
+            {sheet.bedCount.oldestAt === undefined ? "" : `. ${bedCountText(sheet.bedCount, now)}`}
           </p>
           {sheet.wards.length === 0 ? (
             <Empty>No ward in this service has a bed ready.</Empty>
@@ -889,7 +919,7 @@ export type BedMeetingTvScreenProps = {
 
 export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
-  const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration } = useWardFlowSelect(
+  const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration, shared } = useWardFlowSelect(
     "units",
     "movements",
     "bedReleases",
@@ -897,6 +927,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     "leaveBeds",
     "scenario",
     "configuration",
+    "shared",
   );
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
@@ -908,8 +939,10 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   // The screen element only exists while the flag is on, so watch it again once it appears.
   const onView = useOnView(root, enabled);
   useScreenWakeLock(enabled && onView);
-  // DA-07 (design audit): with no connection the TV stops claiming it updates on its own.
+  // DA-07 (design audit): with no connection the TV stops claiming it updates on its own. CS-13
+  // (Audit 1, Josh 20 Oct 2026): nor while the shared workspace says its refresh is unavailable.
   const online = useOnlineStatus();
+  const sharedDown = shared?.enabled === true && shared.status === "unavailable";
   const scenarioLabel = scenarioLabels[scenario];
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
@@ -1021,7 +1054,11 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
             {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} ·{" "}
-            {online ? "updates on its own" : "offline, not updating"}
+            {!online
+              ? "offline, not updating"
+              : sharedDown
+                ? "connection unavailable, not updating"
+                : "updates on its own"}
           </p>
         </div>
         <div className={styles.actions}>

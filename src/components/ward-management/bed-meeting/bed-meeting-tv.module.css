@@ -288,7 +288,8 @@
   border-radius: var(--wf-r-tag);
   background: color-mix(in srgb, var(--tile-accent) 18%, var(--wf-surface));
   color: var(--tile-ink);
-  font-size: clamp(var(--wf-fs-11), 0.62vw, 1rem);
+  /* DA-22: the status word on a tile is read from across the room too. */
+  font-size: clamp(var(--wf-fs-11), 0.85vw, 1.25rem);
   line-height: 1.4;
   font-weight: 700;
   letter-spacing: 0.04em;

@@ -31,14 +31,18 @@ import {
 } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_BED_MEETING_TV_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { activateScenarioNetwork } from "@/components/ward-management/ward-scenarios";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
-import { DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  DEFAULT_DUE_SOON_THRESHOLDS,
+  formatInstantWithDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -149,6 +153,10 @@ describe("the bed meeting TV view", () => {
       nameOf: () => "",
     });
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
+    // CS-10 (Audit 1): the ready figure says how old it is.
+    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(
+      /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
+    );
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -485,6 +493,59 @@ describe("the ward and ED TV views", () => {
     }
   });
 
+  it("says when the ready figure was last confirmed, and how many wards are late (CS-10)", () => {
+    const { state, inputs } = seedInputs();
+    const thresholds = DEFAULT_DUE_SOON_THRESHOLDS;
+    const unit = state.units[0];
+    const fresh = wardTvSheet({ ...inputs, unit, thresholds });
+    expect(fresh.bedCount).toEqual({ wards: 1, notConfirmed: 0, oldestAt: unit.allocatable.confirmedAt });
+    const first = render(<WardTvView sheet={fresh} now={NOW_ANCHOR} scenario="Synthetic" />);
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, NOW_ANCHOR)}`,
+    );
+    first.unmount();
+
+    // Past the ward's own staleAfterMinutes: Capacity's rule, so both screens call it late.
+    const lateAt = NOW_ANCHOR - unit.allocatable.staleAfterMinutes - 30;
+    const late = { ...unit, allocatable: { ...unit.allocatable, confirmedAt: lateAt } };
+    const units = inputs.units.map((each) => (each.id === unit.id ? late : each));
+    const sheet = wardTvSheet({ ...inputs, units, unit: late, thresholds });
+    render(<WardTvView sheet={sheet} now={NOW_ANCHOR} scenario="Synthetic" />);
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `Not confirmed since ${formatInstantWithDay(lateAt, NOW_ANCHOR)}`,
+    );
+    expect(screen.getByTestId("ward-tv-ready")).toHaveAttribute(
+      "data-tone",
+      sheet.capacity.ready === 0 ? "danger" : "warning",
+    );
+
+    const before = meetingTvExtras({ ...inputs, service: null, thresholds }).bedCount;
+    const after = meetingTvExtras({ ...inputs, units, service: null, thresholds }).bedCount;
+    expect(after.notConfirmed).toBe(before.notConfirmed + 1);
+    expect(after.oldestAt).toBe(Math.min(lateAt, before.notConfirmed > 0 ? (before.oldestAt ?? lateAt) : lateAt));
+  });
+
+  it("stops saying it updates on its own while the shared refresh is unavailable (CS-13)", () => {
+    function SharedDown({ children }: { children: ReactNode }) {
+      const value = useWardFlow();
+      return (
+        <WardFlowOverride value={{ ...value, shared: { enabled: true, status: "unavailable", error: null } }}>
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedDown>
+          <BedMeetingTvScreen />
+        </SharedDown>
+      </WardFlowProvider>,
+    );
+    const asAt = screen.getByTestId("bed-meeting-tv-as-at");
+    expect(asAt).toHaveTextContent(/^As at \d\d:\d\d · connection unavailable, not updating$/);
+    expect(asAt).not.toHaveTextContent("updates on its own");
+  });
+
   it("says so when a link names a ward or ED that is not in the network", () => {
     renderTv({ ward: "no-such-ward" });
     expect(screen.getByTestId("bed-meeting-tv-missing")).toHaveTextContent("This ward is not in the network");
@@ -516,7 +577,8 @@ describe("the one tap demo reset", () => {
       expect(screen.getByTestId("ward-demo-reset-confirm")).toHaveTextContent(
         "replaces the demo data in this browser only",
       );
-      expect(screen.getByTestId("ward-demo-reset-confirm-load")).toHaveFocus();
+      // WP-11 (Audit 1): focus lands on Cancel, never on the Load that replaces the data.
+      expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
       fireEvent.click(screen.getByTestId("ward-demo-reset-confirm-load"));
       expect(screen.queryByTestId("ward-demo-reset-confirm")).toBeNull();
       expect(screen.getByTestId("scenario")).toHaveTextContent(scenario);
