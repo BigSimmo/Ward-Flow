@@ -13,8 +13,13 @@ import { createContext, useContext } from "react";
 export const WardDemoNotSavedContext = createContext<boolean | undefined>(undefined);
 
 // The note's code (`ward-demo-saving-note.tsx`) loads only once there is something to say, which
-// keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises).
-const WardDemoSavingNote = dynamic(() => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote));
+// keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises). `loading`
+// gives it its own Suspense boundary: without one, the first typed entry suspended the whole page
+// while the note's code arrived, and the control just pressed could briefly show twice.
+const WardDemoSavingNote = dynamic(
+  () => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote),
+  { loading: () => null },
+);
 
 /** A quiet, persistent note under the header once typed text is held or saving has stopped. */
 export function WardDemoNotSavedNote() {

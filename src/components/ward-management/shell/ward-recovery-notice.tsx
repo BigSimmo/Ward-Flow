@@ -11,8 +11,10 @@ const ROUTINE_NOTICE_MS = 8_000;
 
 // Most loads have no notice, so its code (`ward-recovery-notice-body.tsx`) loads only when there is
 // one, which keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises).
-const WardRecoveryNoticeBody = dynamic(() =>
-  import("./ward-recovery-notice-body").then((module) => module.WardRecoveryNoticeBody),
+// `loading` gives it its own Suspense boundary, so its first load never suspends the whole page.
+const WardRecoveryNoticeBody = dynamic(
+  () => import("./ward-recovery-notice-body").then((module) => module.WardRecoveryNoticeBody),
+  { loading: () => null },
 );
 
 /** Recovery feedback in the shell's existing status area (`ward-recovery-notice-body.tsx`). */
