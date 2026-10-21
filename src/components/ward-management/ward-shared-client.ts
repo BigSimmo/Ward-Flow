@@ -88,9 +88,15 @@ type QueuedCommand = {
   commandId: string;
   confirmed: boolean;
   worldEpoch: number;
-  /** The oldest revision an open popup was showing when this was asked for (audit CS-19). */
-  basedOn?: number;
+  /** The popups open when this was asked for (audit CS-19); it is checked against what they showed. */
+  sheets?: readonly object[];
 };
+/**
+ * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the
+ * records (by the server's opaque tokens) it has since seen at a later revision through this tab's
+ * own saves from it.
+ */
+type SheetSeen = { revision: number; records: Map<string, number> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
@@ -107,6 +113,8 @@ type PendingCommand = {
   classification: "synthetic";
   commandId: string;
   expectedRevision: number;
+  /** Records the popups have seen at a later revision than `expectedRevision`, by token. */
+  seen?: Record<string, number>;
   event: WardFlowEvent;
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
@@ -211,7 +219,9 @@ export class SharedWorkspaceClient {
    * a popup is checked against that, so the server refuses it when another desk changed the record
    * while the person was looking, rather than letting an edit made from an older view through.
    */
-  private sheetSeen = new WeakMap<object, number>();
+  private sheetSeen = new WeakMap<object, SheetSeen>();
+  /** The popups the command in flight was asked for from, while it is in flight. */
+  private pendingSheets: readonly object[] | undefined;
   private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
@@ -241,17 +251,29 @@ export class SharedWorkspaceClient {
   /** Notes each open popup not yet noted. One opened before the board arrived is noted when it does. */
   private noteOpenSheets() {
     if (!this.view.snapshot) return;
-    for (const sheet of openSheetHandles()) if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, this.held());
+    for (const sheet of openSheetHandles())
+      if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, { revision: this.held(), records: new Map() });
   }
-  /** The oldest revision an open popup was showing, or `undefined` when none is open. */
-  private seenByOpenSheets() {
+  /** The popups open now, each noted, for a command asked for now; `undefined` when none is. */
+  private openSheetsNoted() {
     this.noteOpenSheets();
-    let oldest: number | undefined;
-    for (const sheet of openSheetHandles()) {
-      const seen = this.sheetSeen.get(sheet);
-      if (seen !== undefined && (oldest === undefined || seen < oldest)) oldest = seen;
+    const sheets = openSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
+    return sheets.length ? sheets : undefined;
+  }
+  /**
+   * What a command from these popups is checked against: the oldest revision they showed, and each
+   * record all of them have seen later, at the oldest of those. `undefined` when none is noted.
+   */
+  private basis(sheets: readonly object[] | undefined) {
+    const seen = (sheets ?? []).flatMap((sheet) => this.sheetSeen.get(sheet) ?? []);
+    if (!seen.length) return undefined;
+    const revision = Math.min(...seen.map((entry) => entry.revision));
+    const records: Record<string, number> = {};
+    for (const token of seen[0].records.keys()) {
+      const at = Math.min(...seen.map((entry) => entry.records.get(token) ?? entry.revision));
+      if (at > revision) records[token] = at;
     }
-    return oldest;
+    return { revision, records };
   }
   /**
    * This tab's own save is not a change made while the person was looking, so popups and queued
@@ -259,10 +281,19 @@ export class SharedWorkspaceClient {
    * in between: otherwise another desk's save sits in the gap, and a later save from the same popup
    * is still checked against it.
    */
-  private ownSaveLanded(from: number, to: number | undefined) {
-    if (to !== from + 1) return;
-    for (const sheet of openSheetHandles()) if (this.sheetSeen.get(sheet) === from) this.sheetSeen.set(sheet, to);
-    for (const queued of this.queue) if (queued.basedOn === from) queued.basedOn = to;
+  private ownSaveLanded(from: number, to: number | undefined, sheets?: readonly object[], covered?: unknown) {
+    if (to === undefined) return;
+    const tracked = new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
+    if (to === from + 1)
+      for (const sheet of tracked) {
+        const seen = this.sheetSeen.get(sheet);
+        if (seen?.revision === from) seen.revision = to;
+      }
+    // Otherwise the server still names the records it checked against what these popups showed:
+    // nobody else changed those since, so the popups have now seen them at this save.
+    if (!Array.isArray(covered)) return;
+    for (const sheet of sheets ?? [])
+      for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
   }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
@@ -544,7 +575,7 @@ export class SharedWorkspaceClient {
       commandId,
       confirmed: confirmed || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO",
       worldEpoch: this.worldEpoch,
-      basedOn: this.seenByOpenSheets(),
+      sheets: this.openSheetsNoted(),
     });
     void this.drain();
     return completion;
@@ -567,11 +598,14 @@ export class SharedWorkspaceClient {
             );
             continue;
           }
+          const basis = this.basis(queued.sheets);
+          this.pendingSheets = basis ? queued.sheets : undefined;
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: queued.commandId,
-            expectedRevision: queued.basedOn ?? Math.max(snapshot.revision, this.headRevision),
+            expectedRevision: basis?.revision ?? Math.max(snapshot.revision, this.headRevision),
+            ...(basis && Object.keys(basis.records).length ? { seen: basis.records } : {}),
             event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
@@ -633,7 +667,12 @@ export class SharedWorkspaceClient {
           else this.needsRefresh = true;
         }
         if (response.ok)
-          this.ownSaveLanded(command.expectedRevision, value.commandRevision ?? value.snapshot?.revision);
+          this.ownSaveLanded(
+            command.expectedRevision,
+            value.commandRevision ?? value.snapshot?.revision,
+            this.pendingSheets,
+            value.covered,
+          );
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
