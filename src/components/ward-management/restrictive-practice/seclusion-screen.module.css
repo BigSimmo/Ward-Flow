@@ -113,3 +113,8 @@
   gap: var(--wf-s-3);
   padding: 0 0 var(--wf-s-3);
 }
+
+/* The reason a button cannot be used yet takes its own row, under the fields, at every width. */
+.formReason {
+  grid-column: 1 / -1;
+}

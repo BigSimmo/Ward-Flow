@@ -314,7 +314,11 @@ function EpisodeRow({
           >
             Record end
           </Button>
-          {time.refusal ? <DisabledReason id={`${formId}-reason`}>{time.refusal}</DisabledReason> : null}
+          {time.refusal ? (
+            <div className={styles.formReason}>
+              <DisabledReason id={`${formId}-reason`}>{time.refusal}</DisabledReason>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -386,7 +390,11 @@ function StartForm({
       >
         Record start
       </Button>
-      {refusal ? <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason> : null}
+      {refusal ? (
+        <div className={styles.formReason}>
+          <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -434,7 +442,11 @@ function IncidentForm({
       >
         Record incident
       </Button>
-      {refusal ? <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason> : null}
+      {refusal ? (
+        <div className={styles.formReason}>
+          <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason>
+        </div>
+      ) : null}
     </div>
   );
 }
