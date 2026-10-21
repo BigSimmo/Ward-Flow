@@ -538,7 +538,8 @@ terminal); "open" means no closure yet.
   `STEP_BACK_REASONS`. Case at `:7674`.
 - **`WITHDRAW_ACCEPTANCE`** — roles: `coordinator`. Effect: clears `acceptedUnitId`/`acceptedAt`,
   stage back to `destination_review` (never re-adds to `referredUnitIds`). Guards: movement
-  exists, open, currently `accepted_awaiting_bed` or `pulled`; `reason` in `STEP_BACK_REASONS`. A
+  exists, open, currently `accepted_awaiting_bed` or `pulled`, or stepped back earlier while
+  still holding a bed (keeps that stage); `reason` in `STEP_BACK_REASONS`. A
   held bed (at `pulled`, or stepped back holding one) is released in the same act, recording
   `pull_released` and `acceptance_withdrawn` unwinds and telling the ward and the ED (Q16);
   refused while a transport job is booked or collected. Case at `:7727`.

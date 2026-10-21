@@ -483,6 +483,32 @@ describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
     expectReleasedAndWithdrawn(steppedBack, withdrawAcceptance(steppedBack), NOW + 20);
   });
 
+  it("stepped back to Destination review holding a bed: releases it and stays at that stage", () => {
+    const pulled = pulledWithRoom();
+    const steppedBack = wardFlowReducer(pulled, {
+      type: "STEP_BACK_STAGE",
+      role: "coordinator",
+      now: NOW + 5,
+      movementId: REPULL_MOVEMENT,
+      to: "destination_review",
+      reason: "the_bed_was_lost",
+    });
+    expect(steppedBack.rejections, "the step back itself was refused").toEqual([]);
+    const before = movementIn(steppedBack, REPULL_MOVEMENT);
+    expect(before.admissionId, "the premise: the stepped-back movement still holds its admission").toBeDefined();
+
+    const after = withdrawAcceptance(steppedBack);
+
+    expect(after.rejections).toEqual([]);
+    const movement = movementIn(after, REPULL_MOVEMENT);
+    expect(movement.stage).toBe("destination_review");
+    expect(movement.acceptedUnitId).toBeUndefined();
+    expect(movement.admissionId).toBeUndefined();
+    expect(movement.stageChanges, "no same-stage entry is written").toEqual(before.stageChanges);
+    expect(movement.unwinds.slice(-2).map((unwind) => unwind.kind)).toEqual(["pull_released", "acceptance_withdrawn"]);
+    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(unitIn(steppedBack, REPULL_UNIT).allocatable.value + 1);
+  });
+
   it("still refuses from handover_ready on, leaving the bed held", () => {
     const pulled = pulledWithRoom();
     const atHandover: WardFlowState = {

@@ -254,10 +254,15 @@ export function MovementWorkspaceCockpit({
       );
       if (unwind?.kind === "acceptance_withdrawn") {
         const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
-        // Q16: a withdrawal that also released a held bed records both, at the same instant.
-        const bedReleased = patient.unwinds.some(
-          (candidate) => candidate.kind === "pull_released" && candidate.at === change.at && candidate.by === change.by,
-        );
+        // Q16: a withdrawal that also released a held bed writes the release immediately before it,
+        // with the same instant, role and reason. A separate `RELEASE_PULL` carries a different reason list.
+        const index = patient.unwinds.indexOf(unwind);
+        const previous = index > 0 ? patient.unwinds[index - 1] : undefined;
+        const bedReleased =
+          previous?.kind === "pull_released" &&
+          previous.at === unwind.at &&
+          previous.by === unwind.by &&
+          previous.reason === unwind.reason;
         return {
           at: change.at,
           label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${change.by}${suffix}`,
@@ -1689,14 +1694,15 @@ export function MovementWorkspaceCockpit({
                   No ward has accepted this patient, so there is no acceptance to withdraw. If a ward said yes and this
                   page does not show it, that is a missing record rather than something to undo here.
                 </p>
-              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") ? (
+              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") &&
+                movement.admissionId === undefined ? (
                 <p className={styles.actionSay}>
                   {destination ? destination.name : "A ward"} accepted this patient and this page still says so, but the
                   recorded stage has been corrected back to {stageCopy[movement.stage].label}. Withdrawing is only
                   offered while the record says Accepted, awaiting bed — put the stage back to that first, or ring the
                   ward.
                 </p>
-              ) : movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled" ? (
+              ) : acceptedStageIndex > MOVEMENT_STAGES.indexOf("pulled") ? (
                 <p className={styles.actionSay}>
                   This patient is past the point where a bed is only held. Handover is being prepared or the patient may
                   already be moving, so the acceptance cannot be withdrawn here. Ring the ward.

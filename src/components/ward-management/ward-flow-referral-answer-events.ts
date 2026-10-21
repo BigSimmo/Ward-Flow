@@ -1190,10 +1190,14 @@ export function reduceReferralAnswerEvent(
        * `stageCopy`'s label is not used: importing `ward-derivations.ts` would be circular (and
        * pull in `lucide-react`). `.replace(/_/g, " ")` is this file's idiom.
        *
-       * Q16 (owner, 16 Sept 2026): withdrawing is allowed at `pulled` too, releasing the held bed
-       * in the same act. It stays refused from `handover_ready` on, where a patient may be moving.
+       * Q16 (owner, 16 Sept 2026): withdrawing is allowed at `pulled` too, and at any earlier stage
+       * a movement was stepped back to while still holding its bed, releasing the bed in the same
+       * act. It stays refused from `handover_ready` on, where a patient may be moving.
        */
-      if (movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled") {
+      const steppedBackHoldingBed =
+        movement.admissionId !== undefined &&
+        (movement.stage === "placement_requested" || movement.stage === "destination_review");
+      if (movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled" && !steppedBackHoldingBed) {
         return reject(
           state,
           event,
@@ -1240,12 +1244,13 @@ export function reduceReferralAnswerEvent(
         );
       }
       const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
+      const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
       const updatedMovement: Movement = {
         ...movement,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         heldBedNumber: undefined,
-        stage: "destination_review",
+        stage: withdrawnStage,
         // The bed is given back, so the pull's fields go with it, as in `RELEASE_PULL`. A cancelled
         // job is already in `unwinds`. The blocker is restated because a pulled movement's blocker
         // can be a transport sentence, which is false once the bed is gone.
@@ -1263,16 +1268,21 @@ export function reduceReferralAnswerEvent(
           : {}),
         // Not pushed back into `referredUnitIds` (owner ruling 3): withdrawing an acceptance is not
         // re-referring.
-        stageChanges: [
-          ...movement.stageChanges,
-          {
-            at: event.now,
-            from: movement.stage,
-            to: "destination_review",
-            by: event.role,
-            reason: event.reason,
-          },
-        ],
+        // A movement already stepped back to Destination review or earlier stays where it is, so it
+        // gets no stage entry; the unwinds below still record the act.
+        stageChanges:
+          withdrawnStage === movement.stage
+            ? movement.stageChanges
+            : [
+                ...movement.stageChanges,
+                {
+                  at: event.now,
+                  from: movement.stage,
+                  to: withdrawnStage,
+                  by: event.role,
+                  reason: event.reason,
+                },
+              ],
         unwinds: [
           ...movement.unwinds,
           ...(holdsBed

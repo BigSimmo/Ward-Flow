@@ -1954,9 +1954,10 @@ export type WardFlowEvent =
        * (`kind: "acceptance_withdrawn"`, carrying the withdrawn unit's id — see `UnwindRecord`'s
        * own doc comment).
        *
-       * ⚠️ **GATED TO `accepted_awaiting_bed` AND `pulled`** (owner answer Q16, 2026-09-16,
-       * widening ruling 2 of 2026-09-04). When a bed is held, at `pulled` or by a movement stepped
-       * back from it, the same act releases the bed (as `RELEASE_PULL` does) and records both a
+       * ⚠️ **GATED TO `accepted_awaiting_bed` AND `pulled`, PLUS ANY EARLIER STAGE A MOVEMENT WAS
+       * STEPPED BACK TO WHILE STILL HOLDING ITS BED** (owner answer Q16, 2026-09-16, widening ruling
+       * 2 of 2026-09-04; such a movement keeps its stage). When a bed is held, the same act releases
+       * the bed (as `RELEASE_PULL` does) and records both a
        * `pull_released` and an `acceptance_withdrawn` unwind; the referring ED is told as well as
        * the ward. Still refused from `handover_ready` on, where a patient may be moving, and while a
        * transport job is booked or the patient has been collected.
