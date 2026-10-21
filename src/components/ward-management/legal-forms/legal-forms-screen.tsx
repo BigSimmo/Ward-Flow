@@ -191,7 +191,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
-  // The patient record's "Record a form" (&record=1) opens the sheet where this route may record.
   const [recordOpen, setRecordOpen] = useState(
     () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
   );
@@ -1075,6 +1074,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
           now={now}
           recordUnavailable={recordGate.reason}
+          targetMovement={recordOnOpen ? initialMovementId : undefined}
           onSaveForm={({ movementId, formCode, writtenAt }) => {
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);

@@ -1,8 +1,10 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, it, vi } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
+import { RecordFormSheet, type RecordDraft } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import { PatientDetailsTab } from "@/components/ward-management/patients/patient-dossier-tabs";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -131,5 +133,44 @@ describe("Legal forms list", () => {
       </WardFlowProvider>,
     );
     expect(document.body.textContent).not.toMatch(/Not tracked|0 of 0 recorded/u);
+  });
+});
+
+function RecordSheet({ movement, target }: { movement: string; target?: string }) {
+  const [draft, onDraft] = useState<RecordDraft>({ form: "1A", movement });
+  return (
+    <RecordFormSheet
+      open
+      onClose={() => {}}
+      draft={draft}
+      onDraft={onDraft}
+      openMovements={seed.movements.filter(isOpen)}
+      labelOf={(m) => m.id}
+      now={NOW_ANCHOR}
+      targetMovement={target}
+    />
+  );
+}
+
+describe("Record a form opened from a patient record", () => {
+  it("keeps the linked movement when an unsent draft for another patient is waiting", () => {
+    const [first, second] = seed.movements.filter(isOpen);
+    if (!first || !second) throw new Error("the seed no longer carries two open movements");
+    window.sessionStorage.clear();
+    vi.useFakeTimers();
+    try {
+      const earlier = render(<RecordSheet movement="" />);
+      fireEvent.change(screen.getByLabelText("Movement"), { target: { value: first.id } });
+      fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
+      act(() => vi.advanceTimersByTime(500));
+      earlier.unmount();
+      render(<RecordSheet movement={second.id} target={second.id} />);
+      expect(screen.getByLabelText("Movement")).toHaveValue(second.id);
+      expect(screen.getByLabelText("Time on form")).toHaveValue("");
+    } finally {
+      cleanup();
+      window.sessionStorage.clear();
+      vi.useRealTimers();
+    }
   });
 });

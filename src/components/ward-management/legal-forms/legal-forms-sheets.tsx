@@ -173,6 +173,7 @@ export function RecordFormSheet({
   now = 0,
   recordUnavailable,
   onSaveForm,
+  targetMovement,
 }: {
   open: boolean;
   onClose: () => void;
@@ -183,6 +184,8 @@ export function RecordFormSheet({
   now?: Instant;
   recordUnavailable?: string;
   onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean | Promise<boolean>;
+  /** The movement a patient record's "Record a form" link opened the sheet for (&record=1). */
+  targetMovement?: string;
 }) {
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
   const [formKey, setFormKey] = useState(0);
@@ -213,6 +216,8 @@ export function RecordFormSheet({
         )
           return false;
         if (restored.movement && !openMovements.some((movement) => movement.id === restored.movement)) return false;
+        // An unsent draft for another patient never replaces the movement the link asked for.
+        if (targetMovement && restored.movement !== targetMovement) return false;
         onDraft({ movement: restored.movement, form: restored.form });
         setTimeOnForm(restored.timeOnForm);
         return true;
