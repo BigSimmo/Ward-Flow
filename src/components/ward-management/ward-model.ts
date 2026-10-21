@@ -122,7 +122,7 @@ export const PARALLEL_REFERRAL_CAP_RANGE = { min: 1, max: PARALLEL_REFERRAL_CAP,
 export const PULL_HOLD_MINUTES = 240;
 
 /**
- * D-72 (Josh, 21 Oct 2026): the extra minutes an accepting ward can ask for when the patient has
+ * D-75 item 5 (Josh, 21 Oct 2026): the extra minutes an accepting ward can ask for when the patient has
  * further to travel, added to the configured pull hold. Josh chose 60 minutes on 21 Oct 2026 as a
  * prototype value (listed as `extraTravelHold` in ward-clinical-values.ts), not a local policy.
  */

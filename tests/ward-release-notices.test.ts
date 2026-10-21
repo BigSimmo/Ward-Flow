@@ -4,6 +4,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { EVENT_HISTORY_TABLE } from "@/components/ward-management/ward-history";
 import { EXTRA_TRAVEL_HOLD_MINUTES } from "@/components/ward-management/ward-model";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -127,6 +128,25 @@ describe("SEND_RELEASE_SUPPORT_NOTICE", () => {
       details: { kind: "bed-release", requested: { action: "SEND_RELEASE_SUPPORT_NOTICE", service: "pharmacy" } },
     });
     expect(EVENT_HISTORY_TABLE.SEND_RELEASE_SUPPORT_NOTICE.plainWording).toBe("Discharge support notice sent");
+  });
+
+  it("restores a saved notice and rejects a damaged or repeated one", () => {
+    const { state, release } = confirmedRelease();
+    // As saved: a JSON round trip drops the undefined fields the reducer leaves.
+    const next = JSON.parse(
+      JSON.stringify(send(state, { releaseId: release.id, actingUnitId: release.unitId })),
+    ) as WardFlowState;
+    expect(isValidStoredWardFlowState(next)).toBe(true);
+    const damaged = (supportNoticesSent: unknown) => ({
+      ...next,
+      bedReleases: next.bedReleases.map((candidate) =>
+        candidate.id === release.id ? { ...candidate, supportNoticesSent } : candidate,
+      ),
+    });
+    expect(isValidStoredWardFlowState(damaged("bad"))).toBe(false);
+    expect(isValidStoredWardFlowState(damaged([{ service: "laundry", at: NOW, by: "ward" }]))).toBe(false);
+    const notice = { service: "pharmacy", at: NOW, by: "ward" };
+    expect(isValidStoredWardFlowState(damaged([notice, notice]))).toBe(false);
   });
 
   it("refuses a second notice to the same service in plain words", () => {

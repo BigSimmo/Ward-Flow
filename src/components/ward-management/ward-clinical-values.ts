@@ -81,7 +81,7 @@ const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_17_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-17" } as const;
 /** Josh signed the missed bed request window for the prototype at 07:02 AWST on 20 Oct 2026. */
 const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-20" } as const;
-/** Josh chose the extra-travel bed hold on 21 Oct 2026 (D-72 decision card). */
+/** Josh chose the extra-travel bed hold on 21 Oct 2026 (D-75 item 5). */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 
 /**
@@ -269,7 +269,7 @@ export const CLINICAL_VALUES = {
     group: "Alerts and holds",
     value: EXTRA_TRAVEL_HOLD_MINUTES,
     unit: "minutes",
-    source: "Josh, 21 Oct 2026, D-72 decision card (ward-model.ts provenance)",
+    source: "Josh, 21 Oct 2026, D-75 item 5 (ward-model.ts provenance)",
   },
   bedHoldReview: {
     ...SIGNED_BY_JOSH,
