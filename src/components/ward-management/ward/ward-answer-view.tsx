@@ -327,7 +327,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
-  const selectAnswer = (index: number) => setAnswerSelection({ id: incoming[index]?.id, index });
+  const selectAnswer = (index: number) => {
+    setAnswerSelection({ id: incoming[index]?.id, index });
+    setExtendedHold(false);
+  };
   // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
   // elsewhere), so it closes rather than confirm whoever now sits in its place.
   const phoneAcceptLeft = phoneSheet === "accept" && answerSelection.id !== undefined && heldIndex < 0;
@@ -1312,6 +1315,24 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       {/* Decision Action Controls */}
                       {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
+                        {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
+                        {isPhone || blocked ? null : (
+                          <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
+                            <span className={styles.formLabel}>Bed hold once pulled</span>
+                            <select
+                              id={`ward-accept-hold-${activeMovement.id}`}
+                              className={styles.formSelect}
+                              value={extendedHold ? "extended" : "standard"}
+                              onChange={(e) => setExtendedHold(e.target.value === "extended")}
+                            >
+                              {holdChoices.map((choice) => (
+                                <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
+                                  {choice.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                         <button
                           type="button"
                           data-testid={`ward-decline-toggle-${activeMovement.id}`}
@@ -1337,7 +1358,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               openPhoneAccept();
                               return;
                             }
-                            handleAccept(activeMovement.id);
+                            handleAccept(activeMovement.id, extendedHold);
                           }}
                         >
                           Accept in principle

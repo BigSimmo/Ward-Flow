@@ -1,7 +1,7 @@
 // Audit 1, Josh 20 Oct 2026. The ward answer view shows recorded facts only (CS-02, NB-1), holds the
 // request on screen by its journey id (CS-08, WP-01), and its accept dialog never implies a bed was
 // allocated (WP-09). Synthetic seed data only.
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -120,7 +120,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const dispatch = renderAnswer("sjgm-adult-open");
     const dialog = openDialog();
     expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
-    const hold = screen.getByLabelText("Bed hold once pulled");
+    const hold = within(dialog).getByLabelText("Bed hold once pulled");
     expect(hold).toHaveValue("standard");
     fireEvent.change(hold, { target: { value: "extended" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
@@ -128,8 +128,24 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
 
     // Reopened, the choice starts at the standard hold again.
-    expect(openDialog()).toBeTruthy();
-    expect(screen.getByLabelText("Bed hold once pulled")).toHaveValue("standard");
+    expect(within(openDialog()).getByLabelText("Bed hold once pulled")).toHaveValue("standard");
+  });
+
+  it("offers the bed hold choice beside the desk's one-step Accept in principle", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const id = shownId();
+    const hold = screen.getByRole("combobox", { name: "Bed hold once pulled" });
+    expect(hold).toHaveValue("standard");
+    expect(
+      within(hold)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["240 minutes, standard", "300 minutes, extra travel"]);
+    fireEvent.change(hold, { target: { value: "extended" } });
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(1);
+    expect(accepts[0]).toMatchObject({ movementId: id, extendedHold: true });
   });
 
   it("still steps with Previous and Next", () => {

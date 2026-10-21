@@ -472,6 +472,18 @@
   flex-wrap: wrap;
 }
 
+/* D-75 item 5: the desk's bed hold choice beside Accept in principle. */
+.holdInline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.holdInline .formSelect {
+  width: auto;
+}
+
 /* Buttons */
 .btn {
   min-height: 36px;
