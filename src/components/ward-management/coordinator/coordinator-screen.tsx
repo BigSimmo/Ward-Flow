@@ -62,12 +62,12 @@ import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
-import { HomeWardSheet } from "./home-phone-sheets";
+import { HomeWardSheet } from "./home-ward-sheet-lazy";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 import shortlistStyles from "./shortlist-panel.module.css";
+import { SinceLastLookPanel } from "./since-last-look-band-lazy";
 import {
-  SinceLastLookPanel,
   SinceLastLookSheetBody,
   sinceHandoverText,
   sinceLastLookCount,
