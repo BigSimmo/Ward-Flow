@@ -71,7 +71,7 @@ function book(s: WardFlowState) {
     movementId: id,
     provider: TRANSPORT_PROVIDERS[0],
     escortRequired: false,
-    cadNumber: "SYNTHETIC-AUDIT",
+    cadNumber: "CAD-AUDIT-0923",
     transportLegalStatus: "voluntary",
     estimatedAt: now + 20,
   });

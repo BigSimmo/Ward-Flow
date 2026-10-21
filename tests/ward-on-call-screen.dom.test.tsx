@@ -149,7 +149,10 @@ describe("the on-call screen", () => {
     renderOnCall();
     fireEvent.click(panel().getByRole("button", { name: /^Call 08 0000/u }));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    expect(writeText.mock.calls[0]![0]).toMatch(MOCK_NUMBER);
+    // D-71 item 7: every copy starts with the synthetic line, the number on the line after it.
+    const [first, number] = writeText.mock.calls[0]![0].split("\n");
+    expect(first).toBe("Synthetic prototype.");
+    expect(number).toMatch(MOCK_NUMBER);
     expect(await screen.findByTestId("ward-on-call-notice")).toHaveTextContent(/not wired in this prototype/iu);
   });
 

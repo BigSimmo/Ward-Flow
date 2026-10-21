@@ -188,7 +188,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L4-08 (Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
 - **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
 - **TASK-L4-10 (PERF-02 Design Token Consolidation)**: Deprecate `ward-flow-v6-tokens.css` in favor of consolidated `ward-flow-v9-tokens.css` (~90 KB uncompressed CSS reduction).
-- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching.
+- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching (Closed 21 October 2026: Josh ruled to keep the per-request CSP nonce and not edge-cache HTML; see the `src/proxy.ts` header comment).
 - **TASK-L4-12 (PERF-04 Deep-Link Scroll Timing on Lazy Secondary Views)**: Explicit post-mount scroll event for hash links navigating to dynamically imported tabs.
 - **TASK-L4-13 (A2-14 Unused Standalone Clock Provider)**: Retire or align unused standalone `WardFlowClockProvider` in `ward-flow-provider.tsx`.
 

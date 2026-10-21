@@ -21,7 +21,9 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //      browser enforces it. This is why the CSP header lives here and not in
 //      next.config.ts: a nonce cannot be a build-time constant. Using a nonce
 //      opts pages into dynamic rendering (app/layout.tsx reads the nonce), which
-//      is inherent to nonce-based CSP.
+//      is inherent to nonce-based CSP. PERF-03 (owner ruling, 21 October 2026):
+//      keep the per-request nonce and do not edge-cache HTML. A cached page would
+//      replay one nonce to every visitor, so dynamic pages are the accepted cost.
 //   2. CSRF guard for API mutations. Fetch Metadata plus an Origin/Referer host
 //      check on state-changing API requests (see `@/lib/api-csrf` for why
 //      `Sec-Fetch-Site: cross-site` alone is not enough).
