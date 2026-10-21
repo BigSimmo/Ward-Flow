@@ -6,6 +6,7 @@ import { isValidStoredWardFlowState } from "@/components/ward-management/ward-fl
 import { TYPED_TEXT_NOT_KEPT, typedTextOf } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { redactTypedTextForDevice } from "@/components/ward-management/ward-flow-typed-text-scrub";
 import { typedCriterionNotKept } from "@/components/ward-management/ward-discharge-criteria";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
 
 /*
@@ -75,6 +76,14 @@ describe("restore fence with typed text not kept", () => {
     expect(isValidStoredWardFlowState(copy)).toBe(true);
     copy.plannedAdmissions[index].initials = "Typed text";
     expect(isValidStoredWardFlowState(copy)).toBe(false);
+  });
+
+  it("names a booking whose initials were not kept without the placeholder in the initials slot", () => {
+    const copy = deviceCopy("BOOK_PLANNED_ADMISSION with initials");
+    const booking = copy.plannedAdmissions.find((row) => row.initials === TYPED_TEXT_NOT_KEPT)!;
+    const info = resolveSubjectPatient(booking, copy);
+    expect(info.displayName).toBe("Initials not kept on this device");
+    expect(info.initials).toBe("UP");
   });
 
   it("holds patient specific criteria as numbered placeholders, and refuses typed ones", () => {
