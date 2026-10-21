@@ -150,6 +150,16 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
   });
 
+  it("carries nothing over when the clock moves back before an unhandled shift change pack", () => {
+    renderShell();
+    act(() => setClock(SHIFT_CHANGE));
+    expect(screen.getByTestId("ward-downtime-pack-line")).toBeTruthy();
+    act(() => setClock(14 * HOUR));
+    expect(lastDowntimePack()?.generatedAt).toBe(14 * HOUR);
+    expect(lastDowntimePack()?.shiftChangeAt).toBeUndefined();
+    expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
+  });
+
   it("goes once put aside or printed, and comes back with the next shift change pack", () => {
     renderShell();
     act(() => setClock(SHIFT_CHANGE));

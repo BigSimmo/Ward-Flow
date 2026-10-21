@@ -69,8 +69,9 @@ export function WardDowntimePackLine() {
     }
     if (!downtimePackDue(pack.generatedAt, now)) return;
     // A shift change pack nobody has printed or put aside keeps asking: the hourly retake after it
-    // carries the shift change on, so the line shows the fresher pack instead of going quiet.
-    const unhandledShiftChange = handled ? undefined : pack.shiftChangeAt;
+    // carries the shift change on, so the line shows the fresher pack instead of going quiet. A
+    // clock moved back before the pack is a fresh start, so nothing is carried.
+    const unhandledShiftChange = handled || now < pack.generatedAt ? undefined : pack.shiftChangeAt;
     take({ shiftChangeAt: shiftChangeCrossed(pack.generatedAt, now) ?? unhandledShiftChange });
   }, [canOpen, ready, online, pack, handled, now, take, owner, worldGeneration]);
 
