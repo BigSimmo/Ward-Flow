@@ -673,6 +673,17 @@ export function reducePlacementEvent(
          */
         return reject(state, event, `STEP_BACK_STAGE reason must be chosen from STEP_BACK_REASONS`);
       }
+      // Q25: a seeded journey at "pulled" or later can hold its bed by its stage alone, with no
+      // `admissionId` (review finding S2-1). Stepped back before "pulled", nothing would record the
+      // hold any more, so every later ending would keep that bed out of the count. Refused instead.
+      const pulledIndex = MOVEMENT_STAGES.indexOf("pulled");
+      if (movement.admissionId === undefined && fromIndex >= pulledIndex && toIndex < pulledIndex) {
+        return reject(
+          state,
+          event,
+          `cannot step movement ${movement.id} back before ${stageCopy.pulled.label}: its bed is held by its stage alone, so the hold would be lost. Step back no further than ${stageCopy.pulled.label}, or release the bed`,
+        );
+      }
       // Touch nothing else (F3, ruling E: "does not release the bed / does not cancel the
       // transport"). Never write `acceptedUnitId`, `acceptedAt`, `pullExpiresAt`, `admissionId`,
       // `transport` or any `Unit.allocatable` field. The only side effects are the two appends
