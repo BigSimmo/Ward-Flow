@@ -27,7 +27,7 @@ import {
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
-  isActNow,
+  isActOrUrgent,
   isMoving,
   isWaitingForBed,
   STAGE_LABEL,
@@ -88,7 +88,7 @@ const daysText = (days: number | null) =>
 
 /** Status shape for a patient heading to a ward: act now, moving, or waiting. */
 function patientTone(row: HandoverRow, now: Instant): WfTone {
-  if (isActNow(row, now)) return "danger";
+  if (isActOrUrgent(row, now)) return "danger";
   if (isMoving(row)) return "info";
   return "neutral";
 }

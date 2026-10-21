@@ -30,9 +30,12 @@ function open(id: string) {
 }
 
 /** A server at `board.revision`; each command answers with `answer(expectedRevision)`. */
-function setup(answer: (expectedRevision: number) => { status?: number; revision: number; gap?: number }) {
+function setup(
+  answer: (expectedRevision: number) => { status?: number; revision: number; gap?: number; covered?: string[] },
+) {
   const board = { revision: 1 };
   const sent: number[] = [];
+  const seen: unknown[] = [];
   let view: SharedView | undefined;
   const client = new SharedWorkspaceClient({
     baseUrl: "https://example.test",
@@ -42,19 +45,26 @@ function setup(answer: (expectedRevision: number) => { status?: number; revision
     },
     fetch: async (_url, options) => {
       if (!options?.body) return Response.json({ snapshot: snapshot(board.revision) });
-      const { expectedRevision } = JSON.parse(String(options.body));
+      const body = JSON.parse(String(options.body));
+      const { expectedRevision } = body;
       sent.push(expectedRevision);
+      seen.push(body.seen);
       const reply = answer(expectedRevision);
       board.revision = reply.revision;
       return Response.json(
         reply.status === 409
           ? { outcome: "stale", commandRevision: reply.revision, snapshot: snapshot(reply.revision), error: "stale" }
-          : { outcome: "accepted", commandRevision: reply.revision, snapshot: snapshot(reply.revision) },
+          : {
+              outcome: "accepted",
+              commandRevision: reply.revision,
+              snapshot: snapshot(reply.revision),
+              ...(reply.covered ? { covered: reply.covered } : {}),
+            },
         { status: reply.status ?? 200 },
       );
     },
   });
-  return { client, board, sent, view: () => view };
+  return { client, board, sent, seen, view: () => view };
 }
 
 describe("an edit made from a popup (audit CS-19)", () => {
@@ -111,6 +121,22 @@ describe("an edit made from a popup (audit CS-19)", () => {
     await client.dispatch(event); // 2 -> 4: another desk saved at 3
     await client.dispatch(event);
     expect(sent).toEqual([1, 2, 2]);
+    client.dispose();
+  });
+
+  it("tells the server which records a popup saw through its own save across another desk's save", async () => {
+    // Josh, 20 Oct 2026 ("Fix it properly"): a second save of the same record from the same popup is
+    // not refused because another desk saved something else in between. Its first save lands at 3,
+    // on top of another desk's save at 2; the second is still checked from 1 for everything else.
+    const record = "0123456789abcdef";
+    let calls = 0;
+    const { client, sent, seen } = setup(() => (++calls === 1 ? { revision: 3, covered: [record] } : { revision: 4 }));
+    await client.refresh();
+    open("record");
+    await client.dispatch(event);
+    await client.dispatch(event);
+    expect(sent).toEqual([1, 1]);
+    expect(seen).toEqual([undefined, { [record]: 3 }]);
     client.dispose();
   });
 

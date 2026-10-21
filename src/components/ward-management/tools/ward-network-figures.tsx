@@ -6,6 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
+import { CAPACITY_FIGURE_LABELS } from "../ward-morning-rollup";
 import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
 import type { Movement } from "../ward-model";
@@ -124,12 +125,12 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
           sub: "Recorded departures",
         },
         {
-          label: "Confirmed today",
+          label: CAPACITY_FIGURE_LABELS.confirmedToday,
           value: String(capacity.reduce((sum, value) => sum + value.confirmedToday, 0)),
           sub: "Not yet complete",
         },
         {
-          label: "Expected today",
+          label: CAPACITY_FIGURE_LABELS.expectedToday,
           value: String(capacity.reduce((sum, value) => sum + value.expectedToday, 0)),
           sub: "Unconfirmed",
         },

@@ -2,14 +2,15 @@
 import { describe, expect, it } from "vitest";
 
 import { activeActNowItems } from "../src/components/ward-management/ward-act-now-items";
-import { isActNow, toHandoverRow } from "../src/components/ward-management/handover/handover-model";
+import { groupOf, isActNow, toHandoverRow } from "../src/components/ward-management/handover/handover-model";
 import { isOpen } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
  * L1 (site review, 12 Oct 2026): Handover read "Act now 3" while Alerts read 2. The sheet now reads
- * the shared act-now list (`activeActNowItems`), plus any journey a person flagged urgent.
+ * the shared act-now list (`activeActNowItems`). Audit 6 (Josh, 20 Oct 2026): exactly that list, with a
+ * journey a person flagged urgent on its own Flagged urgent line beneath, never dropped.
  */
 describe("Handover act now reads the shared act-now list", () => {
   const seed = seedWardFlowState();
@@ -25,11 +26,23 @@ describe("Handover act now reads the shared act-now list", () => {
       expect(isActNow(row, NOW_ANCHOR)).toBe(true);
   });
 
-  it("adds only journeys flagged urgent to the shared list", () => {
+  it("is exactly the shared list, so Handover's Act now equals Alerts'", () => {
     const act = rows.filter((row) => isActNow(row, NOW_ANCHOR));
-    const extra = act.filter((row) => !shared.has(row.id));
-    expect(extra.every((row) => row.urgent)).toBe(true);
-    expect(act.length).toBe(shared.size + extra.length);
+    expect(act.map((row) => row.id).sort()).toEqual(
+      rows
+        .filter((row) => shared.has(row.id))
+        .map((row) => row.id)
+        .sort(),
+    );
+  });
+
+  it("lists every other journey flagged urgent on its own line beneath Act now", () => {
+    const cutoff = NOW_ANCHOR + 8 * 60;
+    const urgentOnly = rows.filter((row) => row.urgent && !shared.has(row.id));
+    expect(urgentOnly.length).toBeGreaterThan(0);
+    for (const row of urgentOnly) expect(groupOf(row, NOW_ANCHOR, cutoff)).toBe("urg");
+    for (const row of rows.filter((candidate) => shared.has(candidate.id)))
+      expect(groupOf(row, NOW_ANCHOR, cutoff)).toBe("act");
   });
 
   it("drops a snoozed alert from the sheet with the shared list", () => {

@@ -900,6 +900,12 @@
   white-space: nowrap;
 }
 
+/* Audit 7 RC-N8: the "No patient chosen" instruction is a sentence, not a name. Kept on one line it
+   set the card's width (527 px on a 390 px phone) and pushed the patient search off screen. */
+.patientSubWrap {
+  white-space: normal;
+}
+
 .priorityGrid {
   display: grid;
   overflow: hidden;

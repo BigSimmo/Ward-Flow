@@ -125,7 +125,7 @@ function recordOverride() {
  */
 function openOverridesTab() {
   // Desktop: the registers open from the hero's Exceptions count (owner, 8 Oct 2026).
-  fireEvent.click(screen.getByRole("button", { name: /Exceptions/, expanded: false }));
+  fireEvent.click(screen.getByRole("button", { name: /Alerts/, expanded: false }));
   fireEvent.click(screen.getByRole("tab", { name: /Overrides/ }));
 }
 

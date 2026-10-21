@@ -67,6 +67,26 @@ export function bedStates(
   };
 }
 
+/**
+ * **BEDS READY NOW: the one figure every screen prints** (Audit 6, Josh 20 Oct 2026). Ready from
+ * `bedStates`, so a bed pulled for an incoming patient is never offered twice: the rail, Home, the
+ * bed board, Handover and Statistics read this, and the bed flow, Capacity and the TV read the same
+ * box through `bedStates`. The reducer's own gates keep `boundedBedAvailability` (agreed with the
+ * Audit 2 bed engine fixes); this is the display figure only.
+ */
+export function readyBedsNow(unit: Unit, admissions: readonly Admission[], bedReleases: readonly BedRelease[]): number {
+  return bedStates(unit, admissions, [...bedReleases], []).ready;
+}
+
+/** `readyBedsNow` summed over a set of wards. */
+export function totalReadyBedsNow(
+  units: readonly Unit[],
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+): number {
+  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases), 0);
+}
+
 /** The ruled words, spelled once. */
 export const BED_STATE_LABELS = {
   ready: "Ready",
