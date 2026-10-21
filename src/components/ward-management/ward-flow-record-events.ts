@@ -230,32 +230,28 @@ export function reduceRecordedFactEvent(
           `cannot record a transport need for a closed movement (${movement.closure.reason})`,
         );
       }
-      // A ward desk must say which ward it is acting as; without that, neither the sending-ward
-      // ownership rule nor the E-20 "no ward records for an ED or community start" rule can apply.
-      if (event.role === "ward" && event.actingUnitId === undefined) {
-        return reject(state, event, "RECORD_TRANSPORT_NEED was raised by a ward without an acting ward");
-      }
-      if (event.role === "ward" && event.actingUnitId !== undefined) {
+      if (event.role === "ward") {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
         const sendingWard =
           referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
           (movement as { originUnitId?: string }).originUnitId;
-        if (sendingWard) {
-          if (event.actingUnitId !== sendingWard) {
-            return reject(
-              state,
-              event,
-              `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
-            );
-          }
-        } else {
-          // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
-          // transport need, the receiving ward included; the origin and coordinator do.
+        // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
+        // transport need, named or not; the origin and coordinator do. With a sending ward, an
+        // unnamed ward desk is bound to it by its signed-in scope (commandRefusal), so only a named
+        // acting ward is checked here.
+        if (!sendingWard) {
           return reject(
             state,
             event,
-            `RECORD_TRANSPORT_NEED was raised acting as ward ${event.actingUnitId}, but this patient did not start on a ward`,
+            `RECORD_TRANSPORT_NEED was raised by ward ${event.actingUnitId ?? "(unnamed)"}, but this patient did not start on a ward`,
+          );
+        }
+        if (event.actingUnitId !== undefined && event.actingUnitId !== sendingWard) {
+          return reject(
+            state,
+            event,
+            `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
           );
         }
       }

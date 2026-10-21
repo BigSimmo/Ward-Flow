@@ -198,9 +198,9 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     }
   });
 
-  it("refuses a ward-role transport need that does not name the ward it is acting as", () => {
-    // PR #508 review: without actingUnitId neither the sending-ward rule nor the E-20 rule could
-    // apply, so an unidentified ward desk could answer for any movement.
+  it("refuses an unnamed ward's transport need when the patient did not start on a ward", () => {
+    // PR #508 review: an unnamed ward desk must not skip the E-20 rule. With a sending ward the
+    // signed-in scope binds it instead (tests/ward-audit-command-permissions.test.ts).
     const seeded = seedWardFlowState();
     const after = wardFlowReducer(seeded, {
       type: "RECORD_TRANSPORT_NEED",
@@ -210,7 +210,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
       needed: true,
     });
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("without an acting ward");
+    expect(after.rejections[0].reason).toContain("did not start on a ward");
     expect(after.movements.find((candidate) => candidate.id === openMovement().id)!.transportNeed).toBeUndefined();
   });
 });
