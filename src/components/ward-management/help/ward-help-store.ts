@@ -12,7 +12,6 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 export const TOUR_SEEN_STORAGE_KEY = "ward_flow_choice_tour_seen";
 const tourSeenChangeEvent = "ward-flow-tour-seen-change";
 
-
 let inMemoryFallback: string | undefined;
 
 function readRaw(): string {

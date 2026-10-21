@@ -337,9 +337,7 @@ const movement = z
     pullExpiresAt: z.optional(finite),
     closure: z.optional(closureRule),
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.
-    communityPurpose: z.optional(
-      z.custom(isCommunityReferralPurpose),
-    ),
+    communityPurpose: z.optional(z.custom(isCommunityReferralPurpose)),
     meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
