@@ -34,6 +34,7 @@ import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
@@ -50,8 +51,7 @@ function CopyFact({ value, label }: { value: string; label: string }) {
         icon={Clipboard}
         onClick={async () => {
           try {
-            if (!navigator.clipboard) throw new Error("Clipboard unavailable");
-            await navigator.clipboard.writeText(value);
+            await copyTextToClipboard(value);
             setMessage("Copied to clipboard");
           } catch {
             setMessage("Clipboard is unavailable in this browser");
@@ -118,6 +118,13 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
       tone: "info",
       text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
+  // Q16: a withdrawal that also released a held bed records both, so both are listed.
+  for (const unwind of movement.unwinds) {
+    if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
+    const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);
+    const fact = unwind.kind === "pull_released" ? "Held bed released" : "Acceptance withdrawn";
+    events.push({ at: unwind.at, tone: "closed", text: `${fact}${ward ? `, ${ward}` : ""}, by ${unwind.by}` });
+  }
   const job = movement.transport;
   if (job?.acceptedAt !== undefined) events.push({ at: job.acceptedAt, tone: "info", text: "Transport accepted" });
   if (job?.enRouteAt !== undefined) events.push({ at: job.enRouteAt, tone: "info", text: "Transport en route" });
@@ -732,10 +739,7 @@ export function PatientDetailsTab({
             >
               Missing information
             </Button>
-            <CopyFact
-              label="Copy patient identifiers"
-              value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
-            />
+            {/* No "Copy patient identifiers": UMRN and date of birth stay off the clipboard (D-71 item 7). */}
           </span>
         </div>
       </Card>

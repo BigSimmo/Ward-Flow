@@ -41,6 +41,7 @@ import { WardDemoPanel } from "./ward-demo-panel";
 import { WardFormTimes } from "./ward-form-times";
 import { NetworkFigures } from "./ward-network-figures";
 import styles from "./ward-tools-sheet.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver), {
   ssr: false,
@@ -176,7 +177,7 @@ function BedSummary() {
           className={styles.primaryButton}
           onClick={async () => {
             try {
-              await navigator.clipboard.writeText(text);
+              await copyTextToClipboard(text);
               setStatus("Bed summary copied. Paste it into the email or Teams message.");
             } catch {
               setStatus("Copy is unavailable in this browser. Select the text instead.");
@@ -349,7 +350,8 @@ export function WardToolsSheet({
         {tool(
           "contacts",
           Search,
-          "Contacts",
+          // UX audit (21 Oct 2026): the page's own name, not a third one.
+          "On-call",
           "Who is on now, key lines and My list",
           <WardToolsContacts onNavigate={onNavigate} />,
         )}
