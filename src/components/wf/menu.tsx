@@ -57,49 +57,41 @@ type MenuTriggerProps = {
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 };
 
-/** Closes on a pointer press outside the anchor. */
 /*
  * Keeps an open panel inside the window. It drops below its trigger, so a trigger low on the page or
  * a long list ran off the bottom with no way to reach the last items, and an anchor near the right
  * edge pushed it off the side. It flips above when there is more room there, caps its height to the
  * room it has and scrolls inside, and slides sideways back into view.
  */
-const PANEL_EDGE_GAP = 8;
-
 function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, panelRef: RefObject<HTMLElement | null>) {
   useLayoutEffect(() => {
     const anchor = anchorRef.current;
     const panel = panelRef.current;
     if (!open || !anchor || !panel) return;
-    const fit = () => {
-      Object.assign(panel.style, { top: "", bottom: "", maxHeight: "", overflowY: "", translate: "" });
-      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-      const viewportWidth = document.documentElement.clientWidth;
-      const anchorBox = anchor.getBoundingClientRect();
-      const height = panel.getBoundingClientRect().height;
-      const below = viewportHeight - anchorBox.bottom - PANEL_EDGE_GAP - 6;
-      const above = anchorBox.top - PANEL_EDGE_GAP - 6;
-      if (height > below) {
-        if (above > below) Object.assign(panel.style, { top: "auto", bottom: "calc(100% + 6px)" });
-        const room = Math.max(above, below);
-        if (height > room) Object.assign(panel.style, { maxHeight: `${Math.max(room, 120)}px`, overflowY: "auto" });
+    const trigger = anchor.getBoundingClientRect();
+    const box = panel.getBoundingClientRect();
+    if (!box.width) return;
+    const style = panel.style;
+    const below = window.innerHeight - trigger.bottom - 14;
+    const above = trigger.top - 14;
+    if (box.height > below) {
+      if (above > below) {
+        style.top = "auto";
+        style.bottom = "calc(100% + 6px)";
       }
-      const box = panel.getBoundingClientRect();
-      if (box.width === 0) return;
-      const shift =
-        box.right > viewportWidth - PANEL_EDGE_GAP
-          ? viewportWidth - PANEL_EDGE_GAP - box.right
-          : box.left < PANEL_EDGE_GAP
-            ? PANEL_EDGE_GAP - box.left
-            : 0;
-      if (shift !== 0) panel.style.translate = `${Math.round(shift)}px 0`;
-    };
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+      const room = Math.max(above, below, 120);
+      if (box.height > room) {
+        style.maxHeight = `${room}px`;
+        style.overflowY = "auto";
+      }
+    }
+    const right = document.documentElement.clientWidth - 8;
+    if (box.right > right) style.translate = `${Math.round(right - box.right)}px 0`;
+    else if (box.left < 8) style.translate = `${Math.round(8 - box.left)}px 0`;
   }, [open, anchorRef, panelRef]);
 }
 
+/** Closes on a pointer press outside the anchor. */
 function useOutsidePress(open: boolean, anchorRef: RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
     if (!open) return;
