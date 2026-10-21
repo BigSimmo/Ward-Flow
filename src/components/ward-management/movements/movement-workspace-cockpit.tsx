@@ -8,8 +8,6 @@
  */
 
 "use client";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 
@@ -1306,19 +1304,6 @@ export function MovementWorkspaceCockpit({
                 </form>
               )}
             </section>
-
-            {/* 3. CONFIRM A DESTINATION. Audit 7 NA-03: its control renders nothing outside development,
-                so the heading and note that point at it show only there too. */}
-            <UnwiredPreview>
-              <section className={styles.actionSection}>
-                <h3 className={styles.actionSectionTitle}>Confirm a destination</h3>
-                <p className={styles.actionSay}>
-                  Not built yet. Which record a confirmation writes, and in whose name, is a decision the owner still
-                  holds — so this control says it is not wired rather than being hidden or greyed (D-16).
-                </p>
-                <NotWiredButton label="Review and confirm" name="Confirm a destination" />
-              </section>
-            </UnwiredPreview>
 
             {/* 4. ORPHANED TRANSPORT JOB */}
             {orphanedJob ? (

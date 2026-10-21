@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { ArrowRight, Copy, Mail, Star, X } from "lucide-react";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
@@ -22,7 +21,6 @@ import {
 } from "./on-call-directory";
 
 import styles from "./on-call.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 /** What a row or card can ask the screen to do. One set of handlers serves desktop and phone. */
 export type ContactActions = {
@@ -34,8 +32,6 @@ export type ContactActions = {
   onCopy: (text: string, label: string) => void;
   onCall: (entry: DirectoryEntry) => void;
 };
-
-export const NOT_WIRED = "Not wired in this prototype.";
 
 const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
 
@@ -469,14 +465,13 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
       <Badge size="sm" variant="plain">
         Not verified
       </Badge>
-      <NotWiredButton variant="ghost" size="sm" icon={Flag} label="Report change" />
     </div>
   );
 }
 
 /**
- * Call, copy and email for one contact. Calling never dials: it copies and says so, so the Call
- * button shows only in a local development build (overall review, 20 Oct 2026).
+ * Copy the number and email for one contact. Calling never dials, so there is no Call button
+ * (overall review, 20 Oct 2026).
  */
 function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
   const number = numberAt(entry, actions.minute);
@@ -484,11 +479,6 @@ function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactAc
     <div className={styles.callRow}>
       {number ? (
         <>
-          {showsUnwiredPreviews() ? (
-            <Button variant="pri" icon={PhoneCall} className={styles.callButton} onClick={() => actions.onCall(entry)}>
-              Call <span className={styles.mono}>{number}</span>
-            </Button>
-          ) : null}
           <Button
             variant="sec"
             icon={Copy}

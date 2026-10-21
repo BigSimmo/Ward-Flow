@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, Check, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, ChevronRight, Clock, Layers } from "lucide-react";
 
 import {
   GroupHead,
@@ -44,9 +44,6 @@ type Sheet = { title: string; description?: string; body: ReactNode } | null;
 
 /** The phone list shows this many hospitals or wards before "Show all". */
 const LIST_SHOWN = 8;
-
-/** D4: the exact words for a control that is shown for review but not connected. */
-const NOT_WIRED = "Not wired in this prototype.";
 
 const shortService = (service: string) => service.replace(/ Metro$/u, "").replace(/^Country \((.+)\)$/u, "$1");
 
@@ -331,47 +328,5 @@ export function StatisticsSummaryPhone({
         <div className={styles.sheetBody}>{sheet?.body}</div>
       </PhoneSheet>
     </div>
-  );
-}
-
-/**
- * The time range choices in their sheet. Only Now is backed: the prototype keeps no history, so
- * Shift, 7 days and 30 days are Preview and say so when pressed.
- *
- * Not shown on phone for now (audit stats-5, 13 Oct 2026): the pill that opened it is removed until
- * history exists. Kept, not deleted, so it returns with the metrics store.
- */
-export function RangeChoices({ onNow }: { onNow: () => void }) {
-  const [said, setSaid] = useState(false);
-  return (
-    <>
-      <ul className={styles.list} aria-label="Time range">
-        <li>
-          <button type="button" className={styles.rangeItem} aria-pressed="true" onClick={onNow}>
-            <Check size={16} aria-hidden="true" />
-            <span className={styles.rangeLabel}>Now</span>
-            <span className={styles.rangeAside}>Demo</span>
-          </button>
-        </li>
-        {["Shift", "7 days", "30 days"].map((label) => (
-          <li key={label}>
-            <button
-              type="button"
-              className={styles.rangeItem}
-              aria-pressed="false"
-              aria-disabled="true"
-              onClick={() => setSaid(true)}
-            >
-              <span className={styles.rangeTick} aria-hidden="true" />
-              <span className={styles.rangeLabel}>{label}</span>
-              <span className={styles.previewTag}>Preview</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p className={styles.note} role="status">
-        {said ? `Preview. History starts when the metrics store records. ${NOT_WIRED}` : ""}
-      </p>
-    </>
   );
 }

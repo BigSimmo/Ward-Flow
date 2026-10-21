@@ -89,14 +89,13 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(screen.getByText(/^Opens/u)).toBeInTheDocument();
   });
 
-  it("calls, copies the number and opens details for the focal line", () => {
+  it("copies the number and opens details for the focal line, with no copy-only Call button (D-72)", () => {
     const actions = makeActions();
     const onOpen = vi.fn();
     render(<PhoneFocal entries={ENTRIES} actions={actions} onOpen={onOpen} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "NMHS" }));
-    fireEvent.click(screen.getByRole("button", { name: "Call" }));
-    expect(actions.onCall).toHaveBeenCalledWith(entry("nmhs-bfc"));
+    expect(screen.queryByRole("button", { name: "Call" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Copy number" }));
     expect(actions.onCopy).toHaveBeenCalledWith(numberAt(entry("nmhs-bfc"), NOW_ANCHOR), "Number copied");
@@ -105,7 +104,7 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(onOpen).toHaveBeenCalledWith("nmhs-bfc");
   });
 
-  it("keeps the MHERL crisis line one tap away, to open or to call", () => {
+  it("keeps the MHERL crisis line one tap away to open, with no copy-only Call button", () => {
     const actions = makeActions();
     const onOpen = vi.fn();
     render(<PhoneFocal entries={ENTRIES} actions={actions} onOpen={onOpen} />);
@@ -115,8 +114,8 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     fireEvent.click(screen.getByRole("button", { name: new RegExp(`^MHERL crisis line\\s*${crisisNumber}$`, "u") }));
     expect(onOpen).toHaveBeenCalledWith("sw-mherl");
 
-    fireEvent.click(screen.getByRole("button", { name: `Call ${crisis.name}, ${crisisNumber}` }));
-    expect(actions.onCall).toHaveBeenCalledWith(crisis);
+    expect(screen.queryByRole("button", { name: `Call ${crisis.name}, ${crisisNumber}` })).not.toBeInTheDocument();
+    expect(actions.onCall).not.toHaveBeenCalled();
   });
 
   it("shows 'Not held', no copy button and no crisis row when the line has no number", () => {
@@ -200,16 +199,15 @@ describe("PhoneDirectory, the inset grouped list", () => {
     expect(screen.queryAllByRole("button", { expanded: true })).toHaveLength(0);
   });
 
-  it("opens a row's card and calls its line without opening the card", () => {
+  it("opens a row's card and shows its number, with no copy-only Call button (D-72)", () => {
     const { actions, onOpen } = renderDirectory({ tab: "hospitals", rows: hospitals });
     const bfc = entry("nmhs-bfc");
     const number = numberAt(bfc, NOW_ANCHOR)!;
 
-    fireEvent.click(screen.getByRole("button", { name: `Call ${bfc.name}, ${number}` }));
-    expect(actions.onCall).toHaveBeenCalledWith(bfc);
-    expect(onOpen).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: `Call ${bfc.name}, ${number}` })).not.toBeInTheDocument();
+    expect(actions.onCall).not.toHaveBeenCalled();
 
-    const row = screen.getByRole("button", { name: `Call ${bfc.name}, ${number}` }).closest("li")!;
+    const row = screen.getByText(number).closest("li")!;
     fireEvent.click(within(row).getAllByRole("button")[0]!);
     expect(onOpen).toHaveBeenCalledWith("nmhs-bfc");
     expect(within(row).getByText(number)).toBeInTheDocument();
@@ -287,8 +285,8 @@ describe("PhoneDirectory, the inset grouped list", () => {
     const ward = hospitals.find((item) => item.kind === "nurseInCharge" && item.group === inbox.group)!;
     const { actions } = renderDirectory({ tab: "hospitals", rows: [ward, inbox] });
 
-    const wardRow = screen.getByRole("button", { name: new RegExp(`^Call ${ward.name}`, "u") }).closest("li")!;
-    expect(within(wardRow).getByText(`· ${ward.place}`)).toBeInTheDocument();
+    const wardRow = screen.getByText(`· ${ward.place}`).closest("li")!;
+    expect(within(wardRow).queryByRole("button", { name: /^Call /u })).not.toBeInTheDocument();
 
     const copy = screen.getByRole("button", { name: `Copy email for ${inbox.name}` });
     const inboxRow = copy.closest("li")!;
@@ -300,7 +298,7 @@ describe("PhoneDirectory, the inset grouped list", () => {
   it("dims a shut line and shows when it opens", () => {
     const closed = entry("sw-gov");
     renderDirectory({ tab: "statewide", rows: [closed] });
-    const row = screen.getByRole("button", { name: new RegExp(`^Call ${closed.name}`, "u") }).closest("li")!;
+    const row = screen.getByRole("listitem");
     expect(within(row).getByText(/^Opens/u)).toBeInTheDocument();
   });
 
@@ -331,7 +329,7 @@ describe("PhoneDirectory, the inset grouped list", () => {
 });
 
 describe("PhoneSheet, the contact bottom sheet", () => {
-  it("names the contact and its service, and calls, copies and emails from the tiles", () => {
+  it("names the contact and its service, and copies the number and email from the tiles", () => {
     const bfc = entry("nmhs-bfc");
     const number = numberAt(bfc, NOW_ANCHOR)!;
     const actions = makeActions();
@@ -342,8 +340,8 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     expect(sheet).toHaveAccessibleDescription("North Metro");
     expect(within(sheet).getByText("Synthetic notice")).toBeInTheDocument();
 
-    fireEvent.click(within(sheet).getByRole("button", { name: `Call ${number}` }));
-    expect(actions.onCall).toHaveBeenCalledWith(bfc);
+    // D-72: calling only copied the number, so the sheet has no Call button.
+    expect(within(sheet).queryByRole("button", { name: `Call ${number}` })).not.toBeInTheDocument();
     fireEvent.click(within(sheet).getByRole("button", { name: "Copy" }));
     expect(actions.onCopy).toHaveBeenCalledWith(number, "Number copied");
     fireEvent.click(within(sheet).getByRole("button", { name: "Email" }));

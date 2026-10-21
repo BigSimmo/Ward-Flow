@@ -103,7 +103,15 @@ describe("Legal forms — extension shows the day it will record", () => {
     const base = wardMovements.find((m) => m.legalForm !== undefined)!;
     const dueAt = NOW + 60;
     const target = { ...base, legalForm: { ...base.legalForm!, dueAt } };
-    render(<ExtendSheet target={target} label="Synthetic movement" now={NOW} onClose={() => {}} />);
+    render(
+      <ExtendSheet
+        target={target}
+        label="Synthetic movement"
+        now={NOW}
+        onClose={() => {}}
+        onExtendForm={() => false}
+      />,
+    );
     expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).not.toBeInTheDocument();
     // A time earlier in the day than the current expiry rolls to the next day, and the sheet says so.
     const earlier = formatInstant(dueAt - 30);

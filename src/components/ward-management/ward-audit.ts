@@ -27,6 +27,8 @@ import {
   type BedRelease,
   type BedReleaseWaitingOn,
   type LegalStatus,
+  SUPPORT_SERVICE_TYPES,
+  type SupportServiceType,
 } from "./ward-model";
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
@@ -35,7 +37,6 @@ import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { SUPPORT_SERVICE_TYPES, type SupportServiceType } from "./ward-support-notifications";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
 import { seededGovernanceAuditEntry, syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import {

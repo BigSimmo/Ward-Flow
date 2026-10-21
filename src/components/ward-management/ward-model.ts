@@ -22,7 +22,6 @@ import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-
  * `INBOX_CATEGORIES`) warn against elsewhere.
  */
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { SupportServiceType } from "@/components/ward-management/ward-support-notifications";
 import type { LegalClock } from "@/components/ward-management/ward-legal-clock";
 import type {
   BedPreparationNote,
@@ -971,6 +970,10 @@ export type Movement = {
   /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
   medicationChartDone?: boolean;
 };
+
+/** #398: the services a discharge support notice goes to (`SEND_RELEASE_SUPPORT_NOTICE`). */
+export const SUPPORT_SERVICE_TYPES = ["pharmacy", "transport", "cleaning"] as const;
+export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
 
 /**
  * D-72 (21 Oct 2026): the arrival checklist items the emergency department records with

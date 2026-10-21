@@ -12,7 +12,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { CalendarDays, ChevronDown, Clock, Copy, Eye, Search, SearchX, UserPlus, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -57,7 +57,6 @@ import {
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
   act: "danger",
@@ -786,7 +785,6 @@ export type CensusDetailProps = {
 
 /** The selected person. Every fact is the record's own; a missing one says so. */
 export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
-  const [previewNote, setPreviewNote] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.sessionStorage.getItem("wardflow:census-bed-opener") !== row.key) return;
@@ -917,21 +915,6 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           />
         </div>
       ) : null}
-      <UnwiredPreview>
-        <div className={styles.previewRow}>
-          <button
-            type="button"
-            className={styles.previewButton}
-            onClick={() => setPreviewNote(true)}
-            title="Not wired in this prototype."
-          >
-            <Icon icon={Eye} size={14} />
-            Watch this shift
-          </button>
-          <span className={styles.previewTag}>Preview</span>
-          {previewNote ? <span className={styles.previewNote}>Not wired in this prototype.</span> : null}
-        </div>
-      </UnwiredPreview>
       <div className={styles.actions}>
         <Button
           variant="ghost"

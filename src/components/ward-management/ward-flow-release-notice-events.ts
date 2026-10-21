@@ -1,8 +1,13 @@
 import type { AuditDecision } from "./ward-audit";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { BedEventHelpers, findMovement, reject, replaceMovement, WardFlowState } from "./ward-flow-reducer";
-import { ARRIVAL_CHECKS, type BedRelease, type Movement } from "./ward-model";
-import { SUPPORT_SERVICE_TYPES, type SupportServiceType } from "./ward-support-notifications";
+import {
+  ARRIVAL_CHECKS,
+  SUPPORT_SERVICE_TYPES,
+  type BedRelease,
+  type Movement,
+  type SupportServiceType,
+} from "./ward-model";
 
 /**
  * #398 and the arrival checklist (D-72, 21 Oct 2026): the two recorded events that let the

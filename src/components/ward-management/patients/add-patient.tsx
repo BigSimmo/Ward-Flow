@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BusFront,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -67,13 +66,12 @@ import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
  * marker, then the Identity card (saved to the record), the Clinical intake card (layout only, not
  * saved), and one foot with Reset and the single primary, Add patient. The right column carries the
- * live duplicate check, what can follow once the person exists, and the latest records.
+ * live duplicate check and the latest records. Adding opens the new patient's page.
  *
  * Owner Rule D4: an unconnected control says exactly "Not wired in this prototype." Print and Save
  * draft only ever said that, so they are hidden until they work (overall review, 20 Oct 2026).
@@ -1279,22 +1277,6 @@ export function AddPatientForm() {
 
           <aside className={styles.side} aria-label="Duplicate checking and records">
             {isTabletPortrait ? null : duplicateCheck}
-
-            {/* Audit 7 NA-03: these two never become available on this screen, so they show in a
-                development build only. */}
-            <UnwiredPreview>
-              <Card className={styles.phHide}>
-                <CardHead title="After adding" level={2} action={<span className={styles.muted}>Once added</span>} />
-                <CardBody className={styles.afterRow}>
-                  <Button size="sm" icon={FileText} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                    Raise referral
-                  </Button>
-                  <Button size="sm" icon={BusFront} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                    Book transport
-                  </Button>
-                </CardBody>
-              </Card>
-            </UnwiredPreview>
 
             <Card className={styles.phHide}>
               <CardHead

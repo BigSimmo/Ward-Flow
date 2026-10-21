@@ -16,7 +16,6 @@ import type {
   SupportNotificationOccasion,
   SupportNotificationOutcome,
   SupportNotificationParty,
-  SupportServiceType,
 } from "@/components/ward-management/ward-support-notifications";
 import type {
   BroadcastAnswer,
@@ -45,6 +44,7 @@ import type {
 } from "@/components/ward-management/ward-change-reasons";
 import type {
   ArrivalCheck,
+  SupportServiceType,
   AtsCategory,
   ArrivalMode,
   BedReleaseWaitingOn,

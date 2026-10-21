@@ -145,12 +145,12 @@ describe("the on-call screen", () => {
     expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
   });
 
-  it("Call copies the number and says calling is not wired", async () => {
+  it("has no copy-only Call button, and Copy number still copies the number (D-72)", async () => {
     renderOnCall();
-    fireEvent.click(panel().getByRole("button", { name: /^Call 08 0000/u }));
+    expect(panel().queryByRole("button", { name: /^Call 08 0000/u })).not.toBeInTheDocument();
+    fireEvent.click(panel().getAllByRole("button", { name: /^Copy .*number$/u })[0]!);
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     expect(writeText.mock.calls[0]![0]).toMatch(MOCK_NUMBER);
-    expect(await screen.findByTestId("ward-on-call-notice")).toHaveTextContent(/not wired in this prototype/iu);
   });
 
   it("highlights rows and never hides one", () => {
