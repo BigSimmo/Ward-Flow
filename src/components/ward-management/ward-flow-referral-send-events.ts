@@ -16,6 +16,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { isObservation } from "@/components/ward-management/ward-observation";
 import {
   WARD_FLOW_ROLE_LABELS,
   type WardFlowEvent,
@@ -86,6 +87,8 @@ export function reduceReferralSendEvent(
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
+      if (!isObservation(event.draft.observation))
+        return reject(state, event, "RAISE_REFERRAL observation must be a recorded level with a valid interval.");
       if (event.draft.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.draft.atsCategory))
         return reject(state, event, "RAISE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
       const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);
@@ -279,7 +282,7 @@ export function reduceReferralSendEvent(
         gender: event.draft.gender,
         // T15 (item 12): the ED's own choice replaces whatever the linked referral carried.
         tentativeDiagnosis: event.draft.tentativeDiagnosis ?? raisedFrom?.tentativeDiagnosis,
-        observation: event.draft.observation,
+        observation: { ...event.draft.observation },
         highAcuity: event.draft.highAcuity,
         legalStatus: event.draft.legalStatus,
         // Spread-copied, never aliased: `SELECTABLE_LEGAL_FORMS` entries must not become mutable

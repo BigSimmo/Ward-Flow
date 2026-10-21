@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
@@ -19,6 +19,15 @@ import styles from "./ward-bed-dossier-drawer.module.css";
 function levelOptionLabel(level: ObservationLevel): string {
   const ratio = observationRatio(level);
   return ratio ? `${observationLevelName(level)} (${ratio})` : observationLevelName(level);
+}
+
+/** The recorded review time as the time box shows it, when it falls today or tomorrow; otherwise blank. */
+function reviewInputs(reviewAt: Instant | null, now: Instant): { time: string; day: "today" | "tomorrow" } {
+  const offset = reviewAt === null ? -1 : dayOf(reviewAt) - dayOf(now);
+  if (reviewAt === null || (offset !== 0 && offset !== 1)) return { time: "", day: "today" };
+  const minutes = minuteOfDay(reviewAt);
+  const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  return { time, day: offset === 1 ? "tomorrow" : "today" };
 }
 
 /** The level as the drawer reads it: "Intermittent, every 15 minutes. Review 14:00". */
@@ -52,11 +61,13 @@ export function WardObservationControl({
   );
   const [reviewTime, setReviewTime] = useState("");
   const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">("today");
+  const [reviewEdited, setReviewEdited] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function save() {
-    let reviewAt: Instant | null = null;
-    if (reviewTime.trim() !== "") {
+    // An untouched review box keeps the recorded review time exactly, even one outside today or tomorrow.
+    let reviewAt: Instant | null = reviewEdited ? null : observation.reviewAt;
+    if (reviewEdited && reviewTime.trim() !== "") {
       const typed = instantFromEstimatedTimeInputs(reviewTime, reviewDay, now);
       if (typed === undefined) {
         setError("Type the review time as a clock time, for example 14:30.");
@@ -80,8 +91,13 @@ export function WardObservationControl({
           className={styles.pill}
           data-testid="ward-observation-change"
           onClick={() => {
+            const review = reviewInputs(observation.reviewAt, now);
             setLevel(observation.level);
-            setReviewTime("");
+            setIntervalMinutes(observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0]);
+            setReviewTime(review.time);
+            setReviewDay(review.day);
+            setReviewEdited(false);
+            setError(null);
             setOpen(true);
           }}
         >
@@ -126,13 +142,19 @@ export function WardObservationControl({
               inputMode="numeric"
               placeholder="Review time, for example 14:30"
               value={reviewTime}
-              onChange={(event) => setReviewTime(event.target.value)}
+              onChange={(event) => {
+                setReviewTime(event.target.value);
+                setReviewEdited(true);
+              }}
             />
             <select
               className={styles.select}
               aria-label="Review day"
               value={reviewDay}
-              onChange={(event) => setReviewDay(event.target.value as "today" | "tomorrow")}
+              onChange={(event) => {
+                setReviewDay(event.target.value as "today" | "tomorrow");
+                setReviewEdited(true);
+              }}
             >
               <option value="today">Today</option>
               <option value="tomorrow">Tomorrow</option>

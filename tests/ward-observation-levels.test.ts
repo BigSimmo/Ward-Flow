@@ -286,3 +286,46 @@ describe("saves made before observation levels still load", () => {
     expect(legacy.admissions.every((admission) => isObservation(admission.observation))).toBe(true);
   });
 });
+
+describe("a referral cannot carry an observation level the picker could not produce", () => {
+  const raise = (observation: unknown) =>
+    wardFlowReducer(seedWardFlowState(), {
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW,
+      edId: "rph-ed",
+      draft: {
+        cohort: "Adult",
+        security: "Open",
+        sex: "Female",
+        gender: "Female",
+        observation: observation as Observation,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+
+  it("refuses a missing level, an old yes/no flag shape, an unknown level and extra keys", () => {
+    for (const bad of [
+      undefined,
+      true,
+      { level: "hdu", intervalMinutes: null, reviewAt: null },
+      { level: "general", intervalMinutes: null, reviewAt: null, note: "typed text" },
+    ]) {
+      const before = seedWardFlowState();
+      const after = raise(bad);
+      expect(after.movements.length, JSON.stringify(bad)).toBe(before.movements.length);
+      expect(after.rejections.at(-1)?.reason).toMatch(/observation must be a recorded level/);
+    }
+  });
+
+  it("stores a copy of a valid level, not the caller's object", () => {
+    const observation = observationAt("arms_length");
+    const after = raise(observation);
+    const raised = after.movements.at(-1)!;
+    expect(raised.observation).toEqual(observation);
+    expect(raised.observation).not.toBe(observation);
+  });
+});
