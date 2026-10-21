@@ -4,6 +4,12 @@ import {
   COMMUNITY_TEAM_PAGES,
   referralsSentByTeam,
 } from "@/components/ward-management/community/community-derivations";
+import {
+  sentAnswer,
+  sentAskedFor,
+  sentMatches,
+  sentToLine,
+} from "@/components/ward-management/community/community-sent-referrals";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import { communitySentReferral, communitySentView } from "@/components/ward-management/ward-referral-visibility";
@@ -79,12 +85,21 @@ describe("community team: referrals it sent", () => {
     const projected = communitySentReferral(accepted);
     expect(projected?.state).toBe("accepted");
     expect(projected?.addressings).toEqual([
-      { label: `Ward · ${WARD_A}`, unitId: WARD_A, answer: "Accepted.", accepted: true },
+      {
+        label: `Ward · ${WARD_A}`,
+        unitId: WARD_A,
+        askedFor: "Ward bed",
+        answer: "Accepted.",
+        accepted: true,
+        declined: false,
+      },
       {
         label: "Ward · rph-adult-secure",
         unitId: "rph-adult-secure",
+        askedFor: "Ward bed",
         answer: "Cancelled — this referral was accepted somewhere else.",
         accepted: false,
+        declined: false,
       },
     ]);
   });
@@ -96,5 +111,52 @@ describe("community team: referrals it sent", () => {
         (key) => key !== "patientId" || projected?.patientId !== undefined,
       ),
     );
+  });
+});
+
+/** D-77 group A: the Sent tab's columns and filters, in the words the team reads. */
+describe("community team: the Sent tab's wording", () => {
+  const UNITS = seedWardFlowState().units;
+  const secureWard = { ...ward("rph-adult-secure"), secureBedNeeded: true };
+  const project = (destinations: ReferralAddressing[]) =>
+    communitySentReferral(withAnswers(sentReferral(TEAM.name), destinations))!;
+
+  it("names what was asked for once per kind, and a secure bed as secure", () => {
+    const sent = project([
+      { destination: ward(WARD_A), state: "queued" },
+      { destination: secureWard, state: "queued" },
+    ]);
+    expect(sentAskedFor(sent)).toBe("Ward bed and Ward bed, secure");
+    expect(sentToLine(sent, UNITS)).toBe("Asked 2 wards");
+  });
+
+  it("names the one place when only one was asked, never by its id", () => {
+    const line = sentToLine(project([{ destination: ward(WARD_A), state: "queued" }]), UNITS);
+    expect(line).toMatch(/^Asked /);
+    expect(line).not.toContain(WARD_A);
+  });
+
+  it("answers waiting, part declined, accepted and declined everywhere, and filters on them", () => {
+    const waiting = project([{ destination: ward(WARD_A), state: "queued" }]);
+    const partDeclined = project([
+      { destination: ward(WARD_A), state: "declined", decidedAt: NOW_ANCHOR },
+      { destination: secureWard, state: "queued" },
+    ]);
+    const accepted = project([{ destination: ward(WARD_A), state: "accepted", decidedAt: NOW_ANCHOR }]);
+    const declined = project([{ destination: ward(WARD_A), state: "declined", decidedAt: NOW_ANCHOR }]);
+
+    expect(sentAnswer(waiting, UNITS)).toEqual({ text: "Waiting for an answer.", tone: "waiting" });
+    expect(sentAnswer(partDeclined, UNITS)).toEqual({
+      text: "Declined by 1. Waiting for the others.",
+      tone: "declined",
+    });
+    expect(sentAnswer(accepted, UNITS).tone).toBe("accepted");
+    expect(sentAnswer(accepted, UNITS).text).toMatch(/ accepted\.$/);
+    expect(sentAnswer(declined, UNITS)).toEqual({ text: "Declined everywhere it was sent.", tone: "declined" });
+
+    const all = [waiting, partDeclined, accepted, declined];
+    expect(all.filter((sent) => sentMatches(sent, "waiting"))).toEqual([waiting, partDeclined]);
+    expect(all.filter((sent) => sentMatches(sent, "answered"))).toEqual([accepted, declined]);
+    expect(all.filter((sent) => sentMatches(sent, "all"))).toEqual(all);
   });
 });

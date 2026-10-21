@@ -1,6 +1,7 @@
 /*
  * The community team screen's third desktop list: expected back, discharged into the catchment,
- * left another way, and referrals this team has made.
+ * and left another way. The referrals this team made are on the Sent tab
+ * (`community-screen-sent-tab.tsx`, D-77 group A).
  *
  * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor:
  * the markup, text, class names and behaviour are unchanged. Comments moved with the code, so
@@ -8,9 +9,6 @@
  */
 
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
-import { useCommunitySentReferrals } from "../ward-flow-provider";
-import { referralsSentByTeam } from "./community-derivations";
-import { sentAgo, sentPlaceLine, sentReferralSummary, unattributedSentLine } from "./community-sent-referrals";
 import { CommunityFollowUp } from "./community-follow-up";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
@@ -38,13 +36,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
     filteredDepartures,
     cannotResolve,
     activeTab,
-    identityOf,
   } = view;
-  const sentByAnyTeam = useCommunitySentReferrals();
-  const sentReferrals = {
-    sent: referralsSentByTeam(sentByAnyTeam.sent, team),
-    unattributed: sentByAnyTeam.unattributed,
-  };
   return (
     <div
       className={
@@ -400,55 +392,6 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                       lists.otherDepartures.length === 1 ? "admission" : "admissions"
                     } referred to this team ${lists.otherDepartures.length === 1 ? "has" : "have"} ended, recorded as: ${otherDepartureDestinations(lists.otherDepartures)}. None of those records says the person came back into the community, so none is on the list above.`}
             </p>
-          </div>
-        </section>
-
-        {/* ── List 3, moved to the end — the one that cannot be built ──────────────────── */}
-        <section
-          className={styles.cardPanel}
-          aria-label="Referrals we have made"
-          data-testid="ward-community-referrals"
-        >
-          <div className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>
-              <span>Referrals we have made</span>
-            </h3>
-          </div>
-          <div className={styles.panelBody} role="region" aria-label="Referrals we have made details" tabIndex={0}>
-            {/*
-             * Point 3, fix plan item 17 (D-74): a referral records the team that sent it, so the team
-             * sees what it sent and each place's answer. Matched on the sending team's name only,
-             * never on the person's home region, which would look right and not be this team's.
-             * Older referrals that name no sending team are counted, not guessed onto a team.
-             */}
-            {sentReferrals.sent.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-community-referrals-empty">
-                No referral on record names {team.name} as the team that sent it.
-              </p>
-            ) : (
-              <ul className={styles.cardList} data-testid="ward-community-referrals-list">
-                {sentReferrals.sent.map((referral) => (
-                  <li key={referral.id} className={styles.card} data-testid={`ward-community-sent-${referral.id}`}>
-                    <p className={styles.cardUnit}>
-                      {referral.patientId ? identityOf({ patientId: referral.patientId }) : "Person not recorded"}
-                    </p>
-                    <p className={styles.cardDetail}>
-                      {sentReferralSummary(referral)} Sent {sentAgo(referral.raisedAt, now)}.
-                    </p>
-                    <ul className={styles.cardDetail} aria-label="Where it was sent">
-                      {referral.addressings.map((addressing, index) => (
-                        <li key={`${referral.id}-${index}`}>{sentPlaceLine(addressing, units)}</li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {sentReferrals.unattributed > 0 ? (
-              <p className={styles.footnote} data-testid="ward-community-referrals-unattributable">
-                {unattributedSentLine(sentReferrals.unattributed)}
-              </p>
-            ) : null}
           </div>
         </section>
       </div>

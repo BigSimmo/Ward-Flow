@@ -20,6 +20,7 @@ import type {
 import {
   referralAddressingStateLabel,
   referralDestinationLabel,
+  referralPurposeLabel,
   referralState,
   referralWithdrawn,
 } from "@/components/ward-management/ward-referrals";
@@ -746,9 +747,12 @@ export type CommunitySentAddressing = {
    *  `unitId` instead, because this label spells a ward by its id. */
   label: string;
   unitId?: string;
+  /** What this place was asked for: a ward bed (and whether secure), an ED purpose, or community care. */
+  askedFor: string;
   /** That place's answer in words, from `referralAddressingStateLabel`. */
   answer: string;
   accepted: boolean;
+  declined: boolean;
 };
 
 /**
@@ -770,6 +774,19 @@ export type CommunitySentReferral = {
   addressings: CommunitySentAddressing[];
 };
 
+/** D-77 group A: the "Asked for" words on the team's Sent tab. An ED arm always names its purpose,
+ *  as `referralDestinationLabel` requires, so a review request never reads as a bed request. */
+function sentAskedFor(destination: ReferralDestination): string {
+  switch (destination.kind) {
+    case "psychiatric_ward":
+      return destination.secureBedNeeded ? "Ward bed, secure" : "Ward bed";
+    case "emergency_department":
+      return `ED, ${referralPurposeLabel(destination.purpose).toLowerCase()}`;
+    case "community_team":
+      return "Community team";
+  }
+}
+
 /** The sending team's view of one referral, or `undefined` when no community team is recorded as
  *  its sender. An older community referral with no `sendingTeamName` is nobody's to list. */
 export function communitySentReferral(referral: Referral): CommunitySentReferral | undefined {
@@ -787,8 +804,10 @@ export function communitySentReferral(referral: Referral): CommunitySentReferral
       ...(addressing.destination.kind === "psychiatric_ward" && addressing.destination.unitId
         ? { unitId: addressing.destination.unitId }
         : {}),
+      askedFor: sentAskedFor(addressing.destination),
       answer: referralAddressingStateLabel(addressing),
       accepted: addressing.state === "accepted",
+      declined: addressing.state === "declined",
     })),
   };
 }

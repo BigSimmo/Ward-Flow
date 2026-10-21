@@ -15,6 +15,7 @@ import {
   communityMembershipResolution,
   communityHubLists,
   communityTeamById,
+  referralsSentByTeam,
 } from "@/components/ward-management/community/community-derivations";
 import {
   ratifiedAliasesFor,
@@ -34,6 +35,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
   useCommunityScopedReferrals,
+  useCommunitySentReferrals,
   useDanglingReferralIds,
   useWardFlowClock,
   useWardFlowSelect,
@@ -75,6 +77,7 @@ import {
 } from "./community-screen-panels";
 import { CommunityScreenPhone } from "./community-screen-phone";
 import { CommunityScreenDesktopHero, CommunityScreenSwitchDrawer } from "./community-screen-hero";
+import { CommunityScreenSentTab } from "./community-screen-sent-tab";
 import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
@@ -309,6 +312,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "dispatch",
   );
   const liveReferrals = useCommunityScopedReferrals();
+  const sentByAnyTeam = useCommunitySentReferrals();
   const now = useWardFlowClock();
   const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
@@ -635,6 +639,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
 
   // The page for an unknown team is the not-found body below, rendered by `CommunityScreen`.
   if (!team) return null;
+  // Fix plan item 17 and D-77 group A: what this team sent, for the Sent tab on desktop and phone.
+  const sentReferrals = {
+    sent: referralsSentByTeam(sentByAnyTeam.sent, team),
+    unattributed: sentByAnyTeam.unattributed,
+  };
 
   // Only a referral addressed to this team, or a ratified same-service name, opens in the drawer.
   const selectedReferral = sourceReferrals.find(
@@ -851,19 +860,22 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   if (chosenTab === null) setChosenTab(firstListWithSomeone);
   const activeTab: ActiveTabType = chosenTab ?? firstListWithSomeone;
   const phoneListTab: Record<CommunityPhoneListId, ActiveTabType> = {
+    sent: "tab-sent",
     waiting: "tab-triage",
     inBed: "tab-inpatients",
     back: "tab-egress",
     ctos: "tab-caseload",
   };
   const phoneList: CommunityPhoneListId =
-    activeTab === "tab-inpatients"
-      ? "inBed"
-      : activeTab === "tab-egress" || activeTab === "tab-expected"
-        ? "back"
-        : activeTab === "tab-caseload"
-          ? "ctos"
-          : "waiting";
+    activeTab === "tab-sent"
+      ? "sent"
+      : activeTab === "tab-inpatients"
+        ? "inBed"
+        : activeTab === "tab-egress" || activeTab === "tab-expected"
+          ? "back"
+          : activeTab === "tab-caseload"
+            ? "ctos"
+            : "waiting";
   const phonePerson = (patientId: string | null | undefined) =>
     patientId ? patients.find((candidate) => candidate.id === patientId) : undefined;
   const phoneName = (patient: Patient | undefined, fallback: string) =>
@@ -1073,6 +1085,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     activeTab,
     phoneListTab,
     phoneList,
+    sentReferrals,
     phonePerson,
     phoneName,
     openDossier,
@@ -1128,6 +1141,9 @@ export function CommunityScreen(props: CommunityScreenProps) {
 
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
+            {/* ── Sent: the referrals this team made, each with its answer (D-77 group A) ── */}
+            <CommunityScreenSentTab view={view} />
+
             {/* ── Tab 1: Priority Referral Triage Queue ── */}
             <CommunityScreenWaitingTab view={view} />
 

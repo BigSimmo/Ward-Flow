@@ -588,15 +588,17 @@ describe("community hub — referrals this team sent", () => {
     renderSent(TEAM_A.name);
     fireEvent.click(screen.getByTestId("send-referral-btn"));
     const list = within(screen.getByTestId("ward-community-referrals")).getByTestId("ward-community-referrals-list");
-    const rows = within(list)
-      .getAllByRole("listitem")
-      .filter((row) => row.parentElement === list);
+    // D-77 group A: the Sent tab is a table, one row per referral under the header row.
+    const rows = within(list).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(1);
-    const text = rows[0].textContent ?? "";
-    expect(text).toContain("Waiting for an answer.");
-    expect(text).toContain("Sent less than an hour ago.");
-    expect(text).toMatch(/: Queued\./);
-    expect(text).not.toContain("scgh-adult-open");
+    const cells = within(rows[0])
+      .getAllByRole("cell")
+      .map((cell) => cell.textContent ?? "");
+    expect(cells[1]).toBe("Ward bedSent less than an hour ago");
+    expect(cells[2]).toMatch(/^Asked /);
+    expect(cells[3]).toContain("Waiting for an answer.");
+    expect(cells[3]).toMatch(/: Queued\./);
+    expect(rows[0].textContent).not.toContain("scgh-adult-open");
   });
 
   it("does not list a referral another team sent", () => {
