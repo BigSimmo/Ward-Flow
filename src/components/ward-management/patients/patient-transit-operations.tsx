@@ -23,20 +23,20 @@ import {
   type GenderPlacementReason,
   OVERRIDE_REASONS,
   type OverrideReason,
-  REFERRAL_CAP_REASONS,
-  type ReferralCapReason,
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { StatusGlyph } from "@/components/wf";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { clock, dur } from "./patient-now-records";
+import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
@@ -68,8 +68,6 @@ export function PatientTransitOperations({
     );
   // Audit 1 (CS-09, Josh 20 Oct): the gap dialogs name the person and UMRN, never "this patient".
   const identity = patientIdentityLine(resolveSubjectPatient(movement, { patients, referrals, movements }));
-  // Top 25 item 2: asking more wards than the cap warns and asks for a reason instead of refusing.
-  const [capReason, setCapReason] = useState<ReferralCapReason | "">("");
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
@@ -107,7 +105,7 @@ export function PatientTransitOperations({
   const [wardChecked, setWardChecked] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [wardQuery, setWardQuery] = useState("");
-  const [filter, setFilter] = useState<"eligible" | "all" | "referred">("eligible");
+  const [showAllReview, setShowAllReview] = useState(false);
   const [submitted, setSubmitted] = useState<{ rejections: number; audit: number }>();
   const [overrideReason, setOverrideReason] = useState<OverrideReason | "">("");
   const [overrideUnitId, setOverrideUnitId] = useState<string>("");
@@ -152,12 +150,13 @@ export function PatientTransitOperations({
     .filter((u) => u.cohort === movement.cohort)
     .map((unit) => ({ unit, verdict: eligibility(movement, unit, now) }));
   const eligibleCount = candidates.filter((c) => c.verdict.eligible).length;
-  const shown = candidates.filter(
-    (c) =>
-      (filter === "all" ||
-        (filter === "referred" ? movement.referredUnitIds.includes(c.unit.id) : c.verdict.eligible)) &&
-      c.unit.name.toLowerCase().includes(wardQuery.toLowerCase().trim()),
-  );
+  // D-77 (Josh, 21 Oct 2026): one Ask wards list in fixed network order. Wards already asked come
+  // first, then the wards that fit, then the rest to review, three at a time.
+  const shown = candidates.filter((c) => c.unit.name.toLowerCase().includes(wardQuery.toLowerCase().trim()));
+  const askedRows = shown.filter((c) => movement.referredUnitIds.includes(c.unit.id));
+  const fitRows = shown.filter((c) => c.verdict.eligible && !movement.referredUnitIds.includes(c.unit.id));
+  const reviewRows = shown.filter((c) => !c.verdict.eligible && !movement.referredUnitIds.includes(c.unit.id));
+  const reviewShown = showAllReview ? reviewRows : reviewRows.slice(0, 3);
   const canRefer =
     open && ["placement_requested", "destination_review"].includes(movement.stage) && !movement.acceptedUnitId;
   const job = movement.transport;
@@ -183,8 +182,10 @@ export function PatientTransitOperations({
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
-  const wardsAskedAfterSend = movement.referredUnitIds.length + selectedTargets.length;
-  const overReferralCap = wardsAskedAfterSend > configuration.parallelReferralCap;
+  // D-77 replaces the warn-and-record-a-reason path for a fourth ward (Top 25 item 2): the list
+  // holds at the cap, counting wards already asked.
+  const referralCap = configuration.parallelReferralCap;
+  const askSlots = Math.max(0, referralCap - movement.referredUnitIds.length);
   const needsGenderPlacement =
     genderReviewNeeded(movement.gender, movement.sex) &&
     selectedTargets.some((id) => !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(id)));
@@ -294,16 +295,53 @@ export function PatientTransitOperations({
       </section>
     ) : null;
 
+  const askButtonUnavailable =
+    !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked));
+  const askRow = ({ unit, verdict }: (typeof candidates)[number]) => {
+    const checked = selectedTargets.includes(unit.id);
+    const full = !checked && selectedTargets.length >= askSlots;
+    const checks = checkedGates(verdict.gates);
+    return (
+      <label
+        key={unit.id}
+        className={ph.cand}
+        data-kind={verdict.eligible ? "yes" : "review"}
+        data-testid={`ward-ask-ward-${unit.id}`}
+      >
+        <input
+          type="checkbox"
+          className={styles.askBox}
+          aria-label={unit.name}
+          aria-describedby={`${baseId}-ask-${unit.id}`}
+          checked={checked}
+          disabled={!canRefer || !verdict.eligible || full}
+          onChange={(e) =>
+            setSelected(e.target.checked ? [...selected, unit.id] : selected.filter((id) => id !== unit.id))
+          }
+        />
+        <span className={ph.who}>
+          <span className={ph.nm}>{unit.name}</span>
+          <span className={ph.sub} id={`${baseId}-ask-${unit.id}`}>
+            {verdict.eligible
+              ? `${unit.allocatable.value} ready · eligibility ${checks.filter((g) => g.pass).length} of ${checks.length} checks`
+              : candidateReason(verdict)}
+          </span>
+        </span>
+        <span className={ph.lab}>
+          <StatusGlyph tone={verdict.eligible ? "success" : "neutral"} size={9} />
+          {verdict.eligible ? "Fits" : "Review"}
+        </span>
+      </label>
+    );
+  };
   const candidatePanel = (
     <section className={styles.card} aria-labelledby={`${baseId}-candidate-title`}>
       <div className={styles.cardHeader}>
         <div>
           <span className={styles.eyebrow}>DESTINATION REVIEW</span>
-          <h3 id={`${baseId}-candidate-title`}>
-            {destination ? "Network eligibility reference" : "Network ward shortlist"}
-          </h3>
+          <h3 id={`${baseId}-candidate-title`}>Ask wards</h3>
         </div>
-        <span className={styles.count}>{eligibleCount} eligible</span>
+        <span className={styles.count}>{eligibleCount} fit</span>
       </div>
       <label className={styles.wardSearch}>
         <Search size={15} aria-hidden="true" />
@@ -314,107 +352,99 @@ export function PatientTransitOperations({
           onChange={(event) => setWardQuery(event.target.value)}
         />
       </label>
-      <div className={styles.filters} role="group" aria-label="Ward shortlist filter">
-        {(
-          [
-            ["eligible", "Eligible"],
-            ["all", "All wards"],
-            ["referred", "Referred"],
-          ] as const
-        ).map(([value, label]) => (
-          <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
-            {label}
-          </button>
-        ))}
-      </div>
-      <p className={styles.deckHint}>
-        Current {movement.cohort.toLowerCase()} cohort · eligibility recalculates with capacity and legal status.
-      </p>
-      <div className={styles.candidates}>
-        {shown.length === 0 && (
-          <p className={styles.empty}>No wards match this view. Choose All wards to review the eligibility gates.</p>
-        )}
-        {shown.map(({ unit, verdict }) => {
-          const referred = movement.referredUnitIds.includes(unit.id);
-          const accepted = destination?.id === unit.id;
-          return (
-            <article className={styles.candidate} key={unit.id}>
-              <div className={styles.candidateTop}>
-                <label className={styles.pick}>
-                  <input
-                    type="checkbox"
-                    checked={selectedTargets.includes(unit.id)}
-                    disabled={!canRefer || !verdict.eligible || referred || accepted}
-                    onChange={(e) =>
-                      setSelected(e.target.checked ? [...selected, unit.id] : selected.filter((id) => id !== unit.id))
-                    }
-                  />
-                  <strong>{unit.name}</strong>
-                </label>
-                <span className={styles.verdict} data-pass={verdict.eligible}>
-                  {accepted ? "Accepted" : referred ? "Referred" : verdict.eligible ? "Eligible" : "Review gates"}
-                </span>
-              </div>
-              <p>{candidateReason(verdict)}</p>
-              <div className={styles.candidateMeta}>
-                <span>{unit.allocatable.value} allocatable beds</span>
-                <span>{unit.authorised ? "Authorised" : "Voluntary ward"}</span>
-                <span>{unit.lockedBeds > 0 ? "Ward includes locked beds" : "Open ward"}</span>
-              </div>
-              <details>
-                <summary>
-                  Eligibility breakdown{" "}
-                  <span>
-                    {checkedGates(verdict.gates).filter((g) => g.pass).length}/{checkedGates(verdict.gates).length}{" "}
-                    checks
-                  </span>
-                </summary>
-                <ul className={styles.gates}>
-                  {verdict.gates.map((g) => (
-                    <li key={g.gate} data-pass={g.pass} data-mark={gateMark(g)}>
-                      <span aria-hidden="true">{gateMark(g) === "info" ? "i" : g.pass ? "✓" : "!"}</span>
-                      <div>
-                        <strong>{g.gate.replace(/_/g, " ")}</strong>
-                        <p>{g.detail}</p>
-                      </div>
-                      <span>{gateMark(g) === "info" ? "For information" : g.pass ? "Pass" : "Review"}</span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-              {referred && open && movement.stage === "destination_review" && (
-                <>
-                  <button
-                    type="button"
-                    className={styles.secondary}
-                    aria-disabled={
-                      !verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed ? "true" : undefined
-                    }
-                    aria-describedby={gate("ACCEPT_IN_PRINCIPLE", unit.id).buttonProps["aria-describedby"]}
-                    onClick={(e) => {
-                      if (!verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed) {
-                        ignoreUnavailableActivation(e);
-                        return;
-                      }
-                      setOverrideUnitId(unit.id);
-                      noteAttempt();
-                      dispatch({
-                        type: "ACCEPT_IN_PRINCIPLE",
-                        role: routeRole,
-                        now,
-                        movementId: movement.id,
-                        unitId: unit.id,
-                      });
-                    }}
+      <div className={styles.askList}>
+        {shown.length === 0 && <p className={styles.empty}>No ward matches that search.</p>}
+        {askedRows.length > 0 && (
+          <>
+            <p className={ph.ch}>
+              Asked <span className={ph.k}>{askedRows.length}</span>
+            </p>
+            <div className={ph.cands} role="list" aria-label="Wards asked">
+              {askedRows.map(({ unit, verdict }) => {
+                const accepted = destination?.id === unit.id;
+                const acceptGate = gate("ACCEPT_IN_PRINCIPLE", unit.id);
+                return (
+                  <div
+                    key={unit.id}
+                    role="listitem"
+                    className={styles.askedRow}
+                    data-testid={`ward-ask-ward-${unit.id}`}
                   >
-                    Accept bed <ArrowRight size={15} aria-hidden="true" />
-                  </button>
-                  {gate("ACCEPT_IN_PRINCIPLE", unit.id).note}
-                </>
-              )}
-            </article>
-          );
-        })}
+                    <div className={ph.cand} data-kind={verdict.eligible ? "yes" : "review"}>
+                      <Check size={16} aria-hidden="true" />
+                      <span className={ph.who}>
+                        <span className={ph.nm}>{unit.name}</span>
+                        <span className={ph.sub}>{candidateReason(verdict)}</span>
+                      </span>
+                      <span className={ph.lab}>
+                        <StatusGlyph tone={accepted ? "success" : "neutral"} size={9} />
+                        {accepted ? "Accepted" : "Asked"}
+                      </span>
+                    </div>
+                    {open && movement.stage === "destination_review" && (
+                      <>
+                        <button
+                          type="button"
+                          className={styles.secondary}
+                          aria-disabled={!verdict.eligible || !acceptGate.allowed ? "true" : undefined}
+                          aria-describedby={acceptGate.buttonProps["aria-describedby"]}
+                          onClick={(e) => {
+                            if (!verdict.eligible || !acceptGate.allowed) {
+                              ignoreUnavailableActivation(e);
+                              return;
+                            }
+                            setOverrideUnitId(unit.id);
+                            noteAttempt();
+                            dispatch({
+                              type: "ACCEPT_IN_PRINCIPLE",
+                              role: routeRole,
+                              now,
+                              movementId: movement.id,
+                              unitId: unit.id,
+                            });
+                          }}
+                        >
+                          Accept bed at {unit.name} <ArrowRight size={15} aria-hidden="true" />
+                        </button>
+                        {acceptGate.note}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {fitRows.length > 0 && (
+          <>
+            <p className={ph.ch}>
+              Fits, bed ready <span className={ph.k}>{fitRows.length}</span>
+            </p>
+            <div className={ph.cands} role="group" aria-label="Fits, bed ready">
+              {fitRows.map(askRow)}
+            </div>
+          </>
+        )}
+        {reviewRows.length > 0 && (
+          <>
+            <p className={ph.ch}>
+              Needs review <span className={ph.k}>{reviewRows.length}</span>
+            </p>
+            <div className={ph.cands} role="group" aria-label="Needs review">
+              {reviewShown.map(askRow)}
+            </div>
+            {reviewRows.length > reviewShown.length && (
+              <button type="button" className={ph.more} onClick={() => setShowAllReview(true)}>
+                Show {reviewRows.length - reviewShown.length} more to review
+              </button>
+            )}
+          </>
+        )}
+        <p className={ph.note}>
+          Fixed network order. Up to {referralCap} wards at once
+          {movement.referredUnitIds.length > 0 ? `, counting the ${movement.referredUnitIds.length} already asked` : ""}
+          .
+        </p>
       </div>
       {canRefer && needsGenderPlacement && (
         <div className={styles.cardBody}>
@@ -434,49 +464,22 @@ export function PatientTransitOperations({
           </label>
         </div>
       )}
-      {canRefer && overReferralCap && (
-        <div className={styles.cardBody} data-testid="referral-cap-warning">
-          <p className={styles.deckHint} role="status">
-            This asks {wardsAskedAfterSend} wards at once, more than the usual {configuration.parallelReferralCap}.
-            Choose a reason to go ahead.
-          </p>
-          <label>
-            Reason for asking more wards
-            <select value={capReason} onChange={(e) => setCapReason(e.target.value as ReferralCapReason | "")}>
-              <option value="">Choose reason</option>
-              {REFERRAL_CAP_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
       <div className={styles.cardFooter}>
-        <span>{selectedTargets.length} wards selected</span>
+        <span data-testid="ward-ask-count">
+          {selectedTargets.length} of {askSlots} chosen
+        </span>
         {selectedTargets.length === 0 ? (
           <span id={`${baseId}-refer-wards-disabled-guidance`} className="sr-only">
-            Select at least one ward above before sending a referral.
+            Tick at least one ward that fits before asking.
           </span>
         ) : null}
         <button
           type="button"
           className={styles.primary}
-          aria-disabled={
-            !canRefer ||
-            selectedTargets.length === 0 ||
-            (needsGenderPlacement && (!genderReason || !wardChecked)) ||
-            (overReferralCap && !capReason)
-              ? "true"
-              : undefined
-          }
+          aria-disabled={askButtonUnavailable ? "true" : undefined}
           aria-describedby={selectedTargets.length === 0 ? `${baseId}-refer-wards-disabled-guidance` : undefined}
           onClick={
-            !canRefer ||
-            selectedTargets.length === 0 ||
-            (needsGenderPlacement && (!genderReason || !wardChecked)) ||
-            (overReferralCap && !capReason)
+            askButtonUnavailable
               ? ignoreUnavailableActivation
               : () => {
                   setOverrideUnitIds(selectedTargets);
@@ -490,14 +493,17 @@ export function PatientTransitOperations({
                     ...(needsGenderPlacement && genderReason && wardChecked
                       ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                       : {}),
-                    ...(overReferralCap && capReason ? { overCapReason: capReason } : {}),
                   });
                   setSelected([]);
-                  setCapReason("");
                 }
           }
         >
-          Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
+          {askSlots === 0
+            ? `${referralCap} wards already asked`
+            : selectedTargets.length === 0
+              ? `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
+              : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
+          <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>
     </section>

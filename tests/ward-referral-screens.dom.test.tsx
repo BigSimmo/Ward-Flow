@@ -54,7 +54,6 @@ import {
   SYNTHETIC_TRAVEL_TIMES_NOTICE,
   travelBand,
   TRAVEL_BAND_LABELS,
-  TRAVEL_BANDS,
   unitTravelBand,
   type TravelBand,
 } from "@/components/ward-management/ward-distance";
@@ -79,21 +78,20 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { markBroomeForensicForThisFile } from "./helpers/ward-made-up-forensic-ward";
 /**
- * Phase 8, Task 4. The order the match view renders units in once they are grouped by travel band:
- * the fixed band order (`TRAVEL_BANDS`, then not-recorded), and INSIDE each band the site table's
- * own order — the property spec D10 turns on, that a row never moves because it accepts the
- * referral.
- *
- * Derived from `unitTravelBand` directly and NEVER from `groupCandidatesByTravelBand`. An
- * expectation computed by calling the very derivation the screen calls would move with it, so a
- * screen that grouped by something else entirely would still agree with its own expectation.
+ * D-77 (change 3, Josh 21 Oct 2026). The match view is one list on every width: three groups
+ * ("Fits, bed ready", "Fits, no bed now", "Needs review"), each a radiogroup of one row per ward.
+ * Spec D10's property now reads: inside each group the site table's own order holds, so a row never
+ * moves within its group because of anything but the group it is in. The expectation is computed
+ * from `allUnits()` directly, never from the derivation the screen calls.
  */
-function expectedGroupedUnitIds(referral: Referral): string[] {
-  const units = allUnits();
-  const bandsInOrder: (TravelBand | undefined)[] = [...TRAVEL_BANDS, undefined];
-  return bandsInOrder.flatMap((band) =>
-    units.filter((unit) => unitTravelBand(referral, unit) === band).map((unit) => unit.id),
-  );
+function expectNetworkOrderInsideEachGroup(groups: { name: string; ids: string[] }[]) {
+  const order = new Map(allUnits().map((unit, index) => [unit.id, index]));
+  for (const group of groups) {
+    const positions = group.ids.map((id) => order.get(id) ?? -1);
+    expect(positions, `"${group.name}" is not in the network's fixed order`).toEqual(
+      [...positions].sort((a, b) => a - b),
+    );
+  }
 }
 
 /**
@@ -114,37 +112,33 @@ function declineReasonLabelForTest(reason: ReferralDeclineReason | CommunityDecl
   );
 }
 
-/** Every unit id the match view actually rendered, in DOM order. Read with `querySelectorAll`
- *  rather than a role query on purpose: the band groups are `<details>`, and a role query would
- *  quietly return nothing for a shut group, turning a completeness assertion into a vacuous one. */
-function renderedUnitIds(list: HTMLElement): string[] {
-  return Array.from(list.querySelectorAll("li[data-testid]")).map((row) =>
-    (row.getAttribute("data-testid") ?? "").replace(/^ward-referral-match-row-/, ""),
+/** Opens "Show n more" so every ward is on the screen, then returns each group's unit ids in DOM
+ *  order. Read with `querySelectorAll` so a hidden row cannot make a completeness check vacuous. */
+function decisionGroups(panel: HTMLElement): { name: string; ids: string[] }[] {
+  const more = Array.from(panel.querySelectorAll("button")).find((button) =>
+    /^Show \d+ more with a bed ready$/.test(button.textContent ?? ""),
   );
+  if (more) fireEvent.click(more);
+  return Array.from(panel.querySelectorAll<HTMLElement>('[role="radiogroup"]')).map((group) => ({
+    name: group.getAttribute("aria-label") ?? "",
+    ids: Array.from(group.querySelectorAll('[data-testid^="ward-referral-match-phone-cand-"]')).map((row) =>
+      (row.getAttribute("data-testid") ?? "").replace(/^ward-referral-match-phone-cand-/, ""),
+    ),
+  }));
 }
 
-/** The accept controls the match view rendered, found without a role query for the same reason. */
-/**
- * ⚠️ SELECTED BY TEST ID, NOT BY LABEL TEXT, AND THE CHANGE OF METHOD IS THE POINT.
- *
- * This matched `/^Accept at /` on the button's own words. That worked only while an unsuitable
- * ward carried NO control at all — the owner's ruling that a clinician may accept anyway, with a
- * recorded reason, put a second button on exactly those rows, and any label beginning "Accept at"
- * would have been silently collected here as though the ward had accepted.
- *
- * The id names the unconditional accept control specifically, so this helper now says what it
- * always meant. It is narrower than the text match, not wider.
- */
-function acceptButtons(list: HTMLElement): HTMLButtonElement[] {
-  return Array.from(list.querySelectorAll<HTMLButtonElement>('button[data-testid^="ward-referral-match-accept-"]'));
+/** Every unit id the decision list rendered, in DOM order. */
+function renderedUnitIds(panel: HTMLElement): string[] {
+  return decisionGroups(panel).flatMap((group) => group.ids);
 }
 
-/** The seeded referral behind a board row, so a test can compute the band order for the very
- *  referral the screen is showing rather than for one it assumes matches. */
-function seededReferral(id: string): Referral {
-  const found = referrals.find((referral) => referral.id === id);
-  expect(found, `the seed no longer contains ${id} — this test can no longer prove anything`).toBeDefined();
-  return found!;
+/** The rows of wards that fit, which the one button accepts without a reason. */
+function fitRows(panel: HTMLElement): HTMLButtonElement[] {
+  return Array.from(
+    panel.querySelectorAll<HTMLButtonElement>(
+      'button[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]',
+    ),
+  );
 }
 
 /**
@@ -557,38 +551,27 @@ describe("ReferralBoard", () => {
       `0 of ${allUnits().length} units accept this referral right now.`,
     );
 
-    const list = screen.getByTestId("ward-referral-match-list");
-    // I1 (fix round C, F4): the phase's headline clinical-safety property — every unit renders in
-    // the network's own fixed order, and a row NEVER moves because it accepts the referral (spec
-    // D10: an ordering that looked like a recommendation would be one). `referralCandidates`'
-    // order preservation is well tested as a pure function; what this component RENDERS was not.
-    // A row count alone survives sorting every accepting unit to the top, because the count, the
-    // test ids, the reason strings and the uniqueness check are all unchanged by a reorder. This
-    // one assertion pins order, completeness and non-truncation together, and subsumes the row
-    // count it replaces.
-    //
-    // Phase 8, Task 4: the rows are now grouped by travel band, so the flat expectation became the
-    // BAND order with the site table's order preserved inside each band — the same three
-    // properties, restated for the layout that now renders them. `expectedGroupedUnitIds` is total
-    // over the network (every unit falls in exactly one band bucket), asserted here so a helper
-    // that silently dropped units could not make the comparison agree with itself.
-    const expected = expectedGroupedUnitIds(seededReferral("RF-001"));
-    expect(expected).toHaveLength(allUnits().length);
-    expect(renderedUnitIds(list)).toEqual(expected);
-    // ⚠️ NO UNCONDITIONAL ACCEPT CONTROL — which is what this line has always meant. It used to
-    // count EVERY button, which was the same number only while an unsuitable ward had no control
-    // whatsoever. Since the owner ruled that a clinician may accept anyway with a recorded reason,
-    // every one of these 23 rows carries an override control, and counting all buttons would now
-    // assert that the ruling had not been implemented.
-    expect(acceptButtons(list)).toHaveLength(0);
-    // And the other half of that ruling, asserted rather than assumed: not one of these wards is a
-    // dead end. Every row that cannot accept offers a way to accept anyway.
-    const overrideControls = list.querySelectorAll('button[data-testid^="ward-referral-match-override-accept-"]');
-    expect(
-      overrideControls,
-      "a ward that cannot take this referral offers nothing at all — the explanation without the " +
-        "decision, which is the defect the owner's ruling exists to close",
-    ).toHaveLength(allUnits().length);
+    const panel = screen.getByTestId("ward-referral-match-panel");
+    // I1 (fix round C, F4): every unit renders, none twice, and in the network's own fixed order
+    // inside its group. D-77: desktop now uses the phone's one list of radio rows.
+    const rendered = renderedUnitIds(panel);
+    expect(rendered).toHaveLength(allUnits().length);
+    expect([...rendered].sort()).toEqual(
+      allUnits()
+        .map((unit) => unit.id)
+        .sort(),
+    );
+    expectNetworkOrderInsideEachGroup(decisionGroups(panel));
+    // No ward fits, so no row can be accepted without a recorded reason.
+    expect(fitRows(panel)).toHaveLength(0);
+    // And not one of these wards is a dead end: every row names why it does not fit, and picking it
+    // turns the one button into Clinical override.
+    for (const id of rendered) {
+      const row = screen.getByTestId(`ward-referral-match-phone-cand-${id}`);
+      expect(row.textContent ?? "", `${id} gives no reason`).not.toMatch(/Fits$/);
+    }
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-cand-${rendered[0]}`));
+    expect(screen.getByTestId("ward-referral-match-phone-accept")).toHaveTextContent(/^Clinical override for /);
   });
 
   /**
@@ -608,29 +591,13 @@ describe("ReferralBoard", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
 
-    const list = screen.getByTestId("ward-referral-match-list");
-    const expected = expectedGroupedUnitIds(seededReferral("RF-005"));
-    expect(expected).toHaveLength(allUnits().length);
-    expect(renderedUnitIds(list)).toEqual(expected);
-    // The guard is only meaningful if some unit DOES accept — otherwise an accepting-first sort
-    // is a no-op and this test proves nothing, which is exactly how the RF-001 version failed.
-    expect(acceptButtons(list).length).toBeGreaterThan(1);
-    // Phase 8, Task 4: and only meaningful against the GROUPED layout if at least one band holds a
-    // mixture, since a sort inside a single-verdict band is a no-op there too.
-    const bandOfMixedVerdicts = [...TRAVEL_BANDS, "not_recorded"].find((band) => {
-      const group = screen.getByTestId(`ward-referral-match-band-group-${band}`);
-      const rows = Array.from(group.querySelectorAll("li[data-testid]"));
-      // Same correction as `acceptButtons` above: "has a button" stopped meaning "accepts" the
-      // moment unsuitable wards gained an override control.
-      const accepts = rows.filter(
-        (row) => row.querySelector('button[data-testid^="ward-referral-match-accept-"]') !== null,
-      );
-      return accepts.length > 0 && accepts.length < rows.length;
-    });
-    expect(
-      bandOfMixedVerdicts,
-      "no band holds both an accepting and a non-accepting unit — an accepting-first sort inside a band would be invisible",
-    ).toBeDefined();
+    const panel = screen.getByTestId("ward-referral-match-panel");
+    const groups = decisionGroups(panel);
+    expect(groups.flatMap((group) => group.ids)).toHaveLength(allUnits().length);
+    expectNetworkOrderInsideEachGroup(groups);
+    // Only meaningful if a group holds more than one ward, or a sort inside it is invisible.
+    expect(fitRows(panel).length).toBeGreaterThan(1);
+    expect(groups.some((group) => group.ids.length > 1)).toBe(true);
   });
 
   /**
@@ -657,16 +624,14 @@ describe("ReferralBoard", () => {
     function firstUnsuitableUnitId(): string {
       renderBoard();
       fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-001"));
-      const list = screen.getByTestId("ward-referral-match-list");
-      expect(
-        acceptButtons(list),
-        "a ward accepts RF-001, so the rows below are not the unsuitable ones this describes",
-      ).toHaveLength(0);
-      const overrides = Array.from(
-        list.querySelectorAll('button[data-testid^="ward-referral-match-override-accept-"]'),
-      );
-      expect(overrides.length, "no unsuitable ward is rendered, so nothing below is exercised").toBeGreaterThan(0);
-      return overrides[0].getAttribute("data-testid")!.replace("ward-referral-match-override-accept-", "");
+      const panel = screen.getByTestId("ward-referral-match-panel");
+      expect(fitRows(panel), "a ward accepts RF-001, so the rows below are not the unsuitable ones").toHaveLength(0);
+      const unitId = renderedUnitIds(panel)[0];
+      expect(unitId, "no unsuitable ward is rendered, so nothing below is exercised").toBeDefined();
+      // D-77: Clinical override sits behind the one button.
+      fireEvent.click(screen.getByTestId(`ward-referral-match-phone-cand-${unitId}`));
+      fireEvent.click(screen.getByTestId("ward-referral-match-phone-accept"));
+      return unitId!;
     }
 
     it("shows the reason AND a way to act on it, never one without the other", () => {
@@ -719,17 +684,15 @@ describe("ReferralBoard", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
 
-    const list = screen.getByTestId("ward-referral-match-list");
-    const acceptControls = acceptButtons(list);
-    // I2 (fix round C, F5): RF-005 has FOUR accepting units, so `/^Accepted at /` alone matched
-    // whichever ward the system happened to record. Making `handleAccept` ignore its `unitId`
-    // argument and dispatch a different accepting unit kept the old assertion green while the
-    // coordinator pressed "Accept at RPH Older Adult" and the record said Bentley. The clicked
-    // button's own label is captured here so the decided text has to name THAT unit.
-    expect(acceptControls.length).toBeGreaterThan(1);
-    const clickedUnitName = acceptControls[0].textContent?.replace(/^Accept at /, "") ?? "";
+    const panel = screen.getByTestId("ward-referral-match-panel");
+    const fits = fitRows(panel);
+    // I2 (fix round C, F5): RF-005 has more than one accepting unit, so the decided text has to name
+    // the ward actually picked, read from that row's own name.
+    expect(fits.length).toBeGreaterThan(1);
+    const clickedUnitName = fits[0].querySelector("span span")?.textContent ?? "";
     expect(clickedUnitName).not.toBe("");
-    fireEvent.click(acceptControls[0]);
+    fireEvent.click(fits[0]);
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-accept"));
 
     expect(screen.queryByTestId("ward-referral-board-select-RF-005")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-referral-board-decided-row-RF-005")).toBeInTheDocument();
@@ -859,13 +822,15 @@ describe("ReferralBoard", () => {
   it("will not record a decline until the ward states its reason, and says why", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
+    // D-77: Decline opens the reasons as radio rows, on desktop as on the phone.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
 
-    const select = screen.getByTestId("ward-referral-match-decline-reason") as HTMLSelectElement;
+    const reasons = screen.getAllByTestId(/^ward-referral-match-phone-decline-/);
     expect(
-      select.value,
+      reasons.filter((reason) => reason.getAttribute("aria-checked") === "true"),
       "a decline reason is pre-selected, so a ward that never touches this control is recorded as " +
         "having given a clinical reason it did not give",
-    ).toBe("");
+    ).toHaveLength(0);
 
     const button = screen.getByTestId("ward-referral-match-decline");
     expect(button.getAttribute("aria-disabled"), "the referral can be declined with no reason stated").toBe("true");
@@ -897,7 +862,7 @@ describe("ReferralBoard", () => {
     ).not.toBeInTheDocument();
 
     // And it becomes available the moment the ward states one.
-    fireEvent.change(select, { target: { value: "belongs_to_another_service" } });
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-decline-belongs_to_another_service"));
     expect(
       screen.getByTestId("ward-referral-match-decline").getAttribute("aria-disabled"),
       "a reason has been stated and the control is still unavailable, so a ward cannot decline at all",
@@ -908,9 +873,8 @@ describe("ReferralBoard", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
 
-    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), {
-      target: { value: "belongs_to_another_service" },
-    });
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-decline-belongs_to_another_service"));
     fireEvent.click(screen.getByTestId("ward-referral-match-decline"));
 
     expect(screen.queryByTestId("ward-referral-board-select-RF-005")).not.toBeInTheDocument();
@@ -939,9 +903,8 @@ describe("ReferralBoard", () => {
   it("⚠️ shows no raw addressing-state token anywhere in the match panel — the state word has one home", () => {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
-    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), {
-      target: { value: "belongs_to_another_service" },
-    });
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-decline-belongs_to_another_service"));
     fireEvent.click(screen.getByTestId("ward-referral-match-decline"));
 
     const panel = screen.getByTestId("ward-referral-match-panel");
@@ -1760,7 +1723,10 @@ describe("ReferralMatchView — reducer refusal surfaces visibly, never swallowe
     );
     fireEvent.click(screen.getByTestId("raise-forensic-test-referral"));
 
-    fireEvent.click(screen.getByTestId("ward-referral-match-accept-brm-adult-secure"));
+    // D-77: pick the ward in the one list (opening "Show n more" first), then the one button.
+    decisionGroups(screen.getByTestId("ward-referral-match-panel"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-cand-brm-adult-secure"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-accept"));
 
     const rejection = screen.getByTestId("ward-referral-match-rejection");
     expect(rejection).toBeInTheDocument();
@@ -1821,15 +1787,6 @@ describe("ReferralMatchView — RB7 correction notes (build plan item 27, 2026-0
  * exists, so on the day the placeholders are replaced with checked values this file either stays
  * green or fails honestly.
  */
-const BAND_GROUP_KEYS: string[] = [...TRAVEL_BANDS, "not_recorded"];
-
-/** Written out as a literal on purpose — see `tests/ward-travel-grouping.test.ts` for the full
- *  reasoning. `BAND_GROUP_KEYS` is derived from `TRAVEL_BANDS`, so comparing its length against
- *  itself could not fail; pinning the count independently makes adding or removing a band a
- *  decision somebody takes in a test. It counts groups on a screen and is not a clinical, legal or
- *  measured figure. */
-const EXPECTED_BAND_GROUP_COUNT = 5;
-
 function bandReferral(overrides: Partial<Referral> = {}): Referral {
   return {
     id: "RF-TEST-BANDS",
@@ -1870,135 +1827,7 @@ function regionWhere(predicate: (bands: (TravelBand | undefined)[]) => boolean):
   return HOME_REGIONS.find((homeRegion) => predicate(bandsAcrossNetwork(homeRegion))) ?? null;
 }
 
-function bandGroup(band: string): HTMLElement {
-  return screen.getByTestId(`ward-referral-match-band-group-${band}`);
-}
-
-/** The heading a coordinator reads for a group key, from the exported labels — never a second
- *  spelling written out in this file. */
-function bandGroupHeading(band: string): string {
-  return band === "not_recorded" ? NOT_RECORDED_LABEL : TRAVEL_BAND_LABELS[band as TravelBand];
-}
-
-describe("ReferralMatchView — travel bands are grouped, and every group is on the screen", () => {
-  it("renders all five band headings, including the ones no unit sits in", () => {
-    const emptyBandOf = (bands: (TravelBand | undefined)[]) => TRAVEL_BANDS.find((band) => !bands.includes(band));
-    const homeRegion = regionWhere((bands) => emptyBandOf(bands) !== undefined);
-    expect(
-      homeRegion,
-      "no home region in the fixture leaves a band empty — this test can no longer prove empty groups render",
-    ).not.toBeNull();
-    const emptyBand = emptyBandOf(bandsAcrossNetwork(homeRegion!))!;
-
-    renderMatch(bandReferral({ homeRegion: homeRegion! }), allUnits());
-
-    // Every group, in the grouping's own order, present on the screen.
-    expect(BAND_GROUP_KEYS).toHaveLength(EXPECTED_BAND_GROUP_COUNT);
-    const list = screen.getByTestId("ward-referral-match-list");
-    const renderedGroups = Array.from(list.querySelectorAll("[data-testid^='ward-referral-match-band-group-']")).map(
-      (group) => (group.getAttribute("data-testid") ?? "").replace(/^ward-referral-match-band-group-/, ""),
-    );
-    expect(renderedGroups).toEqual(BAND_GROUP_KEYS);
-
-    // Each heading is the exported label, never a second spelling written here.
-    for (const band of TRAVEL_BANDS) {
-      expect(bandGroup(band)).toHaveTextContent(TRAVEL_BAND_LABELS[band]);
-    }
-    expect(bandGroup("not_recorded")).toHaveTextContent(NOT_RECORDED_LABEL);
-
-    // The band no unit in the whole network sits in is a heading plus a plain line — never an
-    // omitted section. "There is nothing available within an hour" is the answer a coordinator
-    // came for, and a missing heading cannot give it; it reads as a rendering fault instead.
-    const empty = bandGroup(emptyBand);
-    expect(empty).toBeInTheDocument();
-    expect(within(empty).getByTestId(`ward-referral-match-band-empty-${emptyBand}`)).toHaveTextContent(
-      "No unit in this band.",
-    );
-    expect(empty.querySelectorAll("li")).toHaveLength(0);
-  });
-
-  it("carries both counts on every heading — shut, and for an empty group", () => {
-    const emptyBandOf = (bands: (TravelBand | undefined)[]) => TRAVEL_BANDS.find((band) => !bands.includes(band));
-    const homeRegion = regionWhere((bands) => emptyBandOf(bands) !== undefined);
-    expect(homeRegion, "no home region leaves a band empty — the zero-count case is untestable").not.toBeNull();
-    const emptyBand = emptyBandOf(bandsAcrossNetwork(homeRegion!))!;
-
-    // The jsdom setup's default matchMedia stub reports no match, so the groups mount SHUT — the
-    // phone default. This is the binding condition on collapsing at all: the heading and both
-    // counts render whether the group is open or shut, including for an empty group.
-    renderMatch(bandReferral({ homeRegion: homeRegion! }), allUnits());
-    for (const group of BAND_GROUP_KEYS) {
-      expect(bandGroup(group)).not.toHaveAttribute("open");
-    }
-
-    expect(screen.getByTestId(`ward-referral-match-band-counts-${emptyBand}`)).toHaveTextContent(
-      "0 units in this band · 0 accept this referral",
-    );
-
-    // The five headings between them account for the whole network — a count that disagreed with
-    // the rows beneath it, or a group quietly counting a narrowed list, breaks this.
-    const total = BAND_GROUP_KEYS.reduce((running, band) => {
-      const text = screen.getByTestId(`ward-referral-match-band-counts-${band}`).textContent ?? "";
-      const units = Number(/^(\d+) units? in this band/.exec(text)?.[1]);
-      expect(units, `heading for ${band} does not state a unit count: ${text}`).not.toBeNaN();
-      return running + units;
-    }, 0);
-    expect(total).toBe(allUnits().length);
-  });
-
-  it("puts the heading and both counts INSIDE the summary, the only part a shut group paints", () => {
-    // THE assertion the binding condition rests on, and the one that was missing. A closed
-    // `<details>` paints its `<summary>` and nothing else — but jsdom does not model that, so every
-    // other test in this file proves only that the counts are in the DOCUMENT. Move the counts span
-    // one line down, below `</summary>`, and all of them stay green while a coordinator on a phone
-    // sees five bare bars with no numbers at all: exactly the outcome the metro/rural toggle was
-    // declined to prevent. Containment in the summary is the structural fact that rules it out, and
-    // it is checkable where visibility is not.
-    const emptyBandOf = (bands: (TravelBand | undefined)[]) => TRAVEL_BANDS.find((band) => !bands.includes(band));
-    const homeRegion = regionWhere((bands) => emptyBandOf(bands) !== undefined);
-    expect(homeRegion, "no home region leaves a band empty — the empty-group case is untestable").not.toBeNull();
-    const emptyBand = emptyBandOf(bandsAcrossNetwork(homeRegion!))!;
-
-    renderMatch(bandReferral({ homeRegion: homeRegion! }), allUnits());
-
-    for (const band of BAND_GROUP_KEYS) {
-      const group = bandGroup(band);
-      expect(group).not.toHaveAttribute("open");
-      const summary = group.querySelector("summary");
-      expect(summary, `band group ${band} renders no summary — its heading would sit inside the fold`).not.toBeNull();
-      // The heading itself.
-      expect(summary!.textContent ?? "").toContain(bandGroupHeading(band));
-      // And BOTH counts, as an element genuinely contained by the summary — not merely somewhere
-      // inside the details.
-      const counts = screen.getByTestId(`ward-referral-match-band-counts-${band}`);
-      expect(summary).toContainElement(counts);
-      expect(counts.textContent ?? "").toContain("in this band");
-      expect(counts.textContent ?? "").toContain("this referral");
-    }
-
-    // Including the empty group, which is the case a coordinator most needs answered without
-    // opening anything: "there is nothing available within an hour".
-    const emptySummary = bandGroup(emptyBand).querySelector("summary");
-    expect(emptySummary!.textContent ?? "").toContain("0 units in this band");
-    expect(emptySummary!.textContent ?? "").toContain("0 accept this referral");
-
-    // No heading may ever assert temporality: "right now" is what made the earlier global
-    // accepting-count line an operational claim, and a band heading must never carry it.
-    for (const band of BAND_GROUP_KEYS) {
-      expect(bandGroup(band).querySelector("summary")!.textContent ?? "").not.toMatch(/right now/i);
-    }
-  });
-
-  it("opens the groups at desktop width and keeps every heading and count in place", () => {
-    installMatchMediaStub(true);
-    renderMatch(bandReferral(), allUnits());
-
-    for (const group of BAND_GROUP_KEYS) {
-      expect(bandGroup(group)).toHaveAttribute("open");
-      expect(screen.getByTestId(`ward-referral-match-band-counts-${group}`)).toBeInTheDocument();
-    }
-  });
-
+describe("ReferralMatchView — every ward names its travel band, and every ward is on the screen", () => {
   it("names an unrecorded band in words on the row itself, never as a blank", () => {
     // A blank cell in a distance column is read as "close", which is the one reading an unrecorded
     // pair must never produce.
@@ -2015,20 +1844,24 @@ describe("ReferralMatchView — travel bands are grouped, and every group is on 
 
     const unbanded = allUnits().filter((unit) => unitTravelBand(subject, unit) === undefined);
     expect(unbanded.length).toBeGreaterThan(0);
-    const notRecordedGroup = bandGroup("not_recorded");
+    decisionGroups(screen.getByTestId("ward-referral-match-panel"));
+    // D-77: each row's second line opens with its band, in words.
+    const bandLine = (unitId: string) =>
+      (
+        screen.getByTestId(`ward-referral-match-phone-cand-${unitId}`).querySelector("span span + span")?.textContent ??
+        ""
+      ).split(" · ")[0];
     for (const unit of unbanded) {
-      const band = screen.getByTestId(`ward-referral-match-band-${unit.id}`);
       // The exact words, not merely "some text" — an empty string, a dash or a space would pass a
       // presence check while reading as a blank cell.
-      expect(band.textContent).toBe(NOT_RECORDED_LABEL);
-      expect(notRecordedGroup).toContainElement(band);
+      expect(bandLine(unit.id)).toBe(NOT_RECORDED_LABEL);
     }
 
     // And every banded unit carries its own band, so "not recorded" is never the screen's default.
     for (const unit of allUnits()) {
       const recorded = unitTravelBand(subject, unit);
       if (recorded === undefined) continue;
-      expect(screen.getByTestId(`ward-referral-match-band-${unit.id}`).textContent).toBe(TRAVEL_BAND_LABELS[recorded]);
+      expect(bandLine(unit.id)).toBe(TRAVEL_BAND_LABELS[recorded]);
     }
   });
 
@@ -2068,7 +1901,7 @@ describe("ReferralMatchView — travel bands are grouped, and every group is on 
     // A band is rendered on this screen, so the sentence must be on it — and exactly once, so a
     // second copy per group cannot creep in unnoticed.
     const panel = screen.getByTestId("ward-referral-match-panel");
-    expect(screen.getAllByTestId(/^ward-referral-match-band-group-/)).toHaveLength(EXPECTED_BAND_GROUP_COUNT);
+    expect(renderedUnitIds(panel).length).toBeGreaterThan(0);
     const occurrences = (panel.textContent ?? "").split(SYNTHETIC_TRAVEL_TIMES_NOTICE).length - 1;
     expect(occurrences).toBe(1);
   });
@@ -2081,7 +1914,7 @@ describe("ReferralMatchView — travel bands are grouped, and every group is on 
 
     const banner = screen.getByTestId("ward-referral-match-structural-gap");
     const notice = screen.getByTestId("ward-referral-match-synthetic-notice");
-    const firstGroup = bandGroup(BAND_GROUP_KEYS[0]);
+    const firstGroup = screen.getAllByRole("radiogroup")[0]!;
     const precedes = (first: Element, second: Element) =>
       Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
     expect(precedes(banner, notice)).toBe(true);
@@ -2118,10 +1951,9 @@ describe("ReferralMatchView — travel bands are grouped, and every group is on 
     ).not.toMatch(comparative);
     expect(panel.textContent ?? "").not.toMatch(comparative);
 
-    // And named individually, so no group heading, count, band label or the local-bed offer can
-    // ever carry one.
-    for (const band of BAND_GROUP_KEYS) {
-      expect(bandGroup(band).textContent ?? "").not.toMatch(comparative);
+    // And named individually, so no group, row, band label or the local-bed offer can ever carry one.
+    for (const group of screen.getAllByRole("radiogroup")) {
+      expect(group.textContent ?? "").not.toMatch(comparative);
     }
     expect(screen.getByTestId("ward-referral-match-synthetic-notice").textContent ?? "").not.toMatch(comparative);
     expect(screen.getByTestId("ward-referral-match-local-bed").textContent ?? "").not.toMatch(comparative);
@@ -2141,13 +1973,13 @@ describe("ReferralMatchView — travel bands are grouped, and every group is on 
     const subject = bandReferral();
     renderMatch(subject, units);
 
-    const list = screen.getByTestId("ward-referral-match-list");
-    const rendered = renderedUnitIds(list);
+    const panel = screen.getByTestId("ward-referral-match-panel");
+    const rendered = renderedUnitIds(panel);
     expect(rendered).toHaveLength(units.length);
     expect(new Set(rendered).size).toBe(units.length);
     expect([...rendered].sort()).toEqual(units.map((unit) => unit.id).sort());
-    // And in the grouped order, with the site table's order preserved inside each band.
-    expect(rendered).toEqual(expectedGroupedUnitIds(subject));
+    // And with the site table's order preserved inside each group.
+    expectNetworkOrderInsideEachGroup(decisionGroups(panel));
   });
 });
 

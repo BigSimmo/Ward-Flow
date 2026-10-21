@@ -307,9 +307,9 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       owner: "Bed coordinator",
       tone: pending === 0 ? "danger" : "warning",
       value: noneAsked ? "No ward asked" : pending === 0 ? "None found" : `${pending} awaiting answer`,
-      sub: noneAsked ? "Refer to fitting wards" : `${declined} declined`,
+      sub: noneAsked ? "Ask wards that fit" : `${declined} declined`,
       time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
-      action: { kind: "button", label: noneAsked ? "Choose wards" : "Open shortlist", onClick: ctx.onOpenPlacement },
+      action: { kind: "button", label: noneAsked ? "Ask wards" : "Ask more wards", onClick: ctx.onOpenPlacement },
     };
     return withMeter({
       tone: "danger",

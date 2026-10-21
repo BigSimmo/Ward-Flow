@@ -10,99 +10,12 @@ import {
   type GenderPlacementReason,
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  candidateAccepts,
-  matchReason,
-  TRAVEL_BAND_GROUP_EMPTY_SENTENCE,
-  travelBandGroupCountsSentence,
-  travelBandGroupLabel,
-  type ReferralCandidate,
-  type TravelBandGroup,
-  type TravelBandGroupCounts,
-} from "@/components/ward-management/ward-referrals";
+import { candidateAccepts, matchReason, type ReferralCandidate } from "@/components/ward-management/ward-referrals";
 import { checkedGates, gateMark } from "@/components/ward-management/ward-eligibility";
 import styles from "./referrals.module.css";
 import { GATE_LABELS, OVERRIDE_REASON_UNCHOSEN } from "./referral-match-model";
 
-/* The match view's travel-band groups and their rows, moved unchanged from `referral-match.tsx`. */
-
-/**
- * One band group: its heading, its two counts, and the rows in it.
- *
- * `<details>`/`<summary>` rather than a hand-built disclosure, deliberately. The summary — heading
- * and BOTH counts — is rendered whether the group is open or shut, and it is rendered for an empty
- * group exactly as for a populated one, which is the binding condition the owner attached to
- * collapsing at all. Nothing is omitted, nothing is reordered, and the open/shut state depends only
- * on viewport width: never on which band this is, and never on either count. Making an empty group
- * non-collapsible would be exactly that forbidden dependency, so every group behaves the same.
- *
- * The band is taken from the GROUP this row sits in rather than looked up again per row. A band
- * looked up in two places is a band that can disagree with itself, and here the heading and the
- * rows beneath it would be the two places.
- */
-export function BandGroup({
-  group,
-  counts,
-  openByDefault,
-  onAccept,
-  needsGenderPlacement,
-}: {
-  group: TravelBandGroup;
-  counts: TravelBandGroupCounts;
-  openByDefault: boolean;
-  onAccept: (
-    unitId: string,
-    overrideReason?: OverrideReason,
-    genderPlacementReason?: GenderPlacementReason,
-    genderPlacementChecked?: true,
-  ) => void;
-  needsGenderPlacement: (unitId: string) => boolean;
-}) {
-  const [open, setOpen] = useState(openByDefault);
-
-  const label = travelBandGroupLabel(group.band);
-  const hasAvailable = counts.accepting > 0;
-
-  return (
-    <details
-      className={hasAvailable ? `${styles.bandGroup} ${styles.bandGroupHasAvailable}` : styles.bandGroup}
-      data-testid={`ward-referral-match-band-group-${group.band}`}
-      open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary className={styles.bandSummary}>
-        <div className={styles.bandSummaryLead}>
-          <span className={styles.bandLabel}>{label}</span>
-          {hasAvailable ? (
-            <span className={styles.bandAvailableBadge}>
-              {counts.accepting} {counts.accepting === 1 ? "bed ready" : "beds ready"}
-            </span>
-          ) : null}
-        </div>
-        <span className={styles.bandCounts} data-testid={`ward-referral-match-band-counts-${group.band}`}>
-          {travelBandGroupCountsSentence(counts)}
-        </span>
-      </summary>
-      {group.candidates.length === 0 ? (
-        <p className={styles.bandEmpty} data-testid={`ward-referral-match-band-empty-${group.band}`}>
-          {TRAVEL_BAND_GROUP_EMPTY_SENTENCE}
-        </p>
-      ) : (
-        <ul className={styles.bandRows}>
-          {group.candidates.map((candidate) => (
-            <MatchRow
-              key={candidate.unit.id}
-              candidate={candidate}
-              bandText={label}
-              onAccept={onAccept}
-              needsGenderPlacement={needsGenderPlacement(candidate.unit.id)}
-            />
-          ))}
-        </ul>
-      )}
-    </details>
-  );
-}
+/* The match view's override and gender placement form for one picked ward, moved from `referral-match.tsx`. */
 
 export function MatchRow({
   candidate,

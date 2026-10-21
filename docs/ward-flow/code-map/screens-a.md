@@ -33,8 +33,8 @@ when necessary, and the trigger itself has a minimum 48px target.
 
 ## Handover improvements — 17 October 2026
 
-- `referrals/referral-match-tiers.tsx` renders the turnaround preference control; its parent
-  derives live CLD/departure eligibility and dispatches the referral or movement event. A clearing
+- `referrals/referral-match.tsx` renders the turnaround preference control (it moved there from
+  the retired `referral-match-tiers.tsx` under D-77) and derives live CLD/departure eligibility and dispatches the referral or movement event. A clearing
   locked bed may appear under capacity pending without enabling immediate placement. The queue's
   badges recheck the recorded source, including before a waiting referral has a movement.
 - `since-last-look-pill.tsx` and its CSS module mount independent Ward/ED 15-minute review sheets
@@ -357,7 +357,9 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   list 2.5) with no change to markup: `use-referral-match-state.tsx` (state and withdraw handling),
   `referral-match-model.ts`, `referral-history-corrections.tsx`, `referral-match-rows.tsx`,
   `referral-match-not-a-bed.tsx` and `referral-match-tiers.tsx`. The accept, decline, local bed and
-  community withdraw handlers stay in `referral-match.tsx`.
+  community withdraw handlers stay in `referral-match.tsx`. D-77 (21 Oct 2026) gave desktop the
+  phone decision list (radio rows grouped by fit, one Accept button, Clinical override behind it)
+  and retired `referral-match-tiers.tsx` with the travel-band groups.
 - **`referral-referrer.ts`** (42 lines) — `referralReferrerName`, `REFERRER_NOT_RECORDED` ("Not
   recorded" — D-12 ruling: never a personal name, never a source type standing in for one).
 - **`referral-sending-team.ts`** (60 lines) — `sendingTeamFragment`, `withSendingTeam`. One-place

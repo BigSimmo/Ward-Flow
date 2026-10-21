@@ -284,8 +284,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                 acceptingUnit
                   ? `${acceptingUnit.name} accepted · bed hold and placement`
                   : liveMovement.referredUnitIds.length > 0
-                    ? `${liveMovement.referredUnitIds.length} wards asked · shortlist`
-                    : "Shortlist eligible wards · none asked"
+                    ? `${liveMovement.referredUnitIds.length} wards asked`
+                    : "Ask wards that fit · none asked"
               }
               onOpen={() => setNowSheet("destination")}
               testId="ward-patient-destination-row"

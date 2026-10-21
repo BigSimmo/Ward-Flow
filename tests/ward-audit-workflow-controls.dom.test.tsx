@@ -287,7 +287,10 @@ describe("referral evidence is visible and honestly qualified", () => {
     render(
       <ReferralMatchView referral={referral} units={[stale]} now={NOW_ANCHOR} dispatch={() => {}} rejections={[]} />,
     );
-    expect(screen.getByText(/1 capacity unresolved/)).toBeInTheDocument();
+    // D-77: the stale ward sits in the one list's "Fits, no bed now" group, named on its own row.
+    const unresolved = screen.getByRole("radiogroup", { name: "Fits, no bed now" });
+    expect(within(unresolved).getAllByRole("radio")).toHaveLength(1);
+    expect(unresolved).toHaveTextContent("Count not current");
     expect(document.body).not.toHaveTextContent("blocked, no bed");
   });
 });

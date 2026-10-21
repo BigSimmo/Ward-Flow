@@ -40,16 +40,19 @@ function setup() {
   fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
 }
 function referAndAccept() {
-  const shortlist = screen.getByRole("region", { name: "Network ward shortlist" });
-  const candidate = within(shortlist).getAllByRole("article")[0];
-  fireEvent.click(within(candidate).getByRole("checkbox"));
-  const refer = screen.getByRole("button", { name: "Refer to selected wards" });
+  const shortlist = screen.getByRole("region", { name: "Ask wards" });
+  fireEvent.click(
+    within(shortlist)
+      .getAllByRole("checkbox")
+      .find((box) => !box.hasAttribute("disabled"))!,
+  );
+  const refer = screen.getByRole("button", { name: "Ask 1 ward" });
   expect(refer).toHaveAttribute("aria-disabled", "true");
   fireEvent.change(screen.getByLabelText("Ward placement reason"), { target: { value: GENDER_PLACEMENT_REASONS[0] } });
   fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
   fireEvent.click(refer);
   expect(screen.getByTestId("live-stage")).toHaveTextContent("destination_review");
-  fireEvent.click(screen.getByRole("button", { name: "Accept bed" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Accept bed at / }));
   expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
   expect(screen.getByRole("heading", { name: "Placement & dispatch deck" })).toHaveFocus();
 }
@@ -136,8 +139,8 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
     referAndAccept();
     // Once a ward has accepted, the sheet names it and no longer lists wards to refer to.
-    expect(screen.queryByRole("region", { name: "Network ward shortlist" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Refer to selected wards" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Ask wards" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Ask \d+ wards?|Pick up to)/ })).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
     expect(screen.getAllByText("Bed held").length).toBeGreaterThan(0);
@@ -158,13 +161,17 @@ describe("unified Patient Now clinical flight deck", () => {
   });
   it("changes the live indicator to inactive when the bed search is withdrawn", () => {
     setup();
-    const shortlist = screen.getByRole("region", { name: "Network ward shortlist" });
-    fireEvent.click(within(shortlist).getAllByRole("checkbox")[0]);
+    const shortlist = screen.getByRole("region", { name: "Ask wards" });
+    fireEvent.click(
+      within(shortlist)
+        .getAllByRole("checkbox")
+        .find((box) => !box.hasAttribute("disabled"))!,
+    );
     fireEvent.change(screen.getByLabelText("Ward placement reason"), {
       target: { value: GENDER_PLACEMENT_REASONS[0] },
     });
     fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
-    fireEvent.click(screen.getByRole("button", { name: "Refer to selected wards" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ask 1 ward" }));
     fireEvent.click(screen.getByText("Withdraw referral", { selector: "summary" }));
     fireEvent.click(screen.getByLabelText("Confirm this bed search is no longer required"));
     fireEvent.click(screen.getByRole("button", { name: /^Withdraw referral$/ }));
@@ -196,7 +203,7 @@ describe("unified Patient Now clinical flight deck", () => {
       searchParams: Promise.resolve({ taskAction: "refer" }),
     });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
-    expect(screen.getByRole("region", { name: "Network ward shortlist" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Ask wards" })).toBeVisible();
   });
   it("opens coordination contacts directly from a task contact action", async () => {
     const { default: Page } = await import("@/app/ward-flow/movements/[movementId]/page");
