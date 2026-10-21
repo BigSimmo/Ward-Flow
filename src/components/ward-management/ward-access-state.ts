@@ -14,9 +14,16 @@ import { isPatientRegistrationScope, registrationIsInScope } from "./ward-patien
  * Pure and browser free: the backend bundles this module through `build-engine.mjs`, so the server
  * and the screens use one rule.
  */
-import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/alerts/ward-broadcast-model";
+import {
+  BROADCAST_TARGET_SCOPES,
+  COORDINATOR_DESK_ACKNOWLEDGER_ID,
+  broadcastKind,
+  pullNowWards,
+  type BroadcastTargetScope,
+} from "@/components/ward-management/alerts/ward-broadcast-model";
+import { directiveDesks, wardsInBroadcastScope } from "./alerts/global-alert-view";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
-import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementSourceAdmission, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
@@ -24,6 +31,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reduce
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
   bookingPersonShown,
+  communityTeamKey,
   countsOnlyBedRelease,
   countsOnlyLeaveBed,
   scopeBroadcastAlerts,
@@ -39,6 +47,7 @@ import {
   type PlaceLookup,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
+import { siteByCode } from "./ward-sites";
 
 type Context = {
   readonly state: WardFlowState;
@@ -103,7 +112,9 @@ function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "a
 /** Is this team id or name the community desk's own team. */
 function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boolean {
   const scope = access.scope;
-  return scope.kind === "team" && (teamId === scope.teamName || teamId === places.teamSlug(scope.teamName));
+  if (scope.kind !== "team") return false;
+  const ownTeam = communityTeamKey(scope.teamName);
+  return ownTeam !== "" && (communityTeamKey(teamId) === ownTeam || teamId === places.teamSlug(scope.teamName));
 }
 
 /**
@@ -476,6 +487,92 @@ export function commandScopeRefusal(
   if (accessIsWholeNetwork(access)) return null;
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
+  // Configuration is one workspace-wide object, even when no command field names a place.
+  if (command.type === "SET_CONFIGURATION") return "Only the statewide coordinator may change global settings.";
+  const scope = access.scope;
+  const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
+  // Resolve the recipients from the whole workspace before projecting it for the caller. Seeing
+  // one part of an alert permits a local answer, not extending or ending it for every recipient.
+  if (command.type === "DISPATCH_BROADCAST_ALERT") {
+    const targetScope = command.targetScope as BroadcastTargetScope;
+    if (!BROADCAST_TARGET_SCOPES.includes(targetScope)) return outside;
+    const recipients =
+      command.kind === "bed_call"
+        ? wardsInBroadcastScope(state.units, targetScope)
+        : directiveDesks({ targetScope } as Parameters<typeof directiveDesks>[0], state.units);
+    if (recipients.some((id) => !placeIn(id))) return outside;
+  }
+  if (command.type === "STAND_DOWN_BROADCAST_ALERT" || command.type === "EXTEND_BROADCAST_ALERT") {
+    const alert = state.broadcastAlerts.find((candidate) => candidate.id === command.alertId);
+    if (alert) {
+      const recipients =
+        broadcastKind(alert) === "directive"
+          ? directiveDesks(alert, state.units)
+          : (alert.targetUnitIds ?? wardsInBroadcastScope(state.units, alert.targetScope));
+      if (recipients.some((id) => !placeIn(id))) return outside;
+    }
+  }
+  if (command.type === "RAISE_PULL_NOW") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (
+      movement &&
+      pullNowWards(movement, (id) => state.units.some((unit) => unit.id === id)).some((id) => !placeIn(id))
+    )
+      return outside;
+  }
+  // Origin and sender identity come from membership plus the stored record, never the presence
+  // of an optional acting-place claim in a client command.
+  if (
+    command.type === "RECEIVE_REFERRAL" &&
+    (access.role === "ed" || (access.role === "coordinator" && command.source === "ed_medical"))
+  ) {
+    const origin =
+      typeof command.originSiteCode === "string"
+        ? siteByCode(command.originSiteCode)?.emergencyDepartment?.id
+        : undefined;
+    if (!origin || !edInScope(scope, origin, places)) return outside;
+  }
+  if (command.type === "ADD_REFERRAL_CORRECTION" || command.type === "RECORD_REFERRER_WITHDRAWAL") {
+    const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
+    if (referral && access.role !== "coordinator") {
+      const ownsSender =
+        access.role === "ed"
+          ? referral.source === "ed_medical" &&
+            scope.kind === "ed" &&
+            places.edSiteCode(scope.edId) === referral.originSiteCode
+          : access.role === "community"
+            ? referral.source !== "psychiatric_ward" &&
+              referral.source !== "ed_medical" &&
+              referral.sendingTeamName !== undefined &&
+              teamIsOwn(access, referral.sendingTeamName, places)
+            : access.role === "ward" &&
+              referral.source === "psychiatric_ward" &&
+              referral.originUnitId !== undefined &&
+              unitInScope(scope, referral.originUnitId, places);
+      if (!ownsSender) return outside;
+    }
+  }
+  if (command.type === "RECORD_TRANSPORT_NEED") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (movement && access.role === "ward") {
+      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      const sendingWard =
+        referral?.originUnitId ??
+        movementSourceAdmission(state, movement)?.unitId ??
+        (movement as { originUnitId?: string }).originUnitId;
+      if (!sendingWard || !unitInScope(scope, sendingWard, places)) return outside;
+    }
+    if (movement && access.role === "ed" && !edInScope(scope, movement.originEdId, places)) return outside;
+    if (movement && access.role === "community") {
+      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      if (
+        referral?.source !== "community" ||
+        referral.sendingTeamName === undefined ||
+        !teamIsOwn(access, referral.sendingTeamName, places)
+      )
+        return outside;
+    }
+  }
   if (
     command.type === "ADD_PATIENT" &&
     command.registrationScope !== undefined &&
@@ -520,8 +617,6 @@ export function commandScopeRefusal(
     const subject = category ? text.slice(category.idPrefix.length) : undefined;
     if (subject !== undefined && all.has(subject) && !writable.has(subject)) return outside;
   }
-  const scope = access.scope;
-  const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
   // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
   const actsFrom = (id: string) =>
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");

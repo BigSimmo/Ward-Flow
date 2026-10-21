@@ -99,7 +99,77 @@ test(
     }
   },
 );
-
+test(
+  "real PostgreSQL: concurrent record openings share the account limit and suppress duplicates",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 12 });
+    const workspaceId = randomUUID();
+    const at = new Date("2026-10-20T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+    const view = {
+      version: LATEST_MIGRATION,
+      actorId: randomUUID(),
+      membershipId: null,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    };
+    try {
+      await migrate(pool);
+      await store.ready();
+      const seed = await store.read(view.actorId);
+      const [patientId, otherPatientId] = seed.payload.state.patients.map((patient) => patient.id);
+      // Delay the first insert so ordinary concurrent callers overlap inside PostgreSQL.
+      // No application query or constraint is replaced by this scheduling fixture.
+      await pool.query(
+        "CREATE FUNCTION ward_flow.test_slow_record_opening() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.patient_id NOT LIKE 'PT-SYN-LIMIT-%' THEN PERFORM pg_sleep(0.2); END IF; RETURN NEW; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER test_slow_record_opening BEFORE INSERT ON ward_flow.record_access FOR EACH ROW EXECUTE FUNCTION ward_flow.test_slow_record_opening()",
+      );
+      await t.test("one opening is kept when the same account opens the same record concurrently", async () => {
+        const answers = await Promise.all(Array.from({ length: 8 }, () => store.logView(view, patientId, "patient")));
+        assert.equal(answers.filter((answer) => answer.body.logged).length, 1);
+        const kept = await pool.query(
+          "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+          [workspaceId, view.actorId],
+        );
+        assert.equal(kept.rows[0].count, 1);
+      });
+      await t.test("different records still share the last account slot", async () => {
+        view.actorId = randomUUID();
+        await pool.query(
+          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3,'PT-SYN-LIMIT-' || n,'patient',$4 FROM generate_series(1,59) AS n",
+          [workspaceId, view.actorId, view.access.scope, at],
+        );
+        const answers = await Promise.all([
+          store.logView(view, patientId, "patient"),
+          store.logView(view, otherPatientId, "patient"),
+        ]);
+        assert.equal(answers.filter((answer) => answer.body.logged).length, 1);
+        const kept = await pool.query(
+          "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+          [workspaceId, view.actorId],
+        );
+        assert.equal(kept.rows[0].count, 60);
+      });
+      await t.test(
+        "an account at its limit does not block a different account or invisible-record refusal",
+        async () => {
+          const colleague = { ...view, actorId: randomUUID() };
+          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: true });
+          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: false });
+          assert.equal((await store.logView(colleague, "PT-SYN-INVISIBLE", "patient")).status, 404);
+        },
+      );
+    } finally {
+      await pool.query("DROP TRIGGER IF EXISTS test_slow_record_opening ON ward_flow.record_access");
+      await pool.query("DROP FUNCTION IF EXISTS ward_flow.test_slow_record_opening()");
+      await pool.end();
+    }
+  },
+);
 test("real PostgreSQL: shared commands, last-bed contention, retry, audit and recovery", { skip: !url }, async (t) => {
   const engine = await import("./dist/engine.mjs");
   const pool = new Pool({ connectionString: url, max: 8 });

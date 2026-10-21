@@ -1,5 +1,14 @@
 # Engine: reducer, events, state and persistence
 
+## Audit repair boundaries — 20 October 2026
+
+`ward-access-state.ts` authorises global configuration, full broadcast audiences, ED origins and
+stored sender ownership at the shared command boundary. `backend/ward-flow/postgres.mjs` serialises
+record-opening checks and inserts per workspace/account. New shared worlds use the Perth calendar
+helper; existing stored origins retain their meaning. Draft recovery follows the confirmed effective
+access context, and the provider remounts forms only after adopting that context's world. Browser
+sign-out handles storage failures and independently stops confirmed-owned phone subscriptions.
+
 ## Bed and shared-save integrity — 19 October 2026
 
 `ward-bed-designation.ts` supplies the numbered bed's kind to bed moves and numbered
@@ -109,7 +118,8 @@ sweep picks up anything left pending. Migration 3 adds `push_subscriptions`, `pu
 `push_deliveries`. On the client, `ward-shared-client.ts` gains the four
 push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provides
 `PhonePushAccessContext` and releases the device's alerts before sign-out, `shell/ward-phone-push.ts`
-holds the per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
+holds the sign-out release and ownership receipts, `shell/ward-phone-push-switch.ts` holds the
+Settings-only per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
 when unavailable). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.

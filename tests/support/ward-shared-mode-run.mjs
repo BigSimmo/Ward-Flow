@@ -8,9 +8,9 @@
  * WARD_E2E_DATABASE_URL is an ADMINISTRATOR URL for a throwaway loopback cluster (CI's postgres:16
  * service, or one started by hand). This creates its own database on it, migrates it with the
  * backend's own migration and runtime-role SQL, and drops it at the end. Extra arguments go to
- * `playwright test` (for example `--repeat-each=2`).
+ * `playwright test`; the full gate still requires all four cases exactly once.
  *
- * What is real: the browser, `next dev`, the backend's HTTP handler, workspace store, engine and
+ * What is real: the browser, `next build` / `next start`, the backend's HTTP handler, workspace store, engine and
  * runtime-role check, its Supabase token verifier (signatures checked against published keys), and
  * PostgreSQL. What is not: Supabase Auth itself. A small fake (below) signs ES256 tokens the verifier
  * accepts. The backend reaches it through the verifier's own `fetch` seam, and the browser through a
@@ -18,11 +18,19 @@
  * code and its CSP, so a real request there must never leave this machine). Synthetic accounts only.
  *
  * `scripts/run-playwright.mjs` cannot run this: it builds the offline demo with shared mode off. A
- * dev server is used because the client accepts a plain-HTTP loopback API only in development.
+ * production build uses an ephemeral HTTPS proxy for the loopback API; no TLS policy is weakened.
  */
 import { spawn } from "node:child_process";
+import { journeyRunVerdict } from "../../scripts/ward-flow/journey-run-verdict.mjs";
+import { sharedModeCases } from "../../scripts/ward-flow/browser-run-contract.mjs";
+import {
+  createSharedApiTlsProxy,
+  sharedModeEnvironment,
+  sharedNextCommands,
+  waitForChild,
+} from "../../scripts/ward-flow/shared-mode-support.mjs";
 import { generateKeyPairSync, randomBytes, randomUUID, sign, verify } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import { createRequire } from "node:module";
 import net from "node:net";
@@ -285,71 +293,77 @@ async function startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl }) {
   return `http://127.0.0.1:${port}`;
 }
 
-/** `next dev` in shared mode, from its own build folder so it never touches the checkout's `.next`. */
+/** `next build` / `next start` in shared mode, from its own build folder so it never touches the checkout's `.next`. */
 async function startNext({ runId, runRoot, port, apiBaseUrl }) {
   const relativeRoot = `.next-playwright/${runId}`;
-  // Same isolated tsconfig as scripts/run-playwright.mjs, so the dev server never edits tsconfig.json.
+  // Same isolated tsconfig as scripts/run-playwright.mjs, so Next never edits tsconfig.json.
   writeFileSync(
     path.join(runRoot, "tsconfig.json"),
     `${JSON.stringify({ extends: "../../tsconfig.json", compilerOptions: { ignoreDeprecations: "6.0", baseUrl: "../..", paths: { "@/*": ["src/*"] } }, include: ["../../next-env.d.ts", "../../src/**/*.ts", "../../src/**/*.tsx", "dist/types/**/*.ts", "dist/dev/types/**/*.ts"] }, null, 2)}\n`,
   );
-  const child = spawn(
-    process.execPath,
-    [
-      path.join(projectRoot, "node_modules/next/dist/bin/next"),
-      "dev",
-      "--hostname",
-      "127.0.0.1",
-      "--port",
-      String(port),
-    ],
-    {
-      cwd: projectRoot,
-      detached: true,
-      stdio: ["ignore", "inherit", "inherit"],
-      env: {
-        ...process.env,
-        NODE_ENV: "development",
-        NEXT_TELEMETRY_DISABLED: "1",
-        NEXT_DIST_DIR: `${relativeRoot}/dist`,
-        NEXT_TSCONFIG_PATH: `${relativeRoot}/tsconfig.json`,
-        NEXT_PUBLIC_WARD_SHARED_ENABLED: "true",
-        NEXT_PUBLIC_WARD_API_BASE_URL: apiBaseUrl,
-        NEXT_PUBLIC_WARD_SUPABASE_URL: SUPABASE_ORIGIN,
-        NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY: PUBLISHABLE_KEY,
-      },
-    },
-  );
-  // Stop the whole process group (next dev forks its server), and wait until every member is gone:
-  // a worker still running would write into the build folder after the cleanup below removes it.
-  cleanups.push(async () => {
-    const group = -(/** @type {number} */ (child.pid));
-    const alive = () => {
-      try {
-        process.kill(group, 0);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-    const gone = async (ms) => {
-      for (const end = Date.now() + ms; alive() && Date.now() < end;)
-        await new Promise((done) => setTimeout(done, 200));
-      return !alive();
-    };
-    if (!alive()) return;
-    process.kill(group, "SIGTERM");
-    if (await gone(10_000)) return;
-    process.kill(group, "SIGKILL");
-    await gone(5_000);
+  const environment = sharedModeEnvironment(process.env, {
+    relativeRoot,
+    apiBaseUrl,
+    authOrigin: SUPABASE_ORIGIN,
+    publishableKey: PUBLISHABLE_KEY,
+  });
+  const commands = sharedNextCommands(path.join(projectRoot, "node_modules/next/dist/bin/next"), port);
+  // Keep the event loop free: the fake auth and backend already run in this process.
+  const ownProcess = (child) => {
+    // Stop the whole process group (Next may fork workers), and wait until every member is gone:
+    // a worker still running would write into the build folder after the cleanup below removes it.
+    cleanups.push(async () => {
+      if (!child.pid) return;
+      const group = -(/** @type {number} */ (child.pid));
+      const alive = () => {
+        try {
+          process.kill(group, 0);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      const gone = async (ms) => {
+        for (const end = Date.now() + ms; alive() && Date.now() < end;)
+          await new Promise((done) => setTimeout(done, 200));
+        return !alive();
+      };
+      if (!alive()) return;
+      process.kill(group, "SIGTERM");
+      if (await gone(10_000)) return;
+      process.kill(group, "SIGKILL");
+      await gone(5_000);
+    });
+  };
+  const build = spawn(process.execPath, commands.build, {
+    cwd: projectRoot,
+    env: environment,
+    stdio: "inherit",
+    detached: true,
+    timeout: 600_000,
+  });
+  ownProcess(build);
+  await waitForChild(build, "Shared-mode production next build");
+  const child = spawn(process.execPath, commands.start, {
+    cwd: projectRoot,
+    detached: true,
+    stdio: ["ignore", "inherit", "inherit"],
+    env: environment,
+  });
+  ownProcess(child);
+  let startupError;
+  child.once("error", (error) => {
+    startupError = error;
   });
   const baseUrl = `http://localhost:${port}`;
   const deadline = Date.now() + 240_000;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`next dev exited early (code ${child.exitCode}).`);
+    if (startupError) throw startupError;
+    if (child.exitCode !== null || child.signalCode !== null)
+      throw new Error(`next start exited early (code ${child.exitCode}).`);
     try {
       const identity = await (await fetch(`${baseUrl}/api/local-project-id`)).json();
-      // The first /ward-flow request compiles the page, so the spec's first navigation is quick.
+      // Probe the compiled page as well as the checkout identity before starting the spec.
       if (
         identity.appName === appName &&
         identity.projectId === localProjectId(projectRoot) &&
@@ -362,13 +376,16 @@ async function startNext({ runId, runRoot, port, apiBaseUrl }) {
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  throw new Error("next dev did not become ready within four minutes.");
+  throw new Error("next start did not become ready within four minutes.");
 }
 
 let exitCode = 1;
 try {
   const runId = `shared-mode-${process.pid}-${Date.now()}`;
   const runRoot = path.join(projectRoot, ".next-playwright", runId);
+  const resultsRoot = path.join(projectRoot, "test-results", runId);
+  mkdirSync(resultsRoot, { recursive: true });
+  const reportFile = path.join(resultsRoot, "journeys.json");
   mkdirSync(runRoot, { recursive: true });
   cleanups.push(async () => {
     const { rmSync } = await import("node:fs");
@@ -381,8 +398,19 @@ try {
     createDatabase(),
     buildEngine(runRoot),
   ]);
-  const apiBaseUrl = await startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl });
-  console.log(`[shared-mode] backend ${apiBaseUrl}, fake auth ${authOrigin}; starting next dev on ${appOrigin}`);
+  const backendUrl = await startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl });
+  const tls = await createSharedApiTlsProxy({ target: backendUrl, runRoot });
+  cleanups.push(
+    () =>
+      new Promise((done) => {
+        tls.server.closeAllConnections();
+        tls.server.close(() => done(undefined));
+      }),
+  );
+  const apiBaseUrl = tls.origin;
+  console.log(
+    `[shared-mode] production HTTPS API ${apiBaseUrl}, fake auth ${authOrigin}; building and starting Next on ${appOrigin}`,
+  );
   const baseUrl = await startNext({ runId, runRoot, port: nextPort, apiBaseUrl });
   // Asynchronous on purpose: the fake sign-in service and the backend live in this process, so a
   // synchronous spawn would stop them answering the browser.
@@ -393,12 +421,21 @@ try {
       "test",
       "--project=ward-shared-mode",
       ...process.argv.slice(2),
+      "--reporter=list,json",
+      `--output=${resultsRoot}/artifacts`,
     ],
     {
       cwd: projectRoot,
       stdio: "inherit",
       env: {
-        ...process.env,
+        ...sharedModeEnvironment(process.env, {
+          relativeRoot: `.next-playwright/${runId}`,
+          apiBaseUrl,
+          authOrigin: SUPABASE_ORIGIN,
+          publishableKey: PUBLISHABLE_KEY,
+        }),
+        PLAYWRIGHT_JSON_OUTPUT_FILE: reportFile,
+        PLAYWRIGHT_JSON_OUTPUT_DIR: "",
         PLAYWRIGHT_BASE_URL: baseUrl,
         WARD_E2E_SUPABASE_ORIGIN: SUPABASE_ORIGIN,
         WARD_E2E_AUTH_ORIGIN: authOrigin,
@@ -410,6 +447,17 @@ try {
     playwright.once("error", () => resolve(1));
     playwright.once("exit", (code) => resolve(code ?? 1));
   });
+  let report = null;
+  try {
+    report = JSON.parse(readFileSync(reportFile, "utf8"));
+  } catch {
+    /* verdict fails closed */
+  }
+  const verdict = journeyRunVerdict([{ label: "shared production", code: exitCode, report }], ["ward-shared-mode"], {
+    requiredCases: sharedModeCases(),
+  });
+  for (const problem of verdict.problems) console.error(`[shared-mode] ${problem}`);
+  if (!verdict.ok) exitCode = exitCode || 1;
 } catch (error) {
   console.error(`[shared-mode] ${error instanceof Error ? error.message : String(error)}`);
 } finally {

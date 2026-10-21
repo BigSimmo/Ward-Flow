@@ -18,6 +18,7 @@ import {
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
+import { demoDayZero } from "../../src/components/ward-management/ward-clock";
 import {
   BREAK_GLASS_REASONS,
   STATEWIDE_COORDINATOR,
@@ -224,7 +225,8 @@ export function seedWorld(at: Date): SharedWorld {
   return {
     version: 1,
     state: serialise(seedWardFlowStateAt(0)),
-    dayZero: new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate())).toISOString(),
+    // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
+    dayZero: demoDayZero(at).toISOString(),
     startedAt: at.toISOString(),
   };
 }

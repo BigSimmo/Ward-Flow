@@ -5,6 +5,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -177,6 +178,8 @@ export class SharedWorkspaceClient {
     this.cancelQueued(message);
   }
   private cancelForRoleChange() {
+    // Fence outgoing drawers before their unmount cleanup can autosave into the next desk.
+    if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
       this.settle(
         this.pending.commandId,
@@ -241,6 +244,8 @@ export class SharedWorkspaceClient {
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
+      /** False for detached sign-out cleanup: it never owns the current board's drafts. */
+      manageDrafts?: boolean;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
@@ -324,6 +329,8 @@ export class SharedWorkspaceClient {
         snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
           ? held.payload
           : snapshot.payload;
+      if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
+        bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
       this.noteOpenSheets();
     }

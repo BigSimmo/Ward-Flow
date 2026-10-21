@@ -12,7 +12,15 @@ describe("policy-only coverage contract", () => {
     "docs/ward-flow/HOW-WE-WORK.md",
     "docs/DOCS-SYSTEM.md",
   ])("runs meaningful contracts for %s without application browser jobs", (file) => {
-    expect(scope(file)).toMatchObject({ full: true, unit: false, browser: false, policy: true });
+    expect(scope(file)).toMatchObject({
+      full: true,
+      unit: false,
+      browser: false,
+      policy: true,
+      backend: false,
+      build: false,
+      frontend_static: false,
+    });
   });
   it.each([
     "src/app/layout.tsx",
@@ -35,8 +43,10 @@ describe("policy-only coverage contract", () => {
     expect(policyContractTests.length).toBeGreaterThan(0);
     for (const file of policyContractTests) expect(existsSync(new URL(`../${file}`, import.meta.url))).toBe(true);
     const workflow = readFileSync(new URL("../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
-    expect(workflow).toMatch(/steps\.plan\.outputs\.policy == 'true'/u);
+    expect(workflow).toMatch(/needs\.plan\.outputs\.policy == 'true'/u);
     expect(workflow).toContain("node scripts/ward-ci-public/check-policy-contracts.mjs");
-    expect(workflow).toContain("needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]");
+    expect(workflow).toContain(
+      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]",
+    );
   });
 });

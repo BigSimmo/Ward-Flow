@@ -95,22 +95,28 @@ export function selectWardAuthProvider(): string {
 export function useWardShared(enabled: boolean): WardSharedConnection {
   const supabaseMode = selectWardAuthProvider() === "supabase";
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
+  // An account without a role still needs its own access-request API. Include the account in
+  // the binding even when React batches a replacement without an intervening signed-out render.
+  const accountBinding = supabase.signedIn ? (supabase.actorId ?? "signed-in-without-role") : null;
   const pushApi = useMemo<PhonePushApi>(() => {
+    const client = accountBinding ? supabase.client.current : null;
     const connected = () => {
-      if (!supabase.client.current) throw new Error("Shared workspace not connected");
-      return supabase.client.current;
+      if (!client || supabase.client.current !== client) throw new Error("Shared workspace not connected");
+      return client;
     };
     return {
+      ownerId: supabase.actorId ?? undefined,
       pushKey: async () => connected().pushKey(),
       pushStatus: async (endpoint) => connected().pushStatus(endpoint),
       pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
       pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
     };
-  }, [supabase.client]);
+  }, [supabase.client, supabase.actorId, accountBinding]);
   const accessApi = useMemo<WardSharedAccessApi>(() => {
+    const client = accountBinding ? supabase.client.current : null;
     const connected = () => {
-      if (!supabase.client.current) throw new Error("Shared workspace not connected");
-      return supabase.client.current;
+      if (!client || supabase.client.current !== client) throw new Error("Shared workspace not connected");
+      return client;
     };
     return {
       listAccess: async () => connected().listAccess(),
@@ -123,7 +129,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
     };
-  }, [supabase.client]);
+  }, [supabase.client, accountBinding]);
   if (!supabaseMode)
     return {
       ...supabase,
