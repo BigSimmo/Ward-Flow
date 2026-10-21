@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, type ComponentProps, type ComponentType, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type ComponentType, type RefObject } from "react";
 import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
@@ -446,6 +446,10 @@ preloadWhenIdle(loadMenuSheets);
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
   const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);
   const opened = props.open || props.createOpen || props.switcherOpen;
+  const latest = useRef(props);
+  useEffect(() => {
+    latest.current = props;
+  });
   useEffect(() => {
     if (Sheets || !opened) return;
     let live = true;
@@ -454,7 +458,12 @@ function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
         if (live) setSheets(() => m.PhoneMenuSheets);
       },
       () => {
-        if (live) announceToWardShell("Menu could not load. Check the connection, then try again.");
+        if (!live) return;
+        // Close what was opened, so the next tap is a fresh open that retries the load.
+        latest.current.onClose();
+        latest.current.onCloseCreate();
+        latest.current.onCloseSwitcher();
+        announceToWardShell("Menu could not load. Check the connection, then try again.");
       },
     );
     return () => {
@@ -476,6 +485,10 @@ export function WardPhoneMenu({
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
+  // its chunk straight away instead of when the browser is idle.
+  const [sheetsMounted, setSheetsMounted] = useState(false);
+  if (!sheetsMounted && (open || createOpen || switcherOpen)) setSheetsMounted(true);
   const [query, setQuery] = useState("");
   // F-07: marks <html data-wf-keyboard> so the dock hides and pinned footers lift over the keyboard.
   useMobileKeyboard({ trackState: false });
@@ -603,32 +616,34 @@ export function WardPhoneMenu({
   };
   return (
     <>
-      <PhoneMenuSheets
-        open={open}
-        onClose={close}
-        query={query}
-        onQuery={setQuery}
-        returnFocusRef={returnFocusRef}
-        shellRole={shellRole}
-        pathname={pathname}
-        counts={counts}
-        entries={entries}
-        byId={byId}
-        needs={needs}
-        groups={menuGroups}
-        onGo={go}
-        onRefer={refer}
-        onDrawer={drawer}
-        switcherOpen={switcherOpen}
-        onSwitch={() => {
-          close();
-          setSwitcherOpen(true);
-        }}
-        onCloseSwitcher={() => setSwitcherOpen(false)}
-        createOpen={createOpen}
-        onCloseCreate={closeCreate}
-        onNewReferral={onNewReferral}
-      />
+      {sheetsMounted ? (
+        <PhoneMenuSheets
+          open={open}
+          onClose={close}
+          query={query}
+          onQuery={setQuery}
+          returnFocusRef={returnFocusRef}
+          shellRole={shellRole}
+          pathname={pathname}
+          counts={counts}
+          entries={entries}
+          byId={byId}
+          needs={needs}
+          groups={menuGroups}
+          onGo={go}
+          onRefer={refer}
+          onDrawer={drawer}
+          switcherOpen={switcherOpen}
+          onSwitch={() => {
+            close();
+            setSwitcherOpen(true);
+          }}
+          onCloseSwitcher={() => setSwitcherOpen(false)}
+          createOpen={createOpen}
+          onCloseCreate={closeCreate}
+          onNewReferral={onNewReferral}
+        />
+      ) : null}
 
       {/* The dock on every phone page (device audit option A). Hidden above 48rem by its CSS. */}
       <div className={`${pageDock.pageDock} ${pageDock.rise}`} data-wf-page-dock="rise">
