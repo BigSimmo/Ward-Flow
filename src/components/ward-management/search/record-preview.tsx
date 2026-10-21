@@ -94,7 +94,9 @@ export function buildReferralSummary(referral: Referral): ReferralSummary {
   const totalCount = referral.destinations.length;
   const state = referralState(referral);
   let declineNote: string;
-  if (state === "accepted") {
+  if (referralWithdrawn(referral)) {
+    declineNote = "the referrer withdrew this referral; no destination accepted.";
+  } else if (state === "accepted") {
     declineNote =
       declinedCount > 0
         ? `${declinedCount} of ${totalCount} destination${totalCount === 1 ? "" : "s"} declined before another destination accepted.`
@@ -345,13 +347,14 @@ export function RecordPreview({
       !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
     ) {
       // Same rule as the search row: no open movement and no queued referral means Past.
-      const declined = referralState(referral) === "declined";
+      const withdrawn = referralWithdrawn(referral);
+      const declined = !withdrawn && referralState(referral) === "declined";
       presenceStatus = "past";
       bannerTitle = "Not on this board now";
-      bannerTag = declined ? "Referral declined" : "Referral closed";
-      disposition = declined ? "Declined" : NOT_RECORDED;
+      bannerTag = withdrawn ? "Referral withdrawn" : declined ? "Referral declined" : "Referral closed";
+      disposition = withdrawn ? "Withdrawn" : declined ? "Declined" : NOT_RECORDED;
       targetWard = "Not admitted";
-      currentStage = declined ? "Declined" : "No open movement";
+      currentStage = withdrawn ? "Withdrawn" : declined ? "Declined" : "No open movement";
       originSite = referral.originSiteCode;
       urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
@@ -500,7 +503,10 @@ export function RecordPreview({
               <h4 className={styles.tieHeading}>Referral</h4>
               {referral && referralSummary ? (
                 <p className={styles.tieBody}>
-                  <strong>This referral</strong> — {referralStateSentence(referralState(referral))}
+                  <strong>This referral</strong> —{" "}
+                  {referralWithdrawn(referral)
+                    ? "Withdrawn — the referrer withdrew it."
+                    : referralStateSentence(referralState(referral))}
                   <br />
                   {referralSummary.originLine} — {referralSummary.declineNote}
                 </p>

@@ -90,7 +90,8 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     // matches a comment as well as the page cannot say which paragraph makes the claim.
     rendered: "one shared timestamp that later release actions overwrite",
     claim:
-      "`BedRelease` carries a single `confirmedAt` that every readiness act overwrites, not one instant per act. " +
+      "`BedRelease` carries a single `confirmedAt` that every readiness act before departure overwrites, not one " +
+      "instant per act; after departure it holds the departure time and preparation keeps it. " +
       "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
       "admission in `stayBlockClearances` when no release is linked.",
     sourceFile: WARD_MODEL,

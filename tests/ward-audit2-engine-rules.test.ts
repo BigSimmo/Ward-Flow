@@ -81,7 +81,8 @@ describe("E-02: a closed ward takes no new admission until a person reopens it",
       unitId: "bty-older-adult",
       actingUnitId: "bty-older-adult",
     });
-    expect(accept.reason).not.toMatch(/closed to admissions/);
+    expect(accept.refused, accept.reason).toBe(false);
+    expect(movement(accept.next, "WF-013").acceptedUnitId).toBe("bty-older-adult");
   });
 });
 

@@ -46,7 +46,7 @@ describe("ward board-time features", () => {
     expect(transportEtaRemainingLabel(NOW_ANCHOR - 15, NOW_ANCHOR)).toBe("15m overdue");
   });
 
-  it("openWorkBeforeShiftEnd lists only open pull holds and typed form times before 15:00", () => {
+  it("openWorkBeforeShiftEnd lists only open pull holds and typed form times before the shift end", () => {
     const shiftEnd = shiftEndInstant(NOW_ANCHOR);
     const base = seedWardFlowState().movements[0]!;
 
@@ -89,7 +89,7 @@ describe("ward board-time features", () => {
     expect(openWorkBeforeShiftEndLabel(items[1]!, NOW_ANCHOR)).toContain("Bed pull");
   });
 
-  it("seed fixture has open work before 15:00 that the helper can surface", () => {
+  it("seed fixture has open work before the shift end that the helper can surface", () => {
     const { movements } = seedWardFlowState();
     const items = openWorkBeforeShiftEnd(movements, NOW_ANCHOR);
     expect(items.length).toBeGreaterThan(0);

@@ -477,7 +477,7 @@ function runSeed(seed: number, steps = STEPS) {
   let refused = 0;
   let locked = false;
   for (let step = 0; step < steps; step += 1) {
-    const event = nextEvent(state, random, step, seed);
+    const event = nextEvent(state, random, step, seed, steps);
     events.push(event);
     const result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1, locked);
     if ("rule" in result) return { failure: describeFailure(seed, scenario, events), refused };

@@ -147,9 +147,10 @@ type Aim = readonly Movement["stage"][] | ((movement: Movement) => boolean);
 /** Prefer a live subject, but sometimes name a closed one or one that does not exist. */
 function movementFor(state: WardFlowState, random: Random, aim?: Aim) {
   if (chance(random, 0.04)) return { id: MISSING_ID } as unknown as Movement;
-  const open = state.movements.filter(isOpen);
+  // An aim that names "arrived" looks at finished journeys too, which `isOpen` leaves out.
+  const pool = Array.isArray(aim) && aim.includes("arrived") ? state.movements : state.movements.filter(isOpen);
   const fits = typeof aim === "function" ? aim : (movement: Movement) => !aim || aim.includes(movement.stage);
-  const fitting = open.filter(fits);
+  const fitting = pool.filter(fits);
   if (fitting.length > 0 && chance(random, 0.85)) return pick(random, fitting);
   return pick(random, state.movements);
 }
@@ -1684,11 +1685,17 @@ const SWEEP_EVERY = 8;
  * so a run of consecutive seeds sends every event type at least once however small its weight.
  * Still reproducible from the seed alone. A builder with no subject falls back to a weighted draw.
  */
-export function nextEvent(state: WardFlowState, random: Random, step: number, seed?: number): WardFlowEvent {
+export function nextEvent(
+  state: WardFlowState,
+  random: Random,
+  step: number,
+  seed?: number,
+  steps = 100,
+): WardFlowEvent {
   currentNow = nowFor(state, step);
   const sweep =
     seed !== undefined && step % SWEEP_EVERY === SWEEP_EVERY - 1
-      ? ALL_BUILDERS[(seed * 12 + Math.floor(step / SWEEP_EVERY)) % ALL_BUILDERS.length][1]
+      ? ALL_BUILDERS[(seed * Math.floor(steps / SWEEP_EVERY) + Math.floor(step / SWEEP_EVERY)) % ALL_BUILDERS.length][1]
       : undefined;
   for (let attempt = 0; ; attempt += 1) {
     const draft = (attempt === 0 && sweep ? sweep : chooseBuilder(random))(state, random);
