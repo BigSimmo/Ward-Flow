@@ -166,7 +166,7 @@ describe("RECORD_DIVERSION — build plan item 29 / R2-7", () => {
       movementId: open.id,
       provider: "Ambulance service",
       escortRequired: false,
-      cadNumber: "CAD-DIV-PRE",
+      cadNumber: "CAD-DIV-0002",
       transportLegalStatus: "voluntary",
       estimatedAt: 0,
     });

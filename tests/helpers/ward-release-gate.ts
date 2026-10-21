@@ -242,6 +242,14 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
   const dockLink = page.getByTestId("ward-phone-dock").locator(`a[href="${href}"]`);
   // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
   const railMore = rail.locator('[data-testid="ward-rail-more"], [data-testid="ward-rail-tablet-more"]').first();
+  // Straight after a desk switch the phone dock can draw a beat late (seen on WebKit), and the Menu
+  // sheet need not list a dock page, so give the direct links a moment before falling back to it.
+  await railLink
+    .or(railMore)
+    .or(dockLink)
+    .first()
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .catch(() => undefined);
   if (await railLink.isVisible()) {
     await railLink.click();
   } else if (await railMore.isVisible()) {

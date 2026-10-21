@@ -120,7 +120,7 @@ function TransportProbe({ movementId }: { movementId: string }) {
             actingPlaceId: TEAM.id,
             provider: TRANSPORT_PROVIDERS[0]!,
             escortRequired: false,
-            cadNumber: "CAD-PREBOOK",
+            cadNumber: "CAD-PREBOOK-1",
             transportLegalStatus: "voluntary",
             estimatedAt: now + 30,
           })
