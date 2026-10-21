@@ -74,6 +74,7 @@ import {
   sinceSheetDescription,
   useSinceLastLook,
 } from "./since-last-look-panel";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -1074,9 +1075,7 @@ export function CoordinatorScreen() {
                     icon={Copy}
                     className={styles.sinceSheetFoot}
                     onClick={() => {
-                      void navigator.clipboard
-                        ?.writeText(sinceHandoverText(lastLook.changes, now))
-                        .catch(() => undefined);
+                      void copyTextToClipboard(sinceHandoverText(lastLook.changes, now)).catch(() => undefined);
                     }}
                   >
                     Copy as handover text

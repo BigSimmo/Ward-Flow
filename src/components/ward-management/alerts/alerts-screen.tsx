@@ -100,6 +100,7 @@ import {
   useIsTabletPortrait,
   useModalFocus,
 } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
@@ -778,7 +779,7 @@ function AlertsWorkspace() {
     setBroadcastRequest(null);
     setActionRequest(null);
     const line = (entry: QueueEntry) =>
-      `- ${entry.item.title}. ${entry.subject.displayName} ${entry.subject.umrn}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
+      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
     const sections: [string, QueueEntry[]][] = [
       ["Act now", actEntries],
       ["Waiting", waitEntries],
@@ -793,11 +794,7 @@ function AlertsWorkspace() {
     ]
       .filter(Boolean)
       .join("\n");
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      setBroadcastSuccessNotice("Copy is not available in this browser.");
-      return;
-    }
-    navigator.clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),
       () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
     );
