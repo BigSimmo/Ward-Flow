@@ -439,7 +439,14 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
                     Log team contact
                   </Button>
-                  <Button size="sm" onClick={() => handleActionClick("Assign", phoneReferral)}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      // The assign dialog draws under this sheet, so close the sheet first, as Full referral does.
+                      closePhoneReferral();
+                      handleActionClick("Assign", phoneReferral);
+                    }}
+                  >
                     Assign
                   </Button>
                   <Button

@@ -14,6 +14,7 @@ import type { CancelTransportReason } from "@/components/ward-management/ward-ch
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { cancelTransportBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_DRAFT,
@@ -128,7 +129,7 @@ export function useCommunityScreenTransport({
     if (
       provider === undefined ||
       escortRequired === undefined ||
-      cadNumber.trim().length === 0 ||
+      cadNumberProblem(cadNumber) !== undefined ||
       transportLegalStatus === undefined ||
       estimatedAt === undefined
     ) {

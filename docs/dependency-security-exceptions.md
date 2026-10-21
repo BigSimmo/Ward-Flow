@@ -1,7 +1,7 @@
 # Dependency security follow-up
 
-Current advisory review: 20 October 2026, from audited commit
-`9eff6b9dab7dcc34fcc7e3b828eea005a6139857` and the npm registry. This is the canonical record for
+Current advisory review: 21 October 2026, from main
+`67ace3940b17a422a574dfab5d28a9def4bf0ad7` and the npm registry. This is the canonical record for
 the remaining advisory. The dated installation evidence below is retained separately. This record
 covers dependency maintenance for synthetic local development; it does not approve clinical use.
 
@@ -39,9 +39,30 @@ covers dependency maintenance for synthetic local development; it does not appro
   application. This is a bounded maintenance exception, not a zero-vulnerability claim.
 - **Follow-up owner:** Ward Flow dependency/tooling maintainer; assignment and any broader risk
   acceptance remain with the repository owner.
-- **Next review:** 22 October 2026, or immediately on a braces/Next ESLint patch or a change that
-  accepts external glob patterns. Re-run `npm view braces version`, `npm explain braces` and
+- **Next review:** 5 November 2026, or immediately on a braces/Next ESLint patch or a change that
+  accepts external glob patterns. The 22 October review was brought forward to 21 October; see
+  below for why the date moved. Re-run `npm view braces version`, `npm explain braces` and
   `npm audit --json`; install a supported patch and verify the lint contracts when available.
+
+## Scheduled review — 21 October 2026
+
+Fresh npm registry queries on 21 October return braces 3.0.3, micromatch 4.0.8 and fast-glob 3.3.3
+as latest, unchanged since September 2024. `@next/eslint-plugin-next` latest (16.4.2) and canary
+(16.5.0-canary.21) both still pin fast-glob 3.3.1. `npm audit --package-lock-only --json` reports
+the same five high development entries for GHSA-vfj7-8cjw-p6xm and nothing else.
+
+No safe override exists. fast-glob 3.x requires micromatch 4 (3.3.1, the plugin's pin, declares
+`^4.0.4`; 3.3.3 declares `^4.0.8`). Every micromatch 4 release requires braces 3, and the advisory
+covers every braces release with no patched version published, so an override can only select the
+same vulnerable parser. Replacing
+fast-glob or micromatch with a different library under the plugin would be an unsupported local
+substitution. `eslint.config.mjs` still sets no `settings.next.rootDir`, so the plugin's only
+fast-glob call is not reached by the configured lint run.
+
+Decision: SEC-003 stays open and upstream-blocked with the same mitigation. The review moves to
+5 November 2026 because two weeks matches the observed upstream cadence (no release in over a
+year) while keeping a short interval; the nightly full audit and the immediate triggers above still
+apply in between.
 
 ## Audit repair review — 20 October 2026
 

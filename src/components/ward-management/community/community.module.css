@@ -1389,7 +1389,8 @@
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  z-index: var(--ward-z-sticky, 100);
+  /* The modal layer, so the phone screen's sticky tab strip cannot draw over the dialog. */
+  z-index: var(--z-modal, 100);
   display: flex;
   align-items: center;
   justify-content: center;
