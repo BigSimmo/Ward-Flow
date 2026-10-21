@@ -85,7 +85,7 @@ export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map([
   ],
   [
     "transport",
-    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen. The current /ward-flow/transport route redirects to /ward-flow/transport/officer. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
+    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen. The current /ward-flow/transport route redirects to /ward-flow/transport/officer. The id is RETAINED in WARD_MODES only. tracker/live-tracker.tsx and ClinicalRail, which once rendered it, have both been deleted, and nothing passes this mode now (checked 21 Oct 2026). tracker/tracker-derivations.ts is still used by the Movements derivations. Retiring the id is a separate rename.",
   ],
 ] as const);
 
