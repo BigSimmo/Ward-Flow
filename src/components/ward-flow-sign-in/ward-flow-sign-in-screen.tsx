@@ -5,6 +5,7 @@ import { ShieldCheck, UsersRound } from "lucide-react";
 
 import { useTheme } from "@/components/clinical-dashboard/use-theme";
 import { Badge, Button, Icon, IconTile, Kbd, Segmented, StatusGlyph, TabPanel, Tabs, ToastView } from "@/components/wf";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import type { ThemePreference } from "@/lib/theme";
 
 import {
@@ -171,7 +172,11 @@ export function WardFlowSignInScreen() {
         chooseRole(SIGN_IN_ROLES[index].id);
         return;
       }
-      if (event.key === "Enter" && !target?.closest("button, a, summary, [role='tab'], [role='radio']")) {
+      if (
+        showsUnwiredPreviews() &&
+        event.key === "Enter" &&
+        !target?.closest("button, a, summary, [role='tab'], [role='radio']")
+      ) {
         event.preventDefault();
         pressSignIn();
       }
@@ -337,9 +342,13 @@ export function WardFlowSignInScreen() {
             <span className={styles.goContext}>
               {catchment.id} · {shift.id} · {role.name}
             </span>
-            <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
-              Preview as {role.as}
-            </Button>
+            {/* The button only says what would open, so it is a not-wired control: shown in a local
+                development build only (Josh, 20 Oct 2026, see unwired-previews.tsx). */}
+            {showsUnwiredPreviews() ? (
+              <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
+                Preview as {role.as}
+              </Button>
+            ) : null}
           </section>
         </section>
 

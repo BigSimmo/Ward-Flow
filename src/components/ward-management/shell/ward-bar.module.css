@@ -1061,6 +1061,11 @@
 }
 
 @container ward-bar (max-width: 66rem) {
+  /* A drill-down screen's Back takes room the bar does not have at 1280px, so New referral ran past
+   * the right edge (visual desk, 21 Oct 2026). With Back, Activity and Alerts go to icons sooner, and
+   * the search folds to its magnifier as on a tablet, since its box overran Activity at its floor. */
+  .bar:has(.deskBack) .drawerTrigger[data-bar-mode="activity"] .triggerLabel,
+  .bar:has(.deskBack) .drawerTrigger[data-bar-mode="tasks"] .triggerLabel,
   .drawerTrigger[data-bar-mode="tools"] .triggerLabel {
     position: absolute;
     width: 1px;
@@ -1071,6 +1076,47 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* Desktop and tablet only: the phone hides this Back and draws its own search sheet. */
+  @media (min-width: 48.0625rem) {
+    .bar:has(.deskBack) .centerGroup,
+    .bar:has(.deskBack) .searchWrap,
+    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search"]) {
+      flex: 0 0 auto;
+      width: var(--spacing-tap, 3rem);
+      min-width: var(--spacing-tap, 3rem);
+      max-width: var(--spacing-tap, 3rem);
+    }
+
+    .bar:has(.deskBack) .centerGroup {
+      margin-left: auto;
+    }
+
+    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search"] > div) {
+      width: var(--spacing-tap, 3rem);
+      min-width: var(--spacing-tap, 3rem);
+      max-width: var(--spacing-tap, 3rem);
+      height: var(--spacing-tap, 3rem);
+      padding: 0;
+      justify-content: center;
+    }
+
+    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search-input"]) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--spacing-tap, 3rem);
+      height: var(--spacing-tap, 3rem);
+      max-width: none;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .bar:has(.deskBack) .searchWrap :global([data-ward-search-shortcut]),
+    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search-clear"]) {
+      display: none;
+    }
   }
 }
 

@@ -22,6 +22,7 @@ import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import type {
   Cohort,
   HealthService,
@@ -403,6 +404,21 @@ function wardReleaseFigures(unit: Unit, { now, releases, leave }: NetworkWardInp
       releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).excludedBeyondToday,
   };
 }
+/**
+ * Audit A3-13: occupants whose recorded sex and gender put them in neither sex-mix bucket
+ * (`mixSexOf` returns undefined, owner rulings 2026-09-25, R7). They fill a bed but are never added
+ * to `sexMix`, so without this the "may not have settled" signal stayed on for as long as they were
+ * on the ward. Only arrived occupants count, since `sexMix` moves on arrival, not on a pull. Zero
+ * when the caller supplied no admissions, which keeps the old comparison.
+ */
+function occupantsInNeitherSexBucket(unitId: string, admissions: Admission[] | undefined): number {
+  return (admissions ?? []).filter(
+    (admission) =>
+      admission.unitId === unitId &&
+      admission.state === "occupied" &&
+      mixSexOf(admission.gender, admission.sex) === undefined,
+  ).length;
+}
 function wardSurge(unit: Unit, cap: ReturnType<typeof unitCapacity>): number {
   return ("surge" in cap ? (cap as { surge?: number }).surge : undefined) ?? Math.max(0, cap.occupied - unit.beds);
 }
@@ -441,7 +457,7 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
     bedRecordsMidUpdate:
       Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
-      unitCapacity(unit, [...(releases ?? [])]).occupied,
+      unitCapacity(unit, [...(releases ?? [])]).occupied - occupantsInNeitherSexBucket(unit.id, admissions),
     // `admissions === undefined` is "nobody told this screen", never "nobody is being specialled".
     // See the field's own note: `remainingSpeciallingCapacity(unit, [])` returns FULL capacity.
     speciallingFree: admissions === undefined ? undefined : remainingSpeciallingCapacity(unit, admissions),
