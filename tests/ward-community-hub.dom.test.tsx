@@ -519,36 +519,91 @@ describe("community hub — an empty list must never read as an all-clear", () =
   });
 });
 
-describe("community hub — the list that cannot be built", () => {
-  it("renders the referrals section with a statement and no list at all", () => {
-    const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
-    renderTeam(TEAM_A.id, [admission({ id: "AD-A", referralId: toA.id })], [toA]);
+/**
+ * Fix plan item 17 (D-74): a referral records the community team that sent it, so the team page
+ * lists what the team sent and each ward's answer. The seed's community referrals predate that
+ * field, so they are counted as unattributed and never guessed onto a team.
+ */
+describe("community hub — referrals this team sent", () => {
+  function SentReferralTest({ sendingTeamName }: { sendingTeamName: string }) {
+    const { dispatch } = useWardFlow();
+    return (
+      <>
+        <button
+          type="button"
+          data-testid="send-referral-btn"
+          onClick={() =>
+            dispatch({
+              type: "RECEIVE_REFERRAL",
+              role: "community",
+              now: NOW_ANCHOR,
+              ageBand: "Adult",
+              destinations: [
+                {
+                  kind: "psychiatric_ward",
+                  unitId: "scgh-adult-open",
+                  sex: "Female",
+                  gender: "Female",
+                  secureBedNeeded: false,
+                  involuntaryBedNeeded: false,
+                  highAcuityNursingNeeded: false,
+                },
+              ],
+              homeRegion: "Perth Metropolitan",
+              suburb: { kind: "named", name: "Armadale" },
+              source: "community",
+              sendingTeamName,
+              urgency: 2,
+              originSiteCode: "RPH",
+              transportNeeded: false,
+              ...FIXTURE_HISTORY,
+            })
+          }
+        >
+          Send
+        </button>
+        <CommunityScreen teamId={TEAM_A.id} />
+      </>
+    );
+  }
 
+  function renderSent(sendingTeamName: string) {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SentReferralTest sendingTeamName={sendingTeamName} />
+      </WardFlowProvider>,
+    );
+  }
+
+  it("says the team has sent nothing on record, and counts older referrals with no sending team", () => {
+    renderSent(TEAM_A.name);
     const section = screen.getByTestId("ward-community-referrals");
-    const statement = within(section).getByTestId("ward-community-referrals-unattributable").textContent ?? "";
-    // Widened 2026-09-09: RED on "Nothing can pin down which referrals this team itself raised".
-    // ⚠️ Deliberately NOT widened to "nothing says which team" — the NEXT sentence of this same
-    // paragraph already says it, so that spelling would survive deleting this claim and put the
-    // hole straight back. Checked against the surviving text, not against the reword.
-    expectSays(statement, "the raised-by attribution refusal", [
-      "cannot be attributed",
-      "not attributable",
-      "pin down",
-      "cannot be traced",
-    ]);
-    // Widened 2026-09-09: RED on "but nothing on the raising end names a team", a faithful
-    // restatement. ⚠️ "nothing says which team" is safe to add here even though those words appear
-    // in the rail panel too — this haystack is the referrals element alone, not the page. Checked.
-    expectSays(statement, "the raised-by attribution refusal", [
-      "source side",
-      "no team",
-      "nothing says which team",
-      "does not name a team",
-      "without a team name",
-    ]);
-    // A section that says why it is empty is honest; a list here would necessarily be a
-    // fabrication, because nothing in the model says which team raised a referral.
-    expect(within(section).queryByRole("list")).toBeNull();
+    expect(within(section).getByTestId("ward-community-referrals-empty").textContent).toContain(TEAM_A.name);
+    expect(within(section).queryByTestId("ward-community-referrals-list")).toBeNull();
+    const unattributed = within(section).getByTestId("ward-community-referrals-unattributable").textContent ?? "";
+    expect(unattributed).toMatch(/^\d+ older community referrals? (does|do) not record which team sent/);
+  });
+
+  it("lists a referral this team sent, with the ward it asked and that ward's answer", () => {
+    renderSent(TEAM_A.name);
+    fireEvent.click(screen.getByTestId("send-referral-btn"));
+    const list = within(screen.getByTestId("ward-community-referrals")).getByTestId("ward-community-referrals-list");
+    const rows = within(list)
+      .getAllByRole("listitem")
+      .filter((row) => row.parentElement === list);
+    expect(rows).toHaveLength(1);
+    const text = rows[0].textContent ?? "";
+    expect(text).toContain("Waiting for an answer.");
+    expect(text).toContain("Sent less than an hour ago.");
+    expect(text).toMatch(/: Queued\./);
+    expect(text).not.toContain("scgh-adult-open");
+  });
+
+  it("does not list a referral another team sent", () => {
+    renderSent(TEAM_B.name);
+    fireEvent.click(screen.getByTestId("send-referral-btn"));
+    const section = screen.getByTestId("ward-community-referrals");
+    expect(within(section).queryByTestId("ward-community-referrals-list")).toBeNull();
   });
 });
 

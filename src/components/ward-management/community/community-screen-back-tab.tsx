@@ -8,6 +8,9 @@
  */
 
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
+import { useCommunitySentReferrals } from "../ward-flow-provider";
+import { referralsSentByTeam } from "./community-derivations";
+import { sentAgo, sentPlaceLine, sentReferralSummary, unattributedSentLine } from "./community-sent-referrals";
 import { CommunityFollowUp } from "./community-follow-up";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
@@ -35,7 +38,13 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
     filteredDepartures,
     cannotResolve,
     activeTab,
+    identityOf,
   } = view;
+  const sentByAnyTeam = useCommunitySentReferrals();
+  const sentReferrals = {
+    sent: referralsSentByTeam(sentByAnyTeam.sent, team),
+    unattributed: sentByAnyTeam.unattributed,
+  };
   return (
     <div
       className={
@@ -407,18 +416,39 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
           </div>
           <div className={styles.panelBody} role="region" aria-label="Referrals we have made details" tabIndex={0}>
             {/*
-             * Point 3. Rendered as a section with a statement and no list, deliberately. Leaving the
-             * section out would let a reader assume the hub had shown everything it knows; filtering
-             * community-sourced referrals by the patient's home region would produce a list that
-             * looked exactly right and was not this team's.
-             *
-             * No count in this panel's header, deliberately: a nought would read as "no referrals
-             * raised", and nothing on this page can measure that.
+             * Point 3, fix plan item 17 (D-74): a referral records the team that sent it, so the team
+             * sees what it sent and each place's answer. Matched on the sending team's name only,
+             * never on the person's home region, which would look right and not be this team's.
+             * Older referrals that name no sending team are counted, not guessed onto a team.
              */}
-            <p className={styles.absenceNotice} data-testid="ward-community-referrals-unattributable">
-              <strong>Referrals raised by this team cannot be attributed.</strong> The source records only
-              &ldquo;community&rdquo;, without a team name, so no list is shown.
-            </p>
+            {sentReferrals.sent.length === 0 ? (
+              <p className={styles.emptyNote} data-testid="ward-community-referrals-empty">
+                No referral on record names {team.name} as the team that sent it.
+              </p>
+            ) : (
+              <ul className={styles.cardList} data-testid="ward-community-referrals-list">
+                {sentReferrals.sent.map((referral) => (
+                  <li key={referral.id} className={styles.card} data-testid={`ward-community-sent-${referral.id}`}>
+                    <p className={styles.cardUnit}>
+                      {referral.patientId ? identityOf({ patientId: referral.patientId }) : "Person not recorded"}
+                    </p>
+                    <p className={styles.cardDetail}>
+                      {sentReferralSummary(referral)} Sent {sentAgo(referral.raisedAt, now)}.
+                    </p>
+                    <ul aria-label="Where it was sent">
+                      {referral.addressings.map((addressing, index) => (
+                        <li key={`${referral.id}-${index}`}>{sentPlaceLine(addressing, units)}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {sentReferrals.unattributed > 0 ? (
+              <p className={styles.footnote} data-testid="ward-community-referrals-unattributable">
+                {unattributedSentLine(sentReferrals.unattributed)}
+              </p>
+            ) : null}
           </div>
         </section>
       </div>

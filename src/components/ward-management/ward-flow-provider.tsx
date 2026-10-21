@@ -12,7 +12,7 @@ import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
-import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
+import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
 
 import {
   type Context,
@@ -1454,6 +1454,12 @@ export function useWardFlow(): WardFlowContextValue {
 export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
   const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
+}
+
+/** Fix plan item 17 (D-74): referrals as the community team that sent them sees them, never the record. */
+export function useCommunitySentReferrals(): ReturnType<typeof communitySentView> {
+  const { referrals } = useWardFlowSelect("referrals");
+  return useMemo(() => communitySentView(referrals), [referrals]);
 }
 
 /**

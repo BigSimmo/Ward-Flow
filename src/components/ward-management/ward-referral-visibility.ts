@@ -17,7 +17,12 @@ import type {
   UrgencyLevel,
   WardAddressing,
 } from "@/components/ward-management/ward-model";
-import { referralState } from "@/components/ward-management/ward-referrals";
+import {
+  referralAddressingStateLabel,
+  referralDestinationLabel,
+  referralState,
+  referralWithdrawn,
+} from "@/components/ward-management/ward-referrals";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import type {
   ReferralChart,
@@ -732,6 +737,77 @@ export function communityScopedReferrals(referrals: Referral[]): CommunityScoped
   return referrals
     .map((referral) => communityScopedReferral(referral))
     .filter((projection): projection is CommunityScopedReferral => projection !== undefined);
+}
+
+/** One place a community team's own referral went, and that place's answer, as the sending team
+ *  may read it. A label and an answer only: the sender chose these places itself (D-74 item 2). */
+export type CommunitySentAddressing = {
+  /** The place, as the referral board names it. A screen with the unit list names a ward by
+   *  `unitId` instead, because this label spells a ward by its id. */
+  label: string;
+  unitId?: string;
+  /** That place's answer in words, from `referralAddressingStateLabel`. */
+  answer: string;
+  accepted: boolean;
+};
+
+/**
+ * D-74 item 2 (fix plan item 17): a referral as the community team that SENT it may see it.
+ *
+ * FD-23 limits what a RECEIVING ward or team sees of somewhere else. The sender is not receiving: it
+ * picked every place on the list, so it sees each one and its answer. It still sees no referral
+ * another team sent, and that filtering is the caller's (`referralsSentByTeam`), because this
+ * module takes no viewer. Field by field, like every projection here.
+ */
+export type CommunitySentReferral = {
+  id: string;
+  raisedAt: Instant;
+  urgency: UrgencyLevel;
+  patientId?: PatientId;
+  sendingTeamName: string;
+  state: ReferralState;
+  withdrawn: boolean;
+  addressings: CommunitySentAddressing[];
+};
+
+/** The sending team's view of one referral, or `undefined` when no community team is recorded as
+ *  its sender. An older community referral with no `sendingTeamName` is nobody's to list. */
+export function communitySentReferral(referral: Referral): CommunitySentReferral | undefined {
+  if (referral.source !== "community" || referral.sendingTeamName === undefined) return undefined;
+  return {
+    id: referral.id,
+    raisedAt: referral.raisedAt,
+    urgency: referral.urgency,
+    ...(referral.patientId !== undefined ? { patientId: referral.patientId } : {}),
+    sendingTeamName: referral.sendingTeamName,
+    state: referralState(referral),
+    withdrawn: referralWithdrawn(referral),
+    addressings: referral.destinations.map((addressing) => ({
+      label: referralDestinationLabel(addressing.destination),
+      ...(addressing.destination.kind === "psychiatric_ward" && addressing.destination.unitId
+        ? { unitId: addressing.destination.unitId }
+        : {}),
+      answer: referralAddressingStateLabel(addressing),
+      accepted: addressing.state === "accepted",
+    })),
+  };
+}
+
+/** Every referral a community team is recorded as having sent, sender-scoped, and how many community
+ *  referrals record no sending team (a count only, never guessed onto a team). Which team's they are
+ *  is the caller's filter, as everywhere in this module. */
+export type CommunitySentView = { sent: CommunitySentReferral[]; unattributed: number };
+
+export function communitySentView(referrals: readonly Referral[]): CommunitySentView {
+  const sent: CommunitySentReferral[] = [];
+  let unattributed = 0;
+  for (const referral of referrals) {
+    if (referral.source !== "community") continue;
+    const projected = communitySentReferral(referral);
+    if (projected) sent.push(projected);
+    else unattributed += 1;
+  }
+  return { sent, unattributed };
 }
 
 /** One addressing whose destination is an emergency department. Declared locally rather than in the
