@@ -42,6 +42,7 @@ import {
 import { ROLE_MENUS, railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 const ROLES = Object.keys(CHROME_ROLE_LABELS) as WardChromeRole[];
 const classes = { button: "b", glyph: "g", text: "t", line: "l", label: "x" };
@@ -90,6 +91,8 @@ describe("help content", () => {
   it("sorts the glossary, includes site codes and filters by word or meaning", () => {
     const terms = GLOSSARY.map((entry) => entry.term);
     expect(terms).toEqual(terms.toSorted((left, right) => left.localeCompare(right, "en-AU")));
+    expect(new Set(terms).size).toBe(terms.length);
+    for (const site of siteDirectory) expect(terms).toContain(site.code);
     expect(filterGlossary("nurse unit").map((entry) => entry.term)).toEqual(["NUM"]);
     expect(filterGlossary("  ")).toBe(GLOSSARY);
   });

@@ -273,7 +273,7 @@ export type Occupant = {
    * (`formatInstantWithDay`), or `null` while the ward has recorded none. Shown beside
    * `tentativeDiagnosis`, never in place of it.
    */
-  wardDiagnosis: { phrase: string; block: TentativeDiagnosisBlock; recordedAt: string } | null;
+  wardDiagnosis: { phrase: string; block: TentativeDiagnosisBlock; recordedAt: string; recordedBy: string } | null;
   /**
    * Whole hours this person has been away at an emergency department, or `null` while they are on
    * the ward. Rounded down, and floored at zero so a clock nudged backwards cannot print "-1
@@ -688,5 +688,11 @@ function wardDiagnosisLine(admission: Admission, now: Instant): Occupant["wardDi
   const phrase = tentativeDiagnosisPhrase(recorded.block);
   return phrase === null
     ? null
-    : { phrase, block: recorded.block, recordedAt: formatInstantWithDay(recorded.recordedAt, now) };
+    : {
+        phrase,
+        block: recorded.block,
+        recordedAt: formatInstantWithDay(recorded.recordedAt, now),
+        // The coordinator may record for a ward, so the line names who actually did.
+        recordedBy: recorded.recordedBy === "coordinator" ? "the coordinator" : "the ward",
+      };
 }

@@ -103,7 +103,7 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
             <button
               type="button"
               className={styles.pinButton}
-              aria-label={`Pin ${current.name} to My wards`}
+              aria-label={`Pin this ward, ${current.name}, to My wards`}
               onClick={() => pin(current)}
               data-testid="ward-my-wards-pin"
             >

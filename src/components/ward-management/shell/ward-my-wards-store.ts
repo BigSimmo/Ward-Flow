@@ -36,7 +36,14 @@ onWardSessionEnd(() => {
   inMemoryFallback = undefined;
   lastRaw = undefined;
   lastParsed = NO_PINS;
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(myWardsChangeEvent));
+  if (typeof window === "undefined") return;
+  // Removed here, before subscribers re-read, so a mounted rail cannot read the last person's pins back.
+  try {
+    window.localStorage.removeItem(MY_WARDS_STORAGE_KEY);
+  } catch {
+    // Nothing is stored when storage is unreachable.
+  }
+  window.dispatchEvent(new Event(myWardsChangeEvent));
 });
 
 /** Reads a stored value as pinned ward ids: valid ids only, no repeats, at most `MY_WARDS_LIMIT`. */

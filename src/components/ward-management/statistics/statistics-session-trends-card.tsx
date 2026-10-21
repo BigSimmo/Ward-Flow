@@ -39,8 +39,8 @@ export function StatisticsSessionTrendsCard({
         </p>
         {trends.counted === 0 ? (
           <p className={styles.muted} data-testid="ward-statistics-session-trends-empty">
-            Nothing counted yet this session. Referrals, decisions, arrivals and departures appear here as they are
-            recorded.
+            Nothing recorded in the last {trends.hours.length} hours. Referrals, decisions, arrivals and departures
+            appear here as they are recorded.
           </p>
         ) : (
           <div className={styles.tableWrap}>

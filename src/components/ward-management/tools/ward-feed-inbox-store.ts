@@ -19,9 +19,15 @@ export type FeedItem = {
   note?: string;
 };
 
-type Inbox = { generation: number | null; received: number; items: readonly FeedItem[] };
+type Inbox = {
+  generation: number | null;
+  received: number;
+  /** The simulated messages, fixed at the first one received, so closing Tools cannot reshuffle them. */
+  script: readonly string[] | null;
+  items: readonly FeedItem[];
+};
 
-const EMPTY: Inbox = { generation: null, received: 0, items: [] };
+const EMPTY: Inbox = { generation: null, received: 0, script: null, items: [] };
 let inbox: Inbox = EMPTY;
 const listeners = new Set<() => void>();
 
@@ -42,6 +48,11 @@ export const useFeedInbox = createBrowserStore(subscribe, () => inbox, EMPTY);
 /** Empties the inbox when the demo world it came from has been replaced. */
 export function syncFeedInboxGeneration(generation: number): void {
   if (inbox.generation !== generation) set({ ...EMPTY, generation });
+}
+
+/** Keeps the messages still to come as they were when the first one arrived. */
+export function startFeedScript(messages: readonly string[]): void {
+  if (!inbox.script) set({ ...inbox, script: messages });
 }
 
 /**

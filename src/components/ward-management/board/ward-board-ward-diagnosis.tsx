@@ -38,7 +38,9 @@ export function WardDiagnosisControl({
         if (block === "" || unchanged) return;
         dispatchAndReport(
           () => raise("RECORD_WARD_DIAGNOSIS", { actingUnitId: unitId, admissionId: occupant.key, block }),
-          `Ward's tentative diagnosis recorded: ${block}. The diagnosis the stay arrived with is kept.`,
+          occupant.tentativeDiagnosis === null
+            ? `Ward's tentative diagnosis recorded: ${block}.`
+            : `Ward's tentative diagnosis recorded: ${block}. The diagnosis the stay arrived with is kept.`,
           "Ward's tentative diagnosis recorded.",
         );
       }}

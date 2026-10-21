@@ -10,6 +10,8 @@ import { WardFeedInbox } from "@/components/ward-management/tools/ward-feed-inbo
 import {
   receiveFeedMessage,
   resetFeedInboxForTests,
+  startFeedScript,
+  syncFeedInboxGeneration,
   useFeedInbox,
 } from "@/components/ward-management/tools/ward-feed-inbox-store";
 
@@ -82,6 +84,21 @@ function MovementStage({ id }: { id: string }) {
 function InboxCount() {
   return <output data-testid="probe-count">{useFeedInbox().items.length}</output>;
 }
+
+describe("feed script", () => {
+  it("keeps the first script until the demo world changes, so closing Tools cannot reshuffle what is to come", () => {
+    function Probe() {
+      return <output data-testid="probe-script">{JSON.stringify(useFeedInbox().script)}</output>;
+    }
+    render(<Probe />);
+    act(() => syncFeedInboxGeneration(1));
+    act(() => startFeedScript(["first"]));
+    act(() => startFeedScript(["second"]));
+    expect(screen.getByTestId("probe-script")).toHaveTextContent('["first"]');
+    act(() => syncFeedInboxGeneration(2));
+    expect(screen.getByTestId("probe-script")).toHaveTextContent("null");
+  });
+});
 
 describe("feed inbox in Tools", () => {
   it("confirms an arrival only when a person taps Confirm, and rejecting changes nothing", async () => {

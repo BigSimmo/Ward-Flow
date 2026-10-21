@@ -143,7 +143,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
           <p className={styles.cardMeta}>
-            Direct referral to Community Mental Health Team (inpatient admission not required):
+            Direct referral to Community Mental Health Team. No bed is requested by this referral.
           </p>
           <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
             Legal status:{" "}

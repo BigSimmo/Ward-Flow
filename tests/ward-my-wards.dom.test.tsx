@@ -104,12 +104,21 @@ describe("My wards section", () => {
   it("offers Pin this ward on a ward page, then lists the ward with a remove button", () => {
     route.pathname = `/ward-flow/ward/${first.id}`;
     renderSection();
-    fireEvent.click(screen.getByRole("button", { name: `Pin ${first.name} to My wards` }));
+    fireEvent.click(screen.getByRole("button", { name: `Pin this ward, ${first.name}, to My wards` }));
     const link = screen.getByRole("link", { name: first.name });
     expect(link.getAttribute("href")).toBe(`/ward-flow/ward/${first.id}`);
     expect(link.getAttribute("aria-current")).toBe("page");
     expect(screen.queryByTestId("ward-my-wards-pin")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: `Remove ${first.name} from My wards` }));
+    expect(screen.queryByRole("link", { name: first.name })).toBeNull();
+  });
+
+  it("drops the pins from a mounted section when the session ends", () => {
+    route.pathname = `/ward-flow/ward/${first.id}`;
+    renderSection();
+    fireEvent.click(screen.getByTestId("ward-my-wards-pin"));
+    expect(screen.getByRole("link", { name: first.name })).toBeInTheDocument();
+    act(() => endWardFlowBrowserSession());
     expect(screen.queryByRole("link", { name: first.name })).toBeNull();
   });
 

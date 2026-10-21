@@ -89,7 +89,7 @@ export function PersonEntry({
         </p>
         {occupant.wardDiagnosis !== null && (
           <p className={styles.personLine} data-testid={`${idPrefix}-${occupant.key}-ward-diagnosis`}>
-            {`Ward's tentative diagnosis: ${occupant.wardDiagnosis.phrase}, recorded by the ward at ${occupant.wardDiagnosis.recordedAt}. The one above is kept.`}
+            {`Ward's tentative diagnosis: ${occupant.wardDiagnosis.phrase}, recorded by ${occupant.wardDiagnosis.recordedBy} at ${occupant.wardDiagnosis.recordedAt}. The one above is kept.`}
           </p>
         )}
         <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
@@ -224,7 +224,7 @@ export function PersonEntry({
         </p>
         {occupant.wardDiagnosis !== null && (
           <p className={styles.personLine} data-testid={`${idPrefix}-${occupant.key}-ward-diagnosis`}>
-            {`Ward's tentative diagnosis: ${occupant.wardDiagnosis.phrase}, recorded by the ward at ${occupant.wardDiagnosis.recordedAt}. The one above is kept.`}
+            {`Ward's tentative diagnosis: ${occupant.wardDiagnosis.phrase}, recorded by ${occupant.wardDiagnosis.recordedBy} at ${occupant.wardDiagnosis.recordedAt}. The one above is kept.`}
           </p>
         )}
       </div>

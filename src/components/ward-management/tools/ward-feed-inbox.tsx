@@ -17,6 +17,7 @@ import { previewFeedMessage, type FeedMessage } from "../integration/hospital-fe
 import {
   receiveFeedMessage,
   settleFeedItem,
+  startFeedScript,
   syncFeedInboxGeneration,
   useFeedInbox,
   type FeedItem,
@@ -61,18 +62,17 @@ export function WardFeedInbox() {
   useEffect(() => syncFeedInboxGeneration(worldGeneration), [worldGeneration]);
 
   // The simulated messages follow the world as it was when the inbox started, so later changes do
-  // not reshuffle what is still to come.
-  const [script, setScript] = useState<{ generation: number; messages: readonly string[] } | null>(null);
+  // not reshuffle what is still to come. The store holds them, so they outlive this row closing.
   const messages =
-    script?.generation === worldGeneration
-      ? script.messages
+    inbox.generation === worldGeneration && inbox.script
+      ? inbox.script
       : simulatedFeedMessages({ movements, admissions, patients });
   const received = inbox.generation === worldGeneration ? inbox.received : 0;
   const next = messages[received];
 
   function receive() {
     if (!next) return;
-    if (script?.generation !== worldGeneration) setScript({ generation: worldGeneration, messages });
+    startFeedScript(messages);
     const item = receiveFeedMessage(next);
     setStatus(
       item.status === "refused"
