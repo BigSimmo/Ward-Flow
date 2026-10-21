@@ -20,10 +20,8 @@ if [ "${GUARD_PUSH_DISABLE:-}" = "1" ]; then
   export SKIP_STATIC_GUARD=1
 fi
 
-# By default, do not block fast iterations/fixes on in-flight CI runs unless explicitly requested.
-if [ "${PREPUSH_CI_STRICT:-0}" != "1" ]; then
-  export SKIP_IN_FLIGHT_CI_GUARD="${SKIP_IN_FLIGHT_CI_GUARD:-1}"
-fi
+# The in-flight CI guard runs by default. Opt out for one push only by setting
+# SKIP_IN_FLIGHT_CI_GUARD=1 explicitly; the hook never exports that bypass itself.
 
 # Without Node, the destination cannot be checked, so block the push.
 if ! command -v node >/dev/null 2>&1; then

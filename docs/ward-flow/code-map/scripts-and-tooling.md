@@ -337,8 +337,8 @@ line.
   Flow's public main branch (the pre-split `BigSimmo/Database` Guard 0 rule that treated Ward Flow
   as local-disk-only is historical). Run directly, `guard-push.mjs` verifies the `BigSimmo/Ward-Flow`
   remote identity and blocks a push while a required CI run is active on the branch (bypass per push
-  with `SKIP_IN_FLIGHT_CI_GUARD=1`; the installed `.githooks/pre-push` exports that bypass by default
-  for fast iteration unless `PREPUSH_CI_STRICT=1` is set).
+  with `SKIP_IN_FLIGHT_CI_GUARD=1`; the installed `.githooks/pre-push` keeps the check on by default
+  and never exports that bypass itself).
 - **`scripts/ci-change-scope.mjs`** (1,543 lines total) — Repo-wide CI scope classifier
   (`check:ci-scope`), not Ward-owned, but its advisory-mockup arm has a dedicated, commented Ward
   section: `wardAdvisorySpecs` (~lines 111–156) derives the `ui-ward-*.spec.ts` alternation from
