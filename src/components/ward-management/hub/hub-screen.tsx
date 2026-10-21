@@ -79,7 +79,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { HubPlaceRow } from "./hub-place-row";
-import { refreshRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
+import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import {
   KIND_WORD_LONG,
   barWidth,
@@ -261,7 +261,7 @@ export function HubScreen() {
   const selectedRequest =
     selected === undefined
       ? undefined
-      : refreshRequests.filter((entry) => entry.unitId === selected.id && refreshRequestIsOpen(entry)).at(-1);
+      : refreshRequests.filter((entry) => entry.unitId === selected.id && capacityRequestIsOpen(entry)).at(-1);
 
   function select(id: string) {
     setSelectedId(id);

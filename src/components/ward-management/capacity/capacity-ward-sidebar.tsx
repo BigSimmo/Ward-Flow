@@ -20,7 +20,7 @@ import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-
 import styles from "./capacity.module.css";
 import { WardClosurePanel } from "./ward-closure-panel";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
-import { refreshRequestIsOpen } from "../ward/ward-buzz-keys";
+import { capacityRequestIsOpen } from "../ward/ward-buzz-keys";
 
 export function CapacityTabs({
   id,
@@ -97,7 +97,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
   const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
   const request = refreshRequests
-    .filter((entry) => entry.unitId === row.unit.id && refreshRequestIsOpen(entry, row.unit.allocatable))
+    .filter((entry) => entry.unitId === row.unit.id && capacityRequestIsOpen(entry, row.unit.allocatable))
     .at(-1);
   function closeRecord() {
     setOpened(null);

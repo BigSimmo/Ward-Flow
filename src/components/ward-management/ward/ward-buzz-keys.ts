@@ -81,6 +81,14 @@ export function refreshRequestIsOpen(
   );
 }
 
+/** An open ask about capacity: what the capacity rows, sidebar, hub and ward home mark show. */
+export function capacityRequestIsOpen(
+  request: CapacityRefreshRequest,
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt">,
+): boolean {
+  return refreshRequestAsksForCapacity(request) && refreshRequestIsOpen(request, allocatable);
+}
+
 /**
  * Marks every open capacity request for `unitId` as answered by a ward confirmation made at
  * `now`. `readRevision` is the capacity revision the ward confirmed against; a request recorded

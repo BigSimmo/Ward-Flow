@@ -6,7 +6,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
-import { refreshRequestIsOpen } from "../src/components/ward-management/ward/ward-buzz-keys";
+import { capacityRequestIsOpen, refreshRequestIsOpen } from "../src/components/ward-management/ward/ward-buzz-keys";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 
 // DEC-L5-04 (CAP-REV): only the ward's own capacity confirmation answers a capacity request, and
@@ -67,6 +67,8 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
     });
     const remaining = open(confirm(s, 7));
     expect(remaining.map((r) => r.message)).toEqual(["Please review the current placement request."]);
+    // The open placement buzz is not a capacity ask, so the capacity screens may ask again.
+    expect(remaining.filter((r) => capacityRequestIsOpen(r))).toHaveLength(0);
   });
 
   it("leaves other wards' requests open and survives a save round trip", () => {

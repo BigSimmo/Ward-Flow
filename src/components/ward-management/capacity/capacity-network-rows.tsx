@@ -23,7 +23,7 @@ import {
 } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { bedKindsServed } from "./capacity-gap-words";
-import { refreshRequestIsOpen } from "../ward/ward-buzz-keys";
+import { capacityRequestIsOpen } from "../ward/ward-buzz-keys";
 
 /**
  * ⚠️ **`matches` MARKS A ROW. IT NEVER REMOVES ONE — that is the whole point of this task.**
@@ -61,7 +61,7 @@ function NetworkRow({
   // A request stays outstanding until the ward next confirms its capacity (DEC-L5-04): the confirmation stamps it
   // answered, so the order comes from the events, not from whole-minute timestamps.
   const latestRequest = refreshRequests
-    .filter((request) => request.unitId === row.unit.id && refreshRequestIsOpen(request, row.unit.allocatable))
+    .filter((request) => request.unitId === row.unit.id && capacityRequestIsOpen(request, row.unit.allocatable))
     .at(-1);
   const asked = latestRequest !== undefined;
   const site = siteByCode(row.unit.siteCode);

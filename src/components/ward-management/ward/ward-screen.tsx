@@ -102,7 +102,7 @@ import {
   pickedUpSay,
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
-import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
+import { buzzKeys, capacityRequestIsOpen, refreshRequestIsOpen } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import {
@@ -1088,7 +1088,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Task 5, spec D12: this unit's REQUEST_CAPACITY_REFRESH asks, live from the provider. The list only
   // grows, so the last is the latest. DEC-L5-04: one the ward's confirmation answered is not shown.
   const latestRefreshRequest = refreshRequests
-    .filter((request) => request.unitId === unit.id && refreshRequestIsOpen(request))
+    .filter((request) => request.unitId === unit.id && capacityRequestIsOpen(request))
     .at(-1);
 
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
