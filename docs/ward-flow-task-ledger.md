@@ -129,7 +129,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Requirement**: Require clinician reason selection from fixed taxonomy prior to unblocking discharge delays.
 8. **CAP-REV (Capacity Request Revision Decoupling)**:
    - **Status**: **Resolved** 21 Oct 2026 (branch `claude/project-thread-yu7210`). Each request records the ward's confirmation count (`allocatable.confirmations`, moved on only by `CONFIRM_CAPACITY`), and it reads as answered once the shared unit's count has moved past it, so it clears on every desk and the shared site, no other bed change answers it, and a confirmation from an older board does not clash with the ask. #290 had been credited with this but never built it.
-   - **Requirement**: Record the allocatable revision on each Capacity request so request ordering and clearance do not rely on minute-level timestamps.
+   - **Requirement**: Record a confirmation counter on each Capacity request so request ordering and clearance do not rely on minute-level timestamps. Implemented as `allocatable.confirmations`, because the general allocatable revision also moves on other bed changes.
 9. **Code-Map Route Audit Synchronization**:
    - **Status**: Open.
    - **Requirement**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points (including `/command`, Statistics sub-routes, and report entry points).
@@ -183,7 +183,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L4-03 (AUD-06 Multi-Ward Rapid Click Reducer Serialization)**: Reducer action serialization under rapid ward switching.
 - **TASK-L4-04 (S2-9 Gender Match Validation)**: Gender match & security classification validation on bed placements against ward mix policies (gender placement validation resolved; S2-9 security comparator alignment tracked in §7.79).
 - **TASK-L4-05 (Discharge Block Reason Selector)**: Mandatory clinician reason selection prior to discharge delay unblocking (Resolved).
-- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record allocatable revision counter on requests to avoid timestamp collisions (Resolved 21 Oct 2026, see item 8 above).
+- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record the ward's confirmation count (`allocatable.confirmations`) on requests to avoid timestamp collisions (Resolved 21 Oct 2026, see item 8 above).
 - **TASK-L4-07 (Code-Map Route Audit Synchronization)**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points.
 - **TASK-L4-08 (Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
 - **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
@@ -197,7 +197,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **DEC-L5-01 (S2-2)**: Revoked-examination hold release — **Ruled**: Refuse generic blocker edits on revoked-exam / stopped-transport holds; require explicit `RELEASE_HELD_BED`.
 - **DEC-L5-02 (A1-8, A1-10, S2-10, A1-13, A1-14)**: Ward unit authority — **Ruled**: Require matching `actingUnitId` for `ward` callers on arrival details, no-transport-needed, transport booking, and origin verification on referral corrections (coordinators unrestricted).
 - **DEC-L5-03 (A1-2)**: Referral withdrawal authority — **Ruled**: Only the originating referrer (matching ED/community `actingPlaceId` or originating inpatient ward `actingUnitId`) plus the `coordinator` may withdraw a referral.
-- **DEC-L5-04 (CAP-REV)**: Capacity request ordering — **Ruled**: Record an explicit `allocatableRevision` counter on capacity update requests so only an actual capacity confirmation clears the request.
+- **DEC-L5-04 (CAP-REV)**: Capacity request ordering — **Ruled**: Record an explicit `allocatableRevision` counter on capacity update requests so only an actual capacity confirmation clears the request. Implemented 21 Oct 2026 as `allocatable.confirmations`, a counter only `CONFIRM_CAPACITY` moves, since the general revision also moves on other bed changes.
 - **DEC-L5-05 (SPEC-005)**: Home queue ordering policy — **Ruled**: Keep D-32 ordering (actionable stage first, then longest wait) and render ATS + Flagged Urgent as distinct visual badges without overriding wait-time order.
 
 #### Category 6: Front-End, UX, Accessibility & Architecture Audit Backlog (October 2026)
