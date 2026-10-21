@@ -128,7 +128,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Status**: **Resolved** (mandatory clinician reason selection enforced prior to unblocking discharge delays).
    - **Requirement**: Require clinician reason selection from fixed taxonomy prior to unblocking discharge delays.
 8. **CAP-REV (Capacity Request Revision Decoupling)**:
-   - **Status**: Open.
+   - **Status**: **Resolved** 21 Oct 2026 (branch `claude/project-thread-yu7210`). Each request records `allocatableRevision`; the ward's `CONFIRM_CAPACITY` stamps `answeredAt` in the shared record, so the request clears on every desk and the shared site. #290 had been credited with this but never built it.
    - **Requirement**: Record the allocatable revision on each Capacity request so request ordering and clearance do not rely on minute-level timestamps.
 9. **Code-Map Route Audit Synchronization**:
    - **Status**: Open.
@@ -183,7 +183,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L4-03 (AUD-06 Multi-Ward Rapid Click Reducer Serialization)**: Reducer action serialization under rapid ward switching.
 - **TASK-L4-04 (S2-9 Gender Match Validation)**: Gender match & security classification validation on bed placements against ward mix policies (gender placement validation resolved; S2-9 security comparator alignment tracked in §7.79).
 - **TASK-L4-05 (Discharge Block Reason Selector)**: Mandatory clinician reason selection prior to discharge delay unblocking (Resolved).
-- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record allocatable revision counter on requests to avoid timestamp collisions.
+- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record allocatable revision counter on requests to avoid timestamp collisions (Resolved 21 Oct 2026, see item 8 above).
 - **TASK-L4-07 (Code-Map Route Audit Synchronization)**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points.
 - **TASK-L4-08 (Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
 - **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
@@ -305,7 +305,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 - **PR #287 (`b8fd53d1`)**: Automated documentation maintenance pipeline (`npm run docs:maintain`) and `manifest.ts` `background_color` (`R7`).
 - **PR #289 (`7debf591`) & PR #295 (`ef302b7e`)**: Cut `backend/ward-flow/` default primary store over to Supabase (`D-55`) and removed retired Azure runtime code.
-- **PR #290 (`950fcac7`)**: Completed Streams 1–5 audit remediations (25 defect fixes across `S1-5`, `S1-7`, `S1-8`, `S1-9..S1-11`, `S2-3`, `S2-9`, `AUD-12`, `AUD-13`, `AUD-14`, `AUD-URL`, `AUD-ESC`, `M-WARD-ANSWER`, `D2`, `D3`, `D7`, `M-TOKENS`, `A3-8/A3-9`, `A3-15`, `A2-11/A2-12`, `A1-15`, `A4-12`, `A4-13`, `A4-15`, `R09`, `R14`, `CAP-REV`, `SPEC-005`).
+- **PR #290 (`950fcac7`)**: Completed Streams 1–5 audit remediations (25 defect fixes across `S1-5`, `S1-7`, `S1-8`, `S1-9..S1-11`, `S2-3`, `S2-9`, `AUD-12`, `AUD-13`, `AUD-14`, `AUD-URL`, `AUD-ESC`, `M-WARD-ANSWER`, `D2`, `D3`, `D7`, `M-TOKENS`, `A3-8/A3-9`, `A3-15`, `A2-11/A2-12`, `A1-15`, `A4-12`, `A4-13`, `A4-15`, `R09`, `R14`, `SPEC-005`). Correction 21 Oct 2026: `CAP-REV` was listed here but #290 did not build it; requests cleared only on a local dismissal until branch `claude/project-thread-yu7210`.
 - **PR #291 (`dc3b2b49`)**: Audit usability, accessibility, and reliability fixes (mandatory discharge blocker reason, dirty-state navigation guards `TASK-L6-01`, `M-WARD-ANSWER`).
 - **PR #292 (`740446a2`)**: Top 25 clinical, operational, and UX improvements across Ward Flow screens.
 - **PR #294 (`e5979207`)**: Source-generated `docs/FACTS.md` markers (`npm run docs:facts`) and `docs/retired-terms.json` enforcement.

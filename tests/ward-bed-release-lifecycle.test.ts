@@ -892,6 +892,7 @@ describe("ward bed release lifecycle", () => {
       unitId: "rph-adult-secure",
       at: NOW,
       byRole: "coordinator",
+      allocatableRevision: unit(state, "rph-adult-secure").allocatable.revision ?? 0,
     });
     const after = capacityBreakdown(unit(next, "rph-adult-secure"), next.bedReleases, next.leaveBeds, NOW);
     expect(after).toEqual(before);

@@ -23,6 +23,7 @@ import {
 } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { bedKindsServed } from "./capacity-gap-words";
+import { refreshRequestIsOpen } from "../ward/ward-buzz-keys";
 
 /**
  * ⚠️ **`matches` MARKS A ROW. IT NEVER REMOVES ONE — that is the whole point of this task.**
@@ -57,11 +58,12 @@ function NetworkRow({
   const requestDisabledReason =
     useEffectiveWardAccess().role === "coordinator" ? undefined : "Only the coordinator can request ward updates.";
   // From the shared record, so a demo reset clears it and a request made from the ward sidebar shows here too.
-  // A request stays outstanding until the ward next confirms its capacity. Timestamps are whole minutes, so a
-  // request and a confirmation in the same minute cannot be ordered; that tie counts as still outstanding, which
-  // prevents a duplicate request rather than allowing one.
-  const latestRequest = refreshRequests.filter((request) => request.unitId === row.unit.id).at(-1);
-  const asked = latestRequest !== undefined && latestRequest.at >= row.unit.allocatable.confirmedAt;
+  // A request stays outstanding until the ward next confirms its capacity (DEC-L5-04): the confirmation stamps it
+  // answered, so the order comes from the events, not from whole-minute timestamps.
+  const latestRequest = refreshRequests
+    .filter((request) => request.unitId === row.unit.id && refreshRequestIsOpen(request, row.unit.allocatable))
+    .at(-1);
+  const asked = latestRequest !== undefined;
   const site = siteByCode(row.unit.siteCode);
   /*
    * Wards are always named, never shown as a bare code. The unresolved sentence comes from

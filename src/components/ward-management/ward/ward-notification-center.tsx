@@ -16,7 +16,7 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
-import { buzzKeys } from "./ward-buzz-keys";
+import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -32,6 +32,8 @@ export interface WardNotificationCenterProps {
     byRole: string;
     message?: string;
     urgent?: boolean;
+    allocatableRevision?: number;
+    answeredAt?: Instant;
   }[];
   morningRollupConfirmed?: boolean;
   morningRollupDeadlinePassed?: boolean;
@@ -162,11 +164,12 @@ export function WardNotificationCenter({
     if (nextTab) setActiveTab(nextTab.id);
   };
 
-  // 1. Coordinator Buzzes matching unitId
+  // 1. Coordinator Buzzes matching unitId, still open: the ward's capacity confirmation answers one
+  // on every desk (DEC-L5-04). Keys come from the whole list so a dismissal keeps its key.
   const keys = buzzKeys(refreshRequests);
   const matchingBuzzes = refreshRequests
     .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
-    .filter(({ buzz }) => buzz.unitId === unitId);
+    .filter(({ buzz }) => buzz.unitId === unitId && refreshRequestIsOpen(buzz));
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 

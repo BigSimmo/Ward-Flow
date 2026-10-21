@@ -69,6 +69,7 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "pullExpiresAt",
   // Global alerts (10 Oct 2026): a Pull now's answer time and a ward's "bed ready at".
   "answerBy",
+  "answeredAt",
   "readyAt",
   // 2026-09-26, with `Movement.plannedMoveAt`: a planned move time must move with the demo clock.
   "plannedMoveAt",
