@@ -834,30 +834,6 @@
   white-space: nowrap;
 }
 
-.umrn {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--wf-s-1);
-  padding: 0 var(--wf-s-1);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-sm);
-  background: none;
-  color: var(--wf-ink-2);
-  font: inherit;
-  cursor: pointer;
-}
-
-.umrn:hover {
-  border-color: var(--wf-line-ctl);
-  color: var(--wf-ink-1);
-}
-
-.umrn:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 1px;
-}
-
 .panelTier {
   display: inline-flex;
   flex: 0 0 auto;
@@ -1483,7 +1459,6 @@
   }
 
   .cardButton,
-  .umrn,
   .rowSelect {
     min-height: 3rem;
   }
