@@ -23,6 +23,7 @@ import { patientAgeYears, type Patient } from "@/components/ward-management/ward
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
+import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { type DocumentationDraft } from "./referral-flow-panels";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
 
@@ -487,6 +488,8 @@ export type KeptDraft = {
   ageBand: Cohort | "";
   selectedUnitIds: string[];
   selectedRecipient: string;
+  /** D-74: what a community referral is for. Omitted until chosen. */
+  communityPurpose?: CommunityReferralPurpose;
   documentation: DocumentationDraft;
   contact: ReferralContact;
   catchmentSuburb: string;

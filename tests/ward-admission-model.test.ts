@@ -565,6 +565,8 @@ describe("Admission privacy — structural", () => {
     // doc comment. One field, and unlike the pair below it IS a fact about the person: a broad
     // ICD-10-AM Chapter V block, chosen from eleven, or `null`.
     "tentativeDiagnosis",
+    // FD-10 (owner, 2026-08-29): the ward's own block, beside the referrer's and never over it.
+    "wardDiagnosis",
     // WIDENED ON PURPOSE, 2026-09-17 — item 11, owner answer 11: "voluntary patients take open beds
     // first, and secure patients take locked beds first." A fact about the WARD'S ACT — which bed
     // `PULL_PATIENT` actually took — in the same category `specialling` and `highAcuity` above sit
@@ -636,6 +638,8 @@ describe("Admission privacy — structural", () => {
       homeRegion: "Kimberley",
       // A BLOCK, never a condition and never anybody's words.
       tentativeDiagnosis: "F20–F29",
+      // Different from the referrer's block, so the two cannot be mistaken for one field (FD-10).
+      wardDiagnosis: { block: "F30–F39", recordedAt: DAY_ZERO + MINUTES_PER_DAY, recordedBy: "ward" },
       // A real kind, not absent — this fixture's whole job is to carry EVERY field at a real value.
       bedKind: "open",
       state: "occupied",
@@ -708,6 +712,10 @@ describe("Admission privacy — structural", () => {
       [
         "tentativeDiagnosis",
         "Owner ruling 2026-08-29: a referral's broad ICD-10-AM Chapter V block, chosen from eleven, never typed.",
+      ],
+      [
+        "wardDiagnosis",
+        "FD-10, owner 2026-08-29: the ward's own block from the same eleven, beside the referrer's, never typed.",
       ],
       [
         "patientId",

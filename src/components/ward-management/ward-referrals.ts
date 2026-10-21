@@ -17,6 +17,7 @@ import {
   BED_HOLD_EXPIRY_MINUTES,
   EXPECT_RECONSIDER_AFTER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   CommunityDeclineReason,
   Movement,
@@ -293,7 +294,26 @@ export function referralDestinationLabel(destination: ReferralDestination): stri
     // two dashes carry different meanings and the reader has to guess which clause is which.
     return `${referralDestinationKindLabel(destination.kind)} (${referralPurposeLabel(destination.purpose)})`;
   }
+  // D-74: a community arm says what it is for too, so a follow-up is never read as an admission ask.
+  if (destination.kind === "community_team") {
+    return `${referralDestinationKindLabel(destination.kind)} (${communityReferralPurposeLabel(communityPurposeOf(destination))})`;
+  }
   return referralDestinationKindLabel(destination.kind);
+}
+
+/** D-74: a community arm's purpose; an arm saved before D-74 reads as follow-up. */
+export function communityPurposeOf(destination: { purpose?: CommunityReferralPurpose }): CommunityReferralPurpose {
+  return destination.purpose ?? "follow_up";
+}
+
+/** D-74: the words for each community purpose, the same on every screen. */
+export function communityReferralPurposeLabel(purpose: CommunityReferralPurpose): string {
+  switch (purpose) {
+    case "follow_up":
+      return "Community follow-up";
+    case "assess_for_admission":
+      return "Assess for admission";
+  }
 }
 
 /**

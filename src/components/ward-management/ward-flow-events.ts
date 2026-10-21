@@ -12,6 +12,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   SupportNotificationOccasion,
   SupportNotificationOutcome,
@@ -1011,6 +1012,8 @@ export type WardFlowEvent =
       movementId: string;
       team: string;
       reason?: string;
+      /** D-74: follow-up or assess for admission. The ED form always sends it; absent reads as follow-up. */
+      purpose?: CommunityReferralPurpose;
     }
   | {
       /**
@@ -2151,6 +2154,19 @@ export type WardFlowEvent =
       actingUnitId?: string;
       admissionId: string;
       stepDownCandidate: boolean;
+    }
+  | {
+      /**
+       * FD-10 (owner, 29 Aug 2026): the ward's own tentative diagnosis block, recorded beside the
+       * referrer's and never over it. Each new one replaces the ward's previous one on the record;
+       * the history keeps every one. A correction, not a task: nothing prompts for it.
+       */
+      type: "RECORD_WARD_DIAGNOSIS";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      admissionId: string;
+      block: TentativeDiagnosisBlock;
     }
   | {
       type: "SET_DISCHARGE_BARRIER";

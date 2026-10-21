@@ -41,6 +41,8 @@ import { edById, siteByCode, siteDirectory } from "@/components/ward-management/
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { suburbOptions } from "./referral-destination-options";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
+import { type CommunityReferralPurpose } from "../ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "../ward-referrals";
 import { documentationError, EMPTY_DOCUMENTATION, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
@@ -255,6 +257,8 @@ export function useWardReferralDrawerState({
     kept?.selectedUnitIds ?? [...(initialUnitIds ?? [])],
   );
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
+  // D-74: a new community referral says whether it is for follow-up or to assess for admission.
+  const [communityPurpose, setCommunityPurpose] = useState<CommunityReferralPurpose | "">(kept?.communityPurpose ?? "");
   const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -411,6 +415,7 @@ export function useWardReferralDrawerState({
     ageBand,
     selectedUnitIds,
     selectedRecipient,
+    ...(communityPurpose ? { communityPurpose } : {}),
     documentation,
     contact,
     catchmentSuburb,
@@ -616,6 +621,7 @@ export function useWardReferralDrawerState({
     setIsSearchOpen(false);
     setSelectedUnitIds([]);
     setSelectedRecipient("");
+    setCommunityPurpose("");
     setDocumentation(EMPTY_DOCUMENTATION);
     setCatchmentSuburb(p.suburb);
     const teams = catchmentRoutingDestinations(lookupCatchment(p.suburb));
@@ -749,7 +755,9 @@ export function useWardReferralDrawerState({
       : !selectedRecipient
         ? []
         : destType === "community"
-          ? [{ kind: "community_team", teamName: selectedRecipient }]
+          ? communityPurpose
+            ? [{ kind: "community_team", teamName: selectedRecipient, purpose: communityPurpose }]
+            : []
           : [{ kind: "emergency_department", edId: selectedRecipient, purpose: "psychiatric_review" }];
   const recipientLabels =
     destType === "ward"
@@ -762,7 +770,13 @@ export function useWardReferralDrawerState({
           .filter((unit): unit is WardCapacityRecord => !!unit)
           .map((unit) => `${unit.hospital} · ${unit.name}`)
       : selectedRecipient
-        ? [destType === "community" ? selectedRecipient : (edById(selectedRecipient)?.name ?? selectedRecipient)]
+        ? [
+            destType === "community"
+              ? communityPurpose
+                ? `${selectedRecipient} (${communityReferralPurposeLabel(communityPurpose)})`
+                : selectedRecipient
+              : (edById(selectedRecipient)?.name ?? selectedRecipient),
+          ]
         : [];
 
   // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
@@ -902,7 +916,11 @@ export function useWardReferralDrawerState({
       referralError() ??
       storyError() ??
       documentationError(documentation) ??
-      (selectedDestinations.length ? null : "Select at least one referral location.");
+      (selectedDestinations.length
+        ? null
+        : destType === "community" && selectedRecipient
+          ? "Choose what the community referral is for."
+          : "Select at least one referral location.");
     setFlowError(error);
     if (error) {
       const failed = sectionFor(error);
@@ -1131,6 +1149,7 @@ export function useWardReferralDrawerState({
     setDestType(kind);
     setSelectedUnitIds([]);
     setSelectedRecipient("");
+    setCommunityPurpose("");
     setConfirmationOpen(false);
     setFlowError(null);
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
@@ -1285,6 +1304,8 @@ export function useWardReferralDrawerState({
     setSelectedUnitIds,
     selectedRecipient,
     setSelectedRecipient,
+    communityPurpose,
+    setCommunityPurpose,
     ageBand,
     setAgeBand,
     previewOpen,

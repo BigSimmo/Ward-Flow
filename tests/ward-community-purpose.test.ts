@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
+import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import {
+  communityPurposeOf,
+  communityReferralPurposeLabel,
+  referralDestinationLabel,
+} from "../src/components/ward-management/ward-referrals";
+import { communityTeamOptions } from "../src/components/ward-management/referrals/referral-destination-options";
+import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import type { CommunityReferralPurpose } from "../src/components/ward-management/ward-model-referral-parts";
+
+/*
+ * D-74 (Josh, 21 Oct 2026): a new community referral says whether it is for community follow-up or
+ * to assess for admission. Records saved before D-74 carry no purpose and read as follow-up.
+ */
+
+const team = communityTeamOptions()[0]!;
+
+function referToTeam(state: WardFlowState, purpose?: CommunityReferralPurpose | "nonsense") {
+  const candidates = state.movements.filter((movement) => !movement.closure && movement.originEdId);
+  for (const movement of candidates) {
+    const next = wardFlowReducer(state, {
+      type: "REFER_TO_COMMUNITY_TEAM",
+      role: "ed",
+      now: NOW_ANCHOR + 1,
+      movementId: movement.id,
+      team,
+      ...(purpose === undefined ? {} : { purpose: purpose as CommunityReferralPurpose }),
+    });
+    if (next.rejections.length === state.rejections.length || purpose === "nonsense") return next;
+  }
+  throw new Error("no seeded movement can be referred to a community team");
+}
+
+function communityArms(state: WardFlowState) {
+  return state.referrals.flatMap((referral) =>
+    referral.destinations.flatMap((arm) =>
+      arm.destination.kind === "community_team" && arm.destination.teamName === team ? [arm.destination] : [],
+    ),
+  );
+}
+
+describe("community referral purpose (D-74)", () => {
+  it("records the purpose chosen and names it on the destination", () => {
+    const state = referToTeam(seedWardFlowState(), "assess_for_admission");
+    const arm = communityArms(state).find((destination) => destination.purpose === "assess_for_admission");
+    expect(arm).toBeDefined();
+    expect(referralDestinationLabel(arm!)).toBe("Community team (Assess for admission)");
+  });
+
+  it("refuses a purpose that is not on the list", () => {
+    const before = seedWardFlowState();
+    const after = referToTeam(before, "nonsense");
+    expect(after.rejections.length).toBe(before.rejections.length + 1);
+    expect(after.rejections.at(-1)?.reason).toContain("COMMUNITY_REFERRAL_PURPOSES");
+  });
+
+  it("reads a record with no purpose as community follow-up", () => {
+    expect(communityPurposeOf({})).toBe("follow_up");
+    expect(communityReferralPurposeLabel(communityPurposeOf({}))).toBe("Community follow-up");
+    expect(referralDestinationLabel({ kind: "community_team", teamName: team })).toBe(
+      "Community team (Community follow-up)",
+    );
+  });
+
+  it("keeps a valid stored purpose and refuses an invented one on reload", () => {
+    const state = JSON.parse(JSON.stringify(referToTeam(seedWardFlowState(), "follow_up"))) as WardFlowState;
+    expect(isValidStoredWardFlowState(state)).toBe(true);
+    const arm = state.referrals
+      .flatMap((referral) => referral.destinations)
+      .find((candidate) => candidate.destination.kind === "community_team" && candidate.destination.purpose);
+    expect(arm).toBeDefined();
+    (arm!.destination as { purpose: string }).purpose = "nonsense";
+    expect(isValidStoredWardFlowState(state)).toBe(false);
+  });
+});

@@ -98,7 +98,7 @@ with a build contract"). **Dispatches:** `ACKNOWLEDGE_INBOX_ITEM`, `DISPATCH_BRO
 **Route:** `/board/[unitId]`. **Mockup:** `bed-board-third-edition.html`. **Dispatches:**
 `BLOCK_BED_RELEASE`, `END_LEAVE_BED`, `PATIENT_ARRIVED`, `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`,
 `RECORD_LEAVE_BED`, `RECORD_LEAVING`, `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT`, `RELEASE_BED`,
-`SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
+`RECORD_WARD_DIAGNOSIS`, `SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
 (`ward-derivations.ts`) plus this folder's own tile/occupant builders. **Tests:** the two-dozen
 `ward-board-*`, `ward-daily-sheet*`, `ward-advanced-features.dom.test.tsx`,
 `ward-builder-2-features.dom.test.tsx`, `ward-dialog-accessibility.dom.test.tsx`,
@@ -113,6 +113,9 @@ repo-wide guards.
   `PersonEntry` component (623); the screen itself, `export function WardBoard({ unitId })`, starts
   at 878 and runs to end of file — dialogs, focus traps, keyboard handling and the tile grid are all
   inline in that one function rather than split into sub-components.
+- **`board/ward-board-ward-diagnosis.tsx`** — `WardDiagnosisControl` (FD-10, 21 Oct 2026): the
+  ward's own tentative diagnosis block, chosen from the fixed list in the detail panel and shown
+  beside the referrer's, which is never changed. Dispatches `RECORD_WARD_DIAGNOSIS`.
 - **`src/components/ward-management/board/board.module.css`** (4847 lines) — styles for both
   `ward-board.tsx` and `ward-daily-sheet.tsx`.
 - **`src/components/ward-management/board/ward-bed-board.tsx`** (removed) — former 2-line re-export shim (`WardBedBoard`); deleted during the October 2026 cleanup pass. The live route (`board/[unitId]/page.tsx`) imports `WardBoard` directly from `src/components/ward-management/board/ward-board.tsx`.

@@ -217,7 +217,9 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   now forwards selected `RECORD_*` cases to `ward-flow-record-events.ts`, `UNDO_*` cases to
   `ward-flow-undo-events.ts`, and whole groups to `ward-flow-referral-send-events.ts`,
   `ward-flow-referral-answer-events.ts`, `ward-flow-placement-events.ts`,
-  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`.
+  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`. `ward-flow-diagnosis-events.ts`
+  (FD-10, 21 Oct 2026) holds `reduceWardDiagnosis`, the guard and effect for
+  `RECORD_WARD_DIAGNOSIS`: the ward's own diagnosis block, kept beside the referrer's.
   Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
   slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**

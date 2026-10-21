@@ -30,6 +30,8 @@ import {
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
 import styles from "./ed.module.css";
+import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 
 const OUTCOME_CONSEQUENCE =
   "This ends the bed search: live ward requests are withdrawn, a held bed is released and uncollected transport is cancelled.";
@@ -64,6 +66,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     setCommunityReferralOpenFor,
     communityTeamChoice,
     setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
     examinationOutcome,
     setExaminationOutcome,
     setEdOutcomeOpenFor,
@@ -82,6 +86,11 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitLegalFormExpiry,
     submitReceiptCorrection,
   } = ctx;
+  // D-74: the team and what the referral is for are both required before it can be sent.
+  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
+  const cmhtMissing = !communityTeamChoice
+    ? "Choose a community mental health team first."
+    : "Choose what the referral is for first.";
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
     legalStatusDraft.legalStatus === undefined
@@ -166,32 +175,50 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               ))}
             </select>
           </label>
+          <fieldset className={styles.referralField} data-testid={`ward-ed-cmht-purpose-${movement.id}`}>
+            <legend>What is the referral for?</legend>
+            {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
+              <label key={purpose}>
+                <input
+                  type="radio"
+                  name={`ward-ed-cmht-purpose-${movement.id}`}
+                  value={purpose}
+                  checked={communityPurposeChoice === purpose}
+                  onChange={() => setCommunityPurposeChoice(purpose)}
+                  data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
+                />{" "}
+                {communityReferralPurposeLabel(purpose)}
+              </label>
+            ))}
+          </fieldset>
           <div className={styles.actionRow}>
             <button
               type="button"
-              aria-disabled={!communityTeamChoice ? "true" : undefined}
-              aria-describedby={!communityTeamChoice ? `ward-ed-cmht-reason-${movement.id}` : undefined}
-              title={!communityTeamChoice ? "Choose a community mental health team first." : undefined}
+              aria-disabled={!cmhtReady ? "true" : undefined}
+              aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+              title={!cmhtReady ? cmhtMissing : undefined}
               data-testid={`ward-ed-cmht-confirm-${movement.id}`}
               className={styles.declineButton}
               onClick={(event) => {
-                if (!communityTeamChoice) {
+                if (!communityTeamChoice || !communityPurposeChoice) {
                   ignoreUnavailableActivation(event);
                   return;
                 }
                 raise("REFER_TO_COMMUNITY_TEAM", {
                   movementId: movement.id,
                   team: communityTeamChoice,
+                  purpose: communityPurposeChoice,
                 });
                 setCommunityReferralOpenFor(undefined);
                 setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
               }}
             >
               Confirm CMHT referral
             </button>
-            {!communityTeamChoice ? (
+            {!cmhtReady ? (
               <span id={`ward-ed-cmht-reason-${movement.id}`} className="sr-only">
-                Choose a community mental health team first.
+                {cmhtMissing}
               </span>
             ) : null}
             <button
@@ -201,6 +228,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               onClick={() => {
                 setCommunityReferralOpenFor(undefined);
                 setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
               }}
             >
               Cancel

@@ -59,6 +59,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker recorded" },
   CLEAR_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker cleared" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
+  RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },

@@ -284,6 +284,17 @@ describe("needs cards and the clearance checklist", () => {
     );
   });
 
+  it("asks whether a community referral is for follow-up or to assess for admission (D-74)", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Teams" }));
+    const purpose = within(screen.getByTestId("ward-referral-community-purpose")).getByRole("group", {
+      name: "What is the referral for?",
+    });
+    expect(within(purpose).getByLabelText("Community follow-up")).not.toBeChecked();
+    fireEvent.click(within(purpose).getByLabelText("Assess for admission"));
+    expect(within(purpose).getByLabelText("Assess for admission")).toBeChecked();
+  });
+
   it("asks how the person reaches an ED", () => {
     renderDrawer({ initialDestination: "ed" });
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));

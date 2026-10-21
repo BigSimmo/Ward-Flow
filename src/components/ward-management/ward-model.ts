@@ -52,6 +52,7 @@ import type {
 } from "@/components/ward-management/ward-model-movement-parts";
 import type {
   CommunityDeclineReason,
+  CommunityReferralPurpose,
   HomeRegion,
   ReferralAddressingState,
   ReferralCorrection,
@@ -1309,6 +1310,12 @@ export type ReferralDestination =
        * region-derived membership through the back door. Never read it here.
        */
       teamName: string;
+      /**
+       * D-74: follow-up or assess for admission, chosen by the referrer. Optional only because arms
+       * saved before D-74 lack it; read it through `communityPurposeOf`, which treats absent as
+       * follow-up. Every form that creates an arm asks for it.
+       */
+      purpose?: CommunityReferralPurpose;
     };
 
 export type ReferralAddressing = {

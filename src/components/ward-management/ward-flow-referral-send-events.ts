@@ -35,6 +35,7 @@ import {
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 
 /**
  * Raising, sending, correcting and withdrawing a referral: `reduceClinicalEvent`'s cases for these
@@ -393,6 +394,9 @@ export function reduceReferralSendEvent(
       if (!communityTeamOptions().includes(event.team)) {
         return reject(state, event, `team "${event.team}" is not a valid community mental health team`);
       }
+      if (event.purpose !== undefined && !isCommunityReferralPurpose(event.purpose)) {
+        return reject(state, event, "REFER_TO_COMMUNITY_TEAM purpose must be chosen from COMMUNITY_REFERRAL_PURPOSES");
+      }
       // Refused once collected, as `WITHDRAW_REFERRAL` does: use `STOP_TRANSPORT`.
       if (movement.transport?.collectedAt !== undefined) {
         return reject(
@@ -457,7 +461,11 @@ export function reduceReferralSendEvent(
             ...(movement.atsCategory === undefined ? {} : { atsCategory: movement.atsCategory }),
             destinations: [
               {
-                destination: { kind: "community_team", teamName: event.team },
+                destination: {
+                  kind: "community_team",
+                  teamName: event.team,
+                  ...(event.purpose === undefined ? {} : { purpose: event.purpose }),
+                },
                 state: "queued",
                 referredAt: event.now,
               },
