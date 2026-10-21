@@ -3,8 +3,8 @@
 _Updated 2026-10-21 — local implementation of the two-pass audit; Documentation owns._
 
 - Task identity: `WF-DOCORG-AUDIT-20261021`; continuation of the same audit objective.
-- Stage: local engineering completed; changes retained uncommitted on the isolated branch. No publication, hosted CI, provider operation, protected move or deletion.
-- Source: `BigSimmo/Ward-Flow`, isolated branch `codex/ward-docs-organisation-repairs-20261021`, base `fc30c90c9cdae9a208786ade6e885750f770a7ea` from cached `origin/main`.
+- Stage: published as PR #526; reconciliation and CI repair authorised. No PR merge or deployment. The original local verification below is retained as dated history; the continuation checkpoint records subsequent evidence.
+- Source: `BigSimmo/Ward-Flow`, PR branch `codex/ward-docs-organisation-repairs-20261021`; original implementation base `fc30c90c9cdae9a208786ade6e885750f770a7ea`.
 - Original audit: local `main` at `5875823b5322f0b4ed2f5239628f88d40ea0195e`. Cached upstream is 578 commits later. Every finding was revalidated against the implementation base; obsolete fixes were not copied.
 - Canonical task handling: [task receipts](../../task-receipts.md). This is an implementation checkpoint, not another task ledger. Remote reconciliation remains unsynced.
 - Ownership: exact paths claimed in the existing shared sign-out log. Three isolated workers cover navigation, tooling and operational guidance; the coordinator owns integration and checks. Retained historical branches and the dirty main checkout are preserved.
@@ -76,3 +76,17 @@ Local evidence is retained outside the repository in `D:/Temp/WardFlow-organisat
 Full unit/browser/release suites, a fresh visual walkthrough, physical-device acceptance, provider configuration, hosted CI and a target-specific recovery rehearsal were not run. The guide identifies its source-review scope. R01/R05/R09/R13 remain conditional structural work requiring a demonstrated benefit, explicit ownership and focused acceptance; they are not unresolved factual repairs. No protected component, history or asset was moved or removed.
 
 Next action: review the local repair diff and choose whether to commission publication as a separate stage. No user action is required to retain the local result. Remote ledger reconciliation remains unsynced.
+
+## PR reconciliation checkpoint — 21 October 2026
+
+Josh authorised reconciling PR #526 with current main and fixing CI, with no merge or deployment. After a concurrent writer published `9333ad44c9e85fb26f2613a69bf3edb7237af4f9`, Josh chose to continue from that published head. Its conditional documentation checks are preserved. The earlier local merge `9807de0e5bc6ed5ff60bdd3c0d8b131ef8a39b9b` remains intact in its original worktree and is not being pushed over the newer work.
+
+The continuation uses `C:/Users/joshs/.codex/worktrees/ward-docorg-pr526-ci/Ward-Flow`, local branch `codex/ward-docorg-pr526-ci`, based on the published head. Main `785915e80ac3435d7a591c3b3e902c5da162c442` merges cleanly. The only repaired CI defect so far is the generated scripts headline: 132 was stale; the existing generator reports 130 script files and 85 npm commands. No executable inventory, threshold or required check was removed.
+
+[Hosted run 39563273804](https://github.com/BigSimmo/Ward-Flow/actions/runs/39563273804), on published head `9333ad44c`, failed the scripts-inventory step with that exact mismatch. Its eight unit shards, production build, phone budget, three browser groups, backend/shared proof and coverage inventory passed. Those results belong to that head and do not establish the corrected candidate's CI status. Fresh checks and the eventual pushed SHA/run are recorded in the existing external evidence manifest at `D:/Temp/WardFlow-organisation-audit-20261021/final-evidence-manifest.json`.
+
+The earlier candidate passed focused tests (163 passed, one Windows skip), documentation checks, lint, source/backend types and backend unit checks. Its full local unit run was interrupted because another project occupied the machine's wide-run slot; three completed batches had 3,995 passing tests. Local build and production-browser stages were not reached. Those incomplete results are not a full local-gate pass and are not reused as fresh proof for this continuation.
+
+Independent review also reproduced two missing documentation-check inputs in the published selector: root `mockups/` changes and added directory paths that can introduce a tracked repository root. Both new regression cases failed before repair. The selector now includes those inputs while retaining conditional checks for unrelated modifications. No required gate is weakened.
+
+Next action: finish selected local checks, commit the combined reconciliation and corrections, make one normal push to PR #526, then inspect that exact head's CI. Auto-merge is user-owned and was confirmed off. The dirty main checkout and all retained worktrees remain untouched. Remote task-ledger reconciliation remains unsynced.

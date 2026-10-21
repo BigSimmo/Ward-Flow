@@ -116,14 +116,16 @@ export function documentChecks(entries) {
     // A registry edit always runs the check, even one that narrows the roots this reads.
     organisation: files.some((file) => file === ORGANISATION_REGISTRY || matchesOrganisationRoot(file)),
     // Generated docs contracts (screen map, drawing manifest, screen verification, scripts inventory,
-    // architecture index, site map) read only these inputs, so unrelated PRs are not blocked by them.
-    doc_contracts: files.some(docContractInput),
+    // architecture index, site map) read these inputs. Added directory paths can introduce a new
+    // tracked root in the architecture index; conservatively check every such addition.
+    doc_contracts:
+      files.some(docContractInput) || entries.some(({ status, file }) => status === "A" && file.includes("/")),
   };
 }
 
 export function docContractInput(file) {
   return (
-    /^(?:src|docs|design|scripts)\//u.test(file) ||
+    /^(?:src|docs|design|scripts|mockups)\//u.test(file) ||
     file === "package.json" ||
     file === ".github/workflows/ward-flow.yml"
   );

@@ -164,8 +164,12 @@ describe("maintained document CI scope", () => {
     "design/third-edition-mockups/MANIFEST.json",
     "scripts/x.mjs",
     "package.json",
+    "mockups/probe/page.tsx",
   ])("runs the generated documentation contracts when %s changes", (file) => {
     expect(documentChecks(entries(file)).doc_contracts).toBe(true);
+  });
+  it("checks added directory paths that can introduce an undocumented tracked root", () => {
+    expect(documentChecks([{ status: "A", file: "audit-fixture-root/probe.txt" }]).doc_contracts).toBe(true);
   });
   it.each(["backend/ward-flow/server.mjs", "tests/ward-ci-scope.test.ts", ".github/workflows/dependency-audit.yml"])(
     "does not block unrelated PRs on the generated documentation contracts (%s)",
