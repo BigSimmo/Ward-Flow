@@ -176,7 +176,22 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   plannedAdmissionSequence: keep("plannedAdmissionSequence"),
   scenario: keep("scenario"),
   configuration: keep("configuration"),
-  units: keep("units"),
+  // D-72: a ward's seclusion and restraint episodes go to the desks that hold the ward, which still
+  // see one whose patient has left so they can record its end. Elsewhere only the stay's own desks.
+  units: (context) =>
+    context.state.units.map((unit) =>
+      !unit.restrictivePractice || context.unitIn(unit.id)
+        ? unit
+        : {
+            ...unit,
+            restrictivePractice: {
+              ...unit.restrictivePractice,
+              episodes: unit.restrictivePractice.episodes.filter((episode) =>
+                context.admissionIds.has(episode.admissionId),
+              ),
+            },
+          },
+    ),
   morningRollupConfirmations: keep("morningRollupConfirmations"),
   // Role and time only, no person.
   handoverSignOffs: keep("handoverSignOffs"),
@@ -382,18 +397,7 @@ function closeReferences(
   const has = (set: ReadonlySet<string>) => (id: string) => set.has(id);
   return {
     ...scoped,
-    units: scoped.units.map((scopedUnit) => {
-      // D-72: a seclusion or restraint episode names a stay, so it goes wherever that stay goes.
-      const practice = scopedUnit.restrictivePractice;
-      const unit = practice
-        ? {
-            ...scopedUnit,
-            restrictivePractice: {
-              ...practice,
-              episodes: practice.episodes.filter((episode) => admissions.has(episode.admissionId)),
-            },
-          }
-        : scopedUnit;
+    units: scoped.units.map((unit) => {
       if (unit.arrivalCapacityConflicts === undefined && unit.reservationReleaseCapacityConflicts === undefined)
         return unit;
       const own = <C extends { movementId: string; admissionId?: string }>(conflicts: readonly C[] | undefined) =>

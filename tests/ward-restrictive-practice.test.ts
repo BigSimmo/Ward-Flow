@@ -196,4 +196,24 @@ describe("what a scoped desk is sent", () => {
     const statewide = scopeWardFlowState(both, STATEWIDE_COORDINATOR, { now: NOW, places }).state;
     expect(episodesOn(statewide, otherStay.unitId).map((episode) => episode.admissionId)).toEqual([otherStay.id]);
   });
+
+  it("still sends the ward an open episode whose patient has left, so the ward can record its end", () => {
+    const state = seedWardFlowState();
+    const stay = state.admissions.find((admission) => admission.state === "occupied")!;
+    const elsewhere = state.units.find((unit) => unit.id !== stay.unitId)!;
+    const started = apply(state, start(stay.unitId, stay.id));
+    // The patient moves on before anyone records the end: the stay now sits on another ward.
+    const moved: WardFlowState = {
+      ...started,
+      admissions: started.admissions.map((admission) =>
+        admission.id === stay.id ? { ...admission, unitId: elsewhere.id } : admission,
+      ),
+    };
+    const places = wardPlaceLookup(moved.units);
+    const desk: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [stay.unitId] } };
+    const scoped = scopeWardFlowState(moved, desk, { now: NOW, places }).state;
+    expect(scoped.admissions.some((admission) => admission.id === stay.id)).toBe(false);
+    const open = scoped.units.find((unit) => unit.id === stay.unitId)!.restrictivePractice!.episodes;
+    expect(open.map((episode) => episode.admissionId)).toEqual([stay.id]);
+  });
 });
