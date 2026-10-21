@@ -22,7 +22,6 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
-import { STATISTICS_OVERVIEW_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -38,7 +37,8 @@ import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
  * stats-5: no time range pill on a phone hero while only Now is live.
  * stats-8: a long ED wait row carries no stripe or tinted fill; the red triangle carries the tone.
  * stats-13: Compare's phone chart labels wards by site code and cohort, never a clipped name.
- * stats-18: "Where the pressure is" opens the one fullest-first list, on Overview.
+ * stats-18: "Where the pressure is" opens the one fullest-first list, in a sheet (Overview folded into
+ * Network on 21 Oct 2026, D-77 change 9).
  */
 
 function asPhone() {
@@ -79,10 +79,17 @@ describe("Statistics hub on a phone", () => {
     }
   });
 
-  it("opens Overview's fullest-first list from Where the pressure is (stats-18)", () => {
+  it("opens the fullest-first list from Where the pressure is (stats-18)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    expect(screen.getByTestId("ward-statistics-pressure-link")).toHaveAttribute("href", STATISTICS_OVERVIEW_HREF);
+    fireEvent.click(screen.getByTestId("ward-statistics-pressure-link"));
+    const dialog = screen.getByRole("dialog");
+    const percents = within(dialog)
+      .getAllByRole("listitem")
+      .map((row) => Number(/(\d+)% in use/u.exec(row.textContent ?? "")?.[1]));
+    expect(percents.length).toBeGreaterThan(0);
+    for (const percent of percents) expect(percent).toBeGreaterThanOrEqual(BED_ALERT_THRESHOLD_PERCENT);
+    expect(percents).toEqual([...percents].sort((a, b) => b - a));
   });
 
   it.each([
