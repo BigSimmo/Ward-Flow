@@ -17,9 +17,12 @@ import styles from "./ward-shared-access.module.css";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
+import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
+// The Demo menu (change 8) loads only when the Synthetic pill opens it.
+const WardDemoMenu = dynamic(() => import("./shell/ward-demo-menu").then((m) => m.WardDemoMenu), { ssr: false });
 const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
   ssr: false,
   loading: () => null,
@@ -405,7 +408,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               <DataModeSlotContext.Provider value={setSlot}>
                 <DataModeContext.Provider value={dataMode}>
                   {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-                  {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
+                  {slot ? createPortal(<DataModePill detail={detail} />, slot) : null}
                   {showLiveInfo && (
                     <section className={styles.notice} aria-label="Hospital records unavailable">
                       <h1>Hospital records are not connected</h1>
@@ -442,17 +445,38 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   );
 }
 
-/** v10 header pill: "Synthetic prototype" (Audit 1 SS-4), opening a small panel that says what the data is. */
-function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospitalRecords: () => void }) {
+/**
+ * v10 header pill: "Synthetic prototype" (Audit 1 SS-4). Change 8 (D-77, 21 Oct 2026): it opens the
+ * Demo menu, the scenario, clock and reset controls that left Tools. The pill's label still says
+ * what the data is. The Board time pill opens the same menu (`requestDemoMenu`).
+ */
+function DataModePill({ detail }: { detail: string }) {
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState({ top: 0, left: 0 });
   const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const show = useCallback((from?: HTMLElement) => {
+    const rect = button.current?.getBoundingClientRect();
+    if (rect) setPlace({ top: rect.bottom + 8, left: Math.max(8, Math.min(rect.left, window.innerWidth - 468)) });
+    returnFocus.current = from ?? button.current;
+    setOpen(true);
+  }, []);
+  const close = useCallback(() => {
+    setOpen(false);
+    returnFocus.current?.focus();
+  }, []);
+  useEffect(() => subscribeDemoMenu(show), [show]);
   useEffect(() => {
     if (!open) return;
     const onDown = (event: PointerEvent) => {
-      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Element;
+      // The menu's own confirm dialog sits outside it, in a portal; a press there is not outside.
+      if (!wrap.current?.contains(target) && !target.closest?.('[aria-modal="true"]')) setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      // A confirm open over the menu takes Escape first.
+      if (event.key === "Escape" && !document.querySelector('[aria-modal="true"]')) close();
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
@@ -460,36 +484,25 @@ function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospita
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, close]);
   return (
     <div ref={wrap} className={styles.pillWrap} data-data-mode="prototype">
       <button
         type="button"
         className={styles.pill}
+        ref={button}
         aria-expanded={open}
-        aria-label={`Data mode: Synthetic prototype. ${detail}`}
+        aria-haspopup="dialog"
+        aria-label={`Data mode: Synthetic prototype. ${detail}. Opens the demo menu`}
         onClick={() => {
-          setOpen((value) => !value);
+          if (open) close();
+          else show();
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
         Synthetic prototype
       </button>
-      {open && (
-        <section className={styles.pop} aria-label="Ward Flow data mode">
-          <strong>Data mode: Synthetic prototype</strong>
-          <span className={styles.detail}>{detail}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onHospitalRecords();
-            }}
-          >
-            Hospital records (unavailable)
-          </button>
-        </section>
-      )}
+      {open ? <WardDemoMenu top={place.top} left={place.left} onClose={close} /> : null}
     </div>
   );
 }

@@ -22,7 +22,6 @@ import {
   Printer,
   Scale,
   Search,
-  Tv,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,9 +30,7 @@ import { WardRoleSwitcher } from "../ward-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { useAccessNavFilter, useCanOpenHref } from "../shell/ward-access";
-import { WARD_BED_MEETING_TV_HREF } from "../ward-nav";
 import { bedSummaryText } from "./ward-bed-summary";
 import { WardBedFinder } from "./ward-bed-finder";
 import { WardToolsContacts } from "./ward-tools-contacts";
@@ -200,8 +197,8 @@ function BedSummary() {
  * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Do now, Look up
  * (All figures first), Print and share, More pages and Demo at the foot. The "Service now" figures
  * block left on 19 Oct 2026 (simplification A5): every page already leads with its own figures. Appearance, Settings, the Digest and the repeated shortcut grids are
- * gone because the rail already carries them. Phone uses the same sheet; Bed meeting TV stays
- * desktop only and shows while its `bed-meeting-tv` flag is on.
+ * gone because the rail already carries them. Phone uses the same sheet. Bed meeting TV left on
+ * 21 Oct 2026 (change 8, D-77): it has its own place in the rail's More pages.
  */
 export function WardToolsSheet({
   isPhone,
@@ -211,7 +208,6 @@ export function WardToolsSheet({
   openRequest,
   onRequestHandled,
 }: WardToolsSheetProps) {
-  const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   // DA-09: a ward desk updates its own ward's beds; the statewide list is not part of that desk.
   const accessNav = useAccessNavFilter();
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
@@ -273,11 +269,16 @@ export function WardToolsSheet({
         </span>
       </div>
 
+      {/* Change 8 (D-77, 21 Oct 2026): on a desktop Tools keeps working tools only. New referral,
+          Handover sheet, Bed meeting TV and Out of area each have their own place already, and the
+          Demo controls open from the Synthetic pill. The phone has no pill, so it keeps them all. */}
       <Group title="Do now">
-        <button type="button" className={styles.row} onClick={() => onNewReferral()}>
-          <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
-          <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-        </button>
+        {isPhone ? (
+          <button type="button" className={styles.row} onClick={() => onNewReferral()}>
+            <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
+            <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+          </button>
+        ) : null}
         <LinkRow
           href={`${root}/waiting`}
           icon={Clock3}
@@ -294,13 +295,15 @@ export function WardToolsSheet({
             onNavigate={onNavigate}
           />
         ) : null}
-        <LinkRow
-          href={handoverHref()}
-          icon={FileText}
-          name="Handover sheet"
-          detail="Review and print the current handover"
-          onNavigate={onNavigate}
-        />
+        {isPhone ? (
+          <LinkRow
+            href={handoverHref()}
+            icon={FileText}
+            name="Handover sheet"
+            detail="Review and print the current handover"
+            onNavigate={onNavigate}
+          />
+        ) : null}
         {tool(
           "bed-finder",
           BedDouble,
@@ -376,15 +379,6 @@ export function WardToolsSheet({
           "Text for the exec on-call email or Teams",
           <BedSummary />,
         )}
-        {bedMeetingTvOn && !isPhone ? (
-          <LinkRow
-            href={WARD_BED_MEETING_TV_HREF}
-            icon={Tv}
-            name="Bed meeting TV"
-            detail="Read only view for the meeting room screen"
-            onNavigate={onNavigate}
-          />
-        ) : null}
         <LinkRow
           href={DOWNTIME_PACK_HREF}
           icon={Printer}
@@ -401,7 +395,7 @@ export function WardToolsSheet({
         />
       </Group>
 
-      {[`${root}/legal-forms`, `${root}/out-of-area`].some(canOpen) ? (
+      {[`${root}/legal-forms`, ...(isPhone ? [`${root}/out-of-area`] : [])].some(canOpen) ? (
         <Group title="More pages">
           <LinkRow
             href={`${root}/legal-forms`}
@@ -410,21 +404,25 @@ export function WardToolsSheet({
             detail="Every open move that carries a form"
             onNavigate={onNavigate}
           />
-          <LinkRow
-            href={`${root}/out-of-area`}
-            icon={MapPinned}
-            name="Out of area"
-            detail="Who is in a bed far from home"
-            onNavigate={onNavigate}
-          />
+          {isPhone ? (
+            <LinkRow
+              href={`${root}/out-of-area`}
+              icon={MapPinned}
+              name="Out of area"
+              detail="Who is in a bed far from home"
+              onNavigate={onNavigate}
+            />
+          ) : null}
         </Group>
       ) : null}
 
-      <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
-        <div className={styles.card}>
-          {tool("demo", FlaskConical, "Demo", "Scenario, clock and reset. Synthetic data only.", <WardDemoPanel />)}
-        </div>
-      </section>
+      {isPhone ? (
+        <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
+          <div className={styles.card}>
+            {tool("demo", FlaskConical, "Demo", "Scenario, clock and reset. Synthetic data only.", <WardDemoPanel />)}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

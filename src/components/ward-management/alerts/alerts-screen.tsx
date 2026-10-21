@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { AlarmClock, Bell, ChevronRight, Clock, Columns3, List, Activity, Users, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -125,6 +125,10 @@ type ArrangeBy = "urgency" | "lanes" | "owner";
 /** A request this screen sent, read back from the event log so a refused act never says it happened. */
 type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
 
+/** The address's query, read on the client only; the server draws the screen without it. */
+const subscribeNever = () => () => {};
+const readAddressQuery = () => window.location.search;
+
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <AlertsWorkspace key={worldGeneration} />;
@@ -235,7 +239,7 @@ function AlertsWorkspace() {
   const [phoneToday, setPhoneToday] = useState(false);
   // A request to focus the release reason once the panel or sheet has drawn it.
   const [releaseRequest, setReleaseRequest] = useState(0);
-  const releasePending = useRef(false);
+  const releaseHandled = useRef(0);
   const releaseRef = useRef<HTMLSelectElement | null>(null);
   const [notifyOn] = useActNowNotificationPreference();
 
@@ -496,18 +500,26 @@ function AlertsWorkspace() {
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
       if (slideOver) setSheetOpen(true);
-      if (options.release) {
-        releasePending.current = true;
-        setReleaseRequest((count) => count + 1);
-      }
+      if (options.release) setReleaseRequest((count) => count + 1);
     },
     [slideOver],
   );
 
+  // Change 7 (D-77): the Alerts drawer's Release bed opens here as `?alert=<id>&release=1`, so the
+  // alert is chosen and its release reason takes focus. Used once, adjusted during render.
+  const address = useSyncExternalStore(subscribeNever, readAddressQuery, () => "");
+  const [addressUsed, setAddressUsed] = useState(false);
+  if (!addressUsed && address) {
+    const query = new URLSearchParams(address);
+    const entry = allEntries.find((candidate) => candidate.item.id === query.get("alert"));
+    setAddressUsed(true);
+    if (entry) select(entry, { release: query.get("release") === "1" });
+  }
+
   useEffect(() => {
-    if (!releasePending.current || !releaseRef.current) return;
+    if (releaseRequest === releaseHandled.current || !releaseRef.current) return;
     releaseRef.current.focus();
-    releasePending.current = false;
+    releaseHandled.current = releaseRequest;
   }, [releaseRequest, selected, sheetOpen]);
 
   const handleNext = () => {

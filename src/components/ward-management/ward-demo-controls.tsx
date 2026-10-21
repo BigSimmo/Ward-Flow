@@ -4,7 +4,7 @@ import { type ReactNode } from "react";
 
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
 
 export type WardDemoClockPopoverProps = {
   className?: string;
@@ -15,9 +15,10 @@ export type WardDemoClockPopoverProps = {
 };
 
 /**
- * The Board time pill (`ward-rail.tsx` / `ward-bar.tsx`). Since the Tools review (15 Oct 2026) it
- * opens the one Demo panel in Tools (`tools/ward-demo-panel.tsx`) rather than its own popover, so
- * the scenario, clock and reset controls live in one place. Keeps every caller `aria-label`,
+ * The Board time pill (`ward-rail.tsx` / `ward-bar.tsx`). It opens the one Demo panel
+ * (`tools/ward-demo-panel.tsx`) rather than its own popover, so the scenario, clock and reset
+ * controls live in one place: the Demo menu under the Synthetic pill since change 8 (D-77), or Tools
+ * on a phone. Keeps every caller `aria-label`,
  * `title` and child on the clock display.
  */
 export function WardDemoClockPopover({
@@ -34,9 +35,9 @@ export function WardDemoClockPopover({
       type="button"
       className={className}
       title={title ?? `Board time ${clockText} AWST`}
-      aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls in Tools`}
+      aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls`}
       data-testid={testId}
-      onClick={(event) => requestToolsTool("demo", event.currentTarget)}
+      onClick={(event) => requestDemoMenu(event.currentTarget)}
     >
       {children ?? (
         <>

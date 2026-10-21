@@ -44,6 +44,15 @@ function Probe() {
     </>
   );
 }
+/** The phone menu's way into the hospital records notice (`useWardDataMode`). */
+function HospitalRecordsLink() {
+  const mode = useWardDataMode();
+  return (
+    <button type="button" onClick={mode?.openHospitalRecords}>
+      Hospital records (unavailable)
+    </button>
+  );
+}
 function DataModeDetail() {
   return <p data-testid="data-mode-detail">{useWardDataMode()?.detail ?? "no data mode"}</p>;
 }
@@ -348,31 +357,35 @@ describe("shared provider boundary", () => {
       </WardFlowProvider>,
     );
     expect(
-      screen.getByRole("button", { name: "Data mode: Synthetic prototype. Invented records · Local demonstration" }),
+      screen.getByRole("button", {
+        name: "Data mode: Synthetic prototype. Invented records · Local demonstration. Opens the demo menu",
+      }),
     ).toBeInTheDocument();
     expect(screen.queryByText("45")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
     fireEvent.click(screen.getByRole("button", { name: "Advance" }));
     expect(fake.connection!.dispatch).not.toHaveBeenCalled();
   });
-  it("explains live data without switching databases or losing a prototype draft", () => {
+  it("explains live data without switching databases or losing a prototype draft", async () => {
     render(
       <WardFlowProvider>
         <Probe />
+        <HospitalRecordsLink />
         <WardDataModeSlot />
       </WardFlowProvider>,
     );
     const draft = screen.getByRole("textbox");
     fireEvent.change(draft, { target: { value: "keep prototype draft" } });
-    // Exactly one data-mode control, in the header slot; it opens to explain the mode.
+    // Exactly one data-mode control, in the header slot. Change 8 (D-77): it opens the Demo menu,
+    // and its label still says what the data is.
     const pill = screen.getByRole("button", { name: /^Data mode: Synthetic prototype/ });
     expect(screen.getAllByRole("button", { name: /^Data mode: Synthetic prototype/ })).toHaveLength(1);
     expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("region", { name: "Ward Flow data mode" })).toHaveTextContent(
-      "Data mode: Synthetic prototype",
-    );
+    expect(await screen.findByRole("dialog", { name: "Demo" })).toBeInTheDocument();
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
     expect(screen.getByRole("heading", { name: "Hospital records are not connected" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();

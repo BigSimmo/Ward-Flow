@@ -1,0 +1,24 @@
+/* The Demo menu under the header's Synthetic pill (change 8, D-77). Fixed, so the header bar's own
+ * overflow never clips it, and it scrolls inside itself on a short screen. */
+.menu {
+  position: fixed;
+  z-index: 70;
+  width: min(460px, calc(100vw - 16px));
+  max-height: calc(100dvh - 72px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--wf-r-lg, 16px);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3, 0 18px 40px rgb(15 30 50 / 22%));
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  text-align: start;
+}
+
+.icon {
+  border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+  color: var(--wf-ink-1);
+}

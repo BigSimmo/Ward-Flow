@@ -355,3 +355,19 @@ describe("Audit 1 (CS-15): the alert nobody chose says it is first in line", () 
     expect(screen.queryByTestId("ward-alerts-first-in-line")).not.toBeInTheDocument();
   });
 });
+
+describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
+  it("chooses the alert named in the address and puts focus on its release reason", async () => {
+    const inbox = buildActionInbox(wardMovements.filter(isOpen), NOW, allUnits());
+    const hold = inbox.find((item) => alertKindOf(item.id) === "hold");
+    if (!hold) throw new Error("fixture drifted: the seeded inbox has no expired bed hold");
+    window.history.replaceState(null, "", `/ward-flow/alerts?alert=${encodeURIComponent(hold.id)}&release=1`);
+    try {
+      renderScreen();
+      const reason = await screen.findByRole("combobox", { name: "Reason for release" });
+      await vi.waitFor(() => expect(reason).toHaveFocus());
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+});
