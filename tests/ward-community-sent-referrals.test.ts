@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import {
-  COMMUNITY_TEAM_PAGES,
   referralsSentByTeam,
-} from "@/components/ward-management/community/community-derivations";
-import {
   sentAnswer,
   sentAskedFor,
   sentMatches,
@@ -85,32 +83,26 @@ describe("community team: referrals it sent", () => {
     const projected = communitySentReferral(accepted);
     expect(projected?.state).toBe("accepted");
     expect(projected?.addressings).toEqual([
+      { destination: ward(WARD_A), state: "accepted", answer: "Accepted." },
       {
-        label: `Ward · ${WARD_A}`,
-        unitId: WARD_A,
-        askedFor: "Ward bed",
-        answer: "Accepted.",
-        accepted: true,
-        declined: false,
-      },
-      {
-        label: "Ward · rph-adult-secure",
-        unitId: "rph-adult-secure",
-        askedFor: "Ward bed",
+        destination: ward("rph-adult-secure"),
+        state: "cancelled",
         answer: "Cancelled — this referral was accepted somewhere else.",
-        accepted: false,
-        declined: false,
       },
     ]);
   });
 
   it("carries no field beyond what the sending team may read", () => {
     const projected = communitySentReferral(sentReferral(TEAM.name));
-    expect(Object.keys(projected ?? {}).sort()).toEqual(
-      ["addressings", "id", "patientId", "raisedAt", "sendingTeamName", "state", "urgency", "withdrawn"].filter(
-        (key) => key !== "patientId" || projected?.patientId !== undefined,
-      ),
-    );
+    expect(Object.keys(projected ?? {}).sort()).toEqual([
+      "addressings",
+      "id",
+      "patientId",
+      "raisedAt",
+      "sendingTeamName",
+      "state",
+      "withdrawn",
+    ]);
   });
 });
 

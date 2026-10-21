@@ -15,8 +15,8 @@ import {
   communityMembershipResolution,
   communityHubLists,
   communityTeamById,
-  referralsSentByTeam,
 } from "@/components/ward-management/community/community-derivations";
+import { referralsSentByTeam } from "@/components/ward-management/community/community-sent-referrals";
 import {
   ratifiedAliasesFor,
   ratifiedSameServiceNames,

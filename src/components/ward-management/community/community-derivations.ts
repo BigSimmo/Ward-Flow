@@ -7,10 +7,7 @@ import {
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
-import type {
-  CommunityScopedReferral,
-  CommunitySentReferral,
-} from "@/components/ward-management/ward-referral-visibility";
+import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
 
 /**
  * The full record (the coordinator's statistics) or the community-scoped projection (the team page,
@@ -435,31 +432,4 @@ export function isAwaitingTeamAnswer(
   addressing: Pick<ReferralAddressing, "state" | "withdrawnAt"> | undefined,
 ): boolean {
   return addressing !== undefined && isAwaitingAnswer(addressing);
-}
-
-/**
- * `ward-access-scope.ts`'s `communityTeamKey`, duplicated on purpose like its other copies: importing
- * that module here forms an import cycle through `communityTeamSlug`. Keep the two in step.
- */
-function sendingTeamKey(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, " ")
-    .trim()
-    .replace(/ community team$/u, "");
-}
-
-/**
- * The referrals `team` sent, newest first, matched on the sending team's name the way the desk scope
- * matches it (`sendingTeamKey`), so this list and what a team desk may see agree.
- */
-export function referralsSentByTeam(
-  sent: readonly CommunitySentReferral[],
-  team: CommunityTeam,
-): CommunitySentReferral[] {
-  const teamKey = sendingTeamKey(team.name);
-  if (teamKey === "") return [];
-  return sent
-    .filter((referral) => sendingTeamKey(referral.sendingTeamName) === teamKey)
-    .sort((a, b) => b.raisedAt - a.raisedAt);
 }

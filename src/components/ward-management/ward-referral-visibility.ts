@@ -19,8 +19,6 @@ import type {
 } from "@/components/ward-management/ward-model";
 import {
   referralAddressingStateLabel,
-  referralDestinationLabel,
-  referralPurposeLabel,
   referralState,
   referralWithdrawn,
 } from "@/components/ward-management/ward-referrals";
@@ -741,18 +739,14 @@ export function communityScopedReferrals(referrals: Referral[]): CommunityScoped
 }
 
 /** One place a community team's own referral went, and that place's answer, as the sending team
- *  may read it. A label and an answer only: the sender chose these places itself (D-74 item 2). */
+ *  may read it. The sender chose every place itself (D-74 item 2), so it reads the place as it
+ *  addressed it. The team page words the rest (`community-sent-referrals.ts`), which keeps this
+ *  projection, loaded on every page by the provider, small. */
 export type CommunitySentAddressing = {
-  /** The place, as the referral board names it. A screen with the unit list names a ward by
-   *  `unitId` instead, because this label spells a ward by its id. */
-  label: string;
-  unitId?: string;
-  /** What this place was asked for: a ward bed (and whether secure), an ED purpose, or community care. */
-  askedFor: string;
+  destination: ReferralDestination;
+  state: ReferralAddressingState;
   /** That place's answer in words, from `referralAddressingStateLabel`. */
   answer: string;
-  accepted: boolean;
-  declined: boolean;
 };
 
 /**
@@ -761,31 +755,18 @@ export type CommunitySentAddressing = {
  * FD-23 limits what a RECEIVING ward or team sees of somewhere else. The sender is not receiving: it
  * picked every place on the list, so it sees each one and its answer. It still sees no referral
  * another team sent, and that filtering is the caller's (`referralsSentByTeam`), because this
- * module takes no viewer. Field by field, like every projection here.
+ * module takes no viewer. Field by field, like every projection here, except that each place is
+ * copied whole: the sending team wrote it.
  */
 export type CommunitySentReferral = {
   id: string;
   raisedAt: Instant;
-  urgency: UrgencyLevel;
   patientId?: PatientId;
   sendingTeamName: string;
   state: ReferralState;
   withdrawn: boolean;
   addressings: CommunitySentAddressing[];
 };
-
-/** D-77 group A: the "Asked for" words on the team's Sent tab. An ED arm always names its purpose,
- *  as `referralDestinationLabel` requires, so a review request never reads as a bed request. */
-function sentAskedFor(destination: ReferralDestination): string {
-  switch (destination.kind) {
-    case "psychiatric_ward":
-      return destination.secureBedNeeded ? "Ward bed, secure" : "Ward bed";
-    case "emergency_department":
-      return `ED, ${referralPurposeLabel(destination.purpose).toLowerCase()}`;
-    case "community_team":
-      return "Community team";
-  }
-}
 
 /** The sending team's view of one referral, or `undefined` when no community team is recorded as
  *  its sender. An older community referral with no `sendingTeamName` is nobody's to list. */
@@ -794,20 +775,14 @@ export function communitySentReferral(referral: Referral): CommunitySentReferral
   return {
     id: referral.id,
     raisedAt: referral.raisedAt,
-    urgency: referral.urgency,
-    ...(referral.patientId !== undefined ? { patientId: referral.patientId } : {}),
+    patientId: referral.patientId,
     sendingTeamName: referral.sendingTeamName,
     state: referralState(referral),
     withdrawn: referralWithdrawn(referral),
     addressings: referral.destinations.map((addressing) => ({
-      label: referralDestinationLabel(addressing.destination),
-      ...(addressing.destination.kind === "psychiatric_ward" && addressing.destination.unitId
-        ? { unitId: addressing.destination.unitId }
-        : {}),
-      askedFor: sentAskedFor(addressing.destination),
+      destination: addressing.destination,
+      state: addressing.state,
       answer: referralAddressingStateLabel(addressing),
-      accepted: addressing.state === "accepted",
-      declined: addressing.state === "declined",
     })),
   };
 }
