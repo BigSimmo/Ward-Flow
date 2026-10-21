@@ -185,10 +185,23 @@ test("Community referral: a community team refers from its own desk, the ward it
   await sheet.getByLabel("Phone number", { exact: true }).fill("0412345678");
   await sheet.getByLabel("Your role", { exact: true }).fill("Community mental health nurse");
   await sheet.getByLabel("Location or service", { exact: true }).fill(teamName);
-  await sheet.getByRole("button", { name: "Confirm and send", exact: true }).click();
-  await expect(sheet.getByRole("heading", { name: "Referral sent" })).toBeVisible();
-  // A refusal renders as the footer's alert, a separate element from the sent heading.
-  await expect(sheet.getByRole("alert")).toHaveCount(0);
+  // Every contact field still holds what was typed, and the send is live, before it is pressed.
+  await expect(sheet.getByLabel("Your name", { exact: true })).toHaveValue("Synthetic Referrer");
+  await expect(sheet.getByLabel("Email address", { exact: true })).toHaveValue("referrer@example.org");
+  await expect(sheet.getByLabel("Phone number", { exact: true })).toHaveValue("0412345678");
+  await expect(sheet.getByLabel("Your role", { exact: true })).toHaveValue("Community mental health nurse");
+  await expect(sheet.getByLabel("Location or service", { exact: true })).toHaveValue(teamName);
+  const confirmSend = sheet.getByRole("button", { name: "Confirm and send", exact: true });
+  await expect(confirmSend).toBeEnabled();
+  await expect(confirmSend).not.toHaveAttribute("aria-disabled", "true");
+  await confirmSend.click();
+  // A refusal renders as the footer's alert, a separate element from the sent heading. Wait for
+  // either, so a refusal fails here with its own words rather than as a missing heading.
+  const sentHeading = sheet.getByRole("heading", { name: "Referral sent" });
+  const refusal = sheet.getByRole("alert");
+  await expect(sentHeading.or(refusal).first()).toBeVisible({ timeout: 15_000 });
+  expect(await refusal.allInnerTexts(), "the send must not be refused").toEqual([]);
+  await expect(sentHeading).toBeVisible();
   await expectAccessible(page, testInfo, "referral sent receipt");
   await sheet.getByRole("button", { name: "Done", exact: true }).click();
   await expect(sheet).toHaveCount(0);
