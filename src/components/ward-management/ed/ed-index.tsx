@@ -93,7 +93,7 @@ const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
 const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes";
-export type WaitClock = "past" | "severe" | "in";
+type WaitClock = "past" | "severe" | "in";
 
 export type EdPerson = {
   movement: Movement;
