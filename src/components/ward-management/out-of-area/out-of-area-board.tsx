@@ -76,6 +76,7 @@ import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -534,7 +535,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
       ...sorted.map((entry) => {
         const info = patientOf(entry);
-        return `${info.displayName} (${info.umrn}), ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
+        return `${info.displayName}, ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
       }),
       "Synthetic demonstration figures. Not approved for clinical use.",
     ];
@@ -542,7 +543,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   };
   async function copySummary() {
     try {
-      await navigator.clipboard.writeText(summaryText());
+      await copyTextToClipboard(summaryText());
       setToolNote("Bed meeting summary copied");
     } catch {
       setToolNote("Copy is not available in this browser");
