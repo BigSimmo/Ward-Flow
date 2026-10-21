@@ -123,8 +123,8 @@ export const PULL_HOLD_MINUTES = 240;
 
 /**
  * D-72 (Josh, 21 Oct 2026): the extra minutes an accepting ward can ask for when the patient has
- * further to travel. Added to the configured pull hold. The figure is unsourced, like
- * `PULL_HOLD_MINUTES`, and is a prototype placeholder for a local policy value.
+ * further to travel, added to the configured pull hold. Josh chose 60 minutes on 21 Oct 2026 as a
+ * prototype value (listed as `extraTravelHold` in ward-clinical-values.ts), not a local policy.
  */
 export const EXTRA_TRAVEL_HOLD_MINUTES = 60;
 

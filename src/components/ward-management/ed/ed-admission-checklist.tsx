@@ -39,12 +39,13 @@ export function EdAdmissionChecklist({ movement, referrals }: { movement: Moveme
           return (
             <li key={item.key} className={styles.row} data-state={item.state}>
               <span className={styles.label}>{item.label}</span>
-              <Badge size="sm" tone={isDone ? "success" : "warning"}>
+              <Badge size="sm" tone={isDone ? "success" : "warning"} className={styles.badge}>
                 {isDone ? "Done" : "Outstanding"}
               </Badge>
               <span className={styles.detail}>{item.detail}</span>
               {check !== undefined && recordable ? (
                 <Button
+                  className={styles.action}
                   variant={isDone ? "ghost" : "sec"}
                   size="sm"
                   aria-label={
