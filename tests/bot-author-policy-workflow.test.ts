@@ -17,10 +17,17 @@ describe("bot-author policy workflow (pull_request_target safety)", () => {
 
   it("checks out only the base commit and never PR code", () => {
     const refs = [...code.matchAll(/^\s+ref:\s*(.+)$/gm)].map((match) => match[1].trim());
-    expect(refs).toEqual(["${{ github.event.pull_request.base.sha }}"]);
+    expect(refs).toEqual(["${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"]);
     expect(code).not.toMatch(/pull_request\.head|github\.head_ref|refs\/pull\/|merge_commit_sha/);
     expect(code).toMatch(/persist-credentials: false/);
     expect(code).not.toMatch(/npm (?:ci|install)|npx |pnpm|yarn/);
+  });
+
+  it("reports the same required check on merge_group for every PR in the group", () => {
+    expect(code).toMatch(/^ {2}merge_group:\n {4}types: \[checks_requested\]$/m);
+    expect(code).toMatch(/^ {4}name: Ward Flow bot-author policy$/m);
+    expect(code).toMatch(/Merge pull request #/);
+    expect(code).toMatch(/failing closed/);
   });
 
   it("uses no secrets beyond GITHUB_TOKEN", () => {

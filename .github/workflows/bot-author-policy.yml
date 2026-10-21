@@ -5,17 +5,23 @@ name: Ward Flow bot-author policy
 # base repository's context, so this workflow must NEVER check out or execute pull-request code:
 # it checks out only the base commit (main's copy of the script) and reads PR metadata, commit
 # authors and changed files through the GitHub API. No secrets beyond GITHUB_TOKEN are used.
+# merge_group: the merge queue needs this required check reported on its temporary
+# gh-readonly-queue ref. There the policy is re-run for EVERY pull request in the group (each
+# "Merge pull request #N" commit between the group's base and head, plus the PR named in the
+# queue ref), still from the base commit's copy of the script; no group PR found fails closed.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
     branches: [main]
+  merge_group:
+    types: [checks_requested]
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: ward-bot-author-policy-${{ github.event.pull_request.number }}
+  group: ward-bot-author-policy-${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 jobs:
@@ -28,12 +34,33 @@ jobs:
       - name: Check out the base revision's policy script
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           persist-credentials: false
           sparse-checkout: scripts/ward-ci-public/bot-author-policy.mjs
           sparse-checkout-cone-mode: false
       - name: Check bot-authored commits on protected paths
+        if: ${{ github.event_name == 'pull_request_target' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WARD_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/ward-ci-public/bot-author-policy.mjs
+      - name: Check bot-authored commits on protected paths (every PR in the merge group)
+        if: ${{ github.event_name == 'merge_group' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          GROUP_BASE: ${{ github.event.merge_group.base_sha }}
+          GROUP_HEAD: ${{ github.event.merge_group.head_sha }}
+          GROUP_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          {
+            printf '%s\n' "$GROUP_REF" | sed -nE 's#^refs/heads/gh-readonly-queue/[^ ]+/pr-([0-9]+)-[0-9a-f]+$#\1#p'
+            gh api --paginate "repos/$GITHUB_REPOSITORY/compare/$GROUP_BASE...$GROUP_HEAD" --jq '.commits[].commit.message' \
+              | sed -nE 's/^Merge pull request #([0-9]+) from .*/\1/p'
+          } | sort -un > "$RUNNER_TEMP/group-prs"
+          test -s "$RUNNER_TEMP/group-prs" || { echo "::error::no pull request found in merge group; failing closed."; exit 1; }
+          while read -r pr; do
+            echo "bot-author-policy: checking PR #$pr"
+            WARD_PR_NUMBER="$pr" node scripts/ward-ci-public/bot-author-policy.mjs
+          done < "$RUNNER_TEMP/group-prs"
