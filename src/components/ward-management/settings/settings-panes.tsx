@@ -30,12 +30,11 @@ import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
+import { clinicalValueStatusText, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import {
   CLINICAL_VALUE_LIST,
-  clinicalValueStatusText,
-  formatClinicalFigure,
   unsignedClinicalValueCount,
-} from "@/components/ward-management/ward-clinical-values";
+} from "@/components/ward-management/ward-clinical-value-notes";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
 import { showsUnwiredPreviews, UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import {

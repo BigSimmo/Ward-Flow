@@ -7,13 +7,15 @@ import { TIER_TARGETS_NOTE } from "../src/components/ward-management/coordinator
 import { BED_ALERT_THRESHOLD_PERCENT } from "../src/components/ward-management/shell/ward-service-bed-alerts";
 import {
   CLINICAL_VALUES,
-  CLINICAL_VALUE_LIST,
   clinicalValueStatusText,
-  clinicalValuesMarkdownTable,
   formatClinicalFigure,
   allClinicalValuesSigned,
-  unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
+import {
+  CLINICAL_VALUE_LIST,
+  clinicalValuesMarkdownTable,
+  unsignedClinicalValueCount,
+} from "../src/components/ward-management/ward-clinical-value-notes";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
