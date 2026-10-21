@@ -38,10 +38,12 @@ it("allows a recorded ward-source referral to reserve a destination and depart i
   s = wardFlowReducer(s, {
     type: "RECORD_TRANSPORT_NEED",
     role: "ward",
+    actingUnitId: a.unitId,
     now: 642,
     movementId: m.id,
     needed: false,
   });
+  expect(s.rejections).toEqual([]);
   s = wardFlowReducer(s, {
     type: "PATIENT_ARRIVED",
     role: "ward",

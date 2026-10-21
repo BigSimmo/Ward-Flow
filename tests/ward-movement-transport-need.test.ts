@@ -123,7 +123,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     });
     const second = wardFlowReducer(first, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 120,
       movementId: openMovement().id,
       needed: true,
@@ -184,7 +184,9 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     expect(refused.rejections).toHaveLength(1);
     expect(refused.movements.find((candidate) => candidate.id === openMovement().id)!.transportNeed).toBeUndefined();
 
-    for (const role of ["ed", "ward", "community", "coordinator"] as const) {
+    // A ward is a permitted sender only for its own ward-start movement, acting as itself; that
+    // positive case is in ward-audit-transfer-compat.test.ts. This movement starts in an ED.
+    for (const role of ["ed", "community", "coordinator"] as const) {
       const allowed = wardFlowReducer(seeded, {
         type: "RECORD_TRANSPORT_NEED",
         role,
@@ -194,5 +196,21 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
       });
       expect(allowed.rejections, `${role} was refused, and it is a permitted sender`).toEqual([]);
     }
+  });
+
+  it("refuses an unnamed ward's transport need when the patient did not start on a ward", () => {
+    // PR #508 review: an unnamed ward desk must not skip the E-20 rule. With a sending ward the
+    // signed-in scope binds it instead (tests/ward-audit-command-permissions.test.ts).
+    const seeded = seedWardFlowState();
+    const after = wardFlowReducer(seeded, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "ward",
+      now: NOW,
+      movementId: openMovement().id,
+      needed: true,
+    });
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toContain("did not start on a ward");
+    expect(after.movements.find((candidate) => candidate.id === openMovement().id)!.transportNeed).toBeUndefined();
   });
 });

@@ -96,7 +96,7 @@ describe("patient-linked discharge transition", () => {
     send({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW_ANCHOR, movementId, unitIds: [unitId] });
     send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId });
     send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId });
-    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", now: NOW_ANCHOR, movementId, needed: false });
+    send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", now: NOW_ANCHOR, movementId, needed: false });
     expect(state.rejections).toEqual([]);
     const admissionId = state.movements.at(-1)!.admissionId!;
     expect(admissionId).toBeTruthy();

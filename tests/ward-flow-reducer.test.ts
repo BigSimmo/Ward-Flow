@@ -217,10 +217,10 @@ describe("the last bed", () => {
      */
     const refusal = state.rejections
       .map((rejection) => rejection.reason)
-      .find((reason) => reason.includes("no allocatable bed remains"));
+      .find((reason) => reason.includes("no Ready bed remains"));
     expect(refusal, "no capacity refusal was raised - this case would prove nothing").toBeDefined();
     expect(refusal, "the refusal does not report the count the guard actually read").toMatch(
-      /allocatable count is \d+/,
+      /allocatable \d+, physically empty \d+/,
     );
     expect(
       refusal,
@@ -1386,52 +1386,67 @@ describe("scenario selection", () => {
 });
 
 describe("arrival capacity floor", () => {
-  it("refuses an arrival once the unit's physically empty beds are exhausted", () => {
-    // A ward can CONFIRM_CAPACITY an allocatable count above what is physically empty — nothing
-    // in PULL_PATIENT's own guard prevents that, since it only bounds `allocatable.value`. That makes
-    // over-arriving a real, reachable sequence, not a hypothetical: hold and arrive one patient
-    // against rph-adult-secure's single seeded allocatable bed (empty 2 -> 1), have the ward
-    // restate a larger allocatable count than physically exists, then hold and arrive a second
-    // patient (empty 1 -> 0), then attempt a third. The third must be refused rather than driving
-    // `empty.value` negative.
-    const walkToArrival = (state: ReturnType<typeof seeded>, movementId: string) => {
-      const steps = [
-        { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
-        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-        // Item 11, owner answer 11 — `rph-adult-secure` is wholly locked (20 of 20 beds), but
-        // `CONFIRM_CAPACITY` below restates `allocatable.value` without touching
-        // `allocatableLocked` (out of this test's own scope), so the second and third walk find no
-        // locked bed on file as free even though the ward has no other kind. A reason is supplied
-        // unconditionally: unused when a locked bed is free (the first walk), and what lets the
-        // later walks reach `PATIENT_ARRIVED` at all, which is the guard this test is actually about.
-        { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", overrideReason: OVERRIDE_REASONS[0] },
-        // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
-        // transport job and answer the escort question by deriving it from legal status. It no
-        // longer invents either, so a walk that reaches handover without booking is refused.
-        {
-          type: "BOOK_TRANSPORT",
-          role: "ed",
-          provider: "Ambulance service",
-          escortRequired: true,
-          cadNumber: "CAD-STUB-0001",
-          transportLegalStatus: "voluntary",
-          estimatedAt: 0,
+  it("refuses a pull once no bed is Ready, and still records an arrival into a ward with no empty bed", () => {
+    // Audit 2 E-08 (Josh, 20 Oct 2026): PULL_PATIENT needs a Ready bed, min(allocatable, empty).
+    // A ward can still CONFIRM_CAPACITY an allocatable count above what is physically empty, and a
+    // pull reserves against allocatable without emptying a bed, so two holds can be taken while one
+    // bed is physically empty. The second arrival is then recorded as an arrival capacity conflict
+    // ("Arrived — Bed Turnaround"), never refused, and a further pull is refused at 0 Ready.
+    const pullSteps = [
+      { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
+      // Item 11, owner answer 11 — `rph-adult-secure` is wholly locked (20 of 20 beds), but
+      // `CONFIRM_CAPACITY` below restates `allocatable.value` without touching
+      // `allocatableLocked`, so later walks find no locked bed on file as free. A reason is
+      // supplied unconditionally: unused when a locked bed is free (the first walk).
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", overrideReason: OVERRIDE_REASONS[0] },
+    ] as const;
+    const arriveSteps = [
+      // Booking is a step of its own since 2026-08-31.
+      {
+        type: "BOOK_TRANSPORT",
+        role: "ed",
+        provider: "Ambulance service",
+        escortRequired: true,
+        cadNumber: "CAD-STUB-0001",
+        transportLegalStatus: "voluntary",
+        estimatedAt: 0,
+      },
+      { type: "HANDOVER_READY", role: "ed" },
+      { type: "TRANSPORT_ACCEPTED", role: "officer" },
+      { type: "TRANSPORT_EN_ROUTE", role: "officer" },
+      { type: "PATIENT_COLLECTED", role: "officer" },
+      { type: "PATIENT_ARRIVED", role: "coordinator" },
+    ] as const;
+    const walk = (state: ReturnType<typeof seeded>, movementId: string, steps: readonly object[]) =>
+      steps.reduce<ReturnType<typeof seeded>>(
+        (next, step) => wardFlowReducer(next, { ...step, now: NOW, movementId } as never),
+        state,
+      );
+    const raiseVoluntarySecure = (state: ReturnType<typeof seeded>) => {
+      const raised = wardFlowReducer(state, {
+        type: "RAISE_REFERRAL",
+        role: "ed",
+        now: NOW,
+        edId: "jhc-ed",
+        draft: {
+          cohort: "Adult",
+          security: "Secure",
+          sex: "Male",
+          gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
+          specialling: false,
+          highAcuity: false,
+          legalStatus: "Voluntary",
+          urgency: 3,
+          legalFormCode: null,
         },
-        { type: "HANDOVER_READY", role: "ed" },
-        { type: "TRANSPORT_ACCEPTED", role: "officer" },
-        { type: "TRANSPORT_EN_ROUTE", role: "officer" },
-        { type: "PATIENT_COLLECTED", role: "officer" },
-        { type: "PATIENT_ARRIVED", role: "coordinator" },
-      ] as const;
-      let next = state;
-      for (const step of steps) {
-        next = wardFlowReducer(next, { ...step, now: NOW, movementId } as never);
-      }
-      return next;
+      });
+      return { raised, id: raised.movements[raised.movements.length - 1].id };
     };
+    const unitOf = (state: ReturnType<typeof seeded>) => state.units.find((unit) => unit.id === "rph-adult-secure")!;
 
     let state = seeded();
-    state = walkToArrival(state, "WF-009"); // empty 2 -> 1, allocatable 1 -> 0
+    state = walk(state, "WF-009", [...pullSteps, ...arriveSteps]); // empty 2 -> 1, allocatable 1 -> 0
     state = wardFlowReducer(state, {
       type: "CONFIRM_CAPACITY",
       role: "ward",
@@ -1439,43 +1454,34 @@ describe("arrival capacity floor", () => {
       unitId: "rph-adult-secure",
       actingUnitId: "rph-adult-secure",
       value: 5,
-      expectedRevision: state.units.find((unit) => unit.id === "rph-adult-secure")!.allocatable.revision ?? 0,
+      expectedRevision: unitOf(state).allocatable.revision ?? 0,
     });
-    state = walkToArrival(state, "WF-017"); // empty 1 -> 0, allocatable 5 -> 4
+    // Two holds against the one physically empty bed: Ready is min(5, 1) then min(4, 1).
+    state = walk(state, "WF-017", pullSteps);
+    const third = raiseVoluntarySecure(state);
+    state = walk(third.raised, third.id, pullSteps);
+    expect(movement(state, "WF-017").stage).toBe("pulled");
+    expect(movement(state, third.id).stage).toBe("pulled");
 
-    const before = state.units.find((unit) => unit.id === "rph-adult-secure")!.empty.value;
-    expect(before).toBe(0);
+    state = walk(state, "WF-017", arriveSteps); // empty 1 -> 0
+    expect(unitOf(state).empty.value).toBe(0);
+    const final = walk(state, third.id, arriveSteps);
 
-    // A third referral raised fresh, so its stage starts clean regardless of fixture state.
-    const raised = wardFlowReducer(state, {
-      type: "RAISE_REFERRAL",
-      role: "ed",
-      now: NOW,
-      edId: "jhc-ed",
-      draft: {
-        cohort: "Adult",
-        security: "Secure",
-        sex: "Male",
-        gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
-        highAcuity: false,
-        legalStatus: "Voluntary",
-        urgency: 3,
-        legalFormCode: null,
-      },
-    });
-    const thirdId = raised.movements[raised.movements.length - 1].id;
-    const final = walkToArrival(raised, thirdId);
-
-    expect(movement(final, thirdId).stage).toBe("arrived");
-    expect(movement(final, thirdId).blocker).toBe("Arrived — Bed Turnaround");
-    const after = final.units.find((unit) => unit.id === "rph-adult-secure")!;
+    expect(movement(final, third.id).stage).toBe("arrived");
+    expect(movement(final, third.id).blocker).toBe("Arrived — Bed Turnaround");
     expect(final.rejections.some((rejection) => rejection.attempted === "PATIENT_ARRIVED")).toBe(false);
-    expect(after.empty.value).toBe(0);
-    const pulledAdm = final.admissions.find((a) => a.id === movement(final, thirdId).admissionId);
+    expect(unitOf(final).empty.value).toBe(0);
+    const pulledAdm = final.admissions.find((a) => a.id === movement(final, third.id).admissionId);
     expect(pulledAdm).toBeDefined();
     expect(pulledAdm?.state).toBe("occupied");
     expect(pulledAdm?.blockReason).toBe("Awaiting clean");
+
+    // With 0 Ready (allocatable 3, empty 0) a fourth pull is refused, naming both figures.
+    const fourth = raiseVoluntarySecure(final);
+    const refused = walk(fourth.raised, fourth.id, pullSteps);
+    expect(movement(refused, fourth.id).stage).not.toBe("pulled");
+    expect(refused.rejections.at(-1)?.attempted).toBe("PULL_PATIENT");
+    expect(refused.rejections.at(-1)?.reason).toMatch(/no Ready bed remains at .*physically empty 0/);
   });
 });
 

@@ -93,7 +93,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
 
     const recorded = wardFlowReducer(booked, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       movementId,
       needed: false,
@@ -124,7 +124,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
 
     const recorded = wardFlowReducer(cancelled, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 3,
       movementId,
       needed: false,
@@ -139,7 +139,7 @@ describe("RECORD_TRANSPORT_NEED refuses to override a live booked job (audit 202
     const { state: booked, movementId } = pulledAndBookedMovement();
     const recorded = wardFlowReducer(booked, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       movementId,
       needed: true,
@@ -187,7 +187,7 @@ describe("PATIENT_ARRIVED's no-transport-needed route requires no live job (audi
     expect(cancelled.rejections).toEqual(booked.rejections);
     const recorded = wardFlowReducer(cancelled, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 3,
       movementId,
       needed: false,

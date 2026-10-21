@@ -91,6 +91,9 @@ function asReferral(person: Person): { referral: Referral; ward: WardReferralDes
     urgency: 2,
     originSiteCode: "RPH",
     transportNeeded: false,
+    // Audit 2 E-04: a referral with no recorded legal status needs an authorised bed, so the
+    // referral records the same status the movement path carries.
+    intake: { legalStatus: asMovement(person).legalStatus } as unknown as Referral["intake"],
     ...FIXTURE_HISTORY,
   };
   return { referral, ward };

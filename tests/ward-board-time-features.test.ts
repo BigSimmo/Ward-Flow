@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   currentShiftStartInstant,
   DAY_SHIFT_END_MINUTE,
-  dayShiftEndInstant,
+  shiftEndInstant,
   openWorkBeforeShiftEnd,
   openWorkBeforeShiftEndLabel,
   pullHoldRemainingLabel,
   transportEtaRemainingLabel,
 } from "../src/components/ward-management/ward-board-time-features";
-import { dayOf, minuteOfDay, MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
+import { dayOf, MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -24,11 +24,16 @@ describe("ward board-time features", () => {
     expect(currentShiftStartInstant(day + 2 * 60)).toBe(day - 60);
   });
 
-  it("dayShiftEndInstant is 15:00 on the same demonstration day as now", () => {
-    const end = dayShiftEndInstant(NOW_ANCHOR);
-    expect(dayOf(end)).toBe(dayOf(NOW_ANCHOR));
-    expect(minuteOfDay(end)).toBe(DAY_SHIFT_END_MINUTE);
-    expect(end).toBe(dayOf(NOW_ANCHOR) * MINUTES_PER_DAY + DAY_SHIFT_END_MINUTE);
+  it("shiftEndInstant is the end of the shift now falls in, never a time already past", () => {
+    const day = dayOf(NOW_ANCHOR) * MINUTES_PER_DAY;
+    expect(shiftEndInstant(day + 10 * 60)).toBe(day + DAY_SHIFT_END_MINUTE);
+    // Audit 2 E-14: in the evening and overnight the end is 23:00, then 07:00 the next morning.
+    expect(shiftEndInstant(day + 20 * 60)).toBe(day + 23 * 60);
+    expect(shiftEndInstant(day + 23 * 60 + 30)).toBe(day + MINUTES_PER_DAY + 7 * 60);
+    expect(shiftEndInstant(day + 2 * 60)).toBe(day + 7 * 60);
+    for (const minute of [0, 6 * 60 + 59, 7 * 60, 14 * 60 + 59, 15 * 60, 22 * 60 + 59, 23 * 60]) {
+      expect(shiftEndInstant(day + minute)).toBeGreaterThan(day + minute);
+    }
   });
 
   it("pullHoldRemainingLabel uses formatRemaining against pullExpiresAt only", () => {
@@ -41,8 +46,8 @@ describe("ward board-time features", () => {
     expect(transportEtaRemainingLabel(NOW_ANCHOR - 15, NOW_ANCHOR)).toBe("15m overdue");
   });
 
-  it("openWorkBeforeShiftEnd lists only open pull holds and typed form times before 15:00", () => {
-    const shiftEnd = dayShiftEndInstant(NOW_ANCHOR);
+  it("openWorkBeforeShiftEnd lists only open pull holds and typed form times before the shift end", () => {
+    const shiftEnd = shiftEndInstant(NOW_ANCHOR);
     const base = seedWardFlowState().movements[0]!;
 
     const beforePull: Movement = {
@@ -84,12 +89,12 @@ describe("ward board-time features", () => {
     expect(openWorkBeforeShiftEndLabel(items[1]!, NOW_ANCHOR)).toContain("Bed pull");
   });
 
-  it("seed fixture has open work before 15:00 that the helper can surface", () => {
+  it("seed fixture has open work before the shift end that the helper can surface", () => {
     const { movements } = seedWardFlowState();
     const items = openWorkBeforeShiftEnd(movements, NOW_ANCHOR);
     expect(items.length).toBeGreaterThan(0);
     for (const item of items) {
-      expect(item.at).toBeLessThan(dayShiftEndInstant(NOW_ANCHOR));
+      expect(item.at).toBeLessThan(shiftEndInstant(NOW_ANCHOR));
     }
   });
 });

@@ -21,7 +21,7 @@ function RecordNoTransport({ movementId }: { movementId: string }) {
   return (
     <button
       type="button"
-      onClick={() => dispatch({ type: "RECORD_TRANSPORT_NEED", role: "ward", now, movementId, needed: false })}
+      onClick={() => dispatch({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", now, movementId, needed: false })}
     >
       record no transport for {movementId}
     </button>

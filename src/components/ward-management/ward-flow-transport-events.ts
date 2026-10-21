@@ -7,6 +7,7 @@ import {
   TRANSPORT_WHEREABOUTS,
 } from "@/components/ward-management/ward-change-reasons";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
+import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { ARRIVAL_LATE_AFTER_MINUTES, isArrivalLate } from "@/components/ward-management/ward-legal-clock";
 import {
@@ -96,6 +97,9 @@ export function reduceTransportEvent(
       // P1-3: re-run at every forward step while a bed is held; see `heldUnitGenderRefusal`.
       const handoverGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (handoverGenderRefusal) return reject(state, event, handoverGenderRefusal);
+      // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
+      const handoverLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      if (handoverLegalRefusal) return reject(state, event, handoverLegalRefusal);
       const updated: Movement = {
         ...movement,
         stage: "handover_ready",
@@ -144,6 +148,9 @@ export function reduceTransportEvent(
       // P1-3 (Ward Lead ruling, 17 September 2026) — see `heldUnitGenderRefusal`'s own doc comment.
       const transportAcceptedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (transportAcceptedGenderRefusal) return reject(state, event, transportAcceptedGenderRefusal);
+      // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
+      const transportAcceptedLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      if (transportAcceptedLegalRefusal) return reject(state, event, transportAcceptedLegalRefusal);
       const updated: Movement = {
         ...movement,
         transport: { ...movement.transport, acceptedAt: event.now },
@@ -246,6 +253,9 @@ export function reduceTransportEvent(
       // The last of the four re-checks: `PATIENT_ARRIVED` deliberately has none.
       const collectedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (collectedGenderRefusal) return reject(state, event, collectedGenderRefusal);
+      // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
+      const collectedLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      if (collectedLegalRefusal) return reject(state, event, collectedLegalRefusal);
       // Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance) records why.
       const collectedException =
         event.exception === undefined
@@ -463,6 +473,10 @@ export function reduceTransportEvent(
         if (genderGate && !genderGate.pass) {
           return reject(state, event, GENDER_NO_LONGER_SUITS_REFUSAL);
         }
+        // Audit 2 E-03: the no-transport shortcut skips the three steps above, so re-ask the legal
+        // status check here too. Never once moving: arrival is always recorded.
+        const arrivalLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+        if (arrivalLegalRefusal) return reject(state, event, arrivalLegalRefusal);
       }
 
       const updatedUnit: Unit = {
@@ -983,6 +997,11 @@ export function reduceTransportEvent(
       if (movement.closure) {
         return reject(state, event, "cannot update arrival details on closed movement");
       }
+      // Audit 2 E-13: arrival plans belong to a ward that has said yes; before that there is no
+      // destination to arrive at.
+      if (movement.acceptedUnitId === undefined) {
+        return reject(state, event, "Arrival details need a ward that has accepted this patient.");
+      }
       // A ward must name itself, so the shared backend can check that desk is the receiving ward
       // and not the sending one (review on PR #365).
       if (
@@ -1010,8 +1029,9 @@ export function reduceTransportEvent(
 
       let updatedMovement: Movement = {
         ...movement,
+        // Audit 2 E-13 (Josh, 20 Oct 2026): the bed-hold timer is kept. An arrival plan is not an
+        // arrival, and only a person releases or moves a held bed.
         arrivalDetails,
-        pullExpiresAt: undefined, // Default 4h countdown timer is removed as arrival is sorted
       };
 
       let next = {

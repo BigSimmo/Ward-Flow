@@ -8,7 +8,7 @@ describe("Advanced clinical coordination features & behaviors", () => {
   const now = 9 * 60; // 09:00
 
   describe("Option 0: Arrival Time & Transport ETA on Pulled Beds", () => {
-    it("records arrival details and clears the default pullExpiresAt 4h hold", () => {
+    it("records arrival details and keeps the bed-hold timer (Audit 2 E-13)", () => {
       // Find or pull a patient
       const pulledMovement = baseState.movements.find((m) => m.stage === "pulled") ?? baseState.movements[0];
       const stateWithHold = {
@@ -37,8 +37,8 @@ describe("Advanced clinical coordination features & behaviors", () => {
       expect(updated.arrivalDetails?.recordedBy).toBe("coordinator");
       expect(updated.arrivalDetails?.recordedAt).toBe(now);
 
-      // The 4-hour hold is cleared because arrival plan is confirmed
-      expect(updated.pullExpiresAt).toBeUndefined();
+      // An arrival plan is not an arrival: the hold timer stays until a person acts.
+      expect(updated.pullExpiresAt).toBe(now + 240);
     });
 
     it("refuses SET_ARRIVAL_DETAILS for non-existent movement", () => {

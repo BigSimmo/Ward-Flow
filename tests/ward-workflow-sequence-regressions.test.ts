@@ -57,7 +57,13 @@ describe("intervening actions and physical provenance", () => {
       unitId: "scgh-adult-open",
       actingUnitId: "scgh-adult-open",
     });
-    state = apply(state, { type: "RECORD_TRANSPORT_NEED", role: "ward", now, movementId: movement.id, needed: false });
+    state = apply(state, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      now,
+      movementId: movement.id,
+      needed: false,
+    });
     const arrived = apply(state, {
       type: "PATIENT_ARRIVED",
       role: "ward",
