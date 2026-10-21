@@ -20,6 +20,9 @@ async function configuredProjects(knownFailuresFile = "") {
   vi.resetModules();
   vi.stubEnv("WARD_JOURNEY_KNOWN_FAILURES", knownFailuresFile);
   vi.stubEnv("PORT", process.env.PORT ?? "");
+  // The config adds the ward-shared-mode project whenever WARD_E2E_ACCOUNTS is set (cloud sessions
+  // set it), while these tests compare against an environment without it.
+  vi.stubEnv("WARD_E2E_ACCOUNTS", "");
   try {
     const { default: config } = await import("../playwright.config");
     return config.projects ?? [];

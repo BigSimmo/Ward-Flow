@@ -13,6 +13,8 @@ import {
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { ESCORT_ANSWERS, NO_TRANSPORT_PROVIDER_VALUE, TRANSPORT_LEGAL_STATUS_LABELS } from "./ed-screen-model";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { cadNumberSentence } from "@/components/ward-management/ward-transport-checks";
 import styles from "./ed.module.css";
 
 export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
@@ -25,6 +27,8 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
     setTransportDraft,
     submitBookTransport,
   } = ctx;
+  // A typed CAD number the rule refuses is named beside the field, not only at the confirm control.
+  const cadFieldProblem = transportDraft.cadNumber.trim() ? cadNumberProblem(transportDraft.cadNumber) : undefined;
   /*
    * ⚠️ **A POPUP (DIALOG), NOT AN INLINE PANEL — owner's third ruling, 2026-09-17.**
    * `role="dialog"`/`aria-modal="true"`/`aria-labelledby` name and announce it,
@@ -95,10 +99,12 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
             </label>
             <fieldset className={styles.declineFieldset} data-testid={`ward-ed-transport-escort-${movement.id}`}>
               <legend className={styles.declineLegend}>Does {patientInfo.displayName} need an escort?</legend>
-              <p className={styles.cardMeta}>
-                Neither answer is selected, and nothing selects one from this patient&apos;s legal status or from the
-                last booking. This is recorded as this team&apos;s answer.
-              </p>
+              {transportDraft.escortRequired === undefined ? (
+                <p className={styles.cardMeta}>
+                  Neither answer is selected, and nothing selects one from this patient&apos;s legal status or from the
+                  last booking. This is recorded as this team&apos;s answer.
+                </p>
+              ) : null}
               {ESCORT_ANSWERS.map((answer) => (
                 <label key={answer.label} className={styles.declineOption}>
                   <input
@@ -127,6 +133,8 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
                 id={`ward-ed-transport-cad-number-${movement.id}`}
                 data-testid={`ward-ed-transport-cad-number-${movement.id}`}
                 value={transportDraft.cadNumber}
+                aria-invalid={cadFieldProblem ? "true" : undefined}
+                aria-describedby={cadFieldProblem ? `ward-ed-transport-cad-problem-${movement.id}` : undefined}
                 onChange={(event) =>
                   setTransportDraft((current) => ({
                     ...current,
@@ -135,6 +143,15 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
                 }
               />
             </label>
+            {cadFieldProblem ? (
+              <span
+                id={`ward-ed-transport-cad-problem-${movement.id}`}
+                className={styles.cardMeta}
+                data-testid={`ward-ed-transport-cad-problem-${movement.id}`}
+              >
+                {cadNumberSentence(cadFieldProblem)}
+              </span>
+            ) : null}
             <fieldset className={styles.declineFieldset} data-testid={`ward-ed-transport-legal-status-${movement.id}`}>
               <legend className={styles.declineLegend}>Is the transport voluntary or involuntary?</legend>
               {TRANSPORT_LEGAL_STATUSES.map((status) => (

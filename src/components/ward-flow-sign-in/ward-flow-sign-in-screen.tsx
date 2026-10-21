@@ -98,6 +98,19 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * (`@/lib/theme-client`), which sets `data-theme`, `.dark` and `theme-color` together, so a choice
  * made here is the same choice the ward screens show after sign-in.
  */
+
+/**
+ * The ward rule for not-wired controls (`showsUnwiredPreviews`, Josh 20 Oct 2026), restated here
+ * because the sign-in screen sits outside the ward seam: shown only in a development build.
+ */
+function showsUnwiredPreviews(
+  configured: string | undefined = process.env.NEXT_PUBLIC_WARD_ENVIRONMENT,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): boolean {
+  const named = configured?.trim().toLowerCase();
+  if (named === "demo" || named === "production") return false;
+  return named === "development" || nodeEnv !== "production";
+}
 export function WardFlowSignInScreen() {
   const [chosen, setChosen] = useState<SignInRoleId>(SIGN_IN_ROLES[0].id);
   const [selectedCatchment, setSelectedCatchment] = useState<CatchmentId>("Statewide");
@@ -171,7 +184,11 @@ export function WardFlowSignInScreen() {
         chooseRole(SIGN_IN_ROLES[index].id);
         return;
       }
-      if (event.key === "Enter" && !target?.closest("button, a, summary, [role='tab'], [role='radio']")) {
+      if (
+        showsUnwiredPreviews() &&
+        event.key === "Enter" &&
+        !target?.closest("button, a, summary, [role='tab'], [role='radio']")
+      ) {
         event.preventDefault();
         pressSignIn();
       }
@@ -337,9 +354,13 @@ export function WardFlowSignInScreen() {
             <span className={styles.goContext}>
               {catchment.id} · {shift.id} · {role.name}
             </span>
-            <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
-              Preview as {role.as}
-            </Button>
+            {/* The button only says what would open, so it is a not-wired control: shown in a local
+                development build only (Josh, 20 Oct 2026, see ward-management/unwired-previews.tsx). */}
+            {showsUnwiredPreviews() ? (
+              <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
+                Preview as {role.as}
+              </Button>
+            ) : null}
           </section>
         </section>
 

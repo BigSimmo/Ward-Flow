@@ -118,6 +118,13 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
       tone: "info",
       text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
+  // Q16: a withdrawal that also released a held bed records both, so both are listed.
+  for (const unwind of movement.unwinds) {
+    if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
+    const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);
+    const fact = unwind.kind === "pull_released" ? "Held bed released" : "Acceptance withdrawn";
+    events.push({ at: unwind.at, tone: "closed", text: `${fact}${ward ? `, ${ward}` : ""}, by ${unwind.by}` });
+  }
   const job = movement.transport;
   if (job?.acceptedAt !== undefined) events.push({ at: job.acceptedAt, tone: "info", text: "Transport accepted" });
   if (job?.enRouteAt !== undefined) events.push({ at: job.enRouteAt, tone: "info", text: "Transport en route" });

@@ -15,7 +15,12 @@
   overflow-x: clip;
   min-width: 0;
   width: 100%;
+}
 
+/* The screen's token names, shared with the transport dialog, which is portalled to the body and so
+ * sits outside `.screen`. Without them its fields lost their borders (var() of an unset token). */
+.screen,
+.modalBackdrop {
   --text: var(--ink);
   --text-heading: var(--ink);
   --text-muted: var(--muted);
@@ -3024,6 +3029,7 @@
 }
 
 .modalBackdrop {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   position: fixed;
   inset: 0;
   z-index: 1000;

@@ -418,6 +418,10 @@
 
 .queueTools {
   display: flex;
+  /* At 1280px with the rail open the card had no room for the tabs and Form due on one line, so the
+   * tabs shrank and "70" ran over the Patients edge (visual desk, 21 Oct 2026). Form due takes the
+   * next line there instead. The phone keeps one line (below). */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
@@ -1954,6 +1958,7 @@ button.registerRow:hover {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
+    flex-wrap: nowrap;
     margin: 0;
     padding: var(--wf-s-2) 0;
     border-bottom: 0;

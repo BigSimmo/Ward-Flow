@@ -2741,11 +2741,13 @@ const REFERRAL_ANSWER_EVENT_HELPERS = {
   referralAcceptanceRefusal,
   referralReferrer,
   reject,
+  releasePulledBedAndAdmission,
   replaceMovement,
   replaceReferral,
   unitName,
   wardActingMovementRefusal,
   wardActingUnitRefusal,
+  withoutReferralBedHold,
 };
 export type ReferralAnswerEventHelpers = typeof REFERRAL_ANSWER_EVENT_HELPERS;
 
