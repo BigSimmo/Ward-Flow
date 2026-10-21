@@ -1820,12 +1820,11 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10). The only writer of `observation` after
-       * intake. Targets the open movement, or the admission once a bed is held; either way the
-       * movement and its live admission change together and append `{ at, from, to }` to their
-       * `observationChanges`. Refused for an invalid level or interval, or no change. It does NOT
-       * refuse raising an occupied bed's level beyond the ward's staff: the capacity refusal stays at
-       * `PULL_PATIENT`, before a bed is committed.
+       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after
+       * intake. Targets the open movement, or the admission once a bed is held; the movement and its
+       * live admission change together and append `{ at, from, to }` to `observationChanges`. Refused
+       * for an invalid level or interval, or no change. Raising an occupied bed's level beyond the
+       * ward's staff is not refused here: the capacity refusal stays at `PULL_PATIENT`.
        */
       type: "RECORD_OBSERVATION_LEVEL";
       role: WardFlowRole;
