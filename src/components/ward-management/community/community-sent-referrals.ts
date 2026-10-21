@@ -52,7 +52,10 @@ export function sentAnswer(
   units: readonly Unit[],
 ): { text: string; tone: SentAnswerTone } {
   if (referral.withdrawn) return { text: "Withdrawn.", tone: "withdrawn" };
-  const accepted = referral.addressings.find((addressing) => addressing.accepted);
+  // The referral's own state decides, as the filters do: a community team's acceptance does not
+  // settle a referral while a ward or ED arm is still open (`referralState`).
+  const accepted =
+    referral.state === "accepted" ? referral.addressings.find((addressing) => addressing.accepted) : undefined;
   if (accepted) return { text: `${sentPlaceName(accepted, units)} accepted.`, tone: "accepted" };
   if (referral.state === "declined") return { text: "Declined everywhere it was sent.", tone: "declined" };
   const declined = referral.addressings.filter((addressing) => addressing.declined).length;

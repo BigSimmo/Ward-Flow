@@ -154,6 +154,19 @@ describe("community team: the Sent tab's wording", () => {
     expect(sentAnswer(accepted, UNITS).text).toMatch(/ accepted\.$/);
     expect(sentAnswer(declined, UNITS)).toEqual({ text: "Declined everywhere it was sent.", tone: "declined" });
 
+    // A community team's acceptance does not settle the referral while a ward is still open, so the
+    // answer and the filters agree that it is waiting.
+    const teamAcceptedWardOpen = project([
+      {
+        destination: { kind: "community_team", teamName: "Synthetic Team" },
+        state: "accepted",
+        decidedAt: NOW_ANCHOR,
+      },
+      { destination: ward(WARD_A), state: "queued" },
+    ]);
+    expect(sentAnswer(teamAcceptedWardOpen, UNITS)).toEqual({ text: "Waiting for an answer.", tone: "waiting" });
+    expect(sentMatches(teamAcceptedWardOpen, "waiting")).toBe(true);
+
     const all = [waiting, partDeclined, accepted, declined];
     expect(all.filter((sent) => sentMatches(sent, "waiting"))).toEqual([waiting, partDeclined]);
     expect(all.filter((sent) => sentMatches(sent, "answered"))).toEqual([accepted, declined]);
