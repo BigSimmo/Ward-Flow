@@ -13,14 +13,17 @@ import {
   useFeedInbox,
 } from "@/components/ward-management/tools/ward-feed-inbox-store";
 
+const route = vi.hoisted(() => ({ pathname: "/ward-flow/capacity" }));
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 afterEach(() => {
   cleanup();
+  route.pathname = "/ward-flow/capacity";
   act(() => resetFeedInboxForTests());
 });
 
@@ -105,5 +108,34 @@ describe("feed inbox in Tools", () => {
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
     expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
+  });
+
+  it("offers no confirmation a desk would be refused, and says why", () => {
+    const first = readFeedMessage(messages[0]!);
+    if (!first.ok) throw new Error("first simulated message should be readable");
+    const suggestion = feedSuggestion(first.message, seed);
+    if (suggestion.kind !== "arrival") throw new Error("first simulated message should be an arrival");
+    const otherWard = seed.units.find((unit) => unit.id !== suggestion.unitId)!;
+    route.pathname = `/ward-flow/ward/${otherWard.id}`;
+    const { unmount } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFeedInbox />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    expect(screen.getByTestId("ward-feed-confirm-1")).toBeDisabled();
+    expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("Open that ward to confirm it.");
+    unmount();
+    act(() => resetFeedInboxForTests());
+
+    route.pathname = `/ward-flow/ed/${seed.movements[0]!.originEdId}`;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFeedInbox />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    expect(screen.getByTestId("ward-feed-confirm-1")).toBeDisabled();
+    expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("This desk cannot record this.");
   });
 });

@@ -467,10 +467,11 @@ export function StatisticsScreen({
           paused={live.paused}
           onTogglePause={live.togglePause}
         />
-        <div className={trendStyles.phoneSlot}>
-          {/* Three hours and no total fit a phone's width without a sideways scroll. */}
+        {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
+            hours and no total fit a phone's width without a sideways scroll. */}
+        <aside className={trendStyles.phoneSlot} aria-label="This session">
           <StatisticsSessionTrendsCard now={now} hours={3} showTotal={false} />
-        </div>
+        </aside>
       </>
     );
   }

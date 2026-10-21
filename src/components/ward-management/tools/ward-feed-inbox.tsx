@@ -6,7 +6,8 @@ import { Inbox } from "lucide-react";
 
 import { Select } from "@/components/wf";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "../ward-admissions";
-import { wardRouteUnitId } from "../ward-chrome-role";
+import { wardRouteUnitId, type WardChromeRole } from "../ward-chrome-role";
+import { EVENT_ROLE } from "../ward-flow-event-roles";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { useRouteRole } from "../ward-role-gate";
@@ -112,16 +113,17 @@ export function WardFeedInbox() {
               suggestion={item.message ? feedSuggestion(item.message, { movements, admissions, patients }) : undefined}
               differences={item.message ? differencesFrom(item.message, patients) : []}
               unitName={unitName}
+              blockedReason={(suggestion) => confirmBlockedReason(suggestion, role, routeUnitId, unitName)}
               onConfirm={(suggestion, leaving) => {
                 const outcome =
                   suggestion.kind === "arrival"
                     ? raise("PATIENT_ARRIVED", {
                         movementId: suggestion.movementId,
-                        actingUnitId: role === "ward" ? (routeUnitId ?? "") : suggestion.unitId,
+                        actingUnitId: suggestion.unitId,
                       })
                     : raise("RECORD_LEAVING", {
                         admissionId: suggestion.admissionId,
-                        actingUnitId: role === "ward" ? (routeUnitId ?? "") : suggestion.unitId,
+                        actingUnitId: suggestion.unitId,
                         leavingDestination: leaving!,
                       });
                 const done =
@@ -154,6 +156,28 @@ export function WardFeedInbox() {
   );
 }
 
+type Confirmable = Exclude<FeedSuggestion, { kind: "none" }>;
+
+/**
+ * Why this desk cannot confirm a message, or null. The same role and ward checks the engine makes,
+ * asked first so a control is never offered only to be refused.
+ */
+function confirmBlockedReason(
+  suggestion: Confirmable,
+  role: WardChromeRole,
+  routeUnitId: string | undefined,
+  unitName: (id: string) => string,
+): string | null {
+  const type = suggestion.kind === "arrival" ? "PATIENT_ARRIVED" : "RECORD_LEAVING";
+  if (!(EVENT_ROLE[type] as readonly string[]).includes(role)) {
+    return "This desk cannot record this. Open Tools from the ward or the coordinator desk.";
+  }
+  if (role === "ward" && routeUnitId !== suggestion.unitId) {
+    return `This message is for ${unitName(suggestion.unitId)}. Open that ward to confirm it.`;
+  }
+  return null;
+}
+
 /** Where a known person's name or date of birth in the message differs from the record. */
 function differencesFrom(message: FeedMessage, patients: Parameters<typeof previewFeedMessage>[1]) {
   const preview = previewFeedMessage(message, patients);
@@ -165,6 +189,7 @@ function FeedRow({
   suggestion,
   differences,
   unitName,
+  blockedReason,
   onConfirm,
   onReject,
 }: {
@@ -172,12 +197,15 @@ function FeedRow({
   suggestion: FeedSuggestion | undefined;
   differences: readonly string[];
   unitName: (id: string) => string;
-  onConfirm: (suggestion: Exclude<FeedSuggestion, { kind: "none" }>, leaving?: LeavingDestination) => void;
+  blockedReason: (suggestion: Confirmable) => string | null;
+  onConfirm: (suggestion: Confirmable, leaving?: LeavingDestination) => void;
   onReject: () => void;
 }) {
   const [leaving, setLeaving] = useState<LeavingDestination | "">("");
   const message = item.message;
   const waiting = item.status === "waiting";
+  const blocked = suggestion && suggestion.kind !== "none" ? blockedReason(suggestion) : null;
+  const blockedId = `ward-feed-blocked-${item.seq}`;
   return (
     <li className={inboxStyles.item} data-status={item.status} data-testid={`ward-feed-item-${item.seq}`}>
       <div className={inboxStyles.head}>
@@ -207,7 +235,12 @@ function FeedRow({
                 ? `Confirms the arrival on ${unitName(suggestion.unitId)}.`
                 : `Records the departure from ${unitName(suggestion.unitId)}. Choose where the person went.`}
             </p>
-            {suggestion.kind === "departure" ? (
+            {blocked ? (
+              <p className={styles.note} id={blockedId} data-testid={blockedId}>
+                {blocked}
+              </p>
+            ) : null}
+            {suggestion.kind === "departure" && !blocked ? (
               <Select
                 aria-label="Where the person went"
                 value={leaving}
@@ -226,7 +259,8 @@ function FeedRow({
               <button
                 type="button"
                 className={styles.primaryButton}
-                disabled={suggestion.kind === "departure" && !leaving}
+                disabled={!!blocked || (suggestion.kind === "departure" && !leaving)}
+                aria-describedby={blocked ? blockedId : undefined}
                 onClick={() => onConfirm(suggestion, leaving || undefined)}
                 data-testid={`ward-feed-confirm-${item.seq}`}
               >
