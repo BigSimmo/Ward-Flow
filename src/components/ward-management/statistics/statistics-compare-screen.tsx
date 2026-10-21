@@ -30,8 +30,9 @@ import {
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
@@ -94,7 +95,8 @@ export function StatisticsCompareScreen({
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
 
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
-  const readyBeds = units.reduce((sum, u) => sum + unitCapacity(u, bedReleases).available, 0);
+  // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
+  const readyBeds = totalReadyBedsNow(units, admissions, bedReleases);
   const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
@@ -108,7 +110,9 @@ export function StatisticsCompareScreen({
   const totalLongStays = wardStats.reduce((s, { statistics }) => s + statistics.longStays, 0);
 
   const openMovements = movements.filter(isOpen);
-  const edWaitingCount = openMovements.length;
+  // Audit 6 (Josh, 20 Oct 2026): every open journey, in transit included, so it is "Still open",
+  // not "Waiting for a bed"; "Waiting in ED" is the shared `waitingInEds` figure on Statistics.
+  const stillOpenCount = openMovements.length;
   const urgentCount = openMovements.filter((m) => m.flaggedUrgent).length;
   const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
 
@@ -120,7 +124,7 @@ export function StatisticsCompareScreen({
       group: wardGroup(unit),
       // L1: the one occupancy count, Occupied + Pulled (`wardBedsInUse`, `ward-occupancy.ts`).
       occupancy: unit.beds > 0 ? Math.round((wardBedsInUse(unit, admissions, bedReleases) / unit.beds) * 100) : 0,
-      readyNow: unitCapacity(unit, bedReleases).available,
+      readyNow: readyBedsNow(unit, admissions, bedReleases),
       awaitingAnswer: wardReferralTally(openMovements, unit.id).askedAndWaiting,
     };
   });
@@ -182,10 +186,10 @@ export function StatisticsCompareScreen({
           <HeroStat value={totalBlockers} label="Blockers" />
           <HeroStat value={totalLongStays} label="Over 3 months" />
           <HeroStat
-            value={edWaitingCount}
+            value={stillOpenCount}
             label={
               <>
-                <SrOnly>Waiting for a bed</SrOnly> {`${urgentCount} urgent, ${unplacedCount} no ward`}
+                <SrOnly>Still open:</SrOnly> {`${urgentCount} urgent, ${unplacedCount} no ward`}
               </>
             }
           />

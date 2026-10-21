@@ -93,7 +93,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 </span>
               </button>
             </div>
-            <div className={styles.filterMeta}>Mandatory WA Health 7-Day Post-Discharge KPI</div>
+            <div className={styles.filterMeta}>7-day follow-up after discharge (example measure)</div>
           </div>
 
           <div className={styles.cardPanel}>

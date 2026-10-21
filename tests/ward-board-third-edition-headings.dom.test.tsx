@@ -51,7 +51,7 @@ const PANEL_HEADINGS = [
   "Today on this ward",
   "Needs you this shift",
   "Coming in",
-  "Going out today",
+  "Going out today and tomorrow",
   "Since yesterday",
 ] as const;
 
@@ -129,7 +129,7 @@ describe("the bed board's third-edition headings", () => {
           "which every test-id assertion in this suite would survive",
       ).toBeInTheDocument();
     }
-    for (const heading of ["Today on this ward", "Needs you this shift", "Going out today"]) {
+    for (const heading of ["Today on this ward", "Needs you this shift", "Going out today and tomorrow"]) {
       expect(screen.getByRole("heading", { name: heading })).toBeVisible();
     }
   });
@@ -142,7 +142,7 @@ describe("the bed board's third-edition headings", () => {
     expect(screen.getAllByRole("tabpanel", { hidden: true })).toHaveLength(3);
     expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
     expect(screen.getByTestId("ward-board-outgoing")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Going out today" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Going out today and tomorrow" })).toBeVisible();
     fireEvent.keyDown(outgoing, { key: "ArrowRight" });
     expect(incoming).toHaveFocus();
     expect(incoming).toHaveAttribute("aria-selected", "true");

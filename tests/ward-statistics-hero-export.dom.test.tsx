@@ -72,9 +72,12 @@ describe("Statistics hero: Export the figures", () => {
       { ...base, id: "WF-SYN-TRANSFER", sourceAdmissionId: "ADM-SYN-TRANSFER" },
     ];
     inProvider(<StatisticsScreen movements={movements} />);
-    const label = screen.getByText("Waiting in ED", { exact: true });
+    // The desktop chip carries the open-journey figure with it (main, audit 6): "Waiting in ED · N still open".
+    const label = phone
+      ? screen.getByText("Waiting in ED", { exact: true })
+      : screen.getByText(/^Waiting in ED · \d+ still open$/);
     const figure = phone ? label.closest("li") : label.parentElement;
-    expect(figure?.textContent).toBe("1Waiting in ED");
+    expect(figure?.textContent).toMatch(phone ? /^1Waiting in ED$/ : /^1Waiting in ED · \d+ still open$/);
     if (!phone) {
       const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
       expect(csv).toContain('"Waiting in ED","1"');

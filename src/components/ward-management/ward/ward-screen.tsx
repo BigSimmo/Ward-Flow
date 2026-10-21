@@ -2054,7 +2054,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             showHome("bed-capacity");
           }}
         >
-          {unit.beds} beds · {capacity.available} ready
+          {unit.beds} beds · {states.ready} ready
         </Link>
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}

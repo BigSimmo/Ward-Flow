@@ -47,7 +47,8 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
@@ -80,7 +81,6 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { waitingInEds } from "../ward-shared-figures";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
 
 /**
@@ -227,10 +227,14 @@ export function StatisticsScreen({
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
   const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 1000) / 10 : 0;
-  const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
+  // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
+  const availableNow = totalReadyBedsNow(units, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
+  // Audit 6 (Josh, 20 Oct 2026): "Waiting in ED" is the shared figure every other screen prints, the
+  // people physically in an ED; every open journey, in transit and ward-to-ward included, is "Still open".
   const waitingCount = waitingInEds(sourceMovements, now).total;
+  const stillOpenCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
     (a) => a.arrivedAt !== null && dayOf(a.arrivedAt) === dayOf(now),
@@ -297,7 +301,6 @@ export function StatisticsScreen({
 
   const allPressureWards = useMemo(() => {
     return units.map((u) => {
-      const capInfo = unitCapacity(u, sourceBedReleases);
       const occupancyRate =
         u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).inUse / u.beds : 0;
       return {
@@ -306,7 +309,7 @@ export function StatisticsScreen({
         site: u.siteCode,
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
-        ready: capInfo.available,
+        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
@@ -413,8 +416,8 @@ export function StatisticsScreen({
           id: u.id,
           name: u.name,
           code: u.siteCode,
-          meta: `${unitCapacity(u, sourceBedReleases).available} ready`,
-          ready: unitCapacity(u, sourceBedReleases).available,
+          meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
+          ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
         }))
         .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
       ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
@@ -424,7 +427,7 @@ export function StatisticsScreen({
       }),
       team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
     }),
-    [units, sourceBedReleases, emergencyDepts],
+    [units, sourceAdmissions, sourceBedReleases, emergencyDepts],
   );
 
   usePrintableDisclosures();
@@ -487,6 +490,7 @@ export function StatisticsScreen({
               ["Being made ready", pendingPreparation],
               ["Admissions ended today", dischargesCount],
               ["Waiting in ED", waitingCount],
+              ["Still open", stillOpenCount],
             ],
           }}
           chips={
@@ -507,7 +511,8 @@ export function StatisticsScreen({
               />
               <HeroChip
                 value={waitingCount}
-                label="Waiting in ED"
+                // Five chips at most; the open-journey figure rides with the waiting one it contains.
+                label={`Waiting in ED · ${stillOpenCount} still open`}
                 onPress={() =>
                   document
                     .querySelector('[data-testid="ward-statistics-emergency-departments"]')

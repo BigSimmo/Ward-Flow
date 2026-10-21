@@ -2570,3 +2570,41 @@ test("a partly refused Refer to wards is saved and says which ward was held back
   for (const name of [secure.name, world.state.units.find((unit) => unit.id === "brm-adult-secure").name])
     assert.ok(two.partly.includes(name), `names ${name}`);
 });
+
+test(
+  "real PostgreSQL: a popup's second save of its own record is not refused across another desk's save",
+  { skip: !url },
+  async () => {
+    // CS-19 follow-up (Josh, 20 Oct 2026, "Fix it properly"). A popup opened at the seed revision.
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const [deskA, deskB] = ["55555555-5555-4555-8555-555555555555", "66666666-6666-4666-8666-666666666666"];
+    const workspaceId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date("2026-10-07T10:00:00Z") });
+    const urgency = (movementId, value) => ({
+      type: "CHANGE_URGENCY",
+      role: "coordinator",
+      movementId,
+      urgency: value,
+      reason: "reassessed",
+    });
+    try {
+      await migrate(pool);
+      await store.ready();
+      const opened = (await store.read(deskB)).revision;
+      assert.equal((await store.command(deskA, randomUUID(), opened, urgency("WF-002", 1))).status, 200);
+      const first = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 2));
+      assert.equal(first.status, 200, JSON.stringify(first.body.error ?? null));
+      assert.equal(first.body.covered.length, 1);
+      const seen = { [first.body.covered[0]]: first.body.commandRevision };
+      // Without saying what the popup saw, its own first save looks like someone else's change.
+      assert.equal((await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3))).status, 409);
+      const second = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3), { seen });
+      assert.equal(second.status, 200, JSON.stringify(second.body.error ?? null));
+      // The other desk's change, which the popup never saw, is still caught.
+      assert.equal((await store.command(deskB, randomUUID(), opened, urgency("WF-002", 3), { seen })).status, 409);
+    } finally {
+      await pool.end();
+    }
+  },
+);
