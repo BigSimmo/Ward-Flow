@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**557 rulings/items extracted, across 31 of 36 files.**
+**558 rulings/items extracted, across 31 of 36 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 330 distinct IDs
+## ID index — 331 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -244,6 +244,7 @@ safe global key across 30 files.
 | `D-73` | `decisions.md`:821 | D-73. Batch merge safeguards (21 October 2026) |
 | `D-74` | `decisions.md`:836 | D-74. Owner answers to the 21 October open questions (21 October 2026) |
 | `D-75` | `decisions.md`:856 | D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026) |
+| `D-76` | `decisions.md`:869 | D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -526,7 +527,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-75 item(s):
+76 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -603,6 +604,7 @@ safe global key across 30 files.
 - `D-73` — line 821, heading: "D-73. Batch merge safeguards (21 October 2026)"
 - `D-74` — line 836, heading: "D-74. Owner answers to the 21 October open questions (21 October 2026)"
 - `D-75` — line 856, heading: "D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026)"
+- `D-76` — line 869, heading: "D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

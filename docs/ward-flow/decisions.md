@@ -858,10 +858,19 @@ is inferred.
 - **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 9:58 PM AWST, answering five recommendations: "yes to these."
 - **Decision:**
   1. **UX simplification audit.** The small fixes the audit found go to the fix threads now: the top 10 to the audit thread and the rest to the area threads. The 10 bigger changes go to a mock-up first, under the D-74 standing rule.
-  2. **PERF-03.** Pages keep the per-request security (CSP) nonce, and HTML is not cached at the edge.
+  2. **PERF-03.** Pages keep the per-request security (CSP) nonce, and HTML is not cached at the edge. Every page stays dynamic: that is the accepted cost, because a cached page would replay one nonce to every visitor. The `src/proxy.ts` header comment (PR #541) carries the same ruling, and it closes TASK-L4-11.
   3. **Community workflow gaps** (fix plan items 15 to 17, D-74 item 2) start in their own thread after the current merges. The Q9 purpose is already in the trends work.
   4. **Seclusion view** may claim the two screen-map files their previous owner released.
   5. **Extra-travel bed hold.** A bed hold for a person with extra travel adds 60 minutes to the hold set in Settings.
 - **Mock-up evidence rule:** Josh, in the project chat at 8:40 PM AWST: "Disregard any mockups that did not utilise up to date live or local site and visual assessment". A mock-up counts only when it was made from screenshots of the running app at current `main` or the hosted site, and it says which commit.
 - **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
 - **Why:** The audit and the fix threads needed owner answers before the quick wins, caching work, community gaps and bed hold timing could go ahead.
+
+## D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the Community referral gaps thread at 10:05 PM AWST: "Go ahead with all recommendations", on the scope in `community-gaps-scope-2026-10-21.md`.
+- **Decision:**
+  1. **Fix plan item 15.** An accepted community referral is built as the full journey: it can be moved, transported and arrived, and it shows on the Movements and Transport boards. The journey records a community origin by team name, with no address. This updates owner ruling 8 of 1 September 2026, which said a journey never starts at a community team, for an accepted community referral. The smaller option, where the ward records "arrived from community" against the held bed with no movement, is not taken.
+  2. **Fix plan item 16.** The coordinator can ask more wards about an open community referral. Each ward added is recorded with who added it and when. No more than 3 wards may be waiting at once (`PARALLEL_REFERRAL_CAP`), and wards that declined do not count. Wards are listed alphabetically and are never ranked or suggested (D-71).
+- **Boundary:** Synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
+- **Why:** D-74 item 2 put the community gaps into Phase 2, and the scope showed that only the full journey puts community transport on the boards that coordinators and transport officers already use.
