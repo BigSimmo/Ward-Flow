@@ -15,6 +15,7 @@ import {
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
+import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -418,6 +419,19 @@ const informationNeed = z
     metBy: z.optional(text),
   })
   .check(z.refine((entry) => (entry.metAt === undefined) === (entry.metBy === undefined)));
+// Fix plan item 4: an owner is a listed desk and a call a listed outcome, both with a time and the
+// role that recorded them. Strict, so no typed field can ride along on a restored entry.
+const referralOwnerEntry = z.strictObject({ owner: z.enum(REFERRAL_OWNER_DESKS), at: finite, by: text });
+const referralContactEntry = z.strictObject({
+  contact: z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("psychiatric_ward"), unitId: text }),
+    z.strictObject({ kind: z.literal("community_team"), teamId: text }),
+    z.strictObject({ kind: z.literal("referrer") }),
+  ]),
+  outcome: text.check(z.refine((outcome) => (REFERRAL_CONTACT_OUTCOME_IDS as readonly string[]).includes(outcome))),
+  at: finite,
+  by: text,
+});
 const referral = z.looseObject({
   id,
   submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
@@ -445,6 +459,8 @@ const referral = z.looseObject({
   ),
   patientId: link,
   originUnitId: link,
+  ownerHistory: z.optional(z.array(referralOwnerEntry)),
+  contactLog: z.optional(z.array(referralContactEntry)),
 });
 
 const bedRelease = z.looseObject({

@@ -5,7 +5,7 @@ import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-man
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Copy, FileText, ListOrdered, Phone, TriangleAlert } from "lucide-react";
+import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
@@ -35,7 +35,10 @@ import {
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
+import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
+import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
+import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
 
@@ -627,8 +630,6 @@ export function ReferralPatientTab({
               />
             </>
           ) : null}
-          {/* Audit 7 NA-03: calling is never wired, so no Call shows with or without a number. */}
-          {intake?.referrer.phone ? <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} /> : null}
         </div>
         <dl className={styles.pCells}>
           <div>
@@ -641,6 +642,11 @@ export function ReferralPatientTab({
           </div>
         </dl>
         {intake?.charts.length ? <ReferralDocumentLinks charts={intake.charts} /> : null}
+      </Section>
+
+      {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
+      <Section title="Owner and calls">
+        <ReferralOwnerAndCalls referral={referral} now={now} />
       </Section>
 
       <Section title="Recorded legal information" aside="For the receiving unit">
@@ -724,6 +730,22 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
   }
   for (const correction of referral.corrections ?? []) {
     entries.push({ at: correction.at, tone: "info", text: "Correction note added" });
+  }
+  // Fix plan item 4: assignments and calls. A call is never an answer, so it is never "success".
+  for (const assignment of referral.ownerHistory ?? []) {
+    entries.push({
+      at: assignment.at,
+      tone: "info",
+      text: `Assigned to ${referralOwnerLabel(assignment.owner)} by ${assignment.by}`,
+    });
+  }
+  const places = { units, teamName: (teamId: string) => communityTeamById(teamId)?.name };
+  for (const call of referral.contactLog ?? []) {
+    entries.push({
+      at: call.at,
+      tone: "neutral",
+      text: `${call.by} rang ${referralContactTargetLabel(call.contact, places)}: ${referralContactOutcomeLabel(call.outcome)}`,
+    });
   }
   return entries.sort((a, b) => a.at - b.at);
 }

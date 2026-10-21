@@ -76,6 +76,10 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { REFERRAL_INFORMATION_NEED_IDS } from "@/components/ward-management/referrals/referral-information-needs";
+import {
+  REFERRAL_CONTACT_OUTCOME_IDS,
+  REFERRAL_OWNER_DESKS,
+} from "@/components/ward-management/referrals/referral-owner-and-calls";
 import { governanceAuditEvents } from "@/components/ward-management/ward-audit";
 import {
   APPOINTMENT_MODES,
@@ -1457,6 +1461,34 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         action: open?.kind ?? pick(random, BED_MEETING_ACTION_KIND_IDS),
         ...(open?.ownerUnitId ? { actingUnitId: open.ownerUnitId } : {}),
         ...(open && chance(random, 0.7) ? { role: open.owner } : {}),
+      };
+    },
+  ],
+  // Fix plan item 4: assign a referral to a desk, and log calls to a ward, a team or the referrer.
+  [
+    0.5,
+    (state, random) => ({
+      type: "ASSIGN_REFERRAL",
+      referralId: id(referralFor(state, random)),
+      owner: pick(random, REFERRAL_OWNER_DESKS) ?? "coordinator",
+    }),
+  ],
+  [
+    0.5,
+    (state, random) => {
+      const referral = referralFor(state, random);
+      const kind = pick(random, ["psychiatric_ward", "community_team", "referrer"] as const);
+      const contact =
+        kind === "psychiatric_ward"
+          ? { kind, unitId: id(pick(random, state.units)) }
+          : kind === "community_team"
+            ? { kind, teamId: pick(random, COMMUNITY_TEAM_PAGES)?.id ?? MISSING_ID }
+            : { kind: "referrer" as const };
+      return {
+        type: "LOG_REFERRAL_CONTACT",
+        referralId: id(referral),
+        contact,
+        outcome: pick(random, REFERRAL_CONTACT_OUTCOME_IDS) ?? "no_answer",
       };
     },
   ],

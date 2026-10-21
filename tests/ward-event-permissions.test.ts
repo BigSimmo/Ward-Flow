@@ -280,6 +280,10 @@ describe("who may raise which event", () => {
     MARK_REFERRAL_OPENED: ["ward", "coordinator"],
     REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
     MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+    // Fix plan item 4 (21 Oct 2026): the coordinator assigns to any listed desk, an ED or community
+    // desk takes a referral for itself; the same desks log calls about it.
+    ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
+    LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
