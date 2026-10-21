@@ -65,7 +65,7 @@ export type WardIncident = {
   recordedBy: string;
 };
 
-export type SeclusionRoomRecord = {
+type SeclusionRoomRecord = {
   status: SeclusionRoomStatus;
   at: Instant;
   by: string;
