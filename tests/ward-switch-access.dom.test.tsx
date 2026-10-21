@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
@@ -24,6 +25,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 const current = allUnits().find((unit) => unit.id === "rph-adult-secure")!;
 const others = allUnits().filter((unit) => unit.id !== current.id && unit.siteCode === current.siteCode);
+const switchName = `Switch ward, now ${current.name}`;
 
 afterEach(() => {
   cleanup();
@@ -52,26 +54,28 @@ describe("ward switch destinations", () => {
   it("does not offer a switch when the desk can open only its current ward", () => {
     expect(others.length).toBeGreaterThan(0);
     showWard([current.id]);
-    expect(screen.queryByTestId("ward-switch-btn") === null).toBe(true);
+    expect(screen.queryByRole("button", { name: switchName })).toBeNull();
   });
 
-  it("offers only a covered ward and navigates to that ward", () => {
+  it("offers only a covered ward and navigates to that ward", async () => {
+    const user = userEvent.setup();
     const covered = others[0];
     showWard([current.id, covered.id]);
-    fireEvent.click(screen.getByTestId("ward-switch-btn"));
+    await user.click(screen.getByRole("button", { name: switchName }));
     const menu = screen.getByRole("menu");
     expect(
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
     ).toEqual([expect.stringContaining(covered.name)]);
-    fireEvent.click(within(menu).getAllByRole("menuitem")[0]);
+    await user.click(within(menu).getByRole("menuitem", { name: new RegExp(covered.name) }));
     expect(routing.push).toHaveBeenCalledWith(`/ward-flow/ward/${covered.id}`);
   });
 
-  it("retains the nearby ward choices when role access is disabled", () => {
+  it("retains the nearby ward choices when role access is disabled", async () => {
+    const user = userEvent.setup();
     showWard([current.id], false);
-    fireEvent.click(screen.getByTestId("ward-switch-btn"));
+    await user.click(screen.getByRole("button", { name: switchName }));
     expect(within(screen.getByRole("menu")).getAllByRole("menuitem").length).toBe(others.length);
   });
 });
