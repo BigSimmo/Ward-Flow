@@ -31,6 +31,7 @@ import v6 from "./community-team-v6.module.css";
 import { DEMO_COMMUNITY_STAFF } from "./community-demo-cohort";
 import { teamSinceItems, elapsedSinceOrUnderADay } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** Search results shown at once; the rest are reached by typing more of the name or UMRN. */
 const SEARCH_RESULT_LIMIT = 8;
@@ -310,7 +311,7 @@ export function communitySinceElement(view: CommunityScreenView) {
           waitingReferrals.length,
         ).map((item) => `${item.value} ${item.word}`);
         const text = `${team.name}, since the start of this shift (synthetic prototype): ${lines.join(", ")}.`;
-        void navigator.clipboard?.writeText(text).then(
+        void copyTextToClipboard(text).then(
           () => toast?.push({ tone: "success", title: "Copied as handover text" }),
           () => toast?.push({ tone: "warning", title: "Could not copy", body: text }),
         );

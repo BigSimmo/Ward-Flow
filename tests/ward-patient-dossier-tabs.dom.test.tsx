@@ -89,14 +89,10 @@ describe("polished patient dossier tabs", () => {
     expect(pane.getByText("Owner", { selector: "dt" }).nextElementSibling).toHaveTextContent("Not recorded");
     expect(pane.getByRole("button", { name: /Missing information/ })).toHaveAttribute("aria-pressed", "true");
   });
-  it("copies recorded identifiers without adding missing facts", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  it("offers no copy of the patient's identifiers (D-71 item 7)", () => {
     setup();
     const pane = tab("Details");
-    fireEvent.click(pane.getByRole("button", { name: "Copy patient identifiers" }));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("UMRN: UM100023"));
-    expect(await pane.findByText("Copied to clipboard")).toBeVisible();
+    expect(pane.queryByRole("button", { name: "Copy patient identifiers" })).not.toBeInTheDocument();
   });
   it("shows transport metadata from shared state and distinguishes it from a file preview", () => {
     setup();
