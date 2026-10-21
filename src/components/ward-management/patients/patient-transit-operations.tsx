@@ -530,9 +530,10 @@ export function PatientTransitOperations({
               </ul>
             </details>
           )}
-          {/* B5 (site review, 12 Oct 2026): one name for the step, "Hold the bed", from the status
-              card to this button to its toast, which offers Undo like every other move. Undo
-              releases the hold as made in error, the engine's own audited reverse. */}
+          {/* B5 (site review, 12 Oct 2026): one name for the step, from the status card to this button
+              to its toast, which offers Undo like every other move. Undo releases the pull as made in
+              error, the engine's own audited reverse. Task 7 wording (Josh, 21 Oct 2026): "Pull the bed",
+              because a hold is a bed kept while a patient is on leave. */}
           {open && movement.stage === "accepted_awaiting_bed" && destination && (
             <>
               <button
@@ -552,7 +553,7 @@ export function PatientTransitOperations({
                       unitId: destination.id,
                     },
                     {
-                      success: "Bed held",
+                      success: "Bed pulled",
                       undo: (at) => ({
                         type: "RELEASE_PULL",
                         role: routeRole,
@@ -561,13 +562,13 @@ export function PatientTransitOperations({
                         reason: "pull_made_in_error",
                         ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
                       }),
-                      undone: "Bed hold undone.",
+                      undone: "Bed pull undone.",
                     },
                   );
                 }}
               >
                 <BedDouble size={16} aria-hidden="true" />
-                Hold the bed
+                Pull the bed
               </button>
               {holdGate.note}
             </>
@@ -575,8 +576,8 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Bed hold expired. Review the hold before progressing."
-                : `Bed held · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
+                ? "Pull expired. Review the pull before progressing."
+                : `Bed pulled · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
@@ -1023,12 +1024,12 @@ export function PatientTransitOperations({
           <div>
             <BedDouble size={18} aria-hidden="true" />
             <span>Bed reservation</span>
-            <strong>{heldBed ? (heldBed.state === "occupied" ? "Occupied" : "Bed held") : "No bed held"}</strong>
+            <strong>{heldBed ? (heldBed.state === "occupied" ? "Occupied" : "Bed pulled") : "No bed pulled"}</strong>
             <small>
               {remaining === undefined
-                ? "No hold expiry recorded"
+                ? "No pull expiry recorded"
                 : remaining <= 0
-                  ? "Hold expired · review required"
+                  ? "Pull expired · review required"
                   : `${dur(remaining)} remaining`}
             </small>
           </div>

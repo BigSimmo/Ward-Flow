@@ -3,6 +3,8 @@
 import { Hand, LayoutGrid, List } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
@@ -277,6 +279,9 @@ export function WardBedBoard({
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
   const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
+  // The ready figure states how many beds are still being made ready, as every other ready figure does.
+  const { bedReleases } = useWardFlowSelect("bedReleases");
+  const beingMadeReady = bedsPendingPreparation(unit.id, bedReleases);
   const leavingToday = beds.filter(
     (bed) =>
       bed.status !== "ready" &&
@@ -503,7 +508,8 @@ export function WardBedBoard({
         meta={isPhone ? undefined : isMixed ? "Locked and open beds" : unit.name}
         aside={
           <span className={styles.headCount}>
-            <b>{free}</b> free of {beds.length}
+            <b>{free}</b> ready of {beds.length}
+            {beingMadeReady > 0 ? `, ${beingMadeReady} being made ready` : null}
           </span>
         }
         action={

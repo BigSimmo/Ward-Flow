@@ -89,9 +89,10 @@ describe("referral slide-out, option B", () => {
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(within(rail).getByRole("heading", { name: "Ready to send" })).toBeInTheDocument();
     expect(within(rail).getByText("Refer to")).toBeInTheDocument();
-    // L1 (review 12 Oct 2026): one count. The summary's items left are the steps' needed items.
-    const [, ready, total] = /(\d+) of (\d+) ready/u.exec(rail.textContent ?? "") ?? [];
-    expect(ready).toBeDefined();
+    // L1 (review 12 Oct 2026): one count. UX audit 21 Oct 2026: the footer carries it, and its items
+    // left are the steps' needed items.
+    const [, left] = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "") ?? [];
+    expect(left).toBeDefined();
     // Each step's "N needed", read once from the steps group (the step buttons share one parent).
     const stepNeeds = [
       ...(screen.getByRole("group", { name: "Referral sections" }).textContent ?? "").matchAll(/(\d+) needed/gu),
@@ -101,7 +102,7 @@ describe("referral slide-out, option B", () => {
     expect(stepNeeds).toBeGreaterThan(0);
     // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
     const contactNeeds = Number(/(\d+) to fill at Send/u.exec(rail.textContent ?? "")?.[1] ?? 0);
-    expect(Number(total) - Number(ready)).toBe(stepNeeds + contactNeeds);
+    expect(Number(left)).toBe(stepNeeds + contactNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {

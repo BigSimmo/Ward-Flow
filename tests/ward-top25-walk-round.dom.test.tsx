@@ -199,7 +199,7 @@ describe("the bed state word (C3)", () => {
     ["At ED", occupied, { ...none, awayAtEd: true }],
     ["Past date", { ...occupied, pastDate: true }, none],
     ["Barrier", { ...occupied, dischargeBarrier: "Accommodation" }, none],
-    ["Held", { status: "incoming" }, none],
+    ["Pulled", { status: "incoming" }, none],
     ["Due out", occupied, { ...none, leaving: true }],
     ["Occupied", occupied, none],
   ] as const)("reads %s", (word, bed, flags) => {
