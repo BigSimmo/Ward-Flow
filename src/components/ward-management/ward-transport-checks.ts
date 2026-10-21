@@ -5,6 +5,7 @@
  * Nothing here blocks a step. A check that is not met is shown as a warning, and a person who goes
  * ahead records which checks were open and a coded reason (`TransportException`).
  */
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -231,7 +232,8 @@ export function transportAnswersBlockedReason(draft: TransportBookingAnswers, no
   const missing: string[] = [];
   if (draft.provider === undefined) missing.push("choose who is collecting the patient");
   if (draft.escortRequired === undefined) missing.push("answer the escort question");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
+  const cadProblem = cadNumberProblem(draft.cadNumber);
+  if (cadProblem !== undefined) missing.push(cadProblem);
   if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
   if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
     missing.push("enter the estimated time");
