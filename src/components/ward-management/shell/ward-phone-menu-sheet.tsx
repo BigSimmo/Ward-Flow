@@ -23,6 +23,7 @@ import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuActio
 import { requestToolsTool } from "../tools/ward-tools-open";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
+import { WardMyWards } from "./ward-my-wards";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
@@ -498,6 +499,7 @@ function MenuPages({
           )}
         </Section>
       ))}
+      <WardMyWards variant="sheet" onNavigate={onClose} />
       <MoreSection onDrawer={onDrawer} onClose={onClose} />
     </>
   );

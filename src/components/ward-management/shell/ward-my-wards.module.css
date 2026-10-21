@@ -1,0 +1,93 @@
+.section {
+  display: block;
+}
+
+.heading {
+  margin: 0;
+  padding: 1rem 0.625rem 0.375rem;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-11);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.link,
+.pinButton {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 0.625rem;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.pinButton {
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link:hover,
+.pinButton:hover,
+.iconButton:hover {
+  background: var(--wf-hover);
+}
+
+.link[aria-current="page"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.iconButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.link:focus-visible,
+.pinButton:focus-visible,
+.iconButton:focus-visible {
+  outline: 2px solid var(--wf-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.pinButton svg,
+.iconButton svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}

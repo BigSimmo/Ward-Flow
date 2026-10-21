@@ -41,6 +41,7 @@ import { applyAppearance } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
+import { WardMyWards } from "./ward-my-wards";
 import styles from "./ward-rail.module.css";
 import { readWardRailEarlyShape } from "./ward-rail-early";
 import {
@@ -976,6 +977,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               )}
             </ul>
           </section>
+          {shownOpen ? <WardMyWards variant="rail" /> : null}
           {menu.more.length > 0 ? (
             // B1: everything else is one tap away. One More in every desktop shape (open, strip, tablet).
             <button
