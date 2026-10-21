@@ -56,6 +56,7 @@ import {
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import {
   canSubmitDecline,
   canSubmitOverride,
@@ -1197,41 +1198,44 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                   <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
                                 </div>
                               </dl>
-                              <div className={styles.phoneSheetField}>
-                                <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
-                                  Bed hold
-                                </span>
-                                <div
-                                  className={styles.phoneSegment}
-                                  role="group"
-                                  aria-labelledby={`ward-hold-${activeMovement.id}`}
-                                >
-                                  {[
-                                    ["120", "120 minutes, standard"],
-                                    ["180", "180 minutes, extra travel"],
-                                  ].map(([value, label]) => (
-                                    <button
-                                      key={value}
-                                      type="button"
-                                      aria-pressed={holdDuration === value}
-                                      onClick={() => setHoldDuration(value ?? "120")}
-                                    >
-                                      {label}
-                                    </button>
-                                  ))}
+                              {/* Audit 7 NA-03: nothing saves these, so they show in a development build only. */}
+                              <UnwiredPreview>
+                                <div className={styles.phoneSheetField}>
+                                  <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
+                                    Bed hold
+                                  </span>
+                                  <div
+                                    className={styles.phoneSegment}
+                                    role="group"
+                                    aria-labelledby={`ward-hold-${activeMovement.id}`}
+                                  >
+                                    {[
+                                      ["120", "120 minutes, standard"],
+                                      ["180", "180 minutes, extra travel"],
+                                    ].map(([value, label]) => (
+                                      <button
+                                        key={value}
+                                        type="button"
+                                        aria-pressed={holdDuration === value}
+                                        onClick={() => setHoldDuration(value ?? "120")}
+                                      >
+                                        {label}
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                              <label className={styles.phoneSheetField}>
-                                <span className={styles.phoneSheetFieldLabel}>Receiving nurse unit manager</span>
-                                <input
-                                  type="text"
-                                  className={styles.phoneSheetInput}
-                                  defaultValue={`NUM ${unit.name}`}
-                                />
-                              </label>
-                              <p className={styles.phoneSheetNote}>
-                                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
-                              </p>
+                                <label className={styles.phoneSheetField}>
+                                  <span className={styles.phoneSheetFieldLabel}>Receiving nurse unit manager</span>
+                                  <input
+                                    type="text"
+                                    className={styles.phoneSheetInput}
+                                    defaultValue={`NUM ${unit.name}`}
+                                  />
+                                </label>
+                                <p className={styles.phoneSheetNote}>
+                                  Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                                </p>
+                              </UnwiredPreview>
                               <p className={styles.phoneSheetNote}>
                                 <StatusGlyph tone="neutral" size={8} />
                                 Acceptance in principle holds a place. Nobody is moved and no transport is booked.
@@ -1593,34 +1597,36 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               <p className={styles.formNote} data-testid="ward-answer-no-bed-named">
                 Accepting does not allocate a bed. No bed number is recorded.
               </p>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="hold-duration-select">
-                  Bed Hold Expiry Duration
-                </label>
-                <select
-                  id="hold-duration-select"
-                  className={styles.formSelect}
-                  value={holdDuration}
-                  onChange={(e) => setHoldDuration(e.target.value)}
-                >
-                  <option value="120">120 Minutes (Standard Transport Hold)</option>
-                  <option value="180">180 Minutes (Extended Travel Buffer)</option>
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="num-endorsement-input">
-                  Receiving Nurse Unit Manager Endorsement
-                </label>
-                <input
-                  id="num-endorsement-input"
-                  type="text"
-                  className={styles.formInput}
-                  defaultValue={`NUM ${unit.name}`}
-                />
-              </div>
-              <p className={styles.formNote}>
-                Bed hold and nurse unit manager are not saved. Not wired in this prototype.
-              </p>
+              <UnwiredPreview>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel} htmlFor="hold-duration-select">
+                    Bed Hold Expiry Duration
+                  </label>
+                  <select
+                    id="hold-duration-select"
+                    className={styles.formSelect}
+                    value={holdDuration}
+                    onChange={(e) => setHoldDuration(e.target.value)}
+                  >
+                    <option value="120">120 Minutes (Standard Transport Hold)</option>
+                    <option value="180">180 Minutes (Extended Travel Buffer)</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel} htmlFor="num-endorsement-input">
+                    Receiving Nurse Unit Manager Endorsement
+                  </label>
+                  <input
+                    id="num-endorsement-input"
+                    type="text"
+                    className={styles.formInput}
+                    defaultValue={`NUM ${unit.name}`}
+                  />
+                </div>
+                <p className={styles.formNote}>
+                  Bed hold and nurse unit manager are not saved. Not wired in this prototype.
+                </p>
+              </UnwiredPreview>
             </div>
             <div className={styles.modalFoot}>
               <button
