@@ -58,3 +58,21 @@
   padding-top: var(--wf-s-2);
   border-top: 1px solid var(--wf-line);
 }
+
+/* Visual check (21 Oct 2026): at 390 px the shared card head clipped the title to "Daily …".
+   On a phone the title keeps its width and the count line wraps under it. */
+@media (max-width: 47.99rem) {
+  .head :has(> h2) {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .head h2 {
+    flex-shrink: 0;
+  }
+
+  .head h2 + span {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+}

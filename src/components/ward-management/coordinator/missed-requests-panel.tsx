@@ -68,6 +68,7 @@ export function MissedRequestsPanel() {
     <Card aria-labelledby="ward-missed-check-title" data-testid="ward-missed-check">
       <CardHead
         id="ward-missed-check-title"
+        className={styles.head}
         icon={ListChecks}
         title="Daily check"
         meta={
