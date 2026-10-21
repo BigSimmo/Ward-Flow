@@ -127,6 +127,25 @@ describe("feed inbox in Tools", () => {
     expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
   });
 
+  it("ties Record departure to its prompt until a destination is chosen", () => {
+    const index = messages.findIndex((raw) => {
+      const read = readFeedMessage(raw);
+      return read.ok && feedSuggestion(read.message, seed).kind === "departure";
+    });
+    if (index < 0) throw new Error("the simulated feed should include a departure");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFeedInbox />
+      </WardFlowProvider>,
+    );
+    for (let count = 0; count <= index; count += 1) fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    const seq = index + 1;
+    const confirm = screen.getByTestId(`ward-feed-confirm-${seq}`);
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(confirm).toHaveAttribute("aria-describedby", `ward-feed-note-${seq}`);
+    expect(document.getElementById(`ward-feed-note-${seq}`)).toHaveTextContent("Choose where the person went.");
+  });
+
   it("offers no confirmation a desk would be refused, and says why", () => {
     const first = readFeedMessage(messages[0]!);
     if (!first.ok) throw new Error("first simulated message should be readable");

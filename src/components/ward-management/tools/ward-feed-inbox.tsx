@@ -206,6 +206,7 @@ function FeedRow({
   const waiting = item.status === "waiting";
   const blocked = suggestion && suggestion.kind !== "none" ? blockedReason(suggestion) : null;
   const blockedId = `ward-feed-blocked-${item.seq}`;
+  const noteId = `ward-feed-note-${item.seq}`;
   const unavailable = !!blocked || (suggestion?.kind === "departure" && !leaving);
   return (
     <li className={inboxStyles.item} data-status={item.status} data-testid={`ward-feed-item-${item.seq}`}>
@@ -231,7 +232,7 @@ function FeedRow({
           </>
         ) : (
           <>
-            <p className={styles.note}>
+            <p className={styles.note} id={noteId}>
               {suggestion.kind === "arrival"
                 ? `Confirms the arrival on ${unitName(suggestion.unitId)}.`
                 : `Records the departure from ${unitName(suggestion.unitId)}. Choose where the person went.`}
@@ -261,7 +262,7 @@ function FeedRow({
                 type="button"
                 className={`${styles.primaryButton} ${inboxStyles.confirm}`}
                 aria-disabled={unavailable || undefined}
-                aria-describedby={blocked ? blockedId : undefined}
+                aria-describedby={blocked ? blockedId : unavailable ? noteId : undefined}
                 onClick={() => {
                   if (!unavailable) onConfirm(suggestion, leaving || undefined);
                 }}
