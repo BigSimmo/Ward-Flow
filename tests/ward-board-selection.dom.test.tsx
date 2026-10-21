@@ -186,7 +186,9 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
     expect(shown.textContent).toBe(`${days} day${days === 1 ? "" : "s"}`);
 
     // And the sex and home region are this admission's, not some other occupant's.
-    expect(detail.textContent).toContain(`${admission!.sex}, from ${admission!.homeRegion}`);
+    // One sex chip and the region chip (UX audit, 21 Oct 2026: the repeated "sex · Gender" line went).
+    expect(within(detail).getAllByText(admission!.sex, { exact: true }).length).toBeGreaterThan(0);
+    expect(within(detail).getAllByText(admission!.homeRegion!, { exact: true }).length).toBeGreaterThan(0);
   });
 
   it("shows a pulled bed as a person with no stay, never as a zero-day one", async () => {

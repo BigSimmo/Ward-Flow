@@ -31,6 +31,7 @@ export function WardBoardGridColumn({
   filterCounts,
   filteredTiles,
   focusBackTo,
+  cardNameByKey,
   occupantByKey,
   occupants,
   orderedTiles,
@@ -50,6 +51,8 @@ export function WardBoardGridColumn({
   filterCounts: Record<BoardFilter, number>;
   filteredTiles: Tile[];
   focusBackTo: RefObject<string | null>;
+  /** Lead line per occupied tile: the surname, so a bed is found without opening every card. */
+  cardNameByKey: Map<string, string>;
   occupantByKey: Map<string, Occupant>;
   occupants: Occupant[];
   orderedTiles: Tile[];
@@ -206,6 +209,12 @@ export function WardBoardGridColumn({
               >
                 {tile.kind === "occupied" && (
                   <>
+                    {/* UX audit, 21 Oct 2026 (Josh approved): the person leads the card. */}
+                    {cardNameByKey.has(tile.key) && (
+                      <span className={styles.bedName} data-testid={`ward-board-bed-${index + 1}-name`}>
+                        {cardNameByKey.get(tile.key)}
+                      </span>
+                    )}
                     <span className={styles.bedTop}>
                       <span className={styles.bedState}>Occupied</span>
                     </span>

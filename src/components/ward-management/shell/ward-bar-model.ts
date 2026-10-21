@@ -252,7 +252,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
-    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
+    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Stays and discharges") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
     (pathname === STATISTICS_OVERVIEW_HREF

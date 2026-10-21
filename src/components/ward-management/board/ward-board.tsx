@@ -533,6 +533,23 @@ export function WardBoard({
   const stamp = asAtStamp(now);
 
   const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
+  /** Name line for each occupied card (UX audit, 21 Oct 2026). A stay with no linked person gets no line. */
+  const cardNameByKey = new Map<string, string>();
+  for (const occupant of occupants) {
+    const admission = admissions.find((candidate) => candidate.id === occupant.key);
+    if (!admission) continue;
+    const resolved = resolvePatientIdentity
+      ? resolvePatientIdentity(admission)
+      : resolveSubjectPatient(admission, { patients, movements });
+    // Surname plus first initial: synthetic seeds reuse surnames, and so do real wards.
+    if (resolved.patient) {
+      const initial = resolved.patient.givenName[0];
+      cardNameByKey.set(
+        occupant.key,
+        initial ? `${resolved.patient.familyName}, ${initial}` : resolved.patient.familyName,
+      );
+    }
+  }
 
   const selectedTile = selectedKey === null ? null : (tiles.find((tile) => tile.key === selectedKey) ?? null);
   const selectedOccupant =
@@ -947,7 +964,7 @@ export function WardBoard({
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.screenName}>Bed board</h1>
+        <h1 className={styles.screenName}>Stays and discharges</h1>
 
         {/*
          * A `<div>`, NOT a `<header>` — found by printing the page and looking, not by a test.
@@ -978,7 +995,7 @@ export function WardBoard({
           <div className={styles.wardToolsLeft}>
             <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`}>
               <Link href={unitHref(unit.id)}>Ward home</Link>
-              <span aria-current="page">Bed board</span>
+              <span aria-current="page">Stays and discharges</span>
             </nav>
           </div>
           <div className={styles.wardToolsRight}>
@@ -1153,6 +1170,7 @@ export function WardBoard({
             filterCounts={filterCounts}
             filteredTiles={filteredTiles}
             focusBackTo={focusBackTo}
+            cardNameByKey={cardNameByKey}
             occupantByKey={occupantByKey}
             occupants={occupants}
             orderedTiles={orderedTiles}
