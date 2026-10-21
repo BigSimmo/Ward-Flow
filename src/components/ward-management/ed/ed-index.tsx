@@ -52,18 +52,13 @@ import {
   ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
-  type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDeviceChoice } from "@/components/ward-management/shell/use-device-choice";
-import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
+import type { HealthService, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import {
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-  ED_TREND_SPAN_MINUTES,
-  ED_TREND_STEP_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
@@ -71,10 +66,18 @@ import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
+import {
+  CLOCK_TONE,
+  personDim,
+  rowHighlighted,
+  trendSpanHours,
+  waitLine,
+  type EdPerson,
+  type EdRow,
+  type Highlight,
+  type WaitClock,
+} from "./ed-index-parts";
 import styles from "./ed-index.module.css";
-
-export const trendSpanHours = ED_TREND_SPAN_MINUTES / 60;
-export const trendStepHours = ED_TREND_STEP_MINUTES / 60;
 
 /**
  * All emergency departments (8 Oct 2026, the "A Cards" mockup plus its wait lanes). One hero band
@@ -93,60 +96,12 @@ const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
 const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes";
-type WaitClock = "past" | "severe" | "in";
-
-export type EdPerson = {
-  movement: Movement;
-  name: string;
-  /** UMRN, or "UMRN not recorded" (D-39: never the movement id). */
-  umrn: string;
-  href: string;
-  wait: number;
-  clock: WaitClock;
-  stage: string;
-  destination?: string;
-};
-
-export type EdRow = {
-  summary: EdSummary;
-  short: string;
-  people: EdPerson[];
-  pastTarget: number;
-  /** Everyone at or over the 8h line, past-target people included. */
-  severe: number;
-  noBed: number;
-  held: number;
-  leaving: number;
-  forms: number;
-  /** Waiting at each 2 hour point over the last 12 hours, the last point now (`edWaitingSeries`). */
-  trend: number[];
-};
 
 const STAGE_LABEL = ED_STAGE_LABELS;
 const HELD = ED_HELD_STAGES;
 const LEAVING = ED_LEAVING_STAGES;
 
-export const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
-
-/**
- * Hero highlight chips (v10, five at most). Pressing one keeps the people it names solid in every
- * view and dims the rest by colour. It never hides an ED.
- */
-export type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
-const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
-  past: (person) => person.clock === "past",
-  severe: (person) => person.clock !== "in",
-  "no-bed": (person) => edHasNoBedYet(person.movement),
-  held: (person) => HELD.includes(person.movement.stage),
-  form: (person) => Boolean(person.movement.legalForm),
-};
-export function personDim(person: EdPerson, highlight: Highlight | null): boolean {
-  return highlight !== null && !HIGHLIGHT_MATCH[highlight](person);
-}
-function rowHighlighted(row: EdRow, highlight: Highlight | null): boolean {
-  return highlight === null || row.people.some(HIGHLIGHT_MATCH[highlight]);
-}
 
 /** Lane scale: logarithmic from zero to seven days, so an hour and a week both stay readable. */
 const LANE_TICKS: readonly [number, string][] = [
@@ -174,11 +129,6 @@ function laneClusters<T extends { wait: number }>(people: readonly T[]): T[][] {
     else clusters.push([person]);
   }
   return clusters;
-}
-
-/** "24h", "8h": the two wait lines as a person says them, never "1d" or "8h 00m". */
-export function waitLine(minutes: number): string {
-  return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
 function serviceShortName(service: HealthService): string {

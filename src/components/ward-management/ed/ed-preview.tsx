@@ -15,7 +15,7 @@ import {
   type EdPerson,
   type EdRow,
   type Highlight,
-} from "./ed-index";
+} from "./ed-index-parts";
 import styles from "./ed-index.module.css";
 
 /** The ED preview's body: facts, the 12 hour trend and who is waiting, longest first. */
