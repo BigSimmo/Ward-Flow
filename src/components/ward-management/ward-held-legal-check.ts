@@ -25,15 +25,9 @@ export function heldUnitAuthorisationGap(movement: Movement, units: readonly Uni
 
 /** An `authorisation` override for this ward recorded at or after the latest legal status change. */
 export function authorisationReasonRecordedSinceLegalChange(movement: Movement, unitId: string): boolean {
-  const lastChange = movement.statusChanges.reduce<number | undefined>(
-    (latest, change) => (latest === undefined || change.at > latest ? change.at : latest),
-    undefined,
-  );
+  const lastChange = Math.max(-Infinity, ...movement.statusChanges.map((change) => change.at));
   return movement.overrides.some(
-    (override) =>
-      override.gate === "authorisation" &&
-      override.unitIds.includes(unitId) &&
-      (lastChange === undefined || override.at >= lastChange),
+    (override) => override.gate === "authorisation" && override.unitIds.includes(unitId) && override.at >= lastChange,
   );
 }
 
@@ -44,10 +38,5 @@ export function authorisationReasonRecordedSinceLegalChange(movement: Movement, 
 export function heldUnitAuthorisationRefusal(state: { units: readonly Unit[] }, movement: Movement): string | null {
   const unit = heldUnitAuthorisationGap(movement, state.units);
   if (unit === undefined || authorisationReasonRecordedSinceLegalChange(movement, unit.id)) return null;
-  return `${heldLegalGapText(unit, movement)}. Pull the bed again with a reason, or release it`;
-}
-
-/** The shared first half of every E-03 refusal. */
-export function heldLegalGapText(unit: Unit, movement: Movement): string {
-  return `${unit.name} is not set up for involuntary admissions and this patient's legal status is now ${movement.legalStatus}`;
+  return `${unit.name} is not set up for involuntary admissions and this patient's legal status is now ${movement.legalStatus}. Pull the bed again with a reason, or release it`;
 }

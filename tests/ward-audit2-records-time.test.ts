@@ -84,7 +84,7 @@ describe("E-13: arrival details need an accepting ward and keep the hold timer",
       estimatedArrivalAt: NOW_ANCHOR + 30,
     });
     expect(step.refused).toBe(true);
-    expect(step.reason).toMatch(/once a ward has accepted/);
+    expect(step.reason).toMatch(/a ward that has accepted/);
   });
 
   it("keeps pullExpiresAt when arrival details are recorded for a held bed", () => {

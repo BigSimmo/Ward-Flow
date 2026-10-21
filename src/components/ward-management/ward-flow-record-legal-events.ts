@@ -278,7 +278,7 @@ export function reduceRecordedLegalEvent(
           earlier.startedAt === event.startedAt &&
           (event.paperExpiresAt ?? currentDueAt) === currentDueAt
         ) {
-          return reject(state, event, "This Form 5B continuation is already recorded with that start time.");
+          return reject(state, event, "This 5B is already recorded with that start time.");
         }
         const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;
         const continued: Movement = {

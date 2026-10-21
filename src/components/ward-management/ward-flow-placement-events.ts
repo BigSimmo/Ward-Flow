@@ -8,7 +8,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
-import { heldLegalGapText, heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -158,13 +158,8 @@ export function reducePlacementEvent(
         // Audit 2 E-03 (Josh, 20 Oct 2026): a legal status change since the bed was held can leave
         // it at a ward not set up for involuntary admissions. Restoring the hold then needs a
         // recorded reason, which `pullOverrides` keeps as an `authorisation` override.
-        if (!speciallingAnsweredRestore && heldUnitAuthorisationRefusal(state, movement)) {
-          return reject(
-            state,
-            event,
-            `${heldLegalGapText(restoreUnit, movement)}. Restoring this bed ${OVERRIDE_REASON_REQUIRED}.`,
-          );
-        }
+        const restoreLegalRefusal = speciallingAnsweredRestore ? null : heldUnitAuthorisationRefusal(state, movement);
+        if (restoreLegalRefusal) return reject(state, event, restoreLegalRefusal);
         const restored: Movement = {
           ...movement,
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),

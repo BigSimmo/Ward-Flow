@@ -1000,7 +1000,7 @@ export function reduceTransportEvent(
       // Audit 2 E-13: arrival plans belong to a ward that has said yes; before that there is no
       // destination to arrive at.
       if (movement.acceptedUnitId === undefined) {
-        return reject(state, event, "Arrival details can be recorded once a ward has accepted this patient.");
+        return reject(state, event, "Arrival details need a ward that has accepted this patient.");
       }
       // A ward must name itself, so the shared backend can check that desk is the receiving ward
       // and not the sending one (review on PR #365).
