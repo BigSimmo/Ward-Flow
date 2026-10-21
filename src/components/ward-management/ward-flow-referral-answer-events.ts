@@ -1228,18 +1228,18 @@ export function reduceReferralAnswerEvent(
       }
       // Read before clearing: `UnwindRecord.unitId` names which ward's acceptance this was.
       const withdrawnUnitId = movement.acceptedUnitId;
-      const released = holdsBed
-        ? withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement)
-        : state;
       // The shared helper gives nothing back when the reservation does not match the movement. A
-      // release is never recorded unless one happened.
-      if (holdsBed && released === state) {
+      // release is never recorded unless one happened, so this is checked before the referral's
+      // bed number is stripped (that strip changes state on its own).
+      const bedReleased = holdsBed ? releasePulledBedAndAdmission(state, movement, event.now) : state;
+      if (holdsBed && bedReleased === state) {
         return reject(
           state,
           event,
           `cannot withdraw the acceptance for movement ${movement.id}: its held bed does not match a reservation that can be released`,
         );
       }
+      const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
       const updatedMovement: Movement = {
         ...movement,
         acceptedUnitId: undefined,

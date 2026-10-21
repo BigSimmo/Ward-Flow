@@ -518,6 +518,19 @@ describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
     expect(movementIn(after, REPULL_MOVEMENT).acceptedUnitId).toBe(REPULL_UNIT);
   });
 
+  it("refuses, recording no release, when the held bed matches no releasable reservation", () => {
+    const pulled = pulledWithRoom();
+    const admissionId = movementIn(pulled, REPULL_MOVEMENT).admissionId;
+    const mismatched: WardFlowState = {
+      ...pulled,
+      admissions: pulled.admissions.filter((admission) => admission.id !== admissionId),
+    };
+    const after = withdrawAcceptance(mismatched);
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toMatch(/does not match a reservation/);
+    expect(movementIn(after, REPULL_MOVEMENT).unwinds).toEqual(movementIn(mismatched, REPULL_MOVEMENT).unwinds);
+  });
+
   /** Positive control: the old three-step route still works and leaves no admission behind. */
   it("the three-step route (restore, release, withdraw) still goes through", () => {
     const steppedBack = steppedBackHoldingBed();
