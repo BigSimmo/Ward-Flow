@@ -2,73 +2,40 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentProps,
-  type ComponentType,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import {
-  Activity,
-  BedDouble,
-  BedSingle,
-  House,
-  Inbox,
-  Clock3,
-  Bell,
-  ListChecks,
-  Plus,
-  Search,
-  Settings,
-  Truck,
-  UserPlus,
-  Wrench,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState, type ComponentProps, type ComponentType, type RefObject } from "react";
+import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
 
-import { Sheet } from "@/components/wf/sheet";
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
-import { Dot, SrOnly } from "@/components/wf";
+import { SrOnly } from "@/components/wf";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
   CHROME_ROLE_LABELS,
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "@/components/ward-management/ward-chrome-role";
-import { WARD_ADD_PERSON_HREF, WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
-import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
+import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
 import { preloadWhenIdle } from "../preload-when-idle";
-import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
-import { useWardDataMode } from "../ward-shared-access";
 import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
-import { officerHref, settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import {
   BED_FINDER_MENU_ID as BED_FINDER_ID,
   isActiveRailEntry,
-  isRoleMenuAction,
   railEntries,
   roleMenu,
   type RailEntry,
-  type RoleMenuAction,
 } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
-import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
+import { CountChip, countIn } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
-import actNowStyles from "./ward-phone-menu-act-now.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
 
 /**
@@ -146,46 +113,6 @@ const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonl
 /** Pages whose count joins Needs you, only while it is urgent (overdue). */
 const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
 
-/**
- * What the + starts. New referral is real; the rest open the page where that work is done.
- * Book transport is left out (audit round 2, A4-10) until a phone booking entry is wired: it opened
- * the officer's job list, which cannot start a booking.
- */
-/*
- * shell-5 (13 Oct 2026): the Create items match the + button's name. Add patient joins (transport stays
- * out until a phone booking entry exists, per A4-10);
- * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
- * that is not a Menu entry.
- */
-const CREATE_LINKS: readonly {
-  id: string;
-  label: string;
-  meta: string;
-  icon: LucideIcon;
-  href?: string;
-  asButton?: boolean;
-}[] = [
-  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
-  { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
-  {
-    id: "add-patient",
-    label: "Add patient",
-    meta: "New record with a UMRN",
-    icon: UserPlus,
-    href: WARD_ADD_PERSON_HREF,
-  },
-  {
-    // The officer page lists existing transport jobs; booking one starts from the placement panel or the
-    // community desk, so this row is a way to see the jobs, not to book.
-    id: "transport-jobs",
-    label: "Transport jobs",
-    meta: "See booked transport and its status",
-    icon: Truck,
-    href: officerHref(),
-    asButton: true,
-  },
-];
-
 export type WardPhoneMenuProps = {
   /** The bar's Menu button, where focus returns when the menu closes. */
   returnFocusRef: RefObject<HTMLButtonElement | null>;
@@ -196,12 +123,8 @@ export type WardPhoneMenuProps = {
   onNewReferral: () => void;
 };
 
-type CountMap = ReturnType<typeof useWardNavCounts>["counts"];
-type DrawerId = "tasks" | "activity" | "tools";
-
-function countIn(counts: CountMap, id: string): WardNavCount | undefined {
-  return counts[id as keyof CountMap];
-}
+export type CountMap = ReturnType<typeof useWardNavCounts>["counts"];
+export type DrawerId = "tasks" | "activity" | "tools";
 
 /** What the menu lists, for this role and these counts. Pure, so the sheet only renders it. */
 function phoneMenuModel(
@@ -252,7 +175,7 @@ function phoneMenuModel(
  * so Waiting also keeps its own row and badge) and Discharges while its count is urgent. Movements'
  * "still open" and Referrals' "awaiting a decision" stay in their groups.
  */
-type NeedRow = {
+export type NeedRow = {
   id: string;
   /** The rail entry this row stands for, so it leaves its group. */
   entryId?: string;
@@ -318,131 +241,9 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
       ];
 }
 
-function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; onTasks: () => void }) {
-  const face = (
-    <>
-      <RowBody
-        icon={row.icon}
-        label={row.label}
-        meta={
-          <>
-            <Dot tone={row.actNow ? "danger" : "warning"} />
-            <span>{row.meta}</span>
-          </>
-        }
-      />
-      <CountChip value={row.count} className={styles.count} />
-      <Chevron />
-    </>
-  );
-  // Site review, 12 Oct 2026: the act-now row takes the approved tint and rounded marker
-  // (`ward-phone-menu-act-now.module.css`), not the full red box the shared row rule drew.
-  const common = {
-    className: row.actNow ? `${styles.row} ${actNowStyles.actNow}` : styles.row,
-    "data-act-marker": row.actNow || undefined,
-    "aria-label": `${row.label}, ${row.count} ${row.meta}`,
-    "data-testid": "ward-phone-menu-need",
-  };
-  return (
-    <li>
-      {row.href ? (
-        <Link href={row.href} {...common} onClick={onGo}>
-          {face}
-        </Link>
-      ) : (
-        <button type="button" {...common} onClick={onTasks}>
-          {face}
-        </button>
-      )}
-    </li>
-  );
-}
-
 function announceGo(pathname: string, entry: RailEntry) {
   const active = isActiveRailEntry(pathname, entry);
   announceToWardShell(active ? `${entry.label}. This is the screen you are on.` : `${entry.label}.`);
-}
-
-function CountChip({ value, className }: { value: number | undefined; className: string }) {
-  if (!value) return null;
-  return (
-    <span className={className} aria-hidden="true">
-      {value > 99 ? "99+" : value}
-    </span>
-  );
-}
-
-function RowBody({ icon: Icon, label, meta }: { icon: typeof Plus; label: string; meta?: ReactNode }) {
-  return (
-    <>
-      <Icon aria-hidden="true" className={styles.rowIcon} strokeWidth={1.75} />
-      <span className={styles.rowText}>
-        <span className={styles.rowLabel}>{label}</span>
-        {meta ? <span className={styles.rowMeta}>{meta}</span> : null}
-      </span>
-    </>
-  );
-}
-
-function PageRow({
-  entry,
-  count,
-  withMeta,
-  pathname,
-  onGo,
-  onNewReferral,
-}: {
-  entry: RailEntry;
-  count?: WardNavCount;
-  withMeta?: boolean;
-  pathname: string;
-  onGo: (entry: RailEntry) => void;
-  onNewReferral?: () => void;
-}) {
-  const meta =
-    withMeta && count ? (
-      <>
-        <Dot tone={count.urgent ? "warning" : "neutral"} />
-        <span>{count.noun}</span>
-      </>
-    ) : undefined;
-  const face = (
-    <>
-      <RowBody icon={entry.icon} label={entry.label} meta={meta} />
-      <CountChip value={count?.value} className={styles.count} />
-      <Chevron />
-    </>
-  );
-  // New referral (found by the filter) opens the slide-out in place, as the + does.
-  if (entry.id === "referral-intake" && onNewReferral) {
-    return (
-      <li>
-        <button
-          type="button"
-          className={styles.row}
-          aria-label={wardNavCountLabel(entry.label, count)}
-          data-testid="ward-phone-new-referral"
-          onClick={onNewReferral}
-        >
-          {face}
-        </button>
-      </li>
-    );
-  }
-  return (
-    <li>
-      <Link
-        href={entry.href}
-        className={styles.row}
-        aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
-        aria-label={wardNavCountLabel(entry.label, count)}
-        data-testid="ward-rail-link"
-        onClick={() => onGo(entry)}
-      >
-        {face}
-      </Link>
-    </li>
-  );
 }
 
 /**
@@ -623,329 +424,44 @@ function PhoneDock({
   );
 }
 
-/** B1: a role menu item that opens a tool (the ED's Find a bed opens the Tools bed finder). */
-function ActionRow({ action, onClose }: { action: RoleMenuAction; onClose: () => void }) {
-  return (
-    <li>
-      <button
-        type="button"
-        className={styles.row}
-        aria-haspopup="dialog"
-        data-testid="ward-phone-menu-bed-finder"
-        onClick={(event) => {
-          onClose();
-          requestToolsTool("bed-finder", event.currentTarget);
-          announceToWardShell(`${action.label}.`);
-        }}
-      >
-        <RowBody icon={action.icon} label={action.label} />
-        <Chevron />
-      </button>
-    </li>
-  );
-}
-
-function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; onClose: () => void }) {
-  return (
-    <section aria-label="More" className={styles.section}>
-      <p className={styles.heading}>More</p>
-      <ul className={styles.list}>
-        <li>
-          <button
-            type="button"
-            className={styles.row}
-            data-testid="ward-phone-menu-tools"
-            onClick={() => onDrawer("tools")}
-          >
-            <RowBody icon={Wrench} label="Tools" />
-            <Chevron />
-          </button>
-        </li>
-        <li>
-          <Link href={settingsHref()} className={styles.row} onClick={onClose}>
-            <RowBody icon={Settings} label="Settings" />
-            <Chevron />
-          </Link>
-        </li>
-        <DataModeRow onClose={onClose} />
-      </ul>
-      <p className={styles.note}>
-        <Dot tone="neutral" />
-        Synthetic prototype, not approved for clinical use
-      </p>
-    </section>
-  );
-}
+export type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
 
 /**
- * The data mode, still reachable on a phone now the header's Prototype pill is desktop only: a
- * quiet row saying which data this is, and the (unavailable) hospital records door. Nothing when
- * the page sits outside `WardSharedAccess`.
+ * The Menu and Create sheets (their rows, search and More) are their own chunk, so a phone's first
+ * load carries only the dock. They load once the browser is idle, so a tap normally finds them
+ * already there. A failed load (offline before the code arrived) retries each time the menu opens.
  */
-function DataModeRow({ onClose }: { onClose: () => void }) {
-  const dataMode = useWardDataMode();
-  if (!dataMode) return null;
-  return (
-    <li className={styles.dataMode} data-testid="ward-phone-menu-data-mode">
-      <span className={styles.rowText}>
-        <span className={styles.rowLabel}>Data mode: Prototype</span>
-        <span className={styles.dataModeDetail}>{dataMode.detail}</span>
-      </span>
-      <button
-        type="button"
-        className={styles.dataModeButton}
-        data-testid="ward-phone-menu-hospital-records"
-        onClick={() => {
-          onClose();
-          dataMode.openHospitalRecords();
-        }}
-      >
-        Hospital records (unavailable)
-      </button>
-    </li>
-  );
-}
-
-/**
- * Audit round 2 (S-34): the who-you-are row opens the Go to a desk drawer itself. It used to
- * go to Settings, where a second button opened the same drawer.
- */
-function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
-  return (
-    <button
-      type="button"
-      className={styles.who}
-      onClick={onSwitch}
-      aria-haspopup="dialog"
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Go to a desk`}
-      data-testid="ward-phone-menu-switch-workstation"
-    >
-      {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
-          initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
-      <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
-        {CHROME_ROLE_LABELS[role]
-          .split(/\s+/u)
-          .slice(0, 2)
-          .map((word) => word[0]?.toUpperCase() ?? "")
-          .join("")}
-      </span>
-      <span className={styles.whoText}>
-        <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
-        {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
-            goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
-        <span className={styles.whoMeta}>Go to a desk</span>
-      </span>
-    </button>
-  );
-}
-
-function CreateSheet({
-  open,
-  onClose,
-  returnFocusRef,
-  byId,
-  onNewReferral,
-}: {
-  open: boolean;
-  onClose: () => void;
-  returnFocusRef: RefObject<HTMLButtonElement | null>;
-  byId: ReadonlyMap<string, RailEntry>;
-  onNewReferral: () => void;
-}) {
-  // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
-  // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
-  const gate = useRoleGate();
-  const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
-  const router = useRouter();
-  // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
-  const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
-  return (
-    <Sheet
-      id="ward-phone-create"
-      testId="ward-phone-create-sheet"
-      open={open}
-      onClose={onClose}
-      title="Create"
-      description="Start something new"
-      mobileBreakpoint="phone"
-      returnFocusRef={returnFocusRef}
-      contentClassName={styles.sheet}
-      headerClassName={styles.createHead}
-      closeButtonClassName={styles.close}
-      bodyClassName={`${styles.body} ${styles.createBody}`}
-    >
-      {canRefer ? (
-        <button
-          type="button"
-          className={styles.createPrimary}
-          data-testid="ward-phone-create-referral"
-          onClick={() => {
-            onClose();
-            onNewReferral();
-          }}
-        >
-          <Inbox aria-hidden="true" strokeWidth={1.75} />
-          New referral
-        </button>
-      ) : null}
-      <ul className={`${styles.list} ${styles.rich}`}>
-        {CREATE_LINKS.flatMap((item) => {
-          const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
-          return entry
-            ? [
-                <li key={item.id}>
-                  {item.asButton ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      data-testid={`ward-phone-create-${item.id}`}
-                      onClick={() => {
-                        onClose();
-                        router.push(entry.href);
-                        announceToWardShell(`${item.label}: ${item.meta}.`);
-                      }}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </button>
-                  ) : (
-                    <Link
-                      href={
-                        item.id === "wards" && currentUnitId !== undefined
-                          ? unitHref(decodeURIComponent(currentUnitId))
-                          : entry.href
-                      }
-                      className={styles.row}
-                      onClick={onClose}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </Link>
-                  )}
-                </li>,
-              ]
-            : [];
-        })}
-      </ul>
-    </Sheet>
-  );
-}
-
-type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
-
-/**
- * Repo score follow-up (16 October 2026): the menu's search results need the app's whole search
- * engine, which a phone's first load no longer carries. They load once the browser is idle, so a
- * search normally finds them already there, and read "Searching…" until then.
- */
-const loadMenuResults = () => import("./ward-phone-menu-results");
-type MenuSearchResultsProps = ComponentProps<(typeof import("./ward-phone-menu-results"))["MenuSearchResults"]>;
-// A failed load (offline before the code arrived) draws `MenuSearchRetry` in its place rather than
-// failing the whole shell.
-const MenuSearchResults = dynamic(
+const loadMenuSheets = () => import("./ward-phone-menu-sheet");
+type PhoneMenuSheetsProps = ComponentProps<(typeof import("./ward-phone-menu-sheet"))["PhoneMenuSheets"]>;
+const PhoneMenuSheets = dynamic(
   () =>
-    loadMenuResults().then(
-      (m) => m.MenuSearchResults,
-      () => MenuSearchRetry,
+    loadMenuSheets().then(
+      (m) => m.PhoneMenuSheets,
+      () => PhoneMenuSheetsRetry,
     ),
-  { ssr: false, loading: () => <MenuSearching /> },
+  { ssr: false },
 );
-preloadWhenIdle(loadMenuResults);
+preloadWhenIdle(loadMenuSheets);
 
-/**
- * Stands in for the results when their code could not load. It tries again on each keystroke and
- * each time the menu opens, and shows the real results once they arrive.
- */
-function MenuSearchRetry(props: MenuSearchResultsProps) {
-  const [Results, setResults] = useState<ComponentType<MenuSearchResultsProps> | null>(null);
-  const [failed, setFailed] = useState(false);
-  const retryKey = Results ? "" : props.query;
+function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
+  const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);
+  const opened = props.open || props.createOpen || props.switcherOpen;
   useEffect(() => {
+    if (Sheets || !opened) return;
     let live = true;
-    loadMenuResults().then(
+    loadMenuSheets().then(
       (m) => {
-        if (live) setResults(() => m.MenuSearchResults);
+        if (live) setSheets(() => m.PhoneMenuSheets);
       },
       () => {
-        if (live) setFailed(true);
+        if (live) announceToWardShell("Menu could not load. Check the connection, then try again.");
       },
     );
     return () => {
       live = false;
     };
-  }, [retryKey]);
-  if (Results) return <Results {...props} />;
-  if (!failed) return <MenuSearching />;
-  return (
-    <Section label="Search unavailable">
-      <li className={styles.empty}>Search could not load. Check the connection, then type again.</li>
-    </Section>
-  );
-}
-
-function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string) => void }) {
-  return (
-    <label className={styles.search}>
-      <Search aria-hidden="true" strokeWidth={1.75} />
-      <span className="sr-only">Go to a page or patient</span>
-      <input
-        type="search"
-        value={query}
-        placeholder="Go to a page or patient"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="none"
-        enterKeyHint="search"
-        onChange={(event) => onQuery(event.target.value)}
-        data-testid="ward-phone-menu-search"
-      />
-    </label>
-  );
-}
-
-/** With a search typed, the matching pages and records. Without one, Needs you, every page by group, then More. */
-function MenuPages({
-  query,
-  entries,
-  needs,
-  groups,
-  pageRow,
-  onResult,
-  onDrawer,
-  onClose,
-}: {
-  query: string;
-  entries: RailEntry[];
-  /** Act-now and overdue rows only (device audit option A). */
-  needs: NeedRow[];
-  groups: PhoneMenuModel["groups"];
-  pageRow: PageRowRender;
-  onResult: (item: SearchResultItem) => void;
-  onDrawer: (id: DrawerId) => void;
-  onClose: () => void;
-}) {
-  if (query.trim().length > 0) {
-    return <MenuSearchResults query={query} entries={entries} pageRow={pageRow} onGo={onResult} />;
-  }
-  return (
-    <>
-      <Section label="Needs you" rich>
-        {needs.length === 0 ? (
-          <li className={styles.empty}>Nothing is act-now or overdue.</li>
-        ) : (
-          needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
-        )}
-      </Section>
-      {groups.map((group) => (
-        <Section key={group.label} label={group.label}>
-          {group.entries.map((entry) =>
-            isRoleMenuAction(entry) ? <ActionRow key={entry.id} action={entry} onClose={onClose} /> : pageRow(entry),
-          )}
-        </Section>
-      ))}
-      <MoreSection onDrawer={onDrawer} onClose={onClose} />
-    </>
-  );
+  }, [Sheets, opened]);
+  return Sheets ? <Sheets {...props} /> : null;
 }
 
 export function WardPhoneMenu({
@@ -1085,67 +601,32 @@ export function WardPhoneMenu({
     close();
     onNewReferral();
   };
-  const pageRow: PageRowRender = (entry, count = countIn(counts, entry.id), withMeta = false) => (
-    <PageRow
-      key={entry.id}
-      entry={entry}
-      count={count}
-      withMeta={withMeta}
-      pathname={pathname}
-      onGo={go}
-      onNewReferral={refer}
-    />
-  );
-
   return (
     <>
-      <Sheet
-        id="ward-phone-menu"
-        testId="ward-phone-menu"
+      <PhoneMenuSheets
         open={open}
         onClose={close}
-        title="Menu"
-        mobileSize="viewport"
-        mobileBreakpoint="phone"
+        query={query}
+        onQuery={setQuery}
         returnFocusRef={returnFocusRef}
-        headerLeading={
-          <WhoLink
-            role={shellRole}
-            onSwitch={() => {
-              close();
-              setSwitcherOpen(true);
-            }}
-          />
-        }
-        contentClassName={styles.sheet}
-        headerClassName={styles.head}
-        titleClassName="sr-only"
-        closeButtonClassName={styles.close}
-        bodyClassName={styles.body}
-      >
-        <MenuSearch query={query} onQuery={setQuery} />
-        <MenuPages
-          query={query}
-          entries={entries}
-          needs={needs}
-          groups={menuGroups}
-          pageRow={pageRow}
-          onResult={(item) => {
-            announceToWardShell(`${item.title}.`);
-            close();
-          }}
-          onDrawer={drawer}
-          onClose={close}
-        />
-      </Sheet>
-
-      {switcherOpen ? <OperatorSwitcherModal isOpen onClose={() => setSwitcherOpen(false)} /> : null}
-
-      <CreateSheet
-        open={createOpen}
-        onClose={closeCreate}
-        returnFocusRef={returnFocusRef}
+        shellRole={shellRole}
+        pathname={pathname}
+        counts={counts}
+        entries={entries}
         byId={byId}
+        needs={needs}
+        groups={menuGroups}
+        onGo={go}
+        onRefer={refer}
+        onDrawer={drawer}
+        switcherOpen={switcherOpen}
+        onSwitch={() => {
+          close();
+          setSwitcherOpen(true);
+        }}
+        onCloseSwitcher={() => setSwitcherOpen(false)}
+        createOpen={createOpen}
+        onCloseCreate={closeCreate}
         onNewReferral={onNewReferral}
       />
 

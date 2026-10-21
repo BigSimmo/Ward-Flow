@@ -743,7 +743,8 @@ hooks) to catch a route whose page throws before any browser test would.
 `WardChromeRole`s; `ward-nav-icons.ts` supplies one icon per id, checked at compile time by `Record`
 totality over the exact id unions; `ward-nav-counts.ts`/`use-ward-nav-counts.ts` supply the small
 set of badge figures. Together these five files are read by `shell/ward-rail.tsx`, `shell/ward-bar.tsx`
-and `shell/ward-phone-menu.tsx` — the single-source design is
+and `shell/ward-phone-menu.tsx` (the phone dock and the menu's model; its Menu and Create sheets are
+`shell/ward-phone-menu-sheet.tsx`, a client-only `next/dynamic` chunk preloaded when idle) — the single-source design is
 what let the second-edition-to-third-edition chrome swap (Task 8) happen without re-deriving any of
 the destination list itself.
 
