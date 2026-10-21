@@ -232,7 +232,7 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     expect(community.queryByRole("heading", { name: "Family and carers" }) !== null).toBe(shown);
   });
 
-  it(`${shown ? "shows" : "hides"} community clinician assignment`, () => {
+  it(`${shown ? "shows" : "hides"} community clinician assignment, and always offers Assign to the team's desk`, () => {
     const teamName = "Mead Centre (Armadale)";
     const seed = seedWardFlowState();
     const referral = {
@@ -246,7 +246,9 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
         <CommunityScreen teamId={communityTeamSlug(teamName)} referrals={communityScopedReferrals([referral])} />
       </WardFlowProvider>,
     );
-    expect(screen.queryAllByRole("button", { name: "Assign" }).length > 0).toBe(shown);
+    // Fix plan item 4 (21 Oct 2026): Assign is wired (the team takes the referral for its desk), so
+    // it shows in every build. Assigning a clinician is still not built.
+    expect(screen.queryAllByRole("button", { name: "Assign" }).length).toBeGreaterThan(0);
     act(() => (window as unknown as { openReferralDrawer(id: string): void }).openReferralDrawer("unwired-test"));
     const dossier = screen.getByRole("dialog", { name: /^Referral Triage: / });
     expect(dossier).toHaveTextContent("It does not assign a clinician or confirm an appointment.");

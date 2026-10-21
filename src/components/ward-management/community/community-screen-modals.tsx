@@ -14,8 +14,49 @@ import styles from "./community.module.css";
 import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { useState } from "react";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 
-/** Review or assign a referral: not wired in this prototype. */
+/**
+ * Assign (fix plan item 4, 21 Oct 2026): the team takes the referral for its own desk
+ * (`ASSIGN_REFERRAL`, owner `community`). It names the desk, never a clinician; clinician
+ * assignment is not built, because the record holds desks rather than people. This team page reads
+ * only its scoped referrals (FD-23), so it reports what its own tap did rather than the owner
+ * history; the reducer refuses a repeat and the referral board shows the owner.
+ */
+function AssignToTeam({ referralId }: { referralId: string }) {
+  const rejections = useOptionalWardFlowSelect("rejections")?.rejections.length ?? 0;
+  const raise = useWardRaise("community");
+  // The rejection count when the team tapped: a refusal lands on that list, so a longer list means
+  // this tap was refused.
+  const [tappedAt, setTappedAt] = useState<number | undefined>(undefined);
+  const result =
+    tappedAt === undefined
+      ? undefined
+      : rejections > tappedAt
+        ? "Not assigned. It may already be with this team's desk."
+        : "Assigned to this team's desk.";
+  return (
+    <div className={styles.modalDetailsList} data-testid={`community-assign-${referralId}`}>
+      <button
+        type="button"
+        className={styles.modalDoneBtn}
+        onClick={() => {
+          setTappedAt(rejections);
+          void Promise.resolve(raise("ASSIGN_REFERRAL", { referralId, owner: "community" })).catch(() => undefined);
+        }}
+        data-testid={`community-assign-take-${referralId}`}
+      >
+        Take for this team
+      </button>
+      {result ? <p role="status">{result}</p> : null}
+      <p>This names the team&apos;s desk, not a clinician.</p>
+    </div>
+  );
+}
+
+/** Review a referral (not wired in this prototype), or assign it to the team's desk. */
 export function CommunityScreenReferralModal({ view }: { view: CommunityScreenView }) {
   const { identityOf, activeModal, setActiveModal, referralModalRef, referralModalBackdropRef } = view;
   if (activeModal === null) return null;
@@ -49,9 +90,13 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
           </button>
         </div>
         <div className={styles.modalBody}>
-          <p className={styles.modalProtNote}>
-            <strong>Not wired in this prototype.</strong>
-          </p>
+          {activeModal.type === "assign" ? (
+            <AssignToTeam referralId={activeModal.referral.id} />
+          ) : (
+            <p className={styles.modalProtNote}>
+              <strong>Not wired in this prototype.</strong>
+            </p>
+          )}
           <div className={styles.modalDetailsList}>
             <p>
               <strong>Patient:</strong> {identityOf(activeModal.referral)}
