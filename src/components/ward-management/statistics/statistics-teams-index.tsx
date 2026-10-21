@@ -6,6 +6,7 @@ import { CalendarClock, LayoutGrid, Search, Users } from "lucide-react";
 
 import {
   BarList,
+  Button,
   CardBody,
   CardFoot,
   HeroStat,
@@ -28,6 +29,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
 
+import { countAxisMax } from "./statistics-axis";
 import { communityFigures } from "./statistics-community-figures";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
@@ -69,6 +71,8 @@ export function StatisticsTeamsIndexScreen() {
   const [phoneView, setPhoneView] = useState<"active" | "all">("active");
   const [phoneQuery, setPhoneQuery] = useState("");
   const [phoneShowAll, setPhoneShowAll] = useState(false);
+  // Desktop All teams: teams with nobody in a bed fold away until asked for (UX audit 21 Oct 2026).
+  const [showEmptyTeams, setShowEmptyTeams] = useState(false);
 
   const teams = COMMUNITY_TEAM_PAGES.map((team) => {
     const lists = communityHubLists(admissions, team, referrals);
@@ -93,6 +97,7 @@ export function StatisticsTeamsIndexScreen() {
   const dueOutWeekTotal = teams.reduce((total, entry) => total + entry.dueOutWeek, 0);
   const active = teams.filter((entry) => (entry.inBed ?? 0) > 0).sort((a, b) => (b.inBed ?? 0) - (a.inBed ?? 0));
   const unknown = teams.filter((entry) => entry.inBed === null).length;
+  const emptyTeams = teams.filter((entry) => entry.inBed === 0).length;
   const noTeamInBed = admissionsWithNoCommunityTeam(admissions, referrals).filter(bedIsOccupied).length;
 
   const groups = GROUPS.map((option) => ({
@@ -214,6 +219,7 @@ export function StatisticsTeamsIndexScreen() {
                     label="People in a bed, or holding one, by the community team their referral named"
                     track
                     axis
+                    max={countAxisMax(active.map((entry) => entry.inBed ?? 0))}
                     labelWidth="13rem"
                     rows={active.map((entry) => ({
                       id: entry.team.id,
@@ -282,38 +288,56 @@ export function StatisticsTeamsIndexScreen() {
                     {group.label}
                     <span className={styles.muted}>{group.teams.length}</span>
                   </h3>
+                  {group.teams.every((entry) => entry.inBed === 0) && !showEmptyTeams ? (
+                    <p className={index.cardNote}>Nobody in a bed</p>
+                  ) : null}
                   <ul className={index.teamList}>
-                    {group.teams.map((entry) => (
-                      <li key={entry.team.id}>
-                        <Link
-                          href={communityStatisticsHref(entry.team.id)}
-                          className={index.teamChip}
-                          data-testid={`ward-statistics-teams-link-${entry.team.id}`}
-                          aria-label={
-                            entry.inBed === null
-                              ? `${entry.team.name}, count not available`
-                              : `${entry.team.name}, ${entry.inBed} in a bed`
-                          }
-                        >
-                          <span className={index.teamName}>{entry.team.name}</span>
-                          <span
-                            className={cx(index.teamCount, (entry.inBed ?? 0) === 0 && index.teamCountZero)}
-                            aria-hidden="true"
+                    {group.teams
+                      .filter((entry) => showEmptyTeams || entry.inBed !== 0)
+                      .map((entry) => (
+                        <li key={entry.team.id}>
+                          <Link
+                            href={communityStatisticsHref(entry.team.id)}
+                            className={index.teamChip}
+                            data-testid={`ward-statistics-teams-link-${entry.team.id}`}
+                            aria-label={
+                              entry.inBed === null
+                                ? `${entry.team.name}, count not available`
+                                : `${entry.team.name}, ${entry.inBed} in a bed`
+                            }
                           >
-                            {entry.inBed ?? "–"}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
+                            <span className={index.teamName}>{entry.team.name}</span>
+                            <span
+                              className={cx(index.teamCount, (entry.inBed ?? 0) === 0 && index.teamCountZero)}
+                              aria-hidden="true"
+                            >
+                              {entry.inBed ?? "–"}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
                   </ul>
                 </section>
               ))}
             </div>
-            {unknown > 0 ? (
-              <CardFoot
-                meta={`${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found, so an empty count would not be a measurement.`}
-              />
-            ) : null}
+            <CardFoot
+              meta={
+                unknown > 0
+                  ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found, so an empty count would not be a measurement.`
+                  : `${emptyTeams} ${plural(emptyTeams, "team has", "teams have")} nobody in a bed`
+              }
+            >
+              {emptyTeams > 0 ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowEmptyTeams((value) => !value)}
+                  data-testid="ward-statistics-teams-show-empty"
+                >
+                  {showEmptyTeams ? "Hide teams with nobody in a bed" : `Show ${emptyTeams} with nobody in a bed`}
+                </Button>
+              ) : null}
+            </CardFoot>
           </StatCard>
         </>
       )}
