@@ -27,7 +27,8 @@ const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
 const mockupTag = /@mockup/;
 // The release gate (15 October 2026): four core bed-flow journeys with an axe check at each key
 // step, on desktop Chrome and phone WebKit. Its own projects, its own CI job, nothing else in them.
-const releaseGateSpecPattern = /.*(?:release-gate-journeys|release-gate-axe-sweep)\.spec\.ts/;
+const releaseGateSpecPattern =
+  /.*(?:release-gate-journeys|release-gate-axe-sweep|release-gate-inpatient-transfer|release-gate-community-referral)\.spec\.ts/;
 // Shared mode (audit F-16): two signed-in desks against a real local backend and PostgreSQL. It needs
 // the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode production `next start`, the backend, a
 // fake sign-in service), so the project exists only inside that runner, never in the offline gates.
