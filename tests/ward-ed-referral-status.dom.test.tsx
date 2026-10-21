@@ -89,6 +89,7 @@ describe("edReferralStatus", () => {
       acceptedUnitName: "SJGM Adult Open",
     });
     expect(status.line).toBe("Accepted, bed held, expired 10m ago");
+    expect(status.phone).toBe("SJGM accepted, bed held, expired 10m ago");
     expect(status.tone).toBe("danger");
   });
 

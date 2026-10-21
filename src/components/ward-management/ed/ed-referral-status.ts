@@ -142,7 +142,8 @@ export function edReferralStatus(
     line: `Accepted, ${accepted}${heldTail}`,
     tone: hold?.state === "lapsed" ? "danger" : done >= 3 ? "good" : "quiet",
     hold,
-    phone: wardShort ? `${wardShort} accepted, ${accepted}` : `Accepted, ${accepted}`,
+    // A lapsed hold says so on the phone too, so the ED need not open the sheet to find out.
+    phone: `${wardShort ? `${wardShort} accepted` : "Accepted"}, ${accepted}${hold?.state === "lapsed" ? `, ${hold.short.toLowerCase()}` : ""}`,
     steps,
   };
 }
