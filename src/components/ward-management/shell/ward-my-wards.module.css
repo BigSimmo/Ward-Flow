@@ -82,7 +82,7 @@
 .link:focus-visible,
 .pinButton:focus-visible,
 .iconButton:focus-visible {
-  outline: 2px solid var(--wf-focus, currentColor);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 

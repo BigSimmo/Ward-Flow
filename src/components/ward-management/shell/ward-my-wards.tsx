@@ -8,15 +8,12 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import type { Unit } from "@/components/ward-management/ward-model";
 
 import { useCanOpenHref } from "./ward-access";
+import { unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { MY_WARDS_LIMIT, toggleMyWard, useMyWards } from "./ward-my-wards-store";
 import styles from "./ward-my-wards.module.css";
 
 const WARD_PATH = /^\/ward-flow\/ward\/([^/?#]+)/;
-
-function myWardHref(unitId: string): string {
-  return `/ward-flow/ward/${encodeURIComponent(unitId)}`;
-}
 
 /** The ward a ward page shows, from its address, or undefined on any other page. */
 export function wardIdFromPath(pathname: string): string | undefined {
@@ -53,7 +50,7 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   const shown = pinned
     .map((id) => byId.get(id))
-    .filter((unit): unit is Unit => unit !== undefined && canOpen(myWardHref(unit.id)));
+    .filter((unit): unit is Unit => unit !== undefined && canOpen(unitHref(unit.id)));
   const currentId = wardIdFromPath(pathname);
   const current = currentId === undefined ? undefined : byId.get(currentId);
   const offerPin = current !== undefined && !pinned.includes(current.id);
@@ -65,7 +62,7 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
       <p className={styles.heading}>My wards</p>
       <ul className={styles.list}>
         {shown.map((unit) => {
-          const href = myWardHref(unit.id);
+          const href = unitHref(unit.id);
           const here = currentId === unit.id;
           return (
             <li key={unit.id} className={styles.row}>

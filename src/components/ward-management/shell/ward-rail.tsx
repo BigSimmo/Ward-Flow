@@ -42,6 +42,7 @@ import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-draw
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { WardMyWards } from "./ward-my-wards";
+import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "./ward-rail.module.css";
 import { readWardRailEarlyShape } from "./ward-rail-early";
 import {
@@ -999,6 +1000,16 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               </span>
             </button>
           ) : null}
+          <WardHelpLink
+            classes={{
+              button: `${styles.railLink} ${styles.railButton}`,
+              glyph: styles.railGlyph,
+              text: styles.railText,
+              line: styles.railLine,
+              label: styles.railLabel,
+            }}
+            showTitle={!shownOpen && isClosedRailCardViewport}
+          />
         </nav>
       </div>
 

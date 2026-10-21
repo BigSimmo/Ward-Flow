@@ -7,6 +7,7 @@ import {
   BellOff,
   BellRing,
   ClipboardList,
+  CircleHelp,
   Copy,
   Database,
   Download,
@@ -28,6 +29,7 @@ import type { NotificationSupport } from "@/components/ward-management/shell/war
 import { phonePushRow, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { openWardHelp } from "@/components/ward-management/help/ward-help-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import {
@@ -540,6 +542,20 @@ export function DisplayPane({
                 </li>
               ))}
             </ul>
+          </Card>
+
+          <Card aria-labelledby="help-title" data-setting="help">
+            <CardHead iconPlain id="help-title" icon={CircleHelp} title="Help and tour" />
+            <SettingRow setting="help-screen" title="Help" sub="What each screen is for, and a glossary">
+              <Button variant="ghost" size="sm" onClick={() => openWardHelp("screen")} data-testid="settings-open-help">
+                Open help
+              </Button>
+            </SettingRow>
+            <SettingRow setting="tour" title="First-run tour" sub="A short walk through this desk's menu">
+              <Button variant="ghost" size="sm" onClick={() => openWardHelp("tour")} data-testid="settings-replay-tour">
+                Replay the tour
+              </Button>
+            </SettingRow>
           </Card>
         </div>
       </div>

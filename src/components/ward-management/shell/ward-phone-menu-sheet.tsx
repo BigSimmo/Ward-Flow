@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentProps, type ComponentType, type ReactNode, type RefObject } from "react";
-import { BedSingle, Inbox, Clock3, Plus, Search, Settings, Truck, UserPlus, Wrench } from "lucide-react";
+import { BedSingle, CircleHelp, Inbox, Clock3, Plus, Search, Settings, Truck, UserPlus, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -24,6 +24,7 @@ import { requestToolsTool } from "../tools/ward-tools-open";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
+import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
@@ -225,6 +226,7 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
             <Chevron />
           </Link>
         </li>
+        <HelpRow onClose={onClose} />
         <DataModeRow onClose={onClose} />
       </ul>
       <p className={styles.note}>
@@ -232,6 +234,28 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
         Synthetic prototype, not approved for clinical use
       </p>
     </section>
+  );
+}
+
+/** Help: says "New" until this desk's tour is seen, and opens the tour until then. */
+function HelpRow({ onClose }: { onClose: () => void }) {
+  const help = useWardHelpRow();
+  return (
+    <li>
+      <button
+        type="button"
+        className={styles.row}
+        aria-label={help.label}
+        data-testid="ward-phone-menu-help"
+        onClick={() => {
+          onClose();
+          help.open();
+        }}
+      >
+        <RowBody icon={CircleHelp} label="Help" meta={help.isNew ? "New" : undefined} />
+        <Chevron />
+      </button>
+    </li>
   );
 }
 
