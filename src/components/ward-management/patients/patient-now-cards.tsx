@@ -6,6 +6,7 @@ import { Button, Card, CardHead, StatusGlyph, buttonClass, useIsPhone, type WfTo
 import { FORMS_HREF } from "@/components/ward-management/governance-shared";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -220,9 +221,11 @@ export function PatientLegalNowCard({
               <StatusGlyph tone="neutral" size={10} />
               <span className={styles.phItemText}>
                 <strong>No form recorded</strong>
-                <Link className={styles.phLink} href={recordFormHref(movement.id)}>
-                  Record a form
-                </Link>
+                {isOpen(movement) ? (
+                  <Link className={styles.phLink} href={recordFormHref(movement.id)}>
+                    Record a form
+                  </Link>
+                ) : null}
               </span>
             </li>
           ) : null}
@@ -265,9 +268,11 @@ export function PatientLegalNowCard({
             <span className={styles.itemText}>
               <strong>No form recorded</strong>
             </span>
-            <Link className={buttonClass({ size: "sm", variant: "ghost" })} href={recordFormHref(movement.id)}>
-              Record a form
-            </Link>
+            {isOpen(movement) ? (
+              <Link className={buttonClass({ size: "sm", variant: "ghost" })} href={recordFormHref(movement.id)}>
+                Record a form
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </div>

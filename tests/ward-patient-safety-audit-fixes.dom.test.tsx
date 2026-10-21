@@ -87,6 +87,21 @@ describe("Legal now on the patient record", () => {
     expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/legal-forms\?movement=[^&]+&record=1$/u);
   });
 
+  it("offers no Record a form for an arrived stay, which the Record a form sheet cannot take", () => {
+    const arrived = seed.movements.find(
+      (movement) => movement.stage === "arrived" && !movement.legalForm && movement.patientId,
+    );
+    if (!arrived?.patientId) throw new Error("the seed no longer carries an arrived stay without a form");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PatientNowScreen patientId={arrived.patientId} />
+      </WardFlowProvider>,
+    );
+    const card = within(screen.getByTestId("ward-patient-legal-now"));
+    expect(card.getByText("No form recorded")).toBeInTheDocument();
+    expect(card.queryByRole("link", { name: "Record a form" })).not.toBeInTheDocument();
+  });
+
   it("opens Record a form with the movement chosen when the address asks for it", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
