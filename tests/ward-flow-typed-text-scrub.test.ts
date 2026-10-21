@@ -6,9 +6,11 @@ import { WARD_FLOW_TYPED_TEXT_EVENT_TYPES } from "@/components/ward-management/w
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { TYPED_TEXT_NOT_KEPT, typedTextOf } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import {
+  deviceCopyFromEvents,
   redactTypedTextForDevice,
   scrubTypedTextFields,
 } from "@/components/ward-management/ward-flow-typed-text-scrub";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
 
 /*
@@ -129,6 +131,17 @@ describe("device copy of a session holding typed text", () => {
     const seed = seedWardFlowState();
     const keyed = { ...seed, dischargeRevisions: { ...seed.dischargeRevisions, "Synthetic typed key 9d2e": 1 } };
     expect(redactTypedTextForDevice(keyed as WardFlowState, ["Synthetic typed key 9d2e"], worlds)).toBeNull();
+  });
+
+  it("reads the session's typed events, and refuses the copy when one cannot be read", () => {
+    const fixture = TYPED_TEXT_FIXTURES[0];
+    const next = after(fixture);
+    const { event } = fixture.build(seedWardFlowState());
+    expect(deviceCopyFromEvents(next, [event], worlds)).toEqual(
+      redactTypedTextForDevice(next, typedTextOf(event) ?? [], worlds),
+    );
+    const unknown = { type: "NOT_A_REAL_EVENT", role: "coordinator", now: 0 } as unknown as WardFlowEvent;
+    expect(deviceCopyFromEvents(next, [event, unknown], worlds)).toBeNull();
   });
 
   it("keeps a typed value identical to fixture text, which ships in the bundle", () => {

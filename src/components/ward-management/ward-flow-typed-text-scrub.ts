@@ -1,8 +1,14 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { isDischargeCriterion } from "./ward-discharge-criteria";
+import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
-import { normaliseTypedText, TYPED_TEXT_NOT_KEPT, type TypedTextLedger } from "./ward-flow-typed-text-ledger";
+import {
+  normaliseTypedText,
+  TYPED_TEXT_NOT_KEPT,
+  type TypedTextLedger,
+  typedTextOf,
+} from "./ward-flow-typed-text-ledger";
 
 /**
  * THE DEVICE COPY OF A SESSION THAT HOLDS TYPED TEXT (Josh, 21 Oct 2026, fix plan item 2, option A).
@@ -254,4 +260,23 @@ export function redactTypedTextForDevice(
   const redacted = replaceValues(stored);
   if (keyLeak || !isValidStoredWardFlowState(redacted)) return null;
   return redacted;
+}
+
+/**
+ * The device copy for a session that dispatched `events` carrying typed text (memory only, held by the
+ * provider). `null` when one of them cannot be read, so nothing typed is ever guessed at.
+ */
+export function deviceCopyFromEvents(
+  state: WardFlowState,
+  events: readonly WardFlowEvent[],
+  worlds: FixtureWorlds,
+  loadedWorld = false,
+): WardFlowState | null {
+  const ledger: string[] = [];
+  for (const event of events) {
+    const typed = typedTextOf(event);
+    if (typed === null) return null;
+    ledger.push(...typed);
+  }
+  return redactTypedTextForDevice(state, ledger, worlds, loadedWorld);
 }

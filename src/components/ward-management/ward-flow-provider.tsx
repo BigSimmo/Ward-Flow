@@ -111,7 +111,6 @@ import {
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
-import { typedTextOf, type TypedTextLedger } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import {
   broadcastDispatchEvent,
@@ -427,10 +426,10 @@ type WardFlowContainer = {
   sharedAccessContext?: string; // Adopted with the world before remounting desk forms.
   world: WardFlowState;
   typedTextSeen: boolean;
-  /** Typed values dispatched this session (memory only), whether one could not be read, and whether
-   *  the world came from a scenario file, whose typed values this session never saw. */
-  typedTextLedger?: TypedTextLedger;
-  typedTextUnreadable?: boolean;
+  /** The typed-text events dispatched this session (memory only; their values are read when the
+   *  device copy is made), and whether the world came from a scenario file, whose typed values this
+   *  session never saw. */
+  typedTextEvents?: readonly WardFlowEvent[];
   typedTextFromFile?: boolean;
   restoredElapsed: number;
   recoveryNotice?: string;
@@ -486,8 +485,7 @@ function wardFlowContainerReducer(
       ...container,
       world: action.world,
       typedTextSeen: true,
-      typedTextLedger: undefined,
-      typedTextUnreadable: false,
+      typedTextEvents: undefined,
       typedTextFromFile: true,
       restoredElapsed: action.restoredElapsed,
       eventLog: [],
@@ -520,15 +518,15 @@ function wardFlowContainerReducer(
  * 2. **Default deny.** Any type not on `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` counts, so a third,
  *    unclassified type is never trusted.
  * 3. **Since 21 Oct 2026 (Josh, fix plan item 2, option A)** saving continues: typed values go on an
- *    in-memory ledger (`typedTextOf`) and the persistence effect saves a copy with them replaced
- *    (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
+ *    the typed events are kept in memory and the persistence effect saves a copy with their values
+ *    replaced (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
  *
  * ⚠️ **ALL OF THIS LIVES INSIDE `WardFlowContainer`, NEVER IN A REF THIS FUNCTION MUTATES** (P2
  * finding 5): React can call a reducer and discard the result, so a ref could read `true` for a
  * dispatch never committed. The persistence effect reads the container exactly as it reads `state`.
  *
  * A genuine reseed (`RESET_SCENARIO`/`SET_SCENARIO`, the only writers of `worldGeneration`) brings
- * fixture data with no typed text, so it alone clears the flag and the ledger. A REJECTED reset
+ * fixture data with no typed text, so it alone clears the flag and the typed events. A REJECTED reset
  * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
@@ -548,8 +546,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
       ...container,
       world: nextWorld,
       typedTextSeen: false,
-      typedTextLedger: undefined,
-      typedTextUnreadable: false,
+      typedTextEvents: undefined,
       typedTextFromFile: false,
       eventLog: [{ ...logged, sequence: 0 }],
       earlyOutcomes,
@@ -562,13 +559,11 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
       ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
       : [...previousLog, logged];
   const typedNow = !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
-  const typed = typedNow ? typedTextOf(event) : [];
   return {
     ...container,
     world: nextWorld,
     typedTextSeen: container.typedTextSeen || typedNow,
-    typedTextLedger: typed?.length ? [...(container.typedTextLedger ?? []), ...typed] : container.typedTextLedger,
-    typedTextUnreadable: container.typedTextUnreadable || typed === null,
+    typedTextEvents: typedNow ? [...(container.typedTextEvents ?? []), event] : container.typedTextEvents,
     eventLog,
     earlyOutcomes,
   };
@@ -1057,8 +1052,7 @@ function WardFlowWorld({
   // The world generation whose typed-text copy could not be made safely, and a re-run once it loads.
   const [deviceCopyRefused, setDeviceCopyRefused] = useState<number | null>(null);
   const [scrubLoaded, setScrubLoaded] = useState(false);
-  const typedTextLocked =
-    container.typedTextSeen && (container.typedTextUnreadable === true || deviceCopyRefused === state.worldGeneration);
+  const typedTextLocked = container.typedTextSeen && deviceCopyRefused === state.worldGeneration;
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
   const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
