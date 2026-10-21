@@ -34,6 +34,7 @@ import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
@@ -50,8 +51,7 @@ function CopyFact({ value, label }: { value: string; label: string }) {
         icon={Clipboard}
         onClick={async () => {
           try {
-            if (!navigator.clipboard) throw new Error("Clipboard unavailable");
-            await navigator.clipboard.writeText(value);
+            await copyTextToClipboard(value);
             setMessage("Copied to clipboard");
           } catch {
             setMessage("Clipboard is unavailable in this browser");
@@ -739,10 +739,7 @@ export function PatientDetailsTab({
             >
               Missing information
             </Button>
-            <CopyFact
-              label="Copy patient identifiers"
-              value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
-            />
+            {/* No "Copy patient identifiers": UMRN and date of birth stay off the clipboard (D-71 item 7). */}
           </span>
         </div>
       </Card>
