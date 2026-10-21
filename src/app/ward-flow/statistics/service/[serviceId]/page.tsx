@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
 import { isKnownHealthService } from "@/components/ward-management/ward-known-places";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
@@ -20,8 +22,19 @@ export const metadata: Metadata = {
  * 404 (DA-32) — never a redirect to a different service, and never an
  * empty page that reads as a service with nothing to show.
  */
+/** "East Metro" reads "east-metro": lowercase words joined by hyphens. */
+const slugOf = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "");
+
 export default async function StatisticsServicePage({ params }: { params: Promise<{ serviceId: string }> }) {
   const serviceId = safeDecodeURIComponent((await params).serviceId);
+  // UX audit 21 Oct 2026: a lowercase slug ("east-metro"), as ward and team addresses use, opens the
+  // same service at its one address instead of a 404. Only an exact slug of a real service does.
+  const named = HEALTH_SERVICES.find((service) => slugOf(service) === serviceId);
+  if (named !== undefined && named !== serviceId) redirect(serviceStatisticsHref(named));
   // DA-32: a name that is no health service shows "Page not found", not a page reporting success.
   if (!isKnownHealthService(serviceId)) notFound();
   return <StatisticsServiceScreen serviceId={serviceId} />;

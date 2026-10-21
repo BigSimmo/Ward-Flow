@@ -540,8 +540,11 @@ terminal); "open" means no closure yet.
   `STEP_BACK_REASONS`. Case at `:7674`.
 - **`WITHDRAW_ACCEPTANCE`** — roles: `coordinator`. Effect: clears `acceptedUnitId`/`acceptedAt`,
   stage back to `destination_review` (never re-adds to `referredUnitIds`). Guards: movement
-  exists, open, currently `accepted_awaiting_bed`; `reason` in `STEP_BACK_REASONS`; refused if the
-  movement still holds a bed/admission (release the pull first). Case at `:7727`.
+  exists, open, currently `accepted_awaiting_bed` or `pulled`, or stepped back earlier while
+  still holding a bed (keeps that stage); `reason` in `STEP_BACK_REASONS`. A
+  held bed (at `pulled`, or stepped back holding one) is released in the same act, recording
+  `pull_released` and `acceptance_withdrawn` unwinds and telling the ward and the ED (Q16);
+  refused while a transport job is booked or collected. Case at `:7727`.
 - **`WITHDRAW_WARD_REQUEST`** — roles: `coordinator`. Effect: removes one unit from
   `referredUnitIds`, appends a `coordinator_withdrew` entry. Guards: movement exists, open; unit
   in `referredUnitIds`; `reason` in `WARD_REQUEST_WITHDRAWAL_REASONS`. Case at `:3531`.
@@ -953,8 +956,8 @@ guard.test.ts` is what proves that check can actually fail.
   conflate them when reading or writing either.
 - **`STEP_BACK_STAGE` does not release a held bed.** It only rewinds `movement.stage`; a movement
   stepped back from `pulled` still holds the phantom admission and consumes ward capacity until a
-  separate release event runs. The same asymmetry applies to `WITHDRAW_ACCEPTANCE`, which refuses
-  outright if a bed is still held rather than releasing it implicitly.
+  separate release event runs. `WITHDRAW_ACCEPTANCE` is the exception (Q16): it releases a held
+  bed explicitly in the same act and records the release.
 - **`Referral.history` is the one genuine free-text field on a `Referral`**, and it (along with 11
   other event types' typed fields) never reaches `sessionStorage` once typed in a session — do
   not assume a restored session's referral history is the same object identity, or that a typed

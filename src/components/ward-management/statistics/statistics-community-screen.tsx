@@ -337,7 +337,9 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                         <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
                           <th scope="row">{row.label}</th>
                           <td className={detail.meterCell}>
-                            {row.figure.kind === "measured" && typeof small(row.figure.value) === "number" ? (
+                            {row.figure.kind === "measured" &&
+                            row.figure.value > 0 &&
+                            typeof small(row.figure.value) === "number" ? (
                               <Meter
                                 value={row.figure.value}
                                 max={measuredMax}
@@ -732,7 +734,11 @@ function TeamComparison({
       ? a.team.name.localeCompare(b.team.name)
       : sortValue(b) - sortValue(a) || a.team.name.localeCompare(b.team.name),
   );
-  const shown = showAll || needle ? sorted : sorted.slice(0, TOP);
+  // A team with nobody on this measure folds into the footer count until Show all (UX audit 21 Oct
+  // 2026): the top twelve used to be one bar and eleven noughts.
+  const withSome = sorted.filter((row) => valueOf(row) > 0);
+  const zeroTeams = sorted.length - withSome.length;
+  const shown = showAll || needle ? sorted : withSome.slice(0, TOP);
   const unlinked = matching.length - measured.length;
   // The mean would give a hidden team's count back by subtraction, so the executive desk has none.
   const mean =
@@ -811,7 +817,7 @@ function TeamComparison({
           data-testid="statistics-community-comparison-chart"
         >
           {shown.length === 0 ? (
-            <p className={styles.muted}>No team matches</p>
+            <p className={styles.muted}>{needle ? "No team matches" : `No team has anyone on this measure`}</p>
           ) : (
             <BarList
               label={chart.chart}
@@ -917,6 +923,7 @@ function TeamComparison({
           view === "chart" ? (
             <>
               Showing <b>{shown.length}</b> of {measured.length} teams
+              {!showAll && !needle && zeroTeams > 0 ? `, ${zeroTeams} with none` : ""}
             </>
           ) : (
             <>
@@ -925,9 +932,9 @@ function TeamComparison({
           )
         }
       >
-        {view === "chart" && !needle && sorted.length > TOP ? (
+        {view === "chart" && !needle && (showAll || sorted.length > shown.length) ? (
           <Button size="sm" variant="ghost" onClick={() => setShowAll((value) => !value)}>
-            {showAll ? `Top ${TOP}` : `Show all ${sorted.length}`}
+            {showAll ? "Show fewer" : `Show all ${sorted.length}`}
           </Button>
         ) : null}
         <Button size="sm" variant="ghost" onClick={exportCsv}>

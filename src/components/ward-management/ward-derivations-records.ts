@@ -107,13 +107,16 @@ export function changeAudit(movements: Movement[]): ChangeAuditEntry[] {
       // widen what values can reach the screen. Never render `unwind.reason` unlabelled: that is
       // the raw snake_case defect this file's own doc comment on `changeReasonLabels` exists to
       // prevent.
+      // Q16: `WITHDRAW_ACCEPTANCE` releasing a held bed writes its `StepBackReason` into the
+      // "pull_released" entry, so that label list is tried first.
       const reason = unwind.reason as ReleasePullReason | CancelTransportReason;
       entries.push({
         at: unwind.at,
         movementId: movement.id,
         kind: unwind.kind,
         by: unwind.by,
-        detail: changeReasonLabels[reason],
+        detail:
+          (stepBackReasonLabels[unwind.reason as StepBackReason] as string | undefined) ?? changeReasonLabels[reason],
       });
     }
   }

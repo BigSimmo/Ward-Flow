@@ -18,7 +18,8 @@ import {
   type TransportLegalStatus,
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
-import { transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { cadNumberSentence, transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./community.module.css";
 import type { CommunityScreenView } from "./community-screen";
@@ -47,6 +48,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     submitBookTransport,
   } = view;
   if (transportBookFor === undefined) return null;
+  // A typed CAD number the rule refuses is named beside the field, not only at the confirm control.
+  const cadFieldProblem = transportDraft.cadNumber.trim() ? cadNumberProblem(transportDraft.cadNumber) : undefined;
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
@@ -99,9 +102,11 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
               data-testid={`ward-community-transport-escort-${transportBookFor}`}
             >
               <legend className={styles.declineLabel}>Does the patient need an escort?</legend>
-              <p className={styles.transportHint}>
-                Neither answer is selected. This is recorded as this team&apos;s answer.
-              </p>
+              {transportDraft.escortRequired === undefined ? (
+                <p className={styles.transportHint}>
+                  Neither answer is selected. This is recorded as this team&apos;s answer.
+                </p>
+              ) : null}
               {ESCORT_ANSWERS.map((answer) => (
                 <label key={answer.label} className={styles.transportOption}>
                   <input
@@ -129,6 +134,10 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
                 className={styles.declineSelect}
                 data-testid={`ward-community-transport-cad-${transportBookFor}`}
                 value={transportDraft.cadNumber}
+                aria-invalid={cadFieldProblem ? "true" : undefined}
+                aria-describedby={
+                  cadFieldProblem ? `ward-community-transport-cad-problem-${transportBookFor}` : undefined
+                }
                 onChange={(event) =>
                   setTransportDraft((current) => ({
                     ...current,
@@ -137,6 +146,15 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
                 }
               />
             </label>
+            {cadFieldProblem ? (
+              <span
+                id={`ward-community-transport-cad-problem-${transportBookFor}`}
+                className={styles.transportHint}
+                data-testid={`ward-community-transport-cad-problem-${transportBookFor}`}
+              >
+                {cadNumberSentence(cadFieldProblem)}
+              </span>
+            ) : null}
             <fieldset
               className={styles.transportFieldset}
               data-testid={`ward-community-transport-legal-${transportBookFor}`}
