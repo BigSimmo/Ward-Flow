@@ -120,6 +120,8 @@ import { renderArrivalSection } from "./patient-now-arrival-section";
 import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
 // and fence the completion so an old patient's save cannot dismiss another patient's form.
@@ -402,20 +404,28 @@ export function PatientNowScreen({
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
-      navigator.clipboard?.writeText(text).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+      void copyTextToClipboard(text).then(
+        () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        },
+        // A refused copy leaves the button as it was, as before the shared helper.
+        () => undefined,
+      );
       return;
     }
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    void copyTextToClipboard(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      // A refused copy leaves the button as it was, as before the shared helper.
+      () => undefined,
+    );
   }
 
   // Keyboard navigation for tablist
@@ -492,7 +502,10 @@ export function PatientNowScreen({
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = etaFromDraft(cleanEta);
     const errors: typeof transportFormErrors = {};
+    // HAZ-03 (#430): the engine's own CAD rule, so a placeholder is named here rather than refused silently.
+    const cadProblem = cleanCad ? cadNumberProblem(cleanCad) : undefined;
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
+    else if (cadProblem) errors.cad = `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}`;
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
     else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
     if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";

@@ -102,6 +102,7 @@ import {
   waitedHours,
 } from "./patient-search-model";
 import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
@@ -749,14 +750,10 @@ export function PatientSearchPage() {
   };
 
   const copyText = (body: string, done: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(body).then(
-        () => showToast(done),
-        () => showToast("Copy was blocked by the browser"),
-      );
-    } else {
-      showToast("Copy was blocked by the browser");
-    }
+    copyTextToClipboard(body).then(
+      () => showToast(done),
+      () => showToast("Copy was blocked by the browser"),
+    );
   };
   const copyRow = (row: CensusRow) => copyText(`${censusLine(row)} (synthetic)`, "Summary copied");
   const copyList = () => {

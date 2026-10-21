@@ -116,10 +116,10 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Status**: Open.
    - **Requirement**: Physical iPhone Safari device inspection. Synthetic Chromium emulation cannot replicate dynamic URL bar collapsing, bottom safe-area insets (`env(safe-area-inset-bottom)`), or virtual keyboard interaction with the fixed bottom dock.
 4. **AUD-03 (Bed-Hold Countdown Arithmetic Unit Tests)**:
-   - **Status**: Open.
+   - **Status**: **Closed, already covered** (checked 21 Oct 2026). `tests/ward-bed-hold.test.ts` tests the lapsed, at-risk and held boundaries and `tests/ward-bed-hold-expiry-in-transit.test.ts` the review threshold (2 hours). There is no 15-minute rule.
    - **Requirement**: Unit test suite for `bedHoldExpiryAlert` hold countdown arithmetic, verifying boundary behavior at 0m, 15m, 60m, and expired transitions.
 5. **AUD-06 (Multi-Ward Rapid Click Reducer Serialization)**:
-   - **Status**: Open.
+   - **Status**: **Resolved** 21 Oct 2026. Every event names its own ward and React serialises dispatch, so the record was safe; the ward answer view now resets per ward like the overview (`tests/ward-switch-stale-action.dom.test.tsx`).
    - **Requirement**: Prevent stale reducer action overwrites when clinicians switch rapidly between wards in the UI under concurrent event dispatch.
 6. **Gender Placement Validation Gate**:
    - **Status**: **Resolved** (enforced in `ward-eligibility.ts` and `ward-flow-reducer.ts`, with shortlist gender-placement state reset verified in PR #281).
@@ -188,7 +188,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L4-08 (Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
 - **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
 - **TASK-L4-10 (PERF-02 Design Token Consolidation)**: Deprecate `ward-flow-v6-tokens.css` in favor of consolidated `ward-flow-v9-tokens.css` (~90 KB uncompressed CSS reduction).
-- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching.
+- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching (Closed 21 October 2026: Josh ruled to keep the per-request CSP nonce and not edge-cache HTML; see the `src/proxy.ts` header comment).
 - **TASK-L4-12 (PERF-04 Deep-Link Scroll Timing on Lazy Secondary Views)**: Explicit post-mount scroll event for hash links navigating to dynamically imported tabs.
 - **TASK-L4-13 (A2-14 Unused Standalone Clock Provider)**: Retire or align unused standalone `WardFlowClockProvider` in `ward-flow-provider.tsx`.
 

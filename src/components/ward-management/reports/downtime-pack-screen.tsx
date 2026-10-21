@@ -686,11 +686,18 @@ export function DowntimePackScreen() {
                               { id: "beds", label: "Beds", value: String(ward.beds) },
                               { id: "ready", label: BED_STATE_LABELS.ready, value: String(ward.counts.ready) },
                               { id: "occupied", label: BED_STATE_LABELS.occupied, value: String(ward.counts.occupied) },
-                              {
-                                id: "closed",
-                                label: `${BED_STATE_LABELS.pulled} or ${BED_STATE_LABELS.closed.toLowerCase()}`,
-                                value: String(ward.counts.pulled + ward.counts.closed),
-                              },
+                              // Separate, as the row states them (UX audit 21 Oct 2026).
+                              { id: "pulled", label: BED_STATE_LABELS.pulled, value: String(ward.counts.pulled) },
+                              { id: "closed", label: BED_STATE_LABELS.closed, value: String(ward.counts.closed) },
+                              ...(ward.pendingPreparation > 0
+                                ? [
+                                    {
+                                      id: "preparing",
+                                      label: "Being made ready",
+                                      value: String(ward.pendingPreparation),
+                                    },
+                                  ]
+                                : []),
                             ],
                           })
                         }
@@ -846,18 +853,19 @@ export function DowntimePackScreen() {
         </p>
 
         {/* Tablet and desktop: the pack runs to thousands of pixels, so a sticky jump row keeps each
-            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). */}
+            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). The
+            hero chips carry the totals, so the row names tables only (UX audit 21 Oct 2026). */}
         <nav className={styles.jumpRow} aria-label="Jump to a table" data-print-hide>
           {(
             [
-              ["beds", "Beds", totals.ready],
-              ["ed", "ED queue", totals.ed],
-              ["moves", "Pending moves", totals.moves],
-              ["forms", "Legal forms", totals.forms],
+              ["beds", "Beds"],
+              ["ed", "ED queue"],
+              ["moves", "Pending moves"],
+              ["forms", "Legal forms"],
             ] as const
-          ).map(([id, label, count]) => (
+          ).map(([id, label]) => (
             <button key={id} type="button" className={styles.jumpItem} onClick={() => jumpTo(id)}>
-              {label} <b>{count}</b>
+              {label}
             </button>
           ))}
         </nav>

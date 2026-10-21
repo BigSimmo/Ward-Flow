@@ -25,6 +25,17 @@ Earlier authenticated API and local synthetic restore checks remain dated eviden
 original records. They do not close the two pending hosted checks above. Network and connector
 denials are access limits, not demonstrated failures of the application or database.
 
+## Server error reporting (Sentry)
+
+Optional and off by default. Setting `SENTRY_DSN` on the signed-in site service turns on
+server-side reporting through `src/lib/sentry-server.ts` (lean `@sentry/core` client, no browser
+SDK, no CSP change). Each failed request sends the error type, stack frames and the
+`incidentId`, method, router and route type tags that `ward.request_failed` already logs.
+Error messages, URLs, headers, bodies, users and breadcrumbs are dropped before sending.
+`logger.ts` warn and error lines also go to Sentry Logs unless `SENTRY_ENABLE_LOGS=false`.
+Optional `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` label events; Railway's commit SHA is the
+default release. No DSN has been configured or observed sending, so delivery is unverified.
+
 ## Hosted browser acceptance
 
 Owner role: application maintainer, with the synthetic test-account owner.

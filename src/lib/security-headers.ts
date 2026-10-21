@@ -115,9 +115,9 @@ export function buildContentSecurityPolicy({
     // configured project origin through connect-src, never media allowances.
     "img-src 'self' data: blob:; " +
     "media-src 'self'; " +
-    // No external error-ingest origin: Ward Flow has no registered browser
-    // monitoring SDK. logger.ts provides an optional server forwarding seam,
-    // not a configured Sentry integration. Add an external origin only with
+    // No external error-ingest origin: Ward Flow has no browser monitoring
+    // SDK. Optional Sentry reporting is server-side only (sentry-server.ts),
+    // so the browser never contacts Sentry. Add an external origin only with
     // an explicitly configured integration and its privacy review. The one
     // exception is the shared Supabase workspace (resolveSharedWorkspaceOrigins).
     `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +

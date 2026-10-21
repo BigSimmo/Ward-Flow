@@ -34,6 +34,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
@@ -116,6 +117,8 @@ export function PatientTransitOperations({
   const [arriveCheck, setArriveCheck] = useState(false);
   const [provider, setProvider] = useState<TransportProvider | "">("");
   const [cad, setCad] = useState("");
+  // Blank is the form's own "required" prompt; a typed placeholder gets the reason (HAZ-03, #430).
+  const cadHint = cad.trim() ? cadNumberProblem(cad) : undefined;
   const [eta, setEta] = useState("");
   const [legal, setLegal] = useState<TransportLegalStatus | "">("");
   const [escort, setEscort] = useState<"" | "yes" | "no">("");
@@ -608,7 +611,7 @@ export function PatientTransitOperations({
                   !provider ||
                   !legal ||
                   !escort ||
-                  !cad.trim() ||
+                  cadNumberProblem(cad) !== undefined ||
                   !eta ||
                   !Number.isFinite(Number(eta)) ||
                   Number(eta) < 0
@@ -642,8 +645,24 @@ export function PatientTransitOperations({
               </label>
               <label>
                 CAD number
-                <input required value={cad} onChange={(e) => setCad(e.target.value)} />
+                <input
+                  required
+                  value={cad}
+                  // A refused number fails the browser's own required check, so Save stops at this
+                  // field with the reason, the same way a blank required field does. Set from cadHint
+                  // on every render, so a form reopened with a refused number still stops.
+                  ref={(el) => el?.setCustomValidity(cadHint === undefined ? "" : `To save, ${cadHint}.`)}
+                  aria-invalid={cadHint !== undefined ? "true" : undefined}
+                  aria-describedby={cadHint !== undefined ? `${baseId}-cad-hint` : undefined}
+                  onChange={(e) => setCad(e.target.value)}
+                />
               </label>
+              {/* Outside the label, so the hint describes the field without renaming it. */}
+              {cadHint !== undefined && (
+                <span id={`${baseId}-cad-hint`} className={styles.deckHint} role="status">
+                  {`To save, ${cadHint}.`}
+                </span>
+              )}
               <label>
                 Quoted ETA (minutes from now)
                 <input required type="number" min="0" value={eta} onChange={(e) => setEta(e.target.value)} />
