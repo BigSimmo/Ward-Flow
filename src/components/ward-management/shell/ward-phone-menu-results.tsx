@@ -69,6 +69,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
       now,
       limitPerGroup: MENU_RESULTS_FULL,
       plannedAdmissions,
+      admissions,
     });
     // A common question ("over 24 hours") is answered from the Patients page's census, built only
     // when the text is one of those questions (search-answers.ts), as the header palette does.
