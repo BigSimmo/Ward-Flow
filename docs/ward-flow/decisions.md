@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-19 - added the existing hosting approval’s supersession pointer at D-2; Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-22 - added D-72 to D-77 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps and the bigger UX changes); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
