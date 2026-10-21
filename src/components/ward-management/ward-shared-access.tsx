@@ -1,6 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
@@ -22,7 +32,6 @@ import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
 // The Demo menu (change 8) loads only when the Synthetic pill opens it.
-const WardDemoMenu = dynamic(() => import("./shell/ward-demo-menu").then((m) => m.WardDemoMenu), { ssr: false });
 const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
   ssr: false,
   loading: () => null,
@@ -62,7 +71,12 @@ export type WardSharedConnection = SharedView & {
  * Where the header asks the data mode to sit (v10: the Prototype pill beside the service pill).
  * Without a header slot (a test, a page with no shell) the full Data mode bar shows above the app.
  */
-const DataModeSlotContext = createContext<((slot: HTMLElement | null) => void) | null>(null);
+const DataModeSlotContext = createContext<((slot: DataModeSlot | null) => void) | null>(null);
+
+/** The Demo menu the pill opens (change 8, D-77). The header passes it in, as the menu's demo
+ * panel reaches back to the provider this file sits under, so importing it here would be a cycle. */
+export type WardDemoMenuComponent = ComponentType<{ top: number; left: number; onClose: () => void }>;
+type DataModeSlot = { element: HTMLElement; menu?: WardDemoMenuComponent };
 
 /** What the data mode says, for the phone menu (the phone's lean bar has no room for the pill). */
 export type WardDataMode = {
@@ -79,9 +93,13 @@ export function useWardDataMode(): WardDataMode | null {
 }
 
 /** The header's place for the Prototype pill. Renders nothing outside `WardSharedAccess`. */
-export function WardDataModeSlot({ className }: { className?: string }) {
+export function WardDataModeSlot({ className, menu }: { className?: string; menu?: WardDemoMenuComponent }) {
   const setSlot = useContext(DataModeSlotContext);
-  return setSlot ? <span ref={setSlot} className={className} data-wf-data-mode-slot="" /> : null;
+  const place = useCallback(
+    (element: HTMLElement | null) => setSlot?.(element ? { element, menu } : null),
+    [setSlot, menu],
+  );
+  return setSlot ? <span ref={place} className={className} data-wf-data-mode-slot="" /> : null;
 }
 
 /**
@@ -295,7 +313,7 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [slot, setSlot] = useState<DataModeSlot | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   // Audit 1 (CS-13, Josh 20 Oct): Live chips read Stale while the shared board cannot refresh or
   // its last good refresh is more than two refreshes old. The one publisher; nothing in local mode.
@@ -408,7 +426,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               <DataModeSlotContext.Provider value={setSlot}>
                 <DataModeContext.Provider value={dataMode}>
                   {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-                  {slot ? createPortal(<DataModePill detail={detail} />, slot) : null}
+                  {slot ? createPortal(<DataModePill detail={detail} Menu={slot.menu} />, slot.element) : null}
                   {showLiveInfo && (
                     <section className={styles.notice} aria-label="Hospital records unavailable">
                       <h1>Hospital records are not connected</h1>
@@ -450,7 +468,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
  * Demo menu, the scenario, clock and reset controls that left Tools. The pill's label still says
  * what the data is. The Board time pill opens the same menu (`requestDemoMenu`).
  */
-function DataModePill({ detail }: { detail: string }) {
+function DataModePill({ detail, Menu }: { detail: string; Menu?: WardDemoMenuComponent }) {
   const [open, setOpen] = useState(false);
   const [place, setPlace] = useState({ top: 0, left: 0 });
   const wrap = useRef<HTMLDivElement>(null);
@@ -505,7 +523,7 @@ function DataModePill({ detail }: { detail: string }) {
           <span className={styles.pillTail}> prototype</span>
         </span>
       </button>
-      {open ? <WardDemoMenu top={place.top} left={place.left} onClose={close} /> : null}
+      {open && Menu ? <Menu top={place.top} left={place.left} onClose={close} /> : null}
     </div>
   );
 }

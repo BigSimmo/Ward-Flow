@@ -6,6 +6,7 @@ import {
   type WardSharedConnection,
 } from "../src/components/ward-management/ward-shared-access";
 import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
+import { WardDemoMenu } from "../src/components/ward-management/shell/ward-demo-menu";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
@@ -371,7 +372,8 @@ describe("shared provider boundary", () => {
       <WardFlowProvider>
         <Probe />
         <HospitalRecordsLink />
-        <WardDataModeSlot />
+        {/* The header passes the Demo menu in (ward-bar.tsx), so the pill does not import it. */}
+        <WardDataModeSlot menu={WardDemoMenu} />
       </WardFlowProvider>,
     );
     const draft = screen.getByRole("textbox");
