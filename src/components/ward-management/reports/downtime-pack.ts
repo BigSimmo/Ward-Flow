@@ -189,6 +189,11 @@ let packGeneration: number | null = null;
 /** An opaque, in-memory session/access boundary. Revoked owners cannot write late snapshots. */
 export type DowntimePackOwner = { active: boolean; ready?: boolean };
 let packOwner: DowntimePackOwner | null = null;
+/**
+ * The pack whose print window was last opened, or whose "ready" prompt was put aside. Compared by
+ * identity, so a new pack prompts again. Memory only, like the pack (D-18).
+ */
+let handledPack: DowntimePack | null = null;
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -202,6 +207,7 @@ export function rememberDowntimePack(
 ): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
   if (owner?.active === false || owner?.ready === false) return;
+  if (lastPack !== pack) handledPack = null;
   lastPack = pack;
   packGeneration = worldGeneration;
   packOwner = owner;
@@ -218,6 +224,20 @@ export function lastDowntimePack(owner?: DowntimePackOwner | null, worldGenerati
   if (owner !== undefined && owner !== packOwner) return null;
   if (worldGeneration !== undefined && downtimePackIsStale(worldGeneration)) return null;
   return lastPack;
+}
+
+/**
+ * The print window was opened for this pack (to print it or save it as a PDF), or its prompt was
+ * put aside, so the shell stops offering it until the next pack. Ignored for a pack no longer held.
+ */
+export function markDowntimePackHandled(pack: DowntimePack): void {
+  if (pack !== lastPack || handledPack === pack) return;
+  handledPack = pack;
+  notify();
+}
+
+export function downtimePackHandled(pack: DowntimePack): boolean {
+  return handledPack === pack;
 }
 
 /** For `useSyncExternalStore`: the screen re-renders when a pack is remembered or forgotten. */
@@ -238,6 +258,7 @@ export function forgetDowntimePack(owner?: DowntimePackOwner | null): void {
   lastPack = null;
   packGeneration = null;
   packOwner = null;
+  handledPack = null;
   notify();
 }
 // The pack lists one account's patients, so a session ending forgets it (Codex review on PR #487).

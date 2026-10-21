@@ -366,7 +366,7 @@ describe("read-only report screens", () => {
 
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {
     inProvider(<DowntimePackScreen />);
-    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* does not update while open$/u);
+    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* · next pack 11:00$/u);
     expect(screen.getByTestId("ward-downtime-beds")).toBeTruthy();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });

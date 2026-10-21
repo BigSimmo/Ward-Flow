@@ -197,7 +197,7 @@ describe("worker lifecycle", () => {
     runInNewContext(WORKER_SOURCE, {
       URL,
       caches: {
-        keys: async () => ["ward-flow-static-v0", "ward-flow-static-v1", "someone-elses-cache"],
+        keys: async () => ["ward-flow-static-v0", "ward-flow-static-v1", "ward-flow-static-v2", "someone-elses-cache"],
         delete: async (name: string) => deleted.push(name),
       },
       self: {
@@ -218,7 +218,7 @@ describe("worker lifecycle", () => {
     let work: Promise<unknown> = Promise.resolve();
     listeners.activate({ waitUntil: (promise: Promise<unknown>) => (work = promise) });
     await work;
-    expect(deleted).toEqual(["ward-flow-static-v0"]);
+    expect(deleted).toEqual(["ward-flow-static-v0", "ward-flow-static-v1"]);
     expect(preload).toBe(true);
   });
 
@@ -285,6 +285,11 @@ describe("the offline page", () => {
     expect(html).toContain("Ward Flow needs a connection");
     expect(html).toMatch(/made-up demo data/);
     expect(html).toContain("prefers-color-scheme: dark");
+  });
+
+  it("points staff to the latest printed or saved downtime pack (fix plan item 9)", () => {
+    expect(html).toMatch(/latest downtime pack/);
+    expect(html).toMatch(/printed copy, or the PDF saved/);
   });
 
   it("uses plain wording: no em dashes or semicolons in what it says", () => {
