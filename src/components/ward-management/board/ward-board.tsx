@@ -63,6 +63,8 @@ import { WardBoardHeader } from "./ward-board-header";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { PhoneSheet } from "@/components/wf/phone";
+import { useIsPhone } from "@/components/wf/use-is-phone";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
@@ -230,6 +232,7 @@ export function WardBoard({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const isPhone = useIsPhone();
   const [dateEdit, setDateEdit] = useState<{
     admissionId: string;
     time: string;
@@ -970,6 +973,76 @@ export function WardBoard({
       ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at ${handoverAt}.`
       : `Nothing needs you before the handover at ${handoverAt}.`;
 
+  const gridColumn = (
+    <WardBoardGridColumn
+      bedFilter={bedFilter}
+      bedOrder={bedOrder}
+      closeDetail={closeDetail}
+      filterCounts={filterCounts}
+      filteredTiles={filteredTiles}
+      focusBackTo={focusBackTo}
+      cardNameByKey={cardNameByKey}
+      occupantByKey={occupantByKey}
+      occupants={occupants}
+      orderedTiles={orderedTiles}
+      selectedKey={selectedKey}
+      selectedTile={selectedTile}
+      setBedFilter={setBedFilter}
+      setBedOrder={setBedOrder}
+      setSelectedKey={setSelectedKey}
+      tileIndexMap={tileIndexMap}
+      tileMatchesFilter={tileMatchesFilter}
+      tiles={tiles}
+      unit={unit}
+    />
+  );
+
+  /** The phone sheet's title: the card's own line, or what kind of bed it is. */
+  const phoneSheetTitle =
+    selectedTile === null
+      ? ""
+      : (cardNameByKey.get(selectedTile.key) ??
+        (selectedTile.kind === "empty"
+          ? "An empty bed"
+          : selectedTile.kind === "closed"
+            ? "A closed bed"
+            : selectedTile.kind === "occupied" || selectedTile.kind === "waiting"
+              ? "Who is in this bed"
+              : "A bed out of service"));
+
+  const detailPanel = (
+    <WardBoardDetailPanel
+      admissions={admissions}
+      blockedTileCount={blockedTileCount}
+      closeDetail={closeDetail}
+      closedTileCount={closedTileCount}
+      constraint={constraint}
+      dateEdit={dateEdit}
+      dayZero={dayZero}
+      dialogTriggerRef={dialogTriggerRef}
+      dispatchAndReport={dispatchAndReport}
+      emptyTileCount={emptyTileCount}
+      leavingDestination={leavingDestination}
+      movements={movements}
+      nameFor={nameFor}
+      now={now}
+      patients={patients}
+      raise={raise}
+      recordDepartureAndReport={recordDepartureAndReport}
+      recordWardDeparture={recordWardDeparture}
+      requireConfirmation={requireConfirmation}
+      resolvePatientIdentity={resolvePatientIdentity}
+      selectedOccupant={selectedOccupant}
+      selectedTile={selectedTile}
+      setBlockerDialogItem={setBlockerDialogItem}
+      setDateEdit={setDateEdit}
+      setLeavingDestination={setLeavingDestination}
+      setPendingConfirm={setPendingConfirm}
+      setSelectedBlocker={setSelectedBlocker}
+      unit={unit}
+    />
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
@@ -1083,6 +1156,13 @@ export function WardBoard({
          * marked in WORDS ("shown in Going out") as well as by weight, because a mark carried by
          * weight alone is a mark a greyscale sheet loses.
          */}
+        {/* Change 10 (D-77): on a phone every bed comes first, above the day figures. */}
+        {isPhone && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from a focused tile
+          <div className={styles.phoneBeds} onKeyDown={onZoneKeyDown}>
+            {gridColumn}
+          </div>
+        )}
         <section className={styles.triage} aria-labelledby="ward-board-triage-heading" data-testid="ward-board-triage">
           <h2 id="ward-board-triage-heading" className={styles.triageHeading}>
             Today on this ward
@@ -1172,27 +1252,7 @@ export function WardBoard({
             targets={targets}
           />
 
-          <WardBoardGridColumn
-            bedFilter={bedFilter}
-            bedOrder={bedOrder}
-            closeDetail={closeDetail}
-            filterCounts={filterCounts}
-            filteredTiles={filteredTiles}
-            focusBackTo={focusBackTo}
-            cardNameByKey={cardNameByKey}
-            occupantByKey={occupantByKey}
-            occupants={occupants}
-            orderedTiles={orderedTiles}
-            selectedKey={selectedKey}
-            selectedTile={selectedTile}
-            setBedFilter={setBedFilter}
-            setBedOrder={setBedOrder}
-            setSelectedKey={setSelectedKey}
-            tileIndexMap={tileIndexMap}
-            tileMatchesFilter={tileMatchesFilter}
-            tiles={tiles}
-            unit={unit}
-          />
+          {!isPhone && gridColumn}
 
           {/*
            * THE SLIDE-OUT. Present only while something is selected, so it costs no width otherwise,
@@ -1214,36 +1274,21 @@ export function WardBoard({
            * grid reflows under the reader's hands at the moment they click, and until they click
            * there is nothing telling them the beds are clickable at all.
            */}
-          <WardBoardDetailPanel
-            admissions={admissions}
-            blockedTileCount={blockedTileCount}
-            closeDetail={closeDetail}
-            closedTileCount={closedTileCount}
-            constraint={constraint}
-            dateEdit={dateEdit}
-            dayZero={dayZero}
-            dialogTriggerRef={dialogTriggerRef}
-            dispatchAndReport={dispatchAndReport}
-            emptyTileCount={emptyTileCount}
-            leavingDestination={leavingDestination}
-            movements={movements}
-            nameFor={nameFor}
-            now={now}
-            patients={patients}
-            raise={raise}
-            recordDepartureAndReport={recordDepartureAndReport}
-            recordWardDeparture={recordWardDeparture}
-            requireConfirmation={requireConfirmation}
-            resolvePatientIdentity={resolvePatientIdentity}
-            selectedOccupant={selectedOccupant}
-            selectedTile={selectedTile}
-            setBlockerDialogItem={setBlockerDialogItem}
-            setDateEdit={setDateEdit}
-            setLeavingDestination={setLeavingDestination}
-            setPendingConfirm={setPendingConfirm}
-            setSelectedBlocker={setSelectedBlocker}
-            unit={unit}
-          />
+          {isPhone ? (
+            // Change 10 (D-77): on a phone the bed's record opens in a sheet over the grid.
+            <PhoneSheet
+              open={selectedTile !== null}
+              onClose={closeDetail}
+              title={phoneSheetTitle}
+              closeLabel="Close bed record"
+              height="tall"
+              data-testid="ward-board-detail-sheet"
+            >
+              <div className={styles.detailSheetBody}>{detailPanel}</div>
+            </PhoneSheet>
+          ) : (
+            detailPanel
+          )}
           <WardBoardWorkBand
             blockerCloseBtnRef={blockerCloseBtnRef}
             blockerDialogItem={blockerDialogItem}

@@ -5547,7 +5547,6 @@
     display: none;
   }
 
-  .screen .gridColumn,
   .screen .detail,
   .screen .zonesOpen .detail {
     display: none;
@@ -6108,4 +6107,83 @@
   font-size: 0.95rem;
   color: var(--ink-soft);
   line-height: 1.5;
+}
+
+/* Change 10 (D-77, 21 Oct 2026): every bed on the phone, above the day figures, two to a row.
+ * The filters scroll as one row and the colour legend is left off, because the day count on each
+ * tile carries the meaning. A tapped bed opens its record in a sheet (`.detailSheetBody`). */
+@media screen and (max-width: 48rem) {
+  .screen .phoneBeds {
+    min-width: 0;
+    margin: 0 0 var(--wf-s-3);
+  }
+
+  .screen .phoneBeds .gridColumn {
+    display: block;
+    min-width: 0;
+  }
+
+  .screen .phoneBeds .filterSet {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .screen .phoneBeds .filterSet button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .screen .phoneBeds .orderControl {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--wf-s-3);
+  }
+
+  .screen .phoneBeds .orderControl select {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .screen .phoneBeds .beds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .screen .phoneBeds .legend {
+    display: none;
+  }
+
+  .screen .phoneBeds .bedFigureRow {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .screen .phoneBeds .bedWho {
+    flex-basis: 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}
+
+/* The bed's record inside the phone sheet. The sheet carries the title and Close, so the panel's
+ * own bar is hidden there. */
+.detailSheetBody .detail {
+  display: block;
+  position: static;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.detailSheetBody .detailBar {
+  display: none;
 }
