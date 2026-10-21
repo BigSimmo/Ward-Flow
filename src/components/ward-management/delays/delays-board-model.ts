@@ -24,6 +24,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { candidateReason } from "@/components/ward-management/ward-eligibility";
 import { edById } from "@/components/ward-management/ward-sites";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import {
   DELAY_CAUSE_ORDER,
   DELAY_OWNERS,
@@ -275,6 +276,14 @@ export function isBreached(row: BoardRow): boolean {
  * population; the table keeps every person visible and dims non-matching rows (owner ruling,
  * 2026-09-07, same as Capacity). `nameOf` resolves display name and number for the search box only.
  */
+/**
+ * "Over 24h" (Audit 6, Josh 20 Oct 2026): in an ED for 24 hours or more, as the bed meeting TV counts
+ * it. The tile and the filter it opens both read this, so the list shows the tile's people.
+ */
+export function isOver24hInEd(row: BoardRow): boolean {
+  return isWaitingInEd(row.movement) && row.waited >= OVER_24H;
+}
+
 function rowMatchesFilters(
   row: BoardRow,
   filters: BoardFilters,
@@ -288,7 +297,7 @@ function rowMatchesFilters(
     (filters.owner === null || row.owner === filters.owner) &&
     (filters.origin === null || row.origin === filters.origin) &&
     (filters.cause === null || row.cause === filters.cause) &&
-    row.waited >= WAIT_THRESHOLDS[filters.threshold] &&
+    (filters.threshold === 3 ? isOver24hInEd(row) : row.waited >= WAIT_THRESHOLDS[filters.threshold]) &&
     (!filters.locked || row.locked) &&
     (!filters.silent || row.silent) &&
     (!filters.dueSoon || isDueSoon(row, thresholds)) &&

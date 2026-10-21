@@ -112,7 +112,7 @@ export function WardBoardHeader({
           <dd>{states.occupied}</dd>
         </div>
         <div>
-          <dt>Going out today</dt>
+          <dt>Going out today and tomorrow</dt>
           <dd>{outgoing.length}</dd>
         </div>
         <div>

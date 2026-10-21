@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**551 rulings/items extracted, across 30 of 35 files.**
+**552 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 325 distinct IDs
+## ID index — 326 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -239,6 +239,7 @@ safe global key across 30 files.
 | `D-68` | `decisions.md`:773 | D-68. Bed meeting TV content and access (19 October 2026) |
 | `D-69` | `decisions.md`:780 | D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026) |
 | `D-70` | `decisions.md`:787 | D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026) |
+| `D-71` | `decisions.md`:793 | D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -513,7 +514,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-70 item(s):
+71 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -585,6 +586,7 @@ safe global key across 30 files.
 - `D-68` — line 773, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
 - `D-69` — line 780, heading: "D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)"
 - `D-70` — line 787, heading: "D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)"
+- `D-71` — line 793, heading: "D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

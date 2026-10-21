@@ -38,6 +38,8 @@ import {
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 
 import {
   Hero,
@@ -127,7 +129,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  const [answerIndex, setAnswerIndex] = useState(0);
+  // Audit 1, Josh 20 Oct (CS-08): the request on screen is held by its journey id, never its list
+  // position, so a request answered elsewhere or a new one sorting ahead cannot swap the person.
+  // `index` is only where to land when the held request leaves the list.
+  const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number }>({ index: 0 });
   // Phone (v10): its own layout. The facts show four until asked, the ISBAR summary and the
   // ward's gates fold, and the beds, census and answers are rows that open in place.
   const isPhone = useIsPhone();
@@ -148,8 +153,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       ? capacityDraft.value
       : String(unit?.allocatable.value ?? 0);
 
-  // Modal & interactive state
-  const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+  // Modal & interactive state. The accept dialog belongs to one journey id (CS-08).
+  const [acceptModalFor, setAcceptModalFor] = useState<string>();
   const [holdDuration, setHoldDuration] = useState("120");
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -166,11 +171,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     newestRejection?.attempted === "ACCEPT_IN_PRINCIPLE" || newestRejection?.attempted === "PULL_PATIENT"
       ? newestRejection
       : undefined;
-
-  useWardModalFocus(acceptModalOpen, modalRef, () => {
-    setAcceptModalOpen(false);
-    (openerRef.current ?? triggerRef.current)?.focus();
-  });
 
   function triggerToast(message: string) {
     setToastMessage({ message });
@@ -194,8 +194,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     sayRefusal: wardSafeRejectionReason,
   });
 
-  // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
-  useWardPageScrollLock(acceptModalOpen && unit !== undefined);
   const hasUnsavedAnswerDraft = Boolean(
     declineReason !== undefined ||
     overrideReason !== undefined ||
@@ -221,6 +219,14 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             .sort((left, right) => left.openedAt - right.openedAt),
     [movements, unit],
   );
+  const acceptModalMovement = incoming.find((movement) => movement.id === acceptModalFor);
+  const acceptModalOpen = acceptModalMovement !== undefined;
+  useWardModalFocus(acceptModalOpen, modalRef, () => {
+    setAcceptModalFor(undefined);
+    (openerRef.current ?? triggerRef.current)?.focus();
+  });
+  // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
+  useWardPageScrollLock(acceptModalOpen);
   const recentAnswers = useMemo(
     () =>
       !unit
@@ -293,8 +299,23 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // reading a bare "ready" count and being refused at the moment of pulling a patient.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
 
-  const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
+  const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
+  const activeAnswerIndex =
+    heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
+  const selectAnswer = (index: number) => setAnswerSelection({ id: incoming[index]?.id, index });
+  // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
+  // elsewhere), so it closes rather than confirm whoever now sits in its place.
+  const phoneAcceptLeft = phoneSheet === "accept" && answerSelection.id !== undefined && heldIndex < 0;
+  if ((acceptModalFor !== undefined && !acceptModalOpen) || phoneAcceptLeft) {
+    setAcceptModalFor(undefined);
+    if (phoneAcceptLeft) setPhoneSheet(null);
+    setToastMessage({ message: "This request was answered or withdrawn." });
+  }
+  function openPhoneAccept() {
+    selectAnswer(activeAnswerIndex);
+    setPhoneSheet("accept");
+  }
 
   function toggleDecline(movementId: string) {
     if (declinePendingRef.current) return;
@@ -363,7 +384,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         undone: "Acceptance undone. The referral is back with this ward.",
       },
     );
-    setAcceptModalOpen(false);
+    setAcceptModalFor(undefined);
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -577,7 +598,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         ignoreUnavailableActivation(event);
                         return;
                       }
-                      setAnswerIndex((current) => Math.max(0, current - 1));
+                      selectAnswer(activeAnswerIndex - 1);
                     }}
                   >
                     <ChevronLeft size={14} aria-hidden="true" />
@@ -602,7 +623,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         ignoreUnavailableActivation(event);
                         return;
                       }
-                      setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1));
+                      selectAnswer(activeAnswerIndex + 1);
                     }}
                   >
                     Next
@@ -695,41 +716,37 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 const failedGateCount = eligibilityVerdict.gates.filter((gate) => !gate.pass).length;
                 // Information-only gates (acuity, specialling) are listed but never counted as passing.
                 const checkedGateCount = checkedGates(eligibilityVerdict.gates).length;
+                const infoGateCount = eligibilityVerdict.gates.length - checkedGateCount;
                 const declineOpen = declineOpenFor === activeMovement.id;
+                // FD-23: a ward-only view reads no referral records, so the shared reader gets none and
+                // returns the movement's own recorded clearance (recording one writes it here too).
+                const clearance = recordedMovementMedicalClearance(activeMovement, []);
+                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only. The fixed history, risk and
+                // "medically stabilised" text and the "Admit to" recommendation were invented for every
+                // referral and are gone; an absent fact reads "Not recorded".
                 const sbarSections = (
                   <>
                     <div className={styles.sbarSection}>
                       <span className={styles.sbarTag}>Situation</span>
                       <div className={styles.sbarContent}>
-                        {activeMovement.cohort} presentation requiring{" "}
-                        {activeMovement.security === "Secure" ? "locked high-dependency" : "open acute"} inpatient
-                        admission under {activeMovement.legalStatus}. Acute clinical escalation in emergency department.
-                      </div>
-                    </div>
-
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Background</span>
-                      <div className={styles.sbarContent}>
-                        Known clinical history. Previous psychiatric admissions. Ceased regular maintenance medications
-                        prior to presentation.
+                        {activeMovement.cohort} cohort. {activeMovement.security === "Secure" ? "Secure" : "Open"} bed
+                        requested. Legal status: {activeMovement.legalStatus}
+                        {activeMovement.legalForm ? `, ${legalFormName(activeMovement.legalForm)}` : ""}.
                       </div>
                     </div>
 
                     <div className={styles.sbarSection}>
                       <span className={styles.sbarTag}>Assessment</span>
-                      <div className={styles.sbarContent}>
-                        High clinical risk profile with active psychomotor agitation. Medically stabilised for inpatient
-                        admission.{" "}
-                        {failedGateCount > 0
-                          ? "Potential admission gate incompatibilities identified below."
-                          : "All clinical admission gates satisfied."}
-                      </div>
-                    </div>
-
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Recommendation</span>
-                      <div className={styles.sbarContent}>
-                        Admit to {unit.name}. High-dependency observations indicated.
+                      <div className={styles.sbarContent} data-testid="ward-answer-assessment">
+                        Medical clearance:{" "}
+                        {clearance === undefined
+                          ? "Not recorded"
+                          : clearance.cleared
+                            ? `Medically cleared at ${formatInstantWithDay(clearance.at, now)}`
+                            : "Recorded as not cleared"}
+                        . Specialling: {activeMovement.specialling ? "Requested" : "Not requested"}. This ward&rsquo;s
+                        gates: {checkedGateCount - failedGateCount} of {checkedGateCount} checks met
+                        {infoGateCount > 0 ? `; ${infoGateCount} for information only` : ""}.
                       </div>
                     </div>
                   </>
@@ -1142,7 +1159,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                   className={buttonClass({ variant: "sec", size: "md" })}
                                   onClick={() => {
                                     toggleDecline(activeMovement.id);
-                                    setPhoneSheet("accept");
+                                    openPhoneAccept();
                                   }}
                                 >
                                   Accept in principle
@@ -1273,14 +1290,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       ) : null}
 
                       {/* Decision Action Controls */}
+                      {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
-                        <button
-                          type="button"
-                          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
-                          onClick={() => triggerToast("Not wired in this prototype.")}
-                        >
-                          Ask a question
-                        </button>
                         <button
                           type="button"
                           data-testid={`ward-decline-toggle-${activeMovement.id}`}
@@ -1303,7 +1314,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           onClick={() => {
                             if (blocked) return;
                             if (isPhone) {
-                              setPhoneSheet("accept");
+                              openPhoneAccept();
                               return;
                             }
                             handleAccept(activeMovement.id);
@@ -1446,7 +1457,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           }
                           if (activeMovement) {
                             openerRef.current = e.currentTarget;
-                            setAcceptModalOpen(true);
+                            selectAnswer(activeAnswerIndex);
+                            setAcceptModalFor(activeMovement.id);
                           }
                         }}
                         aria-label={`Bed ${bedNum} ${statusLabel}`}
@@ -1478,7 +1490,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
                   </div>
                   <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Expected out today</span>
+                    <span className={styles.milieuLabel}>Expected out today and tomorrow</span>
                     <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
                   </div>
                 </div>
@@ -1524,8 +1536,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         </div>
       </main>
 
-      {/* Accept & Allocate Bed Modal */}
-      {acceptModalOpen && activeMovement ? (
+      {/* Accept in principle dialog, bound to the journey it was opened for (CS-08). WP-09 (Audit 1,
+          Josh 20 Oct): the census cells are counts, not numbered beds, so no bed number is sent and
+          the dialog says so rather than imply an allocation. */}
+      {acceptModalMovement ? (
         <div
           className={styles.modalOverlay}
           role="dialog"
@@ -1542,7 +1556,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 type="button"
                 className={`${styles.btn} ${styles.btnSm}`}
                 onClick={() => {
-                  setAcceptModalOpen(false);
+                  setAcceptModalFor(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1560,7 +1574,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   id="ward-answer-allocating-movement"
                   // No identity before acceptance (owner, 26 Sept 2026), so the tier and referral time tell
                   // two waiting requests from the same cohort apart (D-39).
-                  value={`Incoming patient (${activeMovement.cohort}), Tier ${activeMovement.urgency}${activeMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(activeMovement.referredAt, now)}`}`}
+                  value={`Incoming patient (${acceptModalMovement.cohort}), Tier ${acceptModalMovement.urgency}${acceptModalMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(acceptModalMovement.referredAt, now)}`}`}
                   readOnly
                 />
               </div>
@@ -1572,10 +1586,13 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   type="text"
                   className={styles.formInput}
                   id="ward-answer-target-unit"
-                  value={`${unit.name} \u2014 ${capacity.available > 0 ? "Bed Available" : "Allocatable Bed"}`}
+                  value={unit.name}
                   readOnly
                 />
               </div>
+              <p className={styles.formNote} data-testid="ward-answer-no-bed-named">
+                Accepting does not allocate a bed. No bed number is recorded.
+              </p>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel} htmlFor="hold-duration-select">
                   Bed Hold Expiry Duration
@@ -1610,7 +1627,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 type="button"
                 className={styles.btn}
                 onClick={() => {
-                  setAcceptModalOpen(false);
+                  setAcceptModalFor(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1621,7 +1638,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnGood}`}
                 onClick={() => {
                   const opener = openerRef.current;
-                  handleAccept(activeMovement.id);
+                  handleAccept(acceptModalMovement.id);
                   if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
                     opener.focus();
                   } else {

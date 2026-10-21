@@ -112,6 +112,21 @@ describe("inter-ward step-down swap pairing (Top 25 item 16, D-30)", () => {
     }
   });
 
+  // Audit 1, Josh 20 Oct (CS-04, NB-7): longest wait first, whatever the security or acuity.
+  it("orders incoming matches by wait alone", () => {
+    const { state, row } = rowWithWard();
+    const { candidates } = deriveStepDownSwapCandidates({
+      fromUnit: withBeds(row.fromUnit, 3),
+      movements: state.movements.map((movement, index) =>
+        index % 2 === 0 ? { ...movement, highAcuity: true } : movement,
+      ),
+      now: NOW_ANCHOR,
+    });
+    expect(candidates.length).toBeGreaterThan(1);
+    const openedAts = candidates.map((candidate) => candidate.incomingMovement.openedAt);
+    expect(openedAts).toEqual([...openedAts].sort((a, b) => a - b));
+  });
+
   // Owner ruling (17 Oct 2026, 10:13 PM AWST), item 3: the incoming leg is offered only once the bed
   // is actually free. No modelled freed bed, no combined swap.
   it("offers no incoming leg while the step-down ward is full, however well a movement would fit a freed bed", () => {

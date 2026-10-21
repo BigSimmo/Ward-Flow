@@ -421,6 +421,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
       await picker.selectOption(destination.id);
       await page.getByRole("button", { name: /Record that they have left/ }).click();
+      await page.getByRole("button", { name: "Record departure", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.getByTestId("ward-discharge-history").click();

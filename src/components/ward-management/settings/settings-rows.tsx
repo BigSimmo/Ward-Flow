@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
 import styles from "./settings.module.css";
@@ -42,7 +43,12 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
   );
 }
 
-/** A labelled setting: name and short line on the left, its control on the right. */
+/**
+ * A labelled setting: name and short line on the left, its control on the right.
+ *
+ * Overall review, 20 Oct 2026: a Preview row (nothing reads it yet) shows only in a local
+ * development build. Demo and production builds leave it out, so no setting pretends to work.
+ */
 export function SettingRow({
   setting,
   title,
@@ -65,6 +71,7 @@ export function SettingRow({
   testId?: string;
   children?: ReactNode;
 }) {
+  if (preview && !showsUnwiredPreviews()) return null;
   return (
     <div className={cx(styles.row, stacked && styles.rowStacked)} data-setting={setting} data-testid={testId}>
       <span className={styles.rowText}>
@@ -111,6 +118,8 @@ export type RuleRange = {
  * v10: one control per value. The stepper is the only control; the slider that once sat under it
  * is gone, and the range is written out instead. A value at the end of its range stops the
  * stepper there, which is the refusal and its reason in one.
+ *
+ * A Preview rule follows the same rule as a Preview `SettingRow`: development builds only.
  */
 export function RuleRow({
   setting,
@@ -159,6 +168,7 @@ export function RuleRow({
   previewTag?: boolean;
   unavailableReason?: string;
 }) {
+  if (preview && !showsUnwiredPreviews()) return null;
   const changed = !preview && value !== saved;
   return (
     <div

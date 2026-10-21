@@ -18,7 +18,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const UNIT_ID = seedWardFlowState().units[0]!.id;
+const UNIT = seedWardFlowState().units[0]!;
+const UNIT_ID = UNIT.id;
 
 function Panel({ actor }: { actor: WardRecordActor }) {
   const { units, now } = useWardFlow();
@@ -40,18 +41,20 @@ describe("ward closure panel", () => {
     const closeButton = screen.getByTestId("ward-closure-close");
     expect(closeButton).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(closeButton);
-    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
 
     fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
     fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
     fireEvent.click(screen.getByTestId("ward-closure-close"));
 
-    expect(screen.getByRole("heading", { name: /Closed to admissions/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `${UNIT.name} closed to admissions` })).toBeInTheDocument();
     expect(screen.getByText(/^Staffing · since/)).toBeInTheDocument();
     expect(screen.getByText(/^Expected to reopen/)).toBeInTheDocument();
+    // Audit 1: the closed panel shows no internal journey numbers.
+    expect(screen.getByTestId("ward-closure-panel").textContent ?? "").not.toMatch(/\b(WF|RF|PT|AD|WR)-\d/);
 
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
-    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });
 
   it("lets a ward close only itself", () => {
@@ -60,6 +63,6 @@ describe("ward closure panel", () => {
     const closeButton = screen.getByTestId("ward-closure-close");
     expect(closeButton).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(closeButton);
-    expect(screen.getByRole("heading", { name: "Close to admissions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });
 });

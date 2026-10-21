@@ -60,6 +60,7 @@ import { HEALTH_SERVICES, type HealthService } from "@/components/ward-managemen
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import {
   currentDeskId,
@@ -501,7 +502,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
               </button>
             </>
           ) : null}
-          {(accessOn
+          {/* Overall review, 20 Oct 2026: these desks have no screen yet, so their tiles show only in
+              a local development build. */}
+          {(accessOn || !showsUnwiredPreviews()
             ? []
             : ([
                 ["Bed manager", Users],

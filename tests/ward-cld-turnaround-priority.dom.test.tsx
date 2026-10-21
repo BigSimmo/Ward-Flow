@@ -131,6 +131,11 @@ function renderFixture(
       <Harness />
     </WardFlowProvider>,
   );
+  // Audit 1, Josh 20 Oct (WP-05): the phone sheet starts with no ward picked; the coordinator taps one.
+  if (options.phone) {
+    const candidate = screen.queryByTestId(`ward-referral-match-phone-cand-${f.unitId}`);
+    if (candidate) fireEvent.click(candidate);
+  }
   return events;
 }
 

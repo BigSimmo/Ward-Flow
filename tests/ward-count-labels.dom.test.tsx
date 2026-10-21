@@ -1,14 +1,34 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
+import { HandoverPage } from "@/components/ward-management/handover/handover-page";
+import { heroHighlights } from "@/components/ward-management/movements/movements-screen-helpers";
+import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { openJourneySplit } from "@/components/ward-management/ward-shared-figures";
+import { openJourneySplit, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -63,5 +83,54 @@ describe("count labels say what they count", () => {
     expect(actNow).toBeGreaterThan(0);
     const title = screen.getByRole("heading", { level: 1 });
     expect(title.textContent).toMatch(new RegExp(`^${actNow} act now(, \\d+ new to you)?$`, "u"));
+  });
+
+  // Audit 6 (Josh, 20 Oct 2026): the figures the audit found still counting for themselves.
+  it("Statistics' Waiting in ED is the shared figure, and the open journeys are called Still open", () => {
+    inProvider(<StatisticsScreen />);
+    const chips = screen.getByRole("group", { name: "Network at a glance" });
+    const waiting = within(chips)
+      .getByText(/^Waiting in ED · \d+ still open$/u)
+      .closest("button")!;
+    expect(waiting.textContent).toBe(
+      `${waitingInEds(state.movements, NOW_ANCHOR).total}Waiting in ED · ${state.movements.filter(isOpen).length} still open`,
+    );
+  });
+
+  it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {
+    inProvider(<HandoverPage />);
+    const strip = screen.getByTestId("ward-handover-kpi-strip");
+    const act = within(strip).getByRole("button", { name: /Act now$/u });
+    expect(act.textContent).toBe(`${activeActNowItems(state, NOW_ANCHOR).length}Act now`);
+    expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
+  });
+
+  it("Over 8h counts 8 hours or more, past 24 hours included", () => {
+    const at = NOW_ANCHOR + 13 * 60 + 15;
+    const over = heroHighlights(at, LONG_WAIT_MINUTES).find((highlight) => highlight.id === "over")!;
+    const open = state.movements.filter(isOpen);
+    const expected = open.filter((movement) => at - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
+    expect(open.some((movement) => at - movement.openedAt >= LONG_WAIT_MINUTES)).toBe(true);
+    expect(open.filter(over.test).length).toBe(expected);
+  });
+
+  it("the TV's over 24 hours is everyone in an ED for 24 hours or more", () => {
+    const at = NOW_ANCHOR + 13 * 60 + 15;
+    const sheet = bedMeetingSheet({
+      units: state.units,
+      movements: state.movements,
+      bedReleases: state.bedReleases,
+      admissions: state.admissions,
+      leaveBeds: state.leaveBeds,
+      now: at,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      service: null,
+      nameOf: (movement) => movement.id,
+    });
+    const expected = state.movements.filter(
+      (movement) => isWaitingInEd(movement) && at - movement.openedAt >= LONG_WAIT_MINUTES,
+    ).length;
+    expect(expected).toBeGreaterThan(0);
+    expect(sheet.ed.overLongWait).toBe(expected);
   });
 });

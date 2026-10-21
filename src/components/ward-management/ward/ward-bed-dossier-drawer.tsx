@@ -30,9 +30,11 @@ import {
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import {
   Badge,
   Button,
+  Dialog,
   Icon,
   StatusGlyph,
   buttonClass,
@@ -174,6 +176,8 @@ export function WardBedDossierDrawer({
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
+  // Audit 1, Josh 20 Oct (CS-07): leaving and going to an ED each ask once before they are recorded.
+  const [confirmStep, setConfirmStep] = useState<"leave" | "ed" | null>(null);
   const tabRefs = useRef<TabButtons>(new Map());
   const isPhone = useIsPhone();
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
@@ -182,6 +186,7 @@ export function WardBedDossierDrawer({
   if (shownBed !== selectedBed) {
     setShownBed(selectedBed);
     setQuickBlockerOpen(false);
+    setConfirmStep(null);
     setSelectedBlocker(recordedBlocker(bedItem?.blockReason));
   }
 
@@ -389,52 +394,88 @@ export function WardBedDossierDrawer({
   // The person behind this stay, through the provider's ward-facing identity resolver (FD-23): it
   // reads no referral record, destination or history here. Missing or conflicting links stay
   // unknown, and an unknown person gets no link.
-  const person = admission ? resolvePatientIdentity(admission).patient : undefined;
+  const resolved = admission ? resolvePatientIdentity(admission) : undefined;
+  const person = resolved?.patient;
   const personHref = person ? patientHref(person.id) : null;
+
+  // The ward board's departure check (`board/ward-board.tsx`): name · UMRN · bed, and here the destination.
+  const leavingLabel = LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label;
+  const confirmDialog = (
+    <Dialog
+      open={confirmStep !== null && isOccupied && bedItem?.admissionId !== undefined}
+      onClose={() => setConfirmStep(null)}
+      size="sm"
+      title={confirmStep === "ed" ? "Confirm emergency department transfer" : "Confirm patient departure"}
+      description={
+        confirmStep === "ed"
+          ? `Record that ${occupantAlias} has gone to an emergency department? The bed stays held while they are away.`
+          : `Record that ${occupantAlias} has left the ward? Going to ${leavingLabel ?? "Not recorded"}.`
+      }
+      secondary={[{ label: "Cancel", onAction: () => setConfirmStep(null) }]}
+      primary={{
+        label: confirmStep === "ed" ? "Record ED transfer" : "Record departure",
+        onAction: () => {
+          const step = confirmStep;
+          setConfirmStep(null);
+          if (step === "ed") onMarkAtEd?.(selectedBed);
+          else if (bedItem?.admissionId) onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
+        },
+      }}
+      data-testid="ward-drawer-confirm"
+    >
+      <p className={styles.meta} data-testid="ward-drawer-confirm-identity">
+        Check: {resolved ? patientIdentityLine(resolved) : `${occupantAlias} · ${bedItem?.umrn ?? "UMRN not recorded"}`}{" "}
+        · {bedLabel}
+      </p>
+    </Dialog>
+  );
 
   if (isPhone) {
     return (
-      <PhoneBedSheet
-        bedLabel={bedLabel}
-        bedItem={bedItem}
-        isReady={isReady}
-        occupantAlias={occupantAlias}
-        isOccupied={isOccupied}
-        isAwayAtEd={isAwayAtEd}
-        tone={tone}
-        stayDays={stayDays}
-        observation={observation}
-        expectedPlan={expectedValue}
-        timeline={timeline}
-        now={now}
-        personHref={personHref}
-        selectedBed={selectedBed}
-        quickBlockerOpen={quickBlockerOpen}
-        setQuickBlockerOpen={setQuickBlockerOpen}
-        selectedBlocker={selectedBlocker}
-        setSelectedBlocker={setSelectedBlocker}
-        blockerSelectRef={blockerSelectRef}
-        drawerLeavingDestination={drawerLeavingDestination}
-        setDrawerLeavingDestination={setDrawerLeavingDestination}
-        onClose={onClose}
-        onRecordLeft={onRecordLeft}
-        onUpdateBlocker={onUpdateBlocker}
-        onMarkAtEd={onMarkAtEd}
-        onMarkBack={onMarkBack}
-        onMove={onMove}
-        onOpenBoard={onOpenBoard}
-        onMarkReady={isPreparing ? onMarkReady : undefined}
-        onRaiseReferral={onRaiseReferral}
-        fullReferralHref={fullReferralHref}
-        roleLockNote={roleLockNote}
-        bedDrawerRef={bedDrawerRef}
-        onKeyDown={onKeyDown}
-        planRows={barrierRow}
-        planNote={prepNote}
-        planCriteria={criteriaCard}
-        leavingCriteriaNote={criteriaDepartureNote}
-        readyNote={readyNote}
-      />
+      <>
+        <PhoneBedSheet
+          bedLabel={bedLabel}
+          bedItem={bedItem}
+          isReady={isReady}
+          occupantAlias={occupantAlias}
+          isOccupied={isOccupied}
+          isAwayAtEd={isAwayAtEd}
+          tone={tone}
+          stayDays={stayDays}
+          observation={observation}
+          expectedPlan={expectedValue}
+          timeline={timeline}
+          now={now}
+          personHref={personHref}
+          selectedBed={selectedBed}
+          quickBlockerOpen={quickBlockerOpen}
+          setQuickBlockerOpen={setQuickBlockerOpen}
+          selectedBlocker={selectedBlocker}
+          setSelectedBlocker={setSelectedBlocker}
+          blockerSelectRef={blockerSelectRef}
+          drawerLeavingDestination={drawerLeavingDestination}
+          setDrawerLeavingDestination={setDrawerLeavingDestination}
+          onClose={onClose}
+          onRecordLeft={() => setConfirmStep("leave")}
+          onUpdateBlocker={onUpdateBlocker}
+          onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
+          onMarkBack={onMarkBack}
+          onMove={onMove}
+          onOpenBoard={onOpenBoard}
+          onMarkReady={isPreparing ? onMarkReady : undefined}
+          onRaiseReferral={onRaiseReferral}
+          fullReferralHref={fullReferralHref}
+          roleLockNote={roleLockNote}
+          bedDrawerRef={bedDrawerRef}
+          onKeyDown={onKeyDown}
+          planRows={barrierRow}
+          planNote={prepNote}
+          planCriteria={criteriaCard}
+          leavingCriteriaNote={criteriaDepartureNote}
+          readyNote={readyNote}
+        />
+        {confirmDialog}
+      </>
     );
   }
 
@@ -799,10 +840,7 @@ export function WardBedDossierDrawer({
                         ? "drawer-leaving-summary drawer-leaving-criteria"
                         : "drawer-leaving-summary"
                     }
-                    onClick={() => {
-                      if (bedItem.admissionId)
-                        onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
-                    }}
+                    onClick={() => setConfirmStep("leave")}
                   >
                     Record that they have left
                   </Button>
@@ -827,7 +865,7 @@ export function WardBedDossierDrawer({
                     className={styles.pill}
                     onClick={() => {
                       if (isAwayAtEd) onMarkBack?.(selectedBed);
-                      else onMarkAtEd?.(selectedBed);
+                      else if (onMarkAtEd) setConfirmStep("ed");
                     }}
                   >
                     {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
@@ -876,6 +914,7 @@ export function WardBedDossierDrawer({
           ) : null}
         </footer>
       </aside>
+      {confirmDialog}
     </>
   );
 }

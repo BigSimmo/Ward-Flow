@@ -131,7 +131,7 @@ Back to [the code map index](README.md).
   `dispatch(` call sites, all in `shortlist-panel.tsx`).
 - **Main derivations/selectors read:** `ward-derivations.ts` (`allDeclines`, `allOverrides`,
   `buildActionInbox`, `isOpen`, `elapsedLabel`), `ward-priority.ts` (`queueOrder`,
-  `operationalScore`), `ward-referrals.ts` (`referralQueueOrder`), `ward-bed-availability.ts`,
+  `waitFactors`), `ward-referrals.ts` (`referralQueueOrder`), `ward-bed-availability.ts`,
   `ward-pressure.ts` (`edPressure`), `ward-eligibility.ts`. Also reaches into `delays/` (see
   pitfalls) and `ed/ed-home-derivations.ts` (`edOpenSummaries`, for Home's ED pressure card).
 - **Tests:** 28 files under `tests/` reference this folder, including
@@ -153,8 +153,8 @@ Back to [the code map index](README.md).
   The flow diagram it came from (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`)
   were deleted on 20 Oct 2026 (Josh's yes); no route had drawn either since the v6 Home and the
   Network screen's retirement.
-- **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the ranked movement list using
-  `ward-priority.ts`'s `operationalScore`.
+- **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the movement list in wait order
+  (`ward-priority.ts`'s `queueOrder`; flags highlight, never move a row, D-71).
 - **`shortlist-panel.module.css`** (684 lines) — styles for `shortlist-panel.tsx` and reused by
   three sibling files (`coordinator-screen.tsx`, `exception-drawer.tsx`, `priority-queue.tsx`).
 - **`shortlist-panel.tsx`** (2,093 lines) — the largest file in the folder and the folder's only

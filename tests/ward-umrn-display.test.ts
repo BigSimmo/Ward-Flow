@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { generatedOccupantPatients } from "@/components/ward-management/ward-admissions-seed";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { generatedMovementPatients } from "@/components/ward-management/ward-movements";
 import { movementUmrn, withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -47,5 +49,19 @@ describe("UMRN in place of a WF journey number", () => {
     for (const rejection of raised) {
       expect(rejection.reason).not.toContain(linked.id);
     }
+  });
+});
+
+describe("generated seed people (CS-16, Audit 1)", () => {
+  it("never gives a generated movement patient a bed occupant's full name or UMRN", () => {
+    const fullName = (patient: { givenName: string; familyName: string }) =>
+      `${patient.givenName} ${patient.familyName}`;
+    const occupantNames = new Set(generatedOccupantPatients.map(fullName));
+    const occupantUmrns = new Set(generatedOccupantPatients.map((patient) => patient.umrn));
+    expect(generatedMovementPatients.length).toBeGreaterThan(0);
+    expect(generatedMovementPatients.filter((patient) => occupantNames.has(fullName(patient)))).toEqual([]);
+    expect(generatedMovementPatients.filter((patient) => occupantUmrns.has(patient.umrn))).toEqual([]);
+    const umrns = generatedMovementPatients.map((patient) => patient.umrn);
+    expect(new Set(umrns).size).toBe(umrns.length);
   });
 });

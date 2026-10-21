@@ -27,8 +27,12 @@ import {
   URGENCY_OPTIONS,
   URGENCY_REASON_UNCHOSEN,
 } from "./ed-screen-model";
+import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
 import styles from "./ed.module.css";
+
+const OUTCOME_CONSEQUENCE =
+  "This ends the bed search: live ward requests are withdrawn, a held bed is released and uncollected transport is cancelled.";
 
 /** Every panel a row can open. Each renders only while it is the open one. */
 export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
@@ -268,42 +272,49 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               transport job is cancelled. The patient stays on this board until &quot;Left the department&quot; is
               recorded.
             </p>
+            {/* Audit 1 (CS-07, Josh 20 Oct): each outcome asks a second time, naming the person
+                and UMRN, because it cannot be undone from a toast. */}
             <div className={styles.actionRow}>
-              <button
-                type="button"
-                data-testid={`ward-ed-outcome-discharge-${movement.id}`}
-                aria-disabled={dischargeBlocked ? "true" : undefined}
-                aria-describedby={dischargeBlocked ? `ward-ed-outcome-discharge-unavailable-${movement.id}` : undefined}
-                title={dischargeBlocked ?? undefined}
+              {dischargeBlocked ? (
+                <button
+                  type="button"
+                  data-testid={`ward-ed-outcome-discharge-${movement.id}`}
+                  aria-disabled="true"
+                  aria-describedby={`ward-ed-outcome-discharge-unavailable-${movement.id}`}
+                  title={dischargeBlocked}
+                  className={styles.acceptButton}
+                  onClick={ignoreUnavailableActivation}
+                >
+                  For discharge
+                </button>
+              ) : (
+                <EdConfirmedStep
+                  label="For discharge"
+                  title={`Record ${patientInfo.displayName} for discharge?`}
+                  consequence={OUTCOME_CONSEQUENCE}
+                  who={patientInfo.displayName}
+                  umrn={patientInfo.umrn}
+                  testId={`ward-ed-outcome-discharge-${movement.id}`}
+                  className={styles.acceptButton}
+                  onConfirm={() => {
+                    raise("RECORD_ED_OUTCOME", { movementId: movement.id, outcome: "for_discharge" });
+                    setEdOutcomeOpenFor(undefined);
+                  }}
+                />
+              )}
+              <EdConfirmedStep
+                label="For community follow-up"
+                title={`Record ${patientInfo.displayName} for community follow-up?`}
+                consequence={OUTCOME_CONSEQUENCE}
+                who={patientInfo.displayName}
+                umrn={patientInfo.umrn}
+                testId={`ward-ed-outcome-community-${movement.id}`}
                 className={styles.acceptButton}
-                onClick={
-                  dischargeBlocked
-                    ? ignoreUnavailableActivation
-                    : () => {
-                        raise("RECORD_ED_OUTCOME", {
-                          movementId: movement.id,
-                          outcome: "for_discharge",
-                        });
-                        setEdOutcomeOpenFor(undefined);
-                      }
-                }
-              >
-                For discharge
-              </button>
-              <button
-                type="button"
-                data-testid={`ward-ed-outcome-community-${movement.id}`}
-                className={styles.acceptButton}
-                onClick={() => {
-                  raise("RECORD_ED_OUTCOME", {
-                    movementId: movement.id,
-                    outcome: "for_community_follow_up",
-                  });
+                onConfirm={() => {
+                  raise("RECORD_ED_OUTCOME", { movementId: movement.id, outcome: "for_community_follow_up" });
                   setEdOutcomeOpenFor(undefined);
                 }}
-              >
-                For community follow-up
-              </button>
+              />
             </div>
             {dischargeBlocked ? (
               <p

@@ -330,6 +330,18 @@ test("a command may ask for a revision-only reply, and nothing else", async () =
   assert.deepEqual(calls.at(-1).at(-1), { revisionOnly: true, view: { ...STATEWIDE_VIEW, actorId: coordinator } });
   assert.equal((await handler(request("/commands", { ...body, reply: "everything" }))).status, 400);
 });
+test("a command may say which records its popups saw at a later revision (CS-19 follow-up)", async () => {
+  const { calls, handler } = setup();
+  const seen = { "0123456789abcdef": 3 };
+  await handler(request("/commands", { ...body, seen }));
+  assert.deepEqual(calls.at(-1).at(-1), {
+    revisionOnly: false,
+    seen,
+    view: { ...STATEWIDE_VIEW, actorId: coordinator },
+  });
+  for (const bad of [[], { "not-a-token": 3 }, { "0123456789abcdef": 0 }, { "0123456789abcdef": 1.5 }])
+    assert.equal((await handler(request("/commands", { ...body, seen: bad }))).status, 400);
+});
 
 const wardView = {
   ...STATEWIDE_VIEW,

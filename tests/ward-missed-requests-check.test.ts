@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { dailyCheckId, dailyCheckRecord } from "@/components/ward-management/coordinator/daily-check";
 import {
   missedRequestCheck,
   openRequestsByPerson,
 } from "@/components/ward-management/coordinator/missed-requests-check";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
 const NOW = 2 * 24 * 60;
@@ -158,5 +159,38 @@ describe("missedRequestCheck", () => {
   it("says nothing on a network where every request is asked and none is doubled", () => {
     const f = fixture();
     expect(f.check([f.movement("MV-ok", { referredUnitIds: [f.state.units[0]!.id] })])).toEqual([]);
+  });
+});
+
+describe('"Checked, all accounted for" (overall review, 20 Oct 2026)', () => {
+  const complete = (state: ReturnType<typeof seedWardFlowState>, inboxItemId: string, role = "coordinator") =>
+    wardFlowReducer(state, { type: "COMPLETE_INBOX_ITEM", role: role as "coordinator", now: NOW + 5, inboxItemId });
+
+  it("records the role and the time against today's check, once a day", () => {
+    const state = seedWardFlowState();
+    expect(dailyCheckRecord(state.inboxCompletions, NOW + 5)).toBeUndefined();
+
+    const checked = complete(state, dailyCheckId(NOW + 5));
+    expect(checked.rejections).toEqual([]);
+    expect(dailyCheckRecord(checked.inboxCompletions, NOW + 5)).toEqual({
+      at: NOW + 5,
+      by: "Flow coordinator",
+      kind: "completed",
+    });
+    // Nothing else moves: the rules behind the list still run on the same records.
+    expect(checked.movements).toEqual(state.movements);
+    expect(checked.referrals).toEqual(state.referrals);
+
+    // A second tick the same day is refused; the next day starts unticked.
+    expect(complete(checked, dailyCheckId(NOW + 5)).rejections).toHaveLength(1);
+    expect(dailyCheckRecord(checked.inboxCompletions, NOW + 24 * 60)).toBeUndefined();
+    expect(dailyCheckId(NOW + 24 * 60)).not.toBe(dailyCheckId(NOW));
+  });
+
+  it("is the coordinator's alone and names a day, nothing else", () => {
+    const state = seedWardFlowState();
+    expect(complete(state, dailyCheckId(NOW), "ward").rejections).toHaveLength(1);
+    expect(complete(state, "daily-check-WF-001").rejections).toHaveLength(1);
+    expect(complete(state, "daily-check-day-1.5").rejections).toHaveLength(1);
   });
 });

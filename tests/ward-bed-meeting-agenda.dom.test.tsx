@@ -50,4 +50,30 @@ describe("bed meeting agenda", () => {
       "1 done in the last day · 0 overdue · 0 still open",
     );
   });
+
+  it("closes only the tapped action on a double click, never the next person's (Audit 7 NB-02)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
+    for (const index of [0, 1]) {
+      fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[index]!);
+      fireEvent.change(screen.getByTestId("bed-meeting-action-kind"), { target: { value: "book_transport" } });
+      fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+    }
+    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("0 overdue · 2 still open");
+
+    const list = screen.getByTestId("bed-meeting-action-list");
+    const [first] = within(list).getAllByTestId("bed-meeting-action-done");
+    fireEvent.click(first!, { detail: 1 });
+    // The row has gone, so the second click of the pair lands on the next person's Done.
+    fireEvent.click(within(list).getAllByTestId("bed-meeting-action-done")[0]!, { detail: 2 });
+    // A touch screen counts each tap as a first click, so the short pause catches that too.
+    fireEvent.click(within(list).getAllByTestId("bed-meeting-action-done")[0]!, { detail: 1 });
+    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
+      "1 done in the last day · 0 overdue · 1 still open",
+    );
+  });
 });

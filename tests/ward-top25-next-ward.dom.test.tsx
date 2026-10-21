@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { NextWardAfterRefusal } from "@/components/ward-management/coordinator/next-ward-after-refusal";
-import { deriveNextWardsAfterRefusal, deriveTopCompatibleWards } from "@/components/ward-management/ward-derivations";
+import { deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -14,7 +15,8 @@ function declinedMovement(): { movement: Movement; declinedUnitId: string } {
   const base = seeded.movements.find(
     (m) => m.referredUnitIds.length === 0 && m.acceptedUnitId === undefined && m.declines.length === 0,
   )!;
-  const first = deriveTopCompatibleWards(base, seeded.units, 3, now)[0]!;
+  // Decline any ward, then read the list from a different ward's point of view.
+  const first = { unit: seeded.units[0]! };
   return {
     movement: { ...base, declines: [{ unitId: first.unit.id, at: now, reason: "acuity_mix" }] },
     declinedUnitId: first.unit.id,
@@ -42,7 +44,19 @@ describe("Top 25 item 3: next ward after a refusal", () => {
     expect(deriveNextWardsAfterRefusal(waitlisted, seeded.units, now)).toBeUndefined();
   });
 
-  it("adds a suggested ward to the referral selection, never referring by itself", () => {
+  // Audit 1, Josh 20 Oct (CS-03, NB-3): every eligible unasked ward, fixed order, no cap.
+  it("lists every eligible unasked ward in health service then name order, with no cap", () => {
+    const { movement } = declinedMovement();
+    const next = deriveNextWardsAfterRefusal(movement, seeded.units, now)!;
+    expect(next.candidates.length, "the seed gave three or fewer, so the no-cap check proves nothing").toBeGreaterThan(
+      3,
+    );
+    const keys = next.candidates.map((c) => [siteByCode(c.unit.siteCode)?.service ?? "", c.unit.name] as const);
+    const sorted = [...keys].sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+    expect(keys).toEqual(sorted);
+  });
+
+  it("adds a listed ward to the referral selection, never referring by itself", () => {
     const { movement } = declinedMovement();
     const onChoose = vi.fn();
     render(
@@ -56,6 +70,8 @@ describe("Top 25 item 3: next ward after a refusal", () => {
       />,
     );
     expect(screen.getByText(/Last refusal: .*acuity mix\./)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Wards not yet asked that pass every check" })).toBeTruthy();
+    expect(screen.queryByText(/next wards to ask|best/iu)).toBeNull();
     const rows = screen.getAllByTestId("ward-next-ward-row");
     expect(rows.length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByRole("button", { name: "Add to referral" })[0]!);

@@ -8,6 +8,12 @@ import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
 import {
+  BED_MEETING_ACTION_INBOX_PREFIX,
+  meetingActionOfInboxId,
+  openMeetingAction,
+  type BedMeetingAction,
+} from "./bed-meeting/bed-meeting-actions";
+import {
   activeSnooze,
   currentInboxOwner,
   snoozeAllowed,
@@ -95,6 +101,14 @@ export const INBOX_CATEGORIES = {
    *  (Josh, 19 Oct). Leaves when one is answered or withdrawn. Remainder is the patient id
    *  (`ward-duplicate-bed-requests.ts`). */
   duplicate_bed_request: { idPrefix: "duplicate-bed-request-", kind: "fact" },
+  /** Overall review (20 Oct 2026): the coordinator's daily "nobody missed" check, ticked off with
+   *  "Checked, all accounted for" (`COMPLETE_INBOX_ITEM`), which records the role and the time. A
+   *  commitment, never a row on any list. Remainder is `day-` and the demo day (`dailyCheckId`). */
+  daily_check: { idPrefix: "daily-check-", kind: "commitment" },
+  /** Overall review (20 Oct 2026): an action agreed at the bed meeting, in its owner's Needs you
+   *  until the owner or the chair marks it done (`COMPLETE_BED_MEETING_ACTION`). Amber, overdue
+   *  included: shown, never escalated. Remainder names the action (`meetingActionInboxId`). */
+  bed_meeting_action: { idPrefix: BED_MEETING_ACTION_INBOX_PREFIX, kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -123,6 +137,8 @@ const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "planned_arrival_overdue",
   // Audit F-19: a duplicate bed request is something to check, not act on now.
   "duplicate_bed_request",
+  // Overall review (20 Oct 2026): a bed meeting action is a task; overdue is shown, not escalated.
+  "bed_meeting_action",
 ];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
@@ -154,9 +170,25 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
   if (inboxItemId.startsWith(duplicatePrefix)) {
     return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length)) !== undefined;
   }
+  // Overall review (20 Oct 2026): a bed meeting action row exists while that action is still open.
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
+    return openMeetingActionOfRow(state, inboxItemId) !== undefined;
+  }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
   return inboxRowMovementId(state.movements, inboxItemId) !== undefined;
+}
+
+/** The open bed meeting action a row id names, when its record exists and the action is not done. */
+function openMeetingActionOfRow(state: WardFlowState, inboxItemId: string): BedMeetingAction | undefined {
+  const named = meetingActionOfInboxId(inboxItemId);
+  if (!named) return undefined;
+  const { subject, kind } = named;
+  const record =
+    subject.kind === "movement"
+      ? state.movements.find((movement) => movement.id === subject.id)
+      : state.admissions.find((admission) => admission.id === subject.id);
+  return openMeetingAction(record?.meetingActions, kind);
 }
 
 /** The booking a planned-arrival row id names (stream D), when that booking exists. */
@@ -226,6 +258,10 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   if (inboxItemId.startsWith(duplicatePrefix)) {
     return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length));
   }
+  // A bed meeting action row's occurrence starts when the meeting recorded that action.
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
+    return openMeetingActionOfRow(state, inboxItemId)?.recordedAt;
+  }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);
   return movement ? inboxOccurrenceSince(movement, inboxItemId) : undefined;
@@ -280,7 +316,8 @@ export function reduceInboxEvent(
       // id cannot impersonate a booking.
       const namesRecord =
         inboxCategory === INBOX_CATEGORIES.absent_without_leave ||
-        inboxCategory === INBOX_CATEGORIES.duplicate_bed_request
+        inboxCategory === INBOX_CATEGORIES.duplicate_bed_request ||
+        inboxCategory === INBOX_CATEGORIES.bed_meeting_action
           ? inboxRowExists(state, inboxItemId)
           : inboxCategory === INBOX_CATEGORIES.support_notification_discharge
             ? state.admissions.some((admission) => admission.id === inboxMovementId)
@@ -318,6 +355,13 @@ export function reduceInboxEvent(
             ? `inbox row ${inboxItemId} states a live fact, not a commitment — a fact leaves this list when it stops being true, never because it was ticked off`
             : `inbox row ${inboxItemId} is not a classified inbox category, so it cannot be ticked off`,
         );
+      }
+      // The daily check names one day, never anything else.
+      if (
+        inboxItemId.startsWith(INBOX_CATEGORIES.daily_check.idPrefix) &&
+        !/^day-(?:0|-?[1-9]\d*)$/.test(inboxItemId.slice(INBOX_CATEGORIES.daily_check.idPrefix.length))
+      ) {
+        return reject(state, event, `inbox row ${inboxItemId} does not name a day for the daily check`);
       }
       const history = state.inboxCompletions[inboxItemId];
       if (inboxItemCompletionState(history) === "complete") {

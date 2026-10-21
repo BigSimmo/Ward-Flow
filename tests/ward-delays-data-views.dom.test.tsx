@@ -115,16 +115,18 @@ describe("the Delays board's data views", () => {
     expect(screen.getByRole("button", { name: "By blocker" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("Longest wait lists pinned recorded legal times first, then everyone else longest first", () => {
+  // Audit 1, Josh 20 Oct (CS-04, NB-6b): a recorded form time due soon is marked, never pinned.
+  it("Longest wait lists everyone longest first and marks, but does not move, a form time due soon", () => {
     renderDelays();
     fireEvent.click(screen.getByRole("button", { name: "Longest wait" }));
     const ids = listed();
     expect(ids).toHaveLength(OPEN.length);
     const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
-    const pinned = ids.filter((id) => isPinned(byId.get(id)!, DEFAULT_DUE_SOON_THRESHOLDS));
-    expect(ids.slice(0, pinned.length), "a pinned legal time is not at the top").toEqual(pinned);
-    const rest = ids.slice(pinned.length).map((id) => byId.get(id)!.waited);
-    expect(rest, "everyone else is not longest wait first").toEqual([...rest].sort((a, b) => b - a));
+    const waits = ids.map((id) => byId.get(id)!.waited);
+    expect(waits, "the list is not longest wait first").toEqual([...waits].sort((a, b) => b - a));
+    const due = ids.filter((id) => isPinned(byId.get(id)!, DEFAULT_DUE_SOON_THRESHOLDS));
+    for (const id of due) expect(screen.getByTestId(`delays-row-${id}`)).toHaveAttribute("data-form-due", "true");
+    expect(screen.queryByText("Pinned first")).toBeNull();
   });
 
   it("the spread graph's lane label filters the table to that owner", () => {
