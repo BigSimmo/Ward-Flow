@@ -370,14 +370,9 @@ export function WardHomeTab({
   // Done only when the figures were confirmed during this shift; an older confirmation is not.
   const capacityConfirmedThisShift = capacityConfirmed && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
   const referralsClear = incoming.length === 0;
-  const shiftChecks = [
-    capacityConfirmedThisShift,
-    morningRollupConfirmed,
-    referralsClear,
-    localChecks.drugs !== null,
-    localChecks.seclusion !== null,
-    localChecks.afternoon !== null,
-  ];
+  // UX audit 21 Oct 2026: the three local ticks are reminders kept on this screen only, so they are
+  // not counted as shift checks done. Only recorded facts count.
+  const shiftChecks = [capacityConfirmedThisShift, morningRollupConfirmed, referralsClear];
   const checksDone = shiftChecks.filter(Boolean).length;
 
   type LogRow = {
@@ -511,7 +506,7 @@ export function WardHomeTab({
                   : bed.criteriaLedChip && bed.status === "occupied"
                     ? bed.criteriaLedChip.label
                     : free
-                      ? "Free to offer"
+                      ? "Ready"
                       : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
@@ -537,7 +532,7 @@ export function WardHomeTab({
     // D-64: when a higher note takes the tile (Past date, Due out), the CLD state still shows as a tag.
     const criteriaTag = bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip : null;
     const number = String(bed.bedNumber).padStart(2, "0");
-    const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
+    const name = free ? "Ready" : (bed.patientAlias ?? stateWord);
     // The occupant's name is shown on the tile, so a screen reader hears it too.
     const accessibleName = [
       bed.bedLabel,
@@ -691,7 +686,7 @@ export function WardHomeTab({
                   </span>
                 </span>
                 <span className={styles.phoneRowDays} aria-hidden="true">
-                  {row.days || (row.free ? "Free" : "")}
+                  {row.days || (row.free ? "Ready" : "")}
                   {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
                 </span>
                 <WalkRoundTick mark={marks} />
@@ -1035,9 +1030,10 @@ export function WardHomeTab({
   ] as const) {
     const row: TodoRow = {
       key: id,
-      title: label,
-      detail: at === null ? `${hint} On this screen only. Not sent.` : "Ticked on this screen only. Not sent.",
-      meta: at === null ? "Due" : formatInstantWithDay(at, now),
+      title: `${label} (reminder)`,
+      detail:
+        at === null ? `Reminder only, not saved or sent. ${hint}` : "Reminder ticked here only, not saved or sent.",
+      meta: at === null ? "Not saved" : formatInstantWithDay(at, now),
       tone: at === null ? "neutral" : "success",
       tick: id,
     };
@@ -1841,7 +1837,7 @@ export function WardHomeTab({
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
                       { id: "leaving", label: "Due out", count: bedRows.filter((row) => row.leaving).length },
-                      { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
+                      { id: "free", label: "Ready", count: bedRows.filter((row) => row.free).length },
                       // The hero's Occupied and Ready by pills set filters this group does not list,
                       // so the active one joins it while on and a radio is always checked.
                       ...(bedFilter === "occupied"

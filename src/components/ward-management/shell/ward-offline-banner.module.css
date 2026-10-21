@@ -9,6 +9,13 @@
   line-height: 1.4;
 }
 
+.packLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 /* S-1: a quiet note, not a warning: neutral line, secondary ink, no fill of its own. */
 .quiet {
   margin: 0.5rem 0.75rem 0;

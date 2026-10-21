@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { DOWNTIME_PACK_HREF } from "@/components/ward-management/reports/report-routes";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -50,6 +53,7 @@ function useLastDowntimePackAt(): number | null {
  */
 export function WardOfflineBanner() {
   const online = useOnlineStatus();
+  const pathname = usePathname();
   const fullscreenElement = useFullscreenElement();
   const lastPackAt = useLastDowntimePackAt();
   // Outside the provider there is no pack, so the fallback clock is never shown.
@@ -66,6 +70,15 @@ export function WardOfflineBanner() {
       {lastPackAt === null
         ? "If it stops, use the latest printed or saved downtime pack."
         : `If it stops, use the downtime pack taken at ${formatInstantWithDay(lastPackAt, now)}, printed or saved as a PDF.`}
+      {/* UX audit 21 Oct 2026: the notice named the pack but gave no way to reach it. */}
+      {pathname === DOWNTIME_PACK_HREF ? null : (
+        <>
+          {" "}
+          <Link href={DOWNTIME_PACK_HREF} className={styles.packLink}>
+            Open the downtime pack
+          </Link>
+        </>
+      )}
     </p>
   );
   return fullscreenElement ? createPortal(banner, fullscreenElement) : banner;

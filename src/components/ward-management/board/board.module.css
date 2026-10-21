@@ -5549,6 +5549,24 @@
   .screen .zonesOpen .detail {
     display: none;
   }
+
+  /* The note sits in the dark ward band, so it takes the band's ink. */
+  .screen .phoneBedsNote {
+    display: block;
+    margin: var(--wf-s-2) 0 0;
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .screen .phoneBedsNote a {
+    color: var(--wf-hero-ink);
+    text-decoration: underline;
+  }
+}
+
+/* Only the phone hides the bed grid, so only the phone needs the pointer to Ward home. */
+.phoneBedsNote {
+  display: none;
 }
 
 /* Phone polish (8 Oct 2026). The band reads as one compact block: eyebrow, the ward's name on one

@@ -30,6 +30,7 @@ import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-managemen
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 
 import {
   lastDowntimePack,
@@ -150,7 +151,10 @@ export function DowntimePackScreen() {
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
-  const canSnapshot = role === "coordinator" && ready;
+  // UX audit 21 Oct 2026: offline, the shell takes no pack because the data may be stale, so this
+  // screen must not stamp a newer time on it either.
+  const online = useOnlineStatus();
+  const canSnapshot = role === "coordinator" && ready && online;
 
   const take = useTakeDowntimePack();
 
@@ -283,7 +287,11 @@ export function DowntimePackScreen() {
       </Button>
       {canSnapshot ? null : (
         <span id="downtime-snapshot-reason" className={styles.reasonOnHero}>
-          {role === "coordinator" ? "Waiting for current workspace" : "Coordinator only"}
+          {role !== "coordinator"
+            ? "Coordinator only"
+            : online
+              ? "Waiting for current workspace"
+              : "Offline. Snapshot when the connection returns."}
         </span>
       )}
     </span>

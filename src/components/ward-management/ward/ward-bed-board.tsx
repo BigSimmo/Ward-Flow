@@ -211,9 +211,9 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
 export function cellWord(bed: BedItem): string {
   if (bed.status === "ready" && !bed.heldFor && bed.preparing) return "Making ready";
   if (bed.status === "ready") {
-    if (!bed.heldFor) return "Free";
+    if (!bed.heldFor) return "Ready";
     const held = occupantParts(bed.heldFor);
-    return held ? `Held, ${held.surname}, ${held.initial}` : `Held, ${surname(bed.heldFor)}`;
+    return held ? `Pulled, ${held.surname}, ${held.initial}` : `Pulled, ${surname(bed.heldFor)}`;
   }
   if (bed.status === "closed") return "Closed";
   if (bed.status === "incoming") return "Pulled";
@@ -386,12 +386,12 @@ export function WardBedBoard({
         return (
           <div key={pod.id} className={styles.podSlot}>
             {index === 1 ? <div className={styles.corridor} aria-hidden="true" /> : null}
-            <section className={styles.pod} aria-label={`${pod.name}, ${podFree} free of ${pod.beds.length}`}>
+            <section className={styles.pod} aria-label={`${pod.name}, ${podFree} ready of ${pod.beds.length}`}>
               <div className={styles.podHead}>
                 <b className={styles.podName}>{pod.name}</b>
                 <span className={styles.podRule}>{pod.rule}</span>
                 <span className={styles.podCount}>
-                  <b>{podFree}</b> free of {pod.beds.length}
+                  <b>{podFree}</b> ready of {pod.beds.length}
                 </span>
               </div>
               <div
@@ -489,7 +489,7 @@ export function WardBedBoard({
       </span>
       <span>
         <StatusGlyph tone="success" size={9} />
-        Free
+        Ready
       </span>
     </span>
   );

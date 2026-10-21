@@ -2225,10 +2225,6 @@ details.refCard > summary {
   gap: var(--wf-s-2);
 }
 
-.railFrac {
-  margin-left: auto;
-}
-
 .railCount {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
@@ -2523,34 +2519,8 @@ details.refCard > summary {
   }
 }
 
-/* v10 phone: compact ready answer above Refer to, and 44px Refer to buttons. */
-.phReady {
-  display: none;
-}
-
+/* v10 phone: 44px Refer to buttons. */
 @media (max-width: 48rem) {
-  .phReady {
-    display: flex;
-    align-items: center;
-    gap: var(--wf-s-2);
-    min-width: 0;
-    margin: 0;
-    color: var(--wf-ink-2);
-    font-size: var(--wf-fs-13);
-  }
-
-  .phReadyText {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .phReadyText b {
-    color: var(--wf-ink-1);
-    font-family: var(--wf-mono);
-    font-variant-numeric: tabular-nums;
-  }
-
   .categoryTrack > button {
     min-height: var(--wf-touch, 44px);
   }
@@ -2586,7 +2556,6 @@ details.refCard > summary {
   }
 
   .drawerWide[data-ph-mode] .drawerHeadTop,
-  .drawerWide[data-ph-mode] .phReady,
   .drawerWide[data-ph-mode] .dragHandle,
   .drawerWide[data-ph-mode] .destLabel,
   .drawerWide[data-ph-mode] .fromText,

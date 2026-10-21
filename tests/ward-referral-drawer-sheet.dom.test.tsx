@@ -231,17 +231,17 @@ describe("one ready count (audit A2-9)", () => {
   it("counts the contact details asked at Send, so nothing reads ready while Send would refuse", () => {
     // Opened plainly: from an entry point (option B) the referrer's profile fills the contact in.
     renderDrawer({ initialCategory: "ward" });
-    const ready = screen.getByTestId("ward-referral-phone-ready").textContent ?? "";
-    const match = /(\d+) of (\d+)/u.exec(ready);
+    // UX audit 21 Oct 2026: the footer carries the one count; the rail no longer repeats it.
+    const match = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "");
     expect(match).not.toBeNull();
-    const [readyCount, total] = [Number(match![1]), Number(match![2])];
-    // The rail's own fraction and the step footer say the same count.
+    const [left, total] = [Number(match![1]), Number(match![2])];
     const rail = screen.getByTestId("ward-referral-summary-rail");
-    expect(rail).toHaveTextContent(`${readyCount} of ${total} ready`);
-    expect(document.body.textContent).toContain(`${total - readyCount} of ${total} items still needed`);
+    expect(rail).not.toHaveTextContent(/\d+ of \d+ ready/u);
     // The five empty contact fields are among the items still needed, named on their row.
     expect(rail).toHaveTextContent("5 to fill at Send");
-    expect(total - readyCount).toBeGreaterThanOrEqual(5);
+    expect(rail).toHaveTextContent("Your contact details are asked at Send.");
+    expect(left).toBeGreaterThanOrEqual(5);
+    expect(total).toBeGreaterThanOrEqual(left);
   });
 
   it("marks the clearance checklist optional, because its six items are not in the count", () => {

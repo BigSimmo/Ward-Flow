@@ -161,6 +161,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const declineFormRef = useRef<HTMLFormElement | null>(null);
 
   // A response belongs to the attempt that preceded it, without reading a mutable ref in render.
   const [priorRejectionCount, setPriorRejectionCount] = useState<number>();
@@ -182,6 +183,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     const timer = setTimeout(() => setToastMessage(null), 3500);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // Opening Decline moves focus to the first reason, which also scrolls the reasons into view.
+  useEffect(() => {
+    if (!declineOpenFor || isPhone) return;
+    declineFormRef.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+  }, [declineOpenFor, isPhone]);
 
   // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
   // toast line carries the outcome where no toast region is mounted.
@@ -237,7 +244,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               const wardAnswers: Array<{
                 key: string;
                 movementId: string;
-                outcome: "Accepted" | "Declined";
+                outcome: "Accepted in principle" | "Declined";
                 at?: Instant;
                 reason?: DeclineReason;
               }> = [];
@@ -246,7 +253,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 wardAnswers.push({
                   key: `${movement.id}-accepted`,
                   movementId: movement.id,
-                  outcome: "Accepted",
+                  outcome: "Accepted in principle",
                   at: movement.acceptedAt,
                 });
               }
@@ -1245,9 +1252,45 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         </>
                       ) : null}
 
-                      {/* Inline Decline Form */}
+                      {/* Decision Action Controls */}
+                      {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
+                      <div className={styles.decisionArea}>
+                        <button
+                          type="button"
+                          data-testid={`ward-decline-toggle-${activeMovement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          aria-expanded={declineOpen}
+                          className={buttonClass({ variant: "sec", size: "sm" })}
+                          onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
+                        >
+                          Decline
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`ward-accept-${activeMovement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          className={buttonClass({ variant: "pri", size: "sm" })}
+                          onClick={() => {
+                            if (blocked) return;
+                            if (isPhone) {
+                              openPhoneAccept();
+                              return;
+                            }
+                            handleAccept(activeMovement.id);
+                          }}
+                        >
+                          Accept in principle
+                        </button>
+                      </div>
+
+                      {/* Inline Decline Form: below the buttons that open it, so the reasons appear in view (UX audit 21 Oct 2026). */}
                       {declineOpen && !blocked && !isPhone ? (
                         <form
+                          ref={declineFormRef}
                           className={styles.declineForm}
                           onSubmit={(event) => submitDecline(event, activeMovement.id)}
                           data-testid={`ward-decline-form-${activeMovement.id}`}
@@ -1292,41 +1335,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           ) : null}
                         </form>
                       ) : null}
-
-                      {/* Decision Action Controls */}
-                      {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
-                      <div className={styles.decisionArea}>
-                        <button
-                          type="button"
-                          data-testid={`ward-decline-toggle-${activeMovement.id}`}
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
-                          title={blocked ?? undefined}
-                          aria-expanded={declineOpen}
-                          className={buttonClass({ variant: "sec", size: "sm" })}
-                          onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
-                        >
-                          Decline
-                        </button>
-                        <button
-                          type="button"
-                          data-testid={`ward-accept-${activeMovement.id}`}
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
-                          title={blocked ?? undefined}
-                          className={buttonClass({ variant: "pri", size: "sm" })}
-                          onClick={() => {
-                            if (blocked) return;
-                            if (isPhone) {
-                              openPhoneAccept();
-                              return;
-                            }
-                            handleAccept(activeMovement.id);
-                          }}
-                        >
-                          Accept in principle
-                        </button>
-                      </div>
                     </div>
                   </div>
                 );
