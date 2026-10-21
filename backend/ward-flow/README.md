@@ -111,10 +111,18 @@ These source files do not establish a current hosted connection or deployment.
   accounts with no role, so forged tokens naming one real account cannot use up the checks other desks need.
   A confirmed token is reused for a minute. The client address is the socket's, or
   `X-Real-IP` (else the last `X-Forwarded-For` entry) only when the socket is listed in `WARD_TRUSTED_PROXY_ADDRESSES`
-  (`*` on Railway, which is reachable only through its proxy). A locally
+  (`*` is safe only after verifying that every connection passes through an ingress that
+  overwrites these headers; the hosting provider's name alone does not establish that boundary).
+  Prefer an explicit proxy socket allowlist; leave it empty when that boundary is unverified. A locally
   verified token's signature remains valid until it expires. Separately, from migration 11 the
   workspace checks server-side sign-outs on subsequent requests and refuses the signed-out
   session before token expiry. Before 11 that workspace revocation is unavailable.
+  Sign-out refuses subsequent requests; it does not cancel an operation already authorised and
+  in flight. Role changes serialize with full-board reads and commands through the workspace
+  lock. Audit/access/cover helper reads may finish using the authority resolved when their request
+  began. Do not interpret sign-out or revocation as cancellation of every in-flight response.
+  Use migration 11 or later when server-side sign-out and access-history guarantees are required;
+  older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
 - Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.

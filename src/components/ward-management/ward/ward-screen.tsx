@@ -5,6 +5,7 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import type { LegalStatus } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -161,6 +162,7 @@ export function WardScreen({ unitId, presentation = "overview", departurePlannin
   );
 }
 function WardOverviewScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
+  const canOpenHref = useCanOpenHref();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -1970,15 +1972,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
   // The ward switch lists the other wards on this site, or failing that in this health service.
-  const siteUnits = units.filter((candidate) => candidate.id !== unit.id && candidate.siteCode === unit.siteCode);
+  const accessibleUnits = units.filter((candidate) => candidate.id !== unit.id && canOpenHref(unitHref(candidate.id)));
+  const siteUnits = accessibleUnits.filter((candidate) => candidate.siteCode === unit.siteCode);
   const switchUnits =
     siteUnits.length > 0
       ? siteUnits
-      : units.filter(
-          (candidate) =>
-            candidate.id !== unit.id &&
-            unitHealthService(candidate) !== undefined &&
-            unitHealthService(candidate) === unitHealthService(unit),
+      : accessibleUnits.filter(
+          (c) => unitHealthService(c) !== undefined && unitHealthService(c) === unitHealthService(unit),
         );
 
   const phoneCardOpen = isPhone && phoneWalking && activeTab === "attn"; // Option B: a bed's card has the page

@@ -13,7 +13,8 @@ _Updated 2026-10-20 - align runtime compatibility with migration 12; Documentati
   `ward_flow.access_requests` table, and each phone alert device in `ward_flow.push_subscriptions`
   records the membership that turned it on.
 - Migration 11 adds append-only record access history and break glass protection, plus
-  server-side session sign-outs. The backend accepts schema versions 5 through 12; these
+  server-side session sign-outs. The backend accepts schema versions 5 through
+  <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->; these
   capabilities require 11 and its runtime grants. Migration 12 adds foreign-key indexes without
   changing runtime behaviour. The supported bounds come from `MINIMUM_RUNTIME_MIGRATION` and
   `LATEST_MIGRATION` in the migration registry below. See the backend setup guides for rollback limits.

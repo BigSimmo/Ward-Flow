@@ -166,8 +166,8 @@ export function createHandler({
 
 /**
  * The address sign-in checks are limited by. Proxy headers are read only when the socket peer is a
- * listed trusted proxy, or "*" is listed for a host such as Railway that is reachable only through
- * its proxy. Then X-Real-IP (the single client address Railway sets) is used, else the last
+ * listed trusted proxy, or "*" is explicitly listed after verifying proxy-only ingress that
+ * overwrites forwarded client headers and prevents direct access. Then X-Real-IP is used, else the last
  * X-Forwarded-For entry (the one a proxy appends). Otherwise the socket's own address, so a direct
  * client cannot choose its limit address.
  */
