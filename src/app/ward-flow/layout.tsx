@@ -11,6 +11,7 @@ import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
+import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
@@ -172,6 +173,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 <div className={styles.bannerHolder}>
                   <WardBroadcastBanner />
                   <WardOfflineBanner />
+                  {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
+                  <WardDowntimePackLine />
                   <WardDemoNotSavedNote />
                   <WardAccessBanner />
                 </div>
