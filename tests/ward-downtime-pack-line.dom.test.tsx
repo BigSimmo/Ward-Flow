@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useLayoutEffect, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -172,5 +175,17 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     fireEvent.click(screen.getByTestId("ward-downtime-pack-dismiss"));
     const packWrites = setItem.mock.calls.filter(([, value]) => String(value).includes("generatedAt"));
     expect(packWrites).toEqual([]);
+  });
+
+  /**
+   * Local visual check, 21 Oct 2026: the pinned banner holder shrank to 0px in the fixed-height page
+   * column, so the line covered the top of Home (390px and 1280px). It now keeps its height and
+   * pushes the page down (measured in Chromium after the fix).
+   */
+  it("sits in a banner holder that keeps its height, so the line pushes the page down", () => {
+    const css = readFileSync(resolve(process.cwd(), "src/app/ward-flow/ward-flow-layout.module.css"), "utf8");
+    const start = css.indexOf("\n.bannerHolder {");
+    expect(start).toBeGreaterThan(-1);
+    expect(css.slice(start, css.indexOf("}", start))).toContain("flex-shrink: 0");
   });
 });
