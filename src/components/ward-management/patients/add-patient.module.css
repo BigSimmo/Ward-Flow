@@ -533,8 +533,7 @@
 }
 
 .segmented.segmented > button {
-  /* A zero basis so the row wraps only when the label floors themselves do not fit. */
-  flex: 1 1 0;
+  flex: 1 1 auto;
   justify-content: center;
   min-width: 0;
   min-width: calc-size(max-content, size - 8px);
@@ -549,6 +548,14 @@
   color: var(--wf-ink-2);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* With the label floor, a zero basis lets the row wrap only when the floors themselves do not fit.
+   Without `calc-size()` the floor is 0, so the row keeps sizing from each label instead. */
+@supports (min-width: calc-size(max-content, size)) {
+  .segmented.segmented > button {
+    flex-basis: 0;
+  }
 }
 
 .segmented.segmented > button[aria-checked="true"] {

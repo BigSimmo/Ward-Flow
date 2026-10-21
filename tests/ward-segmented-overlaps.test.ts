@@ -21,7 +21,11 @@ describe("registration choices keep their labels (DA-24 follow-up, 20 Oct 2026)"
   it("never shrinks a Triage or Legal status choice below its label", () => {
     const item = block(file, ".segmented.segmented > button");
     expect(item).toMatch(/min-width: 0;\s*min-width: calc-size\(max-content, size - 8px\);/);
-    expect(item).toContain("flex: 1 1 0;");
+    expect(item).toContain("flex: 1 1 auto;");
+    const css = readFileSync(resolve(process.cwd(), file), "utf8");
+    expect(css).toMatch(
+      /@supports \(min-width: calc-size\(max-content, size\)\) \{\s*\.segmented\.segmented > button \{\s*flex-basis: 0;/,
+    );
   });
 
   it("wraps the choices onto a second row when the labels do not fit", () => {
