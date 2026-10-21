@@ -501,8 +501,8 @@ function DataModePill({ detail }: { detail: string }) {
       >
         <span className={styles.pillRing} aria-hidden="true" />
         <span>
-          <span className={styles.pillLong}>Synthetic </span>
-          <span className={styles.pillTail}>prototype</span>
+          Synthetic
+          <span className={styles.pillTail}> prototype</span>
         </span>
       </button>
       {open ? <WardDemoMenu top={place.top} left={place.left} onClose={close} /> : null}

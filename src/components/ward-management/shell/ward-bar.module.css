@@ -169,7 +169,7 @@
  * `ward-shared-access.module.css`'s .pill: 10px sides, 1px border, 12px semibold, and 24px before
  * the word where the 8px ring and its 6px gap sit. */
 .dataMode:empty::before {
-  content: "Prototype";
+  content: "Synthetic";
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
