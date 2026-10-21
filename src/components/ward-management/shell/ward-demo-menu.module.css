@@ -9,7 +9,7 @@
   overscroll-behavior: contain;
   border-radius: var(--wf-r-lg, 16px);
   background: var(--wf-surface);
-  box-shadow: var(--wf-e3, 0 18px 40px rgb(15 30 50 / 22%));
+  box-shadow: var(--wf-e3);
   color: var(--wf-ink-1);
   font-family: var(--wf-font);
   font-size: var(--wf-fs-13);
