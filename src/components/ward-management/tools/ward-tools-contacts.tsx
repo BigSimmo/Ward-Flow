@@ -205,7 +205,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
         {notice}
       </p>
       <Link className={styles.moreLink} href={onCallHref()} onClick={onNavigate}>
-        Open On-call and contacts
+        Open On-call
       </Link>
     </div>
   );
