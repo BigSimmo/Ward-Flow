@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { AlarmClock, Bell, ChevronRight, Clock, Columns3, List, Activity, Users, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -24,6 +24,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useOptionalSearchParams } from "@/components/ward-management/ward/ward-screen-helpers";
 import { usePageLive } from "@/components/ward-management/ward-page-live";
 import {
   enableActNowNotifications,
@@ -126,8 +127,6 @@ type ArrangeBy = "urgency" | "lanes" | "owner";
 type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
 
 /** The address's query, read on the client only; the server draws the screen without it. */
-const subscribeNever = () => () => {};
-const readAddressQuery = () => window.location.search;
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
@@ -506,13 +505,14 @@ function AlertsWorkspace() {
   );
 
   // Change 7 (D-77): the Alerts drawer's Release bed opens here as `?alert=<id>&release=1`, so the
-  // alert is chosen and its release reason takes focus. Used once, adjusted during render.
-  const address = useSyncExternalStore(subscribeNever, readAddressQuery, () => "");
-  const [addressUsed, setAddressUsed] = useState(false);
-  if (!addressUsed && address) {
+  // alert is chosen and its release reason takes focus. Read from the router, so a client-side
+  // visit never sees the previous page's query, and each new address is used once, during render.
+  const address = useOptionalSearchParams()?.toString() ?? "";
+  const [addressUsed, setAddressUsed] = useState("");
+  if (address && address !== addressUsed) {
     const query = new URLSearchParams(address);
     const entry = allEntries.find((candidate) => candidate.item.id === query.get("alert"));
-    setAddressUsed(true);
+    setAddressUsed(address);
     if (entry) select(entry, { release: query.get("release") === "1" });
   }
 

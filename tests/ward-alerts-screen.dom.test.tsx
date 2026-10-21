@@ -33,6 +33,13 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
+// The router's query, as `useSearchParams` gives it. Empty unless a test sets it.
+const address = { query: "" };
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useSearchParams: () => new URLSearchParams(address.query),
+}));
+
 function renderScreen() {
   return render(
     <WardFlowProvider initialNow={NOW}>
@@ -361,13 +368,22 @@ describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
     const inbox = buildActionInbox(wardMovements.filter(isOpen), NOW, allUnits());
     const hold = inbox.find((item) => alertKindOf(item.id) === "hold");
     if (!hold) throw new Error("fixture drifted: the seeded inbox has no expired bed hold");
-    window.history.replaceState(null, "", `/ward-flow/alerts?alert=${encodeURIComponent(hold.id)}&release=1`);
+    // A client-side visit can first render with the previous page's query; it must not use up
+    // the address, so the release link that follows still works.
+    address.query = "view=list";
     try {
-      renderScreen();
+      const { rerender } = renderScreen();
+      expect(screen.queryByRole("combobox", { name: "Reason for release" })).not.toHaveFocus();
+      address.query = `alert=${encodeURIComponent(hold.id)}&release=1`;
+      rerender(
+        <WardFlowProvider initialNow={NOW}>
+          <AlertsScreen />
+        </WardFlowProvider>,
+      );
       const reason = await screen.findByRole("combobox", { name: "Reason for release" });
       await vi.waitFor(() => expect(reason).toHaveFocus());
     } finally {
-      window.history.replaceState(null, "", "/");
+      address.query = "";
     }
   });
 });

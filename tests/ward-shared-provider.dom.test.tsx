@@ -383,7 +383,9 @@ describe("shared provider boundary", () => {
     expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "true");
-    expect(await screen.findByRole("dialog", { name: "Demo" })).toBeInTheDocument();
+    const menu = await screen.findByRole("dialog", { name: "Demo" });
+    // Focus moves into the menu, so Tab reaches it from the Board time pill too.
+    await vi.waitFor(() => expect(menu).toContainElement(document.activeElement as HTMLElement));
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
