@@ -358,11 +358,11 @@ describe("read-only report screens", () => {
 
   it("renders the weekly report for the last full week by default, with a Weekly tab current", () => {
     inProvider(<WeeklyReportScreen />);
-    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Last full week/u);
+    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     expect(nav.getByRole("link", { name: "Weekly" })).toHaveAttribute("aria-current", "page");
     fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "-1" } });
-    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^This week so far/u);
+    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
   });
 
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {

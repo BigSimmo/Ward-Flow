@@ -23,16 +23,19 @@ import styles from "./ward-offline-banner.module.css";
 
 /**
  * Fix plan item 9 (Josh, 21 Oct 2026, "yes to all"): the downtime pack is retaken every hour and at
- * each shift change, wherever the person is in Ward Flow, and a quiet line offers the new one to
- * print or save as a PDF. The pack stays in this tab's memory only (D-18): nothing is written to
- * the device, and a copy leaves the tab only as paper or a file the person saves.
+ * each shift change, wherever the person is in Ward Flow. Only a shift change pack offers itself
+ * to print or save as a PDF (Josh, 21 Oct 2026, UX audit): an hourly pack is taken silently, so
+ * the line comes three times a day at handover rather than up to 24. A shift change pack not yet
+ * printed or put aside is carried into the hourly retakes, so a missed handover prompt stays up with
+ * the freshest pack until it is handled. The pack stays in this tab's memory only (D-18): nothing is
+ * written to the device, and a copy leaves the tab only as paper or a file the person saves.
  *
  * No pack is taken while offline, where the records may be stale; the one due is taken on
  * reconnecting. A late retake keeps the shift change it stands for. The pack taken on opening Ward
  * Flow, or after a reset, is silent: the line is for the scheduled packs, so a reload does not ask
- * for paper. The line goes once the print window has opened for that pack or it is put aside, and
- * does not show on the pack's own screen or while offline (the offline notice names the last pack
- * instead).
+ * for paper. The line goes once the print window has opened for that pack or it is put aside, until
+ * the next shift change, and does not show on the pack's own screen or while offline (the offline
+ * notice names the last pack instead).
  */
 export function WardDowntimePackLine() {
   const now = useWardFlowClock();
@@ -64,23 +67,27 @@ export function WardDowntimePackLine() {
       if (opening) markDowntimePackHandled(opening);
       return;
     }
-    if (downtimePackDue(pack.generatedAt, now)) take({ shiftChangeAt: shiftChangeCrossed(pack.generatedAt, now) });
-  }, [canOpen, ready, online, pack, now, take, owner, worldGeneration]);
+    if (!downtimePackDue(pack.generatedAt, now)) return;
+    // A shift change pack nobody has printed or put aside keeps asking: the hourly retake after it
+    // carries the shift change on, so the line shows the fresher pack instead of going quiet. A
+    // clock moved back before the pack is a fresh start, so nothing is carried.
+    const unhandledShiftChange = handled || now < pack.generatedAt ? undefined : pack.shiftChangeAt;
+    take({ shiftChangeAt: shiftChangeCrossed(pack.generatedAt, now) ?? unhandledShiftChange });
+  }, [canOpen, ready, online, pack, handled, now, take, owner, worldGeneration]);
 
   if (!canOpen || !ready || pack === null || handled || !online || pathname === DOWNTIME_PACK_HREF) return null;
+  if (pack.shiftChangeAt === undefined) return null;
   const at = formatInstantWithDay(pack.generatedAt, now);
-  const shiftChange = pack.shiftChangeAt !== undefined;
   return (
     <p
       className={`${styles.quiet} ${styles.recovery}`}
       role="status"
       data-testid="ward-downtime-pack-line"
-      data-shift-change={shiftChange ? "true" : undefined}
+      data-shift-change="true"
       data-print-hide
     >
       <span>
-        {shiftChange ? "Shift change downtime pack " : "Downtime pack "}
-        <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
+        Shift change downtime pack <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
         <Link href={DOWNTIME_PACK_HREF} data-testid="ward-downtime-pack-open">
           Open pack
         </Link>
@@ -88,7 +95,7 @@ export function WardDowntimePackLine() {
       <button
         type="button"
         className={styles.recoveryClose}
-        aria-label="Put aside until the next pack"
+        aria-label="Put aside until the next shift change"
         data-testid="ward-downtime-pack-dismiss"
         onClick={() => markDowntimePackHandled(pack)}
       >

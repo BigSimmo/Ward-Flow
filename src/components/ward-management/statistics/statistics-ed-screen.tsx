@@ -23,6 +23,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
+import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
@@ -49,9 +50,6 @@ import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-pho
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
-
-/** The row label for a person waiting in ED: no AD- number exists yet, and a WF- id is never shown (D-39). */
-const NOT_YET_ADMITTED = "Not yet admitted";
 
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
@@ -137,9 +135,10 @@ export function StatisticsEdScreen({
   // The bands add up to the Waiting figure in the hero, so a hidden band hides a second one with it.
   const bandShown = parts(bands.map((band) => band.count));
   // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
-  // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row says so and
-  // links to the live movement, where the name is shown.
-  const nameOf: (movement: Movement) => string = () => NOT_YET_ADMITTED;
+  // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row names their
+  // recorded urgency tier, not eight rows of "Not yet admitted" (UX audit 21 Oct 2026), and links to
+  // the live movement, where the name is shown.
+  const nameOf = (movement: Movement): string => urgencyTierLabel(movement.urgency);
 
   const sortedWaits = [...waitingMovements].map((entry) => entry.waitMinutes).sort((a, b) => a - b);
   const middle = Math.floor(sortedWaits.length / 2);
@@ -749,7 +748,9 @@ function Waits({
           : true,
     )
     .sort((a, b) =>
-      sort === "name" ? nameOf(a.movement).localeCompare(nameOf(b.movement)) : b.waitMinutes - a.waitMinutes,
+      sort === "name"
+        ? a.movement.urgency - b.movement.urgency || b.waitMinutes - a.waitMinutes
+        : b.waitMinutes - a.waitMinutes,
     );
   const max = Math.max(VERY_LONG_WAIT_MINUTES, ...waiting.map((entry) => entry.waitMinutes));
 
@@ -791,7 +792,7 @@ function Waits({
                 onChange={setSort}
                 items={[
                   { id: "longest", label: "Longest" },
-                  { id: "name", label: "Name" },
+                  { id: "name", label: "Urgency" },
                 ]}
               />
             </span>
@@ -815,7 +816,7 @@ function Waits({
                 <caption className={styles.srOnly}>Open placement waits from this department, synthetic</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Patient</th>
+                    <th scope="col">Urgency</th>
                     <th scope="col">Ward status</th>
                     <th scope="col">
                       <span className={styles.srOnly}>Elapsed against {veryLongHours} hours</span>

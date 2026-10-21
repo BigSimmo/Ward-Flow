@@ -77,6 +77,15 @@ describe("the booking form reads the same rule", () => {
     expect(reason).toContain("placeholder");
   });
 
+  it("names a refused number as wrong, not as an answer nobody gave", () => {
+    const reason = transportAnswersBlockedReason({ ...answered, cadNumber: "TBC" }, NOW_ANCHOR);
+    expect(reason).toMatch(/^The CAD number looks like a placeholder/);
+    expect(reason).not.toContain("None is filled in for you");
+    const both = transportAnswersBlockedReason({ ...answered, cadNumber: "TBC", provider: undefined }, NOW_ANCHOR);
+    expect(both).toContain("placeholder");
+    expect(both).toContain("choose who is collecting the patient");
+  });
+
   it("allows confirm once a plausible number is entered", () => {
     expect(transportAnswersBlockedReason({ ...answered, cadNumber: "CAD-2026-0001" }, NOW_ANCHOR)).toBeUndefined();
   });
