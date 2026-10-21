@@ -105,6 +105,7 @@ import {
   isOwnLeaveGuardAnchor,
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** Why a ward page that names no real ward cannot send: the referral must come from a ward. */
 export const NO_SENDING_WARD = "Open New referral from your ward's page, so it is sent in that ward's name.";
@@ -258,9 +259,7 @@ export function useWardReferralDrawerState({
     kept?.selectedUnitIds ?? [...(initialUnitIds ?? [])],
   );
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
-  const [communityPurpose, setCommunityPurpose] = useState<NonNullable<KeptDraft["communityPurpose"]> | "">(
-    kept?.communityPurpose ?? "",
-  );
+  const [communityPurpose, setCommunityPurpose] = useState(kept?.communityPurpose ?? ("" as const));
   const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -1128,7 +1127,7 @@ export function useWardReferralDrawerState({
   };
   async function copyText(text: string, done: string) {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyTextToClipboard(text);
       setCopyNotice(done);
     } catch {
       setCopyNotice("Copy unavailable in this browser");

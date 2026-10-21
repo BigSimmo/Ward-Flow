@@ -10,6 +10,7 @@ import {
 import { getHealthServiceBadgeStyle, getHealthServiceDotStyle } from "@/components/ward-management/ward-service-colors";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import styles from "./ward-catchment-resolver.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** A hospital's name as the data layer holds it (`ward-sites.ts`), never restated here. */
 function siteName(code: string): string {
@@ -514,37 +515,6 @@ export function formatCatchmentSummary(entry: ResolvedCatchment): string {
   return lines.join("\n");
 }
 
-/** Safe clipboard copy helper */
-async function copyTextToClipboard(text: string): Promise<boolean> {
-  if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // Fall through to fallback below
-    }
-  }
-
-  if (typeof document !== "undefined") {
-    try {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const success = document.execCommand("copy");
-      document.body.removeChild(textArea);
-      return success;
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
-
 export interface WardCatchmentResolverProps {
   readonly initialQuery?: string;
   readonly onSelectCatchment?: (entry: ResolvedCatchment) => void;
@@ -595,11 +565,13 @@ export function WardCatchmentResolver({
   const handleCopySummary = async () => {
     if (!activeResult) return;
     const text = formatCatchmentSummary(activeResult);
-    const success = await copyTextToClipboard(text);
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    try {
+      await copyTextToClipboard(text);
+    } catch {
+      return;
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const statusStyleClass = (() => {
