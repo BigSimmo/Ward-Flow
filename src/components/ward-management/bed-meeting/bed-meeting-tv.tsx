@@ -219,7 +219,7 @@ function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number;
     <>
       <ol className={styles.list}>
         {rows.map((row) => (
-          <li key={row.id} data-long={row.waitMinutes > LONG_WAIT_MINUTES || undefined}>
+          <li key={row.id} data-long={row.waitMinutes >= LONG_WAIT_MINUTES || undefined}>
             <span className={styles.who}>{row.name}</span>
             <span className={styles.where}>{[row.stage, row.where].filter(Boolean).join(" · ")}</span>
             {/* Overall review (20 Oct 2026): the time says what it measures, the whole wait since
@@ -336,7 +336,7 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.service} data-long={row.longestWaitMinutes > LONG_WAIT_MINUTES || undefined}>
+          <tr key={row.service} data-long={row.longestWaitMinutes >= LONG_WAIT_MINUTES || undefined}>
             <th scope="row">{healthServiceAcronym(row.service)}</th>
             <td className={styles.num}>{row.edWaiting}</td>
             <td className={styles.num} data-wait="">
@@ -427,7 +427,7 @@ function BedMeetingTvView({
             label: "Longest ED wait",
             value: longest ? splitDuration(longest.waitMinutes) : 0,
             detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
-            tone: longest && longest.waitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
+            tone: longest && longest.waitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             testId: "bed-meeting-tv-longest",
           },
           {
@@ -447,7 +447,8 @@ function BedMeetingTvView({
             testId: "bed-meeting-tv-ready",
           },
           {
-            label: "Discharges due",
+            // Audit 6 (Josh, 20 Oct 2026): these count tomorrow's discharges too, so the label says so.
+            label: "Due out today and tomorrow",
             value: dischargingToday,
             detail: `${discharges.confirmed} confirmed, ${discharges.heldUp} held up`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,
@@ -709,7 +710,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             label: "Longest wait",
             value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
             detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
-            tone: summary.longestWaitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
+            tone: summary.longestWaitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             testId: "ed-tv-longest",
           },
           {

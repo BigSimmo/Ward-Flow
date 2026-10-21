@@ -48,6 +48,17 @@ import styles from "./ward-bar.module.css";
  * `phone` draws it as a button in the Menu button's place on a phone, where `buttonRef` makes it the
  * phone sheets' focus return; otherwise it is a link leading the tablet and desktop bar.
  */
+/**
+ * Audit 7 NB-06: the phone Back is a button, so the unsaved-changes guard's link listener never sees
+ * it. With no Ward Flow history it replaces the page, and a half-typed form was dropped without the
+ * question the desktop Back link asks. Ask the same mounted guards first.
+ */
+function confirmLeavingForms(): boolean {
+  const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
+    .__wardFlowConfirmNavigation;
+  return confirmNavigation ? confirmNavigation() : true;
+}
+
 export function WardBarBack({
   parentHref,
   phone,
@@ -69,7 +80,9 @@ export function WardBarBack({
         aria-label="Back"
         data-testid="ward-bar-phone-back"
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
-        onClick={() => navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace)}
+        onClick={() =>
+          navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace, confirmLeavingForms)
+        }
       >
         <ArrowLeft aria-hidden="true" strokeWidth={1.75} />
       </button>

@@ -23,6 +23,7 @@ import {
   withUmrnInPlaceOfMovementIds,
 } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
 import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
@@ -55,6 +56,8 @@ export type CommandActivityInput = {
   rejections: Rejection[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  /** Read only so "beds ready" leaves out a bed pulled for an incoming patient (`readyBedsNow`). */
+  admissions?: readonly Admission[];
   refreshRequests: { unitId: string; at: Instant; byRole: string }[];
   now: Instant;
   thresholds: DueSoonThresholds;
@@ -201,6 +204,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     referrals,
     bedReleases,
     leaveBeds,
+    admissions: input.admissions,
     now,
     thresholds: input.thresholds,
   });

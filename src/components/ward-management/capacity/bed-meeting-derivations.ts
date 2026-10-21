@@ -199,7 +199,8 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   const ed: BedMeetingEd = {
     waiting: edSummaries.reduce((sum, summary) => sum + summary.waiting, 0),
     detained: edSummaries.reduce((sum, summary) => sum + summary.detained, 0),
-    overLongWait: edPeople.filter((person) => person.waitMinutes > LONG_WAIT_MINUTES).length,
+    // Audit 6 (Josh, 20 Oct 2026): "over 24h" is 24 hours or more, as Waiting counts it.
+    overLongWait: edPeople.filter((person) => person.waitMinutes >= LONG_WAIT_MINUTES).length,
     departments: [...edSummaries]
       .sort(
         (a, b) =>

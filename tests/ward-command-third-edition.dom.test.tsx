@@ -114,12 +114,12 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     ).toBeTruthy();
   });
 
-  it("keeps the registers closed until the hero's Exceptions count opens them, above the columns", () => {
+  it("keeps the registers closed until the hero's Alerts count opens them, above the columns", () => {
     renderCoordinator();
     const body = screen.getByTestId("ward-coordinator-body");
     expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
 
-    const toggle = within(body).getByRole("button", { name: /Exceptions/ });
+    const toggle = within(body).getByRole("button", { name: /Alerts/ });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");

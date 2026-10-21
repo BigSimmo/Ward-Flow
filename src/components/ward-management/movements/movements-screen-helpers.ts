@@ -227,7 +227,8 @@ export function heroHighlights(now: Instant, accessTarget: number): HeroHighligh
       id: "over",
       label: `Over ${hours(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
       tone: "warning",
-      test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
+      // Audit 6 (Josh, 20 Oct 2026): 8 hours or more, past 24 hours included, as Waiting counts it.
+      test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
     },
   ];
 }

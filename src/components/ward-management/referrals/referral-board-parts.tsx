@@ -627,19 +627,8 @@ export function ReferralPatientTab({
               />
             </>
           ) : null}
-          {intake?.referrer.phone ? (
-            <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} />
-          ) : (
-            <Button
-              variant="sec"
-              size="sm"
-              icon={Phone}
-              disabledReason="No phone number recorded on this referral."
-              reasonDisplay="tooltip"
-            >
-              Call
-            </Button>
-          )}
+          {/* Audit 7 NA-03: calling is never wired, so no Call shows with or without a number. */}
+          {intake?.referrer.phone ? <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} /> : null}
         </div>
         <dl className={styles.pCells}>
           <div>

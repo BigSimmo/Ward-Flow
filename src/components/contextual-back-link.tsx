@@ -23,11 +23,14 @@ export function navigateContextuallyBack(
   fallbackHref: string,
   canUseHistory: () => boolean,
   onFallback?: () => void,
+  /** Return false to stay put. Only the fallback needs it: a history step is guarded on popstate. */
+  confirmFallback?: () => boolean,
 ) {
   if (canUseHistory() && canNavigateBack()) {
     router.back();
     return;
   }
+  if (confirmFallback && !confirmFallback()) return;
   onFallback?.();
   router.replace(fallbackHref);
 }
