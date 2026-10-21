@@ -22,7 +22,7 @@ const OPEN_MESSAGE = "ward-flow-open";
 
 // Bump the version when the precache list or the caching rules change: activate deletes the rest.
 const CACHE_PREFIX = "ward-flow-static-";
-const STATIC_CACHE = `${CACHE_PREFIX}v1`;
+const STATIC_CACHE = `${CACHE_PREFIX}v2`;
 const OFFLINE_URL = "/ward-flow-offline.html";
 // Best effort: a missing icon must not stop the worker installing, or phone alerts would stop too.
 const PRECACHE_OPTIONAL = ["/icon.svg", "/icons/icon-192", "/icons/maskable-192"];

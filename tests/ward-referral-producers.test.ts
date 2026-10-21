@@ -73,6 +73,10 @@ const WRITTEN_ELSEWHERE: Record<string, string> = {
   // psychiatric_ward source (`event.source === "psychiatric_ward" ? event.originUnitId : undefined`),
   // as the model's own comment specifies, so the plain `field: event.field` form above cannot see it.
   originUnitId: "RECEIVE_REFERRAL, only when source is psychiatric_ward (the sending ward)",
+  // Fix plan item 4 (21 Oct 2026): who is chasing the referral, and the calls made about it, are
+  // recorded after the referral exists.
+  ownerHistory: "ASSIGN_REFERRAL, after the referral exists",
+  contactLog: "LOG_REFERRAL_CONTACT, after the referral exists",
 };
 
 function referralFieldNames(): string[] {

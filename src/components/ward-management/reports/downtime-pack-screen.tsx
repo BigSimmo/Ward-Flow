@@ -29,18 +29,18 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
 import {
-  downtimePack,
   lastDowntimePack,
-  rememberDowntimePack,
+  markDowntimePackHandled,
   subscribeDowntimePack,
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
+import { nextDowntimePackAt } from "./downtime-pack-schedule";
+import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
@@ -49,6 +49,9 @@ const NOT_RECORDED = "Not recorded";
 const PRINT_NOTICE = "Prototype data, invented records. Not real patients and not for clinical use.";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
 const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
+/** Item 9 (Josh, 21 Oct 2026): the pack leaves the tab only as paper or a PDF the person saves. */
+const KEEP_A_COPY =
+  "To keep a file, choose Save as PDF in the print window and save it to your service's approved downtime location. Ward Flow keeps no copy on this device.";
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
@@ -132,8 +135,10 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
 
 /**
  * DOWNTIME PACK — a frozen snapshot of beds, the ED queue, moves under way and legal forms, for
- * paper use while the system is unavailable. The pack does not update while open; "New snapshot"
- * takes another. The last one is kept in this tab's memory only (D-18), never in browser storage.
+ * paper use while the system is unavailable. The pack is frozen between takes: the shell retakes it
+ * every hour and at each shift change, and "New snapshot" takes another at once. The last one is
+ * kept in this tab's memory only (D-18), never in browser storage; a copy leaves the tab only as
+ * paper or a PDF the person saves from the print window.
  *
  * v10: one hero with the frozen time and the four totals as chips that jump to their table. After a
  * new snapshot each chip carries a delta twin: the change since the pack it replaced. Phone is its
@@ -141,37 +146,13 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
-  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
-    "dayZero",
-    "units",
-    "admissions",
-    "bedReleases",
-    "leaveBeds",
-    "movements",
-    "worldGeneration",
-  );
-  const patientOf = usePatientOf();
+  const { dayZero, worldGeneration } = useWardFlowSelect("dayZero", "worldGeneration");
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
   const canSnapshot = role === "coordinator" && ready;
 
-  const take = useCallback((): void => {
-    if (!ready) return;
-    const pack = downtimePack({
-      units,
-      admissions,
-      bedReleases,
-      leaveBeds,
-      movements,
-      now,
-      identify: (movement) => {
-        const person = patientOf(movement);
-        return `${person.displayName} · ${person.umrn}`;
-      },
-    });
-    rememberDowntimePack(pack, worldGeneration, owner);
-  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready]);
+  const take = useTakeDowntimePack();
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
@@ -189,6 +170,9 @@ export function DowntimePackScreen() {
   // The totals of the pack a New snapshot replaced, for the delta twins. Held by this screen only:
   // twins appear after a snapshot the reader asked for, never on opening.
   const [before, setBefore] = useState<PackTotals | null>(null);
+  // The pack that New snapshot took. A scheduled retake replaces it, and then the twins would
+  // compare two packs that were never side by side, so they show only against this one.
+  const [twinFor, setTwinFor] = useState<DowntimePack | null>(null);
   const takingTimer = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -204,9 +188,18 @@ export function DowntimePackScreen() {
     takingTimer.current = window.setTimeout(() => {
       takingTimer.current = null;
       take();
+      setTwinFor(lastDowntimePack(owner, worldGeneration));
       setTaking(false);
     }, TAKING_MS);
   };
+
+  // A print started from the browser's own menu counts as well as the Print button.
+  useEffect(() => {
+    if (pack === null) return;
+    const handled = () => markDowntimePackHandled(pack);
+    window.addEventListener("afterprint", handled);
+    return () => window.removeEventListener("afterprint", handled);
+  }, [pack]);
 
   const [section, setSection] = useState<Section>("beds");
   const [sheet, setSheet] = useState<SheetRow | null>(null);
@@ -215,6 +208,7 @@ export function DowntimePackScreen() {
     setPreviousBoundary({ owner, worldGeneration });
     setTaking(false);
     setBefore(null);
+    setTwinFor(null);
     setSheet(null);
   }
   if (!ready && taking) setTaking(false);
@@ -261,7 +255,7 @@ export function DowntimePackScreen() {
 
   const totals = packTotals(pack);
   const twin = (key: keyof PackTotals) =>
-    before && !taking
+    before && !taking && twinFor === pack
       ? { twin: signed(totals[key] - before[key]), twinLabel: twinWords(totals[key] - before[key]) }
       : {};
 
@@ -295,7 +289,9 @@ export function DowntimePackScreen() {
     </span>
   );
   const printPack = () => {
-    if (ready && lastDowntimePack(owner, worldGeneration) === pack) window.print();
+    if (!ready || lastDowntimePack(owner, worldGeneration) !== pack) return;
+    window.print();
+    markDowntimePackHandled(pack);
   };
   const printButton = (
     <Button
@@ -305,7 +301,7 @@ export function DowntimePackScreen() {
       aria-disabled={!ready || undefined}
       data-testid="ward-downtime-print"
     >
-      Print
+      Print or save PDF
     </Button>
   );
   const printButtonOnHero = (
@@ -326,8 +322,12 @@ export function DowntimePackScreen() {
   // The ED queue counts people still in the department; All EDs counts every open journey.
   const edPopulation =
     pack.leftEd > 0 ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.` : null;
+  // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
+  const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
-    <span data-testid="ward-downtime-generated">Taken {at(pack.generatedAt)} · does not update while open</span>
+    <span data-testid="ward-downtime-generated">
+      Taken {at(pack.generatedAt)} · next pack {nextPackAt}
+    </span>
   );
   const staleLine = stale ? (
     <span className={styles.staleLine} data-testid="ward-downtime-stale">
@@ -616,7 +616,7 @@ export function DowntimePackScreen() {
               // frozen pack takes no Demo pill, whose pulse would read as live.
               eyebrow="Downtime pack · synthetic data"
               title={`Frozen at ${frozenAt}`}
-              sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
+              sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${nextPackAt}`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
               // keeps the frozen time and the actions.
               actions={
@@ -628,6 +628,9 @@ export function DowntimePackScreen() {
               }
             />
             {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
+            <p className={styles.phoneNote} data-testid="ward-downtime-keep-copy">
+              {KEEP_A_COPY}
+            </p>
             <Segmented<Section>
               className={cx(styles.phoneSeg, styles.phoneSegPinned)}
               size="md"
@@ -829,6 +832,10 @@ export function DowntimePackScreen() {
             </span>
           }
         />
+
+        <p className={styles.cardNote} data-print-hide data-testid="ward-downtime-keep-copy">
+          {KEEP_A_COPY}
+        </p>
 
         {/* Tablet and desktop: the pack runs to thousands of pixels, so a sticky jump row keeps each
             table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). */}
