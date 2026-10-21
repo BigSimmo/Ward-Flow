@@ -47,13 +47,6 @@ export function InboxSnoozeControl({
   size?: ButtonSize;
   variant?: "ghost" | "sec";
 }) {
-  const presets = SNOOZE_PRESETS.map((preset) => {
-    const until = snoozeUntilFor(preset.id, now);
-    return { ...preset, until, allowed: snoozeAllowed(until, now, actNow) };
-  });
-  const firstAllowed = presets.find((preset) => preset.allowed)?.id;
-  const [chosenPreset, setChosenPreset] = useState<string | undefined>(undefined);
-  const selected = presets.find((preset) => preset.id === (chosenPreset ?? firstAllowed) && preset.allowed);
   return (
     <Popover
       label={`Snooze ${subject}`}
@@ -65,52 +58,76 @@ export function InboxSnoozeControl({
         </Button>
       )}
     >
-      {(close) => (
-        <div className={styles.body}>
-          <div className={styles.presets} role="group" aria-label="Back in">
-            {presets.map((preset) => (
-              <Button
-                key={preset.id}
-                size="sm"
-                variant={selected?.id === preset.id ? "pri" : "sec"}
-                aria-pressed={selected?.id === preset.id}
-                title={`Back at ${formatInstantWithDay(preset.until, now)}`}
-                disabledReason={
-                  preset.allowed ? undefined : `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`
-                }
-                reasonDisplay="tooltip"
-                onClick={() => {
-                  if (!preset.allowed) return;
-                  setChosenPreset(preset.id);
-                }}
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-          {selected ? (
-            <div className={styles.reasons} role="group" aria-label="Reason">
-              <p className={styles.reasonsLead}>Back at {formatInstantWithDay(selected.until, now)}. Snooze because:</p>
-              {SNOOZE_REASONS.map((entry) => (
-                <Button
-                  key={entry.id}
-                  size="sm"
-                  variant="ghost"
-                  className={styles.reason}
-                  onClick={() => {
-                    onSnooze(selected.until, entry.id);
-                    setChosenPreset(undefined);
-                    close();
-                  }}
-                >
-                  {entry.label}
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      )}
+      {(close) => <SnoozePicker actNow={actNow} now={now} onSnooze={onSnooze} close={close} />}
     </Popover>
+  );
+}
+
+/**
+ * The picker lives inside the popover panel, which unmounts on every close, so an abandoned time
+ * choice (Escape, an outside press or the trigger) never carries over to the next open.
+ */
+function SnoozePicker({
+  actNow,
+  now,
+  onSnooze,
+  close,
+}: {
+  actNow: boolean;
+  now: Instant;
+  onSnooze: (until: Instant, reason: InboxSnoozeReason) => void;
+  close: () => void;
+}) {
+  const presets = SNOOZE_PRESETS.map((preset) => {
+    const until = snoozeUntilFor(preset.id, now);
+    return { ...preset, until, allowed: snoozeAllowed(until, now, actNow) };
+  });
+  const firstAllowed = presets.find((preset) => preset.allowed)?.id;
+  const [chosenPreset, setChosenPreset] = useState<string | undefined>(undefined);
+  const selected = presets.find((preset) => preset.id === (chosenPreset ?? firstAllowed) && preset.allowed);
+  return (
+    <div className={styles.body}>
+      <div className={styles.presets} role="group" aria-label="Back in">
+        {presets.map((preset) => (
+          <Button
+            key={preset.id}
+            size="sm"
+            variant={selected?.id === preset.id ? "pri" : "sec"}
+            aria-pressed={selected?.id === preset.id}
+            title={`Back at ${formatInstantWithDay(preset.until, now)}`}
+            disabledReason={
+              preset.allowed ? undefined : `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`
+            }
+            reasonDisplay="tooltip"
+            onClick={() => {
+              if (!preset.allowed) return;
+              setChosenPreset(preset.id);
+            }}
+          >
+            {preset.label}
+          </Button>
+        ))}
+      </div>
+      {selected ? (
+        <div className={styles.reasons} role="group" aria-label="Reason">
+          <p className={styles.reasonsLead}>Back at {formatInstantWithDay(selected.until, now)}. Snooze because:</p>
+          {SNOOZE_REASONS.map((entry) => (
+            <Button
+              key={entry.id}
+              size="sm"
+              variant="ghost"
+              className={styles.reason}
+              onClick={() => {
+                onSnooze(selected.until, entry.id);
+                close();
+              }}
+            >
+              {entry.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

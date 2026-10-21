@@ -86,6 +86,23 @@ describe("tasks drawer: ownership and snooze", () => {
     });
   });
 
+  it("forgets an abandoned time when the picker closes without a reason", () => {
+    const { dispatch, drawer } = renderDrawer();
+    let presets = openSnooze(drawer, red);
+    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    // Close with the trigger, then open again: the first allowed time is back.
+    fireEvent.click(
+      within(drawer)
+        .getAllByRole("button", { name: new RegExp(`^Snooze ${red.title}`) })
+        .at(0)!,
+    );
+    expect(screen.queryByRole("group", { name: "Back in" })).toBeNull();
+    presets = openSnooze(drawer, red);
+    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(presets).getByRole("button", { name: /^1h/ })).toHaveAttribute("aria-pressed", "false");
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   it("moves a snoozed row into the Snoozed section with who and why, and returns it on request", () => {
     const onSelectMovement = vi.fn();
     const { dispatch, drawer } = renderDrawer({
