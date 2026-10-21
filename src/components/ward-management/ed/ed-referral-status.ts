@@ -17,9 +17,9 @@ import type { EdScreenContext } from "./ed-screen-context";
  * ⚠️ "Bed held" is the ED's word for the `pulled` stage (D-77: "ED sees Bed held"). Coordinator
  * screens keep `stageCopy`'s "Bed pulled"; this module is the only place the ED wording lives.
  */
-export type EdReferralTone = "good" | "warn" | "danger" | "quiet";
+type EdReferralTone = "good" | "warn" | "danger" | "quiet";
 
-export type EdReferralStep = { label: string; detail: string; done: boolean };
+type EdReferralStep = { label: string; detail: string; done: boolean };
 
 export type EdReferralStatus = {
   /** Line one on the board: the accepting ward, or how far the referral has got. */
