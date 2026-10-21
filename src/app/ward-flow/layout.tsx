@@ -7,6 +7,7 @@ import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
+import { WardFirstDocumentOnly } from "@/components/ward-management/shell/ward-first-document-only";
 import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
@@ -141,7 +142,13 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
         <WardAccessScope>
           {/* Remembers a header tap made before the app is ready, for the header to press once it is
           (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
-          <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
+          <WardFirstDocumentOnly>
+            <script
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }}
+            />
+          </WardFirstDocumentOnly>
           {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
           <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
@@ -157,11 +164,13 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardRail />
               {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
-              <script
-                nonce={nonce}
-                suppressHydrationWarning
-                dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
-              />
+              <WardFirstDocumentOnly>
+                <script
+                  nonce={nonce}
+                  suppressHydrationWarning
+                  dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
+                />
+              </WardFirstDocumentOnly>
               <div className={styles.shellContent} data-wf-scroller="">
                 <WardBarMount />
                 {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
