@@ -301,6 +301,26 @@ export function candidateEvents(
           need: "drug_screen" as const,
         })),
       );
+    // Fix plan item 4: every referral, assigned to the coordinator desk or with a call to each ward.
+    case "ASSIGN_REFERRAL":
+      return state.referrals.map((referral) => ({
+        type,
+        role,
+        now,
+        referralId: referral.id,
+        owner: "coordinator" as const,
+      }));
+    case "LOG_REFERRAL_CONTACT":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          contact: { kind: "psychiatric_ward" as const, unitId },
+          outcome: "no_answer" as const,
+        })),
+      );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
