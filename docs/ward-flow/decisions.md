@@ -831,3 +831,23 @@ is inferred.
 - **Boundary:** Synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
 - **Why:** Several threads were building fix plan items in parallel, and the batch needed agreed rules for publishing, shared files and merge order.
 - **Subsequent note (21 October 2026):** Item 5 cannot be applied as approved: GitHub's merge queue is unavailable for a personally owned repository. Josh accepted a lighter substitute in the health check thread at 7:51 PM AWST, in his words "yes but this slows things down", then "yes ok", to that session's proposal as relayed by the coordinating session: "Require branches to be up to date before merging" stays off; only the three riskier PRs (Work loss, Referral owner and Observation levels) merge `main` in and re-run CI just before they are marked ready; the smaller PRs merge as they are.
+
+## D-74. Owner answers to the 21 October open questions (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 8:02 PM AWST: "please go ahead with all recommendations... EXCEPT... ANYTHING YOU ARE BUILDING A MOCKUP FOR", to the coordinating session's 17 recommendations.
+- **Decision:**
+  1. **Shared boards Realtime** is closed. The 3-second refresh is accepted for the prototype. This supersedes D-72 item 3 for live updates; the history table stays as D-72 left it.
+  2. **Community workflow gaps** join Phase 2 of the fix plan: an accepted community referral can be moved, transported and arrived; the coordinator can ask more wards; a community team sees the referrals it sent and whether a ward accepted.
+  3. **Community referral purpose (Q9).** A new community team referral needs a purpose, "Community follow-up" or "Assess for admission". Older records read as "Community follow-up".
+  4. **Six-screen mockup** is not approved, and the six core screens build is paused. D-72 item 4 stands as direction only, until Josh approves a mockup.
+  5. **D-39** is kept: no referral number shows on the accept card until the ward accepts.
+  6. **Copied text** carries no real names.
+  7. **OA-58** (internal patient codes) stays parked until the privacy review.
+  8. **Pilot** runs beside the ward whiteboard first.
+  9. **D-57 wording** items left over are closed as covered by D-63 and D-65.
+  10. **Assign referral** records the community desk only, with no clinician names.
+  11. **R19** (costed ward questions) stays parked until a pilot ward is chosen.
+  12. **Hosted checks.** The hosted save and conflict test and the hosted fresh browser check are approved, with synthetic data only.
+- **Standing rule:** Josh, in the project chat at 8:02 PM AWST: "DO NOT EVER GO AHEAD UNTIL I APPROVE THE MOCKUP". Nothing is built from any mockup until Josh explicitly approves that mockup.
+- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
+- **Why:** The parallel threads had raised open questions that needed owner answers before Phase 2 and the hosted checks could go ahead.
