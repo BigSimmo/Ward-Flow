@@ -90,3 +90,41 @@ describe("community referral purpose (D-74)", () => {
     expect(isValidStoredWardFlowState(state)).toBe(false);
   });
 });
+
+describe("a reused community arm takes the purpose chosen now (D-74)", () => {
+  it("writes the new purpose onto the queued arm, so the arm, the notice and the record agree", () => {
+    const seeded = seedWardFlowState();
+    const baseMovement = seeded.movements.find((m) => m.id === "WF-002")!;
+    const baseReferral = seeded.referrals.find((r) => r.id === "RF-012")!;
+    const linked = {
+      ...baseReferral,
+      id: "RF-TEST-PURPOSE",
+      destinations: [
+        {
+          destination: { kind: "community_team" as const, teamName: team, purpose: "follow_up" as const },
+          state: "queued" as const,
+        },
+      ],
+    };
+    const state: WardFlowState = {
+      ...seeded,
+      referrals: [...seeded.referrals, linked],
+      movements: [...seeded.movements, { ...baseMovement, id: "WF-TEST-PURPOSE", referralId: linked.id }],
+    };
+    const after = wardFlowReducer(state, {
+      type: "REFER_TO_COMMUNITY_TEAM",
+      role: "ed",
+      now: NOW_ANCHOR + 10,
+      movementId: "WF-TEST-PURPOSE",
+      team,
+      purpose: "assess_for_admission",
+    });
+    expect(after.rejections.slice(state.rejections.length)).toEqual([]);
+    const arms = after.referrals.find((r) => r.id === linked.id)!.destinations;
+    expect(arms).toHaveLength(1);
+    expect(arms[0]!.destination).toMatchObject({ kind: "community_team", purpose: "assess_for_admission" });
+    expect(after.movements.find((m) => m.id === "WF-TEST-PURPOSE")!.communityPurpose).toBe("assess_for_admission");
+    const notice = after.notices.slice(state.notices.length).find((n) => n.kind === "community_referral_received");
+    expect(notice?.sentence).toContain("for assessment for admission");
+  });
+});

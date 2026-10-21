@@ -538,10 +538,25 @@ export function reduceReferralSendEvent(
 
       const withMovement = replaceMovement(withoutPulledBed, movement.id, updated);
       // Finding 3: no `newReferral` at all when reusing an existing queued arm — the linked
-      // referral's own array is left exactly as it was, never a second arm appended beside it.
+      // referral's own array keeps its arms, never a second arm appended beside it. D-74: a purpose
+      // chosen now is written onto the reused arm, so the arm the team answers, the notice and the
+      // closed record all say the same thing.
+      const reusedArmToUpdate =
+        existingQueuedArm && linkedReferral && event.purpose !== undefined && event.purpose !== reusedArmPurpose
+          ? existingQueuedArm
+          : undefined;
       const withReferral: WardFlowState =
         newReferral === undefined
-          ? withMovement
+          ? reusedArmToUpdate && linkedReferral
+            ? replaceReferral(withMovement, linkedReferral.id, {
+                ...linkedReferral,
+                destinations: linkedReferral.destinations.map((arm) =>
+                  arm === reusedArmToUpdate && arm.destination.kind === "community_team"
+                    ? { ...arm, destination: { ...arm.destination, purpose } }
+                    : arm,
+                ),
+              })
+            : withMovement
           : {
               ...withMovement,
               referrals: [...withMovement.referrals, newReferral],
