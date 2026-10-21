@@ -136,6 +136,20 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
   });
 
+  it("keeps asking with the fresher hourly pack while the shift change pack is not handled", () => {
+    renderShell();
+    act(() => setClock(SHIFT_CHANGE));
+    act(() => setClock(16 * HOUR));
+    expect(lastDowntimePack()?.generatedAt).toBe(16 * HOUR);
+    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
+      /^Shift change downtime pack 16:00 ready\./u,
+    );
+    fireEvent.click(screen.getByTestId("ward-downtime-pack-dismiss"));
+    act(() => setClock(17 * HOUR));
+    expect(lastDowntimePack()?.generatedAt).toBe(17 * HOUR);
+    expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
+  });
+
   it("goes once put aside or printed, and comes back with the next shift change pack", () => {
     renderShell();
     act(() => setClock(SHIFT_CHANGE));
