@@ -11,6 +11,7 @@ import type { LegalStatus } from "../ward-model";
 import { legalStatusMismatchWarning } from "../ward-eligibility";
 import styles from "./ward.module.css";
 import {
+  INTERMITTENT_INTERVAL_MINUTES,
   OBSERVATION_LEVELS,
   observationAt,
   observationLevelName,
@@ -52,6 +53,8 @@ export function WardAcceptedReferralPlacementForm({
     legalFormCode: string;
     /** Fix plan item 10: unanswered ("") until the ward chooses a level. */
     observation: ObservationLevel | "";
+    /** Intermittent only: minutes between checks, as the ED intake form asks. */
+    intervalMinutes: number;
   } | null>(null);
   // Acceptance is a decision only. Starting its separate journey consumes no bed.
   const acceptedToStart = inboxEntries
@@ -91,7 +94,10 @@ export function WardAcceptedReferralPlacementForm({
             sex: entry.destination.sex,
             gender: entry.destination.gender,
             highAcuity: entry.destination.highAcuityNursingNeeded === true,
-            observation: observationAt(observationLevel),
+            observation:
+              observationLevel === "intermittent"
+                ? { ...observationAt(observationLevel), intervalMinutes: placementDraft.intervalMinutes }
+                : observationAt(observationLevel),
             legalStatus,
             legalFormCode: placementDraft.legalFormCode === "none" ? null : placementDraft.legalFormCode,
             urgency: entry.urgency,
@@ -118,7 +124,7 @@ export function WardAcceptedReferralPlacementForm({
         <div key={entry.id}>
           <p>{resolvePatientIdentity(entry).displayName}</p>
           {placementDraft?.referralId === entry.id ? (
-            <form onSubmit={startAcceptedPlacement}>
+            <form onSubmit={startAcceptedPlacement} className={styles.placementForm}>
               <label>
                 Legal status
                 <select
@@ -175,16 +181,35 @@ export function WardAcceptedReferralPlacementForm({
                   ))}
                 </select>
               </label>
-              <button
-                type="submit"
-                className={styles.btnActionSec}
-                disabled={!placementDraft.legalStatus || !placementDraft.legalFormCode || !placementDraft.observation}
-              >
-                Confirm and start placement
-              </button>
-              <button type="button" className={styles.btnActionSec} onClick={() => setPlacementDraft(null)}>
-                Cancel
-              </button>
+              {placementDraft.observation === "intermittent" ? (
+                <label>
+                  Check every
+                  <select
+                    value={placementDraft.intervalMinutes}
+                    onChange={(event) =>
+                      setPlacementDraft({ ...placementDraft, intervalMinutes: Number(event.target.value) })
+                    }
+                  >
+                    {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {minutes} minutes
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <div className={styles.placementActions}>
+                <button
+                  type="submit"
+                  className={styles.btnActionSec}
+                  disabled={!placementDraft.legalStatus || !placementDraft.legalFormCode || !placementDraft.observation}
+                >
+                  Confirm and start placement
+                </button>
+                <button type="button" className={styles.btnActionSec} onClick={() => setPlacementDraft(null)}>
+                  Cancel
+                </button>
+              </div>
             </form>
           ) : deskInScope && !deskInScope(ed.id) ? (
             <p className={styles.cardMeta} data-testid="ward-accepted-placement-coordinator">
@@ -200,6 +225,7 @@ export function WardAcceptedReferralPlacementForm({
                   legalStatus: LEGAL_STATUS_OPTIONS.find((status) => status === entry.intake?.legalStatus) ?? "",
                   legalFormCode: "",
                   observation: "",
+                  intervalMinutes: INTERMITTENT_INTERVAL_MINUTES[0],
                 })
               }
             >
