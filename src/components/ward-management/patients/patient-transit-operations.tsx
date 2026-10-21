@@ -649,7 +649,13 @@ export function PatientTransitOperations({
                   value={cad}
                   aria-invalid={cadHint !== undefined ? "true" : undefined}
                   aria-describedby={cadHint !== undefined ? `${baseId}-cad-hint` : undefined}
-                  onChange={(e) => setCad(e.target.value)}
+                  onChange={(e) => {
+                    setCad(e.target.value);
+                    // A refused number fails the browser's own required check, so Save stops at this
+                    // field with the reason, the same way a blank required field does.
+                    const problem = e.target.value.trim() ? cadNumberProblem(e.target.value) : undefined;
+                    e.target.setCustomValidity(problem === undefined ? "" : `To save, ${problem}.`);
+                  }}
                 />
               </label>
               {/* Outside the label, so the hint describes the field without renaming it. */}
