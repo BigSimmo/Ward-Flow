@@ -23,8 +23,12 @@ if [ ! -x "${node_dir}/bin/node" ]; then
   curl -fsSL --retry 3 -o "${tmp}/${archive}" "${base}/${archive}"
   curl -fsSL --retry 3 -o "${tmp}/SHASUMS256.txt" "${base}/SHASUMS256.txt"
   (cd "$tmp" && grep " ${archive}\$" SHASUMS256.txt | sha256sum -c - >&2)
-  mkdir -p "${node_dir}"
-  tar -xJf "${tmp}/${archive}" -C "${node_dir}" --strip-components=1
+  # Extract beside the archive and move into place only once tar succeeds, so an
+  # interrupted install is retried next session rather than left half written.
+  mkdir -p "${tmp}/node" "$(dirname "${node_dir}")"
+  tar -xJf "${tmp}/${archive}" -C "${tmp}/node" --strip-components=1
+  rm -rf "${node_dir}"
+  mv "${tmp}/node" "${node_dir}"
 fi
 
 export PATH="${node_dir}/bin:${PATH}"
@@ -38,8 +42,13 @@ if ! node scripts/check-installed-lock-parity.mjs >/dev/null 2>&1; then
   npm ci --no-audit --no-fund
 fi
 
-if [ ! -d backend/ward-flow/node_modules ]; then
+# The backend has no parity check, so reinstall whenever its lock differs
+# from the one recorded at the last install.
+backend_lock_hash="$(sha256sum backend/ward-flow/package-lock.json | cut -d' ' -f1)"
+backend_stamp=backend/ward-flow/node_modules/.ward-flow-lock-sha256
+if [ ! -f "$backend_stamp" ] || [ "$(cat "$backend_stamp")" != "$backend_lock_hash" ]; then
   npm ci --prefix backend/ward-flow --no-audit --no-fund
+  echo "$backend_lock_hash" > "$backend_stamp"
 fi
 
 # Cloud clones are shallow, so the push guard cannot find Ward Flow's identity
