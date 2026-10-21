@@ -457,7 +457,8 @@ function MenuPages({
   }
   return (
     <>
-      <Section label="Needs you" rich>
+      {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds. */}
+      <Section label="Act now and overdue" rich>
         {needs.length === 0 ? (
           <li className={styles.empty}>Nothing is act-now or overdue.</li>
         ) : (

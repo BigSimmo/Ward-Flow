@@ -331,7 +331,10 @@ export function WardGlobalSearch({
   takeFocusFrom,
 }: WardGlobalSearchProps) {
   const id = useId();
-  const tasksWord = tasksAreAlerts ? { many: "Alerts", one: "Alert" } : { many: "Tasks", one: "Task" };
+  const tasksWord = useMemo(
+    () => (tasksAreAlerts ? { many: "Alerts", one: "Alert" } : { many: "Tasks", one: "Task" }),
+    [tasksAreAlerts],
+  );
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
   const demoOffId = `${id}-demo-off`;
@@ -460,7 +463,8 @@ export function WardGlobalSearch({
         key: "needs",
         // shell-4: a cut list says so, with the full count the Tasks badge shows.
         heading:
-          allNeeds.length > needs.length ? `Needs you now · ${needs.length} of ${allNeeds.length}` : "Needs you now",
+          // UX audit (21 Oct 2026): named after the drawer it previews, as "Needs you" is Home's list.
+          allNeeds.length > needs.length ? `${tasksWord.many} · ${needs.length} of ${allNeeds.length}` : tasksWord.many,
         items: needs.map((task) => ({
           kind: "task",
           kindLabel: "Task",
@@ -499,7 +503,7 @@ export function WardGlobalSearch({
     });
     g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
     return g;
-  }, [tasks, recents, lookup, nameFor]);
+  }, [tasks, recents, lookup, nameFor, tasksWord]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
