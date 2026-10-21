@@ -751,6 +751,10 @@ export function defaultRunsFetch(branch, exec = execFileSync) {
         branch,
         "--workflow",
         "ward-flow.yml",
+        // Only pull_request runs share the cancel-in-progress concurrency group; manual or
+        // other-event runs get a unique group and are never cancelled by a push.
+        "--event",
+        "pull_request",
         "--limit",
         "100",
         "--json",
@@ -778,9 +782,17 @@ export function inFlightCiGuard(
   // product regression and is not one.
   { prViewer = defaultPrView, runFetcher = defaultRunsFetch, ghAvailable = ghIsAvailable } = {},
 ) {
-  void _ranges;
   if (process.env.SKIP_IN_FLIGHT_CI_GUARD === "1") {
     return { name: "in-flight-ci", ok: true, skipped: "SKIP_IN_FLIGHT_CI_GUARD=1" };
+  }
+  // A push whose refs are all non-branch (e.g. `git push --tags`) cannot move a PR head or
+  // cancel its CI, so the checked-out-branch fallback must not make it look like a branch push.
+  if (
+    Array.isArray(_ranges) &&
+    _ranges.length > 0 &&
+    !_ranges.some((range) => (range.remoteRef || range.localRef || "").startsWith("refs/heads/"))
+  ) {
+    return { name: "in-flight-ci", ok: true, note: "no branch refs pushed — in-flight CI check not applicable" };
   }
   if (!ghAvailable()) {
     return { name: "in-flight-ci", ok: true, note: "gh not available — in-flight CI check skipped (fail-open)" };

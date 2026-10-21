@@ -639,6 +639,15 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(result.note).toContain("gh not available");
   });
 
+  it("inFlightCiGuard ignores tag-only pushes even when the checked-out branch has CI in flight", () => {
+    const result = inFlightCiGuard(["claude/my-fix"], [{ localRef: "refs/tags/v1", remoteRef: "refs/tags/v1" }], {
+      ghAvailable: () => true,
+      prViewer: () => ({ state: "OPEN", number: 1 }),
+      runFetcher: () => [{ databaseId: 1, name: "Ward Flow CI", status: "in_progress", conclusion: null }],
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it("inFlightCiGuard skips when SKIP_IN_FLIGHT_CI_GUARD=1 is set", () => {
     const previous = process.env.SKIP_IN_FLIGHT_CI_GUARD;
     process.env.SKIP_IN_FLIGHT_CI_GUARD = "1";
@@ -680,6 +689,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(capturedArgs).toContain("claude/my-fix");
     expect(capturedArgs).toContain("--workflow");
     expect(capturedArgs).toContain("ward-flow.yml");
+    expect(capturedArgs[capturedArgs.indexOf("--event") + 1]).toBe("pull_request");
     const limitIndex = capturedArgs.indexOf("--limit");
     expect(limitIndex).not.toBe(-1);
     expect(Number(capturedArgs[limitIndex + 1])).toBeGreaterThan(10);
