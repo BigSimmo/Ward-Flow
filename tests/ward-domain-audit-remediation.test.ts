@@ -68,7 +68,7 @@ function journey(atsCategory?: number) {
         movementId,
         provider: "Ambulance service",
         escortRequired: false,
-        cadNumber: "SYN-CAD",
+        cadNumber: "SYN-CAD-1",
         transportLegalStatus: "voluntary",
         estimatedAt: 700,
       });
@@ -111,7 +111,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
         role: "ed",
         provider: "Ambulance service",
         escortRequired: false,
-        cadNumber: "SYN-RETRY",
+        cadNumber: "SYN-RETRY-2",
         transportLegalStatus: "voluntary",
         estimatedAt: 700,
       },

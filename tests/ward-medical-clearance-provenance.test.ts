@@ -57,7 +57,7 @@ function journey(linked = false) {
       movementId,
       provider: "Ambulance service",
       escortRequired: false,
-      cadNumber: "SYN-ARRIVAL",
+      cadNumber: "SYN-ARRIVAL-1",
       transportLegalStatus: "voluntary",
       estimatedAt: NOW_ANCHOR + 60,
     });
