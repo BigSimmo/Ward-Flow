@@ -448,7 +448,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
       setActiveModal({ type: "assign", referral });
-      setToastMessage("Assign referral: Not wired in this prototype.");
     }
   }
 

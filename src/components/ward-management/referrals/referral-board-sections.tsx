@@ -3,6 +3,7 @@
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
+import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { useMemo } from "react";
 import { Lock, Scale, Truck, Users } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -244,6 +245,12 @@ export function QueuedSection({
                           <StatusGlyph tone="warning" size={8} /> {GENDER_REVIEW_FLAG}
                         </span>
                       ) : null}
+                      {/* Fix plan item 4: who is chasing it and when it was last rung about. */}
+                      {referralFollowUpLine(referral, now) ? (
+                        <span className={a.rowNote} data-testid={`ward-referral-board-follow-up-${referral.id}`}>
+                          {referralFollowUpLine(referral, now)}
+                        </span>
+                      ) : null}
                     </td>
                     <td data-testid={`ward-referral-board-wait-${referral.id}`}>
                       <span className="sr-only">{referralWaitLine(referral, now)}</span>
@@ -414,6 +421,11 @@ export function QueuedSection({
                   {referralNeedsGenderReview(referral) ? (
                     <span className={a.cardNote} data-testid={`ward-referral-board-card-review-${referral.id}`}>
                       {GENDER_REVIEW_FLAG}
+                    </span>
+                  ) : null}
+                  {referralFollowUpLine(referral, now) ? (
+                    <span className={a.cardNote} data-testid={`ward-referral-board-card-follow-up-${referral.id}`}>
+                      {referralFollowUpLine(referral, now)}
                     </span>
                   ) : null}
                 </li>

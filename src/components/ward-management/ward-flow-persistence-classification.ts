@@ -181,6 +181,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "MARK_NOTICE_READ",
   "MARK_REFERRAL_INFORMATION_MET",
   "MARK_REFERRAL_OPENED",
+  // Fix plan item 4 (21 Oct 2026): a desk and a closed-list call outcome, with ward or team ids
+  // and instants only. Nothing typed.
+  "ASSIGN_REFERRAL",
+  "LOG_REFERRAL_CONTACT",
   "OPEN_DISCHARGE_RECORD",
   "PATIENT_ARRIVED",
   "PATIENT_COLLECTED",
