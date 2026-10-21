@@ -672,7 +672,7 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   });
 
   for (const [route, formerLabel, routeLabel] of FORMER_UNWIRED_ROUTES) {
-    test(`on ${routeLabel}, the header primary is New referral, not "${formerLabel}", and its menu opens and closes on Escape with focus returning to the button`, async ({
+    test(`on ${routeLabel}, the header primary is New referral, not "${formerLabel}", and it opens the referral slide-out, which closes on Escape with focus returning to the button`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
@@ -683,22 +683,22 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
       await expect(trigger).toHaveText(/New\s*referral/u);
       await expect(trigger).not.toHaveText(formerLabel);
 
-      const panel = page.getByTestId("ward-bar-primary-panel");
-      await expect(panel, "the New referral menu must start closed").toHaveCount(0);
+      // UX audit (21 Oct 2026): no destination menu; the slide-out's own "Refer to" switch chooses.
+      const sheet = page.getByTestId("ward-bar-referral-sheet");
+      await expect(sheet, "the referral slide-out must start closed").toHaveCount(0);
 
       // A real click, not a DOM presence check: reachability is the property that matters. Retried
-      // as one step, because a dev-server reload just after load can close the menu again.
+      // as one step, because a dev-server reload just after load can close the slide-out again.
       await expect(async () => {
-        if (!(await panel.isVisible())) await trigger.click();
-        await expect(panel, "the New referral menu did not open after a real click on its trigger").toBeVisible({
+        if (!(await sheet.isVisible())) await trigger.click();
+        await expect(sheet, "the referral slide-out did not open after a real click on New referral").toBeVisible({
           timeout: 2_000,
         });
       }).toPass({ timeout: 20_000 });
-      await expect(panel.getByRole("menuitem")).not.toHaveCount(0);
-      await expect(panel.getByText("Not wired in this prototype.", { exact: true })).toHaveCount(0);
+      await expect(page.getByTestId("ward-bar-primary-panel")).toHaveCount(0);
 
       await page.keyboard.press("Escape");
-      await expect(panel, "the New referral menu did not close on Escape").toHaveCount(0);
+      await expect(sheet, "the referral slide-out did not close on Escape").toHaveCount(0);
       await expect(trigger, "focus did not return to the trigger after Escape").toBeFocused();
     });
   }

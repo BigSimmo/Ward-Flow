@@ -124,24 +124,18 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(within(trigger).getByText("New")).toBeInTheDocument();
     });
 
-    it("opens Referral menu with all three destinations and closes on Escape", async () => {
+    it("opens the referral slide-out straight away, with no destination menu first", async () => {
       const user = userEvent.setup();
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
-      expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();
-
       await user.click(trigger);
-      const panel = screen.getByTestId("ward-bar-primary-panel");
-      expect(panel).toBeInTheDocument();
-
-      expect(screen.getByTestId("ward-bar-primary-menu-ward")).toHaveTextContent("To a ward");
-      expect(screen.getByTestId("ward-bar-primary-menu-community")).toHaveTextContent("To community");
-      expect(screen.getByTestId("ward-bar-primary-menu-ed")).toHaveTextContent("To an ED");
-
-      await user.keyboard("{Escape}");
       expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();
-      expect(trigger).toHaveFocus();
+      expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
+      // The slide-out's own switch carries all three destinations.
+      for (const destination of ["ward", "community", "ed"]) {
+        expect(screen.getByTestId(`ward-referral-refer-to-${destination}`)).toBeInTheDocument();
+      }
     });
 
     it("opens and closes Activity drawer correctly", async () => {

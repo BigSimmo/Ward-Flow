@@ -51,7 +51,7 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import { WARD_HOME_HREF, resolveWardPrimaryAction } from "@/components/ward-management/ward-nav";
+import { resolveWardPrimaryAction } from "@/components/ward-management/ward-nav";
 import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -291,9 +291,16 @@ describe("the outside-click-close race no longer reopens a popover on its own se
     expect(screen.queryByTestId("ward-bar-service-panel")).not.toBeInTheDocument();
   });
 
-  it("closes the primary-action ('New referral') popover on a second click of its own trigger", async () => {
+  // New referral opens the slide-out without a popover (UX audit, 21 Oct 2026), so the race is
+  // checked on a not-wired primary action, the one primary kind that still opens a popover.
+  it("closes the primary-action popover on a second click of its own trigger", async () => {
     const user = userEvent.setup();
-    renderBar(WARD_HOME_HREF);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardLiveRegion />
+        <WardBar primaryAction={{ kind: "record-decision", label: "Record a decision" }} />
+      </WardFlowProvider>,
+    );
     const trigger = screen.getByTestId("ward-bar-primary-action");
 
     await user.click(trigger);

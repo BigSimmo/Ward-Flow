@@ -43,6 +43,9 @@ export function MissedRequestsPanel() {
   const listId = useId();
   // Folded by default, so the check is one line above the board until the coordinator opens it.
   const [open, setOpen] = useState(false);
+  // UX audit (21 Oct 2026): "Checked, all accounted for" waits until the list has been opened once,
+  // so nobody confirms a list they have not looked at.
+  const [seen, setSeen] = useState(false);
   const items = useMemo(
     () => missedRequestCheck({ movements, referrals, patients, now }),
     [movements, referrals, patients, now],
@@ -83,6 +86,7 @@ export function MissedRequestsPanel() {
               aria-controls={listId}
               onClick={() => {
                 setOpen((current) => !current);
+                setSeen(true);
               }}
               data-testid="ward-missed-check-toggle"
             >
@@ -127,6 +131,8 @@ export function MissedRequestsPanel() {
             <Button
               variant="sec"
               size="sm"
+              disabledReason={items.length > 0 && !seen ? "Show the list first" : undefined}
+              reasonDisplay="tooltip"
               onClick={() => {
                 raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) });
               }}

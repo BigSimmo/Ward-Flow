@@ -25,6 +25,8 @@ describe("Daily check: Checked, all accounted for", () => {
       </WardFlowProvider>,
     );
     const confirmation = screen.getByTestId("ward-missed-check-confirmation");
+    // UX audit (21 Oct 2026): the tick waits until the list has been opened once.
+    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
     fireEvent.click(screen.getByRole("button", { name: "Checked, all accounted for" }));
 
     expect(screen.queryByTestId("ward-missed-check-done")).toBeNull();
@@ -32,5 +34,18 @@ describe("Daily check: Checked, all accounted for", () => {
       `Checked, all accounted for · Flow coordinator at ${formatInstant(NOW_ANCHOR)}`,
     );
     expect(screen.getByTestId("ward-missed-check")).toHaveTextContent("Daily check");
+  });
+
+  it("will not record the tick before the list has been shown", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MissedRequestsPanel />
+      </WardFlowProvider>,
+    );
+    const done = screen.getByRole("button", { name: "Checked, all accounted for" });
+    expect(done).toHaveAttribute("aria-disabled", "true");
+    expect(done).toHaveAccessibleDescription("Show the list first");
+    fireEvent.click(done);
+    expect(screen.getByTestId("ward-missed-check-done")).toBeInTheDocument();
   });
 });

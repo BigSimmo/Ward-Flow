@@ -62,69 +62,35 @@ describe("WardBar primary action — the five kinds, D-16", () => {
     expect(screen.queryByTestId("ward-bar-primary-action")).toBeNull();
   });
 
-  it('renders the "new-referral" trigger, and opens a menu of exactly its three real hrefs', async () => {
+  /*
+   * UX audit (21 Oct 2026): New referral opens the slide-out at once. The bar used to ask "To a
+   * ward / To community / To an ED" in a menu and the slide-out then asked the same question again,
+   * so the destination is now chosen only on the slide-out's own "Refer to" switch.
+   */
+  it('renders the "new-referral" trigger as a button that opens the slide-out with no menu first', async () => {
     const user = userEvent.setup();
     renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
     const trigger = screen.getByTestId("ward-bar-primary-action");
     expect(trigger).toHaveTextContent("New referral");
     expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger).not.toHaveAttribute("aria-haspopup");
 
     await user.click(trigger);
-    const panel = await screen.findByTestId("ward-bar-primary-panel");
-    const links = within(panel).getAllByRole("menuitem");
-    /*
-     * Asserted against the LIST's own length rather than a fresh literal, so this test cannot drift
-     * from `WARD_NEW_REFERRAL_MENU`. Since 8 Oct 2026 the menu names where the referral goes —
-     * "To a ward", "To community", "To an ED" — not where it came from.
-     */
-    expect(links).toHaveLength(WARD_NEW_REFERRAL_MENU.length);
-    expect(WARD_NEW_REFERRAL_MENU).toHaveLength(3);
-
-    // Every link's href is the SAME object WARD_NEW_REFERRAL_MENU already carries — never a
-    // hand-typed variant — proving the menu is rendered from the real list, not reconstructed.
-    for (const entry of WARD_NEW_REFERRAL_MENU) {
-      const link = screen.getByTestId(`ward-bar-primary-menu-${entry.destination}`);
-      expect(link).toHaveAttribute("href", entry.href);
-      expect(link).toHaveTextContent(entry.label);
-    }
-  });
-
-  it("closes the New referral menu on Escape and returns focus to its trigger", async () => {
-    const user = userEvent.setup();
-    renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
-
-    const trigger = screen.getByTestId("ward-bar-primary-action");
-    await user.click(trigger);
-    await screen.findByTestId("ward-bar-primary-panel");
-
-    await user.keyboard("{Escape}");
-
     expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();
-    expect(document.activeElement).toBe(trigger);
-    expect(screen.getByTestId("ward-live-region").textContent ?? "").toContain("Closed.");
+    const drawer = await screen.findByTestId("ward-bar-referral-sheet");
+    expect(within(drawer).getByTestId("ward-referral-refer-to-ward")).toHaveAttribute("aria-pressed", "true");
   });
 
-  it.each([
-    ["ward", "To a ward"],
-    ["community", "To community"],
-    ["ed", "To an ED"],
-  ] as const)(
-    'opens the referral slide-out with "Refer to" set to %s when clicking "%s"',
-    async (destination, label) => {
+  it.each(["community", "ed"] as const)(
+    'changes "Refer to" to %s on the slide-out\'s own switch',
+    async (destination) => {
       const user = userEvent.setup();
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
-      const trigger = screen.getByTestId("ward-bar-primary-action");
-      await user.click(trigger);
-      const menuItem = await screen.findByTestId(`ward-bar-primary-menu-${destination}`);
-      expect(menuItem).toHaveTextContent(label);
-
-      await user.click(menuItem);
-
-      // The referral slide-out opens in place, and its first choice is the one the menu named.
+      await user.click(screen.getByTestId("ward-bar-primary-action"));
       const drawer = await screen.findByTestId("ward-bar-referral-sheet");
-      expect(drawer).toBeInTheDocument();
+      await user.click(within(drawer).getByTestId(`ward-referral-refer-to-${destination}`));
       expect(within(drawer).getByTestId(`ward-referral-refer-to-${destination}`)).toHaveAttribute(
         "aria-pressed",
         "true",

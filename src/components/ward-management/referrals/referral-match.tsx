@@ -713,11 +713,6 @@ export function ReferralMatchView({
           >
             Decline referral
           </Button>
-          {communityDeclineReason === undefined ? (
-            <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
-              {DECLINE_REASON_UNCHOSEN_COMMUNITY}
-            </span>
-          ) : null}
         </div>
       </>
     ) : null;
@@ -820,11 +815,6 @@ export function ReferralMatchView({
               Decline referral
             </Button>
           </div>
-          {edDeclineReason === undefined ? (
-            <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
-              {DECLINE_REASON_UNCHOSEN_ED}
-            </span>
-          ) : null}
         </div>
       </>
     ) : null;
@@ -1381,11 +1371,6 @@ export function ReferralMatchView({
         >
           Decline referral
         </Button>
-        {declineReason === undefined ? (
-          <span id="ward-referral-match-decline-blocked" className="sr-only">
-            {DECLINE_REASON_UNCHOSEN}
-          </span>
-        ) : null}
       </div>
 
       {communityControls}

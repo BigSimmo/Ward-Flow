@@ -61,25 +61,27 @@ describe("tasks drawer: ownership and snooze", () => {
     });
   });
 
-  it("needs a reason, then snoozes for 30m, and holds a red row to 1h at most", () => {
+  it("picks a time, needs a reason, then snoozes, and holds a red row to 1h at most", () => {
     const { dispatch, drawer } = renderDrawer();
     const presets = openSnooze(drawer, red);
-    fireEvent.click(within(presets).getByRole("button", { name: /^30m/ }));
-    expect(dispatch).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByRole("combobox", { name: "Reason" }), { target: { value: "awaiting_call_back" } });
+    // UX audit (21 Oct 2026): the first allowed time is selected on open and the chips are live.
+    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
     const fourHours = within(presets).getByRole("button", { name: /^4h/ });
     expect(fourHours).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(fourHours);
     expect(dispatch).not.toHaveBeenCalled();
 
-    fireEvent.click(within(presets).getByRole("button", { name: /^30m/ }));
+    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    expect(dispatch).not.toHaveBeenCalled();
+
+    const reasons = screen.getByRole("group", { name: "Reason" });
+    fireEvent.click(within(reasons).getByRole("button", { name: "Awaiting call back" }));
     expect(dispatch).toHaveBeenCalledWith({
       type: "SNOOZE_INBOX_ITEM",
       role: "coordinator",
       now: NOW_ANCHOR,
       inboxItemId: red.id,
-      until: NOW_ANCHOR + 30,
+      until: NOW_ANCHOR + 60,
       reason: "awaiting_call_back",
     });
   });
