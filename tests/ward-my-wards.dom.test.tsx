@@ -86,6 +86,16 @@ describe("My wards store", () => {
 });
 
 describe("My wards section", () => {
+  it("lets the phone menu pin a ward from a list, since its menu is not reachable on a ward page", () => {
+    render(
+      <WardFlowProvider>
+        <WardMyWards variant="sheet" />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByTestId("ward-my-wards-add"), { target: { value: first!.id } });
+    expect(screen.getAllByTestId("ward-my-wards-link").map((link) => link.textContent)).toEqual([first!.name]);
+  });
+
   it("renders nothing away from a ward page until a ward is pinned", () => {
     renderSection();
     expect(screen.queryByTestId("ward-my-wards")).toBeNull();

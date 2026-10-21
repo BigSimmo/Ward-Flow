@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 
-import { Field, Select } from "@/components/wf";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { TENTATIVE_DIAGNOSIS_BLOCKS, type TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 
 import styles from "./board.module.css";
+import own from "./ward-board-ward-diagnosis.module.css";
 import type { Occupant } from "./ward-board-model";
 
 /**
@@ -31,7 +31,7 @@ export function WardDiagnosisControl({
   const unchanged = block === "" || block === occupant.wardDiagnosis?.block;
   return (
     <form
-      className={styles.fullRowSpaced}
+      className={own.form}
       data-testid="ward-board-ward-diagnosis-form"
       onSubmit={(event) => {
         event.preventDefault();
@@ -43,21 +43,23 @@ export function WardDiagnosisControl({
         );
       }}
     >
-      <Field label="Ward's tentative diagnosis">
-        <Select
-          aria-label="Ward's tentative diagnosis"
-          value={block}
-          onChange={(event) => setBlock(event.target.value as TentativeDiagnosisBlock | "")}
-          data-testid="ward-board-ward-diagnosis-select"
-        >
-          <option value="">Choose a block</option>
-          {TENTATIVE_DIAGNOSIS_BLOCKS.map((entry) => (
-            <option key={entry.code} value={entry.code}>
-              {`${entry.code} ${entry.label}`}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <label className={styles.leavingLabel} htmlFor="ward-board-ward-diagnosis-select">
+        Ward&apos;s tentative diagnosis
+      </label>
+      <select
+        id="ward-board-ward-diagnosis-select"
+        className={`${styles.leavingSelect} ${own.select}`}
+        value={block}
+        onChange={(event) => setBlock(event.target.value as TentativeDiagnosisBlock | "")}
+        data-testid="ward-board-ward-diagnosis-select"
+      >
+        <option value="">Choose a block</option>
+        {TENTATIVE_DIAGNOSIS_BLOCKS.map((entry) => (
+          <option key={entry.code} value={entry.code}>
+            {`${entry.code} ${entry.label}`}
+          </option>
+        ))}
+      </select>
       <button
         type="submit"
         className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}

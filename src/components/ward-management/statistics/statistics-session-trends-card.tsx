@@ -13,9 +13,18 @@ import styles from "./statistics-v6.module.css";
  * "This session" on Statistics (fix plan item 6, session-only first step): what was recorded hour by
  * hour in this browser session. Says plainly that it covers this session only.
  */
-export function StatisticsSessionTrendsCard({ now }: { now: Instant }) {
+export function StatisticsSessionTrendsCard({
+  now,
+  hours,
+  showTotal = true,
+}: {
+  now: Instant;
+  hours?: number;
+  /** Off on a phone, where a total column would not fit beside three hours. */
+  showTotal?: boolean;
+}) {
   const { eventLog = [] } = useWardFlowSelect("eventLog");
-  const trends = sessionTrends(eventLog, now);
+  const trends = sessionTrends(eventLog, now, hours);
   return (
     <StatCard
       icon={History}
@@ -45,7 +54,7 @@ export function StatisticsSessionTrendsCard({ now }: { now: Instant }) {
                       {formatInstantWithDay(hour, now)}
                     </th>
                   ))}
-                  <th scope="col">Total</th>
+                  {showTotal ? <th scope="col">Total</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -57,7 +66,7 @@ export function StatisticsSessionTrendsCard({ now }: { now: Instant }) {
                         {count}
                       </td>
                     ))}
-                    <td className={styles.num}>{row.total}</td>
+                    {showTotal ? <td className={styles.num}>{row.total}</td> : null}
                   </tr>
                 ))}
               </tbody>

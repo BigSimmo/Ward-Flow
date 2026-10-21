@@ -4,6 +4,7 @@ import { Pin, PinOff } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Select } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 
@@ -40,6 +41,9 @@ function pin(unit: Unit) {
  *
  * Only wards in today's network that this desk may open are listed. A pin for any other ward stays
  * stored and comes back when the ward does.
+ *
+ * The phone menu is not reachable from a ward page (its header shows Back there), so the sheet
+ * also offers a "Pin a ward" list of the wards this desk may open.
  */
 export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"; onNavigate?: () => void }) {
   const pinned = useMyWards();
@@ -54,8 +58,14 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
   const currentId = wardIdFromPath(pathname);
   const current = currentId === undefined ? undefined : byId.get(currentId);
   const offerPin = current !== undefined && !pinned.includes(current.id);
+  const pinnable =
+    variant === "sheet" && pinned.length < MY_WARDS_LIMIT
+      ? units
+          .filter((unit) => !pinned.includes(unit.id) && canOpen(unitHref(unit.id)))
+          .toSorted((left, right) => left.name.localeCompare(right.name, "en-AU"))
+      : [];
 
-  if (shown.length === 0 && !offerPin) return null;
+  if (shown.length === 0 && !offerPin && pinnable.length === 0) return null;
 
   return (
     <section aria-label="My wards" className={styles.section} data-variant={variant} data-testid="ward-my-wards">
@@ -103,6 +113,25 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
           </li>
         ) : null}
       </ul>
+      {pinnable.length ? (
+        <Select
+          aria-label="Pin a ward to My wards"
+          boxClassName={styles.pinSelect}
+          value=""
+          onChange={(event) => {
+            const unit = byId.get(event.target.value);
+            if (unit) pin(unit);
+          }}
+          data-testid="ward-my-wards-add"
+        >
+          <option value="">Pin a ward</option>
+          {pinnable.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              {`${unit.name} (${unit.siteCode})`}
+            </option>
+          ))}
+        </Select>
+      ) : null}
     </section>
   );
 }

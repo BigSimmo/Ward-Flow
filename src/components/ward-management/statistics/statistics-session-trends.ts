@@ -12,13 +12,13 @@ import type { EventLogEntry } from "@/components/ward-management/ward-event-log"
 const SESSION_TREND_MEASURES = [
   {
     id: "referrals",
-    label: "Referrals sent",
+    label: "Referred",
     types: ["RAISE_REFERRAL", "RECEIVE_REFERRAL", "REFER_TO_UNITS", "REFER_TO_COMMUNITY_TEAM"],
   },
-  { id: "accepted", label: "Referrals accepted", types: ["ACCEPT_REFERRAL"] },
-  { id: "declined", label: "Referrals declined", types: ["DECLINE", "DECLINE_REFERRAL"] },
-  { id: "arrivals", label: "Arrivals", types: ["PATIENT_ARRIVED"] },
-  { id: "departures", label: "Departures", types: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"] },
+  { id: "accepted", label: "Accepted", types: ["ACCEPT_REFERRAL"] },
+  { id: "declined", label: "Declined", types: ["DECLINE", "DECLINE_REFERRAL"] },
+  { id: "arrivals", label: "Arrived", types: ["PATIENT_ARRIVED"] },
+  { id: "departures", label: "Left", types: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly EventLogEntry["type"][] }[];
 
 type SessionTrendRow = { id: string; label: string; counts: number[]; total: number };
@@ -34,7 +34,7 @@ export type SessionTrends = {
 const MINUTES_PER_HOUR = 60;
 
 /** Counts each measure's accepted events in each of the `hourCount` hours up to and including now. */
-export function sessionTrends(log: readonly EventLogEntry[], now: Instant, hourCount = 6): SessionTrends {
+export function sessionTrends(log: readonly EventLogEntry[], now: Instant, hourCount = 4): SessionTrends {
   const currentHour = Math.floor(now / MINUTES_PER_HOUR) * MINUTES_PER_HOUR;
   const hours = Array.from(
     { length: hourCount },

@@ -28,7 +28,7 @@
 .primary {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
-  color: var(--wf-accent-ink);
+  color: var(--wf-on-accent);
 }
 
 .secondary:disabled {

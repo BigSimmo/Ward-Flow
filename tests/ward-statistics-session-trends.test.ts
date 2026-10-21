@@ -29,7 +29,7 @@ describe("sessionTrends", () => {
       entry("DECLINE_REFERRAL", HOUR - 3 * 60 + 15),
       entry("ACCEPT_REFERRAL", HOUR - 4 * 60 + 40),
     ];
-    const trends = sessionTrends(log, NOW);
+    const trends = sessionTrends(log, NOW, 6);
     expect(trends.hours).toEqual([5, 4, 3, 2, 1, 0].map((back) => HOUR - back * 60));
     const counts = Object.fromEntries(trends.rows.map((row) => [row.id, row.counts]));
     expect(counts).toEqual({
@@ -42,6 +42,10 @@ describe("sessionTrends", () => {
     expect(trends.counted).toBe(9);
   });
 
+  it("shows the last four hours by default", () => {
+    expect(sessionTrends([], NOW).hours).toEqual([3, 2, 1, 0].map((back) => HOUR - back * 60));
+  });
+
   it("leaves out refused events, events with no time, other event types and anything outside the hours shown", () => {
     const log = [
       entry("PATIENT_ARRIVED", HOUR + 5, false),
@@ -50,6 +54,6 @@ describe("sessionTrends", () => {
       entry("PATIENT_ARRIVED", HOUR - 6 * 60),
       entry("PATIENT_ARRIVED", HOUR + 60),
     ];
-    expect(sessionTrends(log, NOW).counted).toBe(0);
+    expect(sessionTrends(log, NOW, 6).counted).toBe(0);
   });
 });

@@ -78,6 +78,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
 import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
+import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
@@ -437,34 +438,40 @@ export function StatisticsScreen({
 
   if (isPhone) {
     return (
-      <StatisticsSummaryPhone
-        ready={availableNow}
-        beingMadeReady={pendingPreparation}
-        occupied={inUseCount}
-        occupiedPct={occupiedPct}
-        waitingInEd={waitingCount}
-        endedToday={dischargesCount}
-        wards={allPressureWards.map((ward) => ({
-          id: ward.id,
-          name: ward.name,
-          hospital: ward.hospital,
-          service: siteByCode(ward.site)?.service ?? "Service not recorded",
-          beds: ward.beds,
-          ready: ward.ready,
-          percent: Math.round(ward.occupancyRate * 100),
-        }))}
-        eds={emergencyDepts.map((ed) => ({
-          id: ed.id,
-          name: ed.name,
-          site: ed.site,
-          waiting: ed.waiting,
-          longest: ed.longest,
-        }))}
-        referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
-        wardCount={units.length}
-        paused={live.paused}
-        onTogglePause={live.togglePause}
-      />
+      <>
+        <StatisticsSummaryPhone
+          ready={availableNow}
+          beingMadeReady={pendingPreparation}
+          occupied={inUseCount}
+          occupiedPct={occupiedPct}
+          waitingInEd={waitingCount}
+          endedToday={dischargesCount}
+          wards={allPressureWards.map((ward) => ({
+            id: ward.id,
+            name: ward.name,
+            hospital: ward.hospital,
+            service: siteByCode(ward.site)?.service ?? "Service not recorded",
+            beds: ward.beds,
+            ready: ward.ready,
+            percent: Math.round(ward.occupancyRate * 100),
+          }))}
+          eds={emergencyDepts.map((ed) => ({
+            id: ed.id,
+            name: ed.name,
+            site: ed.site,
+            waiting: ed.waiting,
+            longest: ed.longest,
+          }))}
+          referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
+          wardCount={units.length}
+          paused={live.paused}
+          onTogglePause={live.togglePause}
+        />
+        <div className={trendStyles.phoneSlot}>
+          {/* Three hours and no total fit a phone's width without a sideways scroll. */}
+          <StatisticsSessionTrendsCard now={now} hours={3} showTotal={false} />
+        </div>
+      </>
     );
   }
 
