@@ -147,12 +147,18 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen(props: { initialMovementId?: string } = {}) {
+export function LegalFormsScreen(props: { initialMovementId?: string; recordOnOpen?: boolean } = {}) {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <LegalFormsWorkspace key={worldGeneration} {...props} />;
 }
 
-function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string }) {
+function LegalFormsWorkspace({
+  initialMovementId,
+  recordOnOpen = false,
+}: {
+  initialMovementId?: string;
+  recordOnOpen?: boolean;
+}) {
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -189,10 +195,14 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
-  const [recordOpen, setRecordOpen] = useState(false);
+  // The patient record's "Record a form" adds &record=1, so the sheet opens with that movement
+  // chosen. It opens only where this route may record a form.
+  const [recordOpen, setRecordOpen] = useState(
+    () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
+  );
   const [recordDraft, setRecordDraft] = useState<RecordDraft>({
     form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "",
-    movement: "",
+    movement: recordOnOpen ? (initialMovementId ?? "") : "",
   });
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
@@ -1272,8 +1282,12 @@ function FormRow({
         <span className={styles.srOnly}>{reason}</span>
       </span>
       <span className={styles.recorded}>
+        {/* UX audit (21 Oct 2026): a form with nothing to record shows a plain dash, not "Not
+            tracked" over "0 of 0 recorded". */}
         {facts.length === 0 ? (
-          <span className={styles.sub}>Not tracked</span>
+          <span className={styles.sub} aria-hidden="true">
+            –
+          </span>
         ) : missing.length === 0 ? (
           <>
             <StatusGlyph tone="success" size={9} />
@@ -1289,7 +1303,7 @@ function FormRow({
           </>
         )}
         <span className={styles.srOnly}>
-          {done} of {facts.length} recorded
+          {facts.length === 0 ? "Nothing to record for this form" : `${done} of ${facts.length} recorded`}
         </span>
       </span>
     </DataRow>
@@ -1384,7 +1398,7 @@ function PhoneChecklist({
             name={nameOf(movement)}
             meta={
               facts.length === 0
-                ? "Not tracked"
+                ? "Nothing to record for this form"
                 : missing.length === 0
                   ? "Everything recorded"
                   : `To do ${missing.map((fact) => fact.label).join(", ")}`
@@ -1398,7 +1412,7 @@ function PhoneChecklist({
               )
             }
             time={facts.length === 0 ? undefined : "recorded"}
-            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${done} of ${facts.length} recorded`}
+            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${facts.length === 0 ? "nothing to record for this form" : `${done} of ${facts.length} recorded`}`}
             onSelect={() => onSelect(movement)}
           />
         );

@@ -1,6 +1,6 @@
 "use client";
 
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
@@ -649,6 +649,14 @@ export function PatientDetailsTab({
   preferredName?: string;
 }) {
   const [missingOnly, setMissingOnly] = useState(false);
+  // UX audit (21 Oct 2026): a fact the movement and the patient record share shows once. The
+  // placement copy and the patient's own legal status appear only when they differ, so a reader
+  // compares two values only when there is something to compare.
+  const sexDiffers = movement !== undefined && movement.sex !== patient?.sex;
+  const genderDiffers = movement !== undefined && movement.gender !== patient?.gender;
+  const legalDiffers = Boolean(
+    movement?.legalStatus && patient?.legalStatus && movement.legalStatus !== patient.legalStatus,
+  );
   // Interpreter language and Aboriginal status sit in different groups, never side by side (the
   // placement rule in person-screen.tsx).
   const groups: { title: string; facts: Fact[] }[] = [
@@ -658,7 +666,7 @@ export function PatientDetailsTab({
         ["Name", displayName],
         ["Preferred name", preferredName],
         ["Record number", patient?.umrn],
-        ["Date of birth", patient?.dateOfBirth],
+        ["Date of birth", patient?.dateOfBirth ? formatDateOfBirth(patient.dateOfBirth) : undefined],
         ["Sex", patient?.sex],
         ["Gender", patient?.gender],
       ],
@@ -677,16 +685,16 @@ export function PatientDetailsTab({
       title: "Transfer context",
       facts: [
         ["Age band", movement?.cohort],
-        ["Placement sex", movement?.sex],
-        ["Placement gender", movement?.gender],
-        ["Movement legal status", movement?.legalStatus],
+        ...(sexDiffers ? ([["Placement sex", movement?.sex]] satisfies Fact[]) : []),
+        ...(genderDiffers ? ([["Placement gender", movement?.gender]] satisfies Fact[]) : []),
+        [legalDiffers ? "Movement legal status" : "Legal status", movement?.legalStatus ?? patient?.legalStatus],
         ["Owner", movement?.owner?.trim() || undefined],
       ],
     },
     {
       title: "Recorded identity context",
       facts: [
-        ["Patient legal status", patient?.legalStatus],
+        ...(legalDiffers ? ([["Patient legal status", patient?.legalStatus]] satisfies Fact[]) : []),
         ["Aboriginal or Torres Strait Islander status", patient?.aboriginalOrTorresStraitIslanderStatus],
       ],
     },
@@ -709,7 +717,7 @@ export function PatientDetailsTab({
           aside={
             <span className={styles.chip}>
               <StatusGlyph tone={missing > 0 ? "neutral" : "success"} size={10} />
-              {missing} not recorded
+              {missing > 0 ? `${missing} not recorded` : "All recorded"}
             </span>
           }
         />
@@ -723,15 +731,17 @@ export function PatientDetailsTab({
               value={all.length - missing}
               aria-label="Recorded patient and placement fields"
             />
-            <Button
-              size="sm"
-              aria-pressed={missingOnly}
-              onClick={() => {
-                setMissingOnly(!missingOnly);
-              }}
-            >
-              Missing information
-            </Button>
+            {missing > 0 ? (
+              <Button
+                size="sm"
+                aria-pressed={missingOnly}
+                onClick={() => {
+                  setMissingOnly(!missingOnly);
+                }}
+              >
+                Missing information
+              </Button>
+            ) : null}
             <CopyFact
               label="Copy patient identifiers"
               value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
@@ -763,24 +773,28 @@ export function PatientDetailsTab({
             )}
           </Card>
         ))}
-        <Card className={styles.dashed}>
-          <CardHead
-            level={2}
-            icon={Wrench}
-            title="Not in the record yet"
-            aside={<span className={styles.preview}>Preview</span>}
-          />
-          <dl className={styles.fields}>
-            {["Next of kin", "Carer", "Guardian", "Advance health directive", "NDIS participant", "Alerts"].map(
-              (label) => (
-                <div className={styles.detailField} key={label}>
-                  <dt>{label}</dt>
-                  <dd data-missing="true">Needs a record field</dd>
-                </div>
-              ),
-            )}
-          </dl>
-        </Card>
+        {/* Fields Ward Flow has no record for yet: a builder's note, so it shows only where
+            unfinished previews do (UX audit, 21 Oct 2026). */}
+        <UnwiredPreview>
+          <Card className={styles.dashed}>
+            <CardHead
+              level={2}
+              icon={Wrench}
+              title="Not in the record yet"
+              aside={<span className={styles.preview}>Preview</span>}
+            />
+            <dl className={styles.fields}>
+              {["Next of kin", "Carer", "Guardian", "Advance health directive", "NDIS participant", "Alerts"].map(
+                (label) => (
+                  <div className={styles.detailField} key={label}>
+                    <dt>{label}</dt>
+                    <dd data-missing="true">Needs a record field</dd>
+                  </div>
+                ),
+              )}
+            </dl>
+          </Card>
+        </UnwiredPreview>
       </div>
       <p className={legacy.note}>
         Record completeness describes available fields; it is not a clinical safety assessment.

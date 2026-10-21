@@ -68,7 +68,7 @@ describe("patient page design fixes", () => {
     // WF-005: Tier 2, opened 5h 30m before the anchor, past the 4h limit.
     renderAt("WF-005");
     const root = screen.getByTestId("ward-person-screen");
-    expect(root).toHaveTextContent("Overdue · 4h limit");
+    expect(root).toHaveTextContent("Over T2 target (4h)");
     expect(root).toHaveTextContent("5h 30msince opened");
     expect(root).not.toHaveTextContent("Overdue wait ·");
   });

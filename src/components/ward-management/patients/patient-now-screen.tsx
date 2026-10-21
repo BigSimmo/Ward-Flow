@@ -933,14 +933,11 @@ export function PatientNowScreen({
     { key: "documents", label: "Documents", count: documentCount },
   ];
   /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
-  /* v10 Movement, Phone: "Now, History, Details, Docs" while a movement is live. */
+  /* v10 Movement, Phone: "Now, History, Details, Documents" while a movement is live. The UX audit
+   * (21 Oct 2026) gave the phone the desktop's tab name, "Documents", so the two never disagree. */
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
   const phoneTabs = phoneMovement
-    ? tabs
-        .filter((tab) => tab.key !== "community" || phoneKeepsCommunity)
-        .map((tab) =>
-          tab.key === "documents" ? { ...tab, label: "Docs", count: undefined } : { ...tab, count: undefined },
-        )
+    ? tabs.filter((tab) => tab.key !== "community" || phoneKeepsCommunity).map((tab) => ({ ...tab, count: undefined }))
     : tabs
         .filter(
           (tab) =>

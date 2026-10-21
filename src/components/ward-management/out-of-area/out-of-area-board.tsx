@@ -491,8 +491,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }
 
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
-  const legalOf = (entry: OutOfAreaEntry): string | undefined =>
-    stayLegalShort(entry.admission, { movements, patients, referrals });
+  // UX audit (21 Oct 2026): a stay with none recorded says so, so the gap shows before a return
+  // trip is planned rather than leaving the cell silent.
+  const legalOf = (entry: OutOfAreaEntry): string =>
+    stayLegalShort(entry.admission, { movements, patients, referrals }) ?? "Legal not recorded";
 
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
     const info = patientOf(entry);
@@ -1010,7 +1012,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               <span className={styles.two}>
                                 <b title={info.displayName}>{info.displayName}</b>
                                 <span className={styles.legalUmrn}>
-                                  {legalOf(entry) ? <span>{legalOf(entry)} · </span> : null}
+                                  <span>{legalOf(entry)} · </span>
                                   {href ? (
                                     <Link
                                       href={href}
