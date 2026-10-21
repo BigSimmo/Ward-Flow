@@ -4,7 +4,6 @@
 // answered referrals. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
 import type { ReferralGender } from "@/components/ward-management/ward-model";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -18,6 +17,7 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdScreenContext } from "./ed-screen-context";
 import { ANSWERED_VISIBLE_CAP, answeredAddressingLabel, GENDER_OPTIONS, urgencyGlyph } from "./ed-screen-model";
+import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
 export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
@@ -97,7 +97,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                 >
                   <header className={styles.cardHeader}>
                     <strong>{patientInfo.formalName}</strong>
-                    <span className={styles.cardMeta}>{stageCopy[movement.stage].label}</span>
+                    <span className={styles.cardMeta}>{edStageLabel(movement.stage)}</span>
                     {/*
                      * THE URGENCY TIER, BESIDE THE STAGE, ON EVERY ROW — owner ruling, 2026-08-31.
                      *

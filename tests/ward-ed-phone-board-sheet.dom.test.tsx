@@ -73,20 +73,15 @@ describe("ED board on phone", () => {
     const sheet = screen.getByTestId(`ward-ed-phone-sheet-${id}`);
     expect(within(sheet).getByRole("button", { name: "Open patient" })).toBeTruthy();
     const actions = screen.getByTestId(`ward-ed-phone-actions-${id}`);
-    for (const name of [
-      "Edit presentation",
-      "Edit plan",
-      "Record examination",
-      "Record outcome",
-      "Withdraw referral",
-    ]) {
+    for (const name of ["Edit presentation", "Edit plan", "Record outcome", "Withdraw referral"]) {
       expect(within(actions).getByRole("button", { name })).toBeTruthy();
     }
+    // Change 2 (D-77): the pinned next step is Record exam, so the list does not offer it again.
+    expect(within(actions).queryByRole("button", { name: "Record examination" })).toBeNull();
 
     // The pinned next step opens the inline examination form inside the sheet.
     fireEvent.click(within(sheet).getByRole("button", { name: "Record exam" }));
     expect(within(sheet).getByText(/Examination outcome for/)).toBeTruthy();
-    expect(within(actions).getByTestId(`ward-ed-examine-toggle-${id}`).getAttribute("aria-expanded")).toBe("true");
   });
 
   it("opens the outcome form from the sheet's action list", () => {
