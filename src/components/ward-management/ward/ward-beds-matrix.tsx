@@ -443,7 +443,7 @@ export function WardBedsMatrix({
                 <circle cx="8" cy="8" r="6" />
                 <path d="M8 4.5v3.5l2.5 1.5" />
               </svg>
-              Needs you this shift
+              Before handover
             </span>
             <span className={styles.shiftSubtitle}>
               {visibleShiftItems.length} of {shiftItems.length} before handover at {formatInstant(DAY_SHIFT_END_MINUTE)}

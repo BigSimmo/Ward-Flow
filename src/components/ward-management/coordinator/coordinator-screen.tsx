@@ -512,7 +512,7 @@ export function CoordinatorScreen() {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,
-          title: "Reserved time has passed, bed still held",
+          title: "Pull expired, bed still pulled",
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
