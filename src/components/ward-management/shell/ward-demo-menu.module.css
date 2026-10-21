@@ -22,3 +22,8 @@
   background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
   color: var(--wf-ink-1);
 }
+
+/* The scenario names read at the size the approved mock-up shows. */
+.menu [role="radiogroup"] strong {
+  font-size: var(--wf-fs-16);
+}
