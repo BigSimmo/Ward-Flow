@@ -34,8 +34,12 @@ import {
  *    placeholder without failing that fence, so a session holding them stops saving, exactly as
  *    every typed session did before.
  *
- * The fixture's own prose is kept: it ships in the bundle, so it is not a disclosure, and blanking
- * it made every restored history read as missing (Opus finding F3, 2026-09-17).
+ * The fixture's own prose is kept where the fixture put it: it ships in the bundle, so it is not a
+ * disclosure, and blanking it made every restored history read as missing (Opus finding F3,
+ * 2026-09-17). In a typed field (pass 1), "where the fixture put it" means the same field of the
+ * same record (by `id`): typed initials "JM" on a new booking say something about that booking even
+ * though "JM" is seeded elsewhere (Codex review, 21 Oct 2026). Pass 2 leaves any fixture string alone,
+ * because the default-deny ledger also holds values picked from a list (see `effectiveLedger`).
  *
  * **Adding a typed field.** A new typed-text event needs its reviewed keys in `NOT_TYPED_KEYS`
  * (`ward-flow-typed-text-ledger.ts`, whose test keeps it equal to the typed-text list), a fixture in
@@ -136,20 +140,44 @@ function matchesRule(path: readonly string[], rule: PathRule): boolean {
  */
 export type FixtureWorlds = () => readonly WardFlowState[];
 
-let fixtureText: { from: FixtureWorlds; strings: ReadonlySet<string> } | undefined;
+interface FixtureText {
+  /** Every seeded string with where it sits: what pass 1 keeps. */
+  places: ReadonlySet<string>;
+  /** Every seeded string, wherever it sits: what pass 2 leaves alone (see `effectiveLedger`). */
+  strings: ReadonlySet<string>;
+}
 
-/** Every string in every seeded world, normalised. Built once per source, on first use. */
-function fixtureStrings(worlds: FixtureWorlds): ReadonlySet<string> {
-  if (fixtureText?.from === worlds) return fixtureText.strings;
+let fixtureText: { from: FixtureWorlds; text: FixtureText } | undefined;
+
+/** An array entry's place: its record `id` where it has one, so an insertion cannot shift it. */
+function entryPlace(entry: unknown, index: number): string {
+  const id = entry && typeof entry === "object" ? (entry as { id?: unknown }).id : undefined;
+  return typeof id === "string" ? `#${id}` : `[${index}]`;
+}
+
+/** A string and where it sits, normalised, as one set member. */
+function placed(place: readonly string[], value: string): string {
+  return `${place.join("\u0001")}\u0000${normaliseTypedText(value)}`;
+}
+
+/** Every string in every seeded world. Built once per source, on first use. */
+function fixtureEntries(worlds: FixtureWorlds): FixtureText {
+  if (fixtureText?.from === worlds) return fixtureText.text;
+  const places = new Set<string>();
   const strings = new Set<string>();
-  const visit = (value: unknown): void => {
-    if (typeof value === "string") strings.add(normaliseTypedText(value));
-    else if (Array.isArray(value)) value.forEach(visit);
-    else if (value && typeof value === "object") Object.values(value).forEach(visit);
+  const visit = (value: unknown, place: string[]): void => {
+    if (typeof value === "string") {
+      places.add(placed(place, value));
+      strings.add(normaliseTypedText(value));
+    } else if (Array.isArray(value))
+      value.forEach((entry, index) => visit(entry, [...place, entryPlace(entry, index)]));
+    else if (value && typeof value === "object")
+      for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
   };
-  worlds().forEach(visit);
-  fixtureText = { from: worlds, strings };
-  return strings;
+  for (const world of worlds()) visit(world, []);
+  const text = { places, strings };
+  fixtureText = { from: worlds, text };
+  return text;
 }
 
 /**
@@ -158,21 +186,28 @@ function fixtureStrings(worlds: FixtureWorlds): ReadonlySet<string> {
  */
 export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds, loadedWorld = false): WardFlowState {
   const rules = loadedWorld ? [...HUMAN_ONLY_RULES, ...MIXED_RULES] : HUMAN_ONLY_RULES;
-  const fixture = fixtureStrings(worlds);
-  // Fixture text ships in the bundle, and a fixed-list discharge criterion is chosen, not typed.
-  const keptAsIs = (value: string, path: readonly string[]): boolean =>
+  const fixture = fixtureEntries(worlds).places;
+  // Fixture text where the fixture put it ships in the bundle, and a fixed-list discharge criterion
+  // is chosen, not typed.
+  const keptAsIs = (value: string, path: readonly string[], place: readonly string[]): boolean =>
     value.trim() === "" ||
-    fixture.has(normaliseTypedText(value)) ||
+    fixture.has(placed(place, value)) ||
     (path.at(-1) === "criterion" && isDischargeCriterion(value));
-  const visit = (value: unknown, path: string[]): unknown => {
+  // `path` matches the field rules (`[]` for any array position); `place` finds the fixture's own text.
+  const visit = (value: unknown, path: string[], place: string[]): unknown => {
     if (typeof value === "string")
-      return keptAsIs(value, path) || !rules.some((rule) => matchesRule(path, rule)) ? value : TYPED_TEXT_NOT_KEPT;
-    if (Array.isArray(value)) return value.map((entry) => visit(entry, [...path, "[]"]));
+      return keptAsIs(value, path, place) || !rules.some((rule) => matchesRule(path, rule))
+        ? value
+        : TYPED_TEXT_NOT_KEPT;
+    if (Array.isArray(value))
+      return value.map((entry, index) => visit(entry, [...path, "[]"], [...place, entryPlace(entry, index)]));
     if (value && typeof value === "object")
-      return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, visit(entry, [...path, key])]));
+      return Object.fromEntries(
+        Object.entries(value).map(([key, entry]) => [key, visit(entry, [...path, key], [...place, key])]),
+      );
     return value;
   };
-  return keepHoldableIntakes(visit(state, []) as WardFlowState);
+  return keepHoldableIntakes(visit(state, [], []) as WardFlowState);
 }
 
 /** Optional intake times and file contents: a placeholder cannot stand in for these, so they go. */
@@ -222,9 +257,15 @@ function matchesLedger(value: string, ledger: readonly string[]): boolean {
   );
 }
 
-/** The ledger without blank values or fixture text, normalised: what must not reach storage. */
+/**
+ * The ledger without blank values or fixture text, normalised: what pass 2 replaces. The ledger is
+ * default deny, so it also holds values picked from a list (a unit id, a region, "Female"). Those
+ * are fixture strings, and replacing them everywhere would break every record that names them and
+ * stop every save. A typed field holding such a value on a new record is still replaced by pass 1,
+ * which keeps fixture text only where the fixture put it.
+ */
 function effectiveLedger(ledger: TypedTextLedger, worlds: FixtureWorlds): string[] {
-  const fixture = fixtureStrings(worlds);
+  const fixture = fixtureEntries(worlds).strings;
   return [...new Set(ledger.map(normaliseTypedText))].filter((typed) => typed !== "" && !fixture.has(typed));
 }
 

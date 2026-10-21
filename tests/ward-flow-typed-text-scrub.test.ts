@@ -144,10 +144,36 @@ describe("device copy of a session holding typed text", () => {
     expect(deviceCopyFromEvents(next, [event, unknown], worlds)).toBeNull();
   });
 
-  it("keeps a typed value identical to fixture text, which ships in the bundle", () => {
+  it("keeps fixture text where the fixture put it, even when the same words were typed", () => {
     const seed = seedWardFlowState();
     const fixtureBlocker = seed.movements[0].blocker;
     const copy = redactTypedTextForDevice(seed, [fixtureBlocker], worlds);
     expect(copy!.movements[0].blocker).toBe(fixtureBlocker);
+  });
+
+  it("replaces a typed field whose value the fixture holds only on another record", () => {
+    const seed = seedWardFlowState();
+    const [first, second] = seed.patients;
+    const retyped = {
+      ...seed,
+      patients: seed.patients.map((patient) =>
+        patient === second ? { ...second, familyName: first.familyName } : patient,
+      ),
+    };
+    const copy = redactTypedTextForDevice(retyped, [first.familyName], worlds);
+    expect(copy).not.toBeNull();
+    expect(copy!.patients[0].familyName).toBe(first.familyName);
+    expect(copy!.patients[1].familyName).toBe(TYPED_TEXT_NOT_KEPT);
+  });
+
+  it("replaces a typed field on a new record even when its value is seeded on another", () => {
+    const seed = seedWardFlowState();
+    const seeded = seed.referrals.find((referral) => referral.history);
+    expect(seeded).toBeDefined();
+    const added = { ...seeded!, id: "RF-SYNTHETIC-NEW" };
+    const copy = redactTypedTextForDevice({ ...seed, referrals: [...seed.referrals, added] }, [], worlds);
+    expect(copy).not.toBeNull();
+    expect(copy!.referrals.find((referral) => referral.id === seeded!.id)!.history).toBe(seeded!.history);
+    expect(copy!.referrals.at(-1)!.history).toBe(TYPED_TEXT_NOT_KEPT);
   });
 });
