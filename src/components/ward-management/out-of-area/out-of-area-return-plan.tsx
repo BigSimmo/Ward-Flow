@@ -42,6 +42,7 @@ import {
 } from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 
 export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
@@ -215,6 +216,9 @@ export function ReturnPlan({
 }: ReturnPlanProps) {
   const site = siteByCode(entry.unit.siteCode);
   const missing = missingAnswers(draft, now);
+  // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
+  const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
+  const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
   const move = whoseMove(draft, record);
   const isAir = entry.band === "air_transport_only";
   const optionCodes = new Set(options.map((option) => option.siteCode));
@@ -453,7 +457,7 @@ export function ReturnPlan({
                 title={PLAN_STEPS[2].title}
                 left={missing.filter((m) => PLAN_STEPS[2].answers.includes(m as never))}
               />
-              <Field label="CAD number" className={styles.formRow}>
+              <Field label="CAD number" className={styles.formRow} error={cadError}>
                 <TextInput
                   data-testid="ward-out-of-area-repat-cad"
                   className={styles.mono}
