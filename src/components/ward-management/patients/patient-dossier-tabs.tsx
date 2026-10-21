@@ -424,10 +424,11 @@ export function PatientHistoryTab({
 }
 
 /** Each ward stay the record links: where, when, and how it ended. Only recorded values. */
-/** One label per admission state: a waitlisted person has no bed yet, a pulled bed is held for them. */
+/** One label per admission state: a waitlisted person has no bed yet, a pulled bed is kept for them
+ * ("Bed pulled", the one bed vocabulary; "hold" is for a leave bed only). */
 const STAY_CHIP: Record<Admission["state"], string> = {
   waitlisted: "Waitlisted",
-  pulled: "Bed held",
+  pulled: "Bed pulled",
   occupied: "Current",
   departed: "Closed",
 };
