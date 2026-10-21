@@ -83,7 +83,7 @@ beforeEach(async () => {
   // Every code-split pane has finished loading before the test renders, so it mounts synchronously.
   // A loaded chunk can itself call dynamic() (the phone menu's sheets load its search results), so
   // wait until no new load has started.
-  for (let settled = -1; settled !== pendingDynamicLoads.length; ) {
+  for (let settled = -1; settled !== pendingDynamicLoads.length;) {
     settled = pendingDynamicLoads.length;
     await Promise.all(pendingDynamicLoads);
   }
