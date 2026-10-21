@@ -270,12 +270,12 @@ export function PatientSearchPage() {
 
   const baseResults = useMemo(() => {
     const needle = foldPatientSearchText(text);
-    if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" }, admissions);
-    const byRecord = new Set(searchPatients(movements, referrals, units, query, admissions).map(resultId));
-    return searchPatients(movements, referrals, units, { ...query, text: "" }, admissions).filter(
+    if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
+    const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
+    return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
       (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
     );
-  }, [movements, referrals, units, query, isChip, text, subjectWords, admissions]);
+  }, [movements, referrals, units, query, isChip, text, subjectWords]);
 
   const results = useMemo(() => {
     return baseResults.filter((result) => {

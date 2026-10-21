@@ -538,13 +538,16 @@ function searchReferrals(
   query: string,
   referrals: readonly Referral[],
   lookup: { patients: readonly Patient[]; movements: readonly Movement[]; referrals: readonly Referral[] },
-  admissions: readonly Pick<Admission, "referralId" | "patientId">[],
+  admissions: readonly Pick<Admission, "referralId">[] | undefined,
 ): ReferralSearchResult[] {
   const needle = foldPatientSearchText(query);
   if (needle.length < 2) return [];
   return referrals.flatMap((referral) => {
     const waiting = referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer);
-    if (!waiting && !acceptedReferralAwaitingMovement(referral, lookup.movements, admissions)) return [];
+    // Without admissions a referral already admitted cannot be told apart, so only queued ones show.
+    const awaitingMovement =
+      admissions !== undefined && acceptedReferralAwaitingMovement(referral, lookup.movements, admissions);
+    if (!waiting && !awaitingMovement) return [];
     const info = resolveSubjectPatient(referral, lookup);
     const words = foldPatientSearchText(
       [info.displayName, info.formalName, info.umrn, referral.id, referral.originSiteCode, referral.homeRegion].join(
@@ -614,7 +617,7 @@ export type SmartSearchInput = {
   limitPerGroup?: number;
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
   /** Ward admissions, so an accepted referral already admitted is not offered as still waiting. */
-  admissions?: readonly Pick<Admission, "referralId" | "patientId">[];
+  admissions?: readonly Pick<Admission, "referralId">[];
   precomputedTasks?: readonly InboxItem[];
 };
 
@@ -781,7 +784,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
         movements: input.movements,
         referrals: input.referrals ?? [],
       },
-      input.admissions ?? [],
+      input.admissions,
     ),
     trimmed,
     (result) => [result.formalName, result.umrn, result.referral.id],

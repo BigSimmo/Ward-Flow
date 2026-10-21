@@ -22,7 +22,6 @@ import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import type {
   Cohort,
   HealthService,
@@ -406,17 +405,19 @@ function wardReleaseFigures(unit: Unit, { now, releases, leave }: NetworkWardInp
 }
 /**
  * Audit A3-13: occupants whose recorded sex and gender put them in neither sex-mix bucket
- * (`mixSexOf` returns undefined, owner rulings 2026-09-25, R7). They fill a bed but are never added
+ * (`inASexMixBucket` below is false, owner rulings 2026-09-25, R7). They fill a bed but are never added
  * to `sexMix`, so without this the "may not have settled" signal stayed on for as long as they were
  * on the ward. Only arrived occupants count, since `sexMix` moves on arrival, not on a pull. Zero
  * when the caller supplied no admissions, which keeps the old comparison.
  */
+/** `mixSexOf`'s rule, restated here because this module never imports eligibility: gender first, else sex. */
+function inASexMixBucket(admission: Pick<Admission, "gender" | "sex">): boolean {
+  const named = (value: string | undefined) => value === "Female" || value === "Male";
+  return named(admission.gender) || named(admission.sex);
+}
 function occupantsInNeitherSexBucket(unitId: string, admissions: Admission[] | undefined): number {
   return (admissions ?? []).filter(
-    (admission) =>
-      admission.unitId === unitId &&
-      admission.state === "occupied" &&
-      mixSexOf(admission.gender, admission.sex) === undefined,
+    (admission) => admission.unitId === unitId && admission.state === "occupied" && !inASexMixBucket(admission),
   ).length;
 }
 function wardSurge(unit: Unit, cap: ReturnType<typeof unitCapacity>): number {

@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { lastRecordedActivity } from "@/components/ward-management/delays/delays-derivations";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
-import { searchPatients } from "@/components/ward-management/ward-derivations";
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -29,22 +28,10 @@ function acceptRf011(state: WardFlowState): WardFlowState {
 }
 
 describe("A3-5: a referral accepted before its bed is pulled stays findable", () => {
-  it("keeps RF-011 in patient search once accepted, when no movement exists yet", () => {
+  it("keeps RF-011 in the header search once accepted, when no movement exists yet", () => {
     const seed = seedWardFlowState();
     const accepted = acceptRf011(seed);
     expect(accepted.movements.length).toBe(seed.movements.length);
-    const hits = searchPatients(
-      accepted.movements,
-      accepted.referrals,
-      accepted.units,
-      { text: "RF-011" },
-      accepted.admissions,
-    );
-    expect(hits.map((hit) => (hit.kind === "referral" ? hit.referral.id : hit.movement.id))).toEqual(["RF-011"]);
-  });
-
-  it("keeps it in the header search too", () => {
-    const accepted = acceptRf011(seedWardFlowState());
     const results = searchWardFlow({
       query: "RF-011",
       patients: accepted.patients,
@@ -62,11 +49,18 @@ describe("A3-5: a referral accepted before its bed is pulled stays findable", ()
     // RF-012 has its movement, RF-010 its ward admission (seed facts, checked here).
     expect(seed.movements.some((movement) => movement.referralId === "RF-012")).toBe(true);
     expect(seed.admissions.some((admission) => admission.referralId === "RF-010")).toBe(true);
-    const ids = searchPatients(seed.movements, seed.referrals, seed.units, { text: "" }, seed.admissions).flatMap(
-      (hit) => (hit.kind === "referral" ? [hit.referral.id] : []),
-    );
-    expect(ids).not.toContain("RF-012");
-    expect(ids).not.toContain("RF-010");
+    for (const id of ["RF-012", "RF-010"]) {
+      const results = searchWardFlow({
+        query: id,
+        patients: seed.patients,
+        movements: seed.movements,
+        units: seed.units,
+        referrals: seed.referrals,
+        admissions: seed.admissions,
+        now: NOW_ANCHOR,
+      });
+      expect(results.referrals.map((result) => result.referral.id)).not.toContain(id);
+    }
   });
 });
 

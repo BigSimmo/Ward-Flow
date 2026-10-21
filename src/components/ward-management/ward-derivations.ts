@@ -1205,13 +1205,9 @@ function referralMatches(referral: Referral, needle: string): boolean {
  * made. When an ED psychiatrist searches a patient, the one still waiting is the one they can act
  * on — so it goes at the top rather than being ranked by whatever the fixture order happens to be.
  *
- * **Queued referrals, and accepted ones still waiting for their movement.** An accepted referral
- * whose movement exists would otherwise appear twice, so it is found as that movement. But
- * ACCEPT_REFERRAL itself pulls no bed and creates no movement, so until the ward starts the
- * placement the referral is the only record of that person (audit A3-5): it stays in the results
- * (`acceptedReferralAwaitingMovement`). A declined one is a closed request, and surfacing it is the
- * same untruth `isOpen` exists to prevent on the movement side — a search hit for somebody who is
- * no longer in the system.
+ * **Queued referrals only.** An accepted referral has a movement and would otherwise appear twice;
+ * a declined one is a closed request, and surfacing it is the same untruth `isOpen` exists to
+ * prevent on the movement side — a search hit for somebody who is no longer in the system.
  *
  * `stage` and `edId` are movement-shaped filters and are honoured on the movement half alone. When
  * either is set, referrals drop out entirely rather than being silently included: a coordinator
@@ -1220,21 +1216,19 @@ function referralMatches(referral: Referral, needle: string): boolean {
  */
 /**
  * An accepted referral with nothing yet built from it (audit A3-5). Accepting pulls no bed and
- * creates no movement, so the referral is still the only record of the person: no movement or ward
- * admission carries its id, and its linked patient has no open movement or admission either. A
+ * creates no movement, so until the ward starts the placement the referral is the only record of
+ * that person. Linked by the referral's own id only (D-14: no patient link is read here). A
  * finished journey keeps its movement or admission, so it never comes back as a waiting referral.
+ * The Patients page shows these in its census as Bed found; the header search uses this.
  */
 export function acceptedReferralAwaitingMovement(
   referral: Referral,
-  movements: readonly Movement[],
-  admissions: readonly Pick<Admission, "referralId" | "patientId">[],
+  movements: readonly Pick<Movement, "referralId">[],
+  admissions: readonly Pick<Admission, "referralId">[],
 ): boolean {
   if (referralState(referral) !== "accepted") return false;
-  const samePatient = (patientId: string | null | undefined) =>
-    referral.patientId !== undefined && patientId === referral.patientId;
-  if (movements.some((movement) => movement.referralId === referral.id)) return false;
-  if (movements.some((movement) => isOpen(movement) && samePatient(movement.patientId))) return false;
-  return !admissions.some((admission) => admission.referralId === referral.id || samePatient(admission.patientId));
+  const linked = (record: { referralId?: string | null }) => record.referralId === referral.id;
+  return !movements.some(linked) && !admissions.some(linked);
 }
 
 export function searchPatients(
@@ -1242,7 +1236,6 @@ export function searchPatients(
   referralList: Referral[],
   units: Unit[],
   query: MovementSearchQuery,
-  admissions: readonly Pick<Admission, "referralId" | "patientId">[] = [],
 ): PatientSearchResult[] {
   const needle = query.text.trim().toLowerCase();
   const movementHalf: PatientSearchResult[] = searchMovements(movements, units, query).map((movement) => ({
@@ -1258,11 +1251,7 @@ export function searchPatients(
     // withdrawn (`RECORD_REFERRER_WITHDRAWAL` never touches `state`, O-17.11). The added
     // `some(isAwaitingAnswer)` excludes a referral with nothing left genuinely awaiting an
     // answer — the referrer took it back, so it is no longer a patient search can act on.
-    .filter(
-      (referral) =>
-        (referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer)) ||
-        acceptedReferralAwaitingMovement(referral, movements, admissions),
-    )
+    .filter((referral) => referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer))
     .filter((referral) => referralMatches(referral, needle))
     .map((referral) => ({ kind: "referral", referral }));
 
