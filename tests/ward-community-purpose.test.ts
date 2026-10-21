@@ -89,6 +89,15 @@ describe("community referral purpose (D-74)", () => {
     (arm!.destination as { purpose: string }).purpose = "nonsense";
     expect(isValidStoredWardFlowState(state)).toBe(false);
   });
+
+  it("refuses an invented purpose on a closed ED record on reload", () => {
+    const state = JSON.parse(JSON.stringify(referToTeam(seedWardFlowState(), "follow_up"))) as WardFlowState;
+    const closed = state.movements.find((movement) => movement.communityPurpose !== undefined);
+    expect(closed).toBeDefined();
+    expect(isValidStoredWardFlowState(state)).toBe(true);
+    (closed as { communityPurpose: string }).communityPurpose = "nonsense";
+    expect(isValidStoredWardFlowState(state)).toBe(false);
+  });
 });
 
 describe("a reused community arm takes the purpose chosen now (D-74)", () => {
