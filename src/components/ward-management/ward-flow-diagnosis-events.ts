@@ -25,11 +25,9 @@ export function reduceWardDiagnosis(
     );
   }
   if (admission.state === "departed") return reject(state, event, "RECORD_WARD_DIAGNOSIS needs a current stay");
-  if (!isTentativeDiagnosisBlock(event.block)) {
-    return reject(state, event, "RECORD_WARD_DIAGNOSIS block must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS");
-  }
+  if (!isTentativeDiagnosisBlock(event.block)) return reject(state, event, "RECORD_WARD_DIAGNOSIS block is not listed");
   if (admission.wardDiagnosis?.block === event.block) {
-    return reject(state, event, "RECORD_WARD_DIAGNOSIS block is already the ward's recorded block");
+    return reject(state, event, "RECORD_WARD_DIAGNOSIS block is already recorded");
   }
   const wardDiagnosis = { block: event.block, recordedAt: event.now, recordedBy: event.role };
   return {

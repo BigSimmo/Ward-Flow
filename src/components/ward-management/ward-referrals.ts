@@ -308,12 +308,7 @@ export function communityPurposeOf(destination: { purpose?: CommunityReferralPur
 
 /** D-74: the words for each community purpose, the same on every screen. */
 export function communityReferralPurposeLabel(purpose: CommunityReferralPurpose): string {
-  switch (purpose) {
-    case "follow_up":
-      return "Community follow-up";
-    case "assess_for_admission":
-      return "Assess for admission";
-  }
+  return purpose === "assess_for_admission" ? "Assess for admission" : "Community follow-up";
 }
 
 /**

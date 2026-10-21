@@ -415,11 +415,7 @@ export function reduceReferralAnswerEvent(
             !isCommunityReferralPurpose(destination.purpose),
         )
       ) {
-        return reject(
-          state,
-          event,
-          `RECEIVE_REFERRAL community purpose must be chosen from COMMUNITY_REFERRAL_PURPOSES`,
-        );
+        return reject(state, event, "RECEIVE_REFERRAL community purpose is not listed");
       }
       for (const wardDestination of event.destinations) {
         if (wardDestination.kind !== "psychiatric_ward") continue;
