@@ -1,6 +1,7 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import type { FeedMessage } from "./hospital-feed";
 
@@ -11,7 +12,8 @@ import type { FeedMessage } from "./hospital-feed";
  * here changes the record: `feedSuggestion` only says which normal event a person could confirm.
  *
  * The messages include one record number that is not synthetic and one message sent twice, so the
- * inbox shows both refusals. Matching is by record number only (`hospital-feed.ts`).
+ * inbox shows both refusals. Matching is by record number only (`hospital-feed.ts`), and a record's
+ * person is read only through the patient resolver (D-14), never from the link itself.
  */
 
 type FeedSources = {
@@ -59,7 +61,7 @@ function inBed(admission: Admission): boolean {
  * number (refused), up to two discharges, and the first message again (refused as a duplicate).
  */
 export function simulatedFeedMessages({ movements, admissions, patients }: FeedSources): readonly string[] {
-  const byId = new Map(patients.map((patient) => [patient.id, patient]));
+  const personOf = createPatientResolver({ patients, movements });
   // PV1-3 carries the ward id as the point of care. The inbox names the ward from the record instead.
   const placeCode = (id: string | undefined) => (id ?? "").toUpperCase();
   let sequence = 0;
@@ -67,7 +69,7 @@ export function simulatedFeedMessages({ movements, admissions, patients }: FeedS
   const arrivals = movements
     .filter(arrivingMovement)
     .flatMap((movement) => {
-      const patient = movement.patientId ? byId.get(movement.patientId) : undefined;
+      const patient = personOf(movement).patient;
       return patient ? [{ patient, place: placeCode(movement.acceptedUnitId) }] : [];
     })
     .slice(0, 3)
@@ -75,7 +77,7 @@ export function simulatedFeedMessages({ movements, admissions, patients }: FeedS
   const departures = admissions
     .filter(inBed)
     .flatMap((admission) => {
-      const patient = admission.patientId ? byId.get(admission.patientId) : undefined;
+      const patient = personOf(admission).patient;
       return patient ? [{ patient, place: placeCode(admission.unitId) }] : [];
     })
     .slice(0, 2)
@@ -86,8 +88,8 @@ export function simulatedFeedMessages({ movements, admissions, patients }: FeedS
 }
 
 export type FeedSuggestion =
-  | { kind: "arrival"; movementId: string; unitId: string; patientId: Patient["id"] }
-  | { kind: "departure"; admissionId: string; unitId: string; patientId: Patient["id"] }
+  | { kind: "arrival"; movementId: string; unitId: string }
+  | { kind: "departure"; admissionId: string; unitId: string }
   | { kind: "none"; reason: string };
 
 /**
@@ -96,18 +98,20 @@ export type FeedSuggestion =
  * still in a bed. Everything else is for checking only and confirms nothing.
  */
 export function feedSuggestion(message: FeedMessage, { movements, admissions, patients }: FeedSources): FeedSuggestion {
-  const patient = patients.find((candidate) => candidate.umrn === message.umrn);
-  if (!patient) return { kind: "none", reason: `No person holds ${message.umrn}. Nothing to confirm.` };
+  const personOf = createPatientResolver({ patients, movements });
+  const holds = (subject: Movement | Admission) => personOf(subject).patient?.umrn === message.umrn;
+  if (!patients.some((candidate) => candidate.umrn === message.umrn))
+    return { kind: "none", reason: `No person holds ${message.umrn}. Nothing to confirm.` };
   if (message.event === "admitted") {
-    const movement = movements.find((candidate) => candidate.patientId === patient.id && arrivingMovement(candidate));
+    const movement = movements.find((candidate) => arrivingMovement(candidate) && holds(candidate));
     return movement?.acceptedUnitId
-      ? { kind: "arrival", movementId: movement.id, unitId: movement.acceptedUnitId, patientId: patient.id }
+      ? { kind: "arrival", movementId: movement.id, unitId: movement.acceptedUnitId }
       : { kind: "none", reason: "No movement for this person is on its way to a bed. Nothing to confirm." };
   }
   if (message.event === "discharged") {
-    const admission = admissions.find((candidate) => candidate.patientId === patient.id && inBed(candidate));
+    const admission = admissions.find((candidate) => inBed(candidate) && holds(candidate));
     return admission
-      ? { kind: "departure", admissionId: admission.id, unitId: admission.unitId, patientId: patient.id }
+      ? { kind: "departure", admissionId: admission.id, unitId: admission.unitId }
       : { kind: "none", reason: "This person is not in a bed on any ward. Nothing to confirm." };
   }
   return {
