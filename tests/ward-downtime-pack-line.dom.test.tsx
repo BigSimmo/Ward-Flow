@@ -164,7 +164,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     });
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
     expect(screen.getByTestId("ward-offline-banner").textContent).toMatch(
-      /use the downtime pack taken at 11:00, printed or saved as a PDF\. Open the downtime pack$/u,
+      /use the downtime pack taken at 11:00, printed or saved as a PDF\.$/u,
     );
   });
 
