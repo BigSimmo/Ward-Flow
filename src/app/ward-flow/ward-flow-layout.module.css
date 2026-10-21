@@ -212,6 +212,9 @@
        focused control or a jump target clear of the pinned header and the pinned view row under
        it (Ward views, Home queue tools, Delays and Referrals switches: up to 6.5rem tall). */
     scroll-padding-top: calc(var(--wf-header-height) + 6.5rem);
+    /* Audit 7 NC-04: and clear of the pinned dock at the foot (set on body while the dock shows), so
+       a control tabbed to near the bottom is never scrolled in under it. */
+    scroll-padding-bottom: var(--wf-dock-clear, 0px);
   }
 
   .shellContent:has([data-testid="ward-offline-banner"]) {
