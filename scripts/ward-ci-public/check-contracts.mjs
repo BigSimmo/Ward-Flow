@@ -246,6 +246,20 @@ function requireWorkflow(source) {
     installed,
   );
   exact("build", "Check the phone script budget", "node scripts/check-script-budget.mjs", installed);
+  exact(
+    "build",
+    "Merge the latest main before measuring",
+    "node scripts/ward-ci-public/merge-latest-main.mjs",
+    expression("github.event_name == 'pull_request'"),
+  );
+  {
+    const build = jobs.get("build");
+    const merge = build.indexOf("name: Merge the latest main before measuring");
+    assert.ok(
+      merge >= 0 && merge < build.indexOf("name: Check the phone script budget"),
+      "build: main is merged before the phone script budget is measured",
+    );
+  }
   assert.doesNotMatch(jobs.get("build"), /WARD_GATE_BUILD/u);
   exact("coverage", "Check complete executable coverage inventory", "npm run check:coverage-inventory", installed);
   assert.doesNotMatch(jobs.get("coverage"), /WARD_COVERAGE_BLOB_DIR/u);
@@ -463,6 +477,11 @@ for (const [before, after] of [
   ["run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"],
   ["run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"],
   ["run: node scripts/check-script-budget.mjs", "run: echo omitted"],
+  ["run: node scripts/ward-ci-public/merge-latest-main.mjs", "run: echo omitted"],
+  [
+    "if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs",
+    "if: ${{ false }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs",
+  ],
   ["run: node tests/support/ward-shared-mode-run.mjs", "run: echo omitted"],
   ["run: npm run check:coverage-inventory", "run: echo omitted"],
   ["run: npm run test:e2e:release-gate", "run: echo omitted"],
