@@ -29,6 +29,8 @@ export const REQUIRED_SHARED_JOURNEYS = Object.freeze([
   "a clash: two desks change the same record from the same revision, and the second is refused",
   "a workflow refusal from the server's engine reaches the screen as the engine's own reason",
   "keyboard focus: after a shared save the activated control still has focus",
+  "different records at once: two desks change different records from the same revision, and both saves land on both desks",
+  "a desk that loses its network says it is not connected, then catches up without a reload when it returns",
 ]);
 export function sharedModeCases() {
   return REQUIRED_SHARED_JOURNEYS.map((title) => ({
