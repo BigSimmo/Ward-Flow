@@ -46,6 +46,12 @@ describe("sessionTrends", () => {
     expect(sessionTrends([], NOW).hours).toEqual([3, 2, 1, 0].map((back) => HOUR - back * 60));
   });
 
+  it("counts a ward's acceptance in principle beside a referral acceptance, as Declined counts both kinds", () => {
+    const trends = sessionTrends([entry("ACCEPT_IN_PRINCIPLE", HOUR + 5), entry("DECLINE", HOUR + 6)], NOW);
+    const counts = Object.fromEntries(trends.rows.map((row) => [row.id, row.total]));
+    expect(counts).toMatchObject({ accepted: 1, declined: 1 });
+  });
+
   it("leaves out an event stamped later in the current hour than now", () => {
     const trends = sessionTrends([entry("ACCEPT_REFERRAL", HOUR + 40), entry("ACCEPT_REFERRAL", NOW)], NOW);
     expect(trends.rows.find((row) => row.id === "accepted")?.counts).toEqual([0, 0, 0, 1]);

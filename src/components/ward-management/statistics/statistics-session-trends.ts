@@ -15,7 +15,7 @@ const SESSION_TREND_MEASURES = [
     label: "Referred",
     types: ["RAISE_REFERRAL", "RECEIVE_REFERRAL", "REFER_TO_UNITS", "REFER_TO_COMMUNITY_TEAM"],
   },
-  { id: "accepted", label: "Accepted", types: ["ACCEPT_REFERRAL"] },
+  { id: "accepted", label: "Accepted", types: ["ACCEPT_IN_PRINCIPLE", "ACCEPT_REFERRAL"] },
   { id: "declined", label: "Declined", types: ["DECLINE", "DECLINE_REFERRAL"] },
   { id: "arrivals", label: "Arrived", types: ["PATIENT_ARRIVED"] },
   { id: "departures", label: "Left", types: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"] },
