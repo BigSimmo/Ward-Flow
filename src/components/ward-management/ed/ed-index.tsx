@@ -2,10 +2,11 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,7 +25,6 @@ import {
   CheckingFoot,
   Drawer,
   EmptyState,
-  FactGrid,
   GroupHead,
   Hero,
   HeroStat,
@@ -43,7 +43,6 @@ import {
   useIsPhone,
   useIsTabletPortrait,
   BarList,
-  RowSpark,
   RowTrend,
 } from "@/components/wf";
 import {
@@ -74,8 +73,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 
 import styles from "./ed-index.module.css";
 
-const trendSpanHours = ED_TREND_SPAN_MINUTES / 60;
-const trendStepHours = ED_TREND_STEP_MINUTES / 60;
+export const trendSpanHours = ED_TREND_SPAN_MINUTES / 60;
+export const trendStepHours = ED_TREND_STEP_MINUTES / 60;
 
 /**
  * All emergency departments (8 Oct 2026, the "A Cards" mockup plus its wait lanes). One hero band
@@ -94,9 +93,9 @@ const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
 const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes";
-type WaitClock = "past" | "severe" | "in";
+export type WaitClock = "past" | "severe" | "in";
 
-type EdPerson = {
+export type EdPerson = {
   movement: Movement;
   name: string;
   /** UMRN, or "UMRN not recorded" (D-39: never the movement id). */
@@ -108,7 +107,7 @@ type EdPerson = {
   destination?: string;
 };
 
-type EdRow = {
+export type EdRow = {
   summary: EdSummary;
   short: string;
   people: EdPerson[];
@@ -127,14 +126,14 @@ const STAGE_LABEL = ED_STAGE_LABELS;
 const HELD = ED_HELD_STAGES;
 const LEAVING = ED_LEAVING_STAGES;
 
-const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
+export const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
 
 /**
  * Hero highlight chips (v10, five at most). Pressing one keeps the people it names solid in every
  * view and dims the rest by colour. It never hides an ED.
  */
-type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
+export type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
 const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
   past: (person) => person.clock === "past",
   severe: (person) => person.clock !== "in",
@@ -142,7 +141,7 @@ const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
   held: (person) => HELD.includes(person.movement.stage),
   form: (person) => Boolean(person.movement.legalForm),
 };
-function personDim(person: EdPerson, highlight: Highlight | null): boolean {
+export function personDim(person: EdPerson, highlight: Highlight | null): boolean {
   return highlight !== null && !HIGHLIGHT_MATCH[highlight](person);
 }
 function rowHighlighted(row: EdRow, highlight: Highlight | null): boolean {
@@ -178,7 +177,7 @@ function laneClusters<T extends { wait: number }>(people: readonly T[]): T[][] {
 }
 
 /** "24h", "8h": the two wait lines as a person says them, never "1d" or "8h 00m". */
-function waitLine(minutes: number): string {
+export function waitLine(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
@@ -1097,51 +1096,7 @@ function EdLanes({
           secondary={{ label: "Open patient", onAction: () => router.push(picked.person.href) }}
           data-testid="ed-index-lane-sheet"
         >
-          <FactGrid
-            className={styles.previewFacts}
-            facts={[
-              {
-                id: "wait",
-                label: "In ED",
-                value: (
-                  <span className={styles.longest}>
-                    {picked.person.clock !== "in" ? (
-                      <StatusGlyph tone={CLOCK_TONE[picked.person.clock]} size={9} />
-                    ) : null}
-                    <b className={styles.num}>{splitDuration(picked.person.wait)}</b>
-                  </span>
-                ),
-              },
-              { id: "stage", label: "Stage", value: picked.person.stage },
-              {
-                id: "form",
-                label: "Form",
-                // Audit 1 (CS-14, Josh 20 Oct): "None" only for a voluntary person.
-                value: picked.person.movement.legalForm
-                  ? legalStatusShort(picked.person.movement)
-                  : picked.person.movement.legalStatus === "Voluntary"
-                    ? "None"
-                    : "Not recorded",
-              },
-              {
-                id: "tier",
-                label: "Tier",
-                value: <span className={styles.tierChip}>T{picked.person.movement.urgency}</span>,
-              },
-            ]}
-          />
-          <dl className={styles.laneFacts}>
-            <div>
-              <dt>Cohort</dt>
-              <dd>
-                {picked.person.movement.cohort} · {picked.person.movement.sex}
-              </dd>
-            </div>
-            <div>
-              <dt>Destination</dt>
-              <dd>{picked.person.destination ?? "Not yet found"}</dd>
-            </div>
-          </dl>
+          <EdLaneFacts person={picked.person} />
         </PhoneSheet>
       ) : picked ? (
         <div className={styles.picked} aria-live="polite">
@@ -1299,80 +1254,39 @@ function PhoneEdList({
   );
 }
 
-/** The ED preview's body: facts, the 12 hour trend and who is waiting, longest first. */
-function EdPreview({
-  row,
-  highlight,
-  accessTarget,
-}: {
-  row: EdRow;
-  highlight: Highlight | null;
-  accessTarget: number;
-}) {
-  const isPhone = useIsPhone();
-  return (
-    <div className={styles.preview} data-testid="ed-index-preview-body">
-      <FactGrid
-        className={styles.previewFacts}
-        facts={[
-          { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
-          {
-            id: "past",
-            label: `Past ${waitLine(accessTarget)}`,
-            value: <b className={styles.num}>{row.pastTarget}</b>,
-          },
-          { id: "no-bed", label: "No bed yet", value: <b className={styles.num}>{row.noBed}</b> },
-          { id: "form", label: "Under a form", value: <b className={styles.num}>{row.forms}</b> },
-        ]}
-      />
-      <section className={styles.previewSection} aria-labelledby="ed-preview-trend">
-        <h3 id="ed-preview-trend" className={styles.eyebrow}>
-          {`Last ${trendSpanHours} hours`}
-        </h3>
-        <div className={styles.previewTrend}>
-          <RowSpark values={row.trend} name={row.short} big testId="ed-row-spark" />
-          <span className={styles.meta}>{`${row.trend.join(" · ")} now · every ${trendStepHours}h`}</span>
-        </div>
-      </section>
-      <section className={styles.previewSection} aria-labelledby="ed-preview-people">
-        <h3 id="ed-preview-people" className={styles.eyebrow}>
-          Waiting, longest first
-        </h3>
-        {row.people.length === 0 ? (
-          <p className={styles.previewEmpty}>
-            <StatusGlyph tone="success" size={9} /> No one waiting at {row.short}
-          </p>
-        ) : (
-          <ul className={styles.previewList} data-phone={isPhone ? "true" : undefined}>
-            {row.people.map((person) => (
-              <li
-                key={person.movement.id}
-                className={styles.previewPerson}
-                data-act-now={person.clock === "past" ? "true" : undefined}
-                data-dim={personDim(person, highlight) ? "true" : undefined}
-              >
-                <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
-                <span className={styles.previewText}>
-                  <Link href={person.href} className={styles.previewName}>
-                    {person.name}
-                  </Link>
-                  <span className={styles.meta}>
-                    {isPhone ? (
-                      <>
-                        <span className={styles.previewUmrn}>{person.umrn}</span> ·{" "}
-                      </>
-                    ) : null}
-                    {person.stage}
-                    {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
-                    {person.destination ? ` · ${person.destination}` : ""}
-                  </span>
-                </span>
-                <b className={styles.num}>{splitDuration(person.wait)}</b>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
-  );
+/*
+ * Phone script budget (22 October 2026): the preview body draws only once an ED is previewed, so it
+ * loads after the first paint and is fetched when the browser is idle. Not `next/dynamic`, which
+ * holds a freshly loaded panel back for a frame or more; a loaded body draws straight away.
+ */
+type PreviewModule = typeof import("./ed-preview");
+let loadedPreview: PreviewModule | undefined;
+const loadPreview = () => import("./ed-preview").then((m) => (loadedPreview = m));
+preloadWhenIdle(loadPreview);
+
+function usePreviewModule(): PreviewModule | undefined {
+  const [loaded, setLoaded] = useState(() => loadedPreview);
+  useEffect(() => {
+    if (loaded) return;
+    let live = true;
+    void loadPreview()
+      .then((m) => {
+        if (live) setLoaded(() => m);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [loaded]);
+  return loaded;
+}
+
+function EdPreview(props: ComponentProps<PreviewModule["EdPreview"]>) {
+  const Body = usePreviewModule()?.EdPreview;
+  return Body ? <Body {...props} /> : null;
+}
+
+function EdLaneFacts(props: ComponentProps<PreviewModule["EdLaneFacts"]>) {
+  const Facts = usePreviewModule()?.EdLaneFacts;
+  return Facts ? <Facts {...props} /> : null;
 }
