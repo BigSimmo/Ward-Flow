@@ -559,6 +559,10 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
       .join("\n");
     expect(hookCode).not.toMatch(/SKIP_IN_FLIGHT_CI_GUARD:-1/);
     expect(hookCode).not.toContain("PREPUSH_CI_STRICT");
+    // The only assignment of the bypass is inside the explicit GUARD_PUSH_DISABLE=1 block.
+    const disableBlock = hookCode.match(/if \[ "\$\{GUARD_PUSH_DISABLE:-\}" = "1" \]; then[\s\S]*?\nfi/)?.[0] ?? "";
+    expect(disableBlock).toMatch(/export SKIP_IN_FLIGHT_CI_GUARD=1/);
+    expect(hookCode.replace(disableBlock, "")).not.toMatch(/SKIP_IN_FLIGHT_CI_GUARD\s*=/);
   });
 
   it("allows push when CI has completed or no runs are in-flight", () => {

@@ -20,8 +20,9 @@ if [ "${GUARD_PUSH_DISABLE:-}" = "1" ]; then
   export SKIP_STATIC_GUARD=1
 fi
 
-# The in-flight CI guard runs by default. Opt out for one push only by setting
-# SKIP_IN_FLIGHT_CI_GUARD=1 explicitly; the hook never exports that bypass itself.
+# The in-flight CI guard runs by default: a normal push does not export its bypass.
+# Opt out for one push explicitly with SKIP_IN_FLIGHT_CI_GUARD=1, or with
+# GUARD_PUSH_DISABLE=1 (which also skips the format and static checks, above).
 
 # Without Node, the destination cannot be checked, so block the push.
 if ! command -v node >/dev/null 2>&1; then
