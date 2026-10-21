@@ -36,6 +36,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
+import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
 
 /**
  * Raising, sending, correcting and withdrawing a referral: `reduceClinicalEvent`'s cases for these
@@ -436,6 +437,12 @@ export function reduceReferralSendEvent(
           addressing.withdrawnAt === undefined,
       );
 
+      // D-74: a reused arm keeps the purpose it was sent with unless this referral names one.
+      const reusedArmPurpose =
+        existingQueuedArm?.destination.kind === "community_team" ? existingQueuedArm.destination.purpose : undefined;
+      const purpose = communityPurposeOf({ purpose: event.purpose ?? reusedArmPurpose });
+      const purposeWords = purpose === "assess_for_admission" ? "assessment for admission" : "community follow-up";
+
       const sequence = existingQueuedArm
         ? withoutPulledBed.frontDoorReferralSequence
         : withoutPulledBed.frontDoorReferralSequence + 1;
@@ -486,8 +493,8 @@ export function reduceReferralSendEvent(
         { role: "community", placeId: communityTeamSlug(event.team) },
         { movementId: movement.id, referralId },
         existingQueuedArm
-          ? `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: reusing the existing queued referral rather than raising a second one to the same team.`
-          : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up.`,
+          ? `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}: reusing the existing queued referral rather than raising a second one to the same team.`
+          : `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}.`,
       );
 
       // F5: live ward requests are withdrawn (recorded with `ed_outcome_recorded`, since the
@@ -516,6 +523,7 @@ export function reduceReferralSendEvent(
           ...withdrawnLiveRequests.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
         ],
         edOutcome: "for_community_follow_up",
+        communityPurpose: purpose,
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }

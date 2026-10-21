@@ -53,6 +53,17 @@ describe("community referral purpose (D-74)", () => {
     expect(referralDestinationLabel(arm!)).toBe("Community team (Assess for admission)");
   });
 
+  it("keeps the purpose on the closed ED record and in the team's notice", () => {
+    const before = seedWardFlowState();
+    const state = referToTeam(before, "assess_for_admission");
+    const closed = state.movements.filter((movement) => movement.communityPurpose !== undefined);
+    expect(closed.map((movement) => movement.communityPurpose)).toEqual(["assess_for_admission"]);
+    const notice = state.notices
+      .slice(before.notices.length)
+      .find((item) => item.kind === "community_referral_received");
+    expect(notice?.sentence).toContain("referred a patient for assessment for admission.");
+  });
+
   it("refuses a purpose that is not on the list", () => {
     const before = seedWardFlowState();
     const after = referToTeam(before, "nonsense");

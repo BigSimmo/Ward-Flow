@@ -766,6 +766,12 @@ export type Movement = {
   closure?: MovementClosure;
   /** Recorded outcome from the emergency department (Item 19, owner answers 2026-09-17). */
   edOutcome?: "for_discharge" | "for_community_follow_up";
+  /**
+   * D-74: what the community referral that closed this record is for, written only by
+   * `REFER_TO_COMMUNITY_TEAM`. Absent on records closed before D-74; read it through
+   * `communityPurposeOf`, which treats absent as follow-up.
+   */
+  communityPurpose?: CommunityReferralPurpose;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
