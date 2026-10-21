@@ -42,4 +42,17 @@ if [ ! -d backend/ward-flow/node_modules ]; then
   npm ci --prefix backend/ward-flow --no-audit --no-fund
 fi
 
+# Cloud clones are shallow, so the push guard cannot find Ward Flow's identity
+# anchor commit and refuses every push. Deepen the history from the verified
+# Ward Flow origin only; a failure here leaves the session usable for local work.
+if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+  origin_url="$(git remote get-url origin 2>/dev/null || true)"
+  case "$origin_url" in
+    https://github.com/BigSimmo/Ward-Flow | https://github.com/BigSimmo/Ward-Flow.git)
+      git fetch --quiet --unshallow origin main ||
+        echo "Could not unshallow the clone; pushes will be refused until it is." >&2
+      ;;
+  esac
+fi
+
 echo "Node $(node -v), npm $(npm -v); dependencies ready." >&2
