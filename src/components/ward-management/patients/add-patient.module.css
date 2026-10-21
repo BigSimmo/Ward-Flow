@@ -512,8 +512,16 @@
   font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
 }
 
+/*
+ * DA-24 follow-up (overall review, 20 Oct 2026): Triage and Legal status never squeeze a choice
+ * under its own label. At a laptop width (1024px), and more with wider letter and word spacing
+ * (WCAG 1.4.12), "1 now" lost its first digit to the clipped edge. An item may still give up most
+ * of its side space, as the kit's segmented items do, but never the label; when the row is still
+ * too narrow the choices wrap onto a second row. Browsers without `calc-size()` keep the old floor.
+ */
 .segmented.segmented {
   display: flex;
+  flex-wrap: wrap;
   align-self: stretch;
   gap: var(--wf-s-1);
   width: 100%;
@@ -525,9 +533,11 @@
 }
 
 .segmented.segmented > button {
-  flex: 1 1 auto;
+  /* A zero basis so the row wraps only when the label floors themselves do not fit. */
+  flex: 1 1 0;
   justify-content: center;
   min-width: 0;
+  min-width: calc-size(max-content, size - 8px);
   height: 36px;
   padding: 0 var(--wf-s-2);
   font-size: var(--wf-fs-12);
@@ -598,6 +608,7 @@
   /* The choice options take the shared phone pill size (`--wf-phone-*`): a 32px face with a
      transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
   .segmented.segmented {
+    flex-wrap: nowrap;
     gap: var(--wf-phone-pill-gap);
     height: auto;
     padding-block: var(--wf-phone-pill-hit);
