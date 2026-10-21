@@ -68,14 +68,14 @@ function placement(page: Page): Locator {
   return page.getByRole("complementary", { name: "Placement", exact: true });
 }
 
-function queueRow(page: Page): Locator {
-  return page.getByRole("region", { name: "Priority queue" }).getByTestId(`ward-queue-row-${MOVEMENT}`);
+function queueRow(page: Page, movement = MOVEMENT): Locator {
+  return page.getByRole("region", { name: "Priority queue" }).getByTestId(`ward-queue-row-${movement}`);
 }
 
 /** Show the movement's queue row, opening the queue's "Show all" when the row is past the first rows. */
-async function revealRow(page: Page): Promise<Locator> {
+async function revealRow(page: Page, movement = MOVEMENT): Promise<Locator> {
   const queue = page.getByRole("region", { name: "Priority queue" });
-  const row = queueRow(page);
+  const row = queueRow(page, movement);
   const showAll = queue.getByRole("button", { name: /^Show all/u });
   await expect(queue.locator('[data-testid^="ward-queue-row-"]').first()).toBeVisible();
   if (!(await row.isVisible()) && (await showAll.isVisible())) await showAll.click();
@@ -84,16 +84,16 @@ async function revealRow(page: Page): Promise<Locator> {
 }
 
 /** Select the movement on the queue, so Placement is about it whatever is now top of the queue. */
-async function selectMovement(page: Page): Promise<Locator> {
-  const row = await revealRow(page);
+async function selectMovement(page: Page, movement = MOVEMENT): Promise<Locator> {
+  const row = await revealRow(page, movement);
   await row.click();
-  await expect(placement(page)).toHaveAttribute("data-subject-movement", MOVEMENT);
+  await expect(placement(page)).toHaveAttribute("data-subject-movement", movement);
   return placement(page);
 }
 
 /** Open Placement's Change urgency form for the movement; returns its tier picker. */
-async function openUrgencyForm(page: Page): Promise<Locator> {
-  const panel = await selectMovement(page);
+async function openUrgencyForm(page: Page, movement = MOVEMENT): Promise<Locator> {
+  const panel = await selectMovement(page, movement);
   // Both are toggles that keep their state across a save, so open them only when closed.
   const update = panel.locator("details", { has: page.locator("summary", { hasText: "Update record" }) });
   if (!(await update.evaluate((element) => (element as HTMLDetailsElement).open)))
@@ -104,16 +104,16 @@ async function openUrgencyForm(page: Page): Promise<Locator> {
 }
 
 /** The tier the queue row shows for the movement ("1", "2" or "3"). */
-async function shownTier(page: Page): Promise<string> {
-  return /^Tier (\d)/u.exec((await queueRow(page).textContent()) ?? "")?.[1] ?? "";
+async function shownTier(page: Page, movement = MOVEMENT): Promise<string> {
+  return /^Tier (\d)/u.exec((await queueRow(page, movement).textContent()) ?? "")?.[1] ?? "";
 }
 
 /**
  * Choose, with a reason, a tier other than the one this desk's queue shows (and other than
  * `avoid`); returns the option's label. The picker's own value is the form's state, not the record.
  */
-async function chooseOtherTier(page: Page, tier: Locator, avoid?: string): Promise<string> {
-  const current = await shownTier(page);
+async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, movement = MOVEMENT): Promise<string> {
+  const current = await shownTier(page, movement);
   const options = await tier
     .locator("option")
     .evaluateAll((list) =>
@@ -123,6 +123,47 @@ async function chooseOtherTier(page: Page, tier: Locator, avoid?: string): Promi
   await tier.selectOption(next.value);
   await placement(page).getByRole("combobox", { name: "Reason" }).selectOption({ label: "Reassessed" });
   return next.label;
+}
+
+/** A queued movement other than MOVEMENT, for a second record to change. */
+async function anotherMovement(page: Page): Promise<string> {
+  const rows = page.getByRole("region", { name: "Priority queue" }).locator('[data-testid^="ward-queue-row-"]');
+  await expect(rows.first()).toBeVisible();
+  const ids = await rows.evaluateAll((list) =>
+    list.map((row) => row.getAttribute("data-testid")!.replace("ward-queue-row-", "")),
+  );
+  const other = ids.find((id) => id !== MOVEMENT);
+  expect(other, "the queue needs a second movement").toBeTruthy();
+  return other!;
+}
+
+/** The shared board's command request, and its revision, for one desk's next save. */
+function nextCommand(page: Page) {
+  return page.waitForRequest(
+    (request) => request.method() === "POST" && new URL(request.url()).pathname.endsWith("/v1/workspace/commands"),
+  );
+}
+
+/** Whether Placement sits in the part of the board that goes inert while changes are disabled. */
+function placementInert(page: Page): Promise<boolean> {
+  return placement(page).evaluate((panel) => panel.closest("[inert]") !== null);
+}
+
+// A full page load would reset the board and hide whether the desk caught up on its own, so the
+// recovery test plants a value in the page and checks it survived (as the release-gate helpers do).
+const SENTINEL = "ward-shared-mode-no-reload";
+
+async function plantSentinel(page: Page) {
+  await page.evaluate((value) => {
+    (window as unknown as Record<string, string>).__wardSharedModeSentinel = value;
+  }, SENTINEL);
+}
+
+async function expectNoReloadSince(page: Page, step: string) {
+  const survived = await page.evaluate(
+    () => (window as unknown as Record<string, string | undefined>).__wardSharedModeSentinel,
+  );
+  expect(survived, `the page reloaded during "${step}"`).toBe(SENTINEL);
 }
 
 test.describe.configure({ mode: "serial" });
@@ -243,4 +284,74 @@ test("keyboard focus: after a shared save the activated control still has focus"
   // Leave the desk where the other tests expect it (--repeat-each runs them again).
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
+});
+
+test("different records at once: two desks change different records from the same revision, and both saves land on both desks", async () => {
+  const other = await anotherMovement(two.page);
+  for (const desk of [one, two]) for (const movement of [MOVEMENT, other]) await revealRow(desk.page, movement);
+  // Desk one changes the movement, desk two a different one, both from the board they hold now.
+  const tierOne = await openUrgencyForm(one.page);
+  const tierTwo = await openUrgencyForm(two.page, other);
+  for (const movement of [MOVEMENT, other])
+    await expect.poll(() => shownTier(two.page, movement)).toBe(await shownTier(one.page, movement));
+  // Desk two holds its revision (its poll cannot fire) so it cannot pick up desk one's save first.
+  await two.page.waitForLoadState("networkidle");
+  await two.page.clock.pauseAt(Date.now() + 1_000);
+  const first = await chooseOtherTier(one.page, tierOne);
+  const second = await chooseOtherTier(two.page, tierTwo, undefined, other);
+
+  // Both desks save at the same moment.
+  const [sentOne, sentTwo] = await Promise.all([
+    nextCommand(one.page),
+    nextCommand(two.page),
+    placement(one.page).getByRole("button", { name: "Record urgency change" }).click(),
+    placement(two.page).getByRole("button", { name: "Record urgency change" }).click(),
+  ]);
+  // Both were sent against the same revision, so whichever landed second was checked as stale.
+  expect(sentOne.postDataJSON().expectedRevision).toBe(sentTwo.postDataJSON().expectedRevision);
+  expect((await sentOne.response())?.status()).toBe(200);
+  expect((await sentTwo.response())?.status()).toBe(200);
+  await two.page.clock.resume();
+
+  // Neither desk was told its record changed under it, and both show both changes.
+  for (const desk of [one, two]) {
+    await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+    await expect(queueRow(desk.page)).toContainText(first, POLL);
+    await expect(queueRow(desk.page, other)).toContainText(second, POLL);
+  }
+  // And a new page load reads both from the backend.
+  await one.page.reload({ waitUntil: "domcontentloaded" });
+  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"), { timeout: 30_000 });
+  await expect(await revealRow(one.page)).toContainText(first);
+  await expect(await revealRow(one.page, other)).toContainText(second);
+});
+
+test("a desk that loses its network says it is not connected, then catches up without a reload when it returns", async () => {
+  for (const desk of [one, two]) {
+    await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+    await revealRow(desk.page);
+  }
+  await plantSentinel(one.page);
+
+  // Desk one loses its network: its next poll fails, it says so and stops taking changes.
+  await one.context.setOffline(true);
+  await expect(sharedStatus(one.page)).toContainText("Connection unavailable", POLL);
+  await expect(sharedStatus(one.page).getByRole("button", { name: "Retry" })).toBeVisible();
+  expect(await placementInert(one.page)).toBe(true);
+
+  // Meanwhile desk two saves a change.
+  const tier = await openUrgencyForm(two.page);
+  const chosen = await chooseOtherTier(two.page, tier);
+  await placement(two.page).getByRole("button", { name: "Record urgency change" }).click();
+  await expect(sharedStatus(two.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(queueRow(two.page)).toContainText(chosen);
+  await expect(queueRow(one.page)).not.toContainText(chosen);
+  await expect(sharedStatus(one.page)).toContainText("Connection unavailable");
+
+  // The network returns. Without Retry or a reload, desk one's own poll reconnects and catches up.
+  await one.context.setOffline(false);
+  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+  await expect(queueRow(one.page)).toContainText(chosen, POLL);
+  expect(await placementInert(one.page)).toBe(false);
+  await expectNoReloadSince(one.page, "the network dropping and returning");
 });
