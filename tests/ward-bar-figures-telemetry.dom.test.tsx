@@ -103,7 +103,7 @@ describe("Figures in the Tools sheet", () => {
     const search = within(tools).getByRole("searchbox", { name: "Search contacts" });
     fireEvent.change(search, { target: { value: "no-such-team" } });
     expect(within(tools).getByText("No contact matches.")).toBeVisible();
-    expect(within(tools).getByRole("link", { name: "Open On-call and contacts" })).toBeVisible();
+    expect(within(tools).getByRole("link", { name: "Open On-call" })).toBeVisible();
   });
 
   it("closes Tools from All figures without leaving a second drawer open", async () => {

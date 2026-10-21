@@ -49,6 +49,7 @@ import {
   referralSheetRequestFromSearch,
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
   CHROME_ROLE_LABELS,
@@ -320,6 +321,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const now = useWardFlowClock();
   // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
   const liveClockFace = formatInstant(now);
+  // UX audit (21 Oct 2026): offline, the clock's live dot turns amber so it agrees with the banner.
+  const online = useOnlineStatus();
   useEffect(() => {
     publishLiveClock(liveClockFace);
   }, [liveClockFace]);
@@ -1161,10 +1164,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         <WardDemoClockPopover
           className={styles.demoClock}
           testId="ward-bar-demo-clock"
-          title={`Board time ${liveClockFace} AWST`}
-          aria-label={`Board time ${liveClockFace} AWST`}
+          title={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
+          aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
         >
-          <span className={styles.demoClockDot} aria-hidden="true" />
+          <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
           <span className={styles.demoClockLabel}>Board time</span>
           <span className={styles.demoClockTime}>{liveClockFace}</span>
           <span className={styles.demoClockTz}>AWST</span>
@@ -1198,6 +1201,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               tasks={tasksActiveItems}
               aboveSheets={headerLiveOverSheet}
               onSeeAllTasks={() => openPopover("tasks")}
+              tasksAreAlerts={oneAlertsQueue}
               plannedAdmissions={plannedAdmissions}
               now={now}
               placeholder="Search"

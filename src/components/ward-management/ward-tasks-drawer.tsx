@@ -1284,7 +1284,7 @@ export function WardTasksDrawer({
               data-testid="ward-tasks-jump-coordinator"
               className={styles.quickJump}
             >
-              Coordinator workspace →
+              Home →
             </Link>
           </nav>
         )}
