@@ -233,11 +233,7 @@ export function reduceRecordedFactEvent(
       // A ward desk must say which ward it is acting as; without that, neither the sending-ward
       // ownership rule nor the E-20 "no ward records for an ED or community start" rule can apply.
       if (event.role === "ward" && event.actingUnitId === undefined) {
-        return reject(
-          state,
-          event,
-          "RECORD_TRANSPORT_NEED was raised by a ward without an acting ward; only the sending ward, acting as itself, can record transport need",
-        );
+        return reject(state, event, "RECORD_TRANSPORT_NEED was raised by a ward without an acting ward");
       }
       if (event.role === "ward" && event.actingUnitId !== undefined) {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
@@ -259,9 +255,7 @@ export function reduceRecordedFactEvent(
           return reject(
             state,
             event,
-            movement.acceptedUnitId !== undefined && event.actingUnitId === movement.acceptedUnitId
-              ? `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`
-              : `RECORD_TRANSPORT_NEED was raised acting as ward ${event.actingUnitId}, but this patient did not start on a ward; the sending department or the coordinator records transport need`,
+            `RECORD_TRANSPORT_NEED was raised acting as ward ${event.actingUnitId}, but this patient did not start on a ward`,
           );
         }
       }

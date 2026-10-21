@@ -8,7 +8,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
-import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { heldLegalGapText, heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -162,7 +162,7 @@ export function reducePlacementEvent(
           return reject(
             state,
             event,
-            `${restoreUnit.name} is not set up for involuntary admissions and this patient's legal status is now ${movement.legalStatus}. Restoring this bed ${OVERRIDE_REASON_REQUIRED}.`,
+            `${heldLegalGapText(restoreUnit, movement)}. Restoring this bed ${OVERRIDE_REASON_REQUIRED}.`,
           );
         }
         const restored: Movement = {

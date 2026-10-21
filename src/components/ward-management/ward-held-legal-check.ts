@@ -44,9 +44,10 @@ export function authorisationReasonRecordedSinceLegalChange(movement: Movement, 
 export function heldUnitAuthorisationRefusal(state: { units: readonly Unit[] }, movement: Movement): string | null {
   const unit = heldUnitAuthorisationGap(movement, state.units);
   if (unit === undefined || authorisationReasonRecordedSinceLegalChange(movement, unit.id)) return null;
-  return (
-    `${unit.name} is not set up for involuntary admissions, and this patient's legal status is now ` +
-    `${movement.legalStatus}. Step back and pull the bed again with a recorded reason, ` +
-    `or release the bed, before the patient leaves`
-  );
+  return `${heldLegalGapText(unit, movement)}. Pull the bed again with a reason, or release it`;
+}
+
+/** The shared first half of every E-03 refusal. */
+export function heldLegalGapText(unit: Unit, movement: Movement): string {
+  return `${unit.name} is not set up for involuntary admissions and this patient's legal status is now ${movement.legalStatus}`;
 }

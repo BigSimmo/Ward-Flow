@@ -44,7 +44,7 @@ export function wardClosedLine(unit: Unit): string | null {
 export function closedToAdmissionsRefusal(unit: Unit): string | null {
   if (!unit.isClosed) return null;
   const reason = unit.admissionsClosure ? ` (${wardClosureReasonLabel(unit.admissionsClosure.reason)})` : "";
-  return `${unit.name} is closed to admissions${reason}; it cannot take a new patient until a person reopens it`;
+  return `${unit.name} is closed to admissions${reason} until a person reopens it`;
 }
 
 /** The expected reopening time has come. A prompt for a person, never a reopening. */
