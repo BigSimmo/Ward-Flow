@@ -4,6 +4,8 @@ Last updated: **17 October 2026** (verified on `main` through commit `e025da04`,
 
 _Updated 19 October 2026 — persistence wording aligned with D-67; dated acceptance evidence above is unchanged._
 
+_Updated 21 October 2026 — added the 17 to 21 October summary below, through `main` at `90e92444` (PR #527). The 17 October baseline and counts above are not re-verified._
+
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
 
@@ -33,6 +35,21 @@ The 8 October audit verified the named Ward Railway frontend deployment against 
 baseline SHA. It did not verify the shared backend's host configuration, storage recovery,
 Sentry setup or approved patient-data processing. Provider health is separate
 from end-to-end application verification.
+
+## Since the baseline: 17 to 21 October 2026
+
+A dated summary of merged pull request titles from #393 to #527, not a fresh verification claim. Check current source before relying on any item. More than 120 pull requests merged in that range.
+
+- **Safety audits 1 to 7:** no suggested wards or fit scores and no computed Act countdowns (#490, #504). Queues run in wait order, legal status is re-checked at acceptance, and an involuntary-capable bed is needed until legal status is set (D-69, #475, #487, #508). Legal status and MHA form choices start blank (#465). Duplicate bed requests raise a warning (#442, #469). Counts now agree across screens (#492, #509). Referrer and clearance contacts are kept out of the audit trail (#498). There's a warning when a record changes while a popup is open (CS-19, #494, #512).
+- **Clinical safety:** four clinical safety fixes covering under-18 Act countdowns, shared bed rules, staffing ticks and legal status (#410). Criteria-led discharge turnaround, scoped updates, draft recovery and placement controls are complete (#402). Discharge planning and step-down matching are extended (#396). Make room plans are on Capacity, behind a flag (#400).
+- **Bed engine (Audit 2, #508):** closed wards, Ready-bed pulls, legal re-checks and record history. Ward closure mode sits behind a switch (#453).
+- **Bed meeting:** an agenda and action log behind a switch (#460). Action owners mark actions done on the patient record (#511, #514). The ED bed meeting TV fits a 1080p screen (#461).
+- **Navigation and naming:** Delays is renamed Waiting, and old links redirect with their filters (#474). Waiting has Needs me now, Form due and For handover views (#467). The Network screen is retired, and ready beds by road time moved to Capacity (#443). Each desk sees its own menu, with one desk switcher and a phone bar per role (#456). Drill-down screens get one header Back control (#484). The demo clock shows once, in the top bar (#518).
+- **Phone:** Ward home with the round, Needs you and one ward header (#486, #480). A phone referral inbox (#477, #483). Phone notices and grouped buzzes (#499). Focus and Back guard fixes (#517). Script budgets are measured against the latest `main`, with lazy-loaded sheets (#516, #520, #521).
+- **Honesty and unfinished controls:** buttons and Settings rows that aren't wired up are hidden outside local development (#500, #513). The demo reset is honest (#489). Partly built features are finished: the daily check tick, "being worked on", meeting actions in Needs you, and search questions (#502). The demo script is rewritten to match the app (Audit 3, #510).
+- **Shared mode and backend:** each workspace record saves separately, two people saving at once is tested, and demo records are left out of live builds (#409). Idle desks lock, sign-ins end on the server, record views are logged and role access is on (#411). Shared-mode and backend fixes (audit package B, #435). Backend health shows whether the database answers, with an uptime alert (F-06, #488). A hospital feed test seam reads invented ADT messages only (#439). Audited access, recovery and logging defects are fixed (#496, #505).
+- **Reporting:** pilot measures are added to the weekly report, plus a daily missed-request check (#438). The bed forecast shows where beds are coming from, ward by ward (#481).
+- **Process and CI:** Ward Flow moved out of `/mockups` to its own address (#420). The repository was cleaned up (#412). Scope-selected PR checks and build reuse (#506). Merge queue preparation (#525). The pre-push in-flight CI guard is on by default (#522). Documentation navigation and organisation checks are repaired (#526). Owner ruling of 21 October: don't arm auto-merge on a held PR (#523, #524). Vite security bump to 8.2.4 (#527).
 
 ## What is built
 
