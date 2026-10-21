@@ -1,5 +1,18 @@
 # Ward Flow — the task ledger
 
+**Current navigation:** the [task/receipt contract](task-receipts.md) identifies the canonical task
+source and Ward project view. This file keeps local task detail and dated evidence; it is not an
+exhaustive live backlog. Reuse the existing task identity and verify current scope before acting.
+New decisions belong in the [decision log](ward-flow/decisions.md); the
+[legacy register](ward-flow-ledger.md) preserves older decision and identity evidence.
+
+_Updated 2026-10-21 - clarify task and decision navigation; Documentation owns. Dated task evidence below is unchanged._
+
+<details>
+<summary>Historical introductory claims and navigation — August to October 2026</summary>
+
+<!-- docs-script-refs:historical-start -->
+
 > **Current task navigation — 16 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.81) record PRs landed on `origin/main` up through commit `5ddeb7d5` (PR #363), plus the 16 October adversarial audit remediation.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
@@ -30,6 +43,10 @@ to read WHY), `ward-flow-hubs-and-patient-plan.md`, `ward-flow-roadmap.md`, the 
 `ward-flow-phase-9-decisions.md`. **Those keep their detail; this holds the list.**
 
 ---
+
+<!-- docs-script-refs:historical-end -->
+
+</details>
 
 ## Earlier history
 

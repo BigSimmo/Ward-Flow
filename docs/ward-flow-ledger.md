@@ -1,5 +1,19 @@
 # Ward Flow — the ledger
 
+**Historical decision and identity register.** Current commissioned work follows the
+[task/receipt contract](task-receipts.md); [the local task index](ward-flow-task-ledger.md) keeps dated
+supporting detail. New decisions belong in the [decision log](ward-flow/decisions.md), and the
+[generated owner-rulings index](ward-flow/OWNER-RULINGS.md) points to original sources.
+
+_Updated 2026-10-21 - clarify current navigation; Documentation owns. The original record below is preserved._
+
+## Historical record
+
+The earlier claims about a single home for status and open work describe the original workflow.
+Read decisions in their dated context and follow later supersession references before applying them.
+
+<!-- docs-script-refs:historical-start -->
+
 > **Since 17 Sept 2026 this is the DECISION REGISTER, not the task ledger.** It records decisions, refusals, risks and identity. Task state lives only in `docs/ward-flow-task-ledger.md`, and current status in `docs/ward-flow/STATUS.md`. Where a row below says "one place to look" for status, that is superseded.
 
 **One place to look.** Ward Flow carries 93 numbered decisions, eight specifications, a roadmap,
@@ -723,3 +737,5 @@ done
 
 Statuses are hand-annotated on top of the generated list. When regenerating, carry them across —
 they are the part that cannot be derived.
+
+<!-- docs-script-refs:historical-end -->

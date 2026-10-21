@@ -1,5 +1,16 @@
 # Routes, shell, navigation and shared UI
 
+## Current routing reference — 21 October 2026
+
+Start with the [current architecture orientation](../../codebase-index.md) and the
+[generated screen map](../SCREEN-MAP.md). The dated updates below describe their own changes;
+the [September census](#historical-census--25-september-2026) retains earlier counts and route descriptions.
+
+Source checked at `fc30c90c9cdae9a208786ade6e885750f770a7ea`: the
+[`/ward-flow/transport` route](../../../src/app/ward-flow/transport/page.tsx) redirects to
+`/ward-flow/transport/officer`. The census's `/movements` destination is historical. This source read
+does not reverify the other routes or a running server.
+
 ## Header Back — 20 October 2026
 
 `shell/ward-back.ts` decides which screens are drill-downs (patient, movement, ward answer, new
@@ -108,6 +119,12 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 ## WA pathway audit update — 3 October 2026
 
 The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
+
+## Historical census — 25 September 2026
+
+The original file inventory below is preserved for history, with later annotations already present.
+It is not the current routing contract. In particular, use the [current transport destination](#current-routing-reference--21-october-2026)
+instead of the old `/movements` descriptions below.
 
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file

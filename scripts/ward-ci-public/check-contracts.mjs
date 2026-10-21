@@ -91,6 +91,7 @@ function requireWorkflow(source) {
     "owner_index",
     "rules_index",
     "organisation",
+    "doc_contracts",
   ]) {
     assert.ok(jobs.get("plan").includes(`      ${output}: ${expression(`steps.plan.outputs.${output}`)}\n`));
     assert.ok(
@@ -158,6 +159,22 @@ function requireWorkflow(source) {
     ],
   ])
     exact("static", name, command, condition);
+  // Generated documentation contracts run only when the PR touches their inputs (see plan.mjs docContractInput).
+  const docContracts = expression("needs.plan.outputs.doc_contracts == 'true'");
+  for (const [name, command] of [
+    ["Check Ward screen map", "node scripts/ward-flow/screen-map.mjs --check"],
+    ["Check drawing manifest", "node scripts/ward-flow/mockup-manifest.mjs --check"],
+    ["Check screen verification index", "node scripts/ward-flow/screen-verification.mjs --check"],
+    ["Check scripts inventory", "npm run docs:check-inventory"],
+    ["Check architecture index coverage", "npm run docs:check-index"],
+  ])
+    exact("static", name, command, docContracts);
+  exact(
+    "static",
+    "Check generated site map",
+    "npm run sitemap:check",
+    expression("!cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true'"),
+  );
   for (const [name, command, output] of [
     ["Check owner rulings index", "node scripts/ward-flow/owner-rulings-index.mjs --check", "owner_index"],
     ["Check lessons rules index", "node scripts/ward-flow/rules-index.mjs --check", "rules_index"],

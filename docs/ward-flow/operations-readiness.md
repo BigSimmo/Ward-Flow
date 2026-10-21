@@ -1,6 +1,6 @@
 # Ward Flow operations verification
 
-_Updated 2026-10-19 - conflict fixture and isolated recovery boundaries checked against source; Documentation owns._
+_Updated 2026-10-21 - recovery checklist scope clarified without provider execution; Documentation owns._
 
 This record supports the existing [audit receipt](../superpowers/plans/2026-10-16-audit-resolution-results.md)
 and [task ledger](../ward-flow-task-ledger.md). It records acceptance evidence and recovery steps,
@@ -62,6 +62,14 @@ pending row on the strength of configuration alone.
 Owner role: database/hosting maintainer. The repository owner chooses the acceptable data-loss
 window (RPO) and time to recover (RTO). Neither an approved objective nor its achievement is
 established by the evidence above; do not invent a provider retention schedule or a target value.
+
+This section states what a recovery rehearsal must prove; it is not an executable export or restore
+runbook. Before a separately authorised rehearsal, the maintainer must document the exact source
+and isolated target identities, available backup mechanism and format, chosen recovery point,
+tool/command sequence, database and Auth-state coverage, application configuration, stop conditions
+and bounded cost. The current pending row does not establish that a usable hosted backup or those
+provider operations are available. Keep the approved target-specific procedure and its evidence
+with the private operations receipt, without copying credentials or record contents here.
 
 1. With scoped management access, inspect backup/PITR availability, retention and the most recent
    recoverable point for the exact project on [DATABASE.md](DATABASE.md). Record timestamps and

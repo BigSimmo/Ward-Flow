@@ -69,6 +69,7 @@ const written = {
   owner_index: process.env.WARD_PLAN_OWNER_INDEX,
   rules_index: process.env.WARD_PLAN_RULES_INDEX,
   organisation: process.env.WARD_PLAN_ORGANISATION,
+  doc_contracts: process.env.WARD_PLAN_DOC_CONTRACTS,
 };
 const expected = expectedScope();
 // `reason` is plan.mjs's own console message for a human, not a gate, so it is not compared.

@@ -227,7 +227,20 @@ export function classifyPath(inputPath, { root = DEFAULT_ROOT, registry = null }
 
   const canonicalLocation = exactException ? exactException.path : matchingRules[0] ? matchingRules[0].pattern : null;
 
-  const recommendation = matched ? null : recommendCanonicalLocation(relPath);
+  const outsideScopeLocation = !inRoots && (exists || relPath.startsWith("backend/ward-flow/"));
+  const recommendation = matched
+    ? null
+    : outsideScopeLocation
+      ? {
+          recommendedDirectory: `${path.posix.dirname(relPath)}/`,
+          namingConvention: "Keep the existing repository location pending owner review.",
+          suggestedPath: relPath,
+          rationale:
+            "This path is outside the Ward organisation registry's declared roots; extension alone cannot justify moving it.",
+          registryGuidance:
+            "If this path should enter Ward organisation scope, review its owner and add an explicit root and rule to docs/ward-flow/organisation/registry.json.",
+        }
+      : recommendCanonicalLocation(relPath);
 
   return {
     path: relPath,

@@ -1,9 +1,11 @@
 # Ward Flow plans
 
+_Updated 2026-10-21 - distinguish commissioned work from dated plans and completed checkpoints; Documentation owns._
+
 Start at the [Ward Flow entry point](../README.md). Current work follows the agreed task scope,
 source and [task-receipt contract](../../task-receipts.md); reuse IDs from the
-[task ledger](../../ward-flow-task-ledger.md). [`STATUS.md`](../STATUS.md) preserves historical evidence. Rewritten
-17 September 2026. Nothing here has been moved or deleted.
+[local task-detail index](../../ward-flow-task-ledger.md). [`STATUS.md`](../STATUS.md) records dated evidence.
+This navigation update moves no files.
 
 **Test scope.** The owner's 17 September speed rule in [`HOW-WE-WORK.md`](../HOW-WE-WORK.md) §5 supersedes
 every per-task "Mutation:" line and "give every guard a mutation proof" instruction in the plans below.
@@ -21,10 +23,25 @@ Under the **21 September 2026 visual speed rules** ([`HOW-WE-WORK.md`](../HOW-WE
 
 Current commissioned work is established by the owner's task scope, current source and existing task record under the [receipt contract](../../task-receipts.md). The [task ledger](../../ward-flow-task-ledger.md) indexes existing IDs; [STATUS](../STATUS.md) is dated history. Old plan checkboxes do not establish a current backlog.
 
-- WF-DOCS-20261008 documentation repair (archived; see [ARCHIVE.md](../../ARCHIVE.md)): reviewed current-guidance corrections and maintained documentation gates; same task checkpoint and evidence.
-- [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs come from Ward Lead.
-- Retiring PsychSift from the Ward Flow folder (archived; see [ARCHIVE.md](../../ARCHIVE.md)): what Ward Flow uses, what is safe to remove now, what must be untangled first, and the Railway leftovers.
-- Removing the rest of PsychSift, plan v1 (`docs/ward-flow/plans/2026-09-25-psychsift-removal-plan-v1.md`, removed in the 15 Oct 2026 docs trim): where the retirement stands after batch 3a, why the shared building blocks stay put, the few files that drag PsychSift in, the mixed tests, and the single removal pass.
+- [WF-DOCORG-AUDIT-20261021](2026-10-21-documentation-organisation-repairs.md): local documentation and organisation repairs; the checkpoint records the implementation base, finding dispositions and verification state. Publication remains a separate stage.
+
+## Dated records and previous work
+
+These statuses describe the linked records, not a new assessment of implementation, hosted CI or deployment.
+
+| Record                                                                                              | Recorded status and scope                                                                |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [18 October audit checkpoint](../../superpowers/plans/2026-10-18-full-audit-remediation-results.md) | Dated pre-integration checkpoint; its remaining checks are not a current task commission |
+| [16 October audit results](../../superpowers/plans/2026-10-16-audit-resolution-results.md)          | Reconciled 17 October; records merged fixes and one upstream follow-up at that revision  |
+| [17 October design audit plan](../../superpowers/plans/2026-10-17-design-audit-resolution.md)       | Dated plan; verify current task scope and source before resuming any item                |
+| WF-DOCS-20261008 documentation repair                                                               | Completed local engineering stage, then archived; [restoration record](../../ARCHIVE.md) |
+
+### Earlier historical inputs
+
+- **Completed and archived:** WF-DOCS-20261008 documentation repair (see [ARCHIVE.md](../../ARCHIVE.md)): reviewed current-guidance corrections and maintained documentation gates; same task checkpoint and evidence.
+- **Historical owner-answer context:** [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs came from Ward Lead.
+- **Historical retirement plan:** Retiring PsychSift from the Ward Flow folder (archived; see [ARCHIVE.md](../../ARCHIVE.md)): what Ward Flow used, what was safe to remove, what had to be untangled first, and the Railway leftovers at that time.
+- **Historical removed plan:** Removing the rest of PsychSift, plan v1 (`docs/ward-flow/plans/2026-09-25-psychsift-removal-plan-v1.md`, removed in the 15 Oct 2026 docs trim): where the retirement stood after batch 3a, why the shared building blocks stayed put, the files that dragged PsychSift in, the mixed tests, and the proposed removal pass.
 
 ## Folded & Completed (Round 2)
 
@@ -56,5 +73,8 @@ task-status sources. Many of the plans named in this section were removed in the
 
 ## Adding a plan
 
-Create one dated plan here, add a row under "Current", and put a superseded banner (see `HOW-WE-WORK.md`
-§9) on any plan it replaces. Record task progress in the ledger, not in a new progress file.
+For new Ward Flow plans, use this directory regardless of the authoring tool. Link the plan from the
+same task record and add a row here with its explicit status and evidence date. Existing plans under
+`docs/superpowers/plans/` stay at their paths; do not duplicate or move them for naming consistency.
+Mark a replaced plan with its successor. Follow [document conventions](../../DOCS-SYSTEM.md) and
+record progress through the [task/receipt contract](../../task-receipts.md), not a new status ledger.

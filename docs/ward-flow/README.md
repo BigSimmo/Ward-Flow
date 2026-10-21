@@ -1,7 +1,17 @@
 # Ward Flow — start here
 
-**This is the Ward Flow product and design entry point** (alongside [`AGENTS.md`](../../AGENTS.md) as the repository-level instruction root). Any other Ward Flow document that says "start here" is historical and carries a
-banner pointing back to this one. Updated 28 September 2026 for the dedicated repository.
+**This is the product and design overview.** Use the [documentation portal](../README.md) to find the
+page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
+
+_Updated 2026-10-21 - audience navigation and task/history boundaries; Documentation owns._
+
+| Reader or task                      | Next page                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates        |
+| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                               |
+| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)         |
+| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md) |
+| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                     |
 
 ## What Ward Flow is
 
@@ -62,6 +72,9 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
 - **Decisions: the owner's words.** The newest are in
   [`OWNER-RULINGS.md`](OWNER-RULINGS.md) (historical dump: [`archive/dated-notes/owner-answers-2026-09-17.md`](archive/dated-notes/owner-answers-2026-09-17.md)), including its "Second round". A later
   answer beats an earlier ruling.
+
+<details>
+<summary>Builder reference — local commands and organisation checkpoint</summary>
 
 ## Running it
 
@@ -151,14 +164,16 @@ previous snapshot. These guards do not infer contradictions in prose or clinical
 those in the existing task/decision ledgers for review, using the current owner ruling as authority.
 Existing generated-document checks and relevant behaviour tests remain separate evidence.
 
+</details>
+
 ## The four documents
 
 1. [`../task-receipts.md`](../task-receipts.md) — current task identity, acceptance evidence and handoff; [`STATUS.md`](STATUS.md) gives the current summary, then historical context.
 2. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — detailed operational handbook for how any AI builder picks up, builds, tests, commits and hands back work (governed by [`AGENTS.md`](../../AGENTS.md)).
-3. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — **the ledger**: every Ward Flow task and its state.
+3. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — local task detail and dated history; the task/receipt contract identifies the canonical task source.
 4. [`OWNER-RULINGS.md`](OWNER-RULINGS.md) — generated index of the owner's rulings. Open the source file before relying on one.
 
-Current plans are listed in [`plans/README.md`](plans/README.md).
+[`plans/README.md`](plans/README.md) classifies retained plans and dated checkpoints; current commissioned work comes from the agreed task record.
 
 ## Traps that have each cost a day
 

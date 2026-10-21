@@ -93,7 +93,7 @@ export function classifyChanges(entries) {
 /** Independently scoped, dependency-free maintained-document checks. Missing history fails closed. */
 export function documentChecks(entries) {
   if (!entries.length || entries.some(({ status }) => !["M", "A"].includes(status)))
-    return { owner_index: true, rules_index: true, organisation: true };
+    return { owner_index: true, rules_index: true, organisation: true, doc_contracts: true };
   const files = entries.map(({ file }) => file);
   return {
     owner_index: files.some((file) => {
@@ -115,7 +115,20 @@ export function documentChecks(entries) {
     ),
     // A registry edit always runs the check, even one that narrows the roots this reads.
     organisation: files.some((file) => file === ORGANISATION_REGISTRY || matchesOrganisationRoot(file)),
+    // Generated docs contracts (screen map, drawing manifest, screen verification, scripts inventory,
+    // architecture index, site map) read these inputs. Added directory paths can introduce a new
+    // tracked root in the architecture index; conservatively check every such addition.
+    doc_contracts:
+      files.some(docContractInput) || entries.some(({ status, file }) => status === "A" && file.includes("/")),
   };
+}
+
+export function docContractInput(file) {
+  return (
+    /^(?:src|docs|design|scripts|mockups)\//u.test(file) ||
+    file === "package.json" ||
+    file === ".github/workflows/ward-flow.yml"
+  );
 }
 
 export function hasDependencyChanges(entries) {

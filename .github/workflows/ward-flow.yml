@@ -31,6 +31,7 @@ jobs:
       owner_index: ${{ steps.plan.outputs.owner_index }}
       rules_index: ${{ steps.plan.outputs.rules_index }}
       organisation: ${{ steps.plan.outputs.organisation }}
+      doc_contracts: ${{ steps.plan.outputs.doc_contracts }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -57,6 +58,7 @@ jobs:
           WARD_PLAN_OWNER_INDEX: ${{ steps.plan.outputs.owner_index }}
           WARD_PLAN_RULES_INDEX: ${{ steps.plan.outputs.rules_index }}
           WARD_PLAN_ORGANISATION: ${{ steps.plan.outputs.organisation }}
+          WARD_PLAN_DOC_CONTRACTS: ${{ steps.plan.outputs.doc_contracts }}
           WARD_PLAN_BACKEND: ${{ steps.plan.outputs.backend }}
           WARD_PLAN_BUILD: ${{ steps.plan.outputs.build }}
           WARD_PLAN_FRONTEND_STATIC: ${{ steps.plan.outputs.frontend_static }}
@@ -122,6 +124,21 @@ jobs:
       - name: Check file organisation
         if: ${{ needs.plan.outputs.organisation == 'true' }}
         run: node scripts/ward-flow/organisation.mjs --check --source working-tree
+      - name: Check Ward screen map
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: node scripts/ward-flow/screen-map.mjs --check
+      - name: Check drawing manifest
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: node scripts/ward-flow/mockup-manifest.mjs --check
+      - name: Check screen verification index
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: node scripts/ward-flow/screen-verification.mjs --check
+      - name: Check scripts inventory
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: npm run docs:check-inventory
+      - name: Check architecture index coverage
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: npm run docs:check-index
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && needs.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
@@ -129,6 +146,9 @@ jobs:
         id: install
         if: ${{ !cancelled() && needs.plan.outputs.full == 'true' }}
         run: node scripts/install-locked-dependencies.mjs
+      - name: Check generated site map
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true' }}
+        run: npm run sitemap:check
       - name: Check changed files
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:

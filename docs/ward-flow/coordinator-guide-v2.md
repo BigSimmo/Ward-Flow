@@ -1,5 +1,14 @@
 # Ward Flow: a guide for the bed flow coordinator
 
+**Audience:** coordinators exploring the synthetic prototype. **Status:** maintained guide with dated evidence.
+**Owner:** Documentation. Navigation in section 2 was checked against source at
+`fc30c90c9cdae9a208786ade6e885750f770a7ea` on 21 October 2026; it has not been checked in a browser at that revision.
+The menu description covers the coordinator view in local demo mode; shared mode additionally filters access
+by the signed-in role and place. Other sections retain their stated evidence dates.
+
+<details>
+<summary>Historical screen-check scope — 26 September 2026</summary>
+
 A plain-English guide for the bed flow coordinator, written from the app's own wording on the
 ward line of 26 September 2026. Everything in the app is made-up demo data. The app is called Ward
 Flow.
@@ -10,7 +19,11 @@ the bed board text, Settings labelling each hour rule as your default, and no sc
 "breach". Lines marked _(not yet checked on screen)_ are taken from the code and the
 owner's rulings and are confirmed by the next screen check.
 
+</details>
+
 _Updated 2026-10-19 - corrected urgency, identifier and persistence guidance from source; Documentation owns. The screen-check dates above are unchanged._
+
+_Updated 2026-10-21 - current coordinator menu checked from source; Documentation owns. No new screen-check claim._
 
 ---
 
@@ -31,6 +44,23 @@ health service. It is a prototype.
 
 ## 2. Finding your way: the side rail
 
+The coordinator's main menu contains **Home, Capacity, Movements, Waiting, Referrals and Handover**.
+Use **More** on the desktop rail for the other available pages. On a phone, open **Menu**.
+The remaining pages use the groups **Today, Where, Work and Checks**; empty groups and pages
+outside the current role's access are omitted. Feature flags can also hide unfinished pages,
+including Bed meeting TV.
+
+This wording comes from [`ROLE_MENUS` and `roleMenu`](../../src/components/ward-management/shell/ward-rail-entries.ts),
+which the [desktop rail](../../src/components/ward-management/shell/ward-rail.tsx) and
+[phone menu](../../src/components/ward-management/shell/ward-phone-menu.tsx) use. It is source evidence,
+not a new visual walkthrough. The current legal-time boundary is
+[D-70](decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026).
+
+<details>
+<summary>Historical navigation and badge descriptions — superseded for current navigation</summary>
+
+<!-- docs-script-refs:historical-start -->
+
 The rail on the left (`shell-18` in `src/components/ward-management/ward-rail-entries.ts`) has four groups:
 
 - **Now:** `Coordinator`, `Capacity`, `Waiting`.
@@ -46,6 +76,10 @@ Two numbers on the rail are worth knowing:
 - **Occupancy** for each site and service. _(not yet checked on screen)_
 
 In the top bar, the simulation status chip reads **Demo** (never `'Live'`), with controls labelled **"Pause demo updates"** and **"Resume demo updates"** (per PR #258).
+
+<!-- docs-script-refs:historical-end -->
+
+</details>
 
 ---
 

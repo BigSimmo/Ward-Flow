@@ -69,17 +69,14 @@ describe("scripts documentation inventory", () => {
     expect(installer).toContain('["pre-commit", "pre-push"]');
   });
 
-  it("parses inventory counts and checks tolerance window (#2MTYDV)", () => {
+  it("parses inventory counts and detects even a one-entry drift", () => {
     const text = "Curated map of `scripts/` (306 files) and the `package.json` script surface (299 entries),";
     const parsed = parseScriptsInventoryCounts(text);
     expect(parsed).toEqual({ scriptFileCount: 306, npmScriptCount: 299 });
 
-    expect(isInventoryWithinTolerance(parsed, { scriptFileCount: 308, npmScriptCount: 298 })).toBe(true);
-    expect(
-      isInventoryWithinTolerance(parsed, { scriptFileCount: 306 + INVENTORY_TOLERANCE, npmScriptCount: 299 }),
-    ).toBe(true);
-    expect(
-      isInventoryWithinTolerance(parsed, { scriptFileCount: 306 + INVENTORY_TOLERANCE + 1, npmScriptCount: 299 }),
-    ).toBe(false);
+    expect(INVENTORY_TOLERANCE).toBe(0);
+    expect(isInventoryWithinTolerance(parsed, { scriptFileCount: 306, npmScriptCount: 299 })).toBe(true);
+    expect(isInventoryWithinTolerance(parsed, { scriptFileCount: 307, npmScriptCount: 299 })).toBe(false);
+    expect(isInventoryWithinTolerance(parsed, { scriptFileCount: 306, npmScriptCount: 298 })).toBe(false);
   });
 });
