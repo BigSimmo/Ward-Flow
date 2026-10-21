@@ -719,6 +719,43 @@
 .searchWrap {
   flex: 0 1 380px;
   min-width: 3.5rem;
+  /* Its own width decides the fold below, and its field no longer props the bar open. The results
+   * open in a fixed popup on the body, so this containment does not move them. */
+  container: ward-search / inline-size;
+}
+
+/* Too narrow for the field, its "/" hint and a readable placeholder, the box ran under Activity
+ * (visual desk, 21 Oct 2026). It folds to the magnifier instead, as a tablet's does. */
+@container ward-search (max-width: 9rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search"]),
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-inline: auto;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    height: var(--spacing-tap, 3rem);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    max-width: none;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-ward-search-shortcut]),
+  .bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+    display: none;
+  }
 }
 
 .searchWrap :global([data-testid="ward-global-search"]) {
@@ -1061,11 +1098,6 @@
 }
 
 @container ward-bar (max-width: 66rem) {
-  /* A drill-down screen's Back takes room the bar does not have at 1280px, so New referral ran past
-   * the right edge (visual desk, 21 Oct 2026). With Back, Activity and Alerts go to icons sooner, and
-   * the search folds to its magnifier as on a tablet, since its box overran Activity at its floor. */
-  .bar:has(.deskBack) .drawerTrigger[data-bar-mode="activity"] .triggerLabel,
-  .bar:has(.deskBack) .drawerTrigger[data-bar-mode="tasks"] .triggerLabel,
   .drawerTrigger[data-bar-mode="tools"] .triggerLabel {
     position: absolute;
     width: 1px;
@@ -1077,46 +1109,22 @@
     white-space: nowrap;
     border: 0;
   }
+}
 
-  /* Desktop and tablet only: the phone hides this Back and draws its own search sheet. */
-  @media (min-width: 48.0625rem) {
-    .bar:has(.deskBack) .centerGroup,
-    .bar:has(.deskBack) .searchWrap,
-    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search"]) {
-      flex: 0 0 auto;
-      width: var(--spacing-tap, 3rem);
-      min-width: var(--spacing-tap, 3rem);
-      max-width: var(--spacing-tap, 3rem);
-    }
-
-    .bar:has(.deskBack) .centerGroup {
-      margin-left: auto;
-    }
-
-    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search"] > div) {
-      width: var(--spacing-tap, 3rem);
-      min-width: var(--spacing-tap, 3rem);
-      max-width: var(--spacing-tap, 3rem);
-      height: var(--spacing-tap, 3rem);
-      padding: 0;
-      justify-content: center;
-    }
-
-    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search-input"]) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: var(--spacing-tap, 3rem);
-      height: var(--spacing-tap, 3rem);
-      max-width: none;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    .bar:has(.deskBack) .searchWrap :global([data-ward-search-shortcut]),
-    .bar:has(.deskBack) .searchWrap :global([data-testid="ward-global-search-clear"]) {
-      display: none;
-    }
+/* Up to about 1366px wide with the rail open the bar had no room for the Activity, Alerts and Tools
+ * words: the search ran under Activity, and on a screen with Back, New referral ran past the right
+ * edge (visual desk, 21 Oct 2026). They go to icons here; their names stay for screen readers. */
+@container ward-bar (max-width: 72rem) {
+  .drawerTrigger .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
 
