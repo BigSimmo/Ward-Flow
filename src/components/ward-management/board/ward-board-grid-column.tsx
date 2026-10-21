@@ -78,7 +78,7 @@ export function WardBoardGridColumn({
         </span>
       </header>
       <div className={styles.boardBar}>
-        <div className={styles.filterSet} role="group" aria-label="Narrow the bed board">
+        <div className={styles.filterSet} role="group" aria-label="Narrow stays and discharges">
           {BOARD_FILTERS.map((filter) => (
             <button
               key={filter}
