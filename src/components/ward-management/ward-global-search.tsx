@@ -159,6 +159,11 @@ export type WardGlobalSearchProps = {
   aboveSheets?: boolean;
   /** Opens the full Tasks list (the header's drawer). Absent means no "See all tasks" control. */
   onSeeAllTasks?: () => void;
+  /**
+   * The header drawer is Alerts on the bed coordinator's desk (D-61) and Tasks elsewhere. Search
+   * uses the same name, so the tab, the row tag and "See all" match the drawer (UX audit, 21 Oct 2026).
+   */
+  tasksAreAlerts?: boolean;
   /** Booked planned admissions, so search finds the same overdue rows the task count holds. */
   plannedAdmissions?: Parameters<typeof searchWardFlow>[0]["plannedAdmissions"];
   /** The Ward Flow clock, for waits in the preview. Absent means waits are simply not shown. */
@@ -315,6 +320,7 @@ export function WardGlobalSearch({
   tasks,
   aboveSheets = false,
   onSeeAllTasks,
+  tasksAreAlerts = false,
   plannedAdmissions,
   now,
   scope,
@@ -325,6 +331,7 @@ export function WardGlobalSearch({
   takeFocusFrom,
 }: WardGlobalSearchProps) {
   const id = useId();
+  const tasksWord = tasksAreAlerts ? { many: "Alerts", one: "Alert" } : { many: "Tasks", one: "Task" };
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
   const demoOffId = `${id}-demo-off`;
@@ -834,6 +841,8 @@ export function WardGlobalSearch({
           <div className={styles.kinds} role="group" aria-label="Show only">
             {KIND_FILTERS.map((filter) => {
               const count = kindCounts.get(filter.key) ?? 0;
+              // UX audit (21 Oct 2026): a kind with nothing found is left out rather than shown at 0.
+              if (count === 0 && filter.key !== "all" && activeKind !== filter.key) return null;
               return (
                 <button
                   key={filter.key}
@@ -845,7 +854,7 @@ export function WardGlobalSearch({
                   onClick={() => chooseKind(filter.key)}
                   data-testid={`ward-global-search-kind-${filter.key}`}
                 >
-                  {filter.label}
+                  {filter.key === "tasks" ? tasksWord.many : filter.label}
                   <span className={styles.kindCount}>
                     {refusal ? 0 : count}
                     {!refusal && truncatedGroups.some((key) => filter.key === "all" || filter.groups.includes(key))
@@ -888,7 +897,9 @@ export function WardGlobalSearch({
                   <div key={group.key} className={styles.groupItem}>
                     <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
-                        <span id={`${listId}-${group.key}-heading`}>{group.heading}</span>
+                        <span id={`${listId}-${group.key}-heading`}>
+                          {group.key === "tasks" ? tasksWord.many : group.heading}
+                        </span>
                         {isStart ? null : (
                           <span className={styles.groupCount}>
                             {fullGroupCounts.get(group.key) ?? group.items.length}
@@ -905,7 +916,7 @@ export function WardGlobalSearch({
                             }}
                             data-testid="ward-global-search-see-all-tasks"
                           >
-                            See all tasks
+                            See all {tasksWord.many.toLowerCase()}
                           </button>
                         ) : null}
                         {(() => {
@@ -1002,7 +1013,9 @@ export function WardGlobalSearch({
                                   ) : null}
                                 </span>
                               </span>
-                              <span className={styles.resultKind}>{item.kindLabel}</span>
+                              <span className={styles.resultKind}>
+                                {item.kind === "task" ? tasksWord.one : item.kindLabel}
+                              </span>
                               <span className={styles.actionHint} aria-hidden="true">
                                 <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
                               </span>

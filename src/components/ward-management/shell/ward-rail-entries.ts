@@ -64,7 +64,7 @@ export const RAIL_GROUPS = [
     ],
   },
   {
-    label: "Checks",
+    label: "Reports and reference",
     entries: [
       ["governance", "Governance"],
       ["statistics", "Statistics"],

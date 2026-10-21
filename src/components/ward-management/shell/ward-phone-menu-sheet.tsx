@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ComponentProps, type ComponentType, type ReactNode, type RefObject } from "react";
-import { BedSingle, Inbox, Clock3, Plus, Search, Settings, Truck, UserPlus, Wrench } from "lucide-react";
+import { BedSingle, Inbox, Clock3, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -17,7 +17,7 @@ import { preloadWhenIdle } from "../preload-when-idle";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "../ward-shared-access";
-import { officerHref, settingsHref, unitHref } from "./ward-facade";
+import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
@@ -36,7 +36,8 @@ import actNowStyles from "./ward-phone-menu-act-now.module.css";
  * shell-5 (13 Oct 2026): the Create items match the + button's name. Add patient joins (transport stays
  * out until a phone booking entry exists, per A4-10);
  * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
- * that is not a Menu entry.
+ * that is not a Menu entry. UX audit (21 Oct 2026): "Transport jobs" left, as it is a page to look at,
+ * not something to start, and the menu already lists Transport.
  */
 const CREATE_LINKS: readonly {
   id: string;
@@ -44,7 +45,6 @@ const CREATE_LINKS: readonly {
   meta: string;
   icon: LucideIcon;
   href?: string;
-  asButton?: boolean;
 }[] = [
   { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
@@ -54,16 +54,6 @@ const CREATE_LINKS: readonly {
     meta: "New record with a UMRN",
     icon: UserPlus,
     href: WARD_ADD_PERSON_HREF,
-  },
-  {
-    // The officer page lists existing transport jobs; booking one starts from the placement panel or the
-    // community desk, so this row is a way to see the jobs, not to book.
-    id: "transport-jobs",
-    label: "Transport jobs",
-    meta: "See booked transport and its status",
-    icon: Truck,
-    href: officerHref(),
-    asButton: true,
   },
 ];
 
@@ -313,7 +303,6 @@ function CreateSheet({
   // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
   const gate = useRoleGate();
   const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
-  const router = useRouter();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   return (
@@ -351,34 +340,18 @@ function CreateSheet({
           return entry
             ? [
                 <li key={item.id}>
-                  {item.asButton ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      data-testid={`ward-phone-create-${item.id}`}
-                      onClick={() => {
-                        onClose();
-                        router.push(entry.href);
-                        announceToWardShell(`${item.label}: ${item.meta}.`);
-                      }}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </button>
-                  ) : (
-                    <Link
-                      href={
-                        item.id === "wards" && currentUnitId !== undefined
-                          ? unitHref(decodeURIComponent(currentUnitId))
-                          : entry.href
-                      }
-                      className={styles.row}
-                      onClick={onClose}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </Link>
-                  )}
+                  <Link
+                    href={
+                      item.id === "wards" && currentUnitId !== undefined
+                        ? unitHref(decodeURIComponent(currentUnitId))
+                        : entry.href
+                    }
+                    className={styles.row}
+                    onClick={onClose}
+                  >
+                    <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                    <Chevron />
+                  </Link>
                 </li>,
               ]
             : [];

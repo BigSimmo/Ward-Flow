@@ -349,7 +349,8 @@ export function WardToolsSheet({
         {tool(
           "contacts",
           Search,
-          "Contacts",
+          // UX audit (21 Oct 2026): the page's own name, not a third one.
+          "On-call",
           "Who is on now, key lines and My list",
           <WardToolsContacts onNavigate={onNavigate} />,
         )}
