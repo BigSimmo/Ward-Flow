@@ -1373,21 +1373,26 @@ export function createWorkspaceStore(
           view.actorId,
         ]);
         loggedAt.setTime(clock().getTime());
-        const { rowCount } = await client.query(
-          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
-          [
-            workspaceId,
-            view.actorId,
-            view.membershipId ?? null,
-            view.access.role,
-            view.access.scope,
-            patientId,
-            surface,
-            loggedAt,
-            new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
-            VIEW_RATE_LIMIT,
-          ],
-        );
+        const { rowCount } = await client
+          .query(
+            "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
+            [
+              workspaceId,
+              view.actorId,
+              view.membershipId ?? null,
+              view.access.role,
+              view.access.scope,
+              patientId,
+              surface,
+              loggedAt,
+              new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
+              VIEW_RATE_LIMIT,
+            ],
+          )
+          .catch((error) => {
+            forgetVersionOnMissing(error);
+            throw error;
+          });
         return { status: 200, body: { logged: rowCount > 0 } };
       });
     },
