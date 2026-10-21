@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SIGN_IN_ACTIONS, SIGN_IN_ROLES } from "@/components/ward-flow-sign-in/ward-flow-sign-in-data";
 import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-sign-in-screen";
@@ -125,6 +125,20 @@ describe("Ward Flow sign-in screen renders", () => {
     fireEvent.click(goButton);
     expect(screen.getByRole("status")).toHaveTextContent(/Not wired in this prototype, so nothing has opened\./);
     expect(document.querySelectorAll("input")).toHaveLength(0);
+  });
+
+  it("leaves the not-wired Preview button out of a production build, so nothing says Not wired", () => {
+    // Josh, 20 Oct 2026: not-wired controls show only in a local development build (unwired-previews.tsx).
+    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "production");
+    try {
+      render(<WardFlowSignInScreen />);
+      expect(screen.queryByRole("button", { name: /^Preview as/ })).toBeNull();
+      fireEvent.keyDown(window, { key: "Enter" });
+      expect(document.body).not.toHaveTextContent(/Not wired in this prototype/);
+      expect(screen.getByText(/access is not enforced/)).toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("never renders a claim that a role is enforced, only what the design system's screens index names it for", () => {

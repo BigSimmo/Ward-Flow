@@ -23,6 +23,7 @@
  */
 
 import {
+  acceptedReferralAwaitingMovement,
   buildActionInbox,
   destinationUnit,
   isOpen,
@@ -33,6 +34,7 @@ import {
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -525,9 +527,9 @@ type ReferralSearchResult = {
 
 /**
  * Queued referrals still waiting on an answer, found by the patient's name or UMRN as well as the
- * referral's own id, origin and region. The same "queued and awaiting an answer" rule
- * `searchPatients` keeps, so a referral the referrer withdrew or a ward accepted is never offered:
- * an accepted one has a movement, and is found as that movement.
+ * referral's own id, origin and region. The same rule `searchPatients` keeps, so a referral the
+ * referrer withdrew is never offered. An accepted one is found as its movement once that exists;
+ * until then it is offered here, because accepting creates no movement (audit A3-5).
  *
  * Until 19 October 2026 the header search left referrals out because a referral had no page of its
  * own. `referralBoardHref` now opens one referral on the board, so each row has a real destination.
@@ -536,11 +538,16 @@ function searchReferrals(
   query: string,
   referrals: readonly Referral[],
   lookup: { patients: readonly Patient[]; movements: readonly Movement[]; referrals: readonly Referral[] },
+  admissions: readonly Pick<Admission, "referralId">[] | undefined,
 ): ReferralSearchResult[] {
   const needle = foldPatientSearchText(query);
   if (needle.length < 2) return [];
   return referrals.flatMap((referral) => {
-    if (referralState(referral) !== "queued" || !referral.destinations.some(isAwaitingAnswer)) return [];
+    const waiting = referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer);
+    // Without admissions a referral already admitted cannot be told apart, so only queued ones show.
+    const awaitingMovement =
+      admissions !== undefined && acceptedReferralAwaitingMovement(referral, lookup.movements, admissions);
+    if (!waiting && !awaitingMovement) return [];
     const info = resolveSubjectPatient(referral, lookup);
     const words = foldPatientSearchText(
       [info.displayName, info.formalName, info.umrn, referral.id, referral.originSiteCode, referral.homeRegion].join(
@@ -609,6 +616,8 @@ export type SmartSearchInput = {
   now?: number;
   limitPerGroup?: number;
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
+  /** Ward admissions, so an accepted referral already admitted is not offered as still waiting. */
+  admissions?: readonly Pick<Admission, "referralId">[];
   precomputedTasks?: readonly InboxItem[];
 };
 
@@ -767,11 +776,16 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   const referrals = rankGroup(
     "referrals",
-    searchReferrals(trimmed, input.referrals ?? [], {
-      patients: input.patients,
-      movements: input.movements,
-      referrals: input.referrals ?? [],
-    }),
+    searchReferrals(
+      trimmed,
+      input.referrals ?? [],
+      {
+        patients: input.patients,
+        movements: input.movements,
+        referrals: input.referrals ?? [],
+      },
+      input.admissions,
+    ),
     trimmed,
     (result) => [result.formalName, result.umrn, result.referral.id],
   );
