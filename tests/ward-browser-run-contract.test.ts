@@ -3,20 +3,24 @@ import { describe, expect, it } from "vitest";
 import { includeGroupCsrf, releaseGateCases, sharedModeCases } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 describe("complete release gate and shared-build browser selection", () => {
-  it("requires all four operational journeys on both device projects only for the full preset", () => {
+  it("requires all six operational journeys on both device projects only for the full preset", () => {
     expect(releaseGateCases(false)).toEqual([]);
     const cases = releaseGateCases(true);
-    expect(cases).toHaveLength(8);
+    expect(cases).toHaveLength(12);
     for (const project of ["release-gate-desktop", "release-gate-phone"]) {
       expect(cases.filter((entry) => entry.project === project).map((entry) => entry.title.split(":")[0])).toEqual([
         "ED referral to bed offer",
         "Morning bed meeting",
         "Transfer with transport",
         "Discharge with bed release",
+        "Inpatient transfer",
+        "Community referral",
       ]);
     }
-    const source = readFileSync("tests/release-gate-journeys.spec.ts", "utf8");
-    for (const entry of cases) expect(source, entry.title).toContain(JSON.stringify(entry.title));
+    for (const entry of cases) {
+      const source = readFileSync(`tests/${entry.file}`, "utf8");
+      expect(source, entry.title).toContain(JSON.stringify(entry.title));
+    }
   });
 
   it("requires all six production shared-mode journeys", () => {
