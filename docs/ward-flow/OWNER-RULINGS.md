@@ -4,12 +4,12 @@
 > `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out
 > of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.
 
-Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **35 files**. The brief also asked about
+Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **36 files**. The brief also asked about
 `docs/ward-flow/*owner*ruling*.md`: that pattern matched **zero files beyond the first set** — every file it catches already starts with `owner-`.
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**552 rulings/items extracted, across 30 of 35 files.**
+**553 rulings/items extracted, across 31 of 36 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -506,7 +506,15 @@ safe global key across 30 files.
 
 ---
 
-## By file, newest first — 30 files
+## By file, newest first — 31 files
+
+### `owner-answers-2026-10-21.md` (2026-10-21)
+
+**Title:** Owner answers — 21 October 2026
+
+1 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 5, heading: "1. Auto-merge on a held PR"
 
 ### `decisions.md` (2026-09-07 – 2026-10-20 (mixed, see file))
 

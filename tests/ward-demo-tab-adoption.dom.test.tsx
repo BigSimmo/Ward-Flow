@@ -37,7 +37,11 @@ function savedOffset(): number | undefined {
   return raw ? JSON.parse(raw).state.clockOffsetMinutes : undefined;
 }
 
+// The saved-session read loads on demand, so a tab joins the others once that read has landed.
 async function settle() {
+  await act(async () => {
+    await import("@/components/ward-management/ward-flow-demo-restore");
+  });
   for (let i = 0; i < 5; i++) await act(async () => Promise.resolve());
 }
 

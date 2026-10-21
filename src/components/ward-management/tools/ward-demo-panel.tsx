@@ -53,9 +53,9 @@ export function WardDemoPanel() {
   const pickable = resetOn ? WARD_SCENARIOS.filter((candidate) => !resetScenarios.includes(candidate)) : WARD_SCENARIOS;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function saveToFile() {
+  async function saveToFile() {
     if (!saveScenarioFile) return;
-    const built = saveScenarioFile();
+    const built = await saveScenarioFile();
     if (!built.ok) {
       setMessage(built.reason);
       return;
@@ -121,7 +121,7 @@ export function WardDemoPanel() {
       setMessage("That file could not be read, so nothing was loaded.");
       return;
     }
-    const result = loadScenarioFile(text);
+    const result = await loadScenarioFile(text);
     setMessage(
       result.ok
         ? "Scenario loaded. It is kept in this tab only, so load the file again after a refresh."

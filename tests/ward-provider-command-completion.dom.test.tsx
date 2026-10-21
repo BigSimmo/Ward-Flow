@@ -5,11 +5,8 @@ import { CoordinatorCockpit } from "@/components/ward-management/coordinator/coo
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import {
-  tryReadDemoState,
-  tryWriteDemoState,
-  WARD_FLOW_DEMO_STORAGE_VERSION,
-} from "@/components/ward-management/ward-flow-demo-storage";
+import { tryWriteDemoState, WARD_FLOW_DEMO_STORAGE_VERSION } from "@/components/ward-management/ward-flow-demo-storage";
+import { tryReadDemoState } from "@/components/ward-management/ward-flow-demo-restore";
 import { buildScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import { absoluteWallClockMinutes, demoDayZero } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -194,7 +191,7 @@ it("expires a local accepted completion when the world is reset", () => {
   expect(result?.isCurrent?.()).toBe(false);
 });
 
-it("cancels a pre-adoption command when a scenario file replaces its world", async () => {
+it("settles a pre-adoption command before a scenario file, which now loads on demand, replaces its world", async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-17T10:00:00Z"));
   const imported = wardFlowReducer(seedWardFlowState(), {
@@ -209,19 +206,19 @@ it("cancels a pre-adoption command when a scenario file replaces its world", asy
   if (!file.ok) throw new Error(file.reason);
   const scenarioJson = file.json;
   const finished = vi.fn();
+  const loaded = vi.fn();
   let dispatched = false;
   function EarlyScenarioLoad() {
     const { dispatch, loadScenarioFile, now, worldGeneration } = useWardFlow();
     useLayoutEffect(() => {
       if (dispatched) return;
       dispatched = true;
-      // Layout effects precede saved-session adoption. This command would be accepted
-      // on the seed, but loading a file discards that seed before the promise settles.
+      // Layout effects precede saved-session adoption; the file load below lands after it.
       const pending = dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes: 15 });
       expect(pending).toBeInstanceOf(Promise);
       void Promise.resolve(pending).then(finished);
       expect(finished).not.toHaveBeenCalled();
-      expect(loadScenarioFile?.(scenarioJson)).toEqual({ ok: true });
+      void loadScenarioFile?.(scenarioJson).then(loaded);
     }, [dispatch, loadScenarioFile]);
     return (
       <output data-testid="scenario-load-world">
@@ -238,13 +235,11 @@ it("cancels a pre-adoption command when a scenario file replaces its world", asy
       </StrictMode>,
     );
   });
+  expect(loaded).toHaveBeenCalledWith({ ok: true });
   expect(finished).toHaveBeenCalledTimes(1);
-  expect(finished).toHaveBeenCalledWith(
-    expect.objectContaining({
-      status: "cancelled",
-      message: expect.stringContaining("scenario was replaced"),
-    }),
-  );
+  // The file tools load on demand (21 Oct 2026), so the saved session is adopted and the early
+  // command settles on it first; the loaded file then replaces that world, which ends its currency.
+  expect(finished).toHaveBeenCalledWith(expect.objectContaining({ status: "accepted" }));
   expect(finished.mock.calls[0]![0].isCurrent?.()).toBe(false);
   expect(screen.getByTestId("scenario-load-world").textContent).toBe(
     `${NOW_ANCHOR + 90}:${imported.worldGeneration + 1}`,
