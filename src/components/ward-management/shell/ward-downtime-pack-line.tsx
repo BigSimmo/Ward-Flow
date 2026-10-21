@@ -14,13 +14,12 @@ import {
 import { useDowntimePackAccess } from "@/components/ward-management/reports/downtime-pack-context";
 import { downtimePackDue, shiftChangeCrossed } from "@/components/ward-management/reports/downtime-pack-schedule";
 import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { DOWNTIME_PACK_HREF } from "@/components/ward-management/reports/report-routes";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useCanOpenHref } from "./ward-access";
 import styles from "./ward-offline-banner.module.css";
-
-const DOWNTIME_PACK_HREF = "/ward-flow/reports/downtime";
 
 /**
  * Fix plan item 9 (Josh, 21 Oct 2026, "yes to all"): the downtime pack is retaken every hour and at
@@ -69,7 +68,7 @@ export function WardDowntimePackLine() {
   }, [canOpen, ready, online, pack, now, take, owner, worldGeneration]);
 
   if (!canOpen || !ready || pack === null || handled || !online || pathname === DOWNTIME_PACK_HREF) return null;
-  const at = formatInstant(pack.generatedAt);
+  const at = formatInstantWithDay(pack.generatedAt, now);
   const shiftChange = pack.shiftChangeAt !== undefined;
   return (
     <p

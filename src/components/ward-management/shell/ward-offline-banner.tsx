@@ -4,8 +4,8 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
-import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import styles from "./ward-offline-banner.module.css";
 
@@ -52,6 +52,8 @@ export function WardOfflineBanner() {
   const online = useOnlineStatus();
   const fullscreenElement = useFullscreenElement();
   const lastPackAt = useLastDowntimePackAt();
+  // Outside the provider there is no pack, so the fallback clock is never shown.
+  const now = useWardFlowClock(0);
   if (online) return null;
   const banner = (
     <p
@@ -63,7 +65,7 @@ export function WardOfflineBanner() {
       Offline. This screen keeps working from this session, but nothing is updating until the connection returns.{" "}
       {lastPackAt === null
         ? "If it stops, use the latest printed or saved downtime pack."
-        : `If it stops, use the downtime pack taken at ${formatInstant(lastPackAt)}, printed or saved as a PDF.`}
+        : `If it stops, use the downtime pack taken at ${formatInstantWithDay(lastPackAt, now)}, printed or saved as a PDF.`}
     </p>
   );
   return fullscreenElement ? createPortal(banner, fullscreenElement) : banner;
