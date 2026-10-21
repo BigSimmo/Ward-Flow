@@ -414,12 +414,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // otherwise fall back to for initial focus) never renders. Without an explicit target, Sheet's
   // open-focus controller stays armed forever, waiting on a resolver that never returns an
   // element, and focus never enters the drawer at all. This ref-callback finds the drawer's own
-  // close button (`data-sheet-autofocus`) the moment its wrapper mounts, which happens in the same
-  // commit as the drawer's own content. Not by its label: for the bed coordinator the drawer is
-  // Alerts and the button reads "Close alerts panel", so a label match never found it (UX audit).
+  // close button (`aria-label="Close tasks panel"`) the moment its wrapper mounts, which happens
+  // in the same commit as the drawer's own content.
   const tasksInitialFocusRef = useRef<HTMLElement | null>(null);
   const setTasksBodyRef = useCallback((node: HTMLDivElement | null) => {
-    tasksInitialFocusRef.current = node?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ?? null;
+    tasksInitialFocusRef.current = node?.querySelector<HTMLElement>('[aria-label="Close tasks panel"]') ?? null;
   }, []);
 
   const place = wardPlaceFor(pathname, units);
