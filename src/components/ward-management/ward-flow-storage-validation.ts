@@ -43,7 +43,8 @@ import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
-import { isObservation, upgradeLegacyObservationRows, type Observation } from "./ward-observation";
+import { isObservation, type Observation } from "./ward-observation";
+import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -304,7 +305,7 @@ const meetingAction = z
 // Fix plan item 10: a level from the fixed list, an Intermittent interval from the fixed list, and a
 // review time as a number. `isObservation` is the same check `RECORD_OBSERVATION_LEVEL` makes.
 const observationRule = z.custom<Observation>(isObservation);
-const observationChangeRule = z.object({ at: finite, from: observationRule, to: observationRule });
+const observationChangeRule = z.strictObject({ at: finite, from: observationRule, to: observationRule });
 
 const movement = z
   .looseObject({

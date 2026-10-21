@@ -3,7 +3,7 @@ import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
 import { REPATRIATION_MODES, WARD_FLOW_ROLE_LABELS } from "./ward-flow-events";
 import { TRANSPORT_LEGAL_STATUSES, TRANSPORT_PROVIDERS } from "./ward-model";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { upgradeLegacyObservationRows } from "./ward-observation";
+import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,

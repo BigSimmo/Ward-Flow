@@ -24,10 +24,10 @@ import {
   observationAt,
   observationStaff,
   observationSummary,
-  upgradeLegacyObservationRows,
   type Observation,
   type ObservationLevel,
 } from "../src/components/ward-management/ward-observation";
+import { upgradeLegacyObservationRows } from "../src/components/ward-management/ward-observation-legacy";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -188,6 +188,19 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     expect(movement.observation).toEqual(next);
     expect(movement.observationChanges).toHaveLength(1);
     expect(remainingSpeciallingCapacity(unitIn(state), state.admissions)).toBe(0);
+  });
+
+  it("is saved only as at, from and to, so a change row cannot carry typed text", () => {
+    const seed = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
+    const row = { at: NOW, from: GENERAL_OBSERVATION, to: observationAt("within_sight") };
+    const withChange = (change: object) => ({
+      ...seed,
+      admissions: seed.admissions.map((admission, index) =>
+        index === 0 ? { ...admission, observationChanges: [change] } : admission,
+      ),
+    });
+    expect(isValidStoredWardFlowState(withChange(row))).toBe(true);
+    expect(isValidStoredWardFlowState(withChange({ ...row, note: "x" }))).toBe(false);
   });
 
   it("from the movement before a bed is held, changes the movement only", () => {
