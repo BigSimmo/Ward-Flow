@@ -134,7 +134,7 @@ export function WardObservationControl({
               ))}
             </select>
           ) : null}
-          <div className={styles.editor}>
+          <div className={`${styles.editor} ${styles.editorFlush}`}>
             <input
               className={styles.select}
               aria-label="Next review time, for example 14:30"
@@ -165,7 +165,7 @@ export function WardObservationControl({
               {error}
             </p>
           ) : null}
-          <div className={styles.editor}>
+          <div className={`${styles.editor} ${styles.editorFlush}`}>
             <Button variant="pri" className={styles.pill} data-testid="ward-observation-save" onClick={save}>
               Record level
             </Button>
