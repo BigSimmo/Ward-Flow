@@ -739,9 +739,11 @@
     display: none;
   }
 
+  /* Stretch, not start: with the identity-only head the cards would otherwise shrink to their content (D-77). */
   .main[data-phone-form="true"] .layout {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
   }
 
   .main[data-phone-form="true"] .form,

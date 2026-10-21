@@ -1025,10 +1025,11 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                   open
                   onClose={() => setSelectedId(null)}
                   title={nameOf(selected)}
-                  description={selected.legalForm ? formTitle(selected.legalForm.code) : undefined}
+                  description={`${umrnOf(selected)}${selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}`}
                   testId="ward-legal-form-sheet"
                 >
-                  {focusPanel}
+                  {/* As on the phone sheet, the drawer's own header names the person, so the panel drops its head. */}
+                  <div className={styles.phoneFocus}>{focusPanel}</div>
                 </Drawer>
               ) : null}
             </div>
