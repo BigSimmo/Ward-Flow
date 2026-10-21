@@ -60,7 +60,7 @@ const WardToolsSheet = dynamic(() =>
   import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
 );
 // The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
-const WardDemoMenu = dynamic(() => import("./ward-demo-menu").then((m) => m.WardDemoMenu), { ssr: false });
+const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
@@ -1152,7 +1152,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
         {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
-        <WardDataModeSlot className={styles.dataMode} menu={WardDemoMenu} />
+        <WardDataModeSlot className={styles.dataMode} menu={loadDemoMenu} />
 
         {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
             controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no

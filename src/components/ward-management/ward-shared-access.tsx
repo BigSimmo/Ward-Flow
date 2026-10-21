@@ -73,10 +73,13 @@ export type WardSharedConnection = SharedView & {
  */
 const DataModeSlotContext = createContext<((slot: DataModeSlot | null) => void) | null>(null);
 
-/** The Demo menu the pill opens (change 8, D-77). The header passes it in, as the menu's demo
- * panel reaches back to the provider this file sits under, so importing it here would be a cycle. */
+/** The Demo menu the pill opens (change 8, D-77). The header passes in its loader, as the menu's demo
+ * panel reaches back to the provider this file sits under, so importing it here would be a cycle. The
+ * pill keeps the loaded menu in state rather than a lazy component, so opening it never waits on a
+ * Suspense reveal timer (a paused test clock would hold that forever). */
 export type WardDemoMenuComponent = ComponentType<{ top: number; left: number; onClose: () => void }>;
-type DataModeSlot = { element: HTMLElement; menu?: WardDemoMenuComponent };
+export type WardDemoMenuLoader = () => Promise<WardDemoMenuComponent>;
+type DataModeSlot = { element: HTMLElement; menu?: WardDemoMenuLoader };
 
 /** What the data mode says, for the phone menu (the phone's lean bar has no room for the pill). */
 export type WardDataMode = {
@@ -93,7 +96,7 @@ export function useWardDataMode(): WardDataMode | null {
 }
 
 /** The header's place for the Prototype pill. Renders nothing outside `WardSharedAccess`. */
-export function WardDataModeSlot({ className, menu }: { className?: string; menu?: WardDemoMenuComponent }) {
+export function WardDataModeSlot({ className, menu }: { className?: string; menu?: WardDemoMenuLoader }) {
   const setSlot = useContext(DataModeSlotContext);
   const place = useCallback(
     (element: HTMLElement | null) => setSlot?.(element ? { element, menu } : null),
@@ -426,7 +429,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               <DataModeSlotContext.Provider value={setSlot}>
                 <DataModeContext.Provider value={dataMode}>
                   {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-                  {slot ? createPortal(<DataModePill detail={detail} Menu={slot.menu} />, slot.element) : null}
+                  {slot ? createPortal(<DataModePill detail={detail} loadMenu={slot.menu} />, slot.element) : null}
                   {showLiveInfo && (
                     <section className={styles.notice} aria-label="Hospital records unavailable">
                       <h1>Hospital records are not connected</h1>
@@ -468,18 +471,23 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
  * Demo menu, the scenario, clock and reset controls that left Tools. The pill's label still says
  * what the data is. The Board time pill opens the same menu (`requestDemoMenu`).
  */
-function DataModePill({ detail, Menu }: { detail: string; Menu?: WardDemoMenuComponent }) {
+function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDemoMenuLoader }) {
   const [open, setOpen] = useState(false);
+  const [Menu, setMenu] = useState<WardDemoMenuComponent | null>(null);
   const [place, setPlace] = useState({ top: 0, left: 0 });
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
-  const show = useCallback((from?: HTMLElement) => {
-    const rect = button.current?.getBoundingClientRect();
-    if (rect) setPlace({ top: rect.bottom + 8, left: Math.max(8, Math.min(rect.left, window.innerWidth - 468)) });
-    returnFocus.current = from ?? button.current;
-    setOpen(true);
-  }, []);
+  const show = useCallback(
+    (from?: HTMLElement) => {
+      const rect = button.current?.getBoundingClientRect();
+      if (rect) setPlace({ top: rect.bottom + 8, left: Math.max(8, Math.min(rect.left, window.innerWidth - 468)) });
+      returnFocus.current = from ?? button.current;
+      setOpen(true);
+      void loadMenu?.().then((menu) => setMenu(() => menu));
+    },
+    [loadMenu],
+  );
   const close = useCallback(() => {
     setOpen(false);
     returnFocus.current?.focus();

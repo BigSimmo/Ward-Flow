@@ -28,6 +28,7 @@ import {
   ReferralDocumentLinks,
 } from "../src/components/ward-management/referrals/referral-flow-panels";
 
+const loadDemoMenu = async () => WardDemoMenu;
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
   const actual = await original<typeof import("../src/components/ward-management/ward-shared-access")>();
@@ -372,8 +373,8 @@ describe("shared provider boundary", () => {
       <WardFlowProvider>
         <Probe />
         <HospitalRecordsLink />
-        {/* The header passes the Demo menu in (ward-bar.tsx), so the pill does not import it. */}
-        <WardDataModeSlot menu={WardDemoMenu} />
+        {/* The header passes the Demo menu's loader in (ward-bar.tsx), so the pill does not import it. */}
+        <WardDataModeSlot menu={loadDemoMenu} />
       </WardFlowProvider>,
     );
     const draft = screen.getByRole("textbox");
