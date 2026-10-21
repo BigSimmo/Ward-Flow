@@ -8,6 +8,7 @@ import {
   Inbox,
   LayoutGrid,
   LayoutDashboard,
+  DoorClosed,
   ListFilter,
   PhoneOff,
   LogOut,
@@ -89,6 +90,8 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
    * width, so the glyph is the whole of the promise a reader gets before they arrive.
    */
   "on-call": PhoneOff,
+  // D-72: a closed door for the seclusion room, distinct from every other glyph in the rail.
+  seclusion: DoorClosed,
   hub: ScanSearch,
   discharges: LogOut,
   referrals: Inbox,

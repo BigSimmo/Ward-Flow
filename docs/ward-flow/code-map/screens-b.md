@@ -609,6 +609,24 @@ the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.t
 - **`src/components/ward-management/patients/person.module.css`** (820 lines) — styles for
   `person-screen.tsx`.
 
+## `restrictive-practice/`
+
+D-72 (21 Oct 2026), operational view only: seclusion and bodily restraint in use, the seclusion
+room's status and the last day's ward incidents. Typed times and fixed lists, no legal limit, no
+typed text. The legal register stays in the health service's own system.
+
+**Route:** `/seclusion` (coordinator all, bed manager and ward their own). **Dispatches:**
+`RECORD_RESTRICTIVE_PRACTICE_START`, `RECORD_RESTRICTIVE_PRACTICE_END`, `RECORD_WARD_INCIDENT`,
+`SET_SECLUSION_ROOM_STATUS` (reducer: `ward-flow-restrictive-practice-events.ts`, writing only
+`Unit.restrictivePractice`). **Tests:** `ward-restrictive-practice.test.ts`,
+`ward-restrictive-practice-view.dom.test.tsx`.
+
+- **`src/components/ward-management/restrictive-practice/ward-restrictive-practice.ts`** — the fixed
+  lists, record types, the four event shapes, `pastInstantFromClockText`, `typedTimeRefusal`,
+  `seclusionRoomView` and `recentIncidents`.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.tsx`** — `SeclusionScreen`.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.module.css`** — styles.
+
 ## `settings/`
 
 **Route:** `/settings`. **Mockup:** `settings-third-edition.html`. **Dispatches:**

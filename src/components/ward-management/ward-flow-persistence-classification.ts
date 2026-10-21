@@ -163,6 +163,11 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "REOPEN_WARD_TO_ADMISSIONS",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
+  // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
+  "RECORD_RESTRICTIVE_PRACTICE_START",
+  "RECORD_RESTRICTIVE_PRACTICE_END",
+  "RECORD_WARD_INCIDENT",
+  "SET_SECLUSION_ROOM_STATUS",
   "COMPLETE_INBOX_ITEM",
   "CONFIRM_BED_RELEASE",
   "CONFIRM_CAPACITY",
@@ -413,6 +418,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "referralId"
   | "releaseId"
   | "leaveBedId"
+  // D-72: RECORD_RESTRICTIVE_PRACTICE_END names an episode the reducer minted on the ward's record.
+  | "episodeId"
   // Own-team community scope, resolved against the fixed service directory and referral link.
   | "actingTeamId"
   | "actingUnitId"

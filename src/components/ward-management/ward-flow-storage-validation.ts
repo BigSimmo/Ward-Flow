@@ -1,4 +1,12 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import {
+  RESTRICTIVE_PRACTICES,
+  SECLUSION_ROOM_STATUSES,
+  WARD_INCIDENT_CATEGORIES,
+  type RestrictivePractice,
+  type SeclusionRoomStatus,
+  type WardIncidentCategory,
+} from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
@@ -254,6 +262,44 @@ const unit = z
         at: finite,
         by: text,
         until: z.optional(finite),
+      }),
+    ),
+    // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
+    restrictivePractice: z.optional(
+      z.looseObject({
+        episodes: z.array(
+          z.looseObject({
+            id: text,
+            practice: z.enum(
+              RESTRICTIVE_PRACTICES.map((entry) => entry.id) as [RestrictivePractice, ...RestrictivePractice[]],
+            ),
+            admissionId: id,
+            startedAt: finite,
+            endedAt: z.optional(finite),
+            recordedAt: finite,
+            recordedBy: text,
+          }),
+        ),
+        incidents: z.array(
+          z.looseObject({
+            id: text,
+            category: z.enum(
+              WARD_INCIDENT_CATEGORIES.map((entry) => entry.id) as [WardIncidentCategory, ...WardIncidentCategory[]],
+            ),
+            at: finite,
+            recordedAt: finite,
+            recordedBy: text,
+          }),
+        ),
+        seclusionRoom: z.optional(
+          z.looseObject({
+            status: z.enum(
+              SECLUSION_ROOM_STATUSES.map((entry) => entry.id) as [SeclusionRoomStatus, ...SeclusionRoomStatus[]],
+            ),
+            at: finite,
+            by: text,
+          }),
+        ),
       }),
     ),
   })
