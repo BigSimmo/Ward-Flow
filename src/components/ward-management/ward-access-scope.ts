@@ -24,6 +24,7 @@ import { communityDischargeCriteria } from "./ward-discharge-criteria";
  */
 import { directiveDesks } from "@/components/ward-management/alerts/global-alert-view";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -143,14 +144,35 @@ function withinHandoffWindow(closedAt: Instant, now: Instant, window: number): b
   return now - closedAt <= window;
 }
 
-/** Keep only the destination lines a predicate allows. A referral left with none is not this role's. */
+/**
+ * Keep only the destination lines a predicate allows. A referral left with none is not this role's.
+ * Its call log (fix plan item 4) is trimmed with it: a call names the ward or team rung, so a
+ * trimmed copy keeps only calls to the referrer and to the places on the lines it kept, or it would
+ * say where else the person was referred (FD-23).
+ */
 function trimReferral(
   referral: Referral,
   keep: (addressing: Referral["destinations"][number]) => boolean,
 ): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
-  return destinations.length === referral.destinations.length ? referral : { ...referral, destinations };
+  if (destinations.length === referral.destinations.length) return referral;
+  const trimmed: Referral = { ...referral, destinations };
+  if (referral.contactLog === undefined) return trimmed;
+  const keptUnits = new Set(referralDestinationUnitIds(trimmed));
+  const keptTeams = new Set(
+    destinations.flatMap((line) =>
+      line.destination.kind === "community_team" ? [communityTeamSlug(line.destination.teamName)] : [],
+    ),
+  );
+  const contactLog = referral.contactLog.filter(({ contact }) =>
+    contact.kind === "psychiatric_ward"
+      ? keptUnits.has(contact.unitId)
+      : contact.kind === "community_team"
+        ? keptTeams.has(contact.teamId)
+        : true,
+  );
+  return { ...trimmed, contactLog };
 }
 
 /**

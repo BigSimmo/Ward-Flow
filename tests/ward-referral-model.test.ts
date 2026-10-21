@@ -500,6 +500,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     MARK_REFERRAL_OPENED: false,
     REQUEST_REFERRAL_INFORMATION: false,
     MARK_REFERRAL_INFORMATION_MET: false,
+    // Fix plan item 4 (21 Oct 2026): naming the desk chasing a referral, and logging a call with a
+    // closed-list outcome. Neither answers the referral; a ward's "no" on the phone is still only
+    // recorded by DECLINE_REFERRAL on its own copy.
+    ASSIGN_REFERRAL: false,
+    LOG_REFERRAL_CONTACT: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,
@@ -1177,7 +1182,15 @@ describe("Referral privacy — structural", () => {
     "genderPlacements",
     // Ward-to-ward stepdown transfer: originUnitId identifies the transferring ward.
     "originUnitId",
+    // Fix plan item 4 (Josh, 21 Oct 2026). Operational records about the referral, never the person:
+    // the desk chasing it, and the calls made about it, each a listed value, an id, a time and a
+    // role label. Nothing typed. Entry fields are pinned by ALLOWED_OWNER_ENTRY_FIELDS and
+    // ALLOWED_CONTACT_ENTRY_FIELDS below.
+    "ownerHistory",
+    "contactLog",
   ].sort();
+  const ALLOWED_OWNER_ENTRY_FIELDS = ["at", "by", "owner"];
+  const ALLOWED_CONTACT_ENTRY_FIELDS = ["at", "by", "contact", "outcome"];
 
   /**
    * The permitted fields on ONE correction entry (`Referral.corrections[number]`) — the same
@@ -1412,6 +1425,17 @@ describe("Referral privacy — structural", () => {
         },
       ],
       originUnitId: "rph-adult-secure",
+      // Fix plan item 4: present because `Required<Referral>` demands every optional field. On a
+      // real referral their absence means nobody has been assigned and no call has been logged.
+      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Flow coordinator" }],
+      contactLog: [
+        {
+          contact: { kind: "psychiatric_ward", unitId: "rph-adult-secure" },
+          outcome: "no_answer",
+          at: NOW_ANCHOR + 4,
+          by: "Flow coordinator",
+        },
+      ],
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_REFERRAL_FIELDS);
     // Exact equality on the arm as well: `Required<Referral>` forces every OUTER field to be
@@ -1425,6 +1449,8 @@ describe("Referral privacy — structural", () => {
     // And one correction entry's own fields, the same one-level-down discipline as the two checks
     // above — an unguarded object behind `corrections` would otherwise let a stray key through.
     expect(Object.keys(canonical.corrections[0]).sort()).toEqual(ALLOWED_CORRECTION_FIELDS);
+    expect(Object.keys(canonical.ownerHistory[0]!).sort()).toEqual(ALLOWED_OWNER_ENTRY_FIELDS);
+    expect(Object.keys(canonical.contactLog[0]!).sort()).toEqual(ALLOWED_CONTACT_ENTRY_FIELDS);
   });
 
   it("gives every real referral in the fixture only keys drawn from that same allowed set", () => {

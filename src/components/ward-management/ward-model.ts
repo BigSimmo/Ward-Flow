@@ -1,5 +1,10 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type {
+  ReferralContactOutcome,
+  ReferralContactTarget,
+  ReferralOwnerDesk,
+} from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
@@ -1413,6 +1418,29 @@ export type ReferralInformationNeedEntry = {
   metBy?: string;
 };
 
+/**
+ * One assignment of a referral to a desk (`ASSIGN_REFERRAL`, fix plan item 4, 21 Oct 2026). The
+ * last entry is the current owner. `owner` and `by` are DESKS, never people; `by` is the role label
+ * of the desk that made the assignment.
+ */
+export type ReferralOwnerEntry = {
+  owner: ReferralOwnerDesk;
+  at: Instant;
+  by: string;
+};
+
+/**
+ * One call logged on a referral (`LOG_REFERRAL_CONTACT`, fix plan item 4): who was rung, what they
+ * said, when, and which desk rang (`by`, a role label, never a person). Chosen from closed lists and
+ * never typed. A call never answers the referral.
+ */
+export type ReferralContactEntry = {
+  contact: ReferralContactTarget;
+  outcome: ReferralContactOutcome;
+  at: Instant;
+  by: string;
+};
+
 /** The ward arm, named so signatures can require it. */
 export type WardReferralDestination = Extract<ReferralDestination, { kind: "psychiatric_ward" }>;
 
@@ -1431,6 +1459,10 @@ export type Referral = {
   /** Opaque submission correlation across JSON snapshots. */
   submissionId?: string;
   turnaroundPriority?: TurnaroundPriority;
+  /** Fix plan item 4 (21 Oct 2026): every assignment of this referral to a desk, oldest first. Append-only. */
+  ownerHistory?: ReadonlyArray<ReferralOwnerEntry>;
+  /** Fix plan item 4: every call logged about this referral, oldest first. Append-only. */
+  contactLog?: ReadonlyArray<ReferralContactEntry>;
   /** Confirmed drawer submission; typed text and chart bytes stay in memory under D-18. */
   intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
   id: string;

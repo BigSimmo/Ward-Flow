@@ -182,6 +182,7 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
+import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
 import { subjectId } from "./ward-flow-subject-id";
@@ -2281,6 +2282,9 @@ export function reduceClinicalEvent(
     case "REQUEST_REFERRAL_INFORMATION":
     case "MARK_REFERRAL_INFORMATION_MET":
       return reduceReferralFollowUpEvent(state, event, decision, { findReferral, reject, replaceReferral });
+    case "ASSIGN_REFERRAL":
+    case "LOG_REFERRAL_CONTACT":
+      return reduceReferralOwnerEvent(state, event, decision, { findReferral, reject, replaceReferral });
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });

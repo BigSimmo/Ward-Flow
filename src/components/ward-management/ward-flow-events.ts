@@ -10,6 +10,11 @@ import type {
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type {
+  ReferralContactOutcome,
+  ReferralContactTarget,
+  ReferralOwnerDesk,
+} from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
@@ -777,6 +782,35 @@ export type WardFlowEvent =
        */
       wardUnitId: string;
       need: ReferralInformationNeed;
+    }
+  | {
+      /**
+       * Fix plan item 4 (Josh, 21 Oct 2026): assign a front-door referral to the desk chasing it.
+       * Appends to `Referral.ownerHistory`; the last entry is the owner. A desk, never a person.
+       * The coordinator assigns to any desk in `REFERRAL_OWNER_DESKS`; an ED or community desk
+       * takes a referral only for itself. Not a lock: anyone can still act on the referral.
+       */
+      type: "ASSIGN_REFERRAL";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      owner: ReferralOwnerDesk;
+    }
+  | {
+      /**
+       * Fix plan item 4: log a call made about a referral. Records who was rung (a ward, a community
+       * team or the referrer), what they said from a closed list, the time and the calling desk.
+       * Never typed. A call never answers the referral or stops its decision clock; a ward's answer
+       * is still `ACCEPT_REFERRAL` or `DECLINE_REFERRAL`. Replaces the unwired "Call" button.
+       * `contact` names the place rung, not a place the sender acts from, so it sits in its own
+       * object rather than a top-level `unitId`.
+       */
+      type: "LOG_REFERRAL_CONTACT";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      contact: ReferralContactTarget;
+      outcome: ReferralContactOutcome;
     }
   | {
       /**

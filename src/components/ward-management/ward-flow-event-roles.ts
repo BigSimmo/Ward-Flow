@@ -293,6 +293,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   MARK_REFERRAL_OPENED: ["ward", "coordinator"],
   REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
   MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+  // Fix plan item 4 (21 Oct 2026): the coordinator assigns a referral to any listed desk, and an
+  // ED or community desk takes one for itself (the reducer checks which). The same desks log calls.
+  ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
+  LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
   // Smart features idea 7: the ward for itself (reducer checks the acting unit), or the coordinator.
   CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
   REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
