@@ -89,6 +89,7 @@ import {
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -595,7 +596,7 @@ export function OfficerScreen() {
       const eta = expected
         ? `${expected.booked ? "est." : "ward ETA"} ${formatSheetMoment(expected.at, dayZero)}${late(movement) ? ", late" : ""}`
         : "no ETA";
-      return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
+      return `${officerPatientName(movement)}: ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
     });
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = [
@@ -603,12 +604,7 @@ export function OfficerScreen() {
       `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
       ...lines,
     ].join("\n");
-    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
-    if (!clipboard) {
-      showToast("Copying is not available in this browser.");
-      return;
-    }
-    clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => showToast(`Handover copied, ${jobs.length} open jobs.`),
       () => showToast("Copying is not available in this browser."),
     );

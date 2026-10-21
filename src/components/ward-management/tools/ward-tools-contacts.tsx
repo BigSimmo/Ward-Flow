@@ -21,6 +21,7 @@ import {
 import { readFavourites, saveFavourites, subscribeFavourites } from "../on-call/on-call-favourites";
 import { onCallHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 type ContactsView = "key" | "mine" | "now" | "recent" | "all";
 
@@ -77,7 +78,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
 
   async function copyDetail(entry: DirectoryEntry, detail: string) {
     try {
-      await navigator.clipboard.writeText(detail);
+      await copyTextToClipboard(detail);
       setRecent((current) => [entry.id, ...current.filter((id) => id !== entry.id)].slice(0, 8));
       setNotice(`Copied ${detail}`);
     } catch {

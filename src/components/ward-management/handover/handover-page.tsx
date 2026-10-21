@@ -116,6 +116,7 @@ import {
   recordHandoverSignOff,
   resolveAdmissionPatient,
 } from "./handover-scope-rules";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 export {
   handoverScopeLabel,
@@ -431,7 +432,7 @@ export function HandoverPage() {
       `Since previous handover at ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
       ...sinceItems.map((item) => `${item.value} ${item.word}${item.detail ? ` (${item.detail})` : ""}`),
     ].join("\n");
-    void navigator.clipboard?.writeText(text).then(
+    void copyTextToClipboard(text).then(
       () => announceToWardShell("Changes copied as handover text."),
       () => announceToWardShell("Copy was blocked by the browser."),
     );
@@ -540,7 +541,7 @@ export function HandoverPage() {
   const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstantWithDay(shiftAt, now)}`;
   const copySummary = useCallback(() => {
     const text = summaryText(groups, scopeLabel, shiftLine, now, now);
-    void navigator.clipboard?.writeText(text).then(
+    void copyTextToClipboard(text).then(
       () => {
         setCopied(true);
         announceToWardShell(`Summary copied, ${rows.length} synthetic patients.`);
@@ -550,7 +551,7 @@ export function HandoverPage() {
   }, [groups, scopeLabel, shiftLine, now, rows.length]);
   const copyIsbar = useCallback(
     (row: HandoverRow) => {
-      void navigator.clipboard?.writeText(isbarText(row, now, readyBeds)).then(
+      void copyTextToClipboard(isbarText(row, now, readyBeds)).then(
         () => announceToWardShell(`ISBAR for ${row.name} copied.`),
         () => announceToWardShell("Copy was blocked by the browser."),
       );
