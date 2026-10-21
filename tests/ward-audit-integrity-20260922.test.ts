@@ -64,7 +64,7 @@ function booked(now = NOW_ANCHOR) {
     movementId,
     provider: TRANSPORT_PROVIDERS[0],
     escortRequired: false,
-    cadNumber: "SYNTHETIC-AUDIT",
+    cadNumber: "CAD-AUDIT-0922",
     transportLegalStatus: "voluntary",
     estimatedAt: now + 20,
   });
