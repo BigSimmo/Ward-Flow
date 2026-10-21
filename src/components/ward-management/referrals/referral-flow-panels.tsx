@@ -379,7 +379,8 @@ export function ContactFields({
   errors = {},
 }: {
   contact: ReferralContact;
-  onChange: (contact: ReferralContact) => void;
+  /** Takes an updater, so a field typed before the last one re-rendered is not overwritten. */
+  onChange: Dispatch<SetStateAction<ReferralContact>>;
   /** Shown under each field after a failed send. `referralContactError` stays the gate. */
   errors?: Partial<Record<keyof ReferralContact, string>>;
 }) {
@@ -409,7 +410,10 @@ export function ContactFields({
               aria-describedby={error ? `${id}-${key}-error` : undefined}
               maxLength={key === "email" ? 254 : key === "phone" ? 40 : 200}
               value={contact[key]}
-              onChange={(e) => onChange({ ...contact, [key]: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                onChange((current) => ({ ...current, [key]: value }));
+              }}
             />
             {error ? (
               <p className={styles.fieldError} id={`${id}-${key}-error`}>

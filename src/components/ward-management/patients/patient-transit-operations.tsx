@@ -647,6 +647,10 @@ export function PatientTransitOperations({
                 <input
                   required
                   value={cad}
+                  // A refused number fails the browser's own required check, so Save stops at this
+                  // field with the reason, the same way a blank required field does. Set from cadHint
+                  // on every render, so a form reopened with a refused number still stops.
+                  ref={(el) => el?.setCustomValidity(cadHint === undefined ? "" : `To save, ${cadHint}.`)}
                   aria-invalid={cadHint !== undefined ? "true" : undefined}
                   aria-describedby={cadHint !== undefined ? `${baseId}-cad-hint` : undefined}
                   onChange={(e) => setCad(e.target.value)}
