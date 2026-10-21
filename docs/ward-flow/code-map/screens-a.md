@@ -581,6 +581,11 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `isUnmeasured`, `figureText`. Its header states this folder found three different sentences
   sharing three words but meaning different things, which is why every figure must carry its own
   state rather than a shared "not a measurement" string.
+- **`statistics-session-trends.ts`** and **`statistics-session-trends-card.tsx`** (fix plan item 6,
+  session-only step, 21 Oct 2026) — `sessionTrends(log, now)` counts accepted referrals, decisions,
+  arrivals and departures hour by hour from this session's in-memory event log, and
+  `StatisticsSessionTrendsCard` shows them as "This session" at the foot of `/statistics`. Trends
+  across sessions wait for a shared history table. Tests: `ward-statistics-session-trends.test.ts`.
 - **`statistics-claims-register.ts`** (2,298 lines) — **the largest non-screen file in the folder.**
   `REGISTERED_SURFACES`, `FalsifyingEdit`/`ModelClaim` types, `MODEL_CLAIMS` (a large array pairing
   every claim a statistics screen makes with the source line that makes it true), `UnevidencedClaim`

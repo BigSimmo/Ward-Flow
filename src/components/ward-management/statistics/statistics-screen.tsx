@@ -77,6 +77,7 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
@@ -1089,6 +1090,8 @@ export function StatisticsScreen({
                   </dl>
                 </CardBody>
               </StatCard>
+
+              <StatisticsSessionTrendsCard now={now} />
             </div>
           </div>
         )}
