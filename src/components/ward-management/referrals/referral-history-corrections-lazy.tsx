@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type ComponentProps } from "react";
 
+import { Button } from "@/components/wf";
+
 import { preloadWhenIdle } from "../preload-when-idle";
 
 type HistoryPanel = typeof import("./referral-history-corrections").ReferralHistoryAndCorrections;
@@ -21,19 +23,31 @@ const loadReferralHistory = () =>
 
 export function ReferralHistoryAndCorrections(props: ComponentProps<HistoryPanel>) {
   const [Panel, setPanel] = useState(() => loadedPanel);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (Panel) return;
+    if (Panel || failed) return;
     let live = true;
     void loadReferralHistory()
       .then((panel) => {
         if (live) setPanel(() => panel);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (live) setFailed(true);
+      });
     return () => {
       live = false;
     };
-  }, [Panel]);
-  return Panel ? <Panel {...props} /> : null;
+  }, [Panel, failed]);
+  if (Panel) return <Panel {...props} />;
+  // A failed fetch (patchy Wi-Fi, or a new deploy) must not hide the history without a word.
+  return failed ? (
+    <p role="status" data-testid="ward-referral-history-load-failed">
+      The written history and corrections did not load.{" "}
+      <Button variant="sec" onClick={() => setFailed(false)}>
+        Try again
+      </Button>
+    </p>
+  ) : null;
 }
 
 preloadWhenIdle(loadReferralHistory);
