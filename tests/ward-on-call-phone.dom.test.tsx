@@ -29,7 +29,6 @@ function makeActions(overrides: Partial<ContactActions> = {}): ContactActions {
     onPick: vi.fn(),
     onToggleFavourite: vi.fn(),
     onCopy: vi.fn(),
-    onCall: vi.fn(),
     ...overrides,
   };
 }
@@ -115,7 +114,6 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(onOpen).toHaveBeenCalledWith("sw-mherl");
 
     expect(screen.queryByRole("button", { name: `Call ${crisis.name}, ${crisisNumber}` })).not.toBeInTheDocument();
-    expect(actions.onCall).not.toHaveBeenCalled();
   });
 
   it("shows 'Not held', no copy button and no crisis row when the line has no number", () => {
@@ -205,7 +203,6 @@ describe("PhoneDirectory, the inset grouped list", () => {
     const number = numberAt(bfc, NOW_ANCHOR)!;
 
     expect(screen.queryByRole("button", { name: `Call ${bfc.name}, ${number}` })).not.toBeInTheDocument();
-    expect(actions.onCall).not.toHaveBeenCalled();
 
     const row = screen.getByText(number).closest("li")!;
     fireEvent.click(within(row).getAllByRole("button")[0]!);

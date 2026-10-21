@@ -14,6 +14,8 @@ vi.mock("next/navigation", async (importOriginal) => ({
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
+import type { Rejection } from "@/components/ward-management/ward-model-movement-parts";
+import { OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -177,6 +179,49 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts).toHaveLength(1);
     expect(accepts[0]).toMatchObject({ movementId: "WF-AUDIT-NEXT" });
     expect(accepts[0]).not.toHaveProperty("extendedHold");
+  });
+
+  it("sends the extra-travel choice again with an override reason (CS-08)", () => {
+    const dispatch = vi.fn<(event: WardFlowEvent) => void>();
+    let refused: Rejection[] = [];
+    function RefusingHarness({ children }: { children: ReactNode }) {
+      const state = useWardFlow();
+      return (
+        <WardFlowOverride value={{ ...state, dispatch, rejections: [...state.rejections, ...refused] }}>
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    const tree = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RefusingHarness>
+          <WardAnswerView unitId="sjgm-adult-open" />
+        </RefusingHarness>
+      </WardFlowProvider>
+    );
+    const view = render(tree());
+    const id = shownId();
+    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+      target: { value: "extended" },
+    });
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    refused = [
+      {
+        id: "WF-AUDIT-REFUSED",
+        at: NOW_ANCHOR,
+        movementId: id,
+        attempted: "ACCEPT_IN_PRINCIPLE",
+        reason: `Accepting ${OVERRIDE_REASON_REQUIRED}.`,
+      },
+    ];
+    act(() => view.rerender(tree()));
+    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("extended");
+    const form = screen.getByTestId(`ward-override-form-${id}`);
+    fireEvent.click(within(form).getAllByRole("radio")[0]!);
+    fireEvent.submit(form);
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(2);
+    expect(accepts[1]).toMatchObject({ movementId: id, extendedHold: true, overrideReason: expect.any(String) });
   });
 
   it("still steps with Previous and Next", () => {

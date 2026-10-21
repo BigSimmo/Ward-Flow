@@ -426,7 +426,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       },
     );
     setAcceptModalFor(undefined);
-    setHoldChoice(undefined);
+    // The choice stays, keyed to this request, so an override reason sends it again.
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -445,6 +445,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         unitId: currentUnit.id,
         actingUnitId: currentUnit.id,
         overrideReason,
+        ...(extendedHoldFor(movementId) ? { extendedHold: true as const } : {}),
       });
     } else {
       raise("PULL_PATIENT", {

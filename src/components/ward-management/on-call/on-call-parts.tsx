@@ -30,7 +30,6 @@ export type ContactActions = {
   onPick: (id: string) => void;
   onToggleFavourite: (id: string) => void;
   onCopy: (text: string, label: string) => void;
-  onCall: (entry: DirectoryEntry) => void;
 };
 
 const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
