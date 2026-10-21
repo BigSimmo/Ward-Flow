@@ -145,7 +145,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       within(menu)
         .getAllByTestId("ward-rail-link")
         .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
-    ).toEqual(["Needs you", "Beds", "Movements", "Referrals", "Handover"]);
+    ).toEqual(["Needs you", "Capacity", "Movements", "Referrals", "Handover"]);
     // A5: the open rail's countdown card opens Handover, so the menu's own item is its CSS twin,
     // hidden while the card shows.
     expect(within(menu).getByRole("link", { name: "Handover" }).closest("li")).toHaveAttribute(
