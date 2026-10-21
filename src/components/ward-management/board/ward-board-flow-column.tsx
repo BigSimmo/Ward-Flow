@@ -168,7 +168,7 @@ export function WardBoardFlowColumn({
         tabIndex={0}
       >
         <h2 id="ward-board-outgoing-heading" className={styles.flowHeading}>
-          Going out today
+          Going out today and tomorrow
         </h2>
         {/* The basis is stated in WORDS as well as by the toggle's pressed state, so a printed
                 sheet — where the toggle is gone with every other button — still says which of the

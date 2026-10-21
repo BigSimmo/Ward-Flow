@@ -108,6 +108,7 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
@@ -1167,6 +1168,11 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
+              {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
+              <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
+              <MeetingActionsDue
+                subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
+              />
               {nowPanel}
             </div>
 

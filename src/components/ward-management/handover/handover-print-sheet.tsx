@@ -174,6 +174,7 @@ function paginateExtra(streams: ExtraEntry[][], orientation: PrintOptions["orien
 
 const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   act: "danger",
+  urg: "danger",
   due: "warning",
   rel: "warning",
   bed: "neutral",
@@ -307,10 +308,11 @@ export function HandoverPrintSheet({
     for (const group of groups) for (const row of group.rows) seen.set(row.id, row);
     return [...seen.values()];
   }, [groups]);
-  const dueTitle = handoverGroups(ctx.cutoff, ctx.now)[1].title;
+  const dueTitle = handoverGroups(ctx.cutoff, ctx.now).find((group) => group.id === "due")!.title;
   const summary: [string, number][] = [
     ["Open", rows.length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
+    ["Flagged urgent", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "urg").length],
     [dueTitle, rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length],
     ["Finding a ward", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length],
     ["Moving", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "mov").length],

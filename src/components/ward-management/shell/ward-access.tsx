@@ -103,6 +103,15 @@ function useBreakGlassPatientIds(): ReadonlySet<string> {
 }
 
 /**
+ * Whether a movement or stay belongs to a person this desk sees only through break glass. The
+ * patient link is read here, inside the D-14 allowlist, so callers never touch it themselves.
+ */
+export function useIsBreakGlassRecord(): (record: { patientId?: string | null } | undefined) => boolean {
+  const glass = useBreakGlassPatientIds();
+  return useCallback((record) => Boolean(record?.patientId && glass.has(record.patientId)), [glass]);
+}
+
+/**
  * Whether a ward or ED desk id is in this desk's place, or `undefined` when every desk is. A scoped
  * desk holds only its own acknowledgements, so its counts are against its own desks (review on PR #330).
  */

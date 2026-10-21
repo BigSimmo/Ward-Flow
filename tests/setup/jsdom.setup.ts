@@ -81,7 +81,12 @@ export function installMatchMediaStub(matches = false) {
 
 beforeEach(async () => {
   // Every code-split pane has finished loading before the test renders, so it mounts synchronously.
-  await Promise.all(pendingDynamicLoads);
+  // A loaded chunk can itself call dynamic() (the phone menu's sheets load its search results), so
+  // wait until no new load has started.
+  for (let settled = -1; settled !== pendingDynamicLoads.length;) {
+    settled = pendingDynamicLoads.length;
+    await Promise.all(pendingDynamicLoads);
+  }
   installMatchMediaStub(false);
   // jsdom does not implement scrollIntoView; components call it on focus/expand.
   // Ensure a base impl exists, then re-spy each test so the mock's call history is

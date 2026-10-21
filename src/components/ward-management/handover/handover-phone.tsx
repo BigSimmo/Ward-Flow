@@ -36,7 +36,7 @@ import {
   handoverAt,
   handoverHasPassed,
   handoverShift,
-  isActNow,
+  isActOrUrgent,
   isbarLines,
   nextStep,
   wardIsStale,
@@ -96,6 +96,7 @@ type PhoneTab = "pts" | "beds" | "hist";
 
 const GROUP_TONE: Record<string, WfTone> = {
   act: "danger",
+  urg: "danger",
   due: "warning",
   rel: "warning",
   bed: "neutral",
@@ -104,8 +105,8 @@ const GROUP_TONE: Record<string, WfTone> = {
   out: "danger",
 };
 
-/** Act now and Due show full cards and start open; the other groups are compact and start closed. */
-const CARD_GROUPS = new Set(["act", "due", "out"]);
+/** Act now, Flagged urgent and Due show full cards and start open; the other groups are compact and start closed. */
+const CARD_GROUPS = new Set(["act", "urg", "due", "out"]);
 
 function relative(at: Instant, now: Instant): string {
   return at <= now ? `Passed ${durMinutes(now - at)} ago` : `In ${durMinutes(at - now)}`;
@@ -182,7 +183,7 @@ function PatientRow({
   onPick: (movementId: string) => void;
 }) {
   const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
-  const act = isActNow(row, ctx.now);
+  const act = isActOrUrgent(row, ctx.now);
   return (
     <button
       type="button"
@@ -437,6 +438,7 @@ export function HandoverPhone({
   const at = handoverAt(shift, now);
   const passed = handoverHasPassed(shift, now);
   const actCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "act").length;
+  const urgentCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "urg").length;
   const dueCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length;
   const waitCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length;
   const readyCount = wards.reduce((total, ward) => total + ward.ready, 0);
@@ -462,7 +464,7 @@ export function HandoverPhone({
         }
         // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
         // agrees with the two figures beneath it.
-        title={`${actCount + dueCount} to hand over`}
+        title={`${actCount + urgentCount + dueCount} to hand over`}
         sub={
           signedAt !== null
             ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} beds ready across ${scopeLabel.toLowerCase()}`
@@ -477,6 +479,19 @@ export function HandoverPhone({
             pressed: pill === "act",
             onPress: () => onPill("act"),
           },
+          // Audit 6 (Josh, 20 Oct 2026): flagged urgent is its own figure beside Act now, shown when any.
+          ...(urgentCount > 0
+            ? [
+                {
+                  id: "urg",
+                  value: urgentCount,
+                  label: "Urgent",
+                  tone: "danger" as const,
+                  pressed: pill === "urg",
+                  onPress: () => onPill("urg"),
+                },
+              ]
+            : []),
           {
             id: "due",
             value: dueCount,
