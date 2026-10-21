@@ -1902,6 +1902,10 @@ details.refCard > summary {
 }
 
 .documentLinks a {
+  /* WCAG 2.5.8: each chart link is at least 24px tall, so axe's target-size check passes. */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
   color: var(--wf-accent-ink);
   font-size: var(--wf-fs-12);
   font-weight: 600;
