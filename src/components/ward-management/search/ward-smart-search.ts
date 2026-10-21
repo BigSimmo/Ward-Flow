@@ -134,7 +134,8 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     title: "Referrals",
     href: "/ward-flow/referrals",
     keywords: ["referrals", "intake", "board", "queue"],
-    description: "Waiting for a bed",
+    // The rail's count noun (ward-nav-counts.ts), so a page is described one way (UX audit).
+    description: "Awaiting a decision",
   },
   {
     key: "community",
