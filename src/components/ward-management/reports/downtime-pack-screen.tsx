@@ -170,6 +170,9 @@ export function DowntimePackScreen() {
   // The totals of the pack a New snapshot replaced, for the delta twins. Held by this screen only:
   // twins appear after a snapshot the reader asked for, never on opening.
   const [before, setBefore] = useState<PackTotals | null>(null);
+  // The pack that New snapshot took. A scheduled retake replaces it, and then the twins would
+  // compare two packs that were never side by side, so they show only against this one.
+  const [twinFor, setTwinFor] = useState<DowntimePack | null>(null);
   const takingTimer = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -185,6 +188,7 @@ export function DowntimePackScreen() {
     takingTimer.current = window.setTimeout(() => {
       takingTimer.current = null;
       take();
+      setTwinFor(lastDowntimePack(owner, worldGeneration));
       setTaking(false);
     }, TAKING_MS);
   };
@@ -204,6 +208,7 @@ export function DowntimePackScreen() {
     setPreviousBoundary({ owner, worldGeneration });
     setTaking(false);
     setBefore(null);
+    setTwinFor(null);
     setSheet(null);
   }
   if (!ready && taking) setTaking(false);
@@ -250,7 +255,7 @@ export function DowntimePackScreen() {
 
   const totals = packTotals(pack);
   const twin = (key: keyof PackTotals) =>
-    before && !taking
+    before && !taking && twinFor === pack
       ? { twin: signed(totals[key] - before[key]), twinLabel: twinWords(totals[key] - before[key]) }
       : {};
 

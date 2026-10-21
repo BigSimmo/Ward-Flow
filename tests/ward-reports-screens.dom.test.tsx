@@ -23,6 +23,7 @@ import {
 } from "@/components/ward-management/reports/downtime-pack";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { DowntimePackBoundary, useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
+import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { ToastProvider } from "@/components/wf";
@@ -545,6 +546,35 @@ describe("read-only report screens", () => {
         vi.advanceTimersByTime(1000);
       });
       expect(screen.getAllByText(/since the last pack/u)).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("drops the delta twins when the hourly schedule replaces the pack New snapshot took", () => {
+    vi.useFakeTimers();
+    let retake!: () => void;
+    function ScheduledRetake() {
+      const take = useTakeDowntimePack();
+      useLayoutEffect(() => {
+        retake = take;
+      }, [take]);
+      return null;
+    }
+    try {
+      inProvider(
+        <>
+          <ScheduledRetake />
+          <DowntimePackScreen />
+        </>,
+      );
+      fireEvent.click(screen.getByTestId("ward-downtime-refresh"));
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getAllByText(/since the last pack/u)).toHaveLength(4);
+      act(() => retake());
+      expect(screen.queryByText(/since the last pack/u)).toBeNull();
     } finally {
       vi.useRealTimers();
     }
