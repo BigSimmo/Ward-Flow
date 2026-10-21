@@ -14,9 +14,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * 2. Closed, the same service chosen: just "South" — the short form, no "Service:" prefix.
  * 3. All services (nothing chosen): nothing renders at all — no dot, no word.
  *
- * Plus rail-figure truthfulness: board time and handover countdown come from the demonstration
- * clock (including "Handover Due" after 15:00 on that clock), and bed-alert totals are derived
- * rather than hardcoded.
+ * Plus rail-figure truthfulness: the handover countdown comes from the demonstration clock
+ * (including "Handover Due" after 15:00 on that clock), and bed-alert totals are derived rather
+ * than hardcoded. The board time itself shows once, in the top bar (A7, overall review).
  */
 
 vi.mock("next/link", () => ({
@@ -34,6 +34,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardRail, setRailOpenPreference } from "@/components/ward-management/shell/ward-rail";
 import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -117,17 +118,36 @@ describe("the rail's chosen-service word (item 52)", () => {
   });
 });
 
-describe("rail board time and handover countdown", () => {
-  it("shows the pinned board time (hours and minutes only) and its handover countdown", () => {
+describe("board time in the top bar (A7)", () => {
+  it("shows the demo clock once, in the top bar, and it opens the demo controls", () => {
+    // NOW_ANCHOR is 10:42 on the demonstration clock.
+    setRailOpenPreference(true);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+        <WardBar />
+      </WardFlowProvider>,
+    );
+    const clocks = screen.getAllByLabelText(/Board time 10:42 AWST/i);
+    expect(clocks).toHaveLength(1);
+    const clock = clocks[0]!;
+    expect(clock).toHaveAttribute("data-testid", "ward-bar-demo-clock");
+    expect(clock).toHaveAccessibleName("Board time 10:42 AWST. Open demo controls in Tools");
+    expect(clock).toHaveTextContent("Board time");
+    expect(clock).toHaveTextContent("10:42");
+    expect(clock).toHaveTextContent("AWST");
+    expect(clock.textContent).not.toMatch(/\d{2}:\d{2}:\d{2}/);
+  });
+});
+
+describe("rail handover countdown", () => {
+  it("shows the handover countdown from the pinned board time, and no clock of its own", () => {
     // NOW_ANCHOR is 10:42. Day shift ends 15:00 → remaining 4h 18m.
     setRailOpenPreference(true);
     renderRail(NOW_ANCHOR);
 
-    const boardTime = screen.getByLabelText(/Board time 10:42 AWST/i);
-    expect(boardTime).toHaveTextContent("Board time");
-    expect(boardTime).toHaveTextContent("10:42");
-    expect(boardTime).toHaveTextContent("AWST");
-    expect(boardTime.textContent).not.toMatch(/\d{2}:\d{2}:\d{2}/);
+    // A7 (overall review, 20 Oct 2026): the demo clock lives in the top bar only, not the rail.
+    expect(screen.queryByLabelText(/Board time 10:42 AWST/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Live Time")).not.toBeInTheDocument();
 
     const countdown = screen.getByRole("link", { name: /Handover countdown:/i });
@@ -140,8 +160,6 @@ describe("rail board time and handover countdown", () => {
     // 14:55 on the demonstration day (within 15m of 15:00 shift end) — not the computer's wall clock.
     setRailOpenPreference(true);
     renderRail(14 * 60 + 55);
-
-    expect(screen.getByLabelText(/Board time 14:55 AWST/i)).toHaveTextContent("14:55");
 
     const countdown = screen.getByRole("link", { name: /Handover countdown:/i });
     expect(countdown).toHaveAccessibleName(/Handover Due/);
