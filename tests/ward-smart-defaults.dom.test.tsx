@@ -1,10 +1,12 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -79,14 +81,24 @@ describe("a referral starts from the desk's own place", () => {
 });
 
 describe("adding a patient at an ED desk", () => {
-  it("names the desk's own ED as the presenting facility", () => {
+  // D-77 change 6: Add a patient asks identity only, so the desk's own ED travels with the referral it starts.
+  it("starts the referral from the desk's own ED", async () => {
     atDesk({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AddPatientForm />
       </WardFlowProvider>,
     );
-    expect((screen.getByLabelText(/Presenting facility/) as HTMLSelectElement).value).toBe("rph-ed");
+    expect(screen.queryByLabelText(/Presenting facility/)).toBeNull();
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999998" } });
+    fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
+    fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Deskfirst" } });
+    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1990-01-01" } });
+    fireEvent.click(screen.getByRole("button", { name: /Register & start referral/ }));
+    await waitFor(() => expect(router.push).toHaveBeenCalled());
+    const params = new URLSearchParams(String(router.push.mock.calls.at(-1)?.[0]).split("?")[1]);
+    expect(params.get("site")).toBe("RPH");
+    expect(params.get("source")).toBe("ed");
   });
 });
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -737,49 +737,34 @@ describe("AddPatientForm safety regressions", () => {
     expect(router.push).toHaveBeenCalledTimes(1);
   });
 
-  it("clears every intake field and notice after confirming reset", () => {
+  it("clears every identity field after confirming reset", () => {
     renderForm();
     fillDraft();
     fireEvent.click(screen.getByRole("radio", { name: "Female" }));
     fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
       target: { value: "aboriginal" },
     });
-    fireEvent.change(screen.getByLabelText(/^Address/), { target: { value: "1 Invented Street" } });
-    fireEvent.change(screen.getByTestId("ward-add-patient-suburb"), { target: { value: "Armadale" } });
-    fireEvent.change(screen.getByLabelText("Health service"), { target: { value: "East Metro" } });
-    fireEvent.change(screen.getByLabelText("Presenting facility"), { target: { value: "rph-ed" } });
-    fireEvent.click(screen.getByRole("radio", { name: /^ATS 1/ }));
-    fireEvent.click(screen.getByRole("radio", { name: /^Form 1A/ }));
-    fireEvent.change(screen.getByLabelText("Presenting complaint"), {
-      target: { value: "other" },
-    });
-    fireEvent.change(screen.getByLabelText("Clinical intake notes"), { target: { value: "Invented intake note" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
     expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
 
-    for (const label of [
-      /Record number|UMRN/i,
-      "Given name",
-      "Family name",
-      "Date of birth",
-      /^Address/,
-      "Clinical intake notes",
-    ]) {
+    for (const label of [/Record number|UMRN/i, "Given name", "Family name", "Date of birth"]) {
       expect(screen.getByLabelText(label)).toHaveValue("");
     }
     expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("not-stated");
-    expect(screen.getByTestId("ward-add-patient-suburb")).toHaveValue("");
-    expect(screen.getByLabelText("Health service")).toHaveValue("");
-    expect(screen.getByLabelText("Presenting facility")).toHaveValue("");
-    expect(screen.getByRole("radio", { name: /^ATS 4/ })).toHaveAttribute("aria-checked", "true");
-    // Legal status goes back to unchosen, never to a default (owner rule, 19 Oct 2026).
-    for (const radio of within(screen.getByRole("radiogroup", { name: "Legal status" })).getAllByRole("radio")) {
-      expect(radio).toHaveAttribute("aria-checked", "false");
-    }
-    expect(screen.getByLabelText("Presenting complaint")).toHaveValue("assessment");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  // D-77 change 6: address, facility and intake belong to the referral or the movement, not the person.
+  it("asks identity only, with Aboriginal status still optional", () => {
+    renderForm();
+    for (const gone of [/^Address/, /^Suburb/, "Presenting facility", "Health service", "Clinical intake notes"]) {
+      expect(screen.queryByLabelText(gone)).toBeNull();
+    }
+    expect(screen.queryByRole("heading", { name: "Clinical intake" })).toBeNull();
+    expect(screen.queryByText(/Synthetic records only/)).toBeNull();
+    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).not.toBeRequired();
   });
 
   it("hides Print and Save draft, which only ever said they were not wired (overall review, 20 Oct 2026)", () => {
@@ -789,25 +774,17 @@ describe("AddPatientForm safety regressions", () => {
     expect(screen.queryByText("Not wired in this prototype.")).not.toBeInTheDocument();
   });
 
-  it.each(["Indigenous status", "Triage urgency", "Legal status", "Presenting complaint"])(
-    "asks before discarding a change only to %s",
-    (field) => {
-      renderForm();
-      // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
-      if (field === "Indigenous status")
-        fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
-          target: { value: "aboriginal" },
-        });
-      if (field === "Triage urgency") fireEvent.click(screen.getByRole("radio", { name: /^ATS 1/ }));
-      if (field === "Legal status") fireEvent.click(screen.getByRole("radio", { name: /^Form 1A/ }));
-      if (field === "Presenting complaint")
-        fireEvent.change(screen.getByLabelText("Presenting complaint"), {
-          target: { value: "other" },
-        });
-      fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-      expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
-    },
-  );
+  it.each(["Indigenous status", "Gender"])("asks before discarding a change only to %s", (field) => {
+    renderForm();
+    // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
+    if (field === "Indigenous status")
+      fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
+        target: { value: "aboriginal" },
+      });
+    if (field === "Gender") fireEvent.click(screen.getByRole("radio", { name: "Female" }));
+    fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
+    expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
+  });
 });
 
 describe("AddPatientForm — errors mark and move to the field at fault (DA-12)", () => {
