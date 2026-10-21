@@ -171,8 +171,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   // Modal & interactive state. The accept dialog belongs to one journey id (CS-08).
   const [acceptModalFor, setAcceptModalFor] = useState<string>();
-  // D-72: the accepting ward can ask for the extra-travel bed hold (`ACCEPT_IN_PRINCIPLE.extendedHold`).
-  const [extendedHold, setExtendedHold] = useState(false);
+  // D-75 item 5: the accepting ward can ask for the extra-travel bed hold (`ACCEPT_IN_PRINCIPLE.extendedHold`).
+  // The choice belongs to the request it was made for (CS-08), so it never carries to the next one.
+  const [holdChoice, setHoldChoice] = useState<{ movementId: string; extended: boolean }>();
+  const extendedHoldFor = (movementId: string | undefined) =>
+    movementId !== undefined && holdChoice?.movementId === movementId && holdChoice.extended;
+  const chooseHold = (movementId: string, extended: boolean) => setHoldChoice({ movementId, extended });
   const holdChoices = [
     { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
     {
@@ -247,6 +251,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const acceptModalOpen = acceptModalMovement !== undefined;
   useWardModalFocus(acceptModalOpen, modalRef, () => {
     setAcceptModalFor(undefined);
+    setHoldChoice(undefined);
     (openerRef.current ?? triggerRef.current)?.focus();
   });
   // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
@@ -329,7 +334,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const activeMovement = incoming[activeAnswerIndex];
   const selectAnswer = (index: number) => {
     setAnswerSelection({ id: incoming[index]?.id, index });
-    setExtendedHold(false);
+    setHoldChoice(undefined);
   };
   // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
   // elsewhere), so it closes rather than confirm whoever now sits in its place.
@@ -341,7 +346,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   }
   function openPhoneAccept() {
     selectAnswer(activeAnswerIndex);
-    setExtendedHold(false);
+    setHoldChoice(undefined);
     setPhoneSheet("accept");
   }
 
@@ -421,7 +426,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       },
     );
     setAcceptModalFor(undefined);
-    setExtendedHold(false);
+    setHoldChoice(undefined);
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -1214,7 +1219,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               label: "Accept in principle",
                               onAction: () => {
                                 setPhoneSheet(null);
-                                handleAccept(activeMovement.id, extendedHold);
+                                handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
                               },
                             }}
                             data-testid={`ward-accept-sheet-${activeMovement.id}`}
@@ -1247,8 +1252,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                     <button
                                       key={choice.label}
                                       type="button"
-                                      aria-pressed={extendedHold === choice.extended}
-                                      onClick={() => setExtendedHold(choice.extended)}
+                                      aria-pressed={extendedHoldFor(activeMovement.id) === choice.extended}
+                                      onClick={() => chooseHold(activeMovement.id, choice.extended)}
                                     >
                                       {choice.label}
                                     </button>
@@ -1322,8 +1327,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             <select
                               id={`ward-accept-hold-${activeMovement.id}`}
                               className={styles.formSelect}
-                              value={extendedHold ? "extended" : "standard"}
-                              onChange={(e) => setExtendedHold(e.target.value === "extended")}
+                              value={extendedHoldFor(activeMovement.id) ? "extended" : "standard"}
+                              onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
                             >
                               {holdChoices.map((choice) => (
                                 <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
@@ -1358,7 +1363,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               openPhoneAccept();
                               return;
                             }
-                            handleAccept(activeMovement.id, extendedHold);
+                            handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
                           }}
                         >
                           Accept in principle
@@ -1499,7 +1504,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           if (activeMovement) {
                             openerRef.current = e.currentTarget;
                             selectAnswer(activeAnswerIndex);
-                            setExtendedHold(false);
+                            setHoldChoice(undefined);
                             setAcceptModalFor(activeMovement.id);
                           }
                         }}
@@ -1599,6 +1604,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnSm}`}
                 onClick={() => {
                   setAcceptModalFor(undefined);
+                  setHoldChoice(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1642,8 +1648,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 <select
                   id="hold-duration-select"
                   className={styles.formSelect}
-                  value={extendedHold ? "extended" : "standard"}
-                  onChange={(e) => setExtendedHold(e.target.value === "extended")}
+                  value={extendedHoldFor(acceptModalMovement.id) ? "extended" : "standard"}
+                  onChange={(e) => chooseHold(acceptModalMovement.id, e.target.value === "extended")}
                 >
                   {holdChoices.map((choice) => (
                     <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
@@ -1659,6 +1665,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={styles.btn}
                 onClick={() => {
                   setAcceptModalFor(undefined);
+                  setHoldChoice(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1669,7 +1676,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnGood}`}
                 onClick={() => {
                   const opener = openerRef.current;
-                  handleAccept(acceptModalMovement.id, extendedHold);
+                  handleAccept(acceptModalMovement.id, extendedHoldFor(acceptModalMovement.id));
                   if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
                     opener.focus();
                   } else {

@@ -148,6 +148,37 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts[0]).toMatchObject({ movementId: id, extendedHold: true });
   });
 
+  it("does not carry the extra-travel choice to the next request when the chosen one leaves (CS-08)", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const id = shownId();
+    act(() =>
+      setAdjust((movements) => {
+        const held = movements.find((movement) => movement.id === id)!;
+        return [...movements, { ...held, id: "WF-AUDIT-NEXT", openedAt: held.openedAt + 60_000 }];
+      }),
+    );
+    expect(shownId()).toBe(id);
+    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+      target: { value: "extended" },
+    });
+    act(() =>
+      setAdjust((movements) => {
+        const held = movements.find((movement) => movement.id === id)!;
+        return [
+          ...movements.filter((movement) => movement.id !== id),
+          { ...held, id: "WF-AUDIT-NEXT", openedAt: held.openedAt + 60_000 },
+        ];
+      }),
+    );
+    expect(shownId()).toBe("WF-AUDIT-NEXT");
+    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("standard");
+    fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(1);
+    expect(accepts[0]).toMatchObject({ movementId: "WF-AUDIT-NEXT" });
+    expect(accepts[0]).not.toHaveProperty("extendedHold");
+  });
+
   it("still steps with Previous and Next", () => {
     renderAnswer("sjgm-adult-open", (movements) => {
       const first = movements.find((movement) => movement.referredUnitIds.includes("sjgm-adult-open"))!;
