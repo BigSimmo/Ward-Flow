@@ -8,6 +8,19 @@ import { usePathname } from "next/navigation";
 import { wardRouteUnitId } from "../ward-chrome-role";
 import { useWardFlowSelect } from "../ward-flow-provider";
 
+// PERF-05 (21 Oct 2026): each ward tab body below arrives as its own chunk, which is slow on a
+// phone. Until it does, hold most of a screen so the tab bar and action bar do not jump, and say
+// "Loading" to a screen reader only. The loaded tab replaces this box wholesale.
+function WardTabBodyPlaceholder() {
+  return (
+    <div aria-busy="true" data-testid="ward-tab-body-placeholder" style={{ minBlockSize: "60dvh" }}>
+      <p className="sr-only" role="status">
+        Loading…
+      </p>
+    </div>
+  );
+}
+
 export const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
   { ssr: false },
@@ -37,21 +50,27 @@ export const WardDecisionsCockpit = dynamic(
   () => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit),
   {
     ssr: false,
+    loading: () => <WardTabBodyPlaceholder />,
   },
 );
 export const WardArrivalsCorridor = dynamic(
   () => import("./ward-arrivals-corridor").then((m) => m.WardArrivalsCorridor),
   {
     ssr: false,
+    loading: () => <WardTabBodyPlaceholder />,
   },
 );
 export const WardDischargesMatrix = dynamic(
   () => import("./ward-discharges-matrix").then((m) => m.WardDischargesMatrix),
   {
     ssr: false,
+    loading: () => <WardTabBodyPlaceholder />,
   },
 );
-export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), { ssr: false });
+export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), {
+  ssr: false,
+  loading: () => <WardTabBodyPlaceholder />,
+});
 // Design audit DA-02: the inbox sits above the ward's action bar and its chunk arrives late on a
 // phone, so while it loads it holds about the space its cards will take. That keeps the buttons
 // below it from moving under a finger. A ward with no entries holds no space, as the inbox shows none.
@@ -88,4 +107,7 @@ export const WardDischargeNotices = dynamic(
     ssr: false,
   },
 );
-export const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), { ssr: false });
+export const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), {
+  ssr: false,
+  loading: () => <WardTabBodyPlaceholder />,
+});

@@ -43,7 +43,6 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /*
  * PHONE (v10 all-pages mockup, "Community team", Phone, 11 Oct 2026). Its own tree under 48rem,
@@ -440,11 +439,16 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
                     Log team contact
                   </Button>
-                  <UnwiredPreview>
-                    <Button size="sm" onClick={() => handleActionClick("Assign", phoneReferral)}>
-                      Assign
-                    </Button>
-                  </UnwiredPreview>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      // The assign dialog draws under this sheet, so close the sheet first, as Full referral does.
+                      closePhoneReferral();
+                      handleActionClick("Assign", phoneReferral);
+                    }}
+                  >
+                    Assign
+                  </Button>
                   <Button
                     size="sm"
                     onClick={() => {

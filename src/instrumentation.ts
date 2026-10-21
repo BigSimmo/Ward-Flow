@@ -8,6 +8,10 @@ export async function register() {
   // doesn't build production bundles the way this check validates.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  // Optional Sentry reporting, off unless SENTRY_DSN is set (see sentry-server.ts).
+  const { startServerSentry } = await import("./lib/sentry-server");
+  startServerSentry();
+
   if (process.env.NODE_ENV !== "production") return;
 
   // Playwright validates a real production build, but its runner must remain a
@@ -32,8 +36,9 @@ export async function register() {
   }
 }
 
-/** Server operational failures only: never forward raw errors, URLs, headers or bodies. */
-export const onRequestError: Instrumentation.onRequestError = async (_error, request, context) => {
+/** Server operational failures only: never forward raw errors, URLs, headers or bodies.
+ * Sentry, when enabled, receives the error type and stack only (scrubSentryEvent). */
+export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {
   try {
     const method = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].includes(request.method)
       ? request.method
@@ -42,7 +47,12 @@ export const onRequestError: Instrumentation.onRequestError = async (_error, req
     const routeType = ["render", "route", "action", "proxy"].includes(context.routeType)
       ? context.routeType
       : "unknown";
-    logger.error("ward.request_failed", { incidentId: crypto.randomUUID(), method, routerKind, routeType });
+    const incidentId = crypto.randomUUID();
+    logger.error("ward.request_failed", { incidentId, method, routerKind, routeType });
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+      const { captureServerFailure } = await import("./lib/sentry-server");
+      captureServerFailure(error, { incidentId, method, routerKind, routeType });
+    }
   } catch {
     // Monitoring must not interfere with Next's handling of the original error.
   }
