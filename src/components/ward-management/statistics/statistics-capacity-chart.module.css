@@ -132,10 +132,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.workspace:has(.inspector) {
-  grid-template-columns: minmax(0, 1fr) minmax(min(220px, 100%), 260px);
-}
-
 .plot {
   min-width: 0;
 }
@@ -317,12 +313,13 @@
   color: var(--wf-ink-2);
 }
 
+/* Opens under its row at the chart's full width (UX audit 21 Oct 2026). */
 .inspector {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-3);
-  border-left: 1px solid var(--wf-line);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-block: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
 }
 
