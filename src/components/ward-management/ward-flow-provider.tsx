@@ -1215,7 +1215,7 @@ function WardFlowWorld({
       // selections that belonged to the world being replaced.
       const world: WardFlowState = {
         ...read.state,
-        worldGeneration: Math.max(state.worldGeneration, read.state.worldGeneration) + 1,
+        worldGeneration: Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration) + 1,
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
@@ -1228,7 +1228,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
