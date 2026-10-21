@@ -22,7 +22,6 @@
   "exports:src/components/ward-management/ward-movements.ts:movementsByStage",
   "exports:src/components/wf/primitives.tsx:Inset",
   "exports:src/components/wf/table.tsx:Cell",
-  "exports:src/lib/logger.ts:registerSentryLogForwarder",
   "files:src/components/clinical-dashboard/brand.tsx",
   "files:src/components/ward-management/statistics/statistics-disclaimers.tsx",
   "files:src/components/ward-management/statistics/statistics-section-frame.tsx",
