@@ -1060,6 +1060,18 @@ function WardFlowWorld({
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
 
+  // Item #17: when typed text is held and nothing is saving on this device (a refused copy or failed
+  // storage), warn before a refresh loses the day.
+  useEffect(() => {
+    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
+
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
    * `mountedAtAbsolute`. The restored state arrives through the reducer. The screens are re-keyed
@@ -1143,13 +1155,7 @@ function WardFlowWorld({
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
       setDeviceCopyCheck(state.worldGeneration);
       if (!clearWardFlowDemoState()) setStorageUnavailable(true);
-      // Item #17: typed text has stopped saving on this device, so warn before a refresh loses the day.
-      const warn = (event: BeforeUnloadEvent) => {
-        event.preventDefault();
-        event.returnValue = "";
-      };
-      window.addEventListener("beforeunload", warn);
-      return () => window.removeEventListener("beforeunload", warn);
+      return;
     }
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
     if (
@@ -1165,7 +1171,6 @@ function WardFlowWorld({
     } else {
       localEditsSinceBroadcastRef.current = false;
     }
-    return undefined;
   }, [
     state,
     container,

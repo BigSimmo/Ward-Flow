@@ -143,6 +143,67 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(JSON.stringify(restored)).not.toContain("Josephine");
     });
 
+    // Item #17: typed text held while nothing saves (a refused copy, or failed storage) asks before a
+    // refresh; a session still saving its copy does not.
+    it("warns before a refresh only while typed text is held and nothing saves on this device", () => {
+      const refreshPrevented = () => {
+        const event = new Event("beforeunload", { cancelable: true });
+        window.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
+      const { unmount } = render(
+        <WardFlowProvider>
+          <Capture />
+        </WardFlowProvider>,
+      );
+      const movement = current!.movements.find((candidate) => !candidate.closure);
+      if (!movement) throw new Error("Fixture must carry at least one open movement");
+      act(() => {
+        current!.dispatch({
+          type: "RECORD_MOVEMENT_BLOCKER",
+          role: "coordinator",
+          now: current!.now,
+          movementId: movement.id,
+          blocker: TYPED_BLOCKER,
+        });
+      });
+      expect(current!.savingOnDevice).toBe(true);
+      expect(refreshPrevented()).toBe(false);
+
+      const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("quota");
+      });
+      try {
+        act(() => {
+          current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
+        });
+        expect(current!.savingOnDevice).toBe(false);
+        expect(refreshPrevented()).toBe(true);
+      } finally {
+        setItem.mockRestore();
+      }
+      unmount();
+
+      render(
+        <WardFlowProvider>
+          <Capture />
+        </WardFlowProvider>,
+      );
+      act(() => {
+        current!.dispatch({
+          type: "ADD_PATIENT",
+          role: "coordinator",
+          now: current!.now,
+          umrn: "UMRN-TEST-004",
+          givenName: "Josephine",
+          familyName: "Typiste",
+          dateOfBirth: "1990-01-01",
+        });
+      });
+      expect(current!.savingOnDevice).toBe(false);
+      expect(refreshPrevented()).toBe(true);
+    });
+
     it("saves RECORD_MOVEMENT_BLOCKER without its typed text, and a refresh keeps the rest", () => {
       const { unmount } = render(
         <WardFlowProvider>
