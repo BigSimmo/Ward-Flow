@@ -1,4 +1,5 @@
 import { bedIsOccupied, daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import {
   dayOf,
   formatInstantWithDay,
@@ -133,7 +134,7 @@ export function missingAnswers(draft: RepatDraft, now: Instant): string[] {
   if (draft.mode !== "road" && draft.mode !== "flight") missing.push("road or flight");
   if (draft.provider === undefined) missing.push("provider");
   if (draft.transportLegalStatus === undefined) missing.push("legal status");
-  if (draft.cadNumber.trim().length === 0) missing.push("CAD number");
+  if (cadNumberProblem(draft.cadNumber) !== undefined) missing.push("CAD number");
   if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
     missing.push("depart time");
   }

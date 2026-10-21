@@ -1,7 +1,10 @@
 /* Referral owner and "Log a call" (fix plan item 4). */
 
+/* minmax(0, 1fr) on both grids: an auto track grows to the select's widest option (a long ward
+   name), which pushed the call fields past the panel at 390px in WebKit. */
 .panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-2);
   margin-block: var(--wf-s-2);
   padding: var(--wf-s-3);
@@ -37,6 +40,7 @@
 
 .call {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-2);
   margin: 0;
   padding: 0;

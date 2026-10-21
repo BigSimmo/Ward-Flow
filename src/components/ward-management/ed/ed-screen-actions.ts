@@ -3,6 +3,7 @@
 // `thisEdId` is the resolved department's own id, as it always was.
 import type { FormEvent } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
@@ -125,7 +126,7 @@ export function edScreenActions({
     if (
       provider === undefined ||
       escortRequired === undefined ||
-      cadNumber.trim().length === 0 ||
+      cadNumberProblem(cadNumber) !== undefined ||
       transportLegalStatus === undefined ||
       estimatedAt === undefined
     ) {
