@@ -68,6 +68,21 @@ import { WardBoardPrintSections } from "./ward-board-print-sections";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
 
 /**
+ * The line that leads an occupied /board card. A recorded bed number comes first (Josh, 21 Oct
+ * 2026), then surname plus first initial, because synthetic seeds reuse surnames and so do real
+ * wards. Nothing recorded gives an empty string, and the card shows no line. Never invents a bed.
+ */
+export function boardCardLine(
+  bedNumber: number | undefined,
+  patient: { familyName: string; givenName: string } | null | undefined,
+): string {
+  const bed = bedNumber === undefined ? null : `Bed ${bedNumber}`;
+  const initial = patient?.givenName[0];
+  const name = patient ? (initial ? `${patient.familyName}, ${initial}` : patient.familyName) : null;
+  return [bed, name].filter((part) => part !== null).join(" · ");
+}
+
+/**
  * The ward board, first pass: one ward's beds on a screen.
  *
  * **The deliverable is the rendered page, not the test.** This pass is deliberately the ugly
@@ -533,7 +548,7 @@ export function WardBoard({
   const stamp = asAtStamp(now);
 
   const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
-  /** Name line for each occupied card (UX audit, 21 Oct 2026). A stay with no linked person gets no line. */
+  /** Name line for each occupied card (UX audit, 21 Oct 2026). A stay with no linked person and no bed number gets no line. */
   const cardNameByKey = new Map<string, string>();
   for (const occupant of occupants) {
     const admission = admissions.find((candidate) => candidate.id === occupant.key);
@@ -541,14 +556,8 @@ export function WardBoard({
     const resolved = resolvePatientIdentity
       ? resolvePatientIdentity(admission)
       : resolveSubjectPatient(admission, { patients, movements });
-    // Surname plus first initial: synthetic seeds reuse surnames, and so do real wards.
-    if (resolved.patient) {
-      const initial = resolved.patient.givenName[0];
-      cardNameByKey.set(
-        occupant.key,
-        initial ? `${resolved.patient.familyName}, ${initial}` : resolved.patient.familyName,
-      );
-    }
+    const line = boardCardLine(admission.bedNumber, resolved.patient);
+    if (line) cardNameByKey.set(occupant.key, line);
   }
 
   const selectedTile = selectedKey === null ? null : (tiles.find((tile) => tile.key === selectedKey) ?? null);

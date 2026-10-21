@@ -33,7 +33,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
  * is the identity discipline underneath it: an `Admission` records the ward and NEVER a bed, so a
  * tile may stand for a PERSON and must never stand for a numbered place on a ward. These tests
  * pin both halves — that choosing a tile shows the right person's own record, and that nothing on
- * the board ever labels a tile with a bed number or otherwise turns the grid into a floor plan.
+ * the board invents a bed number the stay does not record or otherwise turns the grid into a floor plan.
  *
  * They also pin the keyboard contract, which is not decoration: a control that opens a panel and
  * then strands the reader's focus is worse than one that never opened it.
@@ -118,7 +118,10 @@ describe("ward board selection — nothing is chosen for the reader", () => {
     expect(hint).toHaveTextContent("Choose a bed to view its record.");
   });
 
-  it("never numbers a tile or otherwise gives it a bed identity", () => {
+  it("never invents a bed number for a stay that records none", () => {
+    // Josh (21 Oct 2026): a RECORDED `bedNumber` may lead the card (see ward-board-card-line).
+    // No seeded stay records one, so on this ward no tile may carry a bed number at all.
+    expect(occupantsFor(UNIT_ID).every((admission) => admission.bedNumber === undefined)).toBe(true);
     const { container } = renderWardBoard(UNIT_ID);
 
     for (const button of tileButtons(container)) {
