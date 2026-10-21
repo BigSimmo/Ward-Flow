@@ -57,7 +57,7 @@ export function appendRefreshRequest(
 const PLACEMENT_BUZZ: (typeof WARD_BUZZ_MESSAGES)[number] = "Please review the current placement request.";
 
 /** Whether a ward's own capacity confirmation answers this request. */
-export function refreshRequestAsksForCapacity(request: Pick<CapacityRefreshRequest, "message">): boolean {
+function refreshRequestAsksForCapacity(request: Pick<CapacityRefreshRequest, "message">): boolean {
   return request.message !== PLACEMENT_BUZZ;
 }
 
