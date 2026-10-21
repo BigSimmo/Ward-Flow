@@ -1217,11 +1217,7 @@ export function reduceReferralAnswerEvent(
        */
       const holdsBed = movement.stage === "pulled" || movement.admissionId !== undefined;
       if (holdsBed && movement.transport?.collectedAt !== undefined) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of withdrawing the acceptance`,
-        );
+        return reject(state, event, `movement ${movement.id}'s patient has been collected; use STOP_TRANSPORT`);
       }
       if (holdsBed && movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
@@ -1237,11 +1233,7 @@ export function reduceReferralAnswerEvent(
       // bed number is stripped (that strip changes state on its own).
       const bedReleased = holdsBed ? releasePulledBedAndAdmission(state, movement, event.now) : state;
       if (holdsBed && bedReleased === state) {
-        return reject(
-          state,
-          event,
-          `cannot withdraw the acceptance for movement ${movement.id}: its held bed does not match a reservation that can be released`,
-        );
+        return reject(state, event, `movement ${movement.id}'s held bed matches no releasable reservation`);
       }
       const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
       const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
@@ -1316,9 +1308,7 @@ export function reduceReferralAnswerEvent(
           "acceptance_withdrawn_ward",
           { role: "ward", placeId: withdrawnUnitId },
           { movementId: movement.id, unitId: withdrawnUnitId },
-          holdsBed
-            ? `The coordinator withdrew this ward's acceptance of ${movement.id} and released the bed held for them. The patient is not coming unless this ward is asked again.`
-            : `The coordinator withdrew this ward's acceptance of ${movement.id}. The patient is not coming unless this ward is asked again.`,
+          `The coordinator withdrew this ward's acceptance of ${movement.id}${holdsBed ? " and released the bed held for them" : ""}. The patient is not coming unless this ward is asked again.`,
         ),
       ];
       // Addendum §1.3, as in `RELEASE_PULL`: "a referrer not told goes on believing a bed is coming."

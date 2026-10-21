@@ -553,7 +553,7 @@ describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
     };
     const after = withdrawAcceptance(mismatched);
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toMatch(/does not match a reservation/);
+    expect(after.rejections[0].reason).toMatch(/matches no releasable reservation/);
     expect(movementIn(after, REPULL_MOVEMENT).unwinds).toEqual(movementIn(mismatched, REPULL_MOVEMENT).unwinds);
   });
 
