@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow mockup · Six coordinator screens</title>
+    <!--
+      Clickable mockup for fix plan item 3 (screen consolidation), approved for a mockup by Josh on
+      21 October 2026 ("Yes to all"). It shows the coordinator's day as six primary screens and says,
+      on each, which of today's routes would move into it. Not a build contract.
+      Self-contained: no network requests, no browser storage, nothing saves. Invented data only.
+      Colour and size values are copied from src/app/ward-flow-v9-tokens.css (v9 tokens), as in
+      needs-you-now-home-mockup.html, and are only declared on :root.
+    -->
+    <style>
+      :root {
+        --wf-canvas: #e8ecf0;
+        --wf-surface: #fdfdfe;
+        --wf-surface-2: #f6f8fa;
+        --wf-track: #eceff3;
+        --wf-hover: #f2f5f8;
+        --wf-selected: #eef3f8;
+        --wf-line: rgba(22, 30, 40, 0.08);
+        --wf-line-2: rgba(22, 30, 40, 0.15);
+        --wf-line-3: rgba(22, 30, 40, 0.26);
+        --wf-ink-1: #161a20;
+        --wf-ink-2: #414953;
+        --wf-ink-3: #5b646f;
+        --wf-line-ctl: #808892;
+        --wf-accent: #245a8c;
+        --wf-accent-tint: #e3eef9;
+        --wf-accent-ink: #1f4d7a;
+        --wf-on-accent: #fff;
+        --wf-pri-1: #2f6aa3;
+        --wf-pri-2: #234f7a;
+        --wf-pri-edge: #1d4569;
+        --wf-hero-1: #22384d;
+        --wf-hero-2: #1c2f41;
+        --wf-hero-ink: #fff;
+        --wf-hero-ink-2: #c3d1de;
+        --wf-hero-ink-3: #a3b8cc;
+        --wf-hero-line: rgba(255, 255, 255, 0.16);
+        --wf-hero-chip: rgba(255, 255, 255, 0.08);
+        --wf-danger: #c4513f;
+        --wf-danger-ink: #9a3424;
+        --wf-danger-tint: #fcf0ee;
+        --wf-warning: #ac720a;
+        --wf-warning-ink: #7a5208;
+        --wf-warning-tint: #fbf5e6;
+        --wf-success: #2f8a5f;
+        --wf-success-ink: #1c6343;
+        --wf-success-tint: #e2f0e8;
+        --wf-info: #4f7398;
+        --wf-scrim: rgba(22, 30, 40, 0.14);
+        --wf-e1:
+          0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
+          0 12px 28px -20px rgba(16, 24, 40, 0.22);
+        --wf-e3:
+          0 0 0 0.5px rgba(16, 24, 40, 0.14), 0 2px 4px rgba(16, 24, 40, 0.06), 0 24px 48px -12px rgba(16, 24, 40, 0.3);
+        --wf-r-sm: 10px;
+        --wf-r-md: 12px;
+        --wf-r-lg: 16px;
+        --wf-r-xl: 22px;
+        --wf-r-pill: 999px;
+        --wf-r-ctl: 12px;
+        --wf-r-tag: 6px;
+        --wf-fs-12: 12px;
+        --wf-fs-13: 13px;
+        --wf-fs-14: 14px;
+        --wf-fs-16: 16px;
+        --wf-fs-20: 20px;
+        --wf-fs-28: 28px;
+        --wf-row: 52px;
+        --wf-tap: 44px;
+        --wf-font: Geist, "Segoe UI", system-ui, -apple-system, sans-serif;
+        --wf-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --wf-canvas: #0d141b;
+          --wf-surface: #141d26;
+          --wf-surface-2: #18232e;
+          --wf-track: #223040;
+          --wf-hover: #1b2733;
+          --wf-selected: #1f2e3c;
+          --wf-line: rgba(255, 255, 255, 0.07);
+          --wf-line-2: rgba(255, 255, 255, 0.13);
+          --wf-line-3: rgba(255, 255, 255, 0.24);
+          --wf-ink-1: #e9eef3;
+          --wf-ink-2: #bcc8d4;
+          --wf-ink-3: #93a4b5;
+          --wf-line-ctl: #6e7d8d;
+          --wf-accent: #8cbcf0;
+          --wf-accent-tint: #1d3349;
+          --wf-accent-ink: #b7d3f0;
+          --wf-pri-1: #3a72a8;
+          --wf-pri-2: #2c5c8c;
+          --wf-pri-edge: #5a8fc4;
+          --wf-hero-1: #22374d;
+          --wf-hero-2: #1c2e41;
+          --wf-danger: #e27a68;
+          --wf-danger-ink: #f2a495;
+          --wf-danger-tint: #3a211d;
+          --wf-warning: #d9a441;
+          --wf-warning-ink: #f0cc85;
+          --wf-warning-tint: #33291a;
+          --wf-success: #4cb383;
+          --wf-success-ink: #8fd6b3;
+          --wf-success-tint: #17322a;
+          --wf-info: #7fa3c8;
+          --wf-scrim: rgba(0, 0, 0, 0.4);
+          --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+          --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --wf-canvas: #0d141b;
+        --wf-surface: #141d26;
+        --wf-surface-2: #18232e;
+        --wf-track: #223040;
+        --wf-hover: #1b2733;
+        --wf-selected: #1f2e3c;
+        --wf-line: rgba(255, 255, 255, 0.07);
+        --wf-line-2: rgba(255, 255, 255, 0.13);
+        --wf-line-3: rgba(255, 255, 255, 0.24);
+        --wf-ink-1: #e9eef3;
+        --wf-ink-2: #bcc8d4;
+        --wf-ink-3: #93a4b5;
+        --wf-line-ctl: #6e7d8d;
+        --wf-accent: #8cbcf0;
+        --wf-accent-tint: #1d3349;
+        --wf-accent-ink: #b7d3f0;
+        --wf-pri-1: #3a72a8;
+        --wf-pri-2: #2c5c8c;
+        --wf-pri-edge: #5a8fc4;
+        --wf-hero-1: #22374d;
+        --wf-hero-2: #1c2e41;
+        --wf-danger: #e27a68;
+        --wf-danger-ink: #f2a495;
+        --wf-danger-tint: #3a211d;
+        --wf-warning: #d9a441;
+        --wf-warning-ink: #f0cc85;
+        --wf-warning-tint: #33291a;
+        --wf-success: #4cb383;
+        --wf-success-ink: #8fd6b3;
+        --wf-success-tint: #17322a;
+        --wf-info: #7fa3c8;
+        --wf-scrim: rgba(0, 0, 0, 0.4);
+        --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+        --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+        color-scheme: dark;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* ─── page ─── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--wf-canvas);
+        color: var(--wf-ink-1);
+        font-family: var(--wf-font);
+        font-size: var(--wf-fs-14);
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 2px;
+      }
+      .skip {
+        position: absolute;
+        left: 8px;
+        top: -60px;
+        background: var(--wf-surface);
+        padding: 8px 12px;
+        border-radius: var(--wf-r-sm);
+        z-index: 60;
+      }
+      .skip:focus {
+        top: 8px;
+      }
+      .mono {
+        font-family: var(--wf-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .proto-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--wf-warning-tint);
+        color: var(--wf-warning-ink);
+        border-bottom: 1px solid var(--wf-line-2);
+        font-size: var(--wf-fs-13);
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        min-height: calc(100vh - 38px);
+      }
+      .rail {
+        background: var(--wf-surface-2);
+        border-right: 1px solid var(--wf-line-2);
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: var(--wf-fs-16);
+      }
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--wf-r-sm);
+        background: var(--wf-pri-1);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      .nav-label {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        margin: 6px 8px 0;
+      }
+      .nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        padding: 8px 10px;
+        min-height: var(--wf-tap);
+        color: var(--wf-ink-2);
+      }
+      .nav button:hover {
+        background: var(--wf-hover);
+      }
+      .nav button[aria-current="page"] {
+        background: var(--wf-surface);
+        border-color: var(--wf-line-2);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+        box-shadow: var(--wf-e1);
+      }
+      .nav .count {
+        margin-left: auto;
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .nav.secondary button {
+        min-height: 36px;
+        font-size: var(--wf-fs-13);
+      }
+      main {
+        padding: 20px 24px 96px;
+        min-width: 0;
+      }
+      .head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 10px 16px;
+        margin-bottom: 14px;
+      }
+      .head h1 {
+        margin: 0;
+        font-size: var(--wf-fs-28);
+        line-height: 1.15;
+      }
+      .head p {
+        margin: 4px 0 0;
+        color: var(--wf-ink-3);
+      }
+      .head .spacer {
+        flex: 1;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: var(--wf-tap);
+        padding: 0 14px;
+        border-radius: var(--wf-r-ctl);
+        border: 1px solid var(--wf-line-ctl);
+        background: var(--wf-surface);
+        font-weight: 500;
+      }
+      .btn.primary {
+        background: var(--wf-pri-1);
+        border-color: var(--wf-pri-edge);
+        color: var(--wf-on-accent);
+      }
+      .btn.small {
+        min-height: 36px;
+        padding: 0 10px;
+        font-size: var(--wf-fs-13);
+      }
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .figure {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 12px 14px;
+        box-shadow: var(--wf-e1);
+      }
+      .figure .n {
+        font-family: var(--wf-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: var(--wf-fs-20);
+        font-weight: 600;
+      }
+      .figure .l {
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-3);
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        background: var(--wf-track);
+        border-radius: var(--wf-r-pill);
+        padding: 4px;
+        width: fit-content;
+        margin-bottom: 12px;
+      }
+      .tabs button {
+        border: 0;
+        background: none;
+        border-radius: var(--wf-r-pill);
+        padding: 6px 14px;
+        min-height: 36px;
+        color: var(--wf-ink-2);
+      }
+      .tabs button[aria-selected="true"] {
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+        box-shadow: var(--wf-e1);
+      }
+      .card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        box-shadow: var(--wf-e1);
+        overflow: hidden;
+      }
+      .card + .card {
+        margin-top: 12px;
+      }
+      .card h2 {
+        margin: 0;
+        font-size: var(--wf-fs-16);
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--wf-fs-13);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--wf-line);
+        white-space: nowrap;
+      }
+      th {
+        font-weight: 600;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .new {
+        display: inline-block;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-accent-ink);
+        background: var(--wf-accent-tint);
+        border-radius: var(--wf-r-tag);
+        padding: 0 6px;
+        margin-left: 4px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--wf-r-pill);
+        padding: 1px 8px;
+        font-size: var(--wf-fs-12);
+        border: 1px solid var(--wf-line-2);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface-2);
+      }
+      .pill.act {
+        border-color: var(--wf-danger);
+        color: var(--wf-danger-ink);
+        background: var(--wf-danger-tint);
+      }
+      .pill.ok {
+        border-color: var(--wf-success);
+        color: var(--wf-success-ink);
+        background: var(--wf-success-tint);
+      }
+      .pill.warn {
+        border-color: var(--wf-warning);
+        color: var(--wf-warning-ink);
+        background: var(--wf-warning-tint);
+      }
+      .list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .list li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .list li:last-child {
+        border-bottom: 0;
+      }
+      .list .what {
+        flex: 1;
+        min-width: 220px;
+      }
+      .list .what small {
+        display: block;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-13);
+      }
+      .moved {
+        margin-top: 16px;
+        border: 1px dashed var(--wf-line-3);
+        border-radius: var(--wf-r-lg);
+        padding: 12px 14px;
+        background: var(--wf-surface-2);
+        font-size: var(--wf-fs-13);
+      }
+      .moved h3 {
+        margin: 0 0 6px;
+        font-size: var(--wf-fs-14);
+      }
+      .moved ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .moved code {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+      }
+      .beds {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        padding: 14px;
+      }
+      .ward {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        padding: 10px 12px;
+        background: var(--wf-surface);
+      }
+      .ward b {
+        display: block;
+      }
+      .ward .row {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-3);
+      }
+      .ward .row span:last-child {
+        font-family: var(--wf-mono);
+        color: var(--wf-ink-1);
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(420px, 100%);
+        background: var(--wf-surface);
+        box-shadow: var(--wf-e3);
+        padding: 16px;
+        overflow: auto;
+        z-index: 40;
+      }
+      .drawer[hidden],
+      .scrim[hidden],
+      .toast[hidden] {
+        display: none;
+      }
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: var(--wf-scrim);
+        z-index: 30;
+      }
+      .drawer h2 {
+        margin: 0 0 4px;
+        font-size: var(--wf-fs-20);
+      }
+      .drawer .close {
+        float: right;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 84px;
+        transform: translateX(-50%);
+        background: var(--wf-hero-1);
+        color: var(--wf-hero-ink);
+        border-radius: var(--wf-r-md);
+        padding: 10px 14px;
+        z-index: 50;
+        max-width: calc(100% - 32px);
+      }
+      .dock {
+        display: none;
+      }
+      .menu-sheet {
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .rail {
+          display: none;
+        }
+        main {
+          padding: 14px 16px 110px;
+        }
+        .head h1 {
+          font-size: var(--wf-fs-20);
+        }
+        .strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dock {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--wf-surface);
+          border-top: 1px solid var(--wf-line-2);
+          padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+          z-index: 20;
+        }
+        .dock button {
+          background: none;
+          border: 0;
+          min-height: 52px;
+          font-size: var(--wf-fs-12);
+          color: var(--wf-ink-3);
+          border-radius: var(--wf-r-sm);
+        }
+        .dock button[aria-current="page"] {
+          color: var(--wf-accent-ink);
+          background: var(--wf-accent-tint);
+          font-weight: 600;
+        }
+        .menu-sheet:not([hidden]) {
+          display: block;
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 70px;
+          background: var(--wf-surface);
+          border-top: 1px solid var(--wf-line-2);
+          border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+          box-shadow: var(--wf-e3);
+          padding: 12px 16px;
+          z-index: 25;
+        }
+        th,
+        td {
+          padding: 8px 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the page</a>
+    <div class="proto-strip">
+      <strong>Mockup for review.</strong>
+      <span>Six core coordinator screens (fix plan item 3). Invented data only. Nothing saves.</span>
+      <span>Controls outside navigation say "Not wired in this prototype."</span>
+    </div>
+    <div class="app">
+      <nav class="rail" aria-label="Ward Flow">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">W</span>Ward Flow</div>
+        <div class="nav-label">Your day</div>
+        <ul class="nav" id="nav-primary"></ul>
+        <div class="nav-label">Also</div>
+        <ul class="nav secondary" id="nav-secondary"></ul>
+      </nav>
+      <main id="main" tabindex="-1"></main>
+    </div>
+    <div class="menu-sheet" id="menu-sheet" hidden>
+      <div class="nav-label">More</div>
+      <ul class="nav" id="nav-more"></ul>
+    </div>
+    <nav class="dock" aria-label="Ward Flow, phone" id="dock"></nav>
+    <div class="scrim" id="scrim" hidden></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></aside>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script>
+      "use strict";
+      // Invented data only. Wait order is first raised, first listed (D-32, D-71): nothing here
+      // ranks, scores or suggests a ward.
+      const SCREENS = [
+        {
+          id: "home",
+          label: "Home",
+          count: 5,
+          title: "Needs you now",
+          sub: "Everything waiting on the coordinator, in the order it was raised. Alerts open from here.",
+          moved: [
+            ["Command", "/ward-flow/command", "folds into this Home"],
+            ["Hub", "/ward-flow/hub", "folds into this Home"],
+            ["Alerts", "/ward-flow/alerts", "becomes the Alerts drawer on this page"],
+            ["Exceptions", "/ward-flow/exceptions", "becomes an Alerts group"],
+            ["Escalation", "/ward-flow/escalation", "becomes an Alerts group"],
+          ],
+        },
+        {
+          id: "referrals",
+          label: "Referrals",
+          count: 9,
+          title: "Referrals",
+          sub: "Every open bed request in wait order. Delays is a filter, not a page.",
+          moved: [
+            ["Queue", "/ward-flow/queue", "becomes the Waiting tab"],
+            ["Waiting", "/ward-flow/waiting", "becomes the Waiting tab"],
+            ["Delays", "/ward-flow/delays", "becomes the At a time limit tab"],
+            ["Referrals", "/ward-flow/referrals", "stays, as this page"],
+          ],
+        },
+        {
+          id: "beds",
+          label: "Beds",
+          count: 4,
+          title: "Beds",
+          sub: "Every ward's beds on one page: the board, the capacity numbers and the whole network.",
+          moved: [
+            ["Bed board", "/ward-flow/board/[unitId]", "becomes the Board tab, filtered to one ward"],
+            ["Capacity", "/ward-flow/capacity", "becomes the Capacity tab"],
+            ["Wards", "/ward-flow/wards", "becomes the Capacity tab's ward list"],
+            ["Network", "/ward-flow/network", "becomes the Network tab"],
+            ["Constellation", "/ward-flow/constellation", "becomes the Network tab"],
+          ],
+        },
+        {
+          id: "movements",
+          label: "Movements",
+          count: 6,
+          title: "Movements",
+          sub: "Everyone on the way to a bed, their transport and anyone placed out of area.",
+          moved: [
+            ["Movements", "/ward-flow/movements", "stays, as this page"],
+            ["Transport", "/ward-flow/transport", "becomes the Transport tab"],
+            ["Out of area", "/ward-flow/out-of-area", "becomes the Out of area tab"],
+          ],
+        },
+        {
+          id: "discharges",
+          label: "Discharges",
+          count: 6,
+          title: "Discharges",
+          sub: "Who is due out today and tomorrow, criteria led discharge, and beds being released.",
+          moved: [["Discharges", "/ward-flow/discharges", "stays, as this page"]],
+        },
+        {
+          id: "handover",
+          label: "Handover",
+          count: null,
+          title: "Handover",
+          sub: "The shift handover, the morning bed meeting and the TV view in one place.",
+          moved: [
+            ["Handover", "/ward-flow/handover", "stays, as this page"],
+            ["Bed meeting", "/ward-flow/bed-meeting", "becomes the Bed meeting tab"],
+          ],
+        },
+      ];
+      const SECONDARY = [
+        ["statistics", "Statistics"],
+        ["directories", "Directories (ED, community, on call)"],
+        ["search", "Search"],
+        ["legal", "Legal forms"],
+        ["settings", "Settings"],
+      ];
+
+      const NEEDS = [
+        ["09:12", "WF-104 · R.T., ED East Hospital", "Referral raised, no ward asked yet", "Ask wards", "act"],
+        ["09:40", "WF-087 · Banksia ward", "Accepted, bed not held", "Hold bed", ""],
+        ["10:05", "WF-112 · A.K., Community North", "Ward asked 2 h ago, no answer", "Log a call", "warn"],
+        ["10:20", "Jarrah ward", "Bed meeting numbers not confirmed", "Remind ward", ""],
+        ["10:31", "WF-090 · transport", "Booked, no estimated time recorded", "Open movement", ""],
+      ];
+      const REFERRALS = [
+        ["WF-104", "ED East Hospital", "09:12", "T1", "Not recorded", "No ward asked", "", ""],
+        [
+          "WF-099",
+          "ED North Hospital",
+          "07:55",
+          "T2",
+          "Involuntary",
+          "2 wards asked",
+          "J. Coordinator",
+          "08:40, Jarrah, call back",
+        ],
+        [
+          "WF-112",
+          "Community North",
+          "08:02",
+          "T3",
+          "Voluntary",
+          "1 ward asked",
+          "J. Coordinator",
+          "08:10, Karri, no answer",
+        ],
+        [
+          "WF-095",
+          "ED South Hospital",
+          "Yesterday 22:10",
+          "T2",
+          "Form 1A",
+          "Accepted, Marri",
+          "Night coordinator",
+          "06:15, Marri, accepted",
+        ],
+        ["WF-101", "ED East Hospital", "08:47", "T3", "Voluntary", "No ward asked", "", ""],
+      ];
+      const WARDS = [
+        ["Banksia", "Adult open", 24, 22, 1, 1],
+        ["Jarrah", "Adult secure", 16, 16, 0, 0],
+        ["Karri", "Older adult", 20, 18, 2, 0],
+        ["Marri", "Adult open", 22, 21, 0, 1],
+        ["Tuart", "Youth", 12, 11, 1, 0],
+        ["Wandoo", "Mother and baby", 6, 5, 0, 1],
+      ];
+
+      const $ = (id) => document.getElementById(id);
+      let current = "home";
+      let tab = {};
+      let opener = null;
+
+      function esc(text) {
+        return String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+      }
+      function toast(text) {
+        const el = $("toast");
+        el.textContent = text;
+        el.hidden = false;
+        clearTimeout(toast.t);
+        toast.t = setTimeout(() => (el.hidden = true), 3200);
+      }
+      function notWired() {
+        toast("Not wired in this prototype.");
+      }
+
+      function navItem(id, label, count) {
+        const c = count == null ? "" : `<span class="count">${count}</span>`;
+        return `<li><button type="button" data-go="${id}"${id === current ? ' aria-current="page"' : ""}>${esc(label)}${c}</button></li>`;
+      }
+      function renderNav() {
+        $("nav-primary").innerHTML = SCREENS.map((s) => navItem(s.id, s.label, s.count)).join("");
+        $("nav-secondary").innerHTML = SECONDARY.map(([id, label]) => navItem(id, label, null)).join("");
+        const dock = ["home", "referrals", "beds", "movements"];
+        $("dock").innerHTML =
+          dock
+            .map((id) => {
+              const s = SCREENS.find((x) => x.id === id);
+              return `<button type="button" data-go="${id}"${id === current ? ' aria-current="page"' : ""}>${s.label}</button>`;
+            })
+            .join("") +
+          `<button type="button" id="more" aria-expanded="${!$("menu-sheet").hidden}" aria-controls="menu-sheet">More</button>`;
+        $("nav-more").innerHTML =
+          SCREENS.filter((s) => !dock.includes(s.id))
+            .map((s) => navItem(s.id, s.label, s.count))
+            .join("") + SECONDARY.map(([id, label]) => navItem(id, label, null)).join("");
+      }
+
+      function strip(items) {
+        return `<div class="strip">${items
+          .map(([n, l]) => `<div class="figure"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`)
+          .join("")}</div>`;
+      }
+      function tabs(id, names) {
+        const active = tab[id] ?? 0;
+        return {
+          active,
+          html: `<div class="tabs" role="tablist" aria-label="${esc(id)} views">${names
+            .map(
+              (n, i) =>
+                `<button type="button" role="tab" data-tab="${id}" data-i="${i}" aria-selected="${i === active}">${esc(n)}</button>`,
+            )
+            .join("")}</div>`,
+        };
+      }
+      function moved(screen) {
+        return `<section class="moved" aria-labelledby="moved-${screen.id}"><h3 id="moved-${screen.id}">What moves here</h3><ul>${screen.moved
+          .map(([name, route, how]) => `<li><b>${esc(name)}</b> <code>${esc(route)}</code> ${esc(how)}</li>`)
+          .join("")}</ul></section>`;
+      }
+
+      const VIEWS = {
+        home() {
+          return (
+            strip([
+              ["4", "Beds ready now"],
+              ["9", "Waiting for a bed"],
+              ["3", "Beds held"],
+              ["6", "Due out today and tomorrow"],
+            ]) +
+            `<div class="card"><h2>Needs you now · oldest first</h2><ul class="list">${NEEDS.map(
+              ([t, who, why, action, tone]) =>
+                `<li><span class="mono">${t}</span><span class="what"><b>${esc(who)}</b><small>${esc(why)}</small></span>${
+                  tone === "act"
+                    ? '<span class="pill act">Act now</span>'
+                    : tone === "warn"
+                      ? '<span class="pill warn">No answer</span>'
+                      : ""
+                }<button type="button" class="btn small" data-nw>${esc(action)}</button></li>`,
+            ).join("")}</ul></div>`
+          );
+        },
+        referrals() {
+          const t = tabs("referrals", ["Waiting", "At a time limit", "All open"]);
+          const rows =
+            t.active === 1 ? REFERRALS.filter((r) => r[3] === "T1" || r[2].startsWith("Yesterday")) : REFERRALS;
+          return (
+            t.html +
+            `<div class="card"><div class="table-wrap"><table><caption class="sr-only">Referrals in wait order</caption><thead><tr><th>Referral</th><th>From</th><th>Raised</th><th>Tier</th><th>Legal status</th><th>Where it is</th><th>Owner <span class="new">new</span></th><th>Last contact <span class="new">new</span></th><th></th></tr></thead><tbody>${rows
+              .map(
+                (r) =>
+                  `<tr><td class="mono">${r[0]}</td><td>${esc(r[1])}</td><td class="mono">${esc(r[2])}</td><td>${r[3]}</td><td>${esc(r[4])}</td><td>${esc(
+                    r[5],
+                  )}</td><td>${r[6] ? esc(r[6]) : '<button type="button" class="btn small" data-nw>Assign</button>'}</td><td>${
+                    r[7] ? esc(r[7]) : "None yet"
+                  }</td><td><button type="button" class="btn small" data-call="${r[0]}">Log a call</button></td></tr>`,
+              )
+              .join("")}</tbody></table></div></div>`
+          );
+        },
+        beds() {
+          const t = tabs("beds", ["Board", "Capacity", "Network"]);
+          if (t.active === 1)
+            return (
+              t.html +
+              `<div class="card"><div class="table-wrap"><table><caption class="sr-only">Capacity by ward</caption><thead><tr><th>Ward</th><th>Type</th><th>Beds</th><th>Occupied</th><th>Ready</th><th>Pulled</th></tr></thead><tbody>${WARDS.map(
+                (w) =>
+                  `<tr><td>${w[0]}</td><td>${w[1]}</td><td class="mono">${w[2]}</td><td class="mono">${w[3]}</td><td class="mono">${w[4]}</td><td class="mono">${w[5]}</td></tr>`,
+              ).join("")}</tbody></table></div></div>`
+            );
+          if (t.active === 2)
+            return (
+              t.html +
+              `<div class="card"><h2>By health service</h2><ul class="list"><li><span class="what"><b>North service</b><small>Banksia, Jarrah, Tuart</small></span><span class="mono">2 ready</span></li><li><span class="what"><b>East service</b><small>Karri, Marri, Wandoo</small></span><span class="mono">2 ready</span></li></ul></div>`
+            );
+          return (
+            t.html +
+            `<div class="card"><h2>All wards · fixed order, no ranking</h2><div class="beds">${WARDS.map(
+              (w) =>
+                `<div class="ward"><b>${w[0]}</b><div class="row"><span>${w[1]}</span><span></span></div><div class="row"><span>Ready</span><span>${w[4]}</span></div><div class="row"><span>Occupied</span><span>${w[3]} of ${w[2]}</span></div></div>`,
+            ).join("")}</div></div>`
+          );
+        },
+        movements() {
+          const t = tabs("movements", ["In progress", "Transport", "Out of area"]);
+          const body =
+            t.active === 1
+              ? `<li><span class="mono">WF-090</span><span class="what"><b>ED East Hospital to Banksia</b><small>Booked by phone, CAD number recorded, no estimated time</small></span><span class="pill warn">Needs a time</span></li><li><span class="mono">WF-095</span><span class="what"><b>ED South Hospital to Marri</b><small>Estimated 11:30</small></span><span class="pill">Booked</span></li>`
+              : t.active === 2
+                ? `<li><span class="mono">WF-071</span><span class="what"><b>Placed out of area</b><small>Since 14 Oct, waiting for a home ward</small></span></li>`
+                : `<li><span class="mono">WF-087</span><span class="what"><b>Accepted by Banksia</b><small>Bed not held yet</small></span><span class="pill">Accepted</span></li><li><span class="mono">WF-095</span><span class="what"><b>Accepted by Marri</b><small>Bed held, transport booked</small></span><span class="pill ok">On the way</span></li>`;
+          return t.html + `<div class="card"><ul class="list">${body}</ul></div>`;
+        },
+        discharges() {
+          return (
+            strip([
+              ["6", "Due out today and tomorrow"],
+              ["2", "Criteria led discharge ready"],
+              ["1", "Bed release confirmed"],
+              ["0", "Leaving today, no plan"],
+            ]) +
+            `<div class="card"><h2>Due out today and tomorrow</h2><ul class="list"><li><span class="what"><b>Banksia, bed 4</b><small>Expected today, criteria led discharge, 5 of 5 met</small></span><span class="pill ok">CLD ready</span></li><li><span class="what"><b>Karri, bed 11</b><small>Expected tomorrow, accommodation not confirmed</small></span><span class="pill warn">Barrier</span></li></ul></div>`
+          );
+        },
+        handover() {
+          const t = tabs("handover", ["Shift handover", "Bed meeting", "TV view"]);
+          const body =
+            t.active === 1
+              ? `<li><span class="what"><b>Morning bed meeting</b><small>4 of 6 wards confirmed their numbers</small></span><button type="button" class="btn small" data-nw>Print sheet</button></li>`
+              : t.active === 2
+                ? `<li><span class="what"><b>TV view</b><small>Initials, sex and day of stay only (D-68)</small></span><button type="button" class="btn small" data-nw>Open on the TV</button></li>`
+                : `<li><span class="what"><b>Act now</b><small>Same list as Alerts' act now</small></span><span class="mono">1</span></li><li><span class="what"><b>Waiting for a bed</b><small>In wait order</small></span><span class="mono">9</span></li><li><span class="what"><b>Beds held</b></span><span class="mono">3</span></li>`;
+          return t.html + `<div class="card"><ul class="list">${body}</ul></div>`;
+        },
+      };
+
+      function render() {
+        const screen = SCREENS.find((s) => s.id === current);
+        const main = $("main");
+        if (!screen) {
+          const label = SECONDARY.find(([id]) => id === current)?.[1] ?? "";
+          main.innerHTML = `<div class="head"><div><h1>${esc(label)}</h1><p>A secondary screen. It stays as it is today and is reached from Also, or More on a phone.</p></div></div>`;
+        } else {
+          const alerts =
+            screen.id === "home"
+              ? '<span class="spacer"></span><button type="button" class="btn" id="open-alerts" aria-haspopup="dialog">Alerts <span class="mono">3</span></button>'
+              : "";
+          main.innerHTML = `<div class="head"><div><h1>${esc(screen.title)}</h1><p>${esc(screen.sub)}</p></div>${alerts}</div>${VIEWS[screen.id]()}${moved(screen)}`;
+        }
+        renderNav();
+      }
+
+      function openDrawer(html, from) {
+        opener = from;
+        const d = $("drawer");
+        d.innerHTML = `<button type="button" class="btn small close" id="close">Close</button>${html}`;
+        d.hidden = false;
+        $("scrim").hidden = false;
+        $("close").focus();
+      }
+      function closeDrawer() {
+        $("drawer").hidden = true;
+        $("scrim").hidden = true;
+        opener?.focus();
+      }
+
+      document.addEventListener("click", (e) => {
+        const go = e.target.closest("[data-go]");
+        if (go) {
+          current = go.dataset.go;
+          $("menu-sheet").hidden = true;
+          render();
+          $("main").focus();
+          return;
+        }
+        const t = e.target.closest("[data-tab]");
+        if (t) {
+          tab[t.dataset.tab] = Number(t.dataset.i);
+          render();
+          document.querySelector(`[data-tab="${t.dataset.tab}"][data-i="${t.dataset.i}"]`)?.focus();
+          return;
+        }
+        if (e.target.closest("#more")) {
+          $("menu-sheet").hidden = !$("menu-sheet").hidden;
+          renderNav();
+          return;
+        }
+        if (e.target.closest("#open-alerts")) {
+          openDrawer(
+            `<h2 id="drawer-title">Alerts</h2><p>Exceptions and escalations live here now, grouped. Highlights never move rows.</p><ul class="list"><li><span class="what"><b>At a time limit</b><small>WF-095 in ED since yesterday 22:10</small></span></li><li><span class="what"><b>Escalation</b><small>Jarrah full, secure beds at 0</small></span></li><li><span class="what"><b>Exception</b><small>Bed held 2 h with no dispatch</small></span></li></ul>`,
+            e.target.closest("#open-alerts"),
+          );
+          return;
+        }
+        const call = e.target.closest("[data-call]");
+        if (call) {
+          openDrawer(
+            `<h2 id="drawer-title">Log a call · ${esc(call.dataset.call)}</h2><p>Who you rang and what they said. Fixed outcomes, so nothing typed is kept on the device.</p><p><label>Called <select><option>Banksia</option><option>Jarrah</option><option>Karri</option><option>Marri</option><option>Tuart</option><option>Wandoo</option></select></label></p><p><label>Outcome <select><option>Accepted</option><option>Declined</option><option>Call back</option><option>No answer</option></select></label></p><button type="button" class="btn primary" data-nw>Save call</button>`,
+            call,
+          );
+          return;
+        }
+        if (e.target.closest("[data-nw]")) notWired();
+        if (e.target.closest("#close") || e.target.closest("#scrim")) closeDrawer();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !$("drawer").hidden) closeDrawer();
+      });
+      render();
+    </script>
+  </body>
+</html>

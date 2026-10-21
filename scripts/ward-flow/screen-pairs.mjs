@@ -97,6 +97,9 @@ export const PAIRS = [
   // owner to try before any app change. Reference only, no route and no build contract.
   ["needs-you-now-home-mockup.html", null, null, false],
   ["one-ward-page-mockup.html", null, null, false],
+  // Added 2026-10-21: clickable try-out of the six core coordinator screens (D-72 item 4), for the
+  // owner to try before any navigation change. Reference only, no route and no build contract.
+  ["coordinator-six-screens-mockup.html", null, null, false],
 ];
 
 /** Superseded drawings — named so they are never treated as current. */

@@ -176,6 +176,17 @@ Controls outside the tried flow say "Not wired in this prototype."
 
 ---
 
+## Six coordinator screens mockup, added 21 October 2026
+
+A clickable try-out of the coordinator's day as six primary screens (Home, Referrals, Beds,
+Movements, Discharges, Handover), from D-72 item 4. Each screen lists which of today's routes would
+move into it. It is **not a build contract**: it copies the v9 tokens like the two mockups above, uses
+invented data, makes no network requests and uses no browser storage. Open
+[`coordinator-six-screens-mockup.html`](coordinator-six-screens-mockup.html) at desktop or phone width.
+It keeps the never-build list: wait order only, no ranking and no suggested ward.
+
+---
+
 ## Proving a page
 
 Every command runs **from the repository root**, not from this folder.
