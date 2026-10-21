@@ -37,13 +37,9 @@ import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-re
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
-import {
-  activeCommunityTreatmentOrder,
-  type Patient,
-  type PatientId,
-} from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { PersonScreen } from "./person-screen";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
@@ -321,9 +317,10 @@ export function PatientNowScreen({
     setExpandedStageIndex(null);
   }
 
-  // If the ID is completely unknown to the system, render the governed missing state
+  // An id the system does not know gets the one not-found page, which never echoes the id. The
+  // older governed dossier that used to render here was retired (Josh, 21 Oct 2026).
   if (!resolved) {
-    return <PersonScreen patientId={(patientId ?? movementId ?? "") as PatientId} />;
+    return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
   }
 
   const record: PatientNowRecord = resolved.record;

@@ -50,6 +50,30 @@ describe("Record details says each fact once", () => {
   });
 });
 
+describe("the placement rule on the one patient record (R-2026-09-04-A)", () => {
+  // The retired governed dossier carried this guard; Patient Now's Details tab is now the only
+  // screen that shows both sensitive fields, so the rule is checked here.
+  const withBoth = seed.patients.find(
+    (person) => person.aboriginalOrTorresStraitIslanderStatus !== undefined && person.interpreterLanguage !== undefined,
+  );
+
+  it("has a seeded patient carrying both sensitive fields, or the assertion below is vacuous", () => {
+    expect(withBoth).toBeDefined();
+  });
+
+  it("keeps Aboriginal or Torres Strait Islander status and interpreter language apart, in different groups", () => {
+    const pane = renderDetails(open, { ...withBoth!, legalStatus: open.legalStatus });
+    const labels = pane.getAllByRole("term").map((term) => term.textContent ?? "");
+    const aboriginal = labels.indexOf("Aboriginal or Torres Strait Islander status");
+    const interpreter = labels.indexOf("Interpreter / preferred language");
+    expect(aboriginal).toBeGreaterThan(-1);
+    expect(interpreter).toBeGreaterThan(-1);
+    expect(Math.abs(aboriginal - interpreter)).toBeGreaterThan(1);
+    const terms = pane.getAllByRole("term");
+    expect(terms[aboriginal]!.closest("dl")).not.toBe(terms[interpreter]!.closest("dl"));
+  });
+});
+
 describe("Legal now on the patient record", () => {
   it("offers Record a form, which opens Legal forms for this movement with the sheet open", () => {
     render(

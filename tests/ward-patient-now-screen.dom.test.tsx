@@ -346,19 +346,18 @@ describe("the ward person route", () => {
       }),
     ).rejects.toThrow(`NEXT_REDIRECT ${patientHref("PT-005")}?view=governed`);
   });
-  it("renders the governed PersonScreen for an id PATIENT_NOW_RECORDS holds no story for", async () => {
+  it("says Patient not found for an id PATIENT_NOW_RECORDS holds no story for", async () => {
     await renderPersonRoute("PT-9999-does-not-exist");
-    expect(screen.getByTestId("ward-person-missing")).toBeInTheDocument();
-    // `PersonScreen` and `PatientNowScreen` share the `ward-person-screen` root testid (a
-    // pre-existing overlap), so the identity block — which `PatientNowScreen` renders
-    // unconditionally and `PersonScreen`'s "no such person" branch never does — is what proves
-    // the rich synthetic screen did not render WF-009's story under this unrelated id.
+    expect(screen.getByRole("heading", { name: "Patient not found" })).toBeInTheDocument();
+    // The identity block is what proves the rich screen did not render another patient's story
+    // under this unrelated id, and the not-found page echoes no internal id.
     expect(screen.queryByTestId("ward-person-identity")).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("PT-9999");
   });
 
   it("renders the dynamic PatientNowScreen for a live WF- movement not in PATIENT_NOW_RECORDS", async () => {
     await renderPersonRoute("WF-005");
-    expect(screen.queryByTestId("ward-person-missing")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Patient not found" })).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-person-identity")).toBeInTheDocument();
     // WF-005 names its patient since the seed-link work, so the identity is that person, not the id.
     expect(
@@ -366,9 +365,9 @@ describe("the ward person route", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the governed PersonScreen for an unknown WF- id that does not exist in movements", async () => {
+  it("says Patient not found for an unknown WF- id that does not exist in movements", async () => {
     await renderPersonRoute("WF-9999-does-not-exist");
-    expect(screen.getByTestId("ward-person-missing")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Patient not found" })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-person-identity")).not.toBeInTheDocument();
   });
 
@@ -379,9 +378,9 @@ describe("the ward person route", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the governed PersonScreen when ?view=governed is requested", async () => {
+  it("ignores the retired ?view=governed and shows the one patient record (Josh, 21 Oct 2026)", async () => {
     await renderPersonRoute("WF-004", { view: "governed" });
-    expect(screen.queryByRole("group", { name: "Example patient" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-person-identity")).toBeInTheDocument();
   });
 });
 
