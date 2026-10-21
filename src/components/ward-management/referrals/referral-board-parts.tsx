@@ -37,7 +37,7 @@ import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
 import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
-import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-panel";
+import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
 import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
