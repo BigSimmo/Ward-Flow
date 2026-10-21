@@ -719,6 +719,94 @@
 .searchWrap {
   flex: 0 1 380px;
   min-width: 3.5rem;
+  /* Its own width decides the fold below, and its field no longer props the bar open. The results
+   * open in a fixed popup on the body, so this containment does not move them. */
+  container: ward-search / inline-size;
+}
+
+/* Too narrow for the field, its "/" hint and a readable placeholder, the box ran under Activity
+ * (visual desk, 21 Oct 2026). It folds to the magnifier instead, as a tablet's does. */
+@container ward-search (max-width: 9rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search"]),
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-inline: auto;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
+    height: var(--spacing-tap, 3rem);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    max-width: none;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-ward-search-shortcut]),
+  .bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+    display: none;
+  }
+}
+
+/* Typing in the folded box (Codex review, #547): on a desktop it opens into a field over the bar's
+ * left side, so the words stay visible and editable while the results are open. Tablets and narrow
+ * bars keep their full-width search sheet (the max-width 1000px and ward-bar 768px rules). */
+@media (min-width: 62.5625rem) {
+  @container ward-bar (min-width: 48.0625rem) {
+    @container ward-search (max-width: 9rem) {
+      .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div) {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        z-index: 2;
+        translate: 0 -50%;
+        width: 16rem;
+        min-width: 16rem;
+        max-width: 16rem;
+        padding: 0 10px;
+        justify-content: flex-start;
+        border-radius: var(--wf-r-ctl);
+        background: var(--wf-surface);
+        box-shadow: var(--wf-e1);
+      }
+
+      .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div)::before {
+        background: var(--wf-surface);
+        border-color: var(--wf-focus-ring);
+      }
+
+      .bar
+        .searchWrap
+        :global(
+          [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-input"]
+        ) {
+        position: static;
+        width: 100%;
+        opacity: 1;
+        color: var(--wf-ink-1);
+        caret-color: var(--wf-focus-ring);
+        cursor: text;
+      }
+
+      .bar
+        .searchWrap
+        :global(
+          [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-clear"]
+        ) {
+        display: inline-flex;
+      }
+    }
+  }
 }
 
 .searchWrap :global([data-testid="ward-global-search"]) {
@@ -1062,6 +1150,23 @@
 
 @container ward-bar (max-width: 66rem) {
   .drawerTrigger[data-bar-mode="tools"] .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* Up to about 1366px wide with the rail open the bar had no room for the Activity, Alerts and Tools
+ * words: the search ran under Activity, and on a screen with Back, New referral ran past the right
+ * edge (visual desk, 21 Oct 2026). They go to icons here; their names stay for screen readers. */
+@container ward-bar (max-width: 72rem) {
+  .drawerTrigger .triggerLabel {
     position: absolute;
     width: 1px;
     height: 1px;

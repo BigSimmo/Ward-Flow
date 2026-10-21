@@ -183,6 +183,7 @@ export function SettingsScreen() {
     patients,
     shared,
   } = useWardFlowSelect("movements", "configuration", "eventLog", "readAuditEvents", "patients", "shared");
+  const { resetDemoState } = useWardFlowSelect("resetDemoState");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
@@ -558,7 +559,9 @@ export function SettingsScreen() {
         }
       }
       keys.forEach((key) => window.sessionStorage.removeItem(key));
-      showToast("Session data for this tab cleared.");
+      // A2-7: the provider re-saves the day it shows after each change, so the local demo resets too.
+      if (!shared?.enabled) resetDemoState();
+      showToast(`Session data for this tab cleared.${shared?.enabled ? "" : " The demonstration has restarted."}`);
     } catch {
       showToast("Session data could not be cleared.");
     }
