@@ -48,8 +48,6 @@ import type {
   WardIntakeConstraint,
 } from "@/components/ward-management/ward-change-reasons";
 import type {
-  ArrivalCheck,
-  SupportServiceType,
   AtsCategory,
   ArrivalMode,
   BedReleaseWaitingOn,
@@ -95,6 +93,10 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type {
+  ArrivalCheckEvent,
+  ReleaseNoticeEvent,
+} from "@/components/ward-management/ward-flow-release-notice-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -474,11 +476,7 @@ export type WardFlowEvent =
        * bed a current stay or another accepted movement on the unit already holds.
        */
       bedNumber?: number;
-      /**
-       * D-72 (Josh, 21 Oct 2026): the accepting ward asks for the extra-travel bed hold. Stored as
-       * `Movement.extendedHoldAt`; a later `PULL_PATIENT` to this ward then holds the bed for
-       * `EXTRA_TRAVEL_HOLD_MINUTES` beyond the configured hold. `true` when chosen, never `false`.
-       */
+      /** D-72: the extra-travel bed hold, stored as `Movement.extendedHoldAt`. `true` or absent. */
       extendedHold?: true;
       /** B1: a ward answering names itself; refused when it answers for another ward. The
        *  coordinator acts for any ward and sends none. */
@@ -2561,35 +2559,9 @@ export type WardFlowEvent =
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
     }
-  | {
-      /**
-       * #398 (D-72, 21 Oct 2026): the ward sends a pharmacy, transport or cleaning notice for a
-       * confirmed bed release, so the discharge card may say "Sent". Ward-scoped: a ward sends only
-       * for its own release. Refused when the release is no longer confirmed or that service was
-       * already notified. Holds ids, a fixed code and an instant only, never typed text.
-       */
-      type: "SEND_RELEASE_SUPPORT_NOTICE";
-      role: WardFlowRole;
-      now: Instant;
-      releaseId: string;
-      service: SupportServiceType;
-      /** The ward sending it. Required, and must be the release's own ward. */
-      actingUnitId: string;
-    }
-  | {
-      /**
-       * D-72 (21 Oct 2026): the emergency department records an arrival checklist item, the
-       * pre-transfer contraband search or the medication chart for the receiving ward. Writes
-       * `Movement.contrabandSearchDone` or `Movement.medicationChartDone`. `done: false` takes a
-       * mistaken tick back. Holds an id, a fixed code and a flag only, never typed text.
-       */
-      type: "RECORD_ARRIVAL_CHECK";
-      role: WardFlowRole;
-      now: Instant;
-      movementId: string;
-      check: ArrivalCheck;
-      done: boolean;
-    }
+  // #398 and the arrival checklist (D-72): declared beside their reducer cases.
+  | ReleaseNoticeEvent
+  | ArrivalCheckEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

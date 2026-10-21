@@ -1,9 +1,11 @@
 import type { AuditDecision } from "./ward-audit";
-import type { WardFlowEvent } from "./ward-flow-events";
+import type { Instant } from "./ward-clock";
+import type { WardFlowRole } from "./ward-flow-roles";
 import type { BedEventHelpers, findMovement, reject, replaceMovement, WardFlowState } from "./ward-flow-reducer";
 import {
   ARRIVAL_CHECKS,
   SUPPORT_SERVICE_TYPES,
+  type ArrivalCheck,
   type BedRelease,
   type Movement,
   type SupportServiceType,
@@ -16,8 +18,36 @@ import {
  *
  * The reducer passes its helpers in, since this file may not import the reducer at run time.
  */
-export type ReleaseNoticeEvent = Extract<WardFlowEvent, { type: "SEND_RELEASE_SUPPORT_NOTICE" }>;
-export type ArrivalCheckEvent = Extract<WardFlowEvent, { type: "RECORD_ARRIVAL_CHECK" }>;
+
+/**
+ * The ward sends a pharmacy, transport or cleaning notice for a confirmed bed release, so the
+ * discharge card may say "Sent". Ward-scoped: a ward sends only for its own release. Refused when
+ * the release is no longer confirmed or that service was already notified. Part of `WardFlowEvent`,
+ * declared here beside its case so `ward-flow-events.ts` stays under its line cap.
+ */
+export type ReleaseNoticeEvent = {
+  type: "SEND_RELEASE_SUPPORT_NOTICE";
+  role: WardFlowRole;
+  now: Instant;
+  releaseId: string;
+  service: SupportServiceType;
+  /** The ward sending it. Required, and must be the release's own ward. */
+  actingUnitId: string;
+};
+
+/**
+ * The emergency department records an arrival checklist item, the pre-transfer contraband search
+ * or the medication chart for the receiving ward. Writes `Movement.contrabandSearchDone` or
+ * `Movement.medicationChartDone`. `done: false` takes a mistaken tick back. Part of `WardFlowEvent`.
+ */
+export type ArrivalCheckEvent = {
+  type: "RECORD_ARRIVAL_CHECK";
+  role: WardFlowRole;
+  now: Instant;
+  movementId: string;
+  check: ArrivalCheck;
+  done: boolean;
+};
 
 const SERVICE_NAMES: Record<SupportServiceType, string> = {
   pharmacy: "Pharmacy",
