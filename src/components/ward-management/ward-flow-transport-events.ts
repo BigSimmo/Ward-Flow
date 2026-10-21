@@ -6,6 +6,7 @@ import {
   STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
 } from "@/components/ward-management/ward-change-reasons";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -624,6 +625,11 @@ export function reduceTransportEvent(
       // that call are required, never defaulted.
       if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
+      }
+      // HAZ-03 (#430): a placeholder or free text is not a dispatch number. Same rule as the forms.
+      const cadProblem = cadNumberProblem(event.cadNumber);
+      if (cadProblem !== undefined) {
+        return reject(state, event, `BOOK_TRANSPORT cadNumber refused: ${cadProblem}`);
       }
       if (!TRANSPORT_LEGAL_STATUSES.includes(event.transportLegalStatus)) {
         return reject(state, event, `BOOK_TRANSPORT transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES`);

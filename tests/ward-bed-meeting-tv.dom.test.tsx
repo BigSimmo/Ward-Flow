@@ -138,6 +138,42 @@ describe("the bed meeting TV view", () => {
     }
   });
 
+  // #315: a return to the tab while a request is still in flight must not start a second one, and
+  // a lock that only arrives after the page has gone is let go at once, so no sentinel is left holding
+  // the screen awake.
+  it("never overlaps wake lock requests, and lets go of a lock that arrives after leaving", async () => {
+    const release = vi.fn(() => Promise.resolve());
+    const resolvers: ((lock: { released: boolean; release: () => Promise<void> }) => void)[] = [];
+    const request = vi.fn(
+      () =>
+        new Promise<{ released: boolean; release: () => Promise<void> }>((resolve) => {
+          resolvers.push(resolve);
+        }),
+    );
+    Object.defineProperty(navigator, "wakeLock", { value: { request }, configurable: true });
+    try {
+      const view = renderTv();
+      await act(async () => {});
+      expect(request).toHaveBeenCalledTimes(1);
+      // Hidden and back again before the browser answers: still one request in flight.
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await act(async () => {});
+      expect(request).toHaveBeenCalledTimes(1);
+      // The page goes before the lock arrives; the late lock is released, not kept.
+      view.unmount();
+      await act(async () => {
+        resolvers[0]!({ released: false, release });
+      });
+      expect(release).toHaveBeenCalledTimes(1);
+      expect(request).toHaveBeenCalledTimes(1);
+    } finally {
+      Reflect.deleteProperty(navigator, "wakeLock");
+    }
+  });
+
   it("shows the same figures as the printed bed meeting sheet", () => {
     renderTv();
     const state = seedWardFlowStateAt(0);
