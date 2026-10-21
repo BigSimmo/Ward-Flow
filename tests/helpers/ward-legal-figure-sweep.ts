@@ -15,7 +15,9 @@ import {
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
-import { expect } from "vitest";
+import { afterAll, expect } from "vitest";
+import { createPreparationProfile } from "../../scripts/ward-flow/test-preparation-profile.mjs";
+
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -55,6 +57,10 @@ import {
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+const preparationProfile = createPreparationProfile("legal-candidates");
+afterAll(() => {
+  preparationProfile.write();
+});
 
 /**
  * 🔴 **DELETED 2026-09-17, T2 — `DEADLINE_BEARING_FORM_PROVENANCE`, THE CODE ALLOWLIST.** It stood
@@ -233,8 +239,7 @@ export function candidateEvents(
   const role = EVENT_ROLE[type][0];
   const movementIds = state.movements.map((movement) => movement.id);
   const unitIds = state.units.map((unit) => unit.id);
-  // Only the five placement/mismatch candidates need the Cartesian product. Constructing it
-  // for all actions made the complete inventory sweep exceed its existing time limit.
+  // Exhaustive controls keep native eager arrays; only short-circuit consumers use the iterator.
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
@@ -1639,6 +1644,92 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
   return { state: held, movementId: movement.id };
 }
 
+/** These variants share the original movement-major, unit-minor Cartesian order. */
+const PAIR_EVENT_TYPES = new Set<WardFlowEvent["type"]>([
+  "FLAG_LEGAL_MISMATCH",
+  "REFER_TO_UNITS",
+  "ACCEPT_IN_PRINCIPLE",
+  "PULL_PATIENT",
+  "DECLINE",
+  "WITHDRAW_WARD_REQUEST",
+]);
+
+function* pairCandidates(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  matchesMovement: (id: string) => boolean = () => true,
+): Generator<WardFlowEvent> {
+  const role = EVENT_ROLE[type][0];
+  preparationProfile.count("pairCandidatesPotential", state.movements.length * state.units.length);
+  for (const movement of state.movements) {
+    if (!matchesMovement(movement.id)) {
+      preparationProfile.count("pairCandidatesFilteredBeforeConstruction", state.units.length);
+      continue;
+    }
+    for (const unit of state.units) {
+      const base = { type, role, now, movementId: movement.id };
+      preparationProfile.count("pairCandidatesConstructed");
+      switch (type) {
+        case "FLAG_LEGAL_MISMATCH":
+          yield { ...base, type, unitId: unit.id, kind: "involuntary_on_voluntary_ward" };
+          break;
+        case "REFER_TO_UNITS":
+          yield { ...base, type, unitIds: [unit.id] };
+          break;
+        case "ACCEPT_IN_PRINCIPLE":
+        case "PULL_PATIENT":
+          yield { ...base, type, unitId: unit.id };
+          break;
+        case "DECLINE":
+          yield { ...base, type, unitId: unit.id, reason: DECLINE_REASONS[0] };
+          break;
+        case "WITHDRAW_WARD_REQUEST":
+          yield { ...base, type, unitId: unit.id, reason: WARD_REQUEST_WITHDRAWAL_REASONS[0] };
+          break;
+        default:
+          throw new Error(`Not a Cartesian candidate type: ${type}`);
+      }
+    }
+  }
+}
+
+/**
+ * Consumer iterator: avoids constructing unused Cartesian candidates. Other variants keep their
+ * eager construction, including registration of every supplied-deadline sentinel. The public
+ * candidateEvents array API still enumerates every candidate for independent refusal controls.
+ */
+export function* iterateCandidateEvents(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  code?: string,
+  supplyDueAt = true,
+): Generator<WardFlowEvent> {
+  // Match the first occurrence of an id, exactly as the former Array.find restriction did.
+  const targetCodes = new Map<string, string | undefined>();
+  if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
+    for (const movement of state.movements) {
+      if (!targetCodes.has(movement.id)) targetCodes.set(movement.id, movement.legalForm?.code);
+    }
+  }
+  const matchesMovement = (id: string) =>
+    code === undefined || !MOVEMENT_TARGETED_EVENTS.has(type) || targetCodes.get(id) === code;
+  const candidates = PAIR_EVENT_TYPES.has(type)
+    ? pairCandidates(type, state, now, matchesMovement)
+    : preparationProfile.measure("eagerGeneration", () => candidateEvents(type, state, now, supplyDueAt));
+  if (Array.isArray(candidates)) preparationProfile.count("eagerCandidatesConstructed", candidates.length);
+  for (const event of candidates) {
+    if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
+      const movementId = targetMovementId(event);
+      if (movementId === undefined || !matchesMovement(movementId)) continue;
+    }
+    if (code !== undefined && event.type === "RAISE_REFERRAL" && event.draft.legalFormCode !== code) continue;
+    preparationProfile.count("candidatesYielded");
+    yield event;
+  }
+}
+
 /**
  * Applies the first candidate of this type that the reducer ACCEPTS, optionally restricted to
  * candidates acting on a movement whose legal form carries `code`.
@@ -1658,27 +1749,15 @@ export function applyFirstAccepted(
   code?: string,
   supplyDueAt = true,
 ): { applied: WardFlowState; event: WardFlowEvent } | undefined {
-  // Match the same first movement as Array.find, once per action rather than rescanning the
-  // growing state for every Cartesian candidate. Candidate order and coverage stay identical.
-  const targetCodes = new Map<string, string | undefined>();
-  if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
-    for (const movement of state.movements) {
-      if (!targetCodes.has(movement.id)) targetCodes.set(movement.id, movement.legalForm?.code);
+  for (const event of iterateCandidateEvents(type, state, now, code, supplyDueAt)) {
+    preparationProfile.count("reducerAttempts");
+    const next = preparationProfile.measure("reducer", () => wardFlowReducer(state, event));
+    if (next.rejections.length === state.rejections.length) {
+      preparationProfile.count("acceptedTransitions");
+      preparationProfile.count(`accepted.${code ?? "unrestricted"}.${supplyDueAt ? "supplied" : "absent"}.${type}`);
+      return { applied: next, event };
     }
-  }
-  for (const event of candidateEvents(type, state, now, supplyDueAt)) {
-    if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
-      const movementId = targetMovementId(event);
-      if (movementId === undefined || targetCodes.get(movementId) !== code) continue;
-    }
-    // RAISE_REFERRAL is not movement-targeted, but since 2026-08-24 it is the ONLY reducer path
-    // that authors a form, so the sweep for a code has to raise referrals carrying that code.
-    // Without this the sweep would only ever create movements of whichever code sorts first,
-    // and — worse — could never hold a FRESH, un-examined movement of the other code to drive
-    // RECORD_EXAMINATION against, since every fixture 3B already carries an examination.
-    if (code !== undefined && event.type === "RAISE_REFERRAL" && event.draft.legalFormCode !== code) continue;
-    const next = wardFlowReducer(state, event);
-    if (next.rejections.length === state.rejections.length) return { applied: next, event };
+    preparationProfile.count("refusedTransitions");
   }
   return undefined;
 }

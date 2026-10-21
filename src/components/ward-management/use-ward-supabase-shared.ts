@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
-import { releasePhonePush } from "./shell/ward-phone-push";
+import { releasePhonePush, rememberPhonePushOwnership } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
@@ -26,9 +26,10 @@ import {
  * bounded to two seconds, through a client of its own that reports nothing back. `token` was
  * captured before the local session cleared.
  */
-function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: string | null) {
+function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: string | null, ownerId: string | null) {
   if (!token || !loadedClient) return;
   const cleanup = new loadedClient({
+    manageDrafts: false,
     baseUrl: baseUrl.replace(/\/$/, ""),
     token: async () => token,
     changed: () => {},
@@ -48,6 +49,7 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
   void (async () => {
     await bounded(() =>
       releasePhonePush({
+        ownerId: ownerId ?? undefined,
         pushKey: () => cleanup.pushKey(),
         pushStatus: (endpoint) => cleanup.pushStatus(endpoint),
         pushSubscribe: (subscription) => cleanup.pushSubscribe(subscription),
@@ -196,7 +198,7 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
             const token = instance.captureAccessTokenForSignOut();
             disconnect();
             setActNowAppBadge(0);
-            releasePhoneAlerts(baseUrl, token, workingAs.get());
+            releasePhoneAlerts(baseUrl, token, workingAs.get(), actorId);
             void instance.signOut().catch(() => {});
           }
           setView(next);
@@ -205,6 +207,13 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
       connection.current = client;
       await client.refresh();
       if (closed || connection.current !== client) return;
+      void rememberPhonePushOwnership({
+        ownerId: actorId,
+        pushKey: () => client.pushKey(),
+        pushStatus: (endpoint) => client.pushStatus(endpoint),
+        pushSubscribe: (subscription) => client.pushSubscribe(subscription),
+        pushUnsubscribe: (endpoint) => client.pushUnsubscribe(endpoint),
+      });
       onVisibilityChange = () => {
         if (!closed && connection.current === client && document.visibilityState === "visible") {
           void client.refresh();
@@ -294,24 +303,37 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           },
           signOut: async () => {
             const token = auth!.captureAccessTokenForSignOut();
+            const ownerId = auth!.userId;
             // The next person at this device chooses their own role. The cleanup below still
             // speaks as the role worked as, so an account with several roles can turn alerts off.
             const chosen = workingAs.get();
             workingAs.set(null);
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
+            // Signed in means the client has loaded, so this cleanup still runs in the click. It
+            // starts before the storage sweep below, which also removes its ownership receipt.
+            releasePhoneAlerts(base.toString(), token, chosen, ownerId);
             // Clear Ward Flow's saved browser data (bed keys, recents, snapshots, filters, drafts)
             // here too, so it goes even when the session had already ended or auth was swapped.
             endWardFlowBrowserSession();
             setForm({ open: false, recovery: false, busy: false, message: null });
             // The next account on a shared phone never sees this one's act-now count, even when
-            // the session has expired and the phone alert cleanup below cannot run.
+            // the session has expired and the phone alert cleanup could not run.
             setActNowAppBadge(0);
-            // Signed in means the client has loaded, so this cleanup still runs in the click.
-            releasePhoneAlerts(base.toString(), token, chosen);
             // Auth clears its local session synchronously; remote logout and phone cleanup are independent.
             // The local session is already cleared, so remote logout is best-effort.
-            await auth!.signOut().catch(() => {});
+            await auth!.signOut().catch((error: unknown) => {
+              if (!closed)
+                setForm({
+                  open: true,
+                  recovery: false,
+                  busy: false,
+                  message:
+                    error instanceof WardAuthError
+                      ? error.message
+                      : "Sign-out cleanup could not be confirmed. Clear this site's browser data before sharing the device.",
+                });
+            });
           },
           retry: () =>
             run(async () => {

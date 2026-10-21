@@ -8,28 +8,23 @@ const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", i
   "\n",
 );
 function requireWorkflow(source) {
-  // This workflow intentionally uses a bounded YAML subset: jobs at two spaces,
-  // steps at six, scalar step fields at eight, literal run blocks at ten.
-  // Comment lines cannot count as executable steps or shell commands.
+  // Dependency-free, bounded YAML subset: duplicate fields and comments cannot
+  // supply executable evidence. Exact commands prevent shell failure suppression.
   source = source
     .split("\n")
     .filter((line) => !/^\s*#/u.test(line))
     .join("\n");
-  assert.match(source, /^on:\n {2}pull_request:\n {4}branches: \[main\]$/mu);
-  assert.match(
-    source,
-    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
-  );
   const jobs = new Map();
   for (const match of source.matchAll(
     /^ {2}([a-z][a-z0-9_-]*):\n([\s\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\n|(?![\s\S]))/gmu,
   )) {
     assert.ok(!jobs.has(match[1]), `duplicate job ${match[1]}`);
     const keys = [...match[2].matchAll(/^ {4}([a-z][a-z0-9_-]*):/gmu)].map((field) => field[1]);
-    assert.equal(new Set(keys).size, keys.length, `duplicate job field in ${match[1]}`);
+    assert.equal(new Set(keys).size, keys.length, `duplicate job field ${match[1]}`);
     jobs.set(match[1], match[2]);
   }
-  function steps(job) {
+  const expression = (value) => "${{ " + value + " }}";
+  const steps = (job) => {
     assert.ok(jobs.has(job), `missing job ${job}`);
     return jobs
       .get(job)
@@ -43,98 +38,126 @@ function requireWorkflow(source) {
         }
         return { fields, text };
       });
-  }
+  };
   const step = (job, name) => {
     const found = steps(job).filter(({ fields }) => fields.get("name") === name);
-    assert.equal(found.length, 1, `${job}: exactly one ${name} step is required`);
+    assert.equal(found.length, 1, `${job}: exactly one ${name}`);
     return found[0];
   };
-  const exactStep = (job, name, run, condition) => {
+  const exact = (job, name, command, condition) => {
     const { fields } = step(job, name);
-    assert.equal(fields.get("run"), run, `${job}: ${name} executable command`);
+    assert.equal(fields.get("run"), command, `${job}: ${name} executable command`);
     assert.equal(fields.get("if"), condition, `${job}: ${name} routing`);
   };
-  const expression = (text) => "${{ " + text + " }}";
-  for (const job of ["static", "unit", "browser", "release-gate", "build", "coverage"])
-    exactStep(job, "Plan Ward scope", "node scripts/ward-ci-public/plan.mjs");
-  exactStep("static", "Verify the scope plan against the diff", "node scripts/ward-ci-public/verify-plan.mjs");
-  for (const job of ["static", "unit", "browser", "release-gate", "build", "coverage"]) {
-    assert.equal(step(job, "Plan Ward scope").fields.get("id"), "plan", `${job} planner id`);
-    assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install", `${job} install id`);
-  }
-  assert.equal(step("browser", "Install Chromium").fields.get("id"), "chromium");
-  assert.equal(step("release-gate", "Install Chromium and WebKit").fields.get("id"), "browsers");
-  exactStep(
-    "release-gate",
-    "Install Chromium and WebKit",
-    "node node_modules/playwright/cli.js install --with-deps chromium webkit",
-    expression("!cancelled() && steps.install.outcome == 'success'"),
+  const installed = expression("!cancelled() && steps.install.outcome == 'success'");
+  const frontend = expression(
+    "!cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true'",
   );
-  const verifier = step("static", "Verify the scope plan against the diff");
+  assert.match(source, /^on:\n {2}pull_request:\n {4}branches: \[main\]$/mu);
+  assert.match(source, /^ {2}push:\n {4}branches: \[main\]$/mu);
+  assert.match(source, /^permissions:\n {2}contents: read$/mu);
+  assert.match(
+    source,
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
+  );
+  assert.doesNotMatch(source, /^\s*(?:shell|defaults):/mu);
+  for (const pattern of [
+    /pull_request_target:/u,
+    /continue-on-error:/u,
+    /secrets\./u,
+    /contents: write/u,
+    /(?:pull-requests|actions): write/u,
+    /WARD_PUBLIC_STANDALONE:/u,
+    /actions\/cache@/u,
+    /node-version: /u,
+  ])
+    assert.doesNotMatch(source, pattern);
+  for (const match of source.matchAll(/^\s*(?:- )?uses: ([^\n]+)/gmu))
+    assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
+  for (const match of source.matchAll(/persist-credentials: ([^\n]+)/gu)) assert.equal(match[1], "false");
+  assert.equal([...source.matchAll(/run: node scripts\/ward-ci-public\/plan\.mjs/g)].length, 1);
+  exact("plan", "Plan Ward scope", "node scripts/ward-ci-public/plan.mjs");
+  assert.equal(step("plan", "Plan Ward scope").fields.get("id"), "plan");
+  exact("plan", "Verify the scope plan against the diff", "node scripts/ward-ci-public/verify-plan.mjs");
   for (const output of [
     "full",
     "unit",
     "browser",
     "policy",
+    "backend",
+    "build",
+    "frontend_static",
     "dependency_review",
     "owner_index",
     "rules_index",
     "organisation",
-  ])
+  ]) {
+    assert.ok(jobs.get("plan").includes(`      ${output}: ${expression(`steps.plan.outputs.${output}`)}\n`));
     assert.ok(
-      verifier.text.includes(
+      step("plan", "Verify the scope plan against the diff").text.includes(
         `          WARD_PLAN_${output.toUpperCase()}: ${expression(`steps.plan.outputs.${output}`)}\n`,
       ),
-      `verifier binding ${output}`,
     );
-  for (const job of ["static", "secret-scan"]) assert.doesNotMatch(jobs.get(job), /^ {4}(?:if|needs):/mu);
-  assert.match(jobs.get("required"), /^ {4}name: Ward Flow required$/mu);
-  assert.match(jobs.get("required"), /^ {4}if: always\(\)$/mu);
-  assert.match(
-    jobs.get("required"),
-    /^ {4}needs: \[reuse, static, unit, browser, release-gate, secret-scan, build, coverage\]$/mu,
-  );
-  const full = expression("!cancelled() && steps.plan.outputs.full == 'true'");
-  exactStep("static", "Install locked dependencies", "npm ci --ignore-scripts", full);
-  exactStep(
-    "build",
+  }
+  assert.match(jobs.get("static"), /^ {4}needs: plan$/mu);
+  assert.match(jobs.get("static"), /^ {4}if: \$\{\{ !cancelled\(\) && needs.plan.result == 'success' \}\}$/mu);
+  for (const [job, scope, reusable] of [
+    ["unit", "unit", true],
+    ["browser-build", "browser", true],
+    ["browser", "browser", true],
+    ["build", "build", true],
+    ["coverage", "unit", true],
+    ["backend", "backend", false],
+    ["release-gate", "browser", false],
+  ]) {
+    const route = expression(
+      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}`,
+    );
+    assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
+    assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
+    exact(job, "Install locked dependencies", "node scripts/install-locked-dependencies.mjs");
+    assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install");
+  }
+  assert.equal(step("static", "Install locked dependencies").fields.get("id"), "install");
+  exact(
+    "static",
     "Install locked dependencies",
-    "npm ci --ignore-scripts",
-    expression("!cancelled() && steps.plan.outputs.full == 'true' && steps.plan.outputs.policy != 'true'"),
+    "node scripts/install-locked-dependencies.mjs",
+    expression("!cancelled() && needs.plan.outputs.full == 'true'"),
   );
-  for (const [job, scope] of [
-    ["unit", "unit"],
-    ["browser", "browser"],
-    ["release-gate", "browser"],
-    ["coverage", "unit"],
+  for (const [name, command, condition] of [
+    ["Check CI contracts", "node scripts/ward-ci-public/check-contracts.mjs"],
+    [
+      "Check synthetic fixture identifiers and disclaimer source",
+      "node scripts/ward-flow/check-clinical-governance-gate.mjs",
+    ],
+    ["Check document links and anchors", "npm run docs:check-links"],
+    ["Check reference-pack integrity", "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check"],
+    ["Check maintained document commands", "npm run docs:check-scripts"],
+    ["Check doc facts and retired terms", "node scripts/doc-facts.mjs"],
+    ["Check changed files", "node scripts/ward-ci-public/changed-checks.mjs", installed],
+    [
+      "Run the tests related to this PR's changes",
+      'node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .',
+      expression(
+        "!cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' && needs.plan.outputs.unit == 'true'",
+      ),
+    ],
+    [
+      "Lint the whole tree",
+      "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern",
+      frontend,
+    ],
+    ["Check for new unused code", "npm run check:knip", frontend],
+    ["Check Ward reference data", "npm run check:ward-reference", frontend],
+    ["Check Ward legal wording", "npm run check:ward-legal-language", frontend],
+    [
+      "Check maintained policy contracts",
+      "node scripts/ward-ci-public/check-policy-contracts.mjs",
+      expression("!cancelled() && needs.plan.outputs.policy == 'true' && steps.install.outcome == 'success'"),
+    ],
   ])
-    exactStep(
-      job,
-      "Install locked dependencies",
-      "npm ci --ignore-scripts",
-      expression(`!cancelled() && steps.plan.outputs.${scope} == 'true'`),
-    );
-  exactStep(
-    "static",
-    "Check maintained policy contracts",
-    "node scripts/ward-ci-public/check-policy-contracts.mjs",
-    expression("!cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success'"),
-  );
-  for (const [name, command] of [
-    ["Check Ward reference data", "npm run check:ward-reference"],
-    ["Check Ward legal wording", "npm run check:ward-legal-language"],
-  ])
-    exactStep(
-      "static",
-      name,
-      command,
-      expression("!cancelled() && steps.install.outcome == 'success' && steps.plan.outputs.policy != 'true'"),
-    );
-  exactStep(
-    "static",
-    "Check reference-pack integrity",
-    "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
-  );
+    exact("static", name, command, condition);
   for (const [name, command, output] of [
     ["Check owner rulings index", "node scripts/ward-flow/owner-rulings-index.mjs --check", "owner_index"],
     ["Check lessons rules index", "node scripts/ward-flow/rules-index.mjs --check", "rules_index"],
@@ -144,313 +167,328 @@ function requireWorkflow(source) {
       "organisation",
     ],
   ])
-    exactStep("static", name, command, expression(`steps.plan.outputs.${output} == 'true'`));
-  exactStep(
-    "coverage",
-    "Check complete executable coverage inventory",
-    "npm run check:coverage-inventory",
-    expression("!cancelled() && steps.install.outcome == 'success'"),
+    exact("static", name, command, expression(`needs.plan.outputs.${output} == 'true'`));
+  const review = step("static", "Review dependency changes");
+  assert.match(review.fields.get("uses") ?? "", /^actions\/dependency-review-action@[0-9a-f]{40}$/u);
+  assert.equal(review.fields.get("run"), undefined);
+  assert.equal(
+    review.fields.get("if"),
+    expression("github.event_name == 'pull_request' && needs.plan.outputs.dependency_review == 'true'"),
   );
-  exactStep(
+  const typecheck = step("static", "Typecheck source and route types");
+  assert.equal(typecheck.fields.get("if"), frontend);
+  assert.equal(
+    typecheck.text.split("        run: |\n")[1]?.trim(),
+    "node node_modules/next/dist/bin/next typegen\n          node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false",
+  );
+  exact(
+    "backend",
+    "Install locked Ward backend dependencies",
+    "node scripts/install-locked-dependencies.mjs --root backend/ward-flow",
+    installed,
+  );
+  exact(
+    "backend",
+    "Run Ward backend tests",
+    "npm run build:engine && npm run typecheck && npm run test:coverage",
+    expression("!cancelled() && steps.backend-install.outcome == 'success'"),
+  );
+  assert.equal(step("backend", "Run Ward backend tests").fields.get("working-directory"), "backend/ward-flow");
+  assert.match(jobs.get("backend"), /image: postgres:16@sha256:[0-9a-f]{64}\n/u);
+  assert.match(
+    step("backend", "Run Ward backend tests").text,
+    /WARD_TEST_DATABASE_URL: postgresql:\/\/postgres@127.0.0.1:5432\/wardflow_test\n/u,
+  );
+  exact(
+    "backend",
+    "Run the shared-mode browser journey",
+    "node tests/support/ward-shared-mode-run.mjs",
+    expression("!cancelled() && steps.shared-chromium.outcome == 'success'"),
+  );
+  exact("unit", "Run reconciled unit suite shard", "npm run check:ward-expected-reds -- --print-signatures", installed);
+  exact("browser-build", "Prepare the isolated browser build", "npm run test:e2e:ward-journeys");
+  assert.match(jobs.get("browser-build"), /WARD_BROWSER_PREPARE_DIR: \$\{\{ runner.temp \}\}\/ward-browser-build/u);
+  const prepared = step("browser-build", "Upload the verified browser build");
+  assert.equal(prepared.fields.get("uses"), "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9");
+  assert.match(prepared.text, /if-no-files-found: error/u);
+  for (const job of ["browser", "release-gate"]) {
+    assert.match(jobs.get(job), /needs: \[[^\n]*browser-build[^\n]*\]/u);
+    const download = step(job, "Download the verified browser build");
+    assert.equal(download.fields.get("uses"), "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333");
+    assert.match(jobs.get(job), /WARD_BROWSER_ARTIFACT_DIR:/u);
+  }
+  exact(
     "browser",
-    "Check the API CSRF proxy boundary",
-    "node scripts/run-playwright.mjs --project=chromium api-csrf-proxy.spec.ts",
-    expression("!cancelled() && steps.chromium.outcome == 'success' && matrix.group == 1"),
+    "Run Ward browser journeys",
+    "npm run test:e2e:ward-journeys",
+    expression("!cancelled() && steps.chromium.outcome == 'success'"),
   );
-  assert.doesNotMatch(jobs.get("release-gate"), /^ {4}(?:if|needs):/mu);
-  exactStep(
+  exact("browser", "Install Chromium", "node scripts/ward-ci-public/install-chromium.mjs", installed);
+  assert.equal(step("browser", "Install Chromium").fields.get("timeout-minutes"), "8");
+  assert.equal(step("browser", "Install Chromium").fields.get("id"), "chromium");
+  exact(
+    "release-gate",
+    "Install Chromium and WebKit",
+    "node scripts/ward-ci-public/install-chromium.mjs chromium webkit",
+    installed,
+  );
+  assert.equal(step("release-gate", "Install Chromium and WebKit").fields.get("id"), "browsers");
+  exact(
     "release-gate",
     "Run the release-gate journeys",
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
+  exact(
+    "build",
+    "Build for production (Railway build command)",
+    "node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
+    installed,
+  );
+  exact("build", "Check the phone script budget", "node scripts/check-script-budget.mjs", installed);
+  assert.doesNotMatch(jobs.get("build"), /WARD_GATE_BUILD/u);
+  exact("coverage", "Check complete executable coverage inventory", "npm run check:coverage-inventory", installed);
+  assert.doesNotMatch(jobs.get("coverage"), /WARD_COVERAGE_BLOB_DIR/u);
+  exact("coverage", "Merge shard coverage and enforce thresholds", "|", installed);
+  assert.equal(
+    step("coverage", "Merge shard coverage and enforce thresholds").text.split("        run: |\n")[1]?.trim(),
+    'for shard in $(seq 1 "$WARD_SHARD_COUNT"); do\n            ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json\n          done\n          node node_modules/vitest/vitest.mjs run --merge-reports="$WARD_SHARD_BLOBS" --coverage',
+  );
+  assert.match(
+    jobs.get("coverage"),
+    /node node_modules\/vitest\/vitest.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage\n/u,
+  );
+  assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "8"/u);
+  assert.match(jobs.get("unit"), /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner.temp \}\}\/ward-coverage-blobs/u);
+  assert.match(jobs.get("unit"), /if-no-files-found: error/u);
+  for (const [job, key, variable, count] of [
+    ["unit", "shard", "WARD_GATE_SHARD", 8],
+    ["browser", "group", "WARD_JOURNEY_GROUP", 3],
+  ]) {
+    assert.match(jobs.get(job), /fail-fast: false/u);
+    const values = new RegExp(`${key}: \\[([\\d, ]+)\\]`).exec(jobs.get(job))?.[1].split(",").map(Number);
+    assert.deepEqual(
+      values,
+      Array.from({ length: count }, (_, i) => i + 1),
+    );
+    assert.ok(jobs.get(job).includes(`${variable}: ${expression(`matrix.${key}`)}/${count}`));
+  }
+  for (const name of ["static", "secret-scan", "backend", "release-gate"])
+    assert.doesNotMatch(jobs.get(name), /needs.reuse/u);
+  assert.match(
+    jobs.get("reuse"),
+    /^ {4}if: \$\{\{ github.event_name == 'push' && github.ref == 'refs\/heads\/main' \}\}$/mu,
+  );
+  exact(
+    "reuse",
+    "Check for an identical tree already verified on its pull request",
+    "node scripts/ward-ci-public/main-reuse.mjs",
+  );
+  assert.match(jobs.get("secret-scan"), /GITLEAKS_SHA256: [0-9a-f]{64}\n/u);
+  assert.match(jobs.get("secret-scan"), /echo "\$\{GITLEAKS_SHA256\}  \$\{archive\}" \| sha256sum -c -/u);
   const scan = step("secret-scan", "Scan git history for secrets");
-  assert.equal(scan.fields.get("run"), "|");
   assert.equal(scan.fields.get("if"), undefined);
   assert.equal(
     scan.text.split("        run: |\n")[1]?.trim(),
-    '\"$RUNNER_TEMP/gitleaks\" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts=\"--full-history HEAD\"',
+    '"$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"',
   );
-  const verdict = step("required", "Require every Ward Flow job to succeed");
-  assert.equal(verdict.fields.get("if"), undefined);
-  assert.match(verdict.text, /^ {10}RELEASE_GATE_RESULT: \$\{\{ needs.release-gate.result \}\}$/mu);
-  for (const [key, job] of [
-    ["STATIC_RESULT", "static"],
-    ["UNIT_RESULT", "unit"],
-    ["BROWSER_RESULT", "browser"],
-    ["SECRET_SCAN_RESULT", "secret-scan"],
-    ["BUILD_RESULT", "build"],
-    ["COVERAGE_RESULT", "coverage"],
-    ["RELEASE_GATE_RESULT", "release-gate"],
-  ]) {
-    const lines = verdict.text.split("\n").filter((line) => line.startsWith(`          ${key}:`));
-    assert.deepEqual(
-      lines,
-      [`          ${key}: ${expression(`needs.${job}.result`)}`],
-      `required result binding ${key}`,
+  assert.match(jobs.get("required"), /^ {4}name: Ward Flow required$/mu);
+  assert.match(jobs.get("required"), /^ {4}if: always\(\)$/mu);
+  assert.match(
+    jobs.get("required"),
+    /^ {4}needs: \[plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage\]$/mu,
+  );
+  assert.match(
+    step("static", "Check doc facts and retired terms").text,
+    /^ {10}WARD_BASE_SHA: \$\{\{ github.event.pull_request.base.sha \|\| github.event.merge_group.base_sha \}\}$/mu,
+  );
+  for (const [job, body] of jobs) {
+    for (const entry of steps(job)) {
+      if (entry.fields.get("uses")?.startsWith("actions/checkout@"))
+        assert.match(entry.text, /^ {10}persist-credentials: false$/mu);
+      if (entry.fields.get("uses")?.startsWith("actions/cache/save@")) {
+        assert.ok(
+          entry.fields.get("if")?.includes("github.ref == 'refs/heads/main'"),
+          `${job}: cache saves require main`,
+        );
+        assert.ok(entry.fields.get("if")?.includes("!cancelled()"), `${job}: cache saves reject cancellation`);
+      }
+    }
+    if (body.includes("actions/setup-node@")) {
+      assert.match(body, /node-version-file: \.nvmrc/u);
+      exact(job, "Record the Node and npm toolchain", "node --version && npm --version");
+    }
+  }
+  for (const job of ["browser", "release-gate"]) {
+    const name = job === "browser" ? "Run Ward browser journeys" : "Run the release-gate journeys";
+    assert.ok(
+      step(job, name).text.includes(
+        `          WARD_BROWSER_ARTIFACT_DIR: ${expression("needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || ''")}\n`,
+      ),
+    );
+    assert.ok(
+      step(job, "Download the verified browser build").text.includes(
+        "          path: " + expression("runner.temp") + "/ward-browser-build\n",
+      ),
+    );
+    assert.equal(
+      step(job, "Download the verified browser build").fields.get("if"),
+      expression("!cancelled() && needs.browser-build.result == 'success' && steps.install.outcome == 'success'"),
     );
   }
-  const ordinary =
-    'test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success && test "$RELEASE_GATE_RESULT" = success';
-  const reused =
-    'test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped && test "$BROWSER_RESULT" = skipped && test "$BUILD_RESULT" = skipped && test "$COVERAGE_RESULT" = skipped && test "$RELEASE_GATE_RESULT" = success';
+  const verdict = step("required", "Require every Ward Flow job to succeed");
+  assert.equal(verdict.fields.get("if"), undefined);
+  for (const [key, value] of Object.entries({
+    REUSE_VERIFIED: "needs.reuse.outputs.verified",
+    PLAN_RESULT: "needs.plan.result",
+    REUSE_RESULT: "needs.reuse.result",
+    STATIC_RESULT: "needs.static.result",
+    BACKEND_RESULT: "needs.backend.result",
+    UNIT_RESULT: "needs.unit.result",
+    BROWSER_RESULT: "needs.browser.result",
+    BROWSER_BUILD_RESULT: "needs.browser-build.result",
+    SECRET_SCAN_RESULT: "needs.secret-scan.result",
+    BUILD_RESULT: "needs.build.result",
+    COVERAGE_RESULT: "needs.coverage.result",
+    RELEASE_GATE_RESULT: "needs.release-gate.result",
+    BACKEND_SCOPE: "needs.plan.outputs.backend",
+    UNIT_SCOPE: "needs.plan.outputs.unit",
+    BROWSER_SCOPE: "needs.plan.outputs.browser",
+    BUILD_SCOPE: "needs.plan.outputs.build",
+  })) {
+    assert.deepEqual(
+      verdict.text.split("\n").filter((line) => line.startsWith(`          ${key}:`)),
+      [`          ${key}: ${expression(value)}`],
+    );
+  }
   assert.equal(
     verdict.text.split("        run: |\n")[1]?.trim(),
-    `if [ "$REUSE_VERIFIED" != true ]; then\n            ${ordinary}\n          else\n            ${reused}\n          fi`,
+    `set -euo pipefail
+          require_scope() {
+            if [ "$1" = true ]; then test "$2" = success;
+            elif [ "$1" = false ]; then test "$2" = skipped;
+            else return 1; fi
+          }
+          test "$PLAN_RESULT" = success
+          test "$STATIC_RESULT" = success
+          test "$SECRET_SCAN_RESULT" = success
+          require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
+          require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
+          if [ "$REUSE_VERIFIED" = true ]; then
+            test "$GITHUB_EVENT_NAME" = push
+            test "$GITHUB_REF" = refs/heads/main
+            test "$REUSE_RESULT" = success
+            test "$UNIT_RESULT" = skipped
+            test "$BROWSER_BUILD_RESULT" = skipped
+            test "$BROWSER_RESULT" = skipped
+            test "$BUILD_RESULT" = skipped
+            test "$COVERAGE_RESULT" = skipped
+          else
+            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
+            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
+            require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
+            require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+          fi`,
   );
-
-  for (const pattern of [
-    /^on:\s*\n\s*pull_request:/mu,
-    // Railway deploys main, so main must get its own run.
-    /^ {2}push:\s*\n {4}branches: \[main\]/mu,
-    /permissions:\s*\n\s*contents: read/u,
-    /persist-credentials: false/u,
-    /name: Ward Flow required/u,
-    /if: always\(\)/u,
-    /needs: \[reuse, static, unit, browser, release-gate, secret-scan, build, coverage\]/u,
-    /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$BUILD_RESULT" = success && test "\$COVERAGE_RESULT" = success/u,
-    /SECRET_SCAN_RESULT: \$\{\{ needs\.secret-scan\.result \}\}/u,
-    /BUILD_RESULT: \$\{\{ needs\.build\.result \}\}/u,
-    /COVERAGE_RESULT: \$\{\{ needs\.coverage\.result \}\}/u,
-    // Coverage thresholds (vitest.config.mts) are enforced over the whole unit suite: every shard
-    // records a blob report and the coverage job merges all of them before judging the thresholds.
-    /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner\.temp \}\}\/ward-coverage-blobs/u,
-    /if-no-files-found: error/u,
-    /^ {10}node node_modules\/vitest\/vitest\.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage$/mu,
-    // Main-push reuse: only on a push to main, and the skipped path still requires static checks and
-    // the secret scan, with the four reused jobs skipped rather than failed or cancelled.
-    /if: \$\{\{ github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' \}\}/u,
-    /run: node scripts\/ward-ci-public\/main-reuse\.mjs/u,
-    /if \[ "\$REUSE_VERIFIED" != true \]; then\n/u,
-    /test "\$STATIC_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$UNIT_RESULT" = skipped && test "\$BROWSER_RESULT" = skipped && test "\$BUILD_RESULT" = skipped && test "\$COVERAGE_RESULT" = skipped/u,
-    // Secret scan: a pinned gitleaks release verified against a pinned SHA-256, over full history,
-    // honouring the reviewed fingerprints.
-    /GITLEAKS_SHA256: [0-9a-f]{64}\n/u,
-    /echo "\$\{GITLEAKS_SHA256\}  \$\{archive\}" \| sha256sum -c -/u,
-    /gitleaks" git \. --redact --no-banner --exit-code 1 --gitleaks-ignore-path \.gitleaksignore/u,
-    // The deploy build: Railway's command, in a job that never sets WARD_GATE_BUILD.
-    /^ {8}run: node --max-old-space-size=8192 node_modules\/next\/dist\/bin\/next build --webpack$/mu,
-    /fail-fast: false/u,
-    /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
-    /related-tests\.mjs --base "\$WARD_BASE_SHA" --head HEAD/u,
-    /node scripts\/ward-ci-public\/changed-checks\.mjs/u,
-    /steps\.plan\.outputs\.unit == 'true'/u,
-    /steps\.plan\.outputs\.browser == 'true'/u,
-    // Browser builds may skip their own type check only because the static job checks route types.
-    /next\/dist\/bin\/next typegen\n\s*node node_modules\/typescript\/bin\/tsc -p tsconfig\.json --noEmit/u,
-    /WARD_GATE_BUILD: "1"/u,
-    // Next build cache: restored on every event, saved only on main, so per-SHA PR entries can
-    // never fill the 10 GB Actions cache again.
-    /actions\/cache\/restore@[0-9a-f]{40}/u,
-    /if: \$\{\{ !cancelled\(\) && github\.ref == 'refs\/heads\/main' && steps\.next-cache\.outcome == 'success'[^\n]*\n\s+uses: actions\/cache\/save@[0-9a-f]{40}/u,
-    /WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/\d+/u,
-    /npm run check:ward-reference/u,
-    /npm run check:ward-expected-reds/u,
-    /check:ward-expected-reds -- --print-signatures/u,
-    /npm run test:e2e:ward-journeys/u,
-    /^ {8}run: npm run docs:check-links$/mu,
-    // Facts and retired terms: the PR or merge-queue base must reach the check so new retired-term lines fail.
-    /WARD_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.merge_group\.base_sha \}\}\n {8}run: node scripts\/doc-facts\.mjs$/mu,
-    /run: node scripts\/ward-flow\/check-clinical-governance-gate\.mjs/u,
-    /id: chromium\n\s*timeout-minutes: 8/u,
-    /run: node scripts\/ward-ci-public\/install-chromium\.mjs/u,
-    /dependency-review-action@[0-9a-f]{40}/u,
-    /steps\.plan\.outputs\.dependency_review == 'true'/u,
-    /actions\/upload-artifact@[0-9a-f]{40}/u,
-    /steps\.journeys\.outcome == 'failure'/u,
-  ])
-    assert.match(source, pattern);
-  for (const pattern of [
-    /pull_request_target:/u,
-    /continue-on-error:/u,
-    /secrets\./u,
-    /contents: write/u,
-    /WARD_PUBLIC_STANDALONE:/u,
-    /actions\/cache@/u,
-  ]) {
-    assert.doesNotMatch(source, pattern);
-  }
-  // The unit shards must be exactly 1..N for the N named in WARD_GATE_SHARD, or some files never run.
-  const shards = /^\s*shard: \[([\d, ]+)\]$/mu
-    .exec(source)?.[1]
-    .split(",")
-    .map((value) => Number(value.trim()));
-  const count = Number(/WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/(\d+)/u.exec(source)?.[1]);
-  assert.ok(shards && count >= 1, "unit shard matrix and WARD_GATE_SHARD count are required");
-  assert.deepEqual(
-    shards,
-    Array.from({ length: count }, (_, index) => index + 1),
-  );
-  // Likewise the browser groups must be exactly 1..N for the N in WARD_JOURNEY_GROUP.
-  const groups = /^\s*group: \[([\d, ]+)\]$/mu
-    .exec(source)?.[1]
-    .split(",")
-    .map((value) => Number(value.trim()));
-  const groupCount = Number(/WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/(\d+)/u.exec(source)?.[1]);
-  assert.ok(groups && groupCount >= 1, "browser group matrix and WARD_JOURNEY_GROUP count are required");
-  assert.deepEqual(
-    groups,
-    Array.from({ length: groupCount }, (_, index) => index + 1),
-  );
-  // The production build job must not inherit the gate build's ignoreBuildErrors.
-  const buildJob = /^ {2}build:\n([\s\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\n|(?![\s\S]))/mu.exec(source)?.[1];
-  assert.ok(buildJob, "the production build job is required");
-  assert.doesNotMatch(buildJob, /^(?!\s*#).*WARD_GATE_BUILD/mu);
-  assert.match(buildJob, /next\/dist\/bin\/next build --webpack/u);
-  // One Node version everywhere: every job reads .nvmrc, which matches Railway's Node
-  // (docs/hosting.md, RAILPACK_NODE_VERSION). No job may pin its own literal version.
-  assert.match(buildJob, /node-version-file: \.nvmrc/u);
-  assert.doesNotMatch(source, /node-version: /u);
-  // Whole-tree lint on non-PR runs is enforcing: the eslint command is the step's whole `run:`,
-  // not wrapped in an `if !` that downgrades failure to a warning.
-  assert.match(
-    source,
-    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--max-warnings 0[^\n]*\n/u,
-  );
-  assert.doesNotMatch(source, /if ! node[^\n]*eslint/u);
-  // The coverage job must judge the thresholds: it may never set the shard flag that drops them, and it
-  // must expect a blob from every unit shard.
-  const jobText = (name) =>
-    new RegExp(`^ {2}${name}:\\n([\\s\\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\\n|(?![\\s\\S]))`, "mu").exec(source)?.[1];
-  assert.ok(
-    jobText("static")?.includes("run: npm run docs:check-links\n"),
-    "docs:check-links must run in the static job",
-  );
-  const coverageJob = jobText("coverage");
-  assert.ok(coverageJob, "the coverage job is required");
-  assert.doesNotMatch(coverageJob, /WARD_COVERAGE_BLOB_DIR/u);
-  assert.match(coverageJob, /needs: \[reuse, unit\]/u);
-  assert.equal(Number(/WARD_SHARD_COUNT: "(\d+)"/u.exec(coverageJob)?.[1]), count);
-  // Only the four reusable jobs may be skipped by the reuse proof; static and secret scan always run.
-  const reuseGate = "if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}";
-  for (const name of ["unit", "browser", "build", "coverage"]) assert.ok(jobText(name)?.includes(reuseGate), name);
-  for (const name of ["static", "secret-scan"]) assert.doesNotMatch(jobText(name) ?? "", /needs\.reuse/u);
-  const reuseJob = jobText("reuse");
-  assert.ok(reuseJob, "the main reuse job is required");
-  assert.doesNotMatch(reuseJob, /contents: write|pull-requests: write|actions: write/u);
 }
-
 requireWorkflow(workflow);
-for (const bad of [
-  workflow.replaceAll("        id: plan\n", "        id: unused-plan\n"),
-  workflow.replaceAll("        id: install\n", "        id: unused-install\n"),
-  workflow.replace("        id: browsers\n", "        id: unused-browsers\n"),
-  workflow.replace("run: node node_modules/playwright/cli.js install --with-deps chromium webkit", "run: echo omitted"),
-
-  workflow.replace(
-    "run: node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
-    "run: echo omitted",
-  ),
-  workflow.replace("run: npm run check:coverage-inventory", "run: echo omitted"),
-  workflow.replace(
-    "run: node scripts/run-playwright.mjs --project=chromium api-csrf-proxy.spec.ts",
-    "run: echo omitted",
-  ),
-  workflow.replace("browser, release-gate, secret-scan", "browser, secret-scan"),
-  workflow.replace(' && test "$RELEASE_GATE_RESULT" = success', ""),
-  workflow.replace(
-    "          RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}",
-    "          RELEASE_GATE_RESULT: success",
-  ),
-  workflow.replace("    name: Ward Flow release gate\n", "    name: Ward Flow release gate\n    if: false\n"),
-  workflow.replace("          UNIT_RESULT: ${{ needs.unit.result }}", "          UNIT_RESULT: success"),
-  workflow.replaceAll("run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"),
-  workflow.replace("run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"),
-  workflow.replaceAll("steps.plan.outputs.full == 'true'", "steps.plan.outputs.full != 'true'"),
-  workflow.replaceAll("steps.plan.outputs.policy == 'true'", "steps.plan.outputs.policy != 'true'"),
-  workflow.replace(/concurrency:\n(?: {2}[^\n]*\n)+/u, ""),
-  workflow.replace('test "$RELEASE_GATE_RESULT" = success\n', 'test "$RELEASE_GATE_RESULT" = success || true\n'),
-  workflow.replace("  pull_request:\n    branches: [main]", "  pull_request:\n    branches: [nonexistent-branch]"),
-  workflow.replace(
-    '          "$RUNNER_TEMP/gitleaks" git . --redact',
-    '          # "$RUNNER_TEMP/gitleaks" git . --redact',
-  ),
-
-  workflow.replace("name: Ward Flow required", "name: Optional"),
-  workflow.replace("timeout-minutes: 8", "timeout-minutes: 30"),
-  workflow.replace("run: node scripts/ward-ci-public/install-chromium.mjs", "run: npx playwright install chromium"),
-  workflow.replace("run: node scripts/ward-flow/check-clinical-governance-gate.mjs", "run: echo skipped"),
-  workflow.replace("if: always()", "if: success()"),
-  workflow.replace("contents: read", "contents: write"),
-  workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
-  workflow.replace(
-    "needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]",
-    "needs: [reuse, static, browser, secret-scan, build]",
-  ),
-  workflow.replace(
-    "needs: [reuse, static, unit, browser, release-gate, secret-scan, build, coverage]",
-    "needs: [static, unit, browser]",
-  ),
-  workflow.replace(' && test "$SECRET_SCAN_RESULT" = success', ""),
-  workflow.replace(' && test "$BUILD_RESULT" = success', ""),
-  workflow.replace(' && test "$COVERAGE_RESULT" = success', ""),
-  workflow.replace('--merge-reports="$WARD_SHARD_BLOBS" --coverage', '--merge-reports="$WARD_SHARD_BLOBS"'),
-  workflow.replace('WARD_SHARD_COUNT: "8"', 'WARD_SHARD_COUNT: "7"'),
-  workflow.replace(
-    "          WARD_SHARD_COUNT:",
-    "          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/x\n          WARD_SHARD_COUNT:",
-  ),
-  workflow.replace("          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs\n", ""),
-  workflow.replace("if-no-files-found: error", "if-no-files-found: warn"),
-  workflow.replace(' && test "$UNIT_RESULT" = skipped', ""),
-  workflow.replace(
-    'test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped',
-    'test "$UNIT_RESULT" = skipped',
-  ),
-  workflow.replace(
-    "    name: Ward Flow production build\n    needs: reuse\n    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}\n",
-    "    name: Ward Flow production build\n    needs: reuse\n",
-  ),
-  workflow.replace(
-    "    name: Ward Flow static checks\n",
-    "    name: Ward Flow static checks\n    needs: reuse\n    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}\n",
-  ),
-  workflow.replace("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}", "if: always()"),
-  workflow.replace("  push:\n    branches: [main]\n", ""),
-  workflow.replace(/\| sha256sum -c -/u, "| cat"),
-  workflow.replace("--gitleaks-ignore-path .gitleaksignore", ""),
-  workflow.replace(
-    "        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
-    '        env:\n          WARD_GATE_BUILD: "1"\n        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack',
-  ),
-  workflow.replace("shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"),
-  workflow.replaceAll("fail-fast: false", "fail-fast: true"),
-  workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
-  workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),
-  workflow.replace("run: npm run docs:check-links", "run: echo skipped documentation gate"),
-  workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
-  workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
-  workflow.replace("node-version-file: .nvmrc", 'node-version: "24.15.0"'),
-  workflow.replace(
-    "        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
-    "        run: |\n          if ! node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
-  ),
-])
-  assert.throws(() => requireWorkflow(bad));
-
+// Exercise the actual aggregate shell across every scope combination and every
+// failure/cancellation/missing-result branch, including the trusted reuse route.
 const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
 assert.ok(verdictShell);
-const runVerdict = (values) =>
-  spawnSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], { env: values }).status;
-for (const reuse of [false, true]) {
-  const values = {
-    REUSE_VERIFIED: String(reuse),
-    STATIC_RESULT: "success",
-    SECRET_SCAN_RESULT: "success",
-    RELEASE_GATE_RESULT: "success",
-    ...Object.fromEntries(
-      ["UNIT_RESULT", "BROWSER_RESULT", "BUILD_RESULT", "COVERAGE_RESULT"].map((key) => [
-        key,
-        reuse ? "skipped" : "success",
-      ]),
-    ),
-  };
-  assert.equal(runVerdict(values), 0, `valid ${reuse ? "reuse" : "ordinary/scoped plan"} verdict`);
-  for (const key of Object.keys(values).filter((key) => key !== "REUSE_VERIFIED"))
-    for (const result of ["failure", "cancelled", "", key === "RELEASE_GATE_RESULT" ? "skipped" : "unexpected"])
-      assert.notEqual(runVerdict({ ...values, [key]: result }), 0, `${key}=${result} must block`);
+const runVerdict = (env) =>
+  spawnSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], { env }).status;
+let verdictCases = 0;
+for (let bits = 0; bits < 16; bits++)
+  for (const reuse of [false, true]) {
+    const enabled = (bit) => Boolean(bits & (1 << bit));
+    const values = {
+      PLAN_RESULT: "success",
+      STATIC_RESULT: "success",
+      SECRET_SCAN_RESULT: "success",
+      REUSE_RESULT: reuse ? "success" : "skipped",
+      REUSE_VERIFIED: String(reuse),
+      GITHUB_EVENT_NAME: reuse ? "push" : "pull_request",
+      GITHUB_REF: reuse ? "refs/heads/main" : "refs/pull/1/merge",
+      BACKEND_SCOPE: String(enabled(0)),
+      UNIT_SCOPE: String(enabled(1)),
+      BROWSER_SCOPE: String(enabled(2)),
+      BUILD_SCOPE: String(enabled(3)),
+      BACKEND_RESULT: enabled(0) ? "success" : "skipped",
+      UNIT_RESULT: !reuse && enabled(1) ? "success" : "skipped",
+      COVERAGE_RESULT: !reuse && enabled(1) ? "success" : "skipped",
+      BROWSER_RESULT: !reuse && enabled(2) ? "success" : "skipped",
+      BROWSER_BUILD_RESULT: !reuse && enabled(2) ? "success" : "skipped",
+      BUILD_RESULT: !reuse && enabled(3) ? "success" : "skipped",
+      RELEASE_GATE_RESULT: enabled(2) ? "success" : "skipped",
+    };
+    assert.equal(runVerdict(values), 0);
+    verdictCases++;
+    for (const key of [
+      "PLAN_RESULT",
+      "STATIC_RESULT",
+      "SECRET_SCAN_RESULT",
+      "BACKEND_RESULT",
+      "UNIT_RESULT",
+      "COVERAGE_RESULT",
+      "BROWSER_RESULT",
+      "BROWSER_BUILD_RESULT",
+      "BUILD_RESULT",
+      "RELEASE_GATE_RESULT",
+      ...(reuse ? ["REUSE_RESULT"] : []),
+    ])
+      for (const result of ["failure", "cancelled", "", values[key] === "success" ? "skipped" : "success"]) {
+        assert.notEqual(runVerdict({ ...values, [key]: result }), 0, `${key}=${result} must block`);
+        verdictCases++;
+      }
+    for (const key of ["BACKEND_SCOPE", "UNIT_SCOPE", "BROWSER_SCOPE", "BUILD_SCOPE"]) {
+      // Scope values bypassed by reuse are checked by the independent planner.
+      if (reuse && key !== "BACKEND_SCOPE" && key !== "BROWSER_SCOPE") continue;
+      assert.notEqual(runVerdict({ ...values, [key]: "" }), 0);
+      verdictCases++;
+    }
+    if (reuse)
+      for (const [key, value] of [
+        ["GITHUB_EVENT_NAME", "pull_request"],
+        ["GITHUB_REF", "refs/heads/other"],
+      ]) {
+        assert.notEqual(runVerdict({ ...values, [key]: value }), 0);
+        verdictCases++;
+      }
+  }
+// Every enforcing run command is an exact contract; mutation probes must change
+// the input before rejection, preventing obsolete no-op controls from passing.
+for (const [before, after] of [
+  ["run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"],
+  ["run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"],
+  ["run: node scripts/check-script-budget.mjs", "run: echo omitted"],
+  ["run: node tests/support/ward-shared-mode-run.mjs", "run: echo omitted"],
+  ["run: npm run check:coverage-inventory", "run: echo omitted"],
+  ["run: npm run test:e2e:release-gate", "run: echo omitted"],
+  ["        id: plan\n", "        id: unused-plan\n"],
+  ["        id: install\n", "        id: unused-install\n"],
+  ["        id: browsers\n", "        id: unused-browsers\n"],
+  ['test "$STATIC_RESULT" = success', "true"],
+  ["          UNIT_RESULT: ${{ needs.unit.result }}", "          UNIT_RESULT: success"],
+  ["contents: read", "contents: write"],
+  [
+    "        run: |\n          set -euo pipefail",
+    "        shell: bash {0}\n        run: |\n          set -euo pipefail",
+  ],
+  ["uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294", "run: echo skipped"],
+  ["if: always()", "if: success()"],
+  ["shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"],
+  ["group: [1, 2, 3]", "group: [1, 2]"],
+  ["| sha256sum -c -", "| cat"],
+  ["--gitleaks-ignore-path .gitleaksignore", ""],
+  ["branches: [main]", "branches: [other]"],
+  ["--max-warnings 0 --no-error-on-unmatched-pattern", "--max-warnings 0 --no-error-on-unmatched-pattern || true"],
+]) {
+  const changed = workflow.replace(before, after);
+  assert.notEqual(changed, workflow, before);
+  assert.throws(() => requireWorkflow(changed), before);
 }
-
 assert.deepEqual(parseNameStatus("M\tdocs/ward-flow/README.md\n"), [{ status: "M", file: "docs/ward-flow/README.md" }]);
 assert.equal(classifyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]).full, false);
 assert.equal(classifyChanges([{ status: "D", file: "docs/ward-flow/README.md" }]).full, true);
@@ -468,7 +506,7 @@ const everything = { full: true, unit: true, browser: true };
 assert.deepEqual(scope("docs/ward-flow/README.md"), { full: false, unit: false, browser: false });
 assert.deepEqual(scope("backend/ward-flow/server.mjs", "docs/ward-flow/README.md"), {
   full: true,
-  unit: false,
+  unit: true,
   browser: false,
 });
 assert.deepEqual(scope("tests/ward-nav.test.ts", "backend/ward-flow/server.mjs"), {
@@ -488,4 +526,6 @@ assert.equal(classifyChanges([]).full, true);
 assert.equal(hasDependencyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]), false);
 assert.equal(hasDependencyChanges([{ status: "M", file: "backend/ward-flow/package-lock.json" }]), true);
 assert.equal(hasDependencyChanges([{ status: "A", file: "package.json" }]), true);
-console.log("Ward public CI contracts OK — executable workflow mutations rejected; 58 aggregate verdict cases passed");
+console.log(
+  `Ward public CI contracts OK — executable mutations rejected; ${verdictCases} aggregate verdict cases passed`,
+);

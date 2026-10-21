@@ -5,9 +5,12 @@ const PREFIX = "wf-draft:v2:";
 export const SESSION_DRAFT_MAX_AGE_MS = CLINICAL_VALUES.sessionLimit.value * 60 * 60_000;
 export const SESSION_DRAFT_MAX_CHARS = 256_000;
 const SESSION_KEY = "wf-draft-session:v1";
+const ACCESS_CONTEXT_KEY = "wf-draft-access:v1";
 let generation = 0;
 let account = "synthetic-demo";
 let activeScenarioScope: string | null = null;
+let activeAccessContext: string | null = null;
+let renewSession = false;
 let fallbackSession = "memory-only";
 let fallbackStartedAt: number | null = null;
 
@@ -32,7 +35,7 @@ function sessionDetails(): { id: string; startedAt: number } {
   const fresh = () => ({ id: sessionId(), startedAt: Date.now() });
   if (typeof window === "undefined") return fallbackDetails();
   try {
-    const existing = window.sessionStorage.getItem(SESSION_KEY);
+    const existing = renewSession ? null : window.sessionStorage.getItem(SESSION_KEY);
     if (existing) {
       const parsed: unknown = JSON.parse(existing);
       if (
@@ -51,19 +54,30 @@ function sessionDetails(): { id: string; startedAt: number } {
     }
     const next = fresh();
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    renewSession = false;
     return next;
   } catch {
     return fallbackDetails();
   }
 }
 
+function sessionScope(id: string): string {
+  // Bind each stored copy too: partial storage failures cannot relabel an old copy on reload.
+  return activeAccessContext === null ? id : `${id}/${activeAccessContext}`;
+}
+
 export function sessionDraftKey(scenario: string, kind: string, subject: string): string {
-  return PREFIX + [account, sessionDetails().id, scenario, kind, subject].map(encodeURIComponent).join(":");
+  return (
+    PREFIX + [account, sessionScope(sessionDetails().id), scenario, kind, subject].map(encodeURIComponent).join(":")
+  );
 }
 
 export function clearSessionDrafts(): void {
   generation += 1;
   activeScenarioScope = null;
+  activeAccessContext = null;
+  // A failed remove must not let sessionDetails adopt the outgoing browser session again.
+  renewSession = true;
   fallbackSession = `memory-only-${generation}`;
   fallbackStartedAt = Date.now();
   if (typeof window === "undefined") return;
@@ -72,9 +86,36 @@ export function clearSessionDrafts(): void {
     const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i));
     for (const key of keys) if (key?.startsWith("wf-draft:")) storage.removeItem(key);
     storage.removeItem(SESSION_KEY);
+    storage.removeItem(ACCESS_CONTEXT_KEY);
   } catch {
     /* Storage can be blocked. Old callbacks remain fenced. */
   }
+}
+
+/** Bind recovery to the server's effective desk, including temporary access and its expiry. */
+export function setDraftAccessContext(context: string): boolean {
+  let previous = activeAccessContext;
+  if (previous === null && typeof window !== "undefined") {
+    try {
+      previous = window.sessionStorage.getItem(ACCESS_CONTEXT_KEY);
+    } catch {
+      /* Unconfirmed recovery is discarded rather than reused under another desk. */
+    }
+  }
+  if (previous === context) {
+    activeAccessContext = context;
+    return false;
+  }
+  clearSessionDrafts();
+  activeAccessContext = context;
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.setItem(ACCESS_CONTEXT_KEY, context);
+    } catch {
+      /* Memory ownership still rotates; recovery after reload requires a confirmed context. */
+    }
+  }
+  return true;
 }
 
 export function setDraftAccount(next: string): void {
@@ -125,7 +166,7 @@ export function clearLegacySessionDrafts(): void {
 export function readSessionDraft(key: string): string | null {
   if (
     typeof window === "undefined" ||
-    !key.startsWith(PREFIX + [account, sessionDetails().id].map(encodeURIComponent).join(":") + ":")
+    !key.startsWith(PREFIX + [account, sessionScope(sessionDetails().id)].map(encodeURIComponent).join(":") + ":")
   )
     return null;
   try {
@@ -171,7 +212,7 @@ export function writeSessionDraft(key: string, value: string, owner: number): bo
     Date.now() - session.startedAt >= SESSION_DRAFT_MAX_AGE_MS ||
     (activeScenarioScope !== null && key.split(":")[4] !== encodeURIComponent(activeScenarioScope)) ||
     value.length > SESSION_DRAFT_MAX_CHARS ||
-    !key.startsWith(PREFIX + [account, session.id].map(encodeURIComponent).join(":") + ":")
+    !key.startsWith(PREFIX + [account, sessionScope(session.id)].map(encodeURIComponent).join(":") + ":")
   )
     return false;
   try {

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
+import { isGeneratedDependencyEntry } from "./dependency-inventory-policy.mjs";
 
 export const OUTCOME_AFFECTING_ENV_VARS = [
   "VITEST_MAX_WORKERS",
@@ -32,6 +33,7 @@ export function testEnvironmentIdentity(env = process.env) {
 
 // FULL checkpoints justify a byte scan once at admission. Narrow receipt
 // wrappers do not scan mutable dependencies or infer immutability from a stamp.
+// Root unit contracts also import the backend, whose nested install can shadow root packages.
 // Symlink targets are scanned by content; cycles and unreadable trees fail closed.
 export function installedToolchainIdentity(root) {
   try {
@@ -45,10 +47,10 @@ export function installedToolchainIdentity(root) {
       if (ancestors.has(real)) throw new Error("cyclic dependency link");
       ancestors.add(real);
       for (const name of readdirSync(directory).sort()) {
-        if (name === ".cache" || name === ".vite" || name === ".codex-installed-tree.json") continue;
         const file = path.join(directory, name);
         const child = `${relative}/${name}`;
         const link = lstatSync(file);
+        if (isGeneratedDependencyEntry(name, link)) continue;
         const stats = link.isSymbolicLink() ? statSync(file) : link;
         if (link.isSymbolicLink()) digest.update(`L\0${child}\0${realpathSync(file)}\0`);
         if (stats.isDirectory()) {
@@ -63,7 +65,23 @@ export function installedToolchainIdentity(root) {
       ancestors.delete(real);
     };
     walk(path.join(root, "node_modules"));
-    return files > 0 ? digest.digest("hex") : null;
+    if (files === 0) return null;
+    const backendRoot = path.join(root, "backend", "ward-flow");
+    const backendModules = path.join(backendRoot, "node_modules");
+    let backendInstalled = true;
+    try {
+      // lstat distinguishes an absent install from a broken dependency symlink.
+      lstatSync(backendModules);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      backendInstalled = false;
+    }
+    digest.update(`P\0backend/ward-flow/node_modules\0${backendInstalled ? "present" : "absent"}\0`);
+    if (backendInstalled) {
+      digest.update(readFileSync(path.join(backendRoot, "package-lock.json")));
+      walk(backendModules, "backend/ward-flow/node_modules");
+    }
+    return digest.digest("hex");
   } catch {
     return null;
   }

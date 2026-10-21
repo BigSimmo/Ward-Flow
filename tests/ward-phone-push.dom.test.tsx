@@ -21,13 +21,14 @@ import {
   PHONE_PUSH_WORKER_URL,
   PhonePushAccessContext,
   iosDevice,
+  rememberPhonePushOwnership,
   phonePushRow,
   releasePhonePush,
-  usePhonePush,
   type PhonePushAccess,
   type PhonePushApi,
   type PhonePushState,
 } from "@/components/ward-management/shell/ward-phone-push";
+import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { useWardShared } from "@/components/ward-management/ward-shared-access";
@@ -175,6 +176,7 @@ function hook(access: PhonePushAccess) {
 
 afterEach(() => {
   Reflect.deleteProperty(navigator, "serviceWorker");
+  localStorage.removeItem("ward-flow:phone-push-owner:v1");
 });
 
 describe("usePhonePush", () => {
@@ -378,6 +380,204 @@ describe("usePhonePush", () => {
 });
 
 describe("releasePhonePush before sign-out", () => {
+  it("keeps Settings on when a concurrent check confirms the same account's ownership", async () => {
+    installBrowser({ permission: "granted", subscribed: true });
+    const api = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    let finish!: (owned: boolean) => void;
+    api.pushStatus.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(api.pushStatus).toHaveBeenCalledOnce());
+    await rememberPhonePushOwnership(api);
+    await act(async () => {
+      finish(true);
+    });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+  });
+
+  it.each(["this tab", "another tab"])(
+    "does not let delayed connection ownership overwrite a newer account in %s",
+    async (where) => {
+      const browser = installBrowser({ permission: "granted", subscribed: true });
+      const outgoing = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+      let finish!: (owned: boolean) => void;
+      outgoing.pushStatus.mockImplementationOnce(
+        () =>
+          new Promise<boolean>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const pending = rememberPhonePushOwnership(outgoing);
+      await waitFor(() => expect(outgoing.pushStatus).toHaveBeenCalledOnce());
+      if (where === "this tab") await rememberPhonePushOwnership({ ...fakeApi(), ownerId: "synthetic-owner-b" });
+      else
+        localStorage.setItem(
+          "ward-flow:phone-push-owner:v1",
+          JSON.stringify({ ownerId: "synthetic-owner-b", publicKey: "p", revision: "newer-tab-receipt" }),
+        );
+      finish(true);
+      await pending;
+      outgoing.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+      await releasePhonePush(outgoing);
+      expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not let a delayed Settings ownership check overwrite another account", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const outgoing = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    let finish!: (owned: boolean) => void;
+    outgoing.pushStatus.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { result } = hook({ kind: "connected", api: outgoing });
+    await waitFor(() => expect(outgoing.pushStatus).toHaveBeenCalledOnce());
+    await rememberPhonePushOwnership({ ...fakeApi(), ownerId: "synthetic-owner-b" });
+    await act(async () => {
+      finish(true);
+    });
+    await waitFor(() => expect(result.current[0]).not.toBe("checking"));
+    outgoing.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await releasePhonePush(outgoing);
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("does not retain an ownership check after its Settings owner unmounts", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const outgoing = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    let finish!: (owned: boolean) => void;
+    outgoing.pushStatus.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { unmount } = hook({ kind: "connected", api: outgoing });
+    await waitFor(() => expect(outgoing.pushStatus).toHaveBeenCalledOnce());
+    unmount();
+    await act(async () => {
+      finish(true);
+    });
+    outgoing.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await releasePhonePush(outgoing);
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("does not let a delayed subscription result overwrite another account's ownership", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const outgoing = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    outgoing.pushStatus.mockResolvedValueOnce(false);
+    const { result } = hook({ kind: "connected", api: outgoing });
+    await waitFor(() => expect(result.current[0]).toBe("off"));
+    let finish!: (outcome: "subscribed") => void;
+    outgoing.pushSubscribe.mockImplementationOnce(
+      () =>
+        new Promise<"subscribed">((resolve) => {
+          finish = resolve;
+        }),
+    );
+    let pending!: Promise<PhonePushState>;
+    act(() => {
+      pending = result.current[1](true);
+    });
+    await waitFor(() => expect(outgoing.pushSubscribe).toHaveBeenCalledOnce());
+    await rememberPhonePushOwnership({ ...fakeApi(), ownerId: "synthetic-owner-b" });
+    await act(async () => {
+      finish("subscribed");
+      await pending;
+    });
+    outgoing.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await releasePhonePush(outgoing);
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("does not stop another account's device after a delayed turn-off response", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const outgoing = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    const { result } = hook({ kind: "connected", api: outgoing });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    let finish!: (revoked: boolean) => void;
+    outgoing.pushUnsubscribe.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    let pending!: Promise<PhonePushState>;
+    act(() => {
+      pending = result.current[1](false);
+    });
+    await waitFor(() => expect(outgoing.pushUnsubscribe).toHaveBeenCalledOnce());
+    await rememberPhonePushOwnership({ ...fakeApi(), ownerId: "synthetic-owner-b" });
+    await act(async () => {
+      finish(true);
+      await pending;
+    });
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("stops a confirmed owned subscription locally before an offline server cleanup", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const api = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    api.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await expect(releasePhonePush(api)).resolves.toBeUndefined();
+    expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(api.pushUnsubscribe).toHaveBeenCalledWith(browser.subscription.endpoint);
+  });
+
+  it("does not use another account's ownership receipt for offline cleanup", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const owner = { ...fakeApi(), ownerId: "synthetic-owner-b" };
+    const { result } = hook({ kind: "connected", api: owner });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    const other = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    other.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await releasePhonePush(other);
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("does not reuse stale ownership after another tab takes over the same device", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const api = { ...fakeApi(), ownerId: "synthetic-owner-a" };
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    // Another tab records its successful server ownership check for this browser's public key.
+    localStorage.setItem(
+      "ward-flow:phone-push-owner:v1",
+      JSON.stringify({ ownerId: "synthetic-owner-b", publicKey: "p" }),
+    );
+    api.pushUnsubscribe.mockRejectedValueOnce(new Error("offline"));
+    await releasePhonePush(api);
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it("does not wait for a hanging server before stopping a known owned subscription", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const api = { ...fakeApi(), ownerId: "synthetic-owner-c" };
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    let finish!: (value: boolean) => void;
+    api.pushUnsubscribe.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const release = releasePhonePush(api);
+    await waitFor(() => expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1));
+    finish(true);
+    await release;
+  });
+
   it("revokes this account's record, then the browser subscription", async () => {
     const browser = installBrowser({ permission: "granted", subscribed: true });
     const api = fakeApi();
@@ -489,6 +689,43 @@ describe("shared connection phone alerts", () => {
     await expect(pushApi.pushKey()).rejects.toThrow("not connected");
   });
 
+  it("replaces account-bound APIs and refuses the outgoing account's wrappers", async () => {
+    const calls = sharedServer();
+    const originalFetch = fetch;
+    let secondAccount = false;
+    vi.stubGlobal("fetch", async (endpoint: RequestInfo | URL, init?: RequestInit) => {
+      const parsed = new URL(String(endpoint));
+      if (parsed.pathname === "/auth/v1/token")
+        return Response.json({
+          access_token: "synthetic-token-b",
+          refresh_token: "synthetic-refresh-b",
+          expires_in: 3600,
+        });
+      if (secondAccount && parsed.pathname === "/auth/v1/user")
+        return Response.json({ id: "87654321-4321-4321-4321-cba987654321" });
+      if (parsed.pathname === "/v1/workspace/access/request") return Response.json({ request: null });
+      return originalFetch(endpoint, init);
+    });
+    const { result, unmount } = await signedInShared();
+    const outgoing = result.current.pushApi;
+    const outgoingAccess = result.current.accessApi!;
+    act(() => result.current.signOut());
+    await waitFor(() => expect(result.current.signedIn).toBe(false));
+    secondAccount = true;
+    await act(async () => {
+      await result.current.credentials!.signIn("synthetic-b@example.invalid", "synthetic-password");
+    });
+    await waitFor(() => expect(result.current.signedIn).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    const before = calls.filter((call) => call.path === "/v1/workspace/push-status").length;
+    await expect(outgoing.pushStatus("https://fcm.googleapis.com/fcm/send/device")).rejects.toThrow("not connected");
+    await expect(outgoingAccess.ownRequest()).rejects.toThrow("not connected");
+    expect(calls.filter((call) => call.path === "/v1/workspace/push-status")).toHaveLength(before);
+    await expect(result.current.pushApi.pushStatus("https://fcm.googleapis.com/fcm/send/device")).resolves.toBe(true);
+    await expect(result.current.accessApi!.ownRequest()).resolves.toBeNull();
+    unmount();
+  });
+
   it("sign-out releases this device's phone alerts first, then signs out", async () => {
     const calls = sharedServer();
     const browser = installBrowser({ permission: "granted", subscribed: true });
@@ -499,6 +736,38 @@ describe("shared connection phone alerts", () => {
     expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1);
     expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     expect(result.current.signedIn).toBe(false);
+    unmount();
+  });
+
+  it("sign-out uses the account ownership confirmed on connection when push cleanup is offline", async () => {
+    const calls = sharedServer();
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const { result, unmount } = await signedInShared();
+    await waitFor(() => expect(calls.some((call) => call.path === "/v1/workspace/push-status")).toBe(true));
+    const originalFetch = fetch;
+    vi.stubGlobal("fetch", async (endpoint: RequestInfo | URL, init?: RequestInit) => {
+      if (new URL(String(endpoint)).pathname === "/v1/workspace/push-unsubscribe") throw new Error("offline");
+      return originalFetch(endpoint, init);
+    });
+    act(() => result.current.signOut());
+    await waitFor(() => expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1));
+    expect(result.current.signedIn).toBe(false);
+    unmount();
+  });
+
+  it("reports incomplete saved-credential cleanup after attempting provider logout", async () => {
+    const calls = sharedServer();
+    const { result, unmount } = await signedInShared();
+    const removeItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key: string) {
+      if (key === WARD_AUTH_STORAGE_KEY) throw new Error("storage blocked");
+      removeItem.call(this, key);
+    });
+    act(() => result.current.signOut());
+    await waitFor(() => expect(result.current.credentials?.message).toMatch(/could not remove saved sign-in details/));
+    expect(result.current.credentials?.open).toBe(true);
+    expect(result.current.signedIn).toBe(false);
+    expect(calls.some((call) => call.path === "/auth/v1/logout")).toBe(true);
     unmount();
   });
 
