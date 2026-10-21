@@ -15,36 +15,37 @@ import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-
 import type { CommunityScreenView } from "./community-screen";
 import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import { useState } from "react";
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 
 /**
  * Assign (fix plan item 4, 21 Oct 2026): the team takes the referral for its own desk
  * (`ASSIGN_REFERRAL`, owner `community`). It names the desk, never a clinician; clinician
  * assignment is not built, because the record holds desks rather than people. This team page reads
- * only its scoped referrals (FD-23), so it reports what its own tap did rather than the owner
- * history; the reducer refuses a repeat and the referral board shows the owner.
+ * only its scoped referrals (FD-23), so it reports what the command's own outcome says rather than
+ * the owner history; the reducer refuses a repeat and the referral board shows the owner.
  */
 function AssignToTeam({ referralId }: { referralId: string }) {
-  const rejections = useOptionalWardFlowSelect("rejections")?.rejections.length ?? 0;
   const raise = useWardRaise("community");
-  // The rejection count when the team tapped: a refusal lands on that list, so a longer list means
-  // this tap was refused.
-  const [tappedAt, setTappedAt] = useState<number | undefined>(undefined);
-  const result =
-    tappedAt === undefined
-      ? undefined
-      : rejections > tappedAt
-        ? "Not assigned. It may already be with this team's desk."
-        : "Assigned to this team's desk.";
+  const [result, setResult] = useState<string | undefined>(undefined);
   return (
     <div className={styles.modalDetailsList} data-testid={`community-assign-${referralId}`}>
       <button
         type="button"
         className={styles.modalDoneBtn}
         onClick={() => {
-          setTappedAt(rejections);
-          void Promise.resolve(raise("ASSIGN_REFERRAL", { referralId, owner: "community" })).catch(() => undefined);
+          setResult(undefined);
+          void Promise.resolve(confirmedWardCommand(raise("ASSIGN_REFERRAL", { referralId, owner: "community" })))
+            .then((outcome) =>
+              setResult(
+                outcome.status === "accepted"
+                  ? "Assigned to this team's desk."
+                  : outcome.status === "refused"
+                    ? "Not assigned. It may already be with this team's desk."
+                    : "Not assigned. The change was not saved.",
+              ),
+            )
+            .catch(() => setResult("Not assigned. The change was not saved."));
         }}
         data-testid={`community-assign-take-${referralId}`}
       >

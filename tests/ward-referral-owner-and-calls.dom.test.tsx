@@ -167,7 +167,7 @@ function Owner() {
 }
 
 describe("community team Assign", () => {
-  it("takes the referral for the team's desk, and refuses a second tap", () => {
+  it("takes the referral for the team's desk, and refuses a second tap", async () => {
     pathname = `/ward-flow/community/${communityTeamSlug(TEAM)}`;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -181,9 +181,9 @@ describe("community team Assign", () => {
     expect(dialog.queryByText(/Not wired in this prototype/u)).not.toBeInTheDocument();
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent("community");
-    expect(dialog.getByRole("status")).toHaveTextContent("Assigned to this team's desk.");
+    expect(await dialog.findByText("Assigned to this team's desk.")).toHaveAttribute("role", "status");
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent(/^community$/u);
-    expect(dialog.getByRole("status")).toHaveTextContent("Not assigned.");
+    expect(await dialog.findByText(/^Not assigned\. It may already be/u)).toHaveAttribute("role", "status");
   });
 });
