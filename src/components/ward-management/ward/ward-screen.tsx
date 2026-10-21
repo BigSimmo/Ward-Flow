@@ -1085,10 +1085,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    */
   const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
 
-  // Task 5, spec D12: this unit's REQUEST_CAPACITY_REFRESH asks, live from the provider. The list only
-  // grows, so the last is the latest. DEC-L5-04: one the ward's confirmation answered is not shown.
+  // Spec D12 and DEC-L5-04: this unit's latest capacity ask that the ward has not yet answered.
   const latestRefreshRequest = refreshRequests
-    .filter((request) => request.unitId === unit.id && capacityRequestIsOpen(request))
+    .filter((request) => request.unitId === unit.id && capacityRequestIsOpen(request, unit.allocatable))
     .at(-1);
 
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
@@ -1138,12 +1137,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const requests = refreshRequests ?? [];
-    const keys = buzzKeys(requests);
-    const activeBuzzes = requests.filter(
-      (r, index) => r.unitId === unit.id && refreshRequestIsOpen(r) && !dismissedBuzzes.includes(keys[index] ?? ""),
+    const keys = buzzKeys(refreshRequests);
+    const undismissed = refreshRequests.filter(
+      (r, i) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[i] ?? ""),
     );
-    count += activeBuzzes.length;
+    count += undismissed.filter((r) => refreshRequestIsOpen(r, unit.allocatable)).length;
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
     return count;

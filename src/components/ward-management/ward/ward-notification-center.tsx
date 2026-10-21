@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { type Movement, type Notice } from "@/components/ward-management/ward-model";
+import { type CapacityFigure, type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -35,6 +35,8 @@ export interface WardNotificationCenterProps {
     allocatableRevision?: number;
     answeredAt?: Instant;
   }[];
+  /** The ward's capacity figure, so a request saved before `answeredAt` existed reads as answered. */
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt">;
   morningRollupConfirmed?: boolean;
   morningRollupDeadlinePassed?: boolean;
   morningRollupDeadlineMinutes?: number;
@@ -118,6 +120,7 @@ export function WardNotificationCenter({
   patients,
   notices,
   refreshRequests = [],
+  allocatable,
   morningRollupConfirmed = false,
   morningRollupDeadlinePassed = false,
   morningRollupDeadlineMinutes = 570,
@@ -169,7 +172,7 @@ export function WardNotificationCenter({
   const keys = buzzKeys(refreshRequests);
   const matchingBuzzes = refreshRequests
     .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
-    .filter(({ buzz }) => buzz.unitId === unitId && refreshRequestIsOpen(buzz));
+    .filter(({ buzz }) => buzz.unitId === unitId && refreshRequestIsOpen(buzz, allocatable));
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 

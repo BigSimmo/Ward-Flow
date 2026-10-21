@@ -254,6 +254,7 @@ export function WardScreenTopBar({
                 movements={movements}
                 notices={notices}
                 refreshRequests={refreshRequests}
+                allocatable={unit.allocatable}
                 morningRollupConfirmed={isRollupConfirmedToday}
                 morningRollupDeadlinePassed={morningRollupDeadlinePassed}
                 morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
@@ -340,6 +341,7 @@ export function WardScreenTopBar({
                       movements={movements}
                       notices={notices}
                       refreshRequests={refreshRequests}
+                      allocatable={unit.allocatable}
                       morningRollupConfirmed={isRollupConfirmedToday}
                       morningRollupDeadlinePassed={morningRollupDeadlinePassed}
                       morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}

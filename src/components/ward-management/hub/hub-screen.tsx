@@ -261,7 +261,13 @@ export function HubScreen() {
   const selectedRequest =
     selected === undefined
       ? undefined
-      : refreshRequests.filter((entry) => entry.unitId === selected.id && capacityRequestIsOpen(entry)).at(-1);
+      : refreshRequests
+          .filter(
+            (entry) =>
+              entry.unitId === selected.id &&
+              capacityRequestIsOpen(entry, units.find((unit) => unit.id === selected.id)?.allocatable),
+          )
+          .at(-1);
 
   function select(id: string) {
     setSelectedId(id);
