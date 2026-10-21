@@ -419,6 +419,7 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  */
 type WardFlowContainer = {
   sharedRevision?: number;
+  sharedAccessContext?: string; // Adopted with the world before remounting desk forms.
   world: WardFlowState;
   typedTextSeen: boolean;
   restoredElapsed: number;
@@ -924,6 +925,7 @@ function WardFlowWorld({
                 ...current,
                 world: seedWardFlowStateAt(anchorOffsetMinutes),
                 sharedRevision: undefined,
+                sharedAccessContext: undefined,
                 eventLog: [],
                 sessionAdopted: true,
                 sessionRestored: false,
@@ -942,12 +944,15 @@ function WardFlowWorld({
       [ADOPT_SESSION]: (current) =>
         // Grants and cover change the scoped payload without changing the clinical revision.
         // A clock-only poll preserves the state reference, so it still skips adoption.
-        current.sharedRevision === snapshot.revision && current.world === snapshot.payload.state
+        current.sharedRevision === snapshot.revision &&
+        current.world === snapshot.payload.state &&
+        current.sharedAccessContext === snapshot.accessContext
           ? current
           : {
               ...current,
               world: snapshot.payload.state,
               sharedRevision: snapshot.revision,
+              sharedAccessContext: snapshot.accessContext,
               sessionAdopted: true,
               sessionRestored: true,
               typedTextSeen: true,
@@ -1394,6 +1399,8 @@ function WardFlowWorld({
     ],
   );
 
+  const screenKey =
+    (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
@@ -1411,15 +1418,9 @@ function WardFlowWorld({
           >
             <ToastDeviceSaveContext.Provider value={savesOnDevice}>
               <WardFlowClockContext.Provider value={now}>
-                {/*
-                 * Remounts the screens once, and only when a saved day that differs from the seed was
-                 * restored: screens initialise drafts and selections from provider data once
-                 * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-                 * must start again from the restored world rather than keep the seed's. A first visit, or a
-                 * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-                 */}
+                {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
                 <WardSharedAccess connection={sharedConnection}>
-                  <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+                  <Fragment key={screenKey}>{children}</Fragment>
                 </WardSharedAccess>
               </WardFlowClockContext.Provider>
             </ToastDeviceSaveContext.Provider>

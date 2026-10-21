@@ -1,5 +1,5 @@
 import { onWardSessionEnd } from "../ward-browser-data";
-import { clearSessionDrafts } from "../ward-session-drafts";
+import { clearSessionDrafts, setDraftAccessContext } from "../ward-session-drafts";
 
 /** Shared tab owner only: sign-out/reset must not load the referral form or recovery validator. */
 export const referralDraftMemory: {
@@ -22,8 +22,17 @@ export const referralDraftMemory: {
 
 /** Invalidate pending callbacks before an outgoing person's form unmounts. */
 export function clearReferralDraftSession(): void {
-  referralDraftMemory.sessionVersion += 1;
   clearSessionDrafts();
+  clearReferralDraftMemory();
+}
+
+/** An unchanged server context preserves reload recovery and ordinary in-progress edits. */
+export function bindReferralDraftAccessContext(context: string): void {
+  if (setDraftAccessContext(context)) clearReferralDraftMemory();
+}
+
+function clearReferralDraftMemory(): void {
+  referralDraftMemory.sessionVersion += 1;
   referralDraftMemory.keptStorageKey = undefined;
   referralDraftMemory.recoveryStorageKey = undefined;
   referralDraftMemory.kept = null;

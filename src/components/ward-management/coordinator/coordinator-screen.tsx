@@ -1,7 +1,6 @@
 "use client";
 
 import { Copy } from "lucide-react";
-import Link from "next/link";
 import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
@@ -75,8 +74,6 @@ import {
   sinceSheetDescription,
   useSinceLastLook,
 } from "./since-last-look-panel";
-
-const HANDOVER_HREF = "/ward-flow/handover";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -913,12 +910,8 @@ export function CoordinatorScreen() {
                   onTogglePause={togglePause}
                 />
               ) : (
-                <>
-                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
-                  <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
-                    Start handover
-                  </Link>
-                </>
+                // A5 (20 Oct 2026): Handover is reached from the rail, not from Home.
+                <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
               )
             }
             foot={

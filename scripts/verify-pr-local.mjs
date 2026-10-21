@@ -25,8 +25,10 @@ export function selectedScripts(scope, _extended = false) {
   const scripts = [...common];
   if (plan.full) scripts.push("check:installed-lock-parity");
   if (plan.policy) scripts.push("check:ward-policy-contracts");
-  if (scope.entries?.some(({ file }) => file.startsWith("backend/ward-flow/"))) scripts.push("test:backend");
-  if (plan.unit) scripts.push("lint", "typecheck", "check:ward-expected-reds");
+  if (plan.backend) scripts.push("typecheck:backend", "test:backend");
+  if (plan.frontend_static) scripts.push("lint", "typecheck");
+  if (plan.unit) scripts.push("check:ward-expected-reds");
+  if (plan.build) scripts.push("build");
   if (plan.browser) scripts.push("test:e2e:ward-journeys");
   return [...new Set(scripts)];
 }
@@ -72,6 +74,7 @@ function runNpmScript(script) {
   return childProcessExitCode(result);
 }
 
+/** @param {string[]} scripts @param {{completed?:string[],failedScript?:string|null,failedExitCode?:number}} [progress] */
 export function summarizePrLocalRun(scripts, { completed = [], failedScript = null, failedExitCode = 0 } = {}) {
   const notReached = scripts.filter((script) => !completed.includes(script) && script !== failedScript);
   return [
@@ -79,6 +82,9 @@ export function summarizePrLocalRun(scripts, { completed = [], failedScript = nu
     `- completed: ${completed.join(", ") || "(none)"}`,
     `- failed: ${failedScript ? `${failedScript} (exit ${failedExitCode})` : "(none)"}`,
     `- not reached: ${notReached.join(", ") || "(none)"}`,
+    ...(scripts.includes("test:backend") && !completed.includes("test:backend")
+      ? ["Backend PostgreSQL integration: NOT RUN to completion; no passing database evidence."]
+      : []),
     "Local selected evidence does not establish hosted CI, publication or deployment.",
   ].join("\n");
 }

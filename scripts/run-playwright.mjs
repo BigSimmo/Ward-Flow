@@ -24,6 +24,12 @@ import { acquireHeavyRunLock } from "./test-run-lock.mjs";
 import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
+import {
+  browserArtifactRunId,
+  prepareBrowserArtifact,
+  consumeBrowserArtifact,
+} from "./ward-flow/browser-build-artifact.mjs";
+import { includeGroupCsrf, releaseGateCases } from "./ward-flow/browser-run-contract.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
 import { KEPT_EVIDENCE_RUNS, pruneEvidenceRuns } from "./ward-flow/prune-evidence-runs.mjs";
 import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
@@ -64,7 +70,8 @@ routeSmokePaths = fullRouteSmokePaths;
  * What `playwright test` receives, exactly as the caller wrote it, and what the browser preflight
  * reads.
  */
-const playwrightArgs = process.argv.slice(2);
+const requiredReleaseGate = process.argv.includes("--require-release-gate");
+const playwrightArgs = process.argv.slice(2).filter((argument) => argument !== "--require-release-gate");
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it
 // whenever the mockups project is requested and the list has entries. playwright.config.ts only
 // defines that project when the list names at least one test, so an emptied list must not ask for
@@ -101,6 +108,7 @@ if (journeyGroup) {
   console.log(
     `Journey group ${index}/${count}: ${Math.round(groups[index - 1].seconds)}s measured, ${groups[index - 1].files.join(", ")}`,
   );
+  playwrightArgs.splice(0, playwrightArgs.length, ...includeGroupCsrf(playwrightArgs, journeyGroup));
 }
 const explicitProjectRequested = playwrightArgs.some(
   (argument) => argument === "--project" || argument.startsWith("--project="),
@@ -126,7 +134,11 @@ const mockupProjectRequested =
 // Fail loud on missing browser binaries before the heavy lock or production build.
 // Otherwise launch failures surface as "N failed" product tests and are easy to misread
 // when a caller pipes output without `pipefail` (outstanding-issues #120).
-const browserPreflight = assertPlaywrightBrowsersReady(playwrightArgs);
+const prepareDir = process.env.WARD_BROWSER_PREPARE_DIR?.trim();
+const artifactDir = process.env.WARD_BROWSER_ARTIFACT_DIR?.trim();
+if (prepareDir && artifactDir) throw new Error("Browser prepare and consume modes are mutually exclusive");
+if ((prepareDir || artifactDir) && wardOnlyRequested) throw new Error("Browser artifacts require a full build");
+const browserPreflight = prepareDir ? { checked: [] } : assertPlaywrightBrowsersReady(playwrightArgs);
 const preinstalledChromium = browserPreflight.checked.find(
   (entry) => entry.source === "preinstalled container Chromium (PLAYWRIGHT_BROWSERS_PATH)",
 );
@@ -152,7 +164,10 @@ if (keepBuildRoot && !requestedRunId) {
   console.error("PLAYWRIGHT_KEEP_BUILD_ROOT requires PLAYWRIGHT_BUILD_ROOT_ID.");
   process.exit(1);
 }
-const runId = requestedRunId || `${process.pid}-${Date.now()}`;
+const artifactRunId = artifactDir ? browserArtifactRunId(artifactDir) : undefined;
+if (artifactRunId && requestedRunId && requestedRunId !== artifactRunId)
+  throw new Error("Browser artifact run ID mismatch");
+const runId = artifactRunId || requestedRunId || `${process.pid}-${Date.now()}`;
 const relativeRunRoot = `.next-playwright/${runId}`;
 const absoluteRunRoot = path.join(projectRoot, relativeRunRoot);
 // Evidence outlives temporary build cleanup. Each invocation owns a separate directory, even
@@ -588,11 +603,13 @@ try {
   // current source, so a warm cache changes speed, not what is built.
   const buildCacheDir = process.env.WARD_BUILD_CACHE_DIR?.trim();
   const runCacheDir = path.join(absoluteRunRoot, "dist", "cache");
-  if (buildCacheDir && existsSync(buildCacheDir)) {
+  if (!artifactDir && buildCacheDir && existsSync(buildCacheDir)) {
     cpSync(buildCacheDir, runCacheDir, { recursive: true });
     console.log(`Seeded the build cache from ${buildCacheDir}`);
   }
-  console.log(`Building isolated production Playwright app (${relativeRunRoot})`);
+  console.log(
+    `${artifactDir ? "Verifying prepared" : "Building isolated"} production Playwright app (${relativeRunRoot})`,
+  );
 
   // WARD_GATE_PARALLEL_TSC=1 (Ward Flow gate, Josh 25 September): the build skips its own type
   // check (WARD_GATE_BUILD=1) and the SAME check (this run's isolated tsconfig, which includes the
@@ -609,7 +626,11 @@ try {
     });
   let wardOnlyBuilt = false;
   let buildResult;
-  if (wardOnlyRequested) {
+  if (artifactDir) {
+    consumeBrowserArtifact({ root: projectRoot, runRoot: absoluteRunRoot, artifactDir, environment: offlineEnv });
+    buildResult = { status: 0 };
+  }
+  if (!artifactDir && wardOnlyRequested) {
     console.log(`Ward-only build (WARD_ONLY_BUILD=1): ${WARD_ONLY_BUILD_PATHS}`);
     buildResult = runBuild([`--debug-build-paths=${WARD_ONLY_BUILD_PATHS}`]);
     wardOnlyBuilt = childProcessExitCode(buildResult) === 0;
@@ -633,7 +654,7 @@ try {
       }
     }
   }
-  if (!wardOnlyBuilt) buildResult = runBuild([]);
+  if (!artifactDir && !wardOnlyBuilt) buildResult = runBuild([]);
   const buildExitCode = childProcessExitCode(buildResult);
   if (wardOnlyBuilt) routeSmokePaths = wardSmokePaths;
   if (buildExitCode !== 0) {
@@ -644,7 +665,7 @@ try {
     throw new Error(`Playwright production build failed (${childProcessFailureSummary(buildResult)}).`);
   }
 
-  if (buildCacheDir && existsSync(runCacheDir)) {
+  if (!artifactDir && buildCacheDir && existsSync(runCacheDir)) {
     // Copy out to a temporary folder first, then swap, so a failed copy never leaves a half cache.
     const staging = `${buildCacheDir}.incoming-${process.pid}`;
     removePathSync(staging, { recursive: true });
@@ -675,6 +696,17 @@ try {
       child.on("error", (error) => resolve({ code: 1, output: String(error.message) }));
       child.on("close", (code) => resolve({ code: code ?? 1, output }));
     });
+  }
+
+  if (prepareDir) {
+    prepareBrowserArtifact({
+      root: projectRoot,
+      runRoot: absoluteRunRoot,
+      outputDir: prepareDir,
+      environment: offlineEnv,
+    });
+    console.log(`Prepared browser build at ${prepareDir}; no browser tests executed.`);
+    await exitAfterTypeCheck(buildExitCode);
   }
 
   console.log(`Starting isolated production Playwright server at ${baseUrl} (${relativeRunRoot})`);
@@ -748,6 +780,7 @@ try {
     grep === "@quarantine|@mockup" &&
     playwrightArgs.includes("--pass-with-no-tests");
   const requiredProjects = advisoryRun ? [] : projects;
+  const requiredCases = releaseGateCases(requiredReleaseGate);
 
   // WARD_JOURNEY_SHARDS=N (off unless set; Ward Flow fold gate only, once proven): split the specs
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its
@@ -844,7 +877,7 @@ try {
     const shardVerdict = journeyRunVerdict(
       codes.map((code, index) => ({ label: `Shard ${index + 1}`, code, report: readJsonReport(reportFor(index)) })),
       requiredProjects,
-      { allowNoTests: advisoryRun },
+      { allowNoTests: advisoryRun, requiredCases },
     );
     if (!shardVerdict.ok) {
       for (const problem of shardVerdict.problems) console.error(`Journeys run is not trustworthy: ${problem}.`);
@@ -930,7 +963,7 @@ try {
   const verdict = journeyRunVerdict(
     [{ label: "The run", code: exitCode, report: readJsonReport(singleReport) }],
     requiredProjects,
-    { allowNoTests: advisoryRun },
+    { allowNoTests: advisoryRun, requiredCases },
   );
   for (const problem of verdict.problems) console.error(`Playwright run is not trustworthy: ${problem}.`);
   const verdictExitCode = verdict.ok ? exitCode : exitCode || 1;

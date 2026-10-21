@@ -44,6 +44,15 @@ function repo(parent?: string) {
 
 const publicRepo = () => repo(WARD_FLOW_IDENTITY_ANCHOR);
 
+function hasIdentityObjects(): boolean {
+  try {
+    git(process.cwd(), "cat-file", "-e", `${WARD_FLOW_IDENTITY_ANCHOR}^{commit}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 afterEach(() => {
   for (const root of roots.splice(0)) {
     expect(resolve(root).startsWith(resolve(tmpdir()))).toBe(true);
@@ -74,6 +83,56 @@ describe("public repository ownership boundary", () => {
     const wrongRoot = publicRepo();
     git(wrongRoot, "remote", "set-url", "--push", "origin", "https://github.com/BigSimmo/PsychSift.git");
     expect(isPublicWardFlowCheckout(wrongRoot)).toBe(false);
+  });
+
+  it("recognises an offline checkout with an anchored local main and retains its explicit public claims", (ctx) => {
+    ctx.skip(!hasIdentityObjects(), NEEDS_WARD_FLOW_HISTORY);
+    const root = publicRepo();
+    const owner = publicRepo();
+    git(root, "update-ref", "-d", "refs/remotes/origin/main");
+    git(owner, "update-ref", "-d", "refs/remotes/origin/main");
+    const claim = `- 2026-10-20 | Owner | fix/audit | ${owner} | tests/offline.test.ts; repo=BigSimmo/Ward-Flow`;
+    const log = `## Active sign-outs\n${claim}\n`;
+    expect(isPublicWardFlowCheckout(root)).toBe(true);
+    expect(scopedActiveSignOutLines(log, root)).toContain(claim);
+    expect(signOutConflicts(["tests/offline.test.ts"], log, "fix/other", root)).toEqual([
+      { file: "tests/offline.test.ts", owner: "Owner", branch: "fix/audit" },
+    ]);
+  });
+
+  it("does not use local main to conceal a foreign origin/main", (ctx) => {
+    ctx.skip(!hasIdentityObjects(), NEEDS_WARD_FLOW_HISTORY);
+    const root = publicRepo();
+    const foreign = git(root, "commit-tree", git(root, "rev-parse", "HEAD^{tree}"), "-m", "foreign baseline");
+    git(root, "update-ref", "refs/remotes/origin/main", foreign);
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
+  });
+
+  it("rejects an offline checkout when neither main baseline exists", (ctx) => {
+    ctx.skip(!hasIdentityObjects(), NEEDS_WARD_FLOW_HISTORY);
+    const root = publicRepo();
+    git(root, "checkout", "--quiet", "-b", "fix/offline");
+    git(root, "update-ref", "-d", "refs/remotes/origin/main");
+    git(root, "update-ref", "-d", "refs/heads/main");
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
+  });
+
+  it("rejects an offline checkout with a foreign local main despite an anchored HEAD", (ctx) => {
+    ctx.skip(!hasIdentityObjects(), NEEDS_WARD_FLOW_HISTORY);
+    const root = publicRepo();
+    const foreign = git(root, "commit-tree", git(root, "rev-parse", "HEAD^{tree}"), "-m", "foreign baseline");
+    git(root, "checkout", "--quiet", "-b", "fix/offline");
+    git(root, "update-ref", "-d", "refs/remotes/origin/main");
+    git(root, "update-ref", "refs/heads/main", foreign);
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
+  });
+
+  it("rejects an offline checkout with the wrong push destination", (ctx) => {
+    ctx.skip(!hasIdentityObjects(), NEEDS_WARD_FLOW_HISTORY);
+    const root = publicRepo();
+    git(root, "update-ref", "-d", "refs/remotes/origin/main");
+    git(root, "remote", "set-url", "--push", "origin", "https://github.com/BigSimmo/PsychSift.git");
+    expect(isPublicWardFlowCheckout(root)).toBe(false);
   });
 
   it("accepts the canonical ssh:// remote the push guard accepts", (ctx) => {

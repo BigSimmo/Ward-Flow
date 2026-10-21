@@ -1,5 +1,12 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import { afterAll } from "vitest";
+import { createPreparationProfile } from "../../scripts/ward-flow/test-preparation-profile.mjs";
+
+const profile = createPreparationProfile("source-ast");
+afterAll(() => {
+  profile.write();
+});
 
 /**
  * Every string-shaped literal the TypeScript parser sees in one file — plain string literals
@@ -23,7 +30,12 @@ import ts from "typescript";
  * check — this function only extracts candidates, it does not decide what counts as a match.
  */
 export function literalsIn(path: string): string[] {
-  const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  profile.count("files");
+  const text = profile.measure("read", () => readFileSync(path, "utf8"));
+  profile.count("sourceBytes", Buffer.byteLength(text));
+  const source = profile.measure("parse", () =>
+    ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX),
+  );
   const literals: string[] = [];
   const visit = (node: ts.Node): void => {
     if (
@@ -37,6 +49,6 @@ export function literalsIn(path: string): string[] {
     }
     ts.forEachChild(node, visit);
   };
-  visit(source);
+  profile.measure("traverse", () => visit(source));
   return literals;
 }

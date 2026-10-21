@@ -37,7 +37,8 @@ type Desk = { context: BrowserContext; page: Page };
  * fake service the runner started; everything else is refused, so nothing leaves the machine.
  */
 async function openDesk(browser: Browser, account: { email: string; password: string }, clock = false) {
-  const context = await browser.newContext();
+  // The runner creates a self-signed certificate only for its loopback HTTPS backend.
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
   await context.route(
     (url) => !["localhost", "127.0.0.1"].includes(url.hostname),
     (route) => route.abort("blockedbyclient"),
@@ -153,6 +154,10 @@ test("two signed-in desks share one workspace: a save on one reaches the other o
   // Desk two did nothing: only its own poll can bring desk one's change.
   await expect(queueRow(two.page)).toContainText(chosen, POLL);
   await expect(sharedStatus(two.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  // A new page load must read the saved record from the backend, rather than reducer state.
+  await one.page.reload({ waitUntil: "domcontentloaded" });
+  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(await revealRow(one.page)).toContainText(chosen);
 });
 
 test("a clash: two desks change the same record from the same revision, and the second is refused", async () => {

@@ -27,8 +27,9 @@ function expectedScope() {
   // plan.mjs's own fail-closed answer — classifyChanges([]), plus dependency review when a base was
   // given but could not be used. `reason` is dropped: it is a console message for a human.
   const failClosed = (dependencyReview) => {
-    const { full, unit, browser, policy } = classifyChanges([]);
-    return { full, unit, browser, policy: policy ?? false, dependencyReview, ...documentChecks([]) };
+    const scope = { ...classifyChanges([]) };
+    delete scope.reason;
+    return { ...scope, dependencyReview, ...documentChecks([]) };
   };
   if (!base) return failClosed(false);
   if (!sha.test(base)) return failClosed(true);
@@ -45,6 +46,9 @@ function expectedScope() {
       unit: plan.unit,
       browser: plan.browser,
       policy: plan.policy ?? false,
+      backend: plan.backend,
+      build: plan.build,
+      frontend_static: plan.frontend_static,
       dependencyReview: hasDependencyChanges(changes),
       ...documentChecks(changes),
     };
@@ -58,6 +62,9 @@ const written = {
   unit: process.env.WARD_PLAN_UNIT,
   browser: process.env.WARD_PLAN_BROWSER,
   policy: process.env.WARD_PLAN_POLICY,
+  backend: process.env.WARD_PLAN_BACKEND,
+  build: process.env.WARD_PLAN_BUILD,
+  frontend_static: process.env.WARD_PLAN_FRONTEND_STATIC,
   dependencyReview: process.env.WARD_PLAN_DEPENDENCY_REVIEW,
   owner_index: process.env.WARD_PLAN_OWNER_INDEX,
   rules_index: process.env.WARD_PLAN_RULES_INDEX,

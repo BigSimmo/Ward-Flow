@@ -1,150 +1,157 @@
 # Public Ward Flow PR checks
 
-_Updated 2026-10-19 - policy scope, lint threshold and main-owned build cache; Documentation owns._
+_Updated 2026-10-20 - verified scope, shared production proof and browser build fan-out; Documentation owns._
 
-The public `BigSimmo/Ward-Flow` repository retains its current application source. The `Ward Flow CI`
-workflow runs on pull requests to `main` and merge groups. It uses a read-only token, pinned actions,
-locked dependencies, and synthetic browser configuration. It does not deploy the application.
+The `Ward Flow CI` workflow in `.github/workflows/ward-flow.yml` checks the public
+`BigSimmo/Ward-Flow` repository with pinned actions, locked dependencies, a read-only token and
+synthetic fixtures. It runs on pull requests to `main`, main pushes, merge groups, manual dispatch
+and the nightly schedule. It does not deploy the application. This describes the implemented
+contracts; hosted runtime and savings need measurements from runs of this topology.
 
 ## Layout
 
-The checks run as parallel jobs, so a typical PR finishes in about four minutes (the single serial
-job it replaced took about seventeen). No test is dropped: each job runs everything in its part, and a
-PR skips a job only when its changes cannot affect it (see [Scope by change](#scope-by-change)).
+The dependency-free `plan` job derives scope and verifies every output against a fresh diff before
+unit or browser matrices can be allocated. Static checks and scoped backend work follow that plan.
+The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
+all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
-| Job                                | Runners | What it runs                                                                                                                                                                                                                               | Typical time |
-| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| `Ward Flow main reuse check`       | 1       | On `main` pushes (`reuse` job): checks via `scripts/ward-ci-public/main-reuse.mjs` whether the exact tree already passed unit shards, browser journeys, coverage, and build on its merged PR head.                                         | seconds      |
-| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types.                                   | 1 to 2 min   |
-| `Ward Flow secret scan`            | 1       | Full-history `gitleaks` scan (`secret-scan` job) using a pinned, checksum-verified binary and `.gitleaksignore`.                                                                                                                           | under 1 min  |
-| `Ward Flow unit shard 1` to `8`    | 8       | The reconciled offline unit population, split into eight disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/8`). Together they run every file once.                                                                                        | 2 to 3 min   |
-| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                                                          | about 3 min  |
-| `Ward Flow release gate`           | 1       | The four core bed-flow journeys (`npm run test:e2e:release-gate`) on desktop Chromium (1440px) and phone WebKit (390x844), with an axe WCAG 2.1 AA scan at each key step. Required by `Ward Flow required`, including the main reuse case. | about 5 min  |
-| `Ward Flow production build`       | 1       | Full production Next.js webpack build (`build` job, Node `24.19.0` matching Railway) without `WARD_GATE_BUILD`, verifying full build and type checks.                                                                                      | 2 to 3 min   |
-| `Ward Flow coverage`               | 1       | Merges the eight unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                                                      | about 1 min  |
-| `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                                                       | seconds      |
+| Job                                             | Work                                                                                                                                                                                                       |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ward Flow scope plan`                          | Computes and verifies install, policy, frontend static, backend, unit, browser and production-build flags.                                                                                                 |
+| `Ward Flow main reuse check`                    | On main pushes, proves the exact tree already passed the required heavy PR jobs.                                                                                                                           |
+| `Ward Flow static checks`                       | CI contracts, source safety, document links/commands/facts and reference-pack integrity; scoped installs, changed-file checks, related tests, lint, route/source typecheck and policy/reference contracts. |
+| `Ward Flow backend and shared production proof` | Discovered backend tests, backend typecheck and LCOV against disposable PostgreSQL; authenticated shared-mode production browser proof.                                                                    |
+| `Ward Flow unit shard 1` to `8`                 | Eight disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                                    |
+| `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                                    |
+| `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                           |
+| `Ward Flow release gate`                        | Four required journeys on desktop Chromium and phone WebKit: eight required cases with accessibility checks. Consumes the prepared build, or builds fresh on verified main reuse.                          |
+| `Ward Flow secret scan`                         | Full-history gitleaks scan with a pinned, checksum-verified binary.                                                                                                                                        |
+| `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                     |
+| `Ward Flow coverage`                            | Merges all eight unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                        |
+| `Ward Flow required`                            | Checks every selected result, every allowed scoped skip and the separate main-reuse path.                                                                                                                  |
 
-Details that keep the split sound:
-
-- **Unit shards.** The discovery floor is checked on the whole population before splitting. Files are
-  dealt longest first onto the lightest shard using `scripts/ward-flow/unit-durations.json` (each
-  file's measured cost; an unmeasured file counts as the median, and with no record the split falls back
-  to every eighth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
-  floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
-  compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once. Eight shards (five until 11 October 2026): balancing five
-  left the slowest at about 6.5 minutes, because files in one shard slow each other down; more
-  runners was the remaining lever. Refresh the cost record when the shards drift apart: the
-  coverage job's "Report measured unit test costs" step prints every file's cost on that run, read from
-  the shards' Vitest blob reports (real runner, coverage on), in the record's own format.
-- **Longest first.** In CI (`CI` set) Vitest runs each unit shard's files, and the related-tests step's
-  files, longest first by the same record (`scripts/ward-flow/unit-durations.mjs`). A fresh runner has
-  no Vitest results cache, so its own order is the file listing, and a 2.5-minute file starting last
-  kept a shard running alone for up to two minutes. This changes order only: every file still runs in
-  its own isolated worker, and the shard split is unchanged. On 11 October 2026 it took a local
-  shard 3 of 5 from 291 to 198 seconds.
-- **Coverage.** Each unit shard also records V8 coverage for its own files into a Vitest blob report
-  (`WARD_COVERAGE_BLOB_DIR`), with the thresholds switched off for that one slice. The coverage job
-  downloads all eight blobs, fails if any shard's blob is missing, and runs
-  `vitest --merge-reports --coverage`, which applies the unchanged thresholds to the merged whole-suite
-  result. Until 6 October 2026 a separate job ran the whole unit suite a second time for coverage, which
-  took about seventeen minutes on its own.
-- **Related tests.** The static job also runs only the tests that import the files the PR changed
-  (`scripts/ward-flow/related-tests.mjs --root .`), as a fast signal. In `--root` mode it judges reds
-  against the expected-reds manifest the same way the unit shards do, so it fails only where a shard
-  would also fail. It used to have its own runner; sharing the static runner keeps two PR runs inside
-  the account's concurrent-runner limit.
-- **Browser groups.** Groups are dealt from `scripts/ward-flow/journey-durations.json` (each spec
-  file's wall time in CI). Refresh it from the list reporter's timestamps in the three group logs when
-  the groups drift apart. Each group runs with one worker on a runner of its own. Three browsers sharing
-  one runner made timing-sensitive journeys fail (28 September 2026). Failing groups upload traces and
-  screenshots for three days.
-- **Route types.** The static job runs `next typegen` before `tsc -p tsconfig.json`, so route and page
-  signatures are checked there. The browser builds therefore skip their own type check
-  (`WARD_GATE_BUILD=1`); the deployed build still runs it.
-- **Build cache.** Browser jobs restore Next's working cache from main's saved entries; only main
-  saves new entries. Next validates every entry against the source, so a warm cache changes speed,
-  not what is built.
-- **Browser cache.** Browser jobs restore the Playwright Chromium download (`~/.cache/ms-playwright`),
-  keyed by the installed Playwright version, and still install the system libraries every run. Only
-  runs on `main` save it, so pull requests reuse main's copy without adding their own.
-- **Release gate.** `tests/release-gate-journeys.spec.ts` runs the ED referral to bed offer, the
-  morning bed meeting, a transfer with transport and a discharge with bed release, each on both
-  release-gate projects in `playwright.config.ts`. A serious or critical axe violation fails it. It
-  installs Chromium and WebKit, builds with `WARD_GATE_BUILD=1`, skips its steps when the plan's
-  `browser` output is false, and restores Next's build cache without saving it. It does not depend
-  on the reuse job, so it runs on every `main` commit too, and a red gate holds that commit's
-  Railway deploy. `Ward Flow required` requires the release gate to succeed in both its normal
-  and verified-main-reuse paths, so a failed release gate also fails the required merge check.
-- **Contracts.** `scripts/ward-ci-public/check-contracts.mjs` fails if the required job stops needing
-  any of the three, if a shard or group matrix does not match its count, or if the browser builds skip
-  their type check without the static job's route-type check.
-
-## Main pushes
-
-Railway deploys a `main` commit only after this workflow succeeds on it. Every push to `main` first runs
-`Ward Flow main reuse check` (`scripts/ward-ci-public/main-reuse.mjs`). It proves, through the GitHub API
-and git, that the pushed tree is identical to the head of the one merged pull request that produced it,
-that the head already contained the previous `main`, and that a successful run on that head really ran
-every unit shard, browser group, the coverage thresholds and the production build. When all of that
-holds, those jobs are skipped on `main`, the required job requires them to be skipped (not failed or
-cancelled), and the run still concludes success, so the deploy proceeds. The static checks, including
-whole-tree lint, and the secret scan still run on every `main` commit.
-Anything short of the proof, including any API or git error, runs the full suite as before.
-
-A scheduled full run of `main` at 02:00 AWST (18:00 UTC) keeps a regular fresh-runner run of the whole
-suite on `main`.
-
-## Changed-file checks
-
-`scripts/ward-ci-public/changed-checks.mjs` runs in the static job on the files the PR changes, in
-about ten seconds:
-
-- **Prettier** on each changed file. Older unformatted files elsewhere never block an unrelated PR.
-- **ESLint, errors only**, on changed source and script files. Warnings are reported locally, not gated.
-- **Test-deletion guard** (`scripts/check-diff-integrity.mjs`): fails on truncation artefacts and unreadable before-state; test-count floor reductions without an entry in `diff-integrity.json` are advisory by default (Prototype Operating Mode §3) and hard-fail when `DIFF_INTEGRITY_STRICT=1` is set.
-
-Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
-
-When executable static work is selected, the static job also runs whole-tree ESLint with
-`--max-warnings 0`, including on pull requests. An ESLint config, rule or plugin change that breaks
-a file the PR did not touch therefore fails on the PR instead of first on `main`. The changed-file
-ESLint check above remains errors-only.
+Every dependency install uses `scripts/install-locked-dependencies.mjs`, including the backend root.
+The wrapper performs the locked install and verifies the installed runtime dependency inventory;
+matching direct versions alone does not prove a usable installation. Jobs also record Node and npm.
+An installation failure cannot establish test evidence.
 
 ## Scope by change
 
-`scripts/ward-ci-public/plan.mjs` decides which jobs a PR needs. It narrows only for files it
-positively recognises; anything else, including deletions, renames, workflow and configuration
-changes, runs every job.
+`plan.mjs` narrows only positively recognised scopes. `full` controls root installation; independent
+`frontend_static`, `backend`, `unit`, `browser`, `build` and `policy` flags select work. Static document
+and contract checks and the secret scan still run on narrow PRs.
 
-| The PR changes only                                     | Static                             | Unit shards | Browser groups |
-| ------------------------------------------------------- | ---------------------------------- | ----------- | -------------- |
-| Ward documentation                                      | links                              | skipped     | skipped        |
-| Maintained policy files (and Ward documentation)        | policy contracts and static checks | skipped     | skipped        |
-| `backend/ward-flow/**` (and documentation)              | yes                                | skipped     | skipped        |
-| unit test files `tests/**/*.test.ts(x)` (and the above) | yes                                | yes         | skipped        |
-| anything else                                           | yes                                | yes         | yes            |
+| The PR changes only                                                           | Frontend static       | Root unit and coverage | Backend/shared proof | Browser groups and release | Production build |
+| ----------------------------------------------------------------------------- | --------------------- | ---------------------- | -------------------- | -------------------------- | ---------------- |
+| Recognised Ward Markdown or README                                            | skipped               | skipped                | skipped              | skipped                    | skipped          |
+| Maintained policy and recognised documentation                                | policy contracts only | skipped                | skipped              | skipped                    | skipped          |
+| `backend/ward-flow/**` and recognised documentation                           | yes                   | yes                    | yes                  | skipped                    | yes              |
+| `tests/**/*.test.ts(x)` and recognised documentation                          | yes                   | yes                    | skipped              | skipped                    | yes              |
+| Unit tests plus backend and recognised documentation                          | yes                   | yes                    | yes                  | skipped                    | yes              |
+| Source, browser specs, tooling, configuration, unknown or unavailable history | yes                   | yes                    | yes                  | yes                        | yes              |
 
-The narrower rows are safe because nothing in `src/`, `tests/` or `scripts/` imports the backend, and
-the browser specs import only application code and Playwright, never unit test files. Package manifest
-changes also receive GitHub dependency review. Unit and browser jobs time out after 15 and 20 minutes,
-so a hung run fails quickly instead of holding a runner.
+Backend engine and schema changes affect root tests and shared contracts. Backend-only changes
+therefore retain the complete root unit gate as well as backend/shared proof, while skipping the
+demo UI build and journey groups. Package manifests also select dependency review on PRs.
+Deletions and renames fail closed even when their paths would otherwise qualify for a narrow row.
+
+## Unit selection, coverage and measured costs
+
+The discovery floor applies before the eight-way split. Files are dealt longest first onto the
+lightest shard using `scripts/ward-flow/unit-durations.json`; unknown files use the median, with a
+deterministic fallback when measurements are absent. Real durations are not capped to make the
+balance look better. All runners compute the same disjoint population. Expected-red entries are
+compared only with the files that actually ran; launch failures, unhandled errors and import crashes
+cannot be accepted as listed assertion failures.
+
+Each shard emits a Vitest blob with slice thresholds disabled. Coverage downloads every shard's
+blobs and applies the unchanged thresholds to the merged population, then checks declared
+executable files. Coverage does not run the entire suite a second time. The unit-duration extractor
+reads those blobs and writes measured JSON; preparation profiling records aggregate counters and
+milliseconds when `WARD_TEST_PROFILE_DIR` is set. No source text or event payloads are recorded.
+Refresh committed duration records only from reviewed comparable measurements; synthetic test
+fixtures and local durations do not establish hosted savings.
+
+The static related-test check follows literal imports, re-exports and CommonJS requires through
+`src`, `scripts`, `tests` and `backend/ward-flow`. Both focused entry points share this selector.
+Declared source-reading guards, including the appearance-key scan across all `src/`, are retained
+after fan-out capping. Capped or explicitly deferred selections are partial evidence; the full unit
+gate covers the remaining population. Root related runs compare failures with the same expected-red
+manifest as the unit gate. Dynamic file-reading dependencies need an explicit declaration.
+
+## Backend and shared production proof
+
+`scripts/run-backend-tests.mjs` discovers every nested backend `.test.mjs`, excluding dependency and
+build directories. Default runs without `WARD_TEST_DATABASE_URL` explicitly report
+**PostgreSQL integration: NOT RUN**. An explicit PostgreSQL URL must point to loopback; remote hosts
+are refused. `npm run test:backend:integration` requires that URL instead of succeeding with skipped
+database checks. `npm run test:backend:coverage` writes separate `coverage/backend/lcov.info` without
+inventing a numeric coverage floor. The default runner retains the explicit loopback URL used by CI.
+
+The backend job uses disposable PostgreSQL and a separate shared-mode runner. That runner builds
+and serves Next in production mode, runs the backend with production configuration through an
+ephemeral loopback HTTPS proxy, and supplies local fake authentication. The runner uses the system
+`openssl` executable to generate a temporary self-signed certificate; it is a declared system binary
+in the unused-code configuration. It exercises both signed-in
+desks, save propagation, reload persistence, conflict refusal, server workflow refusal and retained
+keyboard focus. It validates the required shared cases from the report; a successful process with
+missing or skipped cases is insufficient. It does not contact the hosted authentication provider.
+
+## Browser build, release and caches
+
+One `browser-build` job prepares the offline browser app for the three journey groups and the
+release gate. Consumers verify the checkout, toolchain, build flags, isolated path and payload digest
+before using it. This completed build artifact is distinct from Next's working cache. The separate
+production build still runs normal typechecks; the browser build uses `WARD_GATE_BUILD=1` because
+static checks generate and verify route/source types.
+
+All blocking browser runs use one worker and zero retries. The release verdict requires the four
+named bed-flow journeys on **both** `release-gate-desktop` and `release-gate-phone`: eight cases with
+no skip or retry recovery. Accessibility retains the existing **serious or critical** axe WCAG failure threshold, without a recovery rescan. HTTP success,
+final URL and screen identity are checked before scanning. A diagnostic rerun retains the original
+failure. Playwright JSON establishes executed projects and cases; a configured project is not proof.
+
+Next working caches and browser downloads are restored where selected; explicit cache saves are
+restricted to main. Browser caches are keyed by Playwright version, include the required Chromium
+headless shell, and still install system libraries on a cache hit. Release browser downloads use a
+Chromium/WebKit-specific cache. A missing required executable fails preflight before a build.
+
+Coverage blobs and the prepared browser build are retained for one day. Static diagnostics, unit
+state/preparation profiles and failed browser/release evidence are retained for three days. Backend
+and shared-mode evidence, final coverage/measured unit costs, and browser execution reports/costs are retained for seven days. Browser costs are extracted only after a successful journey verdict; raw JSON is also retained after failure. `scripts/ward-flow/journey-durations.mjs --from-reports <directory>` reads existing JSON without launching browsers or rewriting the baseline.
+Report directories are unique per invocation so a later CSRF or diagnostic run cannot overwrite a
+journey failure. Local pruning keeps the newest five managed report directories only.
+
+## Main pushes and nightly runs
+
+The main reuse proof in `main-reuse.mjs` is unchanged. It verifies through git and the GitHub API that
+the pushed tree equals the head of the one merged PR that produced it, that this head contained the
+previous main, and that a successful run on that head actually ran every required unit shard,
+browser group, coverage thresholds and production build. Any missing proof or API/git error runs
+fresh checks. On verified reuse the unit, coverage, browser-build, journey-group and production-build
+jobs must be skipped, rather than failed or cancelled. Static checks, backend/shared proof and secret
+scanning still execute. The release gate executes afresh, building locally because no prepared
+browser artifact is produced on that path. A failed release gate fails `Ward Flow required`.
+
+The scheduled full main run starts at 18:00 UTC (02:00 AWST). It selects a reproducible UTC-day engine
+fuzz window: 16 sequences of 100 steps, with the exact first/last seeds and event budget written to
+JSON. Reproduce it with `engine-fuzz-window.mjs --date YYYY-MM-DD` and the recorded
+`WARD_ENGINE_FUZZ_FIRST_SEED`, `WARD_ENGINE_FUZZ_SEQUENCES` and `WARD_ENGINE_FUZZ_STEPS` values.
+These settings are part of checkpoint identity. The bounded nightly window changes test inputs,
+not the safety invariants. Ordinary runs retain their deterministic default seeds.
 
 ## Fast local iteration
 
-- `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`: the CI changed-file checks.
-- `npm run test:related`: runs only the tests related to your changes against `origin/main` (about two
-  seconds for a small change). This is the same selection as the quick-feedback job.
-- `WARD_GATE_SHARD=2/8 npm run check:ward-expected-reds`: reproduces one CI unit shard exactly.
-- `WARD_JOURNEY_GROUP=1/3 npm run test:e2e:ward-journeys`: reproduces one CI browser group (Node 24).
+- `node scripts/run-vitest.mjs run <test-file>` uses repository admission and offline defaults.
+- `npm run test:focused -- --files <comma-separated source paths>` shows or runs mapped tests; add `--dry-run` to inspect selection. Unsafe or empty mappings refuse and direct you to the full gate.
+- `npm run test:related` selects against `origin/main`, retaining declared source-reading guards.
+- `npm run verify:pr-local -- --dry-run --files <comma-separated paths>` shows selected aliases. Source or unknown scope includes backend typecheck/tests and the production `build`; narrow scopes follow their flags. A failure before backend completion explicitly leaves integration unproved.
+- `WARD_GATE_SHARD=2/8 npm run check:ward-expected-reds` reproduces one unit shard.
+- `WARD_JOURNEY_GROUP=1/3 npm run test:e2e:ward-journeys` reproduces one browser group.
+- `node scripts/ward-ci-public/changed-checks.mjs --base origin/main` runs the CI changed-file checks.
 
-## History
-
-The previous broad PsychSift `CI` workflow is disabled in GitHub settings. The workflow uses no write
-token or application deployment.
-
-The first hosted run on public `main` found broken local evidence links, four legal-wording lines and
-inherited unit tests that refer to agent tooling absent from the public checkout. Its reference,
-typecheck and browser journey steps passed. These failures are not waived; a later hosted run on the
-final PR head must pass before the change is ready to merge. The screen-verification record check
-checks record structure and freshness, not whether the rendered screens visually match their designs.
+The changed-file checks cover formatting, errors-only ESLint and diff/test-deletion integrity.
+Selected frontend static work additionally runs whole-tree ESLint with `--max-warnings 0`. Test-count
+floor reductions remain advisory unless `DIFF_INTEGRITY_STRICT=1`; unreadable before-state and
+truncation artefacts fail. Agents need the normal authority before provider, hosted CI or publication
+operations. Local passing checks do not establish hosted CI, merge or deployment results.

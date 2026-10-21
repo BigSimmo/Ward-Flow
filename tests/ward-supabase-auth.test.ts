@@ -197,6 +197,90 @@ it("clears local session before a logout outage", async () => {
   auth.dispose();
 });
 
+it.each([204, 503])("attempts provider logout (%i) even when removing browser credentials throws", async (status) => {
+  const store = storage();
+  const fetcher = vi.fn(async (endpoint: RequestInfo | URL) =>
+    String(endpoint).includes("/logout")
+      ? new Response(null, { status })
+      : Response.json(String(endpoint).endsWith("/user") ? user : session()),
+  );
+  const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  store.removeItem = () => {
+    throw new Error("storage blocked");
+  };
+  await expect(auth.signOut()).rejects.toMatchObject({
+    kind: "unavailable",
+    message: expect.stringContaining("could not remove saved sign-in details"),
+  });
+  expect(fetcher.mock.calls.some(([endpoint]) => String(endpoint).includes("/logout"))).toBe(true);
+  expect(auth.userId).toBeNull();
+  await expect(auth.token()).rejects.toMatchObject({ kind: "session" });
+  auth.dispose();
+});
+
+it("keeps a verified sign-in usable in memory when browser writes fail", async () => {
+  const store = storage();
+  store.setItem = () => {
+    throw new Error("storage full");
+  };
+  const auth = new SupabaseWardAuth({
+    url,
+    publishableKey: "sb_publishable_test",
+    storage: store,
+    fetch: async (endpoint) => Response.json(String(endpoint).endsWith("/user") ? user : session()),
+  });
+  await expect(auth.signIn("synthetic@example.invalid", "synthetic-password")).resolves.toBeUndefined();
+  expect(auth.userId).toBe(user.id);
+  expect(await auth.token()).toBe("access");
+  auth.dispose();
+});
+
+it("treats unavailable browser storage as an empty session on restore", async () => {
+  const auth = new SupabaseWardAuth({
+    url,
+    publishableKey: "sb_publishable_test",
+    storage: {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {},
+      removeItem: () => {},
+    },
+    fetch: async () => {
+      throw new Error("must not fetch");
+    },
+  });
+  await expect(auth.restore()).resolves.toBeUndefined();
+  expect(auth.userId).toBeNull();
+  auth.dispose();
+});
+
+it("keeps rotated refresh credentials in memory when browser writes fail", async () => {
+  const store = storage();
+  let first = true;
+  const auth = new SupabaseWardAuth({
+    url,
+    publishableKey: "sb_publishable_test",
+    storage: store,
+    fetch: async (endpoint) => {
+      if (String(endpoint).endsWith("/user")) return Response.json(user);
+      if (first) {
+        first = false;
+        return Response.json({ ...session(), expires_in: 1 });
+      }
+      return Response.json(session("rotated"));
+    },
+  });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  store.setItem = () => {
+    throw new Error("storage full");
+  };
+  expect(await auth.token()).toBe("rotated");
+  expect(auth.userId).toBe(user.id);
+  auth.dispose();
+});
+
 it("refuses refreshed tokens for a different account and removes the old session", async () => {
   const store = storage();
   let verified = 0;

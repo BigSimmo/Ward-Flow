@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, globSync, statSync } from "node:fs";
 import path from "node:path";
+import { createPreparationProfile } from "./ward-flow/test-preparation-profile.mjs";
 import { fileURLToPath } from "node:url";
 
 import { COVERAGE_INVENTORY_ROOTS, COVERAGE_INCLUDE_GLOBS, COVERAGE_EXCLUDE_GLOBS } from "./coverage-contract.mjs";
@@ -34,14 +35,22 @@ export function checkCoverageInventory(lcovSource, { root: base = root } = {}) {
   const sourceFiles = lcovSourceFiles(lcovSource).map((file) =>
     file.startsWith(prefix) ? file.slice(prefix.length) : file,
   );
-  const population = coveragePopulation(base);
+  const profile = createPreparationProfile("coverage-inventory");
+  const population = profile.measure("enumeration", () => coveragePopulation(base));
   const expected = new Set(population);
-  return {
+  const recorded = new Set(sourceFiles);
+  const result = profile.measure("reconciliation", () => ({
     sourceFiles,
-    missing: population.filter((file) => !sourceFiles.includes(file)),
+    missing: population.filter((file) => !recorded.has(file)),
     invalid: sourceFiles.filter((file) => !expected.has(file)),
     population,
-  };
+  }));
+  profile.count("population", population.length);
+  profile.count("reportedFiles", sourceFiles.length);
+  profile.write({
+    note: "LCOV inventory reconciliation; V8 uncovered-file transformation is measured separately with DEBUG=vitest:coverage.",
+  });
+  return result;
 }
 
 function main(argv = process.argv.slice(2)) {
