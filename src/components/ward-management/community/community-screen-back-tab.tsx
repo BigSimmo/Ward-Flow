@@ -435,7 +435,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                     <p className={styles.cardDetail}>
                       {sentReferralSummary(referral)} Sent {sentAgo(referral.raisedAt, now)}.
                     </p>
-                    <ul aria-label="Where it was sent">
+                    <ul className={styles.cardDetail} aria-label="Where it was sent">
                       {referral.addressings.map((addressing, index) => (
                         <li key={`${referral.id}-${index}`}>{sentPlaceLine(addressing, units)}</li>
                       ))}
