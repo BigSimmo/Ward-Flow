@@ -16,8 +16,10 @@ import {
  * file and loads it back later, on any day, without a backend.
  *
  * 🔴 **D-18 STILL HOLDS.** Nothing here writes to browser storage. A file is a deliberate download
- * the presenter asked for, and a LOADED world is treated as carrying typed text, so the provider
- * keeps it in memory only — a refresh discards it and the presenter loads the file again.
+ * the presenter asked for, and a LOADED world is treated as carrying typed text. Since 21 Oct 2026
+ * (Josh, fix plan item 2) the provider saves it like any typed session: a copy with every typed field
+ * replaced (`ward-flow-typed-text-scrub.ts`), so the loaded scenario survives a refresh with typed
+ * fields reading "Typed text not kept on this device". The file itself keeps the typed text.
  *
  * The load path reuses `isValidStoredWardFlowState`, the same fence that guards a browser restore,
  * so a file can never put a shape into the reducer that a browser restore would refuse. Two

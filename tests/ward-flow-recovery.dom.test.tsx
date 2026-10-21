@@ -403,13 +403,17 @@ describe("unavailable browser storage", () => {
       throw new DOMException("denied", "SecurityError");
     });
     expect(() => mount()).not.toThrow();
+    // A typed date of birth is one of the typed values the device copy cannot hold (Josh, 21 Oct
+    // 2026), so the stored day is cleared, which is the path a throwing removeItem must not break.
     act(() =>
       current.dispatch({
-        type: "RECORD_MOVEMENT_BLOCKER",
+        type: "ADD_PATIENT",
         role: "coordinator",
         now: current.now,
-        movementId: current.movements[0].id,
-        blocker: "Synthetic private note",
+        umrn: "UMRN-SYNTHETIC-9",
+        givenName: "Synthetic",
+        familyName: "Private",
+        dateOfBirth: "1990-01-01",
       }),
     );
     expect(screen.getByRole("status")).toHaveTextContent("stay in memory");

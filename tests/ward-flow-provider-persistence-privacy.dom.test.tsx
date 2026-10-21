@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { COHORTS, HOME_REGIONS, REFERRAL_SOURCES, TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
@@ -33,6 +34,11 @@ import {
  *     guard (payload SHAPE) lives in `ward-flow-provider.tsx` itself and is proven by
  *     `tests/ward-flow-provider-safe-payload-shape-guard.test.ts`, not by anything runtime here.
  *
+ * 21 Oct 2026 (Josh, fix plan item 2, option A): the first bullet is superseded. A typed-text dispatch
+ * is still tracked on DISPATCH, accepted or refused, but the session now keeps saving a copy with every
+ * typed value replaced (`ward-flow-typed-text-scrub.ts`), and stops only where that copy cannot be made
+ * safely. Every test below still proves the typed text itself never reaches `sessionStorage`.
+ *
  * No clock mock is installed here (unlike `ward-flow-provider.dom.test.tsx`'s top-of-file
  * `vi.mock("@/components/ward-management/ward-clock", …)`): `vi.useFakeTimers()` plus
  * `vi.setSystemTime(...)` alone is enough, because the real `wallClockNow()`/`demoDayZero()` both
@@ -42,7 +48,10 @@ import {
 describe("ward-flow-provider default-deny persistence privacy", () => {
   const FIXED_SYSTEM_TIME = new Date(2026, 8, 17, 10, 42, 0);
 
-  function readStoredState(): { version: number; state: Record<string, unknown> } | null {
+  function readStoredState(): {
+    version: number;
+    state: Record<string, unknown> & { clockOffsetMinutes?: number };
+  } | null {
     const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   }
@@ -65,8 +74,24 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
     vi.useRealTimers();
   });
 
-  describe("typed-text events lock persistence for the rest of the session, on DISPATCH", () => {
-    it("writes no payload once ADD_PATIENT carrying a typed given name is dispatched, and a remount finds nothing to restore", () => {
+  const TYPED_BLOCKER = "Waiting on the family, who are driving up from Bunbury this afternoon";
+
+  /** The stored copy as text, which must exist and must not hold any of `typed`. */
+  function storedWithout(...typed: string[]): string {
+    const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(raw).not.toBeNull();
+    for (const value of typed) expect(raw).not.toContain(value);
+    return raw!;
+  }
+
+  /*
+   * Josh, 21 Oct 2026 (fix plan item 2, option A): a typed-text dispatch no longer stops the save. The
+   * session keeps saving a copy with every typed value replaced by TYPED_TEXT_NOT_KEPT, so a refresh
+   * keeps every other change. Saving still stops where that copy cannot be made safely (a typed
+   * patient's date of birth, below). Typed text never reaches storage either way.
+   */
+  describe("typed-text events keep saving everything except the typed text, on DISPATCH", () => {
+    it("stops saving once ADD_PATIENT carrying a typed date of birth is dispatched, and a remount finds nothing to restore", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -118,7 +143,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(JSON.stringify(restored)).not.toContain("Josephine");
     });
 
-    it("writes no payload once RECORD_MOVEMENT_BLOCKER carrying typed text is dispatched", () => {
+    it("saves RECORD_MOVEMENT_BLOCKER without its typed text, and a refresh keeps the rest", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -133,13 +158,28 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           role: "coordinator",
           now: current!.now,
           movementId: movement.id,
-          blocker: "Waiting on the family, who are driving up from Bunbury this afternoon",
+          blocker: TYPED_BLOCKER,
         });
       });
-      expect(readStoredState()).toBeNull();
       const updated = current!.movements.find((candidate) => candidate.id === movement.id);
-      expect(updated?.blocker).toContain("Bunbury");
+      expect(updated?.blocker).toBe(TYPED_BLOCKER);
+      storedWithout(TYPED_BLOCKER);
+      act(() => {
+        current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
+      });
+      const clockBeforeRefresh = current!.now;
+      storedWithout(TYPED_BLOCKER);
+      expect(current!.savingOnDevice).toBe(true);
+
+      // A refresh keeps the later change, and the typed field reads as not kept.
       unmount();
+      render(
+        <WardFlowProvider>
+          <Capture />
+        </WardFlowProvider>,
+      );
+      expect(current!.now).toBe(clockBeforeRefresh);
+      expect(current!.movements.find((candidate) => candidate.id === movement.id)?.blocker).toBe(TYPED_TEXT_NOT_KEPT);
     });
 
     /**
@@ -156,7 +196,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
      * `WARD_FLOW_TYPED_TEXT_EVENT_TYPES` (`ward-flow-persistence-classification.ts`) — the same
      * "one typed field decides the event" rule `RECORD_MOVEMENT_BLOCKER` above already holds to.
      */
-    it("writes no payload once BOOK_TRANSPORT carrying a typed CAD number is dispatched, and locks the session", () => {
+    it("saves BOOK_TRANSPORT without its typed CAD number, and keeps saving later changes", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -181,17 +221,23 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(current!.rejections).toEqual([]);
       const updated = current!.movements.find((candidate) => candidate.id === movement.id);
       expect(updated?.transport?.cadNumber).toBe("CAD-2026-0917");
-      expect(readStoredState()).toBeNull();
+      const stored = JSON.parse(storedWithout("CAD-2026-0917")) as {
+        state: { movements: NonNullable<typeof current>["movements"] };
+      };
+      expect(stored.state.movements.find((candidate) => candidate.id === movement.id)?.transport?.cadNumber).toBe(
+        TYPED_TEXT_NOT_KEPT,
+      );
 
-      // And still locked: an allowlisted event afterwards must not be written.
+      // A later allowlisted event is written too, still without the typed number.
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
       });
-      expect(readStoredState()).toBeNull();
+      expect(readStoredState()!.state.clockOffsetMinutes).toBe(5);
+      storedWithout("CAD-2026-0917");
       unmount();
     });
 
-    it("locks persistence on a REJECTED RECORD_MOVEMENT_BLOCKER dispatch too, not only an accepted one", () => {
+    it("tracks a REJECTED RECORD_MOVEMENT_BLOCKER dispatch too, and keeps saving", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -215,16 +261,15 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       const updated = current!.movements.find((candidate) => candidate.id === movement.id);
       expect(updated?.blocker).not.toBe("");
 
-      // And still locked: an allowlisted event afterwards must not be written.
-      expect(readStoredState()).toBeNull();
+      expect(current!.savingOnDevice).toBe(true);
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
       });
-      expect(readStoredState()).toBeNull();
+      expect(readStoredState()!.state.clockOffsetMinutes).toBe(5);
       unmount();
     });
 
-    it("locks persistence on a REJECTED RECEIVE_REFERRAL dispatch (community intake)", () => {
+    it("keeps saving after a REJECTED RECEIVE_REFERRAL dispatch (community intake), without its typed text", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -250,11 +295,11 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
         });
       });
       expect(current!.rejections.length).toBeGreaterThan(0);
-      expect(readStoredState()).toBeNull();
+      storedWithout("Test Suburb", "TEST-SITE");
       unmount();
     });
 
-    it("locks persistence on a REJECTED REFER_TO_COMMUNITY_TEAM dispatch", () => {
+    it("keeps saving after a REJECTED REFER_TO_COMMUNITY_TEAM dispatch, without its typed team", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -274,11 +319,11 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
         });
       });
       expect(current!.rejections.length).toBeGreaterThan(0);
-      expect(readStoredState()).toBeNull();
+      storedWithout("not-a-real-community-team");
       unmount();
     });
 
-    it("locks persistence on a REJECTED RECORD_ESCALATION dispatch", () => {
+    it("keeps saving after a REJECTED RECORD_ESCALATION dispatch, without its typed contact or id", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -296,7 +341,8 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
         });
       });
       expect(current!.rejections.length).toBeGreaterThan(0);
-      expect(readStoredState()).toBeNull();
+      // "Duty psychiatrist" is fixture text (the closed contact list), so only the refused id is checked.
+      storedWithout("not-a-real-movement-id");
       unmount();
     });
 
@@ -307,7 +353,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
      * this test is the proof that dispatching it (a genuine acceptance here — a correction really
      * is written) locks persistence exactly as the ADD_PATIENT test at the top of this block does.
      */
-    it("writes no payload once ADD_REFERRAL_CORRECTION carrying a typed note is dispatched", () => {
+    it("saves ADD_REFERRAL_CORRECTION with its typed note replaced", () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -325,7 +371,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           note: "Corrected: the patient's escort arrived at 14:05, not 14:00 as first written.",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expect(storedWithout("14:05")).toContain(TYPED_TEXT_NOT_KEPT);
       // A correction really was added — a genuine acceptance, so the "even a rejected one locks"
       // property is left to a different event's own test above rather than conflated with this one.
       const updated = current!.referrals.find((candidate) => candidate.id === referral.id);

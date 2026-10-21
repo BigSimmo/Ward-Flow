@@ -63,11 +63,14 @@ import {
 import {
   clearWardFlowDemoState,
   buildScenarioFileLater,
+  deviceCopyOf,
+  loadTypedTextScrub,
   readDemoStateLater,
   readScenarioFileLater,
   STORAGE_UNAVAILABLE,
   tryWriteDemoState,
   useDemoStateRead,
+  useWarnBeforeUnload,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
@@ -95,6 +98,7 @@ import { activeWardNetwork, NOW_ANCHOR, type WardNetwork } from "@/components/wa
 import {
   activateScenarioNetwork,
   scenarioWardNetwork,
+  WARD_SCENARIOS,
   type WardScenario,
 } from "@/components/ward-management/ward-scenarios";
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
@@ -107,6 +111,7 @@ import {
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
+import { typedTextOf, type TypedTextLedger } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import {
   broadcastDispatchEvent,
@@ -422,6 +427,11 @@ type WardFlowContainer = {
   sharedAccessContext?: string; // Adopted with the world before remounting desk forms.
   world: WardFlowState;
   typedTextSeen: boolean;
+  /** Typed values dispatched this session (memory only), whether one could not be read, and whether
+   *  the world came from a scenario file, whose typed values this session never saw. */
+  typedTextLedger?: TypedTextLedger;
+  typedTextUnreadable?: boolean;
+  typedTextFromFile?: boolean;
   restoredElapsed: number;
   recoveryNotice?: string;
   /** Event log, step 1: every dispatch this session, in memory only (see `ward-event-log.ts`).
@@ -469,13 +479,16 @@ function wardFlowContainerReducer(
   }
   if (action.type === "LOAD_SCENARIO_FILE_INTERNAL") {
     syncWorldGlobals(action.world);
-    // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
-    // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
-    // It also counts as adopted, so a late browser restore can never replace it.
+    // A loaded world may hold typed text, so it is treated as a session that has typed: the device
+    // copy replaces every typed field (D-18, `ward-flow-typed-text-scrub.ts`), so it survives a
+    // refresh. It also counts as adopted, so a late browser restore can never replace it.
     return {
       ...container,
       world: action.world,
       typedTextSeen: true,
+      typedTextLedger: undefined,
+      typedTextUnreadable: false,
+      typedTextFromFile: true,
       restoredElapsed: action.restoredElapsed,
       eventLog: [],
       recoveryNotice: undefined,
@@ -499,61 +512,28 @@ function wardFlowContainerReducer(
 
 /**
  * Wraps the real reducer to also track whether this session has DISPATCHED — not merely had
- * accepted — an event whose type carries human-typed text. (Until 25 Sept 2026 it ALSO locked on ANY
- * refused dispatch; see rule 2, now superseded.)
+ * accepted — an event carrying human-typed text, and which typed values it carried.
  *
- * 🔴 **REDESIGNED 2026-09-17, controller decision, Opus adversarial review P2 findings 4–6.**
- * The previous version locked only once a TYPED-TEXT event was genuinely ACCEPTED (read off
- * `rejections.length` not growing). That is gone in two steps:
+ * 1. **On DISPATCH, accepted or refused** (Opus review, 2026-09-17, P2 findings 4–6): a rejection can
+ *    quote its payload back. A text-safe refusal does not count (D-18, 25 Sept 2026): `rejections` are
+ *    never stored, and the restore fence refuses any.
+ * 2. **Default deny.** Any type not on `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` counts, so a third,
+ *    unclassified type is never trusted.
+ * 3. **Since 21 Oct 2026 (Josh, fix plan item 2, option A)** saving continues: typed values go on an
+ *    in-memory ledger (`typedTextOf`) and the persistence effect saves a copy with them replaced
+ *    (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
  *
- * 1. **Locking fires on DISPATCH alone, accepted or refused, for a typed-text event type.** A
- *    rejection record can quote its own payload back (`makeRejection` in `ward-flow-reducer.ts`
- *    stores `attempted`/`reason`, and some reasons interpolate the offending value), so a refused
- *    typed-text dispatch is not nothing to protect.
- * 2. **SUPERSEDED 25 Sept 2026 — Josh, D-18, "Only for typed text".** A refusal no longer locks:
- *    it silently stopped saving for the rest of the session, including the designed "refused, then
- *    give a reason" step, so a reload lost the day. The risk named below — a caller-supplied id
- *    echoed into `Rejection.reason`/`id` — is instead closed at the WRITE: `tryWriteDemoState`
- *    never stores `rejections` (it saves `[]`), and `isValidStoredWardFlowState` still refuses any
- *    stored rejection as a second fence. The original rule, kept for history: **Locking ALSO
- *    fires on ANY rejection at all — including a SAFE-listed event's own** (P2
- *    finding 1, second review round). Confirmed by reading the reducer: `` `no movement found for id
- *    ${event.movementId}` ``, `` `no unit found for id ${event.unitId}` `` and similar reject-branch
- *    messages quote a caller-supplied ID straight into `Rejection.reason`, and NOTHING on the
- *    safe-event list stops a caller passing marker text (or any other string) as `movementId`,
- *    `unitId`, or any other id-shaped field and having it echoed into a SAVED rejection the moment
- *    it fails to resolve to a real record. `WARD_FLOW_TEXT_SAFE_EVENT_TYPES`'s own comment used to
- *    say these ids are "never rendered back as prose" — that claim was wrong, and this is the fix,
- *    not a softened version of it.
+ * ⚠️ **ALL OF THIS LIVES INSIDE `WardFlowContainer`, NEVER IN A REF THIS FUNCTION MUTATES** (P2
+ * finding 5): React can call a reducer and discard the result, so a ref could read `true` for a
+ * dispatch never committed. The persistence effect reads the container exactly as it reads `state`.
  *
- * The combined rule is now genuinely DEFAULT-DENY rather than a denylist: `event.type` not being on
- * `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` locks (never the narrower "is it on the typed-text list", which
- * would silently trust a THIRD, unclassified event type as safe — the union-coverage guard makes a
- * third state impossible today, but the runtime check no longer depends on that guard alone to stay
- * safe). (A growing `rejections` array no longer locks — rule 2 above.)
- *
- * ⚠️ **THE LOCK LIVES INSIDE `WardFlowContainer`, THE VALUE `useReducer` ITSELF RETURNS — NEVER IN A
- * REF THIS FUNCTION MUTATES** (P2 finding 5, the race). A plain `useRef` written from inside a
- * reducer function is written on every CALL of that function, including a call whose resulting state
- * React computes and then discards without ever committing it — React's Strict Mode double-invokes
- * reducers precisely to surface functions with exactly this kind of side effect, and any interrupted
- * concurrent render is the general case the same trap belongs to. A ref set that way could read
- * `true` for a dispatch that, from the committed tree's perspective, never happened. `typedTextSeen`
- * instead travels inside the SAME object `useReducer` returns as `world`, so React can only ever
- * expose a value that was actually committed — `WardFlowWorld`'s persistence effect below reads
- * `container.typedTextSeen` the same way it reads `state` itself, never a separately-mutated ref.
- *
- * A genuine world reseed (`RESET_SCENARIO`/`SET_SCENARIO`, the only two writers of `worldGeneration`
- * — see `wardFlowReducer`'s own case, and `case "SET_SCENARIO"`'s own comment for why that case's
- * condition also checks `next.movements !== state.movements` rather than role alone since this
- * round) replaces the whole world with fresh fixture data carrying no runtime-typed text at all, so
- * it is the only thing that clears the lock — matching "a demo reset re-enables saving" regardless
- * of which of the two call sites raised it (the context's own `resetDemoState()`, or the
- * demo-controls menu's direct `dispatch({ type: "RESET_SCENARIO", … })`, which does not go through
- * `resetDemoState()` at all). A REJECTED reset attempt (wrong role, or now also an invalid
- * `SET_SCENARIO` scenario) leaves `worldGeneration` unchanged, so it leaves the lock as it was.
+ * A genuine reseed (`RESET_SCENARIO`/`SET_SCENARIO`, the only writers of `worldGeneration`) brings
+ * fixture data with no typed text, so it alone clears the flag and the ledger. A REJECTED reset
+ * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
+/** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
+const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
@@ -568,6 +548,9 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
       ...container,
       world: nextWorld,
       typedTextSeen: false,
+      typedTextLedger: undefined,
+      typedTextUnreadable: false,
+      typedTextFromFile: false,
       eventLog: [{ ...logged, sequence: 0 }],
       earlyOutcomes,
       recoveryNotice: undefined,
@@ -578,9 +561,17 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
       ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
       : [...previousLog, logged];
-  const typedTextSeen =
-    container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
-  return { ...container, world: nextWorld, typedTextSeen, eventLog, earlyOutcomes };
+  const typedNow = !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
+  const typed = typedNow ? typedTextOf(event) : [];
+  return {
+    ...container,
+    world: nextWorld,
+    typedTextSeen: container.typedTextSeen || typedNow,
+    typedTextLedger: typed?.length ? [...(container.typedTextLedger ?? []), ...typed] : container.typedTextLedger,
+    typedTextUnreadable: container.typedTextUnreadable || typed === null,
+    eventLog,
+    earlyOutcomes,
+  };
 }
 
 /**
@@ -1063,29 +1054,22 @@ function WardFlowWorld({
     }
   }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
-  // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
-  // storage fails. Shared mode does not save actions on this device.
-  const savingOnDevice = !shared.enabled && initialNow === undefined && !container.typedTextSeen && !storageUnavailable;
+  // The world generation whose typed-text copy could not be made safely, and a re-run once it loads.
+  const [deviceCopyRefused, setDeviceCopyRefused] = useState<number | null>(null);
+  const [, setScrubLoaded] = useState(false);
+  const typedTextLocked =
+    container.typedTextSeen && (container.typedTextUnreadable === true || deviceCopyRefused === state.worldGeneration);
+  // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
+  // copy cannot be made safely. Shared mode does not save actions on this device.
+  const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
   useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
 
-  // Item #17 (D-18 privacy lock protection): when savingOnDevice === false because free text triggered
-  // the D-18 device-storage privacy lock, warn before an accidental browser refresh loses walkthrough state.
-  useEffect(() => {
-    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
-    if (typeof window === "undefined") return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-    };
-  }, [savingOnDevice, container.typedTextSeen, shared.enabled]);
+  // Item #17: when typed text has stopped saving on this device, warn before a refresh loses the day.
+  useWarnBeforeUnload(!shared.enabled && !savingOnDevice && container.typedTextSeen);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1154,23 +1138,29 @@ function WardFlowWorld({
   useEffect(() => {
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
-    // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
-    // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
-    // cleared immediately and never written to again until a genuine reseed re-enables it — checked
-    // every render this effect runs, not only the render the flag first flips, so a later dispatch
-    // cannot slip a write in underneath it. `container.typedTextSeen` is read here exactly as
-    // `state` is: both come from the same COMMITTED `useReducer` value, never a ref
-    // (`trackWardFlowTypedTextDispatch`'s own comment has the race this closes).
-    if (container.typedTextSeen) {
+    if (storageUnavailable) return;
+    // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
+    // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
+    // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
+    const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
+    if (deviceCopy === undefined) {
+      const generation = state.worldGeneration;
+      void loadTypedTextScrub().then(
+        () => setScrubLoaded(true),
+        () => setDeviceCopyRefused(generation),
+      );
+      return;
+    }
+    if (!deviceCopy) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
+      if (deviceCopyRefused !== state.worldGeneration) setDeviceCopyRefused(state.worldGeneration);
       if (!clearWardFlowDemoState()) setStorageUnavailable(true);
       return;
     }
-    if (storageUnavailable) return;
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
     if (
       !tryWriteDemoState(
-        state,
+        deviceCopy,
         dayZero,
         nowRef.current,
         mountedAtAbsolute + Math.max(0, elapsedRef.current),
@@ -1183,8 +1173,9 @@ function WardFlowWorld({
     }
   }, [
     state,
-    container.typedTextSeen,
-    container.sessionAdopted,
+    container,
+    typedTextLocked,
+    deviceCopyRefused,
     initialNow,
     mountedAtAbsolute,
     dayZero,
@@ -1366,7 +1357,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
-      savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
+      savingOnDevice: initialNow !== undefined ? !typedTextLocked && !storageUnavailable : savingOnDevice,
       shared: sharedStatus,
       demoControlsAvailable,
     }),
@@ -1383,7 +1374,7 @@ function WardFlowWorld({
       state,
       stateBound,
       container.sessionAdopted,
-      container.typedTextSeen,
+      typedTextLocked,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
       shared.enabled,
@@ -1418,7 +1409,13 @@ function WardFlowWorld({
           }
         >
           <WardDemoNotSavedContext.Provider
-            value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+            value={
+              shared.enabled || initialNow !== undefined || !container.typedTextSeen
+                ? "saved"
+                : savingOnDevice
+                  ? "typed-text-not-kept"
+                  : "not-saved"
+            }
           >
             <ToastDeviceSaveContext.Provider value={savesOnDevice}>
               <WardFlowClockContext.Provider value={now}>

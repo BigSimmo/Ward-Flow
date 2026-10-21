@@ -3,6 +3,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
+import type { TypedTextLedger } from "./ward-flow-typed-text-ledger";
+import type { FixtureWorlds } from "./ward-flow-typed-text-scrub";
 import {
   RESTORED_NOTICE_PREFIX,
   STORAGE_UNAVAILABLE,
@@ -83,6 +85,39 @@ export function readDemoStateLater(dayZero: Date, mountedAtAbsolute: number, raw
   );
 }
 
+let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
+
+/**
+ * The device copy of a session holding typed text (`ward-flow-typed-text-scrub.ts`) loads on demand,
+ * like the saved-session read: it carries the restore fence, which the first screen does not need.
+ */
+export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
+  return import("./ward-flow-typed-text-scrub").then((module) => (typedTextScrub = module));
+}
+
+type TypedTextHeld = { typedTextSeen: boolean; typedTextLedger?: TypedTextLedger; typedTextFromFile?: boolean };
+
+/**
+ * What may be written to this device: the world itself while it holds no typed text, otherwise its
+ * copy with every typed value replaced (D-18, Josh 21 Oct 2026). `null` means nothing may be written
+ * (`locked`, or no safe copy could be made), and `undefined` that the copy's code has not loaded yet.
+ */
+export function deviceCopyOf(
+  state: WardFlowState,
+  held: TypedTextHeld,
+  locked: boolean,
+  fixtureWorlds: FixtureWorlds,
+): WardFlowState | null | undefined {
+  if (!held.typedTextSeen) return state;
+  if (locked) return null;
+  return typedTextScrub?.redactTypedTextForDevice(
+    state,
+    held.typedTextLedger ?? [],
+    fixtureWorlds,
+    held.typedTextFromFile,
+  );
+}
+
 const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";
 
 /** The saved session for this mount, read once it has loaded; undefined until then and whenever
@@ -115,6 +150,19 @@ export function useDemoStateRead(
 
 /** `buildScenarioFile` and `readScenarioFile` at this build's state version, loaded on first use for
  *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. */
+/** Asks the browser to confirm a refresh or close while `active`: the day would not survive it. */
+export function useWarnBeforeUnload(active: boolean): void {
+  useEffect(() => {
+    if (!active || typeof window === "undefined") return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [active]);
+}
+
 export function buildScenarioFileLater(state: WardFlowState, now: Instant): Promise<ScenarioFileBuild> {
   return import("./ward-flow-scenario-file").then(
     ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),

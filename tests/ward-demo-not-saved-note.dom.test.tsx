@@ -5,9 +5,10 @@ import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-de
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 
 /*
- * S-1 (audit 13 Oct 2026): typing free text stops the demonstration saving on this device (the
- * default-deny lock stays). The shell now says so with a quiet note instead of losing the day
- * silently on the next reload.
+ * S-1 (audit 13 Oct 2026): when the demonstration stops saving on this device, the shell says so with
+ * a quiet note instead of losing the day silently on the next reload. Since 21 Oct 2026 typed text
+ * stops the save only where its copy cannot be made safely (a typed date of birth here); otherwise
+ * a second note says typed text is not kept.
  */
 describe("Not saved on this device note (S-1)", () => {
   let current: ReturnType<typeof useWardFlow> | undefined;
@@ -26,7 +27,7 @@ describe("Not saved on this device note (S-1)", () => {
     vi.useRealTimers();
   });
 
-  it("stays hidden while the day saves, and shows once typed text stops saving", () => {
+  it("stays hidden while the day saves, and shows once a typed date of birth stops saving", () => {
     render(
       <WardFlowProvider>
         <Capture />
@@ -54,6 +55,27 @@ describe("Not saved on this device note (S-1)", () => {
     expect(screen.getByTestId("ward-demo-not-saved")).toHaveTextContent(
       "Demonstration state is not saved on this device",
     );
+  });
+
+  it("says typed text is not kept while the rest of the day still saves (Josh, 21 Oct 2026)", () => {
+    render(
+      <WardFlowProvider>
+        <Capture />
+        <WardDemoNotSavedNote />
+      </WardFlowProvider>,
+    );
+    const movement = current!.movements.find((candidate) => !candidate.closure)!;
+    act(() => {
+      current!.dispatch({
+        type: "RECORD_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: current!.now,
+        movementId: movement.id,
+        blocker: "Synthetic typed blocker words",
+      });
+    });
+    expect(screen.queryByTestId("ward-demo-not-saved")).toBeNull();
+    expect(screen.getByTestId("ward-demo-typed-text-not-kept")).toHaveTextContent("Typed text not kept on this device");
   });
 
   it("is never shown on a fixed-clock render, which never saves anyway", () => {
