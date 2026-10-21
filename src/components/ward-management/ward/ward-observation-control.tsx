@@ -140,7 +140,7 @@ export function WardObservationControl({
               aria-label="Next review time, for example 14:30"
               data-testid="ward-observation-review-time"
               inputMode="numeric"
-              placeholder="Review time, for example 14:30"
+              placeholder="For example 14:30"
               value={reviewTime}
               onChange={(event) => {
                 setReviewTime(event.target.value);

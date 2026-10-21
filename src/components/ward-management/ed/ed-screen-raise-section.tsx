@@ -455,9 +455,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             </label>
           ) : null}
           <label className={fieldClass("observationReviewTime", styles.referralField)}>
-            Observation review time (optional, for example 14:30)
+            Review time (optional)
             <input
               data-testid="ward-ed-referral-observation-review-time"
+              type="text"
               inputMode="numeric"
               placeholder="For example 14:30"
               aria-invalid={isMissing("observationReviewTime") || undefined}
