@@ -76,18 +76,21 @@ export function edReferralStatus(
     return { title: fallback, tone: "quiet", phone: fallback };
 
   const ward = acceptedUnitName?.split(" — ")[0];
-  const wardShort = ward?.split(" ")[0];
   const stage = movement.stage;
   const declinedBy = new Set(movement.declines.map((decline) => decline.unitId)).size;
   const hold = stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : undefined;
   const done = STEPS_DONE[stage];
+  // `REFER_TO_UNITS` moves a movement to destination review while wards are still answering, so
+  // only an empty live set means every ward asked has declined and the coordinator is deciding.
+  const beingPlaced =
+    stage === "placement_requested" || (stage === "destination_review" && movement.referredUnitIds.length > 0);
+  const transportNotNeeded = movement.transportNeed?.needed === false;
 
-  const sentDetail =
-    stage === "placement_requested"
-      ? (referredTo ?? "Coordinator finding a ward")
-      : stage === "destination_review"
-        ? `Declined by ${declinedBy} ${declinedBy === 1 ? "ward" : "wards"}, coordinator reviewing`
-        : "Coordinator asked wards";
+  const sentDetail = beingPlaced
+    ? (referredTo ?? "Coordinator finding a ward")
+    : stage === "destination_review"
+      ? `Declined by ${declinedBy} ${declinedBy === 1 ? "ward" : "wards"}, coordinator reviewing`
+      : "Coordinator asked wards";
   const heldDetail =
     stage === "pulled" ? (hold ? hold.short : `${holdLabel} hold`) : done > 3 ? "Bed held" : "No bed yet";
   const transportDetail =
@@ -99,17 +102,23 @@ export function edReferralStatus(
           ? "Arrived"
           : movement.transport !== undefined
             ? "Booked"
-            : "Not booked yet";
+            : transportNotNeeded
+              ? "Not needed"
+              : "Not booked yet";
   const steps: EdReferralStep[] = [
     { label: "Referral sent", detail: sentDetail, done: true },
     ward
       ? { label: `${ward} accepted`, detail: "Accepted in principle", done: done >= 2 }
       : { label: "A ward accepts", detail: "Waiting for a ward", done: false },
     { label: "Bed held for this patient", detail: heldDetail, done: done >= 3 },
-    { label: "Transport", detail: transportDetail, done: done >= 4 },
+    {
+      label: "Transport",
+      detail: transportDetail,
+      done: done >= 4 || movement.transport !== undefined || transportNotNeeded,
+    },
   ];
 
-  if (stage === "placement_requested") {
+  if (beingPlaced) {
     const line = referredTo ?? "Coordinator finding a ward";
     return { title: "Referral sent", line, tone: "quiet", phone: line, steps };
   }
@@ -142,8 +151,8 @@ export function edReferralStatus(
     line: `Accepted, ${accepted}${heldTail}`,
     tone: hold?.state === "lapsed" ? "danger" : done >= 3 ? "good" : "quiet",
     hold,
-    // A lapsed hold says so on the phone too, so the ED need not open the sheet to find out.
-    phone: `${wardShort ? `${wardShort} accepted` : "Accepted"}, ${accepted}${hold?.state === "lapsed" ? `, ${hold.short.toLowerCase()}` : ""}`,
+    // The ward's full name, never a first word ("Mental accepted"); a lapsed hold says so here too.
+    phone: `${ward ? `${ward} accepted` : "Accepted"}, ${accepted}${hold?.state === "lapsed" ? `, ${hold.short.toLowerCase()}` : ""}`,
     steps,
   };
 }

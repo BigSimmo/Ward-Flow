@@ -33,6 +33,8 @@ const movement = (stage: Movement["stage"], extra: Partial<Movement> = {}): Move
   acceptedUnitId: undefined,
   pullExpiresAt: undefined,
   transport: undefined,
+  transportNeed: undefined,
+  referredUnitIds: [],
   ...extra,
 });
 const options = {
@@ -64,6 +66,22 @@ describe("edReferralStatus", () => {
     expect([status.title, status.line, status.tone]).toEqual(["Declined by 2 wards", "Coordinator reviewing", "warn"]);
   });
 
+  it("keeps a referral wards are still answering as being placed, not with the coordinator", () => {
+    const declines = [{ unitId: "a", at: 1, reason: "no_bed" }] as Movement["declines"];
+    const status = edReferralStatus(movement("destination_review", { declines, referredUnitIds: ["b"] }), options);
+    expect([status.title, status.line, status.tone]).toEqual(["Referral sent", "Coordinator finding a ward", "quiet"]);
+  });
+
+  it("ticks transport once it is booked, before handover", () => {
+    const transport = seeded.find((candidate) => candidate.transport !== undefined)?.transport;
+    expect(transport).toBeDefined();
+    const status = edReferralStatus(movement("pulled", { pullExpiresAt: 1_027, transport }), {
+      ...options,
+      acceptedUnitName: "SJGM Adult Open",
+    });
+    expect(status.steps?.[3]).toEqual({ label: "Transport", detail: "Booked", done: true });
+  });
+
   it("names the ward and the time left on a held bed", () => {
     const status = edReferralStatus(movement("pulled", { pullExpiresAt: 1_027 }), {
       ...options,
@@ -72,7 +90,7 @@ describe("edReferralStatus", () => {
     expect([status.title, status.line, status.phone, status.tone]).toEqual([
       "SJGM Adult Open",
       "Accepted, bed held 27m left",
-      "SJGM accepted, bed held",
+      "SJGM Adult Open accepted, bed held",
       "good",
     ]);
     expect(status.steps).toEqual([
@@ -89,7 +107,7 @@ describe("edReferralStatus", () => {
       acceptedUnitName: "SJGM Adult Open",
     });
     expect(status.line).toBe("Accepted, bed held, expired 10m ago");
-    expect(status.phone).toBe("SJGM accepted, bed held, expired 10m ago");
+    expect(status.phone).toBe("SJGM Adult Open accepted, bed held, expired 10m ago");
     expect(status.tone).toBe("danger");
   });
 
@@ -150,7 +168,7 @@ describe("the ED board shows where each referral stands", () => {
   it("says it on the phone row and lists the steps in the row sheet", () => {
     renderPeel();
     const row = screen.getByTestId("ward-ed-patient-WF-016");
-    expect(row).toHaveTextContent("SJGM accepted, bed held");
+    expect(row).toHaveTextContent("SJGM Adult Open accepted, bed held");
     fireEvent.click(within(row).getByRole("button"));
 
     const sheet = screen.getByTestId("ward-ed-phone-sheet-WF-016");
