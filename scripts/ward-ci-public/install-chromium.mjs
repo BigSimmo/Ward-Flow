@@ -21,43 +21,60 @@ export function waitForPackageManager(deadline, now = Date.now) {
 
 /**
  * Six-minute shared budget, two attempts per operation; the workflow adds an eight-minute outer bound.
- * @param {{ cacheHit?: boolean, execute?: (command: string, args: string[], timeoutMs: number) => { status: number | null, error?: { code?: string }, signal?: string | null }, now?: () => number, log?: (message: string) => void, waitForIdle?: (deadline: number) => void }} options
+ * @param {{ browsers?: string[], cacheHit?: boolean, execute?: (command: string, args: string[], timeoutMs: number) => { status: number | null, error?: { code?: string }, signal?: string | null }, now?: () => number, log?: (message: string) => void, waitForIdle?: (deadline: number) => void }} options
  */
-export function installChromium({
+export function installBrowsers({
+  browsers = ["chromium"],
   cacheHit = false,
   execute = runBounded,
   now = Date.now,
   log = console.log,
   waitForIdle = execute === runBounded ? (deadline) => waitForPackageManager(deadline, now) : () => {},
 } = {}) {
+  if (
+    !browsers.length ||
+    new Set(browsers).size !== browsers.length ||
+    browsers.some((browser) => !["chromium", "webkit", "firefox"].includes(browser))
+  )
+    throw new Error("Invalid browser selection; name unique supported engines");
+  const label = browsers.length === 1 && browsers[0] === "chromium" ? "Chromium" : "Playwright browser";
   const deadline = now() + 360_000;
   const operations = cacheHit
     ? [
-        ["install-deps", "chromium"],
-        ["install", "chromium"],
+        ["install-deps", ...browsers],
+        ["install", ...browsers],
       ]
-    : [["install", "--with-deps", "chromium"]];
+    : [["install", "--with-deps", ...browsers]];
   for (const args of operations) {
     let installed = false;
     for (let attempt = 1; attempt <= 2; attempt++) {
       if (attempt > 1) waitForIdle(deadline);
       const remaining = deadline - now();
       if (remaining <= 0) {
-        log("Chromium setup failed: six-minute installation budget exhausted.");
+        log(`${label} setup failed: six-minute installation budget exhausted.`);
         return 1;
       }
-      log(`Chromium setup: ${args[0]}, attempt ${attempt}/2.`);
+      log(`${label} setup: ${args[0]}, attempt ${attempt}/2.`);
       const result = execute(process.execPath, [cli, ...args], Math.min(120_000, remaining));
       if (!result.error && result.status === 0) {
         installed = true;
         break;
       }
-      log(`Chromium setup attempt failed (${result.error?.code ?? result.signal ?? result.status ?? "unknown"}).`);
+      log(`${label} setup attempt failed (${result.error?.code ?? result.signal ?? result.status ?? "unknown"}).`);
     }
     if (!installed) return 1;
   }
   return 0;
 }
 
+// Existing consumers retain their default Chromium-only command and retry budget.
+/** Compatibility entry point for callers requesting Chromium only. @param {Parameters<typeof installBrowsers>[0]} [options] */
+export function installChromium(options) {
+  return installBrowsers(options);
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)
-  process.exitCode = installChromium({ cacheHit: process.env.PLAYWRIGHT_CACHE_HIT === "true" });
+  process.exitCode = installBrowsers({
+    ...(process.argv.length > 2 ? { browsers: process.argv.slice(2) } : {}),
+    cacheHit: process.env.PLAYWRIGHT_CACHE_HIT === "true",
+  });

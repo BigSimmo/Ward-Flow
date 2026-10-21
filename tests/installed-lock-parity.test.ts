@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -130,13 +130,10 @@ describe("installedLockParity", () => {
     expect(installedTreeParity(root)).toEqual(expect.objectContaining({ ok: true }));
   });
 
-  it("runs before local, UI, release, and CI test interpretation", () => {
+  it("runs before local, UI, and release test interpretation", () => {
     const packageJson = JSON.parse(readFileSync(path.resolve("package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    const ciPath = path.resolve(".github/workflows/ci.yml");
-    const ci = existsSync(ciPath) ? readFileSync(ciPath, "utf8") : null;
-
     for (const scriptName of ["verify:cheap", "verify:ui", "verify:release"]) {
       const script = packageJson.scripts[scriptName];
       const parityIndex = script.indexOf("check:installed-lock-parity");
@@ -162,7 +159,15 @@ describe("installedLockParity", () => {
         if (selected.includes(expensive)) expect(parity).toBeLessThan(selected.indexOf(expensive));
       }
     }
-    if (ci) expect(ci).toContain("run: npm run check:installed-lock-parity");
+  });
+
+  it("attests locked installs in the active CI workflow without dependency lifecycle scripts", () => {
+    const ci = readFileSync(path.resolve(".github/workflows/ward-flow.yml"), "utf8");
+    const commands = ci.split(/\r?\n/u).filter((line) => /^\s+run:/u.test(line));
+    expect(
+      commands.some((line) => /run: node (?:\.\.\/\.\.\/)?scripts\/install-locked-dependencies\.mjs/u.test(line)),
+    ).toBe(true);
+    expect(commands.some((line) => line.includes("run: npm ci --ignore-scripts"))).toBe(false);
   });
 
   it("keeps brace-expansion constraints and installed releases above the patched floors", () => {

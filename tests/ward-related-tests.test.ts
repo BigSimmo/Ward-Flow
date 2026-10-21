@@ -17,6 +17,13 @@ function select(changedFile: string) {
   write("tests/value.test.ts", 'import { value } from "../src/use-value";');
   write("tests/helper.ts", "export const helper = 1;");
   write("tests/helper-owner.test.ts", 'import { helper } from "./helper";');
+  write("backend/ward-flow/schema.ts", "export const schema = 1;");
+  write("backend/ward-flow/engine.ts", 'export { schema } from "./schema";');
+  write("tests/backend-consumer.test.ts", 'import { schema } from "../backend/ward-flow/engine";');
+  write("backend/ward-flow/bridge.cjs", 'module.exports = require("./engine");');
+  write("tests/backend-commonjs.test.ts", 'const engine = require("../backend/ward-flow/bridge.cjs");');
+  write("src/lib/theme-client.ts", "export const theme = 1;");
+  write("tests/ward-one-appearance-key.test.ts", 'import { readFileSync } from "node:fs";');
   const git = (args: string[]) =>
     execFileSync("git", args, {
       cwd: root,
@@ -25,7 +32,7 @@ function select(changedFile: string) {
       stdio: ["ignore", "pipe", "pipe"],
     });
   git(["init", "--quiet"]);
-  git(["add", "src", "tests"]);
+  git(["add", "src", "tests", "backend"]);
   git(["-c", "user.name=Ward Test", "-c", "user.email=ward@example.invalid", "commit", "--quiet", "-m", "fixture"]);
   write(changedFile, "// changed fixture\n");
   // Count actual directory walks in the child; do not infer the optimisation from source text.
@@ -65,7 +72,7 @@ describe("related-test selection without unnecessary graph work", () => {
 
   it("retains transitive source-to-test selection", () => {
     const result = select("src/value.ts");
-    expect(result.selected).toEqual(["  tests/value.test.ts"]);
+    expect(result.selected).toEqual(["  tests/value.test.ts", "  tests/ward-one-appearance-key.test.ts"]);
     expect(result.walks).toBeGreaterThan(0);
   });
 
@@ -73,5 +80,14 @@ describe("related-test selection without unnecessary graph work", () => {
     const result = select("tests/helper.ts");
     expect(result.selected).toEqual(["  tests/helper-owner.test.ts"]);
     expect(result.walks).toBeGreaterThan(0);
+  });
+  it("follows backend dependencies into root contract suites", () => {
+    expect(select("backend/ward-flow/schema.ts").selected).toEqual([
+      "  tests/backend-commonjs.test.ts",
+      "  tests/backend-consumer.test.ts",
+    ]);
+  });
+  it("selects declared source-reading contracts outside the Ward component folder", () => {
+    expect(select("src/lib/theme-client.ts").selected).toEqual(["  tests/ward-one-appearance-key.test.ts"]);
   });
 });

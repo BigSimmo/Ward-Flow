@@ -27,6 +27,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { undoStepTypeFor } from "@/components/ward-management/ward-undo";
 import { FUZZED_EVENT_TYPES, nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
 import { undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
+import { createPreparationProfile } from "../scripts/ward-flow/test-preparation-profile.mjs";
+
+const fuzzProfile = createPreparationProfile("engine-fuzz-run");
+let recordingRandomRun = false;
 
 const envCount = (name: string, fallback: number) => {
   const value = Number(process.env[name]);
@@ -239,6 +243,7 @@ function undoViolation(before: WardFlowState, event: WardFlowEvent, applied: War
       detail: `${undone.type} did not restore the world before ${event.type}`,
     };
   UNDONE_STEP_TYPES.add(event.type);
+  if (recordingRandomRun) fuzzProfile.count(`undone.${event.type}`);
   return null;
 }
 
@@ -291,9 +296,19 @@ function runSeed(seed: number, steps = STEPS) {
   for (let step = 0; step < steps; step += 1) {
     const event = nextEvent(state, random, step);
     events.push(event);
-    const result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1);
+    fuzzProfile.count(`attempted.${event.type}`);
+    recordingRandomRun = true;
+    let result: ReturnType<typeof applyAndCheck>;
+    try {
+      result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1);
+    } finally {
+      recordingRandomRun = false;
+    }
     if ("rule" in result) return { failure: describeFailure(seed, scenario, events), refused };
-    if (result.next.rejections.length > state.rejections.length) refused += 1;
+    if (result.next.rejections.length > state.rejections.length) {
+      refused += 1;
+      fuzzProfile.count(`refused.${event.type}`);
+    } else fuzzProfile.count(`accepted.${event.type}`);
     state = result.next;
   }
   return { failure: null, refused };
@@ -410,22 +425,42 @@ describe("engine safety under random event sequences", () => {
   it(
     `keeps beds whole across ${SEQUENCES} seeded sequences of ${STEPS} events`,
     () => {
-      let refused = 0;
-      for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
-        const result = runSeed(seed);
-        expect(result.failure, `seed ${seed}`).toBeNull();
-        refused += result.refused;
+      let completed = false;
+      try {
+        let refused = 0;
+        for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
+          const result = runSeed(seed);
+          expect(result.failure, `seed ${seed}`).toBeNull();
+          refused += result.refused;
+        }
+        // The generator must reach both sides: enough events succeed to move patients and beds, and
+        // enough are refused to prove refusals are safe too. A short run set by hand is too small to
+        // measure that, so only the rules above apply to it.
+        const total = SEQUENCES * STEPS;
+        if (total < 1000) {
+          completed = true;
+          return;
+        }
+        expect(refused).toBeGreaterThan(total * 0.1);
+        expect(refused).toBeLessThan(total * 0.9);
+        expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
+        // Enough undoable steps are accepted that the undo rule is tested, not passed by default.
+        expect(UNDONE_STEP_TYPES.size).toBeGreaterThan(8);
+        completed = true;
+      } finally {
+        fuzzProfile.write({
+          generator: "mulberry32",
+          firstSeed: FIRST_SEED,
+          lastSeed: FIRST_SEED + SEQUENCES - 1,
+          sequences: SEQUENCES,
+          steps: STEPS,
+          eventBudget: SEQUENCES * STEPS,
+          completed,
+          attemptedTypes: [...FUZZED_EVENT_TYPES].sort(),
+          undoneTypes: [...UNDONE_STEP_TYPES].sort(),
+          replayExcludedFromCounts: true,
+        });
       }
-      // The generator must reach both sides: enough events succeed to move patients and beds, and
-      // enough are refused to prove refusals are safe too. A short run set by hand is too small to
-      // measure that, so only the rules above apply to it.
-      const total = SEQUENCES * STEPS;
-      if (total < 1000) return;
-      expect(refused).toBeGreaterThan(total * 0.1);
-      expect(refused).toBeLessThan(total * 0.9);
-      expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
-      // Enough undoable steps are accepted that the undo rule is tested, not passed by default.
-      expect(UNDONE_STEP_TYPES.size).toBeGreaterThan(8);
     },
     Math.max(30_000, SEQUENCES * STEPS * 5),
   );
