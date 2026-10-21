@@ -150,19 +150,6 @@ export function useDemoStateRead(
 
 /** `buildScenarioFile` and `readScenarioFile` at this build's state version, loaded on first use for
  *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. */
-/** Asks the browser to confirm a refresh or close while `active`: the day would not survive it. */
-export function useWarnBeforeUnload(active: boolean): void {
-  useEffect(() => {
-    if (!active || typeof window === "undefined") return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [active]);
-}
-
 export function buildScenarioFileLater(state: WardFlowState, now: Instant): Promise<ScenarioFileBuild> {
   return import("./ward-flow-scenario-file").then(
     ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),

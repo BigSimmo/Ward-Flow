@@ -70,7 +70,6 @@ import {
   STORAGE_UNAVAILABLE,
   tryWriteDemoState,
   useDemoStateRead,
-  useWarnBeforeUnload,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
@@ -485,7 +484,6 @@ function wardFlowContainerReducer(
       ...container,
       world: action.world,
       typedTextSeen: true,
-      typedTextEvents: undefined,
       typedTextFromFile: true,
       restoredElapsed: action.restoredElapsed,
       eventLog: [],
@@ -517,9 +515,9 @@ function wardFlowContainerReducer(
  *    never stored, and the restore fence refuses any.
  * 2. **Default deny.** Any type not on `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` counts, so a third,
  *    unclassified type is never trusted.
- * 3. **Since 21 Oct 2026 (Josh, fix plan item 2, option A)** saving continues: typed values go on an
- *    the typed events are kept in memory and the persistence effect saves a copy with their values
- *    replaced (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
+ * 3. **Since 21 Oct 2026 (Josh, fix plan item 2, option A)** saving continues: the typed events are
+ *    kept in memory and the persistence effect saves a copy with their values replaced
+ *    (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
  *
  * ⚠️ **ALL OF THIS LIVES INSIDE `WardFlowContainer`, NEVER IN A REF THIS FUNCTION MUTATES** (P2
  * finding 5): React can call a reducer and discard the result, so a ref could read `true` for a
@@ -1049,10 +1047,10 @@ function WardFlowWorld({
     }
   }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
-  // The world generation whose typed-text copy could not be made safely, and a re-run once it loads.
-  const [deviceCopyRefused, setDeviceCopyRefused] = useState<number | null>(null);
-  const [scrubLoaded, setScrubLoaded] = useState(false);
-  const typedTextLocked = container.typedTextSeen && deviceCopyRefused === state.worldGeneration;
+  // The world generation whose typed-text copy could not be made safely, or "loaded" to re-run the
+  // save once the copy's code arrives.
+  const [deviceCopyCheck, setDeviceCopyCheck] = useState<number | "loaded" | null>(null);
+  const typedTextLocked = container.typedTextSeen && deviceCopyCheck === state.worldGeneration;
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
   const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
@@ -1061,9 +1059,6 @@ function WardFlowWorld({
   useEffect(() => {
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
-
-  // Item #17: when typed text has stopped saving on this device, warn before a refresh loses the day.
-  useWarnBeforeUnload(!shared.enabled && !savingOnDevice && container.typedTextSeen);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1138,18 +1133,23 @@ function WardFlowWorld({
     // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
     const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
     if (deviceCopy === undefined) {
-      const generation = state.worldGeneration;
       void loadTypedTextScrub().then(
-        () => setScrubLoaded(true),
-        () => setDeviceCopyRefused(generation),
+        () => setDeviceCopyCheck("loaded"),
+        () => setDeviceCopyCheck(state.worldGeneration),
       );
       return;
     }
     if (!deviceCopy) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
-      if (deviceCopyRefused !== state.worldGeneration) setDeviceCopyRefused(state.worldGeneration);
+      setDeviceCopyCheck(state.worldGeneration);
       if (!clearWardFlowDemoState()) setStorageUnavailable(true);
-      return;
+      // Item #17: typed text has stopped saving on this device, so warn before a refresh loses the day.
+      const warn = (event: BeforeUnloadEvent) => {
+        event.preventDefault();
+        event.returnValue = "";
+      };
+      window.addEventListener("beforeunload", warn);
+      return () => window.removeEventListener("beforeunload", warn);
     }
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
     if (
@@ -1165,12 +1165,12 @@ function WardFlowWorld({
     } else {
       localEditsSinceBroadcastRef.current = false;
     }
+    return undefined;
   }, [
     state,
     container,
     typedTextLocked,
-    scrubLoaded,
-    deviceCopyRefused,
+    deviceCopyCheck,
     initialNow,
     mountedAtAbsolute,
     dayZero,
@@ -1404,13 +1404,7 @@ function WardFlowWorld({
           }
         >
           <WardDemoNotSavedContext.Provider
-            value={
-              shared.enabled || initialNow !== undefined || !container.typedTextSeen
-                ? "saved"
-                : savingOnDevice
-                  ? "typed-text-not-kept"
-                  : "not-saved"
-            }
+            value={shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice}
           >
             <ToastDeviceSaveContext.Provider value={savesOnDevice}>
               <WardFlowClockContext.Provider value={now}>

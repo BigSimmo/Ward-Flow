@@ -1,31 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { createContext, useContext } from "react";
-import styles from "./ward-offline-banner.module.css";
 
 /**
- * How much of the submitted demonstration state is saved on this device. Since 21 Oct 2026 (Josh,
- * fix plan item 2) typed text no longer stops the save: the rest of the day is kept and typed fields
- * read "Typed text not kept on this device" after a reload. Saving stops only when that copy cannot be made safely.
- * Session draft recovery is separate.
+ * Once this session holds typed text, whether its submitted demonstration state still saves on this
+ * device (`undefined` before then, and outside the local demonstration). Since 21 Oct 2026 (Josh, fix
+ * plan item 2) typed text no longer stops the save: the rest of the day is kept and typed fields read
+ * "Typed text not kept on this device" after a reload. Saving stops only when that copy cannot be
+ * made safely. Session draft recovery is separate.
  */
-export type WardDemoSaving = "saved" | "typed-text-not-kept" | "not-saved";
-export const WardDemoNotSavedContext = createContext<WardDemoSaving>("saved");
+export const WardDemoNotSavedContext = createContext<boolean | undefined>(undefined);
+
+// The note's code (`ward-demo-saving-note.tsx`) loads only once there is something to say, which
+// keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises).
+const WardDemoSavingNote = dynamic(() => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote));
 
 /** A quiet, persistent note under the header once typed text is held or saving has stopped. */
 export function WardDemoNotSavedNote() {
   const saving = useContext(WardDemoNotSavedContext);
-  if (saving === "typed-text-not-kept")
-    return (
-      <p className={styles.quiet} role="status" data-testid="ward-demo-typed-text-not-kept">
-        Demonstration state is saved on this device, except typed text.
-      </p>
-    );
-  if (saving !== "not-saved") return null;
-  return (
-    <p className={styles.quiet} role="status" data-testid="ward-demo-not-saved">
-      Demonstration state is not saved on this device, so a reload starts it again. Some synthetic form drafts may still
-      be recovered within this browser session.
-    </p>
-  );
+  return saving === undefined ? null : <WardDemoSavingNote saving={saving} />;
 }
