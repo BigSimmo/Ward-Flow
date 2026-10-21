@@ -62,6 +62,7 @@ import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-
 
 import styles from "./ward-tasks-drawer.module.css";
 import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
@@ -368,13 +369,10 @@ export function WardTasksDrawer({
     const failed = () =>
       toast?.push({ tone: "warning", title: "Number not copied", body: `Copy it by hand: ${number}` });
     // Says copied only once the clipboard has taken it.
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      failed();
-      return;
-    }
-    navigator.clipboard
-      .writeText(number)
-      .then(() => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }), failed);
+    copyTextToClipboard(number).then(
+      () => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }),
+      failed,
+    );
   }
 
   function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {

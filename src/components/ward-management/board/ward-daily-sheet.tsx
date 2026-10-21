@@ -30,6 +30,7 @@ import { releaseBand } from "@/components/ward-management/ward-bed-availability"
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./ward-daily-sheet.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * THE WARD'S DAILY SHEET — the page a charge nurse carries into the morning meeting.
@@ -857,7 +858,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
       return;
     }
     const text = [title, stampLine, sheet.innerText.trim()].filter(Boolean).join("\n\n");
-    navigator.clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => {
         setCopyState("copied");
       },
