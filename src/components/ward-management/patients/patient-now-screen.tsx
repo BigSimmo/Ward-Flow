@@ -120,6 +120,7 @@ import { renderArrivalSection } from "./patient-now-arrival-section";
 import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
 // and fence the completion so an old patient's save cannot dismiss another patient's form.
@@ -402,7 +403,7 @@ export function PatientNowScreen({
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
-      navigator.clipboard?.writeText(text).then(() => {
+      void copyTextToClipboard(text).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
@@ -412,7 +413,7 @@ export function PatientNowScreen({
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
-    navigator.clipboard?.writeText(text).then(() => {
+    void copyTextToClipboard(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });

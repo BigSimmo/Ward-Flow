@@ -17,6 +17,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { type WfTone } from "@/components/wf";
 import { SETTINGS_TABS, type SettingsTab } from "./settings-search-index";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** 24-hour clock time, `HH:MM`, for the morning count. */
 export function clock24(minutesFromMidnight: number): string {
@@ -211,9 +212,6 @@ export async function copySettingsDiagnostics(state: {
   };
 
   const text = JSON.stringify(payload, null, 2);
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    throw new Error("Clipboard is unavailable");
-  }
-  await navigator.clipboard.writeText(text);
+  await copyTextToClipboard(text);
   return text;
 }

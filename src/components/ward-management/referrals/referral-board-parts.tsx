@@ -38,6 +38,7 @@ import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
 const REFERRAL_BEDS_HREF = "/ward-flow/hub";
@@ -623,7 +624,7 @@ export function ReferralPatientTab({
                 icon={Copy}
                 iconOnly
                 aria-label="Copy the referrer's number"
-                onClick={() => void navigator.clipboard?.writeText(intake.referrer.phone).catch(() => undefined)}
+                onClick={() => void copyTextToClipboard(intake.referrer.phone).catch(() => undefined)}
               />
             </>
           ) : null}

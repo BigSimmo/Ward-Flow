@@ -1,8 +1,11 @@
 /**
  * The referral as plain text: the letter the slide-out previews before sending, and the ISBAR
  * note it offers to copy once sent. Built only from what the referrer entered or the record holds,
- * so the copy says exactly what the referral says. Synthetic prototype, not a medical device.
+ * so the copy says exactly what the referral says, less the UMRN, which `ward-clipboard` keeps off
+ * the clipboard. Synthetic prototype, not a medical device.
  */
+
+import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
 
 export type ReferralTextInput = {
   /** "a ward", "a community team" or "an emergency department". */
@@ -32,11 +35,8 @@ export type ReferralTextInput = {
 
 const NOT_RECORDED = "Not recorded";
 
-/**
- * The first line of every text Ward Flow puts on the clipboard (Audit 1, CS-12, Josh 20 Oct), so a
- * pasted copy always says it came from the prototype. The letter's own header words.
- */
-export const SYNTHETIC_COPY_LINE = "Synthetic prototype.";
+/** The letter's own header words: the first line of every Ward Flow copy, kept in `ward-clipboard`. */
+export { SYNTHETIC_COPY_LINE };
 
 function value(text: string): string {
   return text.trim() || NOT_RECORDED;
