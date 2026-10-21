@@ -142,7 +142,7 @@ describe("PR15 recorded facts and unavailable data", () => {
     expect(container.textContent).not.toMatch(/Ready beds and people waiting are separate counts/);
     expect(container.textContent).not.toMatch(/This page does not match which bed suits which person/);
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
-    expect(screen.getAllByText("Waiting for a bed")).toHaveLength(1);
+    expect(screen.getAllByText("Still open:")).toHaveLength(1);
     expect(container.textContent).toContain(`${available.beds} beds`);
   });
 

@@ -54,7 +54,7 @@ describe("CoordinatorScreen", () => {
 
     expect(screen.queryByText(`Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Exceptions/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alerts/ })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
   });
