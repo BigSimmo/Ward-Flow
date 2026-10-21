@@ -160,7 +160,7 @@ describe("ward screen surfaces a refused action to the ward user", () => {
     // alert renders on the SAME row, next to the SAME button the ward just pressed.
     const alert = within(screen.getByTestId("ward-accepted-WF-319")).getByRole("alert");
     expect(alert).toHaveTextContent(/Pull a bed not recorded/i);
-    expect(alert).toHaveTextContent(/no one-to-one specialling capacity left/i);
+    expect(alert).toHaveTextContent(/not enough observation staff left/i);
   });
 
   it("names the reason a second accept was refused, on the row it now occupies", () => {

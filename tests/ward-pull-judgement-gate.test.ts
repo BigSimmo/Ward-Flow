@@ -91,7 +91,7 @@ describe("PULL_PATIENT refuses a judgement gate on the coordinator's own path", 
     // earlier in the same case, and any one of them would produce a red that proves nothing.
     expect(reason).not.toContain("no Ready bed remains");
     expect(reason).not.toContain("still being made ready");
-    expect(reason).not.toContain("specialling capacity left");
+    expect(reason).not.toContain("observation staff left");
     // O-16.8 reworded this refusal (it now names the stage by its coordinator-facing label).
     // ⚠️ THE STRING HAD TO BE UPDATED OR THIS ASSERTION WOULD HAVE BECOME UNFAILABLE: a
     // negative match on text that no longer exists anywhere can never fire, and it would have

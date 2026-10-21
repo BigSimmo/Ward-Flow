@@ -218,6 +218,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // A stay-level discharge blocker is the ward's to record, exactly like the release-level one.
   RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
   CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+  // Fix plan item 10: the ED records the level at intake and may change it while the patient waits,
+  // the ward changes it for its own beds, and the coordinator for either.
+  RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
   /*
    * Mirrors `WITHDRAW_REFERRAL` below exactly, and for the same reason: whoever may raise a
    * movement may say what is holding it up, plus the coordinator. The four are not

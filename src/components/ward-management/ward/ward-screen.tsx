@@ -26,6 +26,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { isConstantObservation, observationStaffOnWard } from "@/components/ward-management/ward-observation";
 import {
   bedsPendingPreparation,
   capacityBreakdown,
@@ -1149,9 +1150,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     count += overdueArrivals.length;
     return count;
   })();
-  const staffedSpecialling = (admissions ?? []).filter(
-    (admission) => admission.unitId === unit.id && admission.state === "occupied" && admission.specialling,
-  ).length;
+  const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
   const overdueLeaveBeds = unitLeaveBeds.filter(
     (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
   );
@@ -1230,9 +1229,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const recordedStatus = (stayMovement?.legalStatus ?? targetBed?.legalStatus) as LegalStatus | undefined;
     const involuntaryBedNeeded = requiresAuthorisedDestination(recordedStatus);
     const secureBedNeeded = Boolean(stayMovement ? stayMovement.security === "Secure" : false);
-    const highAcuityNursingNeeded = Boolean(
-      stayAdmission?.highAcuity || stayAdmission?.specialling || targetBed?.highAcuity || targetBed?.isSpecialling,
-    );
+    const constantObservation = isConstantObservation(stayAdmission?.observation) || targetBed?.isSpecialling;
+    const highAcuityNursingNeeded = Boolean(stayAdmission?.highAcuity || constantObservation || targetBed?.highAcuity);
     const derivedHomeRegion = stayMovement?.homeRegion ?? stayAdmission?.homeRegion ?? "Perth Metropolitan";
     const derivedSuburb =
       patientRecord?.suburb && referralSuburbIsKnown(patientRecord.suburb)
@@ -2058,7 +2056,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </Link>
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-        <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
+        <span>Roster not recorded</span> · {staffedSpecialling} staff on constant observation ·{" "}
         {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
         {(unit.intakeConstraints ?? []).length > 0
           ? ` · ${(unit.intakeConstraints ?? [])

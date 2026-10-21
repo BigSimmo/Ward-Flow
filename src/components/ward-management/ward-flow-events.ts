@@ -88,6 +88,7 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { Observation } from "@/components/ward-management/ward-observation";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -113,13 +114,14 @@ export type ReferralDraft = {
    * absent leaves `Movement.tentativeDiagnosis` unset rather than forcing a guess.
    */
   tentativeDiagnosis?: TentativeDiagnosisBlock;
-  specialling: boolean;
+  /** The observation level the ED recorded at intake (fix plan item 10). See `Movement.observation`. */
+  observation: Observation;
   /**
    * Whether high-acuity nursing is requested. **The referring clinician marks it — owner ruling,
    * 2026-09-10**, chosen over the system working it out, which would have been the first thing
    * Ward Flow ever did that assessed a patient.
    *
-   * A plain `boolean` with `false` as the ordinary state, exactly like `specialling` above. It is
+   * A plain `boolean` with `false` as the ordinary state. It is
    * never inferred from `urgency`, `security` or `legalStatus` on this same draft.
    */
   highAcuity: boolean;
@@ -1781,6 +1783,28 @@ export type WardFlowEvent =
       actingUnitId: string;
       /** Chosen from `BED_RELEASE_BLOCKERS`; the reducer refuses anything else. */
       blocker: BedReleaseBlocker;
+    }
+  | {
+      /**
+       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10, Josh, 21 Oct 2026). The only writer of
+       * `Movement.observation` after intake and of `Admission.observation` after the pull. The
+       * target is the open movement (before a bed is held) or the admission (once it is). Either way
+       * the movement and its live admission are changed together, so the level the capacity check
+       * counts and the level the referral shows never disagree, and each appends `{ at, from, to }`
+       * to its `observationChanges`.
+       *
+       * Refused for a level outside `OBSERVATION_LEVELS`, an Intermittent interval outside
+       * `INTERMITTENT_INTERVAL_MINUTES`, or no change. It does NOT refuse a ward raising an occupied
+       * bed's level beyond its staffed capacity: the person on the ward needs the level whatever
+       * the roster says, so the ward's remaining figure simply reads nought. The capacity refusal
+       * stays where it always was, at `PULL_PATIENT`, before a bed is committed.
+       */
+      type: "RECORD_OBSERVATION_LEVEL";
+      role: WardFlowRole;
+      now: Instant;
+      target:
+        { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
+      observation: Observation;
     }
   | {
       /** The other half: the stay's discharge is no longer held up. Refused when none is recorded. */

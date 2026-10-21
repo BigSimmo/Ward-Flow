@@ -44,6 +44,7 @@ import {
   useEdReferralDraft,
   useEdRowPanels,
 } from "./use-ed-screen-state";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 
 /*
  * Fix list 2.5 and 9.6 (15 Oct 2026): this screen was one 6,500 line file. It is now split into
@@ -295,7 +296,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       gender === undefined ||
       legalStatus === undefined ||
       urgency === undefined ||
-      draft.specialling === undefined ||
+      draft.observation === undefined ||
       draft.highAcuity === undefined ||
       (draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")
     ) {
@@ -319,7 +320,14 @@ export function EdScreen({ edId }: EdScreenProps) {
         // T15 (item 12): `"none"` becomes `undefined` on the dispatched event, the same widening
         // the gender field immediately above gets.
         tentativeDiagnosis: draft.tentativeDiagnosis === "none" ? undefined : draft.tentativeDiagnosis,
-        specialling: draft.specialling,
+        observation: {
+          level: draft.observation,
+          intervalMinutes: draft.observation === "intermittent" ? draft.observationIntervalMinutes : null,
+          reviewAt:
+            draft.observationReviewTime.trim() === ""
+              ? null
+              : (instantFromEstimatedTimeInputs(draft.observationReviewTime, draft.observationReviewDay, now) ?? null),
+        },
         highAcuity: draft.highAcuity,
         legalStatus,
         urgency,

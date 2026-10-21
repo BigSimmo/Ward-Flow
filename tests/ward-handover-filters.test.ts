@@ -29,6 +29,7 @@ import { handoverSnapshot, isOpen } from "../src/components/ward-management/ward
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import type { Movement, Referral } from "../src/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const { movements, units, referrals } = seedWardFlowState();
 const openMovements = movements.filter(isOpen);
@@ -45,7 +46,7 @@ function baseMovement(overrides: Partial<Movement> & { id: string; originEdId: s
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

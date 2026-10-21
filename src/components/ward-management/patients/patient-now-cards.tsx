@@ -12,6 +12,7 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 /**
  * The gate board's context cards for Now (9 Oct 2026). Now only ever shows what is true at this
  * moment: past presentations, closed records and superseded forms live in History and Documents.
@@ -56,7 +57,8 @@ export function PatientWhyCard({
       <div className={styles.rows}>
         {movement ? (
           <Row label="Needs">
-            {movement.security} {movement.cohort.toLowerCase()} bed{movement.specialling ? ", 1:1 specialling" : ""}
+            {movement.security} {movement.cohort.toLowerCase()} bed
+            {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
           </Row>
         ) : null}
         {/* Interpreter language and Aboriginal status stay in Details, apart from each other and

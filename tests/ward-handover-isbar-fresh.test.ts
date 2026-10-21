@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { isbarLines, situationState, type HandoverRow } from "@/components/ward-management/handover/handover-model";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 /** Audit A4-26 (13 Oct 2026): Situation reads the latest state; Recommendation is owner and next step. */
 const row = (fields: Partial<HandoverRow>) =>
@@ -17,6 +19,7 @@ const row = (fields: Partial<HandoverRow>) =>
     legalStatus: "Involuntary inpatient",
     formCode: "4C",
     obs: "Standard",
+    movement: { observation: GENERAL_OBSERVATION } as Movement,
     asked: [],
     declines: [],
     escalated: false,
@@ -55,12 +58,12 @@ describe("ISBAR Assessment names recorded risk (audit r1 item 3)", () => {
 
   it("lists the referral's recorded risk flags and the high-acuity mark", () => {
     expect(assessment({ riskFlags: ["absconding", "aggression"], highAcuity: true })).toBe(
-      "Standard obs, high acuity nursing, risk flags absconding, aggression, Form 4C, no due time typed",
+      "General, hourly, high acuity nursing, risk flags absconding, aggression, Form 4C, no due time typed",
     );
   });
 
   it("says when none were recorded and when no referral intake is linked", () => {
-    expect(assessment({ riskFlags: [] })).toBe("Standard obs, no risk flags recorded, Form 4C, no due time typed");
-    expect(assessment({})).toBe("Standard obs, risk flags not recorded, Form 4C, no due time typed");
+    expect(assessment({ riskFlags: [] })).toBe("General, hourly, no risk flags recorded, Form 4C, no due time typed");
+    expect(assessment({})).toBe("General, hourly, risk flags not recorded, Form 4C, no due time typed");
   });
 });

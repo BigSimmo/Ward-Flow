@@ -5,6 +5,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { bedMapWards } from "@/components/ward-management/capacity/bed-map";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
 // The provider deliberately omits rejections from its persistence projection (D-18).
 const valid = (state: WardFlowState) =>
@@ -35,7 +36,7 @@ function journey(atsCategory?: number) {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,
@@ -370,7 +371,7 @@ describe("medical clearance and recorded category boundaries", () => {
           security: "Open",
           sex: "Female",
           gender: "Female",
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,

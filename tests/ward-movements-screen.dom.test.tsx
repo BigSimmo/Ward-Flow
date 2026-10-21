@@ -21,6 +21,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById, NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * MERGE 03 — the patient movement board (`MovementsView`) and the coordinator's live transport
@@ -964,7 +965,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
       cohort: "Adult",
       security: "Open",
       sex: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       statusChanges: [],

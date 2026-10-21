@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { eligibility } from "../src/components/ward-management/ward-eligibility";
 import { movementById } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR, unitById } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION, isConstantObservation } from "../src/components/ward-management/ward-observation";
 
 /**
  * **The specialling gate must never claim headroom, because it cannot see any.**
@@ -58,7 +59,7 @@ describe("the specialling gate's detail line", () => {
   });
 
   it("fixture sanity: WF-009 needs specialling, or nothing below exercises this branch", () => {
-    expect(WF_009.specialling).toBe(true);
+    expect(isConstantObservation(WF_009.observation)).toBe(true);
   });
 
   it("promises no headroom for a ward authored for two — the case that shipped wrong", () => {
@@ -87,7 +88,7 @@ describe("the specialling gate's detail line", () => {
   });
 
   it("says nothing about capacity when the movement needs no specialling", () => {
-    const notSpecialling = { ...WF_009, specialling: false };
+    const notSpecialling = { ...WF_009, observation: GENERAL_OBSERVATION };
     const unit = { ...unitById("fsh-adult-secure")!, id: "test-only-specialling-ward", speciallingCapacity: 2 };
     const gate = eligibility(notSpecialling, unit, NOW_ANCHOR).gates.find((c) => c.gate === "specialling")!;
     expect(gate.pass).toBe(true);

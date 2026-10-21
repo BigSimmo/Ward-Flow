@@ -11,6 +11,7 @@ import type { WardRecordActor } from "@/components/ward-management/ward-discharg
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { COHORTS } from "@/components/ward-management/ward-model";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const coordinator = { role: "coordinator" } as const;
 const legalEvent = {
@@ -65,7 +66,7 @@ describe("session audit capture and review", () => {
         cohort: "Adult",
         security: "Open",
         sex: "Male",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 3,

@@ -6,6 +6,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardArrivalsCorridor } from "@/components/ward-management/ward/ward-arrivals-corridor";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 /**
  * Audit A1-5 (13 Oct 2026): the arrivals cards used to tag every secure patient "HDU / Close
@@ -39,11 +40,13 @@ function renderCard(overrides: Partial<typeof SECURE>) {
 
 describe("arrivals cards show only a recorded observation level (A1-5)", () => {
   it("adds no observation tag to a secure patient with none recorded", () => {
-    const card = renderCard({ specialling: false, highAcuity: false });
+    const card = renderCard({ observation: GENERAL_OBSERVATION, highAcuity: false });
     expect(card).not.toHaveTextContent(/HDU|Close Observation|specialling|High-acuity/);
   });
 
-  it("shows 1:1 specialling only when it is recorded", () => {
-    expect(renderCard({ specialling: true, highAcuity: false })).toHaveTextContent("1:1 specialling");
+  it("shows a constant observation level only when it is recorded", () => {
+    expect(renderCard({ observation: observationAt("within_sight"), highAcuity: false })).toHaveTextContent(
+      "Constant within sight (1:1)",
+    );
   });
 });

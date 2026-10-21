@@ -16,6 +16,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -409,7 +410,7 @@ describe("new referrals", () => {
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -426,7 +427,7 @@ describe("new referrals", () => {
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -449,7 +450,7 @@ describe("new referrals", () => {
         security: "Open",
         sex: "Male",
         gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 3,
@@ -481,7 +482,7 @@ describe("new referrals", () => {
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -514,7 +515,7 @@ describe("new referrals", () => {
           security: "Open",
           sex: "Female",
           gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus,
           urgency: 2,
@@ -550,7 +551,7 @@ describe("new referrals", () => {
           security: "Open",
           sex: "Female",
           gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,
@@ -579,7 +580,7 @@ describe("new referrals", () => {
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -764,7 +765,7 @@ describe("examination", () => {
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -1434,7 +1435,7 @@ describe("arrival capacity floor", () => {
           security: "Secure",
           sex: "Male",
           gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 3,
@@ -2506,7 +2507,7 @@ describe("bed release privacy", () => {
           security: "Open",
           sex: "Female",
           gender: "Female",
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 9 as unknown as 1,

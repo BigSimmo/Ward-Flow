@@ -42,6 +42,7 @@ import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
+import { isObservation, upgradeLegacyObservationRows, type Observation } from "./ward-observation";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -299,6 +300,11 @@ const meetingAction = z
   .check(z.refine((action) => (action.owner === "ward") === (action.ownerUnitId !== undefined)))
   .check(z.refine((action) => (action.doneAt === undefined) === (action.doneBy === undefined)));
 
+// Fix plan item 10: a level from the fixed list, an Intermittent interval from the fixed list, and a
+// review time as a number. `isObservation` is the same check `RECORD_OBSERVATION_LEVEL` makes.
+const observationRule = z.custom<Observation>(isObservation);
+const observationChangeRule = z.object({ at: finite, from: observationRule, to: observationRule });
+
 const movement = z
   .looseObject({
     id,
@@ -313,7 +319,8 @@ const movement = z
     blocker: text,
     openedAt: finite,
     flaggedUrgent: bool,
-    specialling: bool,
+    observation: observationRule,
+    observationChanges: z.optional(z.array(observationChangeRule)),
     highAcuity: bool,
     urgency,
     statusChanges: records,
@@ -359,7 +366,8 @@ const admission = z.looseObject({
   unitId: text,
   meetingActions: z.optional(z.array(meetingAction)),
   state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
-  specialling: bool,
+  observation: observationRule,
+  observationChanges: z.optional(z.array(observationChangeRule)),
   highAcuity: bool,
   sex: text,
   // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
@@ -1035,8 +1043,9 @@ export const WARD_FLOW_STORED_STATE_VERSION = 7;
  * a v6 shape and is refused rather than overwritten.
  */
 export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown): unknown {
-  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return state;
+  // Fix plan item 10: a save from before observation levels reads its yes/no flag as a level.
+  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return upgradeLegacyObservationRows(state);
   if (fromVersion !== 6 || !object(state)) return null;
   if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
-  return { ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 };
+  return upgradeLegacyObservationRows({ ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 });
 }

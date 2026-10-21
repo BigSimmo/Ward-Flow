@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { eligibility } from "../src/components/ward-management/ward-eligibility";
 import { movementById } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR, unitById } from "../src/components/ward-management/ward-sites";
+import { isConstantObservation } from "../src/components/ward-management/ward-observation";
 
 /**
  * Audit follow-up 2026-09-25: the specialling gate's "capacity reached" sentence said
@@ -26,7 +27,7 @@ function speciallingDetail(speciallingCapacity: number): string {
 
 describe("the specialling gate's reached-capacity wording (audit follow-up 2026-09-25)", () => {
   it("fixture sanity: WF-009 needs specialling, or nothing below exercises this branch", () => {
-    expect(WF_009.specialling).toBe(true);
+    expect(isConstantObservation(WF_009.observation)).toBe(true);
   });
 
   it("names specialling (one-to-one nursing), not high-acuity nursing, when capacity is reached", () => {

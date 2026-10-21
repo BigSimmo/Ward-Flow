@@ -21,6 +21,7 @@ import {
   ALL_EVENT_TYPES,
   offendingFormsIn,
 } from "./helpers/ward-legal-figure-sweep";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * Guard against a fourth fabrication of a Mental Health Act duration in this prototype.
  *
@@ -531,7 +532,7 @@ function collectLegalForms(): { source: string; movementId: string; form: LegalF
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus,
         urgency: 2,

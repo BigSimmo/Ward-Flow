@@ -22,6 +22,7 @@ import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import styles from "./patient-status-card.module.css";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
 interface StatusCell {
@@ -494,7 +495,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           icon: Eye,
           label: "Observation",
           owner: "Nurse in charge",
-          value: admission?.specialling ? "1:1 specialling" : "General",
+          value: admission ? observationSummary(admission.observation) : "Not recorded",
           sub: admission?.highAcuity ? "High acuity recorded" : "No high acuity recorded",
         },
         {

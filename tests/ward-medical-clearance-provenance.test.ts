@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 function journey(linked = false) {
@@ -37,7 +38,7 @@ function journey(linked = false) {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

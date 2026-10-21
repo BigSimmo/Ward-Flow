@@ -18,6 +18,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { markBroomeForensicForThisFile } from "./helpers/ward-made-up-forensic-ward";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 // The 09:30 morning-rollup overdue banner (added 22 Sept) is itself role="alert" and is always on
 // at NOW_ANCHOR (10:42). These tests count REFUSAL alerts, so the banner is left out of the count.
@@ -64,7 +65,7 @@ const HIGH_ACUITY_DRAFT: ReferralDraft = {
   security: "Open",
   sex: "Female",
   gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: true,
   legalStatus: "Voluntary",
   urgency: 2,

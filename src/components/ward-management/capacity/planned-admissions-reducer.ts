@@ -39,6 +39,7 @@ import {
   type Unit,
 } from "../ward-model";
 import { patientCohort } from "../ward-patients";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -80,7 +81,7 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
     ...(planned.gender === undefined ? {} : { gender: planned.gender }),
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: planned.legalStatus,
     statusChanges: [],
@@ -444,7 +445,7 @@ export function reducePlannedAdmissionEvent(
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,
         unitId: unit.id,
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         referralId: null,
         movementId: null,

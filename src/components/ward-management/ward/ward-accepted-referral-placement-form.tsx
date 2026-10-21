@@ -10,6 +10,12 @@ import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command
 import type { LegalStatus } from "../ward-model";
 import { legalStatusMismatchWarning } from "../ward-eligibility";
 import styles from "./ward.module.css";
+import {
+  OBSERVATION_LEVELS,
+  observationAt,
+  observationLevelName,
+  type ObservationLevel,
+} from "@/components/ward-management/ward-observation";
 
 /** Every `LegalStatus`, hand-listed like the shortlist panel's: importing the ED screen model for
  *  it pulled the coordinator queue and ED derivations into every ward page's phone script budget. */
@@ -44,7 +50,8 @@ export function WardAcceptedReferralPlacementForm({
     referralId: string;
     legalStatus: string;
     legalFormCode: string;
-    specialling: boolean;
+    /** Fix plan item 10: unanswered ("") until the ward chooses a level. */
+    observation: ObservationLevel | "";
   } | null>(null);
   // Acceptance is a decision only. Starting its separate journey consumes no bed.
   const acceptedToStart = inboxEntries
@@ -66,7 +73,8 @@ export function WardAcceptedReferralPlacementForm({
     if (!placementDraft) return;
     const current = acceptedToStart.find(({ entry }) => entry.id === placementDraft.referralId);
     const legalStatus = LEGAL_STATUS_OPTIONS.find((status) => status === placementDraft.legalStatus);
-    if (!current || !legalStatus || !placementDraft.legalFormCode) return;
+    const observationLevel = placementDraft.observation;
+    if (!current || !legalStatus || !placementDraft.legalFormCode || observationLevel === "") return;
     const { entry, cohort, ed } = current;
     const mismatch = legalStatusMismatchWarning(entry.destination.involuntaryBedNeeded, legalStatus);
     completeCommand(
@@ -83,7 +91,7 @@ export function WardAcceptedReferralPlacementForm({
             sex: entry.destination.sex,
             gender: entry.destination.gender,
             highAcuity: entry.destination.highAcuityNursingNeeded === true,
-            specialling: placementDraft.specialling,
+            observation: observationAt(observationLevel),
             legalStatus,
             legalFormCode: placementDraft.legalFormCode === "none" ? null : placementDraft.legalFormCode,
             urgency: entry.urgency,
@@ -152,17 +160,25 @@ export function WardAcceptedReferralPlacementForm({
                 </select>
               </label>
               <label>
-                <input
-                  type="checkbox"
-                  checked={placementDraft.specialling}
-                  onChange={(event) => setPlacementDraft({ ...placementDraft, specialling: event.target.checked })}
-                />
-                Specialling needed
+                Observation level
+                <select
+                  value={placementDraft.observation}
+                  onChange={(event) =>
+                    setPlacementDraft({ ...placementDraft, observation: event.target.value as ObservationLevel | "" })
+                  }
+                >
+                  <option value="">Choose an observation level</option>
+                  {OBSERVATION_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {observationLevelName(level)}
+                    </option>
+                  ))}
+                </select>
               </label>
               <button
                 type="submit"
                 className={styles.btnActionSec}
-                disabled={!placementDraft.legalStatus || !placementDraft.legalFormCode}
+                disabled={!placementDraft.legalStatus || !placementDraft.legalFormCode || !placementDraft.observation}
               >
                 Confirm and start placement
               </button>
@@ -183,7 +199,7 @@ export function WardAcceptedReferralPlacementForm({
                   referralId: entry.id,
                   legalStatus: LEGAL_STATUS_OPTIONS.find((status) => status === entry.intake?.legalStatus) ?? "",
                   legalFormCode: "",
-                  specialling: false,
+                  observation: "",
                 })
               }
             >

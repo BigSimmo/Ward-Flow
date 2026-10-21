@@ -279,7 +279,7 @@ export function reduceReferralSendEvent(
         gender: event.draft.gender,
         // T15 (item 12): the ED's own choice replaces whatever the linked referral carried.
         tentativeDiagnosis: event.draft.tentativeDiagnosis ?? raisedFrom?.tentativeDiagnosis,
-        specialling: event.draft.specialling,
+        observation: event.draft.observation,
         highAcuity: event.draft.highAcuity,
         legalStatus: event.draft.legalStatus,
         // Spread-copied, never aliased: `SELECTABLE_LEGAL_FORMS` entries must not become mutable

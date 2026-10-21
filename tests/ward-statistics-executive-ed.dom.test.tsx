@@ -17,6 +17,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WF_PHONE_QUERY } from "@/components/wf";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Executive Statistics on one ED (role access plan, Josh's yes 15 Oct 2026): counts only. A small
@@ -36,7 +37,7 @@ function movement(overrides: Partial<Movement> & Pick<Movement, "id" | "originEd
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

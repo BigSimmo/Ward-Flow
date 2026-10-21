@@ -36,6 +36,7 @@ import {
 import { NOW_ANCHOR, allUnits } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * Phase 8 Task 3. The same boundary `tests/ward-travel-bands.test.ts` sets for itself applies here
  * and for the same reason: every value in `SYNTHETIC_TRAVEL_BANDS` is invented, sits beside REAL
@@ -435,7 +436,7 @@ describe("the out-of-area ledger", () => {
     return {
       id: "AD-TEST",
       unitId: "fsh-adult-secure",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       referralId: "RF-TEST",
       movementId: null,

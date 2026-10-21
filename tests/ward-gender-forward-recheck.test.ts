@@ -16,6 +16,7 @@ import {
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import type { Movement, MovementStage } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR, unitById } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * P1-3 (Ward Lead ruling, 17 September 2026): "a gender corrected after placement is never
@@ -52,7 +53,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     security: "Secure",
     sex: "Male",
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

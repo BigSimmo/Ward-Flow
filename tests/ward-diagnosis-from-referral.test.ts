@@ -13,6 +13,7 @@ import type { Movement, Unit } from "../src/components/ward-management/ward-mode
 import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * T15 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 12, owner answer 12,
@@ -45,7 +46,7 @@ function draft(overrides: Partial<ReferralDraft> = {}): ReferralDraft {
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     urgency: 2,

@@ -34,6 +34,7 @@ import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { StagePresentationDetail } from "./patient-now-screen-helpers";
 import type { WfTone } from "@/components/wf";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The values `PatientNowScreen` has derived that its summary section reads. */
 export type PatientNowSummaryProps = {
@@ -158,7 +159,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             // second line rather than cut it off.
             <span className={styles.phMoveEyebrow}>
               {`Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}`}
-              {liveMovement?.specialling ? <span className={styles.phObsChip}>1:1 specialling</span> : null}
+              {liveMovement && isConstantObservation(liveMovement.observation) ? (
+                <span className={styles.phObsChip}>{observationSummary(liveMovement.observation)}</span>
+              ) : null}
             </span>
           ) : (
             <span className={styles.phEyebrow}>
@@ -330,10 +333,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   Overdue · {tierOverdueAfterMinutes(urgencyTier) / 60}h limit
                 </span>
               ) : null}
-              {liveMovement.specialling ? (
+              {isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
                   <StatusGlyph tone="warning" size={9} />
-                  1:1 specialling
+                  {observationSummary(liveMovement.observation)}
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>

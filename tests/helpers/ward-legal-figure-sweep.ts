@@ -13,6 +13,7 @@ import {
   BROADCAST_TARGET_SCOPES,
 } from "../../src/components/ward-management/alerts/ward-broadcast-model";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
+import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
 import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
 import { afterAll, expect } from "vitest";
@@ -57,6 +58,7 @@ import {
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+import { GENERAL_OBSERVATION } from "../../src/components/ward-management/ward-observation";
 const preparationProfile = createPreparationProfile("legal-candidates");
 afterAll(() => {
   preparationProfile.write();
@@ -480,7 +482,7 @@ export function candidateEvents(
                 security: "Open" as const,
                 sex: "Female" as const,
                 gender: "Female" as const, // R7 (2026-09-25): record gender so the walk needs no coordinator review
-                specialling: false,
+                observation: GENERAL_OBSERVATION,
                 highAcuity: false,
                 legalStatus,
                 urgency: 2 as const,
@@ -1094,6 +1096,18 @@ export function candidateEvents(
         admissionId: admission.id,
         actingUnitId: admission.unitId,
       }));
+    case "RECORD_OBSERVATION_LEVEL":
+      // One candidate per admission, crossed with every level. A level is a closed list and its
+      // review time is left unrecorded, so nothing here can carry a duration or statutory figure.
+      return state.admissions.flatMap((admission) =>
+        OBSERVATION_LEVELS.map((level) => ({
+          type,
+          role,
+          now,
+          target: { kind: "admission" as const, admissionId: admission.id, actingUnitId: admission.unitId },
+          observation: observationAt(level),
+        })),
+      );
     case "RECORD_STAY_DISCHARGE_BLOCKER":
       // One candidate per admission, crossed with every chosen blocker. The blocker is a closed list
       // of plain operational reasons, so nothing here can carry a duration or statutory figure.
@@ -1532,7 +1546,7 @@ export function buildReferredMovementFor(
       security: "Open",
       sex: "Female",
       gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Referred for psychiatric examination",
       urgency: 2,
@@ -1589,7 +1603,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
       security: "Open",
       sex: "Female",
       gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Referred for psychiatric examination",
       urgency: 2,

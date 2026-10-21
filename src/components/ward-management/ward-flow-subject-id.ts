@@ -140,6 +140,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "CANCEL_PLANNED_ADMISSION":
     case "CONVERT_PLANNED_ADMISSION":
       return event.plannedAdmissionId;
+    case "RECORD_OBSERVATION_LEVEL":
+      return event.target.kind === "movement" ? event.target.movementId : event.target.admissionId;
     default:
       return "movementId" in event ? (event.movementId as string) : "none";
   }

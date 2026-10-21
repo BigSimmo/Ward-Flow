@@ -20,6 +20,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { refusedAndNothingPending } from "../src/components/ward-management/statistics/statistics-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -35,7 +36,7 @@ const DRAFT = {
   // referral can reach a single-gender ward — fsh-adult-secure is male-only. Matches `sex` above,
   // the same known-eligible combination this fixture already relies on.
   gender: "Male",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   urgency: 2,

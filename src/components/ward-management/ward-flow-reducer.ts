@@ -68,6 +68,7 @@ import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import { type RecordedFactEventHelpers, reduceRecordedFactEvent } from "./ward-flow-record-events";
+import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
 import { type UndoEventHelpers, reduceUndoEvent } from "./ward-flow-undo-events";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
@@ -149,8 +150,8 @@ import {
 } from "@/components/ward-management/ward-scenarios";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import {
+  lacksObservationStaff,
   remainingHighAcuityCapacity,
-  remainingSpeciallingCapacity,
   bedIsOccupied,
   type Admission,
   type PlannedAdmission,
@@ -634,7 +635,7 @@ function pullOverrides(
 ): Movement["overrides"] {
   if (event.overrideReason === undefined || !OVERRIDE_REASONS.includes(event.overrideReason)) return movement.overrides;
   const gates: NonNullable<Movement["overrides"][number]["gate"]>[] = [];
-  if (movement.specialling && remainingSpeciallingCapacity(unit, admissions) <= 0) gates.push("specialling_staffing");
+  if (lacksObservationStaff(movement.observation, unit, admissions)) gates.push("specialling_staffing");
   if (movement.highAcuity && remainingHighAcuityCapacity(unit, admissions) <= 0) gates.push("high_acuity_staffing");
   if (!checkEligibility) {
     // The restore pull (Audit 2 E-03): the one suitability question it re-asks is authorisation
@@ -1630,7 +1631,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       )
         return deny("transition", "denied", "The patient already has another occupied or held bed.");
       if (
-        (admission.specialling && remainingSpeciallingCapacity(receiving, state.admissions) <= 0) ||
+        lacksObservationStaff(admission.observation, receiving, state.admissions) ||
         (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
       )
         return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
@@ -2267,6 +2268,8 @@ export function reduceClinicalEvent(
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
       return reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
+    case "RECORD_OBSERVATION_LEVEL":
+      return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS);
     case "ACCEPT_IN_PRINCIPLE":
     case "DECLINE":
     case "RECEIVE_REFERRAL":
