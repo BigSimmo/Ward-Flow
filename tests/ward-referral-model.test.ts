@@ -677,6 +677,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CONVERT_PLANNED_ADMISSION: false,
     // Records that a carer, PSP or MHAS was told about a completed move. Not a refusal.
     RECORD_SUPPORT_NOTIFICATION: false,
+    SEND_RELEASE_SUPPORT_NOTICE: false,
+    RECORD_ARRIVAL_CHECK: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,

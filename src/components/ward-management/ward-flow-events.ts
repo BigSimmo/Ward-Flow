@@ -16,6 +16,7 @@ import type {
   SupportNotificationOccasion,
   SupportNotificationOutcome,
   SupportNotificationParty,
+  SupportServiceType,
 } from "@/components/ward-management/ward-support-notifications";
 import type {
   BroadcastAnswer,
@@ -43,6 +44,7 @@ import type {
   WardIntakeConstraint,
 } from "@/components/ward-management/ward-change-reasons";
 import type {
+  ArrivalCheck,
   AtsCategory,
   ArrivalMode,
   BedReleaseWaitingOn,
@@ -467,6 +469,12 @@ export type WardFlowEvent =
        * bed a current stay or another accepted movement on the unit already holds.
        */
       bedNumber?: number;
+      /**
+       * D-72 (Josh, 21 Oct 2026): the accepting ward asks for the extra-travel bed hold. Stored as
+       * `Movement.extendedHoldAt`; a later `PULL_PATIENT` to this ward then holds the bed for
+       * `EXTRA_TRAVEL_HOLD_MINUTES` beyond the configured hold. `true` when chosen, never `false`.
+       */
+      extendedHold?: true;
       /** B1: a ward answering names itself; refused when it answers for another ward. The
        *  coordinator acts for any ward and sends none. */
       actingUnitId?: string;
@@ -2518,6 +2526,35 @@ export type WardFlowEvent =
       contactedAt?: Instant;
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
+    }
+  | {
+      /**
+       * #398 (D-72, 21 Oct 2026): the ward sends a pharmacy, transport or cleaning notice for a
+       * confirmed bed release, so the discharge card may say "Sent". Ward-scoped: a ward sends only
+       * for its own release. Refused when the release is no longer confirmed or that service was
+       * already notified. Holds ids, a fixed code and an instant only, never typed text.
+       */
+      type: "SEND_RELEASE_SUPPORT_NOTICE";
+      role: WardFlowRole;
+      now: Instant;
+      releaseId: string;
+      service: SupportServiceType;
+      /** The ward sending it. Required, and must be the release's own ward. */
+      actingUnitId: string;
+    }
+  | {
+      /**
+       * D-72 (21 Oct 2026): the emergency department records an arrival checklist item, the
+       * pre-transfer contraband search or the medication chart for the receiving ward. Writes
+       * `Movement.contrabandSearchDone` or `Movement.medicationChartDone`. `done: false` takes a
+       * mistaken tick back. Holds an id, a fixed code and a flag only, never typed text.
+       */
+      type: "RECORD_ARRIVAL_CHECK";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      check: ArrivalCheck;
+      done: boolean;
     }
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,

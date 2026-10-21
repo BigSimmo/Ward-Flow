@@ -192,6 +192,8 @@ export function reduceReferralAnswerEvent(
             : movement.overrides,
         // The instant this acceptance happened. See `Movement.acceptedAt`.
         acceptedAt: event.now,
+        // D-72: the extra-travel bed hold belongs to this acceptance only. See `Movement.extendedHoldAt`.
+        extendedHoldAt: event.extendedHold === true ? event.now : undefined,
         stage: "accepted_awaiting_bed",
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],

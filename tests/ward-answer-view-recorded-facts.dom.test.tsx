@@ -116,6 +116,22 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts[0]).not.toHaveProperty("bedNumber");
   });
 
+  it("sends the extra-travel bed hold only when the ward chooses it (D-72)", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const dialog = openDialog();
+    expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
+    const hold = screen.getByLabelText("Bed hold once pulled");
+    expect(hold).toHaveValue("standard");
+    fireEvent.change(hold, { target: { value: "extended" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
+
+    // Reopened, the choice starts at the standard hold again.
+    expect(openDialog()).toBeTruthy();
+    expect(screen.getByLabelText("Bed hold once pulled")).toHaveValue("standard");
+  });
+
   it("still steps with Previous and Next", () => {
     renderAnswer("sjgm-adult-open", (movements) => {
       const first = movements.find((movement) => movement.referredUnitIds.includes("sjgm-adult-open"))!;

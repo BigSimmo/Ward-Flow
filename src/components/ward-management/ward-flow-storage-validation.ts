@@ -332,6 +332,7 @@ const movement = z
     sourceAdmissionId: link,
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
+    extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
     meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
