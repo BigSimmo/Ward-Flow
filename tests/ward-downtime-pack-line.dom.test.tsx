@@ -78,16 +78,17 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
   });
 
-  it("retakes the pack on the hour and offers it to print or save", () => {
+  it("retakes the pack on the hour silently, asking for paper only at shift change (Josh, 21 Oct 2026)", () => {
     renderShell();
     const opening = lastDowntimePack();
     act(() => setClock(ELEVEN - 1));
     expect(lastDowntimePack()).toBe(opening);
     act(() => setClock(ELEVEN));
     expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
+    expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
+    act(() => setClock(SHIFT_CHANGE));
     const line = screen.getByTestId("ward-downtime-pack-line");
-    expect(line.textContent).toMatch(/^Downtime pack 11:00 ready\. Print it or save it as a PDF/u);
-    expect(line.hasAttribute("data-shift-change")).toBe(false);
+    expect(line.textContent).toMatch(/^Shift change downtime pack 15:00 ready\. Print it or save it as a PDF/u);
     expect(screen.getByTestId("ward-downtime-pack-open").getAttribute("href")).toBe("/ward-flow/reports/downtime");
   });
 
@@ -135,13 +136,15 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
   });
 
-  it("goes once put aside or printed, and comes back with the next pack", () => {
+  it("goes once put aside or printed, and comes back with the next shift change pack", () => {
     renderShell();
-    act(() => setClock(ELEVEN));
+    act(() => setClock(SHIFT_CHANGE));
     fireEvent.click(screen.getByTestId("ward-downtime-pack-dismiss"));
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
-    act(() => setClock(12 * HOUR));
-    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(/12:00/u);
+    act(() => setClock(16 * HOUR));
+    expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
+    act(() => setClock(23 * HOUR));
+    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(/23:00/u);
     act(() => markDowntimePackHandled(lastDowntimePack()!));
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
   });
@@ -156,7 +159,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
 
   it("offline, hides the line and the offline notice names the last pack", () => {
     renderShell();
-    act(() => setClock(ELEVEN));
+    act(() => setClock(SHIFT_CHANGE));
     expect(screen.getByTestId("ward-downtime-pack-line")).toBeTruthy();
     act(() => {
       setOnline(false);
@@ -164,14 +167,14 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     });
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
     expect(screen.getByTestId("ward-offline-banner").textContent).toMatch(
-      /use the downtime pack taken at 11:00, printed or saved as a PDF\.$/u,
+      /use the downtime pack taken at 15:00, printed or saved as a PDF\.$/u,
     );
   });
 
   it("writes nothing to browser storage", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     renderShell();
-    act(() => setClock(ELEVEN));
+    act(() => setClock(SHIFT_CHANGE));
     fireEvent.click(screen.getByTestId("ward-downtime-pack-dismiss"));
     const packWrites = setItem.mock.calls.filter(([, value]) => String(value).includes("generatedAt"));
     expect(packWrites).toEqual([]);

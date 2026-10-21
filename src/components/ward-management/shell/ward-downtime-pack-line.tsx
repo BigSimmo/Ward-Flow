@@ -23,8 +23,9 @@ import styles from "./ward-offline-banner.module.css";
 
 /**
  * Fix plan item 9 (Josh, 21 Oct 2026, "yes to all"): the downtime pack is retaken every hour and at
- * each shift change, wherever the person is in Ward Flow, and a quiet line offers the new one to
- * print or save as a PDF. The pack stays in this tab's memory only (D-18): nothing is written to
+ * each shift change, wherever the person is in Ward Flow. Only a shift change pack offers itself
+ * to print or save as a PDF (Josh, 21 Oct 2026, UX audit): an hourly pack is taken silently, so
+ * the line comes three times a day at handover rather than up to 24. The pack stays in this tab's memory only (D-18): nothing is written to
  * the device, and a copy leaves the tab only as paper or a file the person saves.
  *
  * No pack is taken while offline, where the records may be stale; the one due is taken on
@@ -68,19 +69,18 @@ export function WardDowntimePackLine() {
   }, [canOpen, ready, online, pack, now, take, owner, worldGeneration]);
 
   if (!canOpen || !ready || pack === null || handled || !online || pathname === DOWNTIME_PACK_HREF) return null;
+  if (pack.shiftChangeAt === undefined) return null;
   const at = formatInstantWithDay(pack.generatedAt, now);
-  const shiftChange = pack.shiftChangeAt !== undefined;
   return (
     <p
       className={`${styles.quiet} ${styles.recovery}`}
       role="status"
       data-testid="ward-downtime-pack-line"
-      data-shift-change={shiftChange ? "true" : undefined}
+      data-shift-change="true"
       data-print-hide
     >
       <span>
-        {shiftChange ? "Shift change downtime pack " : "Downtime pack "}
-        <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
+        Shift change downtime pack <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
         <Link href={DOWNTIME_PACK_HREF} data-testid="ward-downtime-pack-open">
           Open pack
         </Link>
