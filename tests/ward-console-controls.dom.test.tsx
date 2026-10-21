@@ -916,6 +916,19 @@ describe("withdrawing an acceptance while a bed is held (Q16)", () => {
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
     expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
   });
+
+  it("lists a withdrawal from a stepped-back stage, which writes no stage entry, in the timeline", () => {
+    renderWorkspace("WF-004");
+    fireEvent.change(screen.getByTestId("ward-console-step-back-to"), { target: { value: "destination_review" } });
+    fireEvent.change(screen.getByTestId("ward-console-step-back-reason"), { target: { value: "recorded_in_error" } });
+    fireEvent.click(screen.getByTestId("ward-console-step-back-stage"));
+    expect(screen.getByTestId("ward-console-withdraw-releases-bed")).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId("ward-console-withdraw-reason"), { target: { value: "the_bed_was_lost" } });
+    fireEvent.click(screen.getByTestId("ward-console-withdraw-acceptance"));
+
+    const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
+    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+  });
 });
 
 describe("the movement workspace's step-back-stage control", () => {

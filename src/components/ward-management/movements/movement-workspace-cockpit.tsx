@@ -243,7 +243,7 @@ export function MovementWorkspaceCockpit({
           },
         ]
       : []),
-    ...patient.stageChanges.map((change) => {
+    ...patient.stageChanges.flatMap((change) => {
       const reasonLabel = change.reason === undefined ? undefined : stageChangeReasonLabel(change.reason);
       const suffix = reasonLabel ? ` · ${reasonLabel}` : "";
       const unwind = patient.unwinds.find(
@@ -252,34 +252,44 @@ export function MovementWorkspaceCockpit({
           candidate.by === change.by &&
           (candidate.kind === "acceptance_withdrawn" || candidate.kind === "stage_corrected"),
       );
-      if (unwind?.kind === "acceptance_withdrawn") {
-        const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
-        // Q16: a withdrawal that also released a held bed writes the release immediately before it,
-        // with the same instant, role and reason. A separate `RELEASE_PULL` carries a different reason list.
-        const index = patient.unwinds.indexOf(unwind);
-        const previous = index > 0 ? patient.unwinds[index - 1] : undefined;
-        const bedReleased =
-          previous?.kind === "pull_released" &&
-          previous.at === unwind.at &&
-          previous.by === unwind.by &&
-          previous.reason === unwind.reason;
-        return {
-          at: change.at,
-          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${change.by}${suffix}`,
-        };
-      }
+      // A withdrawal is listed once, from its unwind below.
+      if (unwind?.kind === "acceptance_withdrawn") return [];
       if (unwind?.kind === "stage_corrected") {
-        return {
-          at: change.at,
-          label:
-            `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
-            `no bed released, no transport cancelled, no acceptance undone`,
-        };
+        return [
+          {
+            at: change.at,
+            label:
+              `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
+              `no bed released, no transport cancelled, no acceptance undone`,
+          },
+        ];
       }
-      return {
-        at: change.at,
-        label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
-      };
+      return [
+        {
+          at: change.at,
+          label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
+        },
+      ];
+    }),
+    // Q16: listed from the unwind so a withdrawal that kept a stepped-back stage, writing no stage
+    // entry, still shows. A release written immediately before it with the same instant, role and
+    // reason was the same act (a separate `RELEASE_PULL` carries a different reason list).
+    ...patient.unwinds.flatMap((unwind, index) => {
+      if (unwind.kind !== "acceptance_withdrawn") return [];
+      const previous = patient.unwinds[index - 1];
+      const bedReleased =
+        previous?.kind === "pull_released" &&
+        previous.at === unwind.at &&
+        previous.by === unwind.by &&
+        previous.reason === unwind.reason;
+      const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
+      const reasonLabel = stageChangeReasonLabel(unwind.reason);
+      return [
+        {
+          at: unwind.at,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
+        },
+      ];
     }),
     ...patient.statusChanges.map((change) => ({
       at: change.at,
