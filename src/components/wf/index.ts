@@ -64,6 +64,7 @@ export { Sheet, Drawer } from "./sheet";
 export { Menu, Popover, type MenuItem } from "./menu";
 export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
+export { OverlayScope } from "./overlay-root";
 export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
