@@ -1,5 +1,4 @@
 import type { WARD_BUZZ_MESSAGES } from "../ward-flow-events";
-import type { Instant } from "../ward-clock";
 import type { CapacityFigure, CapacityRefreshRequest } from "../ward-model";
 
 /** A coordinator buzz as the ward chrome reads it. */
@@ -63,54 +62,27 @@ function refreshRequestAsksForCapacity(request: Pick<CapacityRefreshRequest, "me
 
 /**
  * DEC-L5-04 (CAP-REV): a capacity request stays open until the ward confirms its capacity, on every
- * desk, not only until somebody dismisses it on their own screen. `CONFIRM_CAPACITY` stamps
- * `answeredAt`, so the order comes from the event sequence rather than minute timestamps. A request
- * saved before that stamp existed (no `allocatableRevision`) falls back to the old timestamp rule:
- * answered only by a ward confirmation in a later minute, so a same-minute tie stays open.
+ * desk, not only until somebody dismissed it on their own screen. It is read from the shared unit,
+ * so a confirmation clears it everywhere without rewriting the request: answered once a ward
+ * confirmation (from its minute on) has moved the capacity revision past the one the request
+ * recorded, so a same-minute ask made after the confirmation stays open. A request saved before it
+ * recorded a revision falls back to the old rule: answered only by a ward confirmation in a later
+ * minute.
  */
 export function refreshRequestIsOpen(
   request: CapacityRefreshRequest,
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt">,
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">,
 ): boolean {
-  if (request.answeredAt !== undefined) return false;
-  if (request.allocatableRevision !== undefined || allocatable === undefined) return true;
-  return !(
-    refreshRequestAsksForCapacity(request) &&
-    allocatable.source === "ward" &&
-    allocatable.confirmedAt > request.at
-  );
+  if (allocatable === undefined || !refreshRequestAsksForCapacity(request) || allocatable.source !== "ward")
+    return true;
+  if (request.allocatableRevision === undefined) return !(allocatable.confirmedAt > request.at);
+  return !((allocatable.revision ?? 0) > request.allocatableRevision && allocatable.confirmedAt >= request.at);
 }
 
 /** An open ask about capacity: what the capacity rows, sidebar, hub and ward home mark show. */
 export function capacityRequestIsOpen(
   request: CapacityRefreshRequest,
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt">,
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">,
 ): boolean {
   return refreshRequestAsksForCapacity(request) && refreshRequestIsOpen(request, allocatable);
-}
-
-/**
- * Marks every open capacity request for `unitId` as answered by a ward confirmation made at
- * `now`. `readRevision` is the capacity revision the ward confirmed against; a request recorded
- * at a later revision asked about figures the ward had not seen, so it stays open.
- */
-export function answerRefreshRequests(
-  requests: CapacityRefreshRequest[],
-  unitId: string,
-  readRevision: number,
-  now: Instant,
-): CapacityRefreshRequest[] {
-  let changed = false;
-  const next = requests.map((request) => {
-    if (
-      request.unitId !== unitId ||
-      request.answeredAt !== undefined ||
-      !refreshRequestAsksForCapacity(request) ||
-      (request.allocatableRevision ?? 0) > readRevision
-    )
-      return request;
-    changed = true;
-    return { ...request, answeredAt: now };
-  });
-  return changed ? next : requests;
 }

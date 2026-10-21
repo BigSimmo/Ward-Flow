@@ -1,4 +1,4 @@
-import { answerRefreshRequests, appendRefreshRequest } from "./ward/ward-buzz-keys";
+import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { isDischargeBarrier } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
@@ -307,12 +307,7 @@ export function reduceBedEvent(
           revision: (unit.allocatable.revision ?? 0) + 1,
         },
       };
-      // DEC-L5-04: the ward's own confirmation is what answers an open capacity request, so it
-      // clears on every desk and the shared site, not only where somebody dismissed it.
-      return {
-        ...replaceUnit(state, unit.id, updatedUnit),
-        refreshRequests: answerRefreshRequests(state.refreshRequests, unit.id, event.expectedRevision, event.now),
-      };
+      return replaceUnit(state, unit.id, updatedUnit);
     }
 
     case "FLAG_BED_RELEASE": {

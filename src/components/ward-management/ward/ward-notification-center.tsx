@@ -33,10 +33,9 @@ export interface WardNotificationCenterProps {
     message?: string;
     urgent?: boolean;
     allocatableRevision?: number;
-    answeredAt?: Instant;
   }[];
-  /** The ward's capacity figure, so a request saved before `answeredAt` existed reads as answered. */
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt">;
+  /** The ward's capacity figure: its own confirmation answers a capacity request (DEC-L5-04). */
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">;
   morningRollupConfirmed?: boolean;
   morningRollupDeadlinePassed?: boolean;
   morningRollupDeadlineMinutes?: number;

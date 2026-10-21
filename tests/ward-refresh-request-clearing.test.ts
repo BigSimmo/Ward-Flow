@@ -9,8 +9,8 @@ import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-
 import { capacityRequestIsOpen, refreshRequestIsOpen } from "../src/components/ward-management/ward/ward-buzz-keys";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 
-// DEC-L5-04 (CAP-REV): only the ward's own capacity confirmation answers a capacity request, and
-// it does so in the shared record, so every desk and the shared site see it cleared.
+// DEC-L5-04 (CAP-REV): only the ward's own capacity confirmation answers a capacity request. It is
+// read from the shared unit, so every desk and the shared site see it cleared.
 const unitId = "rph-adult-secure";
 const unit = (s: WardFlowState) => s.units.find((u) => u.id === unitId)!;
 const apply = (s: WardFlowState, e: WardFlowEvent) => {
@@ -31,7 +31,9 @@ const confirm = (s: WardFlowState, now: number) =>
     value: unit(s).allocatable.value,
     expectedRevision: unit(s).allocatable.revision ?? 0,
   });
-const open = (s: WardFlowState) => s.refreshRequests.filter((r) => r.unitId === unitId && refreshRequestIsOpen(r));
+const openFor = (s: WardFlowState) =>
+  s.refreshRequests.filter((r) => refreshRequestIsOpen(r, s.units.find((u) => u.id === r.unitId)?.allocatable));
+const open = (s: WardFlowState) => openFor(s).filter((r) => r.unitId === unitId);
 
 describe("capacity refresh requests clear on the ward's confirmation", () => {
   it("records the capacity revision and stays open until the ward confirms", () => {
@@ -42,7 +44,9 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
 
     const confirmed = confirm(asked, 10);
     expect(open(confirmed)).toHaveLength(0);
-    expect(confirmed.refreshRequests.at(-1)?.answeredAt).toBe(10);
+    // The request itself is left alone, so a confirmation sent from an older board does not clash
+    // with the ask on the shared site.
+    expect(confirmed.refreshRequests).toBe(asked.refreshRequests);
   });
 
   it("orders a same-minute ask after a confirmation by event, not timestamp", () => {
@@ -68,7 +72,7 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
     const remaining = open(confirm(s, 7));
     expect(remaining.map((r) => r.message)).toEqual(["Please review the current placement request."]);
     // The open placement buzz is not a capacity ask, so the capacity screens may ask again.
-    expect(remaining.filter((r) => capacityRequestIsOpen(r))).toHaveLength(0);
+    expect(remaining.filter((r) => capacityRequestIsOpen(r, unit(s).allocatable))).toHaveLength(0);
   });
 
   it("leaves other wards' requests open and survives a save round trip", () => {
@@ -76,12 +80,18 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
     const other = seeded.units.find((u) => u.id !== unitId)!;
     let s = apply(seeded, { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 3, unitId: other.id });
     s = confirm(ask(s, 4), 5);
-    expect(s.refreshRequests.filter((r) => refreshRequestIsOpen(r)).map((r) => r.unitId)).toEqual([other.id]);
+    expect(openFor(s).map((r) => r.unitId)).toEqual([other.id]);
     const reloaded: unknown = JSON.parse(JSON.stringify(s));
     expect(isValidStoredWardFlowState(reloaded)).toBe(true);
-    expect(
-      (reloaded as WardFlowState).refreshRequests.filter((r) => refreshRequestIsOpen(r)).map((r) => r.unitId),
-    ).toEqual([other.id]);
+    expect(openFor(reloaded as WardFlowState).map((r) => r.unitId)).toEqual([other.id]);
+  });
+
+  it("reopens the request when the confirmation is undone", () => {
+    const confirmed = confirm(ask(seedWardFlowStateAt(0), 10), 12);
+    expect(open(confirmed)).toHaveLength(0);
+    // Undo restores the earlier confirmation time and moves the revision on again.
+    const undone = { ...unit(confirmed).allocatable, confirmedAt: 9, revision: 99 };
+    expect(capacityRequestIsOpen(confirmed.refreshRequests.at(-1)!, undone)).toBe(true);
   });
 
   it("answers a legacy request by a later ward confirmation only", () => {

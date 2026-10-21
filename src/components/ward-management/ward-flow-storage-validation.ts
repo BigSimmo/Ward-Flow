@@ -501,7 +501,6 @@ const refreshRequest = z.looseObject({
   at: finite,
   byRole: text,
   allocatableRevision: z.optional(counter),
-  answeredAt: z.optional(finite),
 });
 const distinctRefreshRequestIds = (rows: readonly { id?: string }[]) => {
   const ids = rows.flatMap((row) => (row.id === undefined ? [] : [row.id]));

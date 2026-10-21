@@ -539,8 +539,6 @@ export type CapacityRefreshRequest = {
   urgent?: boolean;
   /** DEC-L5-04: the unit's capacity revision when the request was made; absent on legacy saves. */
   allocatableRevision?: number;
-  /** When the ward's own capacity confirmation answered it; set by `CONFIRM_CAPACITY` only. */
-  answeredAt?: Instant;
 };
 
 /** Human-recorded turnaround preference only; reserves no bed and books no transport. */
