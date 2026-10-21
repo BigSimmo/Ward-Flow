@@ -254,7 +254,14 @@ export function MovementWorkspaceCockpit({
       );
       if (unwind?.kind === "acceptance_withdrawn") {
         const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
-        return { at: change.at, label: `Acceptance by ${ward} withdrawn, by ${change.by}${suffix}` };
+        // Q16: a withdrawal that also released a held bed records both, at the same instant.
+        const bedReleased = patient.unwinds.some(
+          (candidate) => candidate.kind === "pull_released" && candidate.at === change.at && candidate.by === change.by,
+        );
+        return {
+          at: change.at,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${change.by}${suffix}`,
+        };
       }
       if (unwind?.kind === "stage_corrected") {
         return {
@@ -1689,11 +1696,10 @@ export function MovementWorkspaceCockpit({
                   offered while the record says Accepted, awaiting bed — put the stage back to that first, or ring the
                   ward.
                 </p>
-              ) : movement.stage !== "accepted_awaiting_bed" ? (
+              ) : movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled" ? (
                 <p className={styles.actionSay}>
-                  A bed has already been pulled for this patient, and withdrawing an acceptance past that point is not
-                  built. It is a larger act — a ward is physically holding a bed, and further along a patient may
-                  already be moving — and the owner is still deciding what it should do. Ring the ward.
+                  This patient is past the point where a bed is only held. Handover is being prepared or the patient may
+                  already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
                 </p>
               ) : (
                 <>
@@ -1703,6 +1709,12 @@ export function MovementWorkspaceCockpit({
                     It does not re-refer the patient to them — if you want them to consider this patient again, refer
                     again.
                   </p>
+                  {movement.stage === "pulled" || movement.admissionId !== undefined ? (
+                    <p className={styles.actionSay} data-testid="ward-console-withdraw-releases-bed">
+                      A bed is held for this patient. Withdrawing also releases that bed in the same step, and the
+                      referring emergency department is told.
+                    </p>
+                  ) : null}
                   <div className={styles.controlRow}>
                     <label className="sr-only" htmlFor="ward-console-withdraw-reason">
                       Why is the acceptance being withdrawn?

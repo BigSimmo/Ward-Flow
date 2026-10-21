@@ -1920,12 +1920,12 @@ export type WardFlowEvent =
        * (`kind: "acceptance_withdrawn"`, carrying the withdrawn unit's id — see `UnwindRecord`'s
        * own doc comment).
        *
-       * ⚠️ **GATED TO `movement.stage === "accepted_awaiting_bed"` ONLY** (owner ruling 2 of
-       * 2026-09-04, deliberately narrow: a withdrawal from `pulled` or later is a bigger act with
-       * different consequences — a bed is physically held and, past `handover_ready`, a patient
-       * may be moving — and the owner recorded this as an OPEN QUESTION for himself, not a settled
-       * boundary: "the bed was lost" is exactly the reason that would arise at `pulled`, so the
-       * narrow gate probably excludes a real case. Widening it later is his call, not this build's).
+       * ⚠️ **GATED TO `accepted_awaiting_bed` AND `pulled`** (owner answer Q16, 2026-09-16,
+       * widening ruling 2 of 2026-09-04). When a bed is held, at `pulled` or by a movement stepped
+       * back from it, the same act releases the bed (as `RELEASE_PULL` does) and records both a
+       * `pull_released` and an `acceptance_withdrawn` unwind; the referring ED is told as well as
+       * the ward. Still refused from `handover_ready` on, where a patient may be moving, and while a
+       * transport job is booked or the patient has been collected.
        *
        * ⚠️ **DOES NOT RE-ADD THE WITHDRAWN UNIT TO `referredUnitIds`** (owner ruling 3 of
        * 2026-09-04): withdrawing an acceptance is not the same act as re-referring, and reviving a

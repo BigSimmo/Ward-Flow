@@ -90,11 +90,13 @@ export function reduceReferralAnswerEvent(
     referralAcceptanceRefusal,
     referralReferrer,
     reject,
+    releasePulledBedAndAdmission,
     replaceMovement,
     replaceReferral,
     unitName,
     wardActingMovementRefusal,
     wardActingUnitRefusal,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "ACCEPT_IN_PRINCIPLE": {
@@ -1182,18 +1184,20 @@ export function reduceReferralAnswerEvent(
         return reject(state, event, `cannot withdraw an acceptance for a closed movement (${movement.closure.reason})`);
       }
       /**
-       * The message states the condition the guard tests, never a cause: five stages can reach it,
-       * and at the two earliest no bed exists. `arrived` cannot reach here, since arrival sets
-       * `closure`. Do not restore the removed wording, even quoted.
+       * The message states the condition the guard tests, never a cause. `arrived` cannot reach
+       * here, since arrival sets `closure`. Do not restore the removed wording, even quoted.
        *
        * `stageCopy`'s label is not used: importing `ward-derivations.ts` would be circular (and
        * pull in `lucide-react`). `.replace(/_/g, " ")` is this file's idiom.
+       *
+       * Q16 (owner, 16 Sept 2026): withdrawing is allowed at `pulled` too, releasing the held bed
+       * in the same act. It stays refused from `handover_ready` on, where a patient may be moving.
        */
-      if (movement.stage !== "accepted_awaiting_bed") {
+      if (movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled") {
         return reject(
           state,
           event,
-          `cannot withdraw an acceptance unless the movement is still awaiting a bed ` +
+          `cannot withdraw an acceptance unless the movement is awaiting a bed or has one pulled ` +
             `(movement ${movement.id} is at ${stageCopy[movement.stage].label})`,
         );
       }
@@ -1201,32 +1205,69 @@ export function reduceReferralAnswerEvent(
         return reject(state, event, `WITHDRAW_ACCEPTANCE reason must be chosen from STEP_BACK_REASONS`);
       }
       /**
-       * A movement stepped back from `pulled` is at this stage and still holds a bed. Refused,
-       * naming the existing route (restore the pull, release it, then withdraw); a bed-holding
-       * withdrawal is an open owner question (ruling 2).
+       * Q16: a bed is held at `pulled`, and also by a movement stepped back from `pulled` (it keeps
+       * its `admissionId`). Either way the bed is released in this one act and both facts are
+       * recorded: a `pull_released` unwind and an `acceptance_withdrawn` unwind. The transport
+       * guards are `RELEASE_PULL`'s: a collected patient is `STOP_TRANSPORT`, and a booked job is
+       * cancelled first so the officer and receiving ward are told.
        */
-      if (movement.admissionId !== undefined) {
+      const holdsBed = movement.stage === "pulled" || movement.admissionId !== undefined;
+      if (holdsBed && movement.transport?.collectedAt !== undefined) {
         return reject(
           state,
           event,
-          `cannot withdraw an acceptance while movement ${movement.id} still holds a bed (admission ${movement.admissionId}); pull it again to restore it, release the pull, then withdraw`,
+          `movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of withdrawing the acceptance`,
+        );
+      }
+      if (holdsBed && movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
+        return reject(
+          state,
+          event,
+          `movement ${movement.id} has a transport job booked; cancel it (CANCEL_TRANSPORT) before withdrawing the acceptance`,
         );
       }
       // Read before clearing: `UnwindRecord.unitId` names which ward's acceptance this was.
       const withdrawnUnitId = movement.acceptedUnitId;
+      const released = holdsBed
+        ? withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement)
+        : state;
+      // The shared helper gives nothing back when the reservation does not match the movement. A
+      // release is never recorded unless one happened.
+      if (holdsBed && released === state) {
+        return reject(
+          state,
+          event,
+          `cannot withdraw the acceptance for movement ${movement.id}: its held bed does not match a reservation that can be released`,
+        );
+      }
       const updatedMovement: Movement = {
         ...movement,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         heldBedNumber: undefined,
         stage: "destination_review",
+        // The bed is given back, so the pull's fields go with it, as in `RELEASE_PULL`. A cancelled
+        // job is already in `unwinds`. The blocker is restated because a pulled movement's blocker
+        // can be a transport sentence, which is false once the bed is gone.
+        ...(holdsBed
+          ? {
+              admissionId: undefined,
+              allocatedBed: undefined,
+              pullExpiresAt: undefined,
+              transport: undefined,
+              blocker:
+                movement.referredUnitIds.length > 0
+                  ? STAGE_TRANSITION_BLOCKERS.referred
+                  : STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn,
+            }
+          : {}),
         // Not pushed back into `referredUnitIds` (owner ruling 3): withdrawing an acceptance is not
         // re-referring.
         stageChanges: [
           ...movement.stageChanges,
           {
             at: event.now,
-            from: "accepted_awaiting_bed",
+            from: movement.stage,
             to: "destination_review",
             by: event.role,
             reason: event.reason,
@@ -1234,6 +1275,17 @@ export function reduceReferralAnswerEvent(
         ],
         unwinds: [
           ...movement.unwinds,
+          ...(holdsBed
+            ? [
+                {
+                  at: event.now,
+                  kind: "pull_released" as const,
+                  by: event.role,
+                  reason: event.reason,
+                  unitId: withdrawnUnitId,
+                },
+              ]
+            : []),
           {
             at: event.now,
             kind: "acceptance_withdrawn",
@@ -1243,19 +1295,36 @@ export function reduceReferralAnswerEvent(
           },
         ],
       };
-      const next = replaceMovement(state, movement.id, updatedMovement);
+      const next = replaceMovement(released, movement.id, updatedMovement);
+      const reasonText = event.reason.replace(/_/g, " ");
       // Item 48, Q3 (owner): the ward whose acceptance was undone is told. `withdrawnUnitId` was
       // read before this handler cleared it.
-      return appendNotices(next, [
+      const notices = [
         makeNotice(
           event.now,
           state.notices.length,
           "acceptance_withdrawn_ward",
           { role: "ward", placeId: withdrawnUnitId },
           { movementId: movement.id, unitId: withdrawnUnitId },
-          `The coordinator withdrew this ward's acceptance of ${movement.id}. The patient is not coming unless this ward is asked again.`,
+          holdsBed
+            ? `The coordinator withdrew this ward's acceptance of ${movement.id} and released the bed held for them. The patient is not coming unless this ward is asked again.`
+            : `The coordinator withdrew this ward's acceptance of ${movement.id}. The patient is not coming unless this ward is asked again.`,
         ),
-      ]);
+      ];
+      // Addendum §1.3, as in `RELEASE_PULL`: "a referrer not told goes on believing a bed is coming."
+      if (holdsBed) {
+        notices.push(
+          makeNotice(
+            event.now,
+            state.notices.length + 1,
+            "bed_pull_released",
+            { role: "ed", placeId: movement.originEdId },
+            { movementId: movement.id, unitId: withdrawnUnitId },
+            `The coordinator withdrew ${withdrawnUnitId === undefined ? "the ward" : unitName(state, withdrawnUnitId)}'s acceptance of ${movement.id} and released the bed held for them (${reasonText}).`,
+          ),
+        );
+      }
+      return appendNotices(next, notices);
     }
   }
 }
