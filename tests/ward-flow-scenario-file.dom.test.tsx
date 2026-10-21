@@ -56,18 +56,22 @@ describe("demo scenario save and load", () => {
     vi.useRealTimers();
   });
 
-  it("round-trips typed work and the scenario clock, and keeps the loaded world out of browser storage", () => {
+  it("round-trips typed work and the scenario clock, and keeps the loaded world out of browser storage", async () => {
     render(
       <WardFlowProvider>
         <Capture />
       </WardFlowProvider>,
     );
+    // The saved-session read loads on demand; browser saving starts once its answer is adopted.
+    await act(async () => {
+      await import("@/components/ward-management/ward-flow-demo-restore");
+    });
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 75 });
     });
     addTypedPatient();
     const savedNow = current!.now;
-    const built = current!.saveScenarioFile!();
+    const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
     expect(built.fileName).toMatch(/^ward-flow-scenario-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
 
@@ -77,9 +81,9 @@ describe("demo scenario save and load", () => {
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toBeNull();
     const generationBefore = current!.worldGeneration;
 
-    let result: ReturnType<NonNullable<typeof current>["loadScenarioFile"] & object> | undefined;
-    act(() => {
-      result = current!.loadScenarioFile!(built.json);
+    let result: Awaited<ReturnType<NonNullable<NonNullable<typeof current>["loadScenarioFile"]>>> | undefined;
+    await act(async () => {
+      result = await current!.loadScenarioFile!(built.json);
     });
     expect(result).toEqual({ ok: true });
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
@@ -173,11 +177,13 @@ describe("demo scenario save and load", () => {
     );
     const message = () => container.querySelector('[data-testid="ward-tools-demo-panel"] > [role="status"]');
     addTypedPatient();
-    fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
+    });
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
     expect(message()).toHaveTextContent(/^Download requested: ward-flow-scenario-.*Check your browser downloads\.$/);
-    const built = current!.saveScenarioFile!();
+    const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
     // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.

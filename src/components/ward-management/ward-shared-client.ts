@@ -4,7 +4,16 @@ import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
-import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+
+// The shared state schema loads with the first request rather than with every phone page (Josh,
+// 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
+let isValidSharedState: ((value: unknown) => boolean) | undefined;
+function loadSharedStateCheck(): Promise<void> {
+  if (isValidSharedState) return Promise.resolve();
+  return import("./ward-shared-state-validation").then((module) => {
+    isValidSharedState = module.isValidSharedWardFlowState;
+  });
+}
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -310,7 +319,7 @@ export class SharedWorkspaceClient {
       (snapshot.accessContext !== undefined &&
         (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
       snapshot.payload?.version !== 1 ||
-      !isValidSharedWardFlowState(snapshot.payload.state) ||
+      !isValidSharedState?.(snapshot.payload.state) ||
       !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
@@ -337,6 +346,7 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
+    await loadSharedStateCheck();
     let token: string;
     try {
       token = await this.options.token();
