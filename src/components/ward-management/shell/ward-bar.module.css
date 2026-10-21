@@ -758,6 +758,57 @@
   }
 }
 
+/* Typing in the folded box (Codex review, #547): on a desktop it opens into a field over the bar's
+ * left side, so the words stay visible and editable while the results are open. Tablets and narrow
+ * bars keep their full-width search sheet (the max-width 1000px and ward-bar 768px rules). */
+@media (min-width: 62.5625rem) {
+  @container ward-bar (min-width: 48.0625rem) {
+    @container ward-search (max-width: 9rem) {
+      .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div) {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        z-index: 2;
+        translate: 0 -50%;
+        width: 16rem;
+        min-width: 16rem;
+        max-width: 16rem;
+        padding: 0 10px;
+        justify-content: flex-start;
+        border-radius: var(--wf-r-ctl);
+        background: var(--wf-surface);
+        box-shadow: var(--wf-e1);
+      }
+
+      .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div)::before {
+        background: var(--wf-surface);
+        border-color: var(--wf-focus-ring);
+      }
+
+      .bar
+        .searchWrap
+        :global(
+          [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-input"]
+        ) {
+        position: static;
+        width: 100%;
+        opacity: 1;
+        color: var(--wf-ink-1);
+        caret-color: var(--wf-focus-ring);
+        cursor: text;
+      }
+
+      .bar
+        .searchWrap
+        :global(
+          [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-clear"]
+        ) {
+        display: inline-flex;
+      }
+    }
+  }
+}
+
 .searchWrap :global([data-testid="ward-global-search"]) {
   width: 100%;
   max-width: none;
