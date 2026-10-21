@@ -30,7 +30,6 @@ import {
   PhoneListRow,
   Segmented,
   SrOnly,
-  StackBar,
   StatusGlyph,
   TextInput,
   buttonClass,
@@ -54,7 +53,6 @@ import {
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
@@ -131,10 +129,6 @@ export function StatisticsWardScreen({
     [unit, bedReleases],
   );
   const openBeds = useMemo(() => (unit ? openBedsNow(unit, bedReleases) : 0), [unit, bedReleases]);
-  const states = useMemo(
-    () => (unit ? bedStates(unit, admissions, bedReleases, leaveBeds) : null),
-    [unit, admissions, bedReleases, leaveBeds],
-  );
   const bedMap = useMemo(
     () => (unit ? bedMapCells(unit, admissions, bedReleases, leaveBeds, now) : null),
     [unit, admissions, bedReleases, leaveBeds, now],
@@ -198,7 +192,7 @@ export function StatisticsWardScreen({
     [current, now],
   );
 
-  if (!unit || !statistics || !capacity || !states || !bedMap || !wardOccupancy || !referrals || !dischargeDates) {
+  if (!unit || !statistics || !capacity || !bedMap || !wardOccupancy || !referrals || !dischargeDates) {
     return (
       <StatisticsPage
         section={section}
@@ -385,26 +379,9 @@ export function StatisticsWardScreen({
                 id="ward-beds"
                 data-testid="ward-statistics-ward-beds-now"
               >
+                {/* Ready, pulled and closed are in the hero and the bed map legend, so this card keeps
+                    only the figures found nowhere else (UX audit 21 Oct 2026). */}
                 <CardBody className={styles.bodyStack}>
-                  <div>
-                    <StackBar
-                      label={`${unit.name} beds by state`}
-                      segments={[
-                        { id: "ready", label: BED_STATE_LABELS.ready, value: states.ready, fill: "ready" },
-                        { id: "pulled", label: BED_STATE_LABELS.pulled, value: states.pulled, hatch: true },
-                        { id: "closed", label: BED_STATE_LABELS.closed, value: states.closed, fill: "closed" },
-                        { id: "occupied", label: BED_STATE_LABELS.occupied, value: states.occupied, fill: "data-1" },
-                      ]}
-                    />
-                    <p className={ward.stateLine} aria-hidden="true">
-                      <span>{states.ready} ready</span>
-                      <span>{states.pulled} pulled</span>
-                      <span>{states.closed} closed</span>
-                      <span className={ward.stateLineEnd}>
-                        {states.occupied} occupied{states.onLeave > 0 ? `, ${states.onLeave} on leave` : ""}
-                      </span>
-                    </p>
-                  </div>
                   <dl className={styles.tiles} aria-label="Current bed figures">
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Empty</dt>
