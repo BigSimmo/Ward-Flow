@@ -147,18 +147,14 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen(props: { initialMovementId?: string; recordOnOpen?: boolean } = {}) {
+type WorkspaceProps = { initialMovementId?: string; recordOnOpen?: boolean };
+
+export function LegalFormsScreen(props: WorkspaceProps = {}) {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <LegalFormsWorkspace key={worldGeneration} {...props} />;
 }
 
-function LegalFormsWorkspace({
-  initialMovementId,
-  recordOnOpen = false,
-}: {
-  initialMovementId?: string;
-  recordOnOpen?: boolean;
-}) {
+function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: WorkspaceProps) {
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -195,8 +191,7 @@ function LegalFormsWorkspace({
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
-  // The patient record's "Record a form" adds &record=1, so the sheet opens with that movement
-  // chosen. It opens only where this route may record a form.
+  // The patient record's "Record a form" (&record=1) opens the sheet where this route may record.
   const [recordOpen, setRecordOpen] = useState(
     () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
   );
@@ -1282,8 +1277,6 @@ function FormRow({
         <span className={styles.srOnly}>{reason}</span>
       </span>
       <span className={styles.recorded}>
-        {/* UX audit (21 Oct 2026): a form with nothing to record shows a plain dash, not "Not
-            tracked" over "0 of 0 recorded". */}
         {facts.length === 0 ? (
           <span className={styles.sub} aria-hidden="true">
             –
