@@ -62,18 +62,19 @@ import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
-import { HomeWardSheet } from "./home-phone-sheets";
+import { HomeWardSheet } from "./home-ward-sheet-lazy";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 import shortlistStyles from "./shortlist-panel.module.css";
+import { SinceLastLookPanel } from "./since-last-look-band-lazy";
 import {
-  SinceLastLookPanel,
   SinceLastLookSheetBody,
   sinceHandoverText,
   sinceLastLookCount,
   sinceSheetDescription,
   useSinceLastLook,
 } from "./since-last-look-panel";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -1074,9 +1075,7 @@ export function CoordinatorScreen() {
                     icon={Copy}
                     className={styles.sinceSheetFoot}
                     onClick={() => {
-                      void navigator.clipboard
-                        ?.writeText(sinceHandoverText(lastLook.changes, now))
-                        .catch(() => undefined);
+                      void copyTextToClipboard(sinceHandoverText(lastLook.changes, now)).catch(() => undefined);
                     }}
                   >
                     Copy as handover text
