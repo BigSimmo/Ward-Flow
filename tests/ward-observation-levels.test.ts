@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { remainingSpeciallingCapacity, type Admission } from "../src/components/ward-management/ward-admissions";
 import { unitHasLockedBeds } from "../src/components/ward-management/ward-bed-designation";
-import { CLINICAL_VALUES, OBSERVATION_LEVEL_NAMES } from "../src/components/ward-management/ward-clinical-values";
+import { OBSERVATION_LEVEL_NAMES } from "../src/components/ward-management/ward-clinical-values";
 import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-events";
 import {
   seedWardFlowState,
@@ -112,8 +112,6 @@ describe("the five observation levels", () => {
 
   it("count one staff for each 1:1 level, two for 2:1, and none for General or Intermittent", () => {
     expect(OBSERVATION_LEVELS.map(observationStaff)).toEqual([0, 0, 1, 1, 2]);
-    expect(CLINICAL_VALUES.observationOneToOneStaff.value).toBe(1);
-    expect(CLINICAL_VALUES.observationTwoToOneStaff.value).toBe(2);
   });
 
   it("offer 15 and 30 minutes for Intermittent and read General as hourly", () => {
@@ -222,7 +220,7 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     expect(change(pulled, own, GENERAL_OBSERVATION).rejections.at(-1)?.reason).toMatch(/already recorded/);
     expect(
       change(pulled, own, { level: "intermittent", intervalMinutes: 45, reviewAt: null }).rejections.at(-1)?.reason,
-    ).toMatch(/INTERMITTENT_INTERVAL_MINUTES/);
+    ).toMatch(/needs a level with a valid interval/);
     expect(
       change(pulled, { ...own, actingUnitId: "rph-adult-open" }, observationAt("within_sight")).rejections.at(-1)
         ?.reason,

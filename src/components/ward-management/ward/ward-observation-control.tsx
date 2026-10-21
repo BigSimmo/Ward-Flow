@@ -31,7 +31,7 @@ function reviewInputs(reviewAt: Instant | null, now: Instant): { time: string; d
 }
 
 /** The level as the drawer reads it: "Intermittent, every 15 minutes. Review 14:00". */
-export function observationWithReview(observation: Observation, now: Instant): string {
+function observationWithReview(observation: Observation, now: Instant): string {
   const summary = observationSummary(observation);
   return observation.reviewAt === null
     ? `${summary}. No review time recorded`

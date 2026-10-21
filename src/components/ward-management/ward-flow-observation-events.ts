@@ -27,26 +27,16 @@ export function reduceObservationLevelEvent(
   helpers: ObservationLevelHelpers,
 ): WardFlowState {
   const { findAdmission, findMovement, reject, replaceAdmission, replaceMovement } = helpers;
-  if (!isObservation(event.observation)) {
-    return reject(
-      state,
-      event,
-      "RECORD_OBSERVATION_LEVEL needs a level from OBSERVATION_LEVELS, an Intermittent interval from INTERMITTENT_INTERVAL_MINUTES and no interval for any other level",
-    );
-  }
+  const level = event.observation;
+  if (!isObservation(level))
+    return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a level with a valid interval");
 
   let movement: Movement | undefined;
   let admission: Admission | undefined;
   if (event.target.kind === "movement") {
     movement = findMovement(state, event.target.movementId);
     if (!movement) return reject(state, event, `no movement found for id ${event.target.movementId}`);
-    if (movement.closure) {
-      return reject(
-        state,
-        event,
-        `cannot record an observation level for a closed movement (${movement.closure.reason})`,
-      );
-    }
+    if (movement.closure) return reject(state, event, `movement ${movement.id} is closed`);
     const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
     admission = held && held.movementId === movement.id && bedIsOccupied(held) ? held : undefined;
   } else {
@@ -59,42 +49,21 @@ export function reduceObservationLevelEvent(
         `RECORD_OBSERVATION_LEVEL was raised acting as unit ${event.target.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
       );
     }
-    if (!bedIsOccupied(admission)) {
-      return reject(
-        state,
-        event,
-        `admission ${admission.id} is ${admission.state}, and only a held or occupied bed has an observation level to change`,
-      );
-    }
+    if (!bedIsOccupied(admission)) return reject(state, event, `admission ${admission.id} is ${admission.state}`);
     const source = admission.movementId ? findMovement(state, admission.movementId) : undefined;
     movement = source && !source.closure ? source : undefined;
   }
 
   const current = admission?.observation ?? movement?.observation;
-  if (current && sameObservation(current, event.observation)) {
-    return reject(state, event, "RECORD_OBSERVATION_LEVEL records a change, and this is the level already recorded");
-  }
+  if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
+  const changed = <T extends Movement | Admission>(row: T): T => ({
+    ...row,
+    observation: level,
+    observationChanges: [...(row.observationChanges ?? []), { at: event.now, from: row.observation, to: level }],
+  });
   let next = state;
-  if (movement) {
-    next = replaceMovement(next, movement.id, {
-      ...movement,
-      observation: event.observation,
-      observationChanges: [
-        ...(movement.observationChanges ?? []),
-        { at: event.now, from: movement.observation, to: event.observation },
-      ],
-    });
-  }
-  if (admission) {
-    next = replaceAdmission(next, admission.id, {
-      ...admission,
-      observation: event.observation,
-      observationChanges: [
-        ...(admission.observationChanges ?? []),
-        { at: event.now, from: admission.observation, to: event.observation },
-      ],
-    });
-  }
+  if (movement) next = replaceMovement(next, movement.id, changed(movement));
+  if (admission) next = replaceAdmission(next, admission.id, changed(admission));
   return next;
 }

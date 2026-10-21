@@ -55,9 +55,7 @@ export function observationAt(level: ObservationLevel, reviewAt: Instant | null 
 
 /** How many staff this level counts against the ward's observation capacity. */
 export function observationStaff(level: ObservationLevel): number {
-  if (level === "within_sight" || level === "arms_length") return CLINICAL_VALUES.observationOneToOneStaff.value;
-  if (level === "two_staff") return CLINICAL_VALUES.observationTwoToOneStaff.value;
-  return 0;
+  return level === "two_staff" ? 2 : level === "within_sight" || level === "arms_length" ? 1 : 0;
 }
 
 /** Staff this ward is committing to constant observation for the people in its beds now. */
@@ -88,11 +86,7 @@ export function observationLevelName(level: ObservationLevel): string {
  */
 export function observationSummary(observation: Observation): string {
   const name = observationLevelName(observation.level);
-  if (observation.level === "general") {
-    return CLINICAL_VALUES.observationGeneralInterval.value === 60
-      ? `${name}, hourly`
-      : `${name}, every ${CLINICAL_VALUES.observationGeneralInterval.value} minutes`;
-  }
+  if (observation.level === "general") return `${name}, hourly`;
   if (observation.level === "intermittent") {
     return observation.intervalMinutes === null ? name : `${name}, every ${observation.intervalMinutes} minutes`;
   }
@@ -104,10 +98,7 @@ export function isObservation(value: unknown): value is Observation {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
   // Exactly these three keys: an extra one could carry typed text past the storage fence.
-  const keys = Object.keys(record);
-  if (keys.length !== 3 || !keys.every((key) => key === "level" || key === "intervalMinutes" || key === "reviewAt")) {
-    return false;
-  }
+  if (Object.keys(record).sort().join() !== "intervalMinutes,level,reviewAt") return false;
   if (!OBSERVATION_LEVELS.includes(record.level as ObservationLevel)) return false;
   const interval = record.intervalMinutes;
   if (record.level === "intermittent") {

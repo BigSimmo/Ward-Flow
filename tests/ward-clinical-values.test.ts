@@ -120,11 +120,8 @@ describe("clinical values file", () => {
       accessExpiringSoon: 14,
       accessUnused: 45,
       // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
-      observationGeneralInterval: 60,
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,
-      observationOneToOneStaff: 1,
-      observationTwoToOneStaff: 2,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

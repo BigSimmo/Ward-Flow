@@ -81,7 +81,7 @@ const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_17_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-17" } as const;
 /** Josh signed the missed bed request window for the prototype at 07:02 AWST on 20 Oct 2026. */
 const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-20" } as const;
-/** Josh approved the observation levels and their staff counts for the prototype on 21 Oct 2026 (fix plan item 10). */
+/** Josh approved the observation levels and their intervals for the prototype on 21 Oct 2026 (fix plan item 10). */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 
 /**
@@ -98,7 +98,7 @@ export const OBSERVATION_LEVEL_NAMES = {
   two_staff: "Two staff constant",
 } as const satisfies Record<string, string>;
 
-const OBSERVATION_LEVEL_SOURCE = 'Fix plan item 10, Josh\'s decision 5 (21 Oct 2026, "Yes to all")';
+const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
 
 /**
  * Every clinical value, keyed for typed reads (`CLINICAL_VALUES.tierOneOverdue.value`). The order
@@ -569,19 +569,12 @@ export const CLINICAL_VALUES = {
       "D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days. Checked against the September 2026 ISM on cyber.gov.au (D-65)",
   },
   // ---- Observation levels (fix plan item 10, Josh, 21 Oct 2026) -----------------------------------
-  // The level names are in `OBSERVATION_LEVEL_NAMES` above. General and Intermittent count no staff
-  // against a ward's observation capacity, so they have no figure here (every figure is above zero).
-  observationGeneralInterval: {
-    ...SIGNED_BY_JOSH_21_OCT,
-    name: OBSERVATION_LEVEL_NAMES.general + " observation, checked every",
-    group: "Observation levels",
-    value: 1 * MINUTES_PER_HOUR,
-    unit: "minutes",
-    source: OBSERVATION_LEVEL_SOURCE,
-  },
+  // The level names are in `OBSERVATION_LEVEL_NAMES` above. General is hourly and the staff counts
+  // (1:1 counts one, 2:1 counts two) are what the level names mean, so they are fixed in
+  // `ward-observation.ts` rather than listed here as figures to edit.
   observationIntermittentShort: {
     ...SIGNED_BY_JOSH_21_OCT,
-    name: OBSERVATION_LEVEL_NAMES.intermittent + " observation, shorter interval a person can choose",
+    name: OBSERVATION_LEVEL_NAMES.intermittent + " observation, shorter interval",
     group: "Observation levels",
     value: 15,
     unit: "minutes",
@@ -589,30 +582,10 @@ export const CLINICAL_VALUES = {
   },
   observationIntermittentLong: {
     ...SIGNED_BY_JOSH_21_OCT,
-    name: OBSERVATION_LEVEL_NAMES.intermittent + " observation, longer interval a person can choose",
+    name: OBSERVATION_LEVEL_NAMES.intermittent + " observation, longer interval",
     group: "Observation levels",
     value: 30,
     unit: "minutes",
-    source: OBSERVATION_LEVEL_SOURCE,
-  },
-  observationOneToOneStaff: {
-    ...SIGNED_BY_JOSH_21_OCT,
-    name:
-      OBSERVATION_LEVEL_NAMES.within_sight +
-      " or " +
-      OBSERVATION_LEVEL_NAMES.arms_length +
-      " (1:1), staff counted against the ward's observation capacity",
-    group: "Observation levels",
-    value: 1,
-    unit: "count",
-    source: OBSERVATION_LEVEL_SOURCE,
-  },
-  observationTwoToOneStaff: {
-    ...SIGNED_BY_JOSH_21_OCT,
-    name: OBSERVATION_LEVEL_NAMES.two_staff + " (2:1), staff counted against the ward's observation capacity",
-    group: "Observation levels",
-    value: 2,
-    unit: "count",
     source: OBSERVATION_LEVEL_SOURCE,
   },
 } satisfies Record<string, ClinicalValueEntry>;
