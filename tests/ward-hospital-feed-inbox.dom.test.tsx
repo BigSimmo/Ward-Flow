@@ -140,8 +140,10 @@ describe("feed inbox in Tools", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
-    expect(screen.getByTestId("ward-feed-confirm-1")).toBeDisabled();
+    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("Open that ward to confirm it.");
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    expect(screen.getByTestId("ward-feed-item-1")).toHaveAttribute("data-status", "waiting");
     unmount();
     act(() => resetFeedInboxForTests());
 
@@ -152,7 +154,7 @@ describe("feed inbox in Tools", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
-    expect(screen.getByTestId("ward-feed-confirm-1")).toBeDisabled();
+    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("This desk cannot record this.");
   });
 });
