@@ -40,7 +40,13 @@ export function downtimePackDue(generatedAt: Instant, now: Instant): boolean {
   return now < generatedAt || now >= nextDowntimePackAt(generatedAt);
 }
 
-/** True when `instant` falls on a shift change, so the pack taken then is the handover copy. */
-export function isShiftChangeMoment(instant: Instant): boolean {
-  return SHIFT_CHANGE_MINUTES.includes(Math.floor(minuteOfDay(instant)));
+/**
+ * The latest shift change after `from` and up to `to`, or null. A retake that runs late (a sleeping
+ * tab woke at 15:02) still stands for the 15:00 handover, so the reason comes from the boundary
+ * crossed, not from the moment the pack was taken.
+ */
+export function shiftChangeCrossed(from: Instant, to: Instant): Instant | null {
+  let crossed: Instant | null = null;
+  for (let next = nextShiftChange(from); next <= to; next = nextShiftChange(next)) crossed = next;
+  return crossed;
 }

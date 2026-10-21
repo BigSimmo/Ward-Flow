@@ -69,6 +69,8 @@ export type DowntimePack = {
   edQueue: DowntimeEdLine[];
   pendingMoves: DowntimeMoveLine[];
   legalForms: DowntimeLegalLine[];
+  /** The shift change this pack was retaken for, when it is the handover copy (downtime-pack-schedule.ts). */
+  shiftChangeAt?: Instant;
   /**
    * Open movements that have left their ED (moving to a ward). The ED queue counts only people still
    * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.

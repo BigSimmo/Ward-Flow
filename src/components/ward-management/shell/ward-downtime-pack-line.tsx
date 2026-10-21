@@ -12,7 +12,7 @@ import {
   subscribeDowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackAccess } from "@/components/ward-management/reports/downtime-pack-context";
-import { downtimePackDue, isShiftChangeMoment } from "@/components/ward-management/reports/downtime-pack-schedule";
+import { downtimePackDue, shiftChangeCrossed } from "@/components/ward-management/reports/downtime-pack-schedule";
 import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -28,10 +28,12 @@ const DOWNTIME_PACK_HREF = "/ward-flow/reports/downtime";
  * print or save as a PDF. The pack stays in this tab's memory only (D-18): nothing is written to
  * the device, and a copy leaves the tab only as paper or a file the person saves.
  *
- * The pack taken on opening Ward Flow, or after a reset, is silent: the line is for the scheduled
- * packs, so a reload does not ask for paper. The line goes once the print window has opened for
- * that pack or it is put aside, and does not show on the pack's own screen or while offline (the
- * offline notice names the last pack instead).
+ * No pack is taken while offline, where the records may be stale; the one due is taken on
+ * reconnecting. A late retake keeps the shift change it stands for. The pack taken on opening Ward
+ * Flow, or after a reset, is silent: the line is for the scheduled packs, so a reload does not ask
+ * for paper. The line goes once the print window has opened for that pack or it is put aside, and
+ * does not show on the pack's own screen or while offline (the offline notice names the last pack
+ * instead).
  */
 export function WardDowntimePackLine() {
   const now = useWardFlowClock();
@@ -54,28 +56,31 @@ export function WardDowntimePackLine() {
   );
 
   useEffect(() => {
-    if (!canOpen || !ready) return;
+    // Offline, the records may be stale (a shared board stops syncing), so no pack is stamped with a
+    // later time. The pack due meanwhile is taken as soon as the connection returns.
+    if (!canOpen || !ready || !online) return;
     if (pack === null) {
       take();
       const opening = lastDowntimePack(owner, worldGeneration);
       if (opening) markDowntimePackHandled(opening);
       return;
     }
-    if (downtimePackDue(pack.generatedAt, now)) take();
-  }, [canOpen, ready, pack, now, take, owner, worldGeneration]);
+    if (downtimePackDue(pack.generatedAt, now)) take({ shiftChangeAt: shiftChangeCrossed(pack.generatedAt, now) });
+  }, [canOpen, ready, online, pack, now, take, owner, worldGeneration]);
 
   if (!canOpen || !ready || pack === null || handled || !online || pathname === DOWNTIME_PACK_HREF) return null;
   const at = formatInstant(pack.generatedAt);
+  const shiftChange = pack.shiftChangeAt !== undefined;
   return (
     <p
       className={`${styles.quiet} ${styles.recovery}`}
       role="status"
       data-testid="ward-downtime-pack-line"
-      data-shift-change={isShiftChangeMoment(pack.generatedAt) ? "true" : undefined}
+      data-shift-change={shiftChange ? "true" : undefined}
       data-print-hide
     >
       <span>
-        {isShiftChangeMoment(pack.generatedAt) ? "Shift change downtime pack " : "Downtime pack "}
+        {shiftChange ? "Shift change downtime pack " : "Downtime pack "}
         <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
         <Link href={DOWNTIME_PACK_HREF} data-testid="ward-downtime-pack-open">
           Open pack

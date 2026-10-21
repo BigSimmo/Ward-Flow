@@ -107,6 +107,31 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(line.getAttribute("data-shift-change")).toBe("true");
   });
 
+  it("still names the handover copy when the retake runs late after the shift change", () => {
+    renderShell();
+    act(() => setClock(14 * HOUR + 59));
+    act(() => setClock(SHIFT_CHANGE + 2));
+    expect(lastDowntimePack()?.shiftChangeAt).toBe(SHIFT_CHANGE);
+    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
+      /^Shift change downtime pack 15:02 ready\./u,
+    );
+  });
+
+  it("takes no pack while offline, then takes the one due as the connection returns", () => {
+    renderShell();
+    act(() => {
+      setOnline(false);
+      window.dispatchEvent(new Event("offline"));
+    });
+    act(() => setClock(ELEVEN));
+    expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
+    act(() => {
+      setOnline(true);
+      window.dispatchEvent(new Event("online"));
+    });
+    expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
+  });
+
   it("goes once put aside or printed, and comes back with the next pack", () => {
     renderShell();
     act(() => setClock(ELEVEN));
@@ -129,6 +154,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
   it("offline, hides the line and the offline notice names the last pack", () => {
     renderShell();
     act(() => setClock(ELEVEN));
+    expect(screen.getByTestId("ward-downtime-pack-line")).toBeTruthy();
     act(() => {
       setOnline(false);
       window.dispatchEvent(new Event("offline"));
