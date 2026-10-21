@@ -150,7 +150,10 @@ describe("the on-call screen", () => {
     expect(panel().queryByRole("button", { name: /^Call 08 0000/u })).not.toBeInTheDocument();
     fireEvent.click(panel().getAllByRole("button", { name: /^Copy .*number$/u })[0]!);
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    expect(writeText.mock.calls[0]![0]).toMatch(MOCK_NUMBER);
+    // D-71 item 7: every copy starts with the synthetic line, the number on the line after it.
+    const [first, number] = writeText.mock.calls[0]![0].split("\n");
+    expect(first).toBe("Synthetic prototype.");
+    expect(number).toMatch(MOCK_NUMBER);
   });
 
   it("highlights rows and never hides one", () => {

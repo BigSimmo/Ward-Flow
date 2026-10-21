@@ -102,6 +102,7 @@ import {
   isOwnLeaveGuardAnchor,
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** Why a ward page that names no real ward cannot send: the referral must come from a ward. */
 export const NO_SENDING_WARD = "Open New referral from your ward's page, so it is sent in that ward's name.";
@@ -1120,7 +1121,7 @@ export function useWardReferralDrawerState({
   };
   async function copyText(text: string, done: string) {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyTextToClipboard(text);
       setCopyNotice(done);
     } catch {
       setCopyNotice("Copy unavailable in this browser");
