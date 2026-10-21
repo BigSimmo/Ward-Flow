@@ -517,6 +517,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      # Main has no merge queue and does not require PRs to be up to date, so measure the budget on
+      # this PR merged with the current main; ward-flow-budget-recheck.yml re-runs this job when main moves.
+      - name: Merge the latest main before measuring
+        if: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/ward-ci-public/merge-latest-main.mjs
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
