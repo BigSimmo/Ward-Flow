@@ -932,7 +932,7 @@ function TeamComparison({
           )
         }
       >
-        {view === "chart" && !needle && sorted.length > shown.length ? (
+        {view === "chart" && !needle && (showAll || sorted.length > shown.length) ? (
           <Button size="sm" variant="ghost" onClick={() => setShowAll((value) => !value)}>
             {showAll ? "Show fewer" : `Show all ${sorted.length}`}
           </Button>

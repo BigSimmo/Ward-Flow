@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import StatisticsServicePage from "@/app/ward-flow/statistics/service/[serviceId]/page";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
+import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { StatisticsCapacityChart } from "@/components/ward-management/statistics/statistics-capacity-chart";
 import { StatisticsCompareScreen } from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
@@ -56,6 +57,14 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     expect(toggle).toHaveTextContent(/^Show \d+ with nobody in a bed$/u);
     fireEvent.click(toggle);
     expect(within(all).getAllByRole("link").length).toBeGreaterThan(before);
+  });
+
+  it("keeps the team comparison's toggle after Show all, so the list folds back", () => {
+    renderInProvider(<StatisticsCommunityScreen teamId="midland" />);
+    const card = screen.getByTestId("ward-statistics-community-comparison");
+    fireEvent.click(within(card).getByRole("button", { name: /^Show all \d+$/u }));
+    fireEvent.click(within(card).getByRole("button", { name: "Show fewer" }));
+    expect(within(card).getByRole("button", { name: /^Show all \d+$/u })).toBeInTheDocument();
   });
 
   it("names the downtime pack's tables in the jump row without repeating the hero totals", () => {
