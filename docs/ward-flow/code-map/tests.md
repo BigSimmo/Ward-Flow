@@ -1,5 +1,20 @@
 # Tests
 
+## Audit repair coverage — 20 October 2026
+
+- `tests/ward-audit-command-permissions.test.ts` checks statewide settings, complete broadcast
+  audiences, ED origin, sender-only corrections/withdrawals and transport assessment, with allowed
+  owner controls alongside denied commands that omit acting identity.
+- `tests/ward-shared-calendar-origin.test.ts` checks new shared worlds against Perth midnight,
+  date entry and formatting, while preserving existing stored calendar origins.
+- `tests/ward-draft-access-scope.test.ts` checks role/access changes, stale autosaves, unchanged
+  recovery, reloads and partial storage failures. The shared-provider DOM suite checks form remounts.
+- The phone-push and browser-auth suites cover offline cleanup, shared-device ownership and throwing
+  storage. `backend/ward-flow/postgres.test.mjs` exercises concurrent duplicate suppression and the
+  shared record-opening account limit against disposable loopback PostgreSQL.
+- `tests/public-signout-boundary.test.ts` checks anchored local-main ownership detection in offline
+  checkouts, including refusal controls for missing or foreign history and wrong remote destinations.
+
 ## Handover contract follow-up — 18 October 2026
 
 `helpers/ward-turnaround-fixture.ts` builds accepted movement and referral staging commands for
