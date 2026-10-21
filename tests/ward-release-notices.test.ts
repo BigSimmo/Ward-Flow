@@ -153,7 +153,7 @@ describe("SEND_RELEASE_SUPPORT_NOTICE", () => {
     const { state, release } = confirmedRelease();
     const once = send(state, { releaseId: release.id, actingUnitId: release.unitId, service: "cleaning" });
     const twice = send(once, { releaseId: release.id, actingUnitId: release.unitId, service: "cleaning" });
-    expect(twice.rejections.at(-1)?.reason).toBe("Cleaning has already been notified for this discharge.");
+    expect(twice.rejections.at(-1)?.reason).toBe("That service has already been notified.");
   });
 
   it("refuses another ward sending for this release", () => {
@@ -200,7 +200,7 @@ describe("RECORD_ARRIVAL_CHECK", () => {
     state = record(state, "medication_chart", true);
     expect(movement(state, open.id).medicationChartDone).toBe(true);
     const repeat = record(state, "medication_chart", true);
-    expect(repeat.rejections.at(-1)?.reason).toBe("This check is already recorded as done.");
+    expect(repeat.rejections.at(-1)?.reason).toBe("This check is already recorded that way.");
     state = record(state, "contraband_search", false);
     expect(movement(state, open.id).contrabandSearchDone).toBe(false);
   });

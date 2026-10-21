@@ -49,12 +49,6 @@ export type ArrivalCheckEvent = {
   done: boolean;
 };
 
-const SERVICE_NAMES: Record<SupportServiceType, string> = {
-  pharmacy: "Pharmacy",
-  transport: "Transport",
-  cleaning: "Cleaning",
-};
-
 export function reduceReleaseNoticeEvent(
   state: WardFlowState,
   event: ReleaseNoticeEvent,
@@ -62,7 +56,10 @@ export function reduceReleaseNoticeEvent(
   { findBedRelease, findUnit, reject, replaceBedRelease }: BedEventHelpers,
 ): WardFlowState {
   const release = findBedRelease(state, event.releaseId);
-  if (!release) return reject(state, event, "This discharge is no longer on the board, so no notice was sent.");
+  // A notice goes only for a release that is still confirmed, so a gone one is refused the same way.
+  if (release?.state !== "confirmed") {
+    return reject(state, event, "This discharge is no longer confirmed, so no notice was sent.");
+  }
   // Claim, not proof, as CLEAR_BED_RELEASE_BLOCK: a ward sends only for its own release.
   if (event.actingUnitId !== release.unitId) {
     const owner = findUnit(state, release.unitId)?.name ?? "another ward";
@@ -70,14 +67,11 @@ export function reduceReleaseNoticeEvent(
   }
   // Chosen, never typed: the runtime half of the union-type check, for an untyped caller.
   if (!SUPPORT_SERVICE_TYPES.includes(event.service)) {
-    return reject(state, event, "Choose pharmacy, transport or cleaning for the notice.");
-  }
-  if (release.state !== "confirmed") {
-    return reject(state, event, "This discharge is no longer confirmed, so no notice was sent.");
+    return reject(state, event, "Choose a service for the notice.");
   }
   const sent = release.supportNoticesSent ?? [];
   if (sent.some((notice) => notice.service === event.service)) {
-    return reject(state, event, `${SERVICE_NAMES[event.service]} has already been notified for this discharge.`);
+    return reject(state, event, "That service has already been notified.");
   }
   decision.outcome = "accepted";
   decision.reasonCode = "none";
@@ -101,15 +95,14 @@ export function reduceArrivalCheckEvent(
   { findMovement, reject, replaceMovement }: ArrivalCheckHelpers,
 ): WardFlowState {
   const movement = findMovement(state, event.movementId);
-  if (!movement) return reject(state, event, "This patient is no longer on the list, so nothing was recorded.");
-  if (movement.closure) return reject(state, event, "This movement is closed, so nothing was recorded.");
+  if (!movement || movement.closure) return reject(state, event, "This movement is closed, so nothing was recorded.");
   if (!ARRIVAL_CHECKS.includes(event.check)) {
-    return reject(state, event, "Choose the contraband search or the medication chart.");
+    return reject(state, event, "Choose a check to record.");
   }
-  if (typeof event.done !== "boolean") return reject(state, event, "Say whether the check is done.");
   const field = event.check === "contraband_search" ? "contrabandSearchDone" : "medicationChartDone";
-  if (movement[field] === event.done) {
-    return reject(state, event, event.done ? "This check is already recorded as done." : "This check is not recorded.");
+  // `!movement[field]` counts an unrecorded check as not done; a non-boolean `done` is refused here too.
+  if (typeof event.done !== "boolean" || !movement[field] === !event.done) {
+    return reject(state, event, "This check is already recorded that way.");
   }
   decision.outcome = "accepted";
   decision.reasonCode = "none";
