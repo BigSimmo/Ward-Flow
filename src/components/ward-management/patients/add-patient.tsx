@@ -67,6 +67,7 @@ import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -1279,17 +1280,21 @@ export function AddPatientForm() {
           <aside className={styles.side} aria-label="Duplicate checking and records">
             {isTabletPortrait ? null : duplicateCheck}
 
-            <Card className={styles.phHide}>
-              <CardHead title="After adding" level={2} action={<span className={styles.muted}>Once added</span>} />
-              <CardBody className={styles.afterRow}>
-                <Button size="sm" icon={FileText} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                  Raise referral
-                </Button>
-                <Button size="sm" icon={BusFront} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                  Book transport
-                </Button>
-              </CardBody>
-            </Card>
+            {/* Audit 7 NA-03: these two never become available on this screen, so they show in a
+                development build only. */}
+            <UnwiredPreview>
+              <Card className={styles.phHide}>
+                <CardHead title="After adding" level={2} action={<span className={styles.muted}>Once added</span>} />
+                <CardBody className={styles.afterRow}>
+                  <Button size="sm" icon={FileText} disabledReason="Add the patient first" reasonDisplay="tooltip">
+                    Raise referral
+                  </Button>
+                  <Button size="sm" icon={BusFront} disabledReason="Add the patient first" reasonDisplay="tooltip">
+                    Book transport
+                  </Button>
+                </CardBody>
+              </Card>
+            </UnwiredPreview>
 
             <Card className={styles.phHide}>
               <CardHead

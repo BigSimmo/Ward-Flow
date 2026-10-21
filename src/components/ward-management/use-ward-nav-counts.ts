@@ -48,12 +48,13 @@ export function useWardNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
+  const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlowSelect(
     "movements",
     "units",
     "referrals",
     "bedReleases",
     "leaveBeds",
+    "admissions",
   );
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
@@ -72,6 +73,7 @@ export function useWardNavCounts(): {
       referrals,
       bedReleases,
       leaveBeds,
+      admissions,
       now,
       thresholds,
       service,

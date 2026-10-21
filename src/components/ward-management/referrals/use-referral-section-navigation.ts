@@ -52,11 +52,14 @@ export function useReferralSectionNavigation({
       const control = invalid
         ? Array.from(
             panel.querySelectorAll<HTMLElement>(
-              'input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"]',
+              'input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"], button[data-referral-invalid]',
             ),
           ).find((element) => !element.matches(":disabled") && !element.closest("[hidden], [inert]"))
         : null;
       (control ?? panel.querySelector<HTMLElement>("h3[tabindex]"))?.focus({ preventScroll: true });
+      // Audit 7 RC-N2: the body was scrolled to the top, so a field lower in the step sat under the
+      // phone sheet's pinned footer or off screen. Centre the field the error points to.
+      control?.scrollIntoView?.({ block: "center" });
     });
   }
 

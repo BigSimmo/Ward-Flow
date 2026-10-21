@@ -201,8 +201,10 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
         id,
         // A `need` is a different figure from the badge, so the page keeps its own row and badge.
         entryId: count?.need ? undefined : id,
-        label: entry.label,
-        meta: need.noun,
+        // Audit 6 (Josh, 20 Oct 2026): Waiting's severe causes are "At a time limit", so the menu
+        // no longer shows two rows called Waiting with different numbers.
+        label: id === "delays" && count?.need ? "At a time limit" : entry.label,
+        meta: id === "delays" && count?.need ? "in Waiting, or with nowhere to go" : need.noun,
         count: need.value,
         // shell-9: Delays opens filtered to the severe causes this row counts.
         href: id === "delays" ? `${entry.href}?show=severe` : entry.href,

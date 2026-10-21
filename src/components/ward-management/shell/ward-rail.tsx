@@ -27,7 +27,6 @@ import { useShellPersonaRole } from "@/components/ward-management/settings/perso
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
-import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
@@ -776,16 +775,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             ) : null}
           </span>
         </div>
-        <WardDemoClockPopover
-          className={styles.shiftLiveClockRow}
-          title={`Board time ${boardClock} AWST`}
-          aria-label={`Board time ${boardClock} AWST`}
-        >
-          <span className={styles.liveClockDot} aria-hidden="true" />
-          <span className={styles.shiftLiveClockLabel}>Board time</span>
-          <span className={styles.shiftLiveClockTime}>{boardClock}</span>
-          <span className={styles.shiftLiveTz}>AWST</span>
-        </WardDemoClockPopover>
+        {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
+            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
         {handoverCardLinks ? (
           <Link
             href={handoverHref()}
