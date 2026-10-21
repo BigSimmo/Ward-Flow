@@ -1056,7 +1056,7 @@ function WardFlowWorld({
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // The world generation whose typed-text copy could not be made safely, and a re-run once it loads.
   const [deviceCopyRefused, setDeviceCopyRefused] = useState<number | null>(null);
-  const [, setScrubLoaded] = useState(false);
+  const [scrubLoaded, setScrubLoaded] = useState(false);
   const typedTextLocked =
     container.typedTextSeen && (container.typedTextUnreadable === true || deviceCopyRefused === state.worldGeneration);
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
@@ -1175,6 +1175,7 @@ function WardFlowWorld({
     state,
     container,
     typedTextLocked,
+    scrubLoaded,
     deviceCopyRefused,
     initialNow,
     mountedAtAbsolute,

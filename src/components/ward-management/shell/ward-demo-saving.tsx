@@ -1,13 +1,12 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { TYPED_TEXT_NOT_KEPT } from "../ward-flow-typed-text-ledger";
 import styles from "./ward-offline-banner.module.css";
 
 /**
  * How much of the submitted demonstration state is saved on this device. Since 21 Oct 2026 (Josh,
  * fix plan item 2) typed text no longer stops the save: the rest of the day is kept and typed fields
- * read `TYPED_TEXT_NOT_KEPT` after a reload. Saving stops only when that copy cannot be made safely.
+ * read "Typed text not kept on this device" after a reload. Saving stops only when that copy cannot be made safely.
  * Session draft recovery is separate.
  */
 export type WardDemoSaving = "saved" | "typed-text-not-kept" | "not-saved";
@@ -19,7 +18,7 @@ export function WardDemoNotSavedNote() {
   if (saving === "typed-text-not-kept")
     return (
       <p className={styles.quiet} role="status" data-testid="ward-demo-typed-text-not-kept">
-        Demonstration state is saved on this device except typed text, which a reload shows as “{TYPED_TEXT_NOT_KEPT}”.
+        Demonstration state is saved on this device, except typed text.
       </p>
     );
   if (saving !== "not-saved") return null;

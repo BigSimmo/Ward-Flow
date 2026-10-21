@@ -75,7 +75,9 @@ describe("Not saved on this device note (S-1)", () => {
       });
     });
     expect(screen.queryByTestId("ward-demo-not-saved")).toBeNull();
-    expect(screen.getByTestId("ward-demo-typed-text-not-kept")).toHaveTextContent("Typed text not kept on this device");
+    expect(screen.getByTestId("ward-demo-typed-text-not-kept")).toHaveTextContent(
+      "saved on this device, except typed text",
+    );
   });
 
   it("is never shown on a fixed-clock render, which never saves anyway", () => {
