@@ -49,22 +49,32 @@ describe("Daily check: Checked, all accounted for", () => {
     expect(screen.getByTestId("ward-missed-check-done")).toBeInTheDocument();
   });
 
-  it("asks for the list again when the screen stays open into the next day", () => {
-    const at = (now: number) => (
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFlowClockContext.Provider value={now}>
-          <MissedRequestsPanel />
-        </WardFlowClockContext.Provider>
-      </WardFlowProvider>
-    );
+  const at = (now: number) => (
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardFlowClockContext.Provider value={now}>
+        <MissedRequestsPanel />
+      </WardFlowClockContext.Provider>
+    </WardFlowProvider>
+  );
+  const tick = () => screen.getByRole("button", { name: "Checked, all accounted for" });
+
+  it("asks for the list again when a folded list is left into the next day", () => {
     const { rerender } = render(at(NOW_ANCHOR));
+    // Open then fold the list, so nothing is on screen when the day turns.
     fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    expect(screen.getByRole("button", { name: "Checked, all accounted for" })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
+    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
 
     rerender(at(NOW_ANCHOR + 24 * 60));
-    expect(screen.getByRole("button", { name: "Checked, all accounted for" })).toHaveAttribute("aria-disabled", "true");
+    expect(tick()).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
+    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("keeps the tick available when the list stays open into the next day", () => {
+    const { rerender } = render(at(NOW_ANCHOR));
+    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
+    rerender(at(NOW_ANCHOR + 24 * 60));
+    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
   });
 });

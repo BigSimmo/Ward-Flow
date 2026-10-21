@@ -44,11 +44,11 @@ export function MissedRequestsPanel() {
   // Folded by default, so the check is one line above the board until the coordinator opens it.
   const [open, setOpen] = useState(false);
   // UX audit (21 Oct 2026): "Checked, all accounted for" waits until the list has been opened once,
-  // so nobody confirms a list they have not looked at. It is kept per day, so a screen left open
-  // past midnight asks again for the new day's list.
+  // so nobody confirms a list they have not looked at. It is kept per day, so a folded list left
+  // past midnight asks again for the new day's list; a list open on screen counts as seen.
   const [seenDay, setSeenDay] = useState<string | undefined>(undefined);
   const today = dailyCheckId(now);
-  const seen = seenDay === today;
+  const seen = open || seenDay === today;
   const items = useMemo(
     () => missedRequestCheck({ movements, referrals, patients, now }),
     [movements, referrals, patients, now],
