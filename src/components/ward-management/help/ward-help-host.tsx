@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { subscribeWardHelp, type HelpView } from "./ward-help-store";
+import { subscribeWardHelp, type HelpView } from "./ward-help-events";
 
 // The sheet and its content load only when Help is first opened, so every page's first load stays
 // the same size.

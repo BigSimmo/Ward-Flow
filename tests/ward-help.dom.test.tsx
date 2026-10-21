@@ -37,8 +37,8 @@ import {
   markTourSeen,
   parseTourSeen,
   resetTourSeenForTests,
-  type HelpView,
 } from "@/components/ward-management/help/ward-help-store";
+import type { HelpView } from "@/components/ward-management/help/ward-help-events";
 import { ROLE_MENUS, railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";

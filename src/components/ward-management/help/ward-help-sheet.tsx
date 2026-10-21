@@ -9,7 +9,8 @@ import { railEntries } from "@/components/ward-management/shell/ward-rail-entrie
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 
 import { filterGlossary, screenHelpFor, tourFor } from "./ward-help-content";
-import { markTourSeen, type HelpView } from "./ward-help-store";
+import type { HelpView } from "./ward-help-events";
+import { markTourSeen } from "./ward-help-store";
 import styles from "./ward-help.module.css";
 
 const VIEWS: readonly { id: HelpView; label: string }[] = [

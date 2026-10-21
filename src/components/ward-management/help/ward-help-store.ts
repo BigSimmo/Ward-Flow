@@ -11,9 +11,7 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 
 export const TOUR_SEEN_STORAGE_KEY = "ward_flow_choice_tour_seen";
 const tourSeenChangeEvent = "ward-flow-tour-seen-change";
-const OPEN_HELP_EVENT = "ward-flow-open-help";
 
-export type HelpView = "screen" | "glossary" | "tour";
 
 let inMemoryFallback: string | undefined;
 
@@ -67,21 +65,6 @@ export function markTourSeen(role: WardChromeRole): void {
     inMemoryFallback = next;
   }
   window.dispatchEvent(new Event(tourSeenChangeEvent));
-}
-
-/** Opens the Help sheet at `view`, from anywhere in the shell. */
-export function openWardHelp(view: HelpView = "screen"): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(OPEN_HELP_EVENT, { detail: { view } }));
-}
-
-export function subscribeWardHelp(onOpen: (view: HelpView) => void): () => void {
-  function handler(event: Event) {
-    const view = (event as CustomEvent<{ view?: HelpView }>).detail?.view;
-    onOpen(view === "glossary" || view === "tour" ? view : "screen");
-  }
-  window.addEventListener(OPEN_HELP_EVENT, handler);
-  return () => window.removeEventListener(OPEN_HELP_EVENT, handler);
 }
 
 /** Test-only reset. */

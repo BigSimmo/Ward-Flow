@@ -4,7 +4,8 @@ import { CircleHelp } from "lucide-react";
 
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 
-import { openWardHelp, useTourSeen } from "./ward-help-store";
+import { openWardHelp } from "./ward-help-events";
+import { useTourSeen } from "./ward-help-store";
 import styles from "./ward-help.module.css";
 
 /**

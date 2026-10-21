@@ -509,8 +509,8 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
 - **`help/`** (fix plan item 12, 21 Oct 2026) — in-app help. `ward-help-content.ts` holds
   `SCREEN_HELP` (keyed by rail entry id), `GLOSSARY` (Ward Flow terms plus site codes) and
   `tourFor(role)`, built from that desk's `ROLE_MENUS`. `ward-help-store.ts` keeps which desks have
-  seen their tour under `ward_flow_choice_tour_seen` (kept at sign-out) and sends the open-help
-  event. `ward-help-host.tsx` lazy-loads `ward-help-sheet.tsx` (screen help, glossary search and the
+  seen their tour under `ward_flow_choice_tour_seen` (kept at sign-out). `ward-help-events.ts` sends
+  and hears the open-help event, apart from the store so the header loads only it. `ward-help-host.tsx` lazy-loads `ward-help-sheet.tsx` (screen help, glossary search and the
   tour). `ward-help-link.tsx` is the rail and phone menu row, marked New until the tour is seen.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by

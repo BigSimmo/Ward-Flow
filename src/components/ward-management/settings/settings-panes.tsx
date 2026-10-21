@@ -29,7 +29,7 @@ import type { NotificationSupport } from "@/components/ward-management/shell/war
 import { phonePushRow, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { openWardHelp } from "@/components/ward-management/help/ward-help-store";
+import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import {
