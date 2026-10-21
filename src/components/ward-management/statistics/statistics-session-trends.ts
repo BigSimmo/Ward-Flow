@@ -44,8 +44,9 @@ export function sessionTrends(log: readonly EventLogEntry[], now: Instant, hourC
   const rows = SESSION_TREND_MEASURES.map((measure) => {
     const counts = hours.map(() => 0);
     for (const entry of log) {
-      if (!entry.accepted || entry.now === undefined || !(measure.types as readonly string[]).includes(entry.type))
-        continue;
+      // An event stamped after `now` (a later minute of this hour, or a later hour) has not happened yet.
+      if (!entry.accepted || entry.now === undefined || entry.now > now) continue;
+      if (!(measure.types as readonly string[]).includes(entry.type)) continue;
       const slot = Math.floor((entry.now - first) / MINUTES_PER_HOUR);
       if (slot >= 0 && slot < hourCount) counts[slot]! += 1;
     }

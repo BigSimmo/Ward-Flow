@@ -46,6 +46,11 @@ describe("sessionTrends", () => {
     expect(sessionTrends([], NOW).hours).toEqual([3, 2, 1, 0].map((back) => HOUR - back * 60));
   });
 
+  it("leaves out an event stamped later in the current hour than now", () => {
+    const trends = sessionTrends([entry("ACCEPT_REFERRAL", HOUR + 40), entry("ACCEPT_REFERRAL", NOW)], NOW);
+    expect(trends.rows.find((row) => row.id === "accepted")?.counts).toEqual([0, 0, 0, 1]);
+  });
+
   it("leaves out refused events, events with no time, other event types and anything outside the hours shown", () => {
     const log = [
       entry("PATIENT_ARRIVED", HOUR + 5, false),
