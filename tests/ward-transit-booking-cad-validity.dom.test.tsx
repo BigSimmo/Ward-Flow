@@ -54,18 +54,23 @@ function openBookingForm() {
 describe("patient transit booking CAD field", () => {
   it("fails the browser check with the reason for a placeholder, and clears once a number is typed", () => {
     openBookingForm();
-    const cad = screen.getByLabelText("CAD number") as HTMLInputElement;
+    const cad = () => screen.getByLabelText("CAD number") as HTMLInputElement;
 
-    fireEvent.change(cad, { target: { value: "TBC" } });
-    expect(cad.validity.valid).toBe(false);
-    expect(cad.validationMessage).toBe(
+    fireEvent.change(cad(), { target: { value: "TBC" } });
+    expect(cad().validity.valid).toBe(false);
+    expect(cad().validationMessage).toBe(
       "To save, the CAD number looks like a placeholder, so enter the number the provider gave.",
     );
     fireEvent.click(screen.getByRole("button", { name: "Save booking" }));
     expect(screen.getByTestId("live-cad")).toBeEmptyDOMElement();
 
-    fireEvent.change(cad, { target: { value: "CAD-2026-1234" } });
-    expect(cad.validity.valid).toBe(true);
+    // Closing keeps the typed number, so the reopened field must still fail the check.
+    fireEvent.click(screen.getByRole("button", { name: "Close booking form" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));
+    expect(cad().validity.valid).toBe(false);
+
+    fireEvent.change(cad(), { target: { value: "CAD-2026-1234" } });
+    expect(cad().validity.valid).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Save booking" }));
     expect(screen.getByTestId("live-cad")).toHaveTextContent("CAD-2026-1234");
   });
