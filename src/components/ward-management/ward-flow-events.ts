@@ -1820,18 +1820,12 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10, Josh, 21 Oct 2026). The only writer of
-       * `Movement.observation` after intake and of `Admission.observation` after the pull. The
-       * target is the open movement (before a bed is held) or the admission (once it is). Either way
-       * the movement and its live admission are changed together, so the level the capacity check
-       * counts and the level the referral shows never disagree, and each appends `{ at, from, to }`
-       * to its `observationChanges`.
-       *
-       * Refused for a level outside `OBSERVATION_LEVELS`, an Intermittent interval outside
-       * `INTERMITTENT_INTERVAL_MINUTES`, or no change. It does NOT refuse a ward raising an occupied
-       * bed's level beyond its staffed capacity: the person on the ward needs the level whatever
-       * the roster says, so the ward's remaining figure simply reads nought. The capacity refusal
-       * stays where it always was, at `PULL_PATIENT`, before a bed is committed.
+       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10). The only writer of `observation` after
+       * intake. Targets the open movement, or the admission once a bed is held; either way the
+       * movement and its live admission change together and append `{ at, from, to }` to their
+       * `observationChanges`. Refused for an invalid level or interval, or no change. It does NOT
+       * refuse raising an occupied bed's level beyond the ward's staff: the capacity refusal stays at
+       * `PULL_PATIENT`, before a bed is committed.
        */
       type: "RECORD_OBSERVATION_LEVEL";
       role: WardFlowRole;
