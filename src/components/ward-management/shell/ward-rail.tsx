@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
@@ -42,12 +41,9 @@ import { applyAppearance } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
+import { WardMyWards } from "./ward-my-wards";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "./ward-rail.module.css";
-
-// Pins live on this device only, so the server has nothing to draw; loading after hydration keeps
-// them out of every page's first script (the phone script budget).
-const WardMyWards = dynamic(() => import("./ward-my-wards").then((m) => m.WardMyWards), { ssr: false });
 import { readWardRailEarlyShape } from "./ward-rail-early";
 import {
   isTypingTarget,
