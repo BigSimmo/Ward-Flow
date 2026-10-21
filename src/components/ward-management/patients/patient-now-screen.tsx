@@ -120,6 +120,7 @@ import { renderArrivalSection } from "./patient-now-arrival-section";
 import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
@@ -403,20 +404,28 @@ export function PatientNowScreen({
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
-      navigator.clipboard?.writeText(text).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+      void copyTextToClipboard(text).then(
+        () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        },
+        // A refused copy leaves the button as it was, as before the shared helper.
+        () => undefined,
+      );
       return;
     }
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    void copyTextToClipboard(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      // A refused copy leaves the button as it was, as before the shared helper.
+      () => undefined,
+    );
   }
 
   // Keyboard navigation for tablist

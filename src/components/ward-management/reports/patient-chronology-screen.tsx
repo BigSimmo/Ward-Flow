@@ -58,6 +58,7 @@ import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { reportDay, reportMoment } from "./report-parts";
 import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -273,12 +274,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     // The shared wf toast (polite live region) confirms the copy; words stay neutral.
     const copied = () => toast?.push({ tone: "success", title: "Row copied", duration: 2600 });
     const failed = () => toast?.push({ tone: "warning", title: "Could not copy the row", duration: 4000 });
-    try {
-      if (!navigator.clipboard) throw new Error("no clipboard");
-      void navigator.clipboard.writeText(text).then(copied, failed);
-    } catch {
-      failed();
-    }
+    copyTextToClipboard(text).then(copied, failed);
   }
 
   // Opening an event never moves the table: remember and restore its scroll position.
