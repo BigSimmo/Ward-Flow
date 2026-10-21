@@ -54,6 +54,8 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     // A block, never a condition, and `null` is equally ordinary — the base admission here carries
     // one so that a test overriding it to `null` is testing the absence deliberately.
     tentativeDiagnosis: "F30–F39",
+    // FD-10 (2026-10-21): the ward's own block beside the referrer's, so the built fixture carries every field.
+    wardDiagnosis: { block: "F20–F29", recordedAt: 0, recordedBy: "ward" },
     // WIDENED ON PURPOSE, 2026-09-17 — item 11, owner answer 11. Which kind of bed this admission
     // actually took; optional, and absent is equally ordinary for every admission seeded before
     // this field existed (see `Admission.bedKind`'s own doc comment). The base admission here
