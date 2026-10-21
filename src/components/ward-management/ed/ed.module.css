@@ -5039,6 +5039,7 @@
 .a2Referral {
   display: block;
   min-width: 0;
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 
@@ -5054,15 +5055,15 @@
 }
 
 .a2ReferralLine[data-tone="good"] {
-  color: var(--good-ink);
+  color: var(--wf-success-ink);
 }
 
 .a2ReferralLine[data-tone="warn"] {
-  color: var(--warn-ink);
+  color: var(--wf-warning-ink);
 }
 
 .a2ReferralLine[data-tone="danger"] {
-  color: var(--danger-ink);
+  color: var(--wf-danger-ink);
 }
 
 /* The row sheet's "Where the referral is": four steps, a tick on each one done. */
@@ -5094,8 +5095,8 @@
 
 .referralSteps > li[data-done="true"] .referralStepMark {
   border-color: transparent;
-  background: color-mix(in srgb, var(--good-ink) 14%, transparent);
-  color: var(--good-ink);
+  background: color-mix(in srgb, var(--wf-success-ink) 14%, transparent);
+  color: var(--wf-success-ink);
 }
 
 .referralStepLabel {
