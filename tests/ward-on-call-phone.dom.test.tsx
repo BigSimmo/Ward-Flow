@@ -198,7 +198,7 @@ describe("PhoneDirectory, the inset grouped list", () => {
   });
 
   it("opens a row's card and shows its number, with no copy-only Call button (D-72)", () => {
-    const { actions, onOpen } = renderDirectory({ tab: "hospitals", rows: hospitals });
+    const { onOpen } = renderDirectory({ tab: "hospitals", rows: hospitals });
     const bfc = entry("nmhs-bfc");
     const number = numberAt(bfc, NOW_ANCHOR)!;
 
