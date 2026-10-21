@@ -607,7 +607,8 @@ export function HandoverPage() {
   const urgentRows = rows.filter((row) => groupOf(row, now, cutoff) === "urg");
   const actOwnedRows = [...actRows, ...urgentRows];
   const actOwned = actOwnedRows.every((row) => row.owner !== "No owner recorded");
-  const actPassed = actRows.filter(
+  // A flagged urgent row left off Alerts' act-now list (snoozed there) can still be past its time.
+  const actPassed = actOwnedRows.filter(
     (row) =>
       (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
       (row.formDueAt !== undefined && row.formDueAt <= now),
