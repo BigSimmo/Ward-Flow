@@ -1,0 +1,71 @@
+/* Referral owner and "Log a call" (fix plan item 4). */
+
+.panel {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-block: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+}
+
+.owner {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.heading {
+  margin: 0;
+  padding: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+
+.call {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.when {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
