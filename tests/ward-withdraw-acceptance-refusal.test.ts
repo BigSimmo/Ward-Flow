@@ -121,10 +121,11 @@ describe("withdrawing an acceptance is refused without inventing a cause", () =>
    * Rewording a refusal is one keystroke away from deleting the branch that raises it, and every
    * assertion above would still pass if the guard simply stopped refusing: no rejection, no
    * message, nothing claiming a pulled bed. This case fails if a later stage becomes withdrawable.
+   * Q16 (owner, 16 Sept 2026) made `pulled` withdrawable; `handover_ready` on stays refused.
    */
-  it("still refuses at a stage after the bed was pulled", () => {
+  it("still refuses from handover_ready on", () => {
     const state = seedWardFlowState();
-    const movement = openMovementAt(state, "pulled") ?? openMovementAt(state, "moving");
+    const movement = openMovementAt(state, "handover_ready") ?? openMovementAt(state, "moving");
     expect(movement, "no open seeded movement past acceptance - this case would prove nothing").toBeDefined();
 
     const after = withdraw(state, movement!.id);

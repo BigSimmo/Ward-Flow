@@ -241,7 +241,7 @@ export function MovementWorkspaceCockpit({
           },
         ]
       : []),
-    ...patient.stageChanges.map((change) => {
+    ...patient.stageChanges.flatMap((change) => {
       const reasonLabel = change.reason === undefined ? undefined : stageChangeReasonLabel(change.reason);
       const suffix = reasonLabel ? ` · ${reasonLabel}` : "";
       const unwind = patient.unwinds.find(
@@ -250,22 +250,44 @@ export function MovementWorkspaceCockpit({
           candidate.by === change.by &&
           (candidate.kind === "acceptance_withdrawn" || candidate.kind === "stage_corrected"),
       );
-      if (unwind?.kind === "acceptance_withdrawn") {
-        const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
-        return { at: change.at, label: `Acceptance by ${ward} withdrawn, by ${change.by}${suffix}` };
-      }
+      // A withdrawal is listed once, from its unwind below.
+      if (unwind?.kind === "acceptance_withdrawn") return [];
       if (unwind?.kind === "stage_corrected") {
-        return {
-          at: change.at,
-          label:
-            `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
-            `no bed released, no transport cancelled, no acceptance undone`,
-        };
+        return [
+          {
+            at: change.at,
+            label:
+              `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
+              `no bed released, no transport cancelled, no acceptance undone`,
+          },
+        ];
       }
-      return {
-        at: change.at,
-        label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
-      };
+      return [
+        {
+          at: change.at,
+          label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
+        },
+      ];
+    }),
+    // Q16: listed from the unwind so a withdrawal that kept a stepped-back stage, writing no stage
+    // entry, still shows. A release written immediately before it with the same instant, role and
+    // reason was the same act (a separate `RELEASE_PULL` carries a different reason list).
+    ...patient.unwinds.flatMap((unwind, index) => {
+      if (unwind.kind !== "acceptance_withdrawn") return [];
+      const previous = patient.unwinds[index - 1];
+      const bedReleased =
+        previous?.kind === "pull_released" &&
+        previous.at === unwind.at &&
+        previous.by === unwind.by &&
+        previous.reason === unwind.reason;
+      const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
+      const reasonLabel = stageChangeReasonLabel(unwind.reason);
+      return [
+        {
+          at: unwind.at,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
+        },
+      ];
     }),
     ...patient.statusChanges.map((change) => ({
       at: change.at,
@@ -1667,18 +1689,18 @@ export function MovementWorkspaceCockpit({
                   No ward has accepted this patient, so there is no acceptance to withdraw. If a ward said yes and this
                   page does not show it, that is a missing record rather than something to undo here.
                 </p>
-              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") ? (
+              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") &&
+                movement.admissionId === undefined ? (
                 <p className={styles.actionSay}>
                   {destination ? destination.name : "A ward"} accepted this patient and this page still says so, but the
                   recorded stage has been corrected back to {stageCopy[movement.stage].label}. Withdrawing is only
                   offered while the record says Accepted, awaiting bed — put the stage back to that first, or ring the
                   ward.
                 </p>
-              ) : movement.stage !== "accepted_awaiting_bed" ? (
+              ) : acceptedStageIndex > MOVEMENT_STAGES.indexOf("pulled") ? (
                 <p className={styles.actionSay}>
-                  A bed has already been pulled for this patient, and withdrawing an acceptance past that point is not
-                  built. It is a larger act — a ward is physically holding a bed, and further along a patient may
-                  already be moving — and the owner is still deciding what it should do. Ring the ward.
+                  This patient is past the point where a bed is only held. Handover is being prepared or the patient may
+                  already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
                 </p>
               ) : (
                 <>
@@ -1688,6 +1710,12 @@ export function MovementWorkspaceCockpit({
                     It does not re-refer the patient to them — if you want them to consider this patient again, refer
                     again.
                   </p>
+                  {movement.stage === "pulled" || movement.admissionId !== undefined ? (
+                    <p className={styles.actionSay} data-testid="ward-console-withdraw-releases-bed">
+                      A bed is held for this patient. Withdrawing also releases that bed in the same step, and the
+                      referring emergency department is told.
+                    </p>
+                  ) : null}
                   <div className={styles.controlRow}>
                     <label className="sr-only" htmlFor="ward-console-withdraw-reason">
                       Why is the acceptance being withdrawn?
