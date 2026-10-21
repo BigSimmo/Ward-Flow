@@ -8,7 +8,6 @@ import {
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
   WARD_INCIDENT_CATEGORY_IDS,
-  restrictivePracticeLabel,
   typedTimeRefusal,
   type WardRestrictivePractice,
 } from "./restrictive-practice/ward-restrictive-practice";
@@ -59,7 +58,7 @@ export function reduceRestrictivePracticeEvent(
   switch (event.type) {
     case "RECORD_RESTRICTIVE_PRACTICE_START": {
       if (!RESTRICTIVE_PRACTICE_IDS.includes(event.practice)) {
-        return reject(state, event, `${event.type} practice must be chosen from RESTRICTIVE_PRACTICES`);
+        return reject(state, event, `${event.type} practice must be chosen from RESTRICTIVE_PRACTICE_IDS`);
       }
       const stay = state.admissions.find((admission) => admission.id === event.admissionId);
       if (!stay || stay.unitId !== unit.id || stay.state !== "occupied") {
@@ -73,7 +72,7 @@ export function reduceRestrictivePracticeEvent(
             episode.admissionId === stay.id && episode.practice === event.practice && episode.endedAt === undefined,
         )
       ) {
-        return reject(state, event, `${restrictivePracticeLabel(event.practice)} is already recorded as in use`);
+        return reject(state, event, "That is already recorded as in use for this patient");
       }
       next = {
         ...record,
@@ -107,7 +106,7 @@ export function reduceRestrictivePracticeEvent(
     }
     case "RECORD_WARD_INCIDENT": {
       if (!WARD_INCIDENT_CATEGORY_IDS.includes(event.category)) {
-        return reject(state, event, `${event.type} category must be chosen from WARD_INCIDENT_CATEGORIES`);
+        return reject(state, event, `${event.type} category must be chosen from WARD_INCIDENT_CATEGORY_IDS`);
       }
       const timeRefusal = typedTimeRefusal(event.at, event.now);
       if (timeRefusal) return reject(state, event, timeRefusal);
@@ -128,7 +127,7 @@ export function reduceRestrictivePracticeEvent(
     }
     case "SET_SECLUSION_ROOM_STATUS": {
       if (!SECLUSION_ROOM_STATUS_IDS.includes(event.status)) {
-        return reject(state, event, `${event.type} status must be chosen from SECLUSION_ROOM_STATUSES`);
+        return reject(state, event, `${event.type} status must be chosen from SECLUSION_ROOM_STATUS_IDS`);
       }
       if (record.seclusionRoom?.status === event.status) {
         return reject(state, event, `The seclusion room on ${unit.name} is already recorded that way`);

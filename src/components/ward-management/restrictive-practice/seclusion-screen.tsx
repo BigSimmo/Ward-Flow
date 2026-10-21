@@ -27,13 +27,15 @@ import { unitInScope } from "../ward-role-access";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
-  openEpisodes,
   pastInstantFromClockText,
   recentIncidents,
   restrictivePracticeLabel,
   seclusionRoomView,
-  typedTimeRefusal,
   wardIncidentLabel,
+} from "./restrictive-practice-view";
+import {
+  openEpisodes,
+  typedTimeRefusal,
   type RestrictivePractice,
   type RestrictivePracticeEpisode,
   type WardIncidentCategory,

@@ -622,8 +622,11 @@ typed text. The legal register stays in the health service's own system.
 `ward-restrictive-practice-view.dom.test.tsx`.
 
 - **`src/components/ward-management/restrictive-practice/ward-restrictive-practice.ts`** — the fixed
-  lists, record types, the four event shapes, `pastInstantFromClockText`, `typedTimeRefusal`,
-  `seclusionRoomView` and `recentIncidents`.
+  list ids, record types, the four event shapes, `openEpisodes` and `typedTimeRefusal`, which the shared engine
+  loads.
+- **`src/components/ward-management/restrictive-practice/restrictive-practice-view.ts`** — the
+  screen-only labels, `pastInstantFromClockText`, `seclusionRoomView` and
+  `recentIncidents`, kept out of the shared engine for the phone script budget.
 - **`src/components/ward-management/restrictive-practice/seclusion-screen.tsx`** — `SeclusionScreen`.
 - **`src/components/ward-management/restrictive-practice/seclusion-screen.module.css`** — styles.
 

@@ -9,7 +9,7 @@ import {
   pastInstantFromClockText,
   recentIncidents,
   seclusionRoomView,
-} from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+} from "@/components/ward-management/restrictive-practice/restrictive-practice-view";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { scopeWardFlowState } from "@/components/ward-management/ward-access-state";
 import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
@@ -107,7 +107,9 @@ describe("recording seclusion and restraint on a ward", () => {
   it("refuses a second open episode of the same kind, a patient on another ward, and another ward acting", () => {
     const { state, stay, unitId, otherUnitId } = setup();
     const started = apply(state, start(unitId, stay.id));
-    expect(added(started, apply(started, start(unitId, stay.id)))).toEqual(["Seclusion is already recorded as in use"]);
+    expect(added(started, apply(started, start(unitId, stay.id)))).toEqual([
+      "That is already recorded as in use for this patient",
+    ]);
     // Restraint alongside seclusion is a different record and is allowed.
     expect(added(started, apply(started, start(unitId, stay.id, { practice: "bodily_restraint_physical" })))).toEqual(
       [],
@@ -117,7 +119,7 @@ describe("recording seclusion and restraint on a ward", () => {
       /a ward records only for itself/,
     );
     expect(added(state, apply(state, start(unitId, stay.id, { practice: "chemical_restraint" })))[0]).toMatch(
-      /RESTRICTIVE_PRACTICES/,
+      /RESTRICTIVE_PRACTICE_IDS/,
     );
   });
 });
@@ -135,7 +137,7 @@ describe("ward incidents and the seclusion room", () => {
     const one = apply(state, incident("fall", NOW - 60));
     const two = apply(one, incident("self_harm", NOW - 10));
     expect(added(state, two)).toEqual([]);
-    expect(added(two, apply(two, incident("made_up", NOW)))[0]).toMatch(/WARD_INCIDENT_CATEGORIES/);
+    expect(added(two, apply(two, incident("made_up", NOW)))[0]).toMatch(/WARD_INCIDENT_CATEGORY_IDS/);
     const record = two.units.find((unit) => unit.id === unitId)!.restrictivePractice;
     expect(recentIncidents(record, NOW).map((entry) => entry.category)).toEqual(["self_harm", "fall"]);
     expect(recentIncidents(record, NOW + 24 * 60 - 30).map((entry) => entry.category)).toEqual(["self_harm"]);

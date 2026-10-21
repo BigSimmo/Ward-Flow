@@ -1,11 +1,8 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
 import {
-  RESTRICTIVE_PRACTICES,
-  SECLUSION_ROOM_STATUSES,
-  WARD_INCIDENT_CATEGORIES,
-  type RestrictivePractice,
-  type SeclusionRoomStatus,
-  type WardIncidentCategory,
+  RESTRICTIVE_PRACTICE_IDS,
+  SECLUSION_ROOM_STATUS_IDS,
+  WARD_INCIDENT_CATEGORY_IDS,
 } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import * as z from "zod/mini";
@@ -271,9 +268,7 @@ const unit = z
         episodes: z.array(
           z.looseObject({
             id: text,
-            practice: z.enum(
-              RESTRICTIVE_PRACTICES.map((entry) => entry.id) as [RestrictivePractice, ...RestrictivePractice[]],
-            ),
+            practice: z.enum(RESTRICTIVE_PRACTICE_IDS),
             admissionId: id,
             startedAt: finite,
             endedAt: z.optional(finite),
@@ -284,9 +279,7 @@ const unit = z
         incidents: z.array(
           z.looseObject({
             id: text,
-            category: z.enum(
-              WARD_INCIDENT_CATEGORIES.map((entry) => entry.id) as [WardIncidentCategory, ...WardIncidentCategory[]],
-            ),
+            category: z.enum(WARD_INCIDENT_CATEGORY_IDS),
             at: finite,
             recordedAt: finite,
             recordedBy: text,
@@ -294,9 +287,7 @@ const unit = z
         ),
         seclusionRoom: z.optional(
           z.looseObject({
-            status: z.enum(
-              SECLUSION_ROOM_STATUSES.map((entry) => entry.id) as [SeclusionRoomStatus, ...SeclusionRoomStatus[]],
-            ),
+            status: z.enum(SECLUSION_ROOM_STATUS_IDS),
             at: finite,
             by: text,
           }),

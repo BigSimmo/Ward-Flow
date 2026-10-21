@@ -1,4 +1,4 @@
-import { MINUTES_PER_DAY, minuteOfDayFromClockText, type Instant } from "../ward-clock";
+import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-roles";
 
 /**
@@ -14,33 +14,29 @@ import type { WardFlowRole } from "../ward-flow-roles";
  * `ward-flow-restrictive-practice-events.ts`.
  */
 
-export const RESTRICTIVE_PRACTICES = [
-  { id: "seclusion", label: "Seclusion" },
-  { id: "bodily_restraint_physical", label: "Bodily restraint, physical" },
-  { id: "bodily_restraint_mechanical", label: "Bodily restraint, mechanical" },
+// The ids only: their labels and the view's helpers are in `restrictive-practice-view.ts`, which only
+// the screen loads, so the shared engine every page carries stays small (phone script budget).
+export const RESTRICTIVE_PRACTICE_IDS = [
+  "seclusion",
+  "bodily_restraint_physical",
+  "bodily_restraint_mechanical",
 ] as const;
-export type RestrictivePractice = (typeof RESTRICTIVE_PRACTICES)[number]["id"];
-export const RESTRICTIVE_PRACTICE_IDS: readonly string[] = RESTRICTIVE_PRACTICES.map((entry) => entry.id);
+export type RestrictivePractice = (typeof RESTRICTIVE_PRACTICE_IDS)[number];
 
-export const WARD_INCIDENT_CATEGORIES = [
-  { id: "aggression_to_staff", label: "Aggression towards staff" },
-  { id: "aggression_to_patient", label: "Aggression towards another patient" },
-  { id: "self_harm", label: "Self-harm" },
-  { id: "property_damage", label: "Property damage" },
-  { id: "contraband_found", label: "Contraband found" },
-  { id: "fall", label: "Fall" },
-  { id: "medication", label: "Medication incident" },
-  { id: "other", label: "Other incident" },
+export const WARD_INCIDENT_CATEGORY_IDS = [
+  "aggression_to_staff",
+  "aggression_to_patient",
+  "self_harm",
+  "property_damage",
+  "contraband_found",
+  "fall",
+  "medication",
+  "other",
 ] as const;
-export type WardIncidentCategory = (typeof WARD_INCIDENT_CATEGORIES)[number]["id"];
-export const WARD_INCIDENT_CATEGORY_IDS: readonly string[] = WARD_INCIDENT_CATEGORIES.map((entry) => entry.id);
+export type WardIncidentCategory = (typeof WARD_INCIDENT_CATEGORY_IDS)[number];
 
-export const SECLUSION_ROOM_STATUSES = [
-  { id: "available", label: "Available" },
-  { id: "out_of_service", label: "Out of service" },
-] as const;
-export type SeclusionRoomStatus = (typeof SECLUSION_ROOM_STATUSES)[number]["id"];
-export const SECLUSION_ROOM_STATUS_IDS: readonly string[] = SECLUSION_ROOM_STATUSES.map((entry) => entry.id);
+export const SECLUSION_ROOM_STATUS_IDS = ["available", "out_of_service"] as const;
+export type SeclusionRoomStatus = (typeof SECLUSION_ROOM_STATUS_IDS)[number];
 
 export type RestrictivePracticeEpisode = {
   id: string;
@@ -79,25 +75,6 @@ export type WardRestrictivePractice = {
 
 export const EMPTY_WARD_RESTRICTIVE_PRACTICE: WardRestrictivePractice = { episodes: [], incidents: [] };
 
-export function restrictivePracticeLabel(practice: string): string {
-  return RESTRICTIVE_PRACTICES.find((entry) => entry.id === practice)?.label ?? "Restrictive practice";
-}
-
-export function wardIncidentLabel(category: string): string {
-  return WARD_INCIDENT_CATEGORIES.find((entry) => entry.id === category)?.label ?? "Incident";
-}
-
-/**
- * A typed `HH:MM` (or "0930") as the latest such time at or before `now`, so "23:50" typed just
- * after midnight means last night. `undefined` when the time cannot be read.
- */
-export function pastInstantFromClockText(text: string, now: Instant): Instant | undefined {
-  const minute = minuteOfDayFromClockText(text);
-  if (minute === undefined) return undefined;
-  const today = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + minute;
-  return today > now ? today - MINUTES_PER_DAY : today;
-}
-
 /**
  * Why a typed time cannot be recorded, or `null` when it can. A typed time is read off a clock, never
  * a date, so it reaches back one day at most.
@@ -112,26 +89,6 @@ export function typedTimeRefusal(at: Instant, now: Instant, after?: Instant): st
 
 export function openEpisodes(record: WardRestrictivePractice | undefined): RestrictivePracticeEpisode[] {
   return (record?.episodes ?? []).filter((episode) => episode.endedAt === undefined);
-}
-
-/** In use now, from an open seclusion; otherwise the status a person last recorded, if any. */
-export type SeclusionRoomView =
-  | { kind: "in_use"; since: Instant }
-  | { kind: "recorded"; status: SeclusionRoomStatus; at: Instant; by: string }
-  | { kind: "not_recorded" };
-
-export function seclusionRoomView(record: WardRestrictivePractice | undefined): SeclusionRoomView {
-  const secluded = openEpisodes(record).filter((episode) => episode.practice === "seclusion");
-  if (secluded.length > 0) return { kind: "in_use", since: Math.min(...secluded.map((episode) => episode.startedAt)) };
-  const room = record?.seclusionRoom;
-  return room ? { kind: "recorded", status: room.status, at: room.at, by: room.by } : { kind: "not_recorded" };
-}
-
-/** Incidents shown on the view: those in the last day. Older ones stay on the record. */
-export function recentIncidents(record: WardRestrictivePractice | undefined, now: Instant): WardIncident[] {
-  return (record?.incidents ?? [])
-    .filter((incident) => incident.at >= now - MINUTES_PER_DAY)
-    .sort((a, b) => b.at - a.at);
 }
 
 /** The four events that write `Unit.restrictivePractice`, joined into `WardFlowEvent`. */
