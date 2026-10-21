@@ -8,6 +8,8 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
@@ -153,6 +155,11 @@ export function reducePlacementEvent(
             `${restoreUnit.name} ${HIGH_ACUITY_STAFFING_REFUSAL}. This placement ${OVERRIDE_REASON_REQUIRED} and the nurse unit manager consulted.`,
           );
         }
+        // Audit 2 E-03 (Josh, 20 Oct 2026): a legal status change since the bed was held can leave
+        // it at a ward not set up for involuntary admissions. Restoring the hold then needs a
+        // recorded reason, which `pullOverrides` keeps as an `authorisation` override.
+        const restoreLegalRefusal = speciallingAnsweredRestore ? null : heldUnitAuthorisationRefusal(state, movement);
+        if (restoreLegalRefusal) return reject(state, event, restoreLegalRefusal);
         const restored: Movement = {
           ...movement,
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
@@ -175,17 +182,19 @@ export function reducePlacementEvent(
       if (unit.isClosed) {
         return reject(state, event, `${unit.name} is closed; a new bed cannot be reserved there`);
       }
-      if (unit.allocatable.value <= 0) {
+      const pullReady = boundedBedAvailability(unit).available;
+      if (pullReady <= 0) {
         /**
-         * Reports only the fact it read (`allocatable.value <= 0`), never a cause.
-         * `CONFIRM_CAPACITY` sets that value from a ward's self-report, and `allocatable.source`
-         * cannot tell a pull from a ward correction, so naming an earlier pull as the cause could
-         * be false.
+         * Audit 2 E-08 (Josh, 20 Oct 2026): a pull needs a Ready bed, `min(allocatable, empty)`,
+         * the same figure the ward shows, so it cannot reserve a bed when the ward shows 0 Ready.
+         * Reports only the two figures it read, never a cause: `CONFIRM_CAPACITY` sets allocatable
+         * from a ward's self-report and `allocatable.source` cannot tell a pull from a correction.
+         * An arrival is still always recorded (`PATIENT_ARRIVED`).
          */
         return reject(
           state,
           event,
-          `no allocatable bed remains at ${unit.name} (the ward's allocatable count is ${unit.allocatable.value})`,
+          `no Ready bed remains at ${unit.name} (allocatable ${unit.allocatable.value}, physically empty ${unit.empty.value})`,
         );
       }
       /**

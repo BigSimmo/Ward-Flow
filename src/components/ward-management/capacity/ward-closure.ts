@@ -36,6 +36,17 @@ export function wardClosedLine(unit: Unit): string | null {
     : "Closed to admissions";
 }
 
+/**
+ * The refusal for a new admission step at a closed ward (Audit 2 E-02, Josh 20 Oct 2026): a closed
+ * ward takes no new referral, acceptance or planned booking until a person reopens it. Closure is not
+ * fullness: it is decided by `isClosed` alone, whatever the bed counts. Existing holds stand.
+ */
+export function closedToAdmissionsRefusal(unit: Unit): string | null {
+  if (!unit.isClosed) return null;
+  const reason = unit.admissionsClosure ? ` (${wardClosureReasonLabel(unit.admissionsClosure.reason)})` : "";
+  return `${unit.name} is closed to admissions${reason} until a person reopens it`;
+}
+
 /** The expected reopening time has come. A prompt for a person, never a reopening. */
 export function wardReopeningDue(unit: Unit, now: Instant): boolean {
   const until = unit.admissionsClosure?.until;

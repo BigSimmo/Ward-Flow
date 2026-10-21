@@ -61,13 +61,16 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     id: "statistics-screen/bed-readiness/preparation-stamps-confirmed-at",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Bed readiness has a yes/no flag and one shared timestamp",
-    claim: "Setting `preparing` writes an instant — `SET_BED_PREPARATION` stamps `confirmedAt: event.now`.",
+    // Audit 2 E-11 (20 Oct 2026): still true before the patient leaves; after departure
+    // `confirmedAt` is the departure time and is kept.
+    claim:
+      "Setting `preparing` writes an instant — before departure `SET_BED_PREPARATION` stamps `confirmedAt: event.now`.",
     sourceFile: WARD_BED_EVENTS,
-    evidence: "preparationNote: event.preparing ? (event.note ?? null) : null, confirmedAt: event.now,",
+    evidence: 'confirmedAt: release.state === "discharged" ? release.confirmedAt : event.now,',
     falsifiedBy: {
       change: "`SET_BED_PREPARATION` stops stamping an instant, so setting `preparing` no longer writes one.",
-      find: "preparationNote: event.preparing ? (event.note ?? null) : null, confirmedAt: event.now,",
-      replaceWith: "preparationNote: event.preparing ? (event.note ?? null) : null,",
+      find: 'confirmedAt: release.state === "discharged" ? release.confirmedAt : event.now,',
+      replaceWith: "confirmedAt: release.confirmedAt,",
     },
   },
   {
@@ -87,7 +90,8 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     // matches a comment as well as the page cannot say which paragraph makes the claim.
     rendered: "one shared timestamp that later release actions overwrite",
     claim:
-      "`BedRelease` carries a single `confirmedAt` that every readiness act overwrites, not one instant per act. " +
+      "`BedRelease` carries a single `confirmedAt` that every readiness act before departure overwrites, not one " +
+      "instant per act; after departure it holds the departure time and preparation keeps it. " +
       "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
       "admission in `stayBlockClearances` when no release is linked.",
     sourceFile: WARD_MODEL,

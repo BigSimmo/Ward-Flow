@@ -1,3 +1,4 @@
+import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import { referralIntakeError } from "./referrals/referral-submission";
 import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
@@ -125,6 +126,8 @@ export function reduceReferralAnswerEvent(
       }
       const acceptedUnit = findUnit(state, event.unitId);
       if (!acceptedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
+      const closedRefusal = closedToAdmissionsRefusal(acceptedUnit);
+      if (closedRefusal) return reject(state, event, closedRefusal);
 
       // T12: `ACCEPT_IN_PRINCIPLE` never writes a gender-placement record (only `REFER_TO_UNITS`
       // does); it refuses when nothing on the movement names this unit. See `GenderPlacement`
@@ -403,9 +406,12 @@ export function reduceReferralAnswerEvent(
       }
       for (const wardDestination of event.destinations) {
         if (wardDestination.kind !== "psychiatric_ward") continue;
-        if (wardDestination.unitId !== undefined && !findUnit(state, wardDestination.unitId)) {
+        const namedWard = wardDestination.unitId === undefined ? undefined : findUnit(state, wardDestination.unitId);
+        if (wardDestination.unitId !== undefined && !namedWard) {
           return reject(state, event, "RECEIVE_REFERRAL unitId must resolve to a real ward");
         }
+        const closedRefusal = namedWard ? closedToAdmissionsRefusal(namedWard) : null;
+        if (closedRefusal) return reject(state, event, closedRefusal);
         if (!RECORDED_SEXES.includes(wardDestination.sex))
           return reject(state, event, "RECEIVE_REFERRAL sex must be chosen from RECORDED_SEXES");
         if (wardDestination.gender !== undefined && !REFERRAL_GENDERS.includes(wardDestination.gender))
@@ -831,6 +837,8 @@ export function reduceReferralAnswerEvent(
         }
         const unit = findUnit(state, event.unitId);
         if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
+        const closedRefusal = closedToAdmissionsRefusal(unit);
+        if (closedRefusal) return reject(state, event, closedRefusal);
         if (event.bedNumber !== undefined) {
           const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, undefined);
           if (bedRefusal) return reject(state, event, bedRefusal);

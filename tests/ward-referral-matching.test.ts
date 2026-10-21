@@ -140,7 +140,10 @@ describe("legal_status", () => {
   });
 
   it("a referral that does not need an involuntary bed is also accepted by an unauthorised (voluntary-only) unit", () => {
-    const verdict = verdictFor(referral({ involuntaryBedNeeded: false }), unit({ authorised: false }), NOW);
+    // Audit 2 E-04: the referral records a voluntary legal status; with none recorded it needs an
+    // authorised bed (`ward-referral-unknown-legal-status-bed.test.ts`).
+    const voluntary = { ...referral({ involuntaryBedNeeded: false }), intake: { legalStatus: "Voluntary" } };
+    const verdict = verdictFor(voluntary as unknown as Referral, unit({ authorised: false }), NOW);
     expect(gate(verdict, "legal_status")?.pass).toBe(true);
   });
 

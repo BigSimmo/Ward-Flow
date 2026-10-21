@@ -412,6 +412,20 @@ export type LegalForm = {
     by: WardFlowRole;
     continuedFormDueAt?: Instant;
   };
+  /**
+   * Audit 2 E-15 (20 Oct 2026): earlier 5B continuations of the same 5A, oldest first, kept when a
+   * later 5B is recorded so no first-recorded time is overwritten. Typed facts only.
+   */
+  earlierContinuations?: ReadonlyArray<NonNullable<LegalForm["continuedBy"]>>;
+  /**
+   * Audit 2 E-16 (Josh, 20 Oct 2026): the forms this one replaced, oldest first, each as it was
+   * recorded, with when (`at`) and by whom it was replaced. `writtenAt` and `receivedAt` copy the
+   * movement's `formedAt` and `legalFormReceivedAt` for that form. History only: nothing reads an
+   * expiry from it and nothing is computed.
+   */
+  earlierForms?: ReadonlyArray<
+    Omit<LegalForm, "earlierForms"> & { writtenAt?: Instant; receivedAt?: Instant; at: Instant; by: WardFlowRole }
+  >;
 };
 
 /**

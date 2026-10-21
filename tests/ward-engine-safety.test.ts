@@ -18,11 +18,16 @@
 import { describe, expect, it } from "vitest";
 
 import { ADMISSION_STATES } from "@/components/ward-management/ward-admissions";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  eventCarriesTypedTextPayload,
+  WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
+} from "@/components/ward-management/ward-flow-persistence-classification";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { MOVEMENT_STAGES, REFERRAL_ADDRESSING_STATES } from "@/components/ward-management/ward-model";
 import { WARD_SCENARIOS, type WardScenario } from "@/components/ward-management/ward-scenarios";
+import { STOP_TRANSPORT_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { undoStepTypeFor } from "@/components/ward-management/ward-undo";
 import { FUZZED_EVENT_TYPES, nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
@@ -186,6 +191,170 @@ function deepFreeze(value: unknown): void {
   for (const child of Object.values(value)) deepFreeze(child);
 }
 
+/** Top-level keys an accepted ADVANCE_CLOCK may change besides the clock: the audit trail. */
+const CLOCK_ONLY_KEYS: ReadonlySet<string> = new Set([
+  "clockOffsetMinutes",
+  "auditEvents",
+  "auditReviews",
+  "auditSequence",
+  "auditReviewSequence",
+  "rejections",
+]);
+
+/** A reseed replaces the whole world, so no record before it is the same record after it. */
+const reseeds = (event: WardFlowEvent) => event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
+const inBed = (admission: WardFlowState["admissions"][number]) => IN_A_BED.has(admission.state);
+
+/**
+ * Ward closure mode: a ward closed before and after an accepted event gains no new acceptance or
+ * hold. Existing holds are kept by design, so a hold made before closure may still arrive
+ * (PATIENT_ARRIVED for a journey already accepted there), a pull may restore a journey that
+ * already had its stay, and an undo may put back a stay the ward already had. Only
+ * REOPEN_WARD_TO_ADMISSIONS clears `isClosed`.
+ */
+function closedWardViolation(before: WardFlowState, event: WardFlowEvent, after: WardFlowState): Violation | null {
+  if (reseeds(event)) return null;
+  const wasClosed = new Set(before.units.filter((unit) => unit.isClosed).map((unit) => unit.id));
+  for (const unit of before.units) {
+    const now = after.units.find((candidate) => candidate.id === unit.id);
+    if (unit.isClosed && now && !now.isClosed && event.type !== "REOPEN_WARD_TO_ADMISSIONS")
+      return {
+        rule: "a closed ward gains no new acceptance or hold",
+        detail: `${event.type} reopened ${unit.id}; only REOPEN_WARD_TO_ADMISSIONS may`,
+      };
+  }
+  const closed = new Set(after.units.filter((unit) => unit.isClosed && wasClosed.has(unit.id)).map((unit) => unit.id));
+  if (closed.size === 0) return null;
+  const movementId = "movementId" in event && typeof event.movementId === "string" ? event.movementId : undefined;
+  const subjectBefore = before.movements.find((movement) => movement.id === movementId);
+  const arrivalOfEarlierHold = (unitId: string) =>
+    event.type === "PATIENT_ARRIVED" && subjectBefore?.acceptedUnitId === unitId;
+  const pullRestoringStay = event.type === "PULL_PATIENT" && subjectBefore?.admissionId !== undefined;
+  const broken = (detail: string): Violation => ({
+    rule: "a closed ward gains no new acceptance or hold",
+    detail: `${event.type} ${detail}`,
+  });
+
+  const staysBefore = new Map(before.admissions.map((admission) => [admission.id, admission]));
+  for (const stay of after.admissions) {
+    if (!closed.has(stay.unitId) || !inBed(stay)) continue;
+    const was = staysBefore.get(stay.id);
+    if (was && was.unitId === stay.unitId && inBed(was)) continue;
+    if (arrivalOfEarlierHold(stay.unitId) || pullRestoringStay) continue;
+    // An UNDO_* step puts back a stay this ward already had (a departure undone returns the person
+    // to their bed); it is not a new admission, so closure does not refuse it.
+    if (event.type.startsWith("UNDO_") && was?.unitId === stay.unitId) continue;
+    return broken(`put stay ${stay.id} (${stay.state}) on closed ward ${stay.unitId}`);
+  }
+  const movementsBefore = new Map(before.movements.map((movement) => [movement.id, movement]));
+  for (const movement of after.movements) {
+    const unitId = movement.acceptedUnitId;
+    if (!unitId || !closed.has(unitId)) continue;
+    const was = movementsBefore.get(movement.id);
+    if (arrivalOfEarlierHold(unitId) || (pullRestoringStay && movement.id === movementId)) continue;
+    if (was?.acceptedUnitId !== unitId) return broken(`accepted ${movement.id} onto closed ward ${unitId}`);
+    if (movement.heldBedNumber !== undefined && was.heldBedNumber !== movement.heldBedNumber)
+      return broken(`held bed ${movement.heldBedNumber} on closed ward ${unitId} for ${movement.id}`);
+  }
+  const referralsBefore = new Map(before.referrals.map((referral) => [referral.id, referral]));
+  for (const referral of after.referrals) {
+    for (const [index, arm] of referral.destinations.entries()) {
+      if (arm.state !== "accepted" || arm.destination.kind !== "psychiatric_ward") continue;
+      const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
+      if (!unitId || !closed.has(unitId)) continue;
+      const was = referralsBefore.get(referral.id)?.destinations[index];
+      const wasUnit =
+        was && was.destination.kind === "psychiatric_ward" ? (was.acceptedUnitId ?? was.destination.unitId) : undefined;
+      if (arrivalOfEarlierHold(unitId)) continue;
+      if (was?.state !== "accepted" || wasUnit !== unitId)
+        return broken(`accepted referral ${referral.id} onto closed ward ${unitId}`);
+      if (arm.heldBedNumber !== undefined && was.heldBedNumber !== arm.heldBedNumber)
+        return broken(`held bed ${arm.heldBedNumber} on closed ward ${unitId} for referral ${referral.id}`);
+    }
+  }
+  return null;
+}
+
+/** Advancing the demonstration clock changes nothing but the clock (and the audit trail). */
+function clockOnlyViolation(before: WardFlowState, event: WardFlowEvent, after: WardFlowState): Violation | null {
+  if (event.type !== "ADVANCE_CLOCK") return null;
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
+    if (CLOCK_ONLY_KEYS.has(key)) continue;
+    const was = (before as Record<string, unknown>)[key];
+    const now = (after as Record<string, unknown>)[key];
+    if (was !== now && JSON.stringify(was) !== JSON.stringify(now))
+      return { rule: "advancing the clock changes nothing but the clock", detail: `ADVANCE_CLOCK changed ${key}` };
+  }
+  return null;
+}
+
+/** The role check is the reducer's first gate: nothing it accepts came from a role it does not permit. */
+function roleViolation(event: WardFlowEvent): Violation | null {
+  return EVENT_ROLE[event.type].includes(event.role)
+    ? null
+    : { rule: "an accepted event's role is permitted", detail: `${event.type} was accepted from role ${event.role}` };
+}
+
+/**
+ * A first recorded time is never rewritten: once set it stays, unless the record is removed or an
+ * UNDO_* step puts back the earlier state. Arrival details' `recordedAt`, a departed bed release's
+ * departure time (`confirmedAt`, which the Discharges board shows for a departed release), and a
+ * legal form continuation's `startedAt` and `recordedAt`.
+ */
+function firstTimeViolation(before: WardFlowState, event: WardFlowEvent, after: WardFlowState): Violation | null {
+  if (reseeds(event) || event.type.startsWith("UNDO_")) return null;
+  const broken = (detail: string): Violation => ({
+    rule: "a first recorded time is never rewritten",
+    detail: `${event.type} ${detail}`,
+  });
+  const movementsAfter = new Map(after.movements.map((movement) => [movement.id, movement]));
+  for (const movement of before.movements) {
+    const now = movementsAfter.get(movement.id);
+    if (!now) continue;
+    const recorded = movement.arrivalDetails?.recordedAt;
+    if (recorded !== undefined && now.arrivalDetails && now.arrivalDetails.recordedAt !== recorded)
+      return broken(
+        `moved ${movement.id} arrival details recordedAt from ${recorded} to ${now.arrivalDetails.recordedAt}`,
+      );
+    // A later 5B keeps the earlier continuation in `earlierContinuations`, so each continuation
+    // recorded before must still be there with its own times while the form carries any.
+    const formNow = now.legalForm;
+    const keptNow = [...(formNow?.earlierContinuations ?? []), ...(formNow?.continuedBy ? [formNow.continuedBy] : [])];
+    if (keptNow.length > 0) {
+      const keptBefore = [
+        ...(movement.legalForm?.earlierContinuations ?? []),
+        ...(movement.legalForm?.continuedBy ? [movement.legalForm.continuedBy] : []),
+      ];
+      for (const earlier of keptBefore)
+        if (!keptNow.some((entry) => entry.startedAt === earlier.startedAt && entry.recordedAt === earlier.recordedAt))
+          return broken(
+            `rewrote ${movement.id}'s continuation started ${earlier.startedAt}, recorded ${earlier.recordedAt}`,
+          );
+    }
+  }
+  const releasesAfter = new Map(after.bedReleases.map((release) => [release.id, release]));
+  for (const release of before.bedReleases) {
+    if (release.state !== "discharged") continue;
+    const now = releasesAfter.get(release.id);
+    if (now && now.confirmedAt !== release.confirmedAt)
+      return broken(
+        `moved departed release ${release.id} departure time from ${release.confirmedAt} to ${now.confirmedAt}`,
+      );
+  }
+  return null;
+}
+
+/** The per-step rules for an accepted event. */
+function acceptedStepViolation(before: WardFlowState, event: WardFlowEvent, after: WardFlowState): Violation | null {
+  return (
+    roleViolation(event) ??
+    clockOnlyViolation(before, event, after) ??
+    closedWardViolation(before, event, after) ??
+    firstTimeViolation(before, event, after)
+  );
+}
+
 /** Bed-side records a refused event must leave exactly as they were. */
 const BED_RECORDS = ["units", "admissions", "bedReleases", "leaveBeds", "plannedAdmissions"] as const;
 /** The storage check walks the whole world, so the run checks it every few events and at the end. */
@@ -193,11 +362,24 @@ const STORAGE_EVERY = 10;
 
 type StepFailure = Violation & { step: number };
 
+/**
+ * Whether the browser copy is locked after this event, as the provider tracks it
+ * (`trackWardFlowTypedTextDispatch`): a dispatch of a typed-text event, or one carrying typed text,
+ * stops saving until a reseed moves `worldGeneration`. A locked session is never written, so the
+ * storage rule does not apply to it (repatriations and support notifications are refused in a
+ * stored copy by design).
+ */
+function typedTextLocked(locked: boolean, event: WardFlowEvent, before: WardFlowState, after: WardFlowState) {
+  if (after.worldGeneration !== before.worldGeneration) return false;
+  return locked || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
+}
+
 function applyAndCheck(
   state: WardFlowState,
   event: WardFlowEvent,
   checkStorage: boolean,
-): Violation | { next: WardFlowState } {
+  lockedBefore = false,
+): Violation | { next: WardFlowState; locked: boolean } {
   deepFreeze(state);
   let next: WardFlowState;
   try {
@@ -214,10 +396,13 @@ function applyAndCheck(
         return { rule: "a refused event changes no bed", detail: `refused ${event.type} changed ${key}` };
     }
   }
+  const locked = typedTextLocked(lockedBefore, event, state, next);
   return (
     bedInvariantViolation(next) ??
-    (checkStorage ? storageViolation(next) : null) ??
-    (next.rejections.length === state.rejections.length ? undoViolation(state, event, next) : null) ?? { next }
+    (checkStorage && !locked ? storageViolation(next) : null) ??
+    (next.rejections.length === state.rejections.length
+      ? (acceptedStepViolation(state, event, next) ?? undoViolation(state, event, next))
+      : null) ?? { next, locked }
   );
 }
 
@@ -250,10 +435,12 @@ function undoViolation(before: WardFlowState, event: WardFlowEvent, applied: War
 /** Applies events in order from a fresh seed, checking every rule after every event. */
 function replay(scenario: WardScenario, events: readonly WardFlowEvent[]): StepFailure | null {
   let state = seedWardFlowState(scenario);
+  let locked = false;
   for (const [step, event] of events.entries()) {
-    const result = applyAndCheck(state, event, true);
+    const result = applyAndCheck(state, event, true, locked);
     if ("rule" in result) return { ...result, step };
     state = result.next;
+    locked = result.locked;
   }
   return null;
 }
@@ -293,14 +480,15 @@ function runSeed(seed: number, steps = STEPS) {
   let state = seedWardFlowState(scenario);
   const events: WardFlowEvent[] = [];
   let refused = 0;
+  let locked = false;
   for (let step = 0; step < steps; step += 1) {
-    const event = nextEvent(state, random, step);
+    const event = nextEvent(state, random, step, seed, steps);
     events.push(event);
     fuzzProfile.count(`attempted.${event.type}`);
     recordingRandomRun = true;
     let result: ReturnType<typeof applyAndCheck>;
     try {
-      result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1);
+      result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1, locked);
     } finally {
       recordingRandomRun = false;
     }
@@ -310,6 +498,7 @@ function runSeed(seed: number, steps = STEPS) {
       fuzzProfile.count(`refused.${event.type}`);
     } else fuzzProfile.count(`accepted.${event.type}`);
     state = result.next;
+    locked = result.locked;
   }
   return { failure: null, refused };
 }
@@ -355,6 +544,87 @@ describe("sequences the random run found", () => {
     expect(state.admissions.some((admission) => admission.id === admissionId)).toBe(false);
     expect(state.undoRecords?.some((record) => record.kind === "bed-placement")).toBe(false);
     expect(storageViolation(state)).toBeNull();
+  });
+});
+
+/**
+ * Audit 2, E-19: six events the random run sent but never once saw accepted. Each is driven here by
+ * a short scripted sequence from a seeded world, so its success path is proven regardless of how
+ * long the random run is. RELEASE_BED is left out because no seeded world can reach it: it completes
+ * only a live release whose stay has already departed, but every departure (`departAdmission`)
+ * discharges that stay's live release in the same write, FLAG_BED_RELEASE refuses a departed stay,
+ * UNDO_DEPARTURE puts the stay and its release back together, and no seed carries such a pair.
+ */
+describe("events the random run never saw accepted", () => {
+  function script(scenario: WardScenario = "standard") {
+    let state = seedWardFlowState(scenario);
+    let now = NOW_ANCHOR;
+    const ok = (event: Record<string, unknown>) => {
+      now += 1;
+      const next = wardFlowReducer(state, { now, ...event } as unknown as WardFlowEvent);
+      expect(next.rejections.at(-1)?.reason, String(event.type)).toBe(state.rejections.at(-1)?.reason);
+      expect(next.rejections.length, String(event.type)).toBe(state.rejections.length);
+      state = next;
+      return state;
+    };
+    return {
+      ok,
+      get state() {
+        return state;
+      },
+    };
+  }
+  const occupiedStay = (state: WardFlowState) => state.admissions.find((admission) => admission.state === "occupied")!;
+
+  it("RELEASE_HELD_BED frees the bed of a journey stopped after collection", () => {
+    const run = script();
+    // WF-006 is in transit (collected) in the standard world.
+    const moving = run.state.movements.find((movement) => movement.id === "WF-006")!;
+    expect(moving.transport?.collectedAt).toBeDefined();
+    run.ok({
+      type: "STOP_TRANSPORT",
+      role: "coordinator",
+      movementId: moving.id,
+      reason: STOP_TRANSPORT_REASONS[0],
+      whereabouts: TRANSPORT_WHEREABOUTS[0],
+    });
+    run.ok({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: moving.id });
+  });
+
+  it("UNDO_ABSENT_WITHOUT_LEAVE takes back a recorded absence", () => {
+    const run = script();
+    const stay = occupiedStay(run.state);
+    run.ok({ type: "RECORD_ABSENT_WITHOUT_LEAVE", role: "ward", admissionId: stay.id, actingUnitId: stay.unitId });
+    run.ok({ type: "UNDO_ABSENT_WITHOUT_LEAVE", role: "ward", admissionId: stay.id, actingUnitId: stay.unitId });
+    expect(run.state.leaveBeds.some((bed) => bed.admissionId === stay.id && bed.absentWithoutLeave)).toBe(false);
+  });
+
+  it("UNDO_ACCEPT_IN_PRINCIPLE takes back a ward's acceptance", () => {
+    const run = script();
+    const unitId = "rph-adult-secure";
+    run.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: "WF-009", unitIds: [unitId] });
+    run.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: "WF-009", unitId, actingUnitId: unitId });
+    run.ok({ type: "UNDO_ACCEPT_IN_PRINCIPLE", role: "ward", movementId: "WF-009", actingUnitId: unitId });
+    expect(run.state.movements.find((movement) => movement.id === "WF-009")?.acceptedUnitId).toBeUndefined();
+  });
+
+  it("UNDO_ED_STEP takes back an ED step", () => {
+    const run = script();
+    run.ok({ type: "RECORD_TRANSPORT_NEED", role: "ed", movementId: "WF-004", needed: false });
+    run.ok({ type: "UNDO_ED_STEP", role: "ed", movementId: "WF-004" });
+  });
+
+  it("UNDO_PLACE_IN_BED takes back a Bed board move", () => {
+    const run = script();
+    const stay = occupiedStay(run.state);
+    const used = new Set(run.state.admissions.filter((a) => a.unitId === stay.unitId).map((a) => a.bedNumber));
+    const held = new Set(
+      run.state.movements.filter((m) => m.acceptedUnitId === stay.unitId).map((m) => m.heldBedNumber),
+    );
+    const bed = [...Array(40).keys()].map((n) => n + 1).find((n) => !used.has(n) && !held.has(n))!;
+    run.ok({ type: "PLACE_IN_BED", role: "coordinator", admissionId: stay.id, bedNumber: bed });
+    run.ok({ type: "UNDO_PLACE_IN_BED", role: "coordinator", admissionId: stay.id });
+    expect(run.state.admissions.find((admission) => admission.id === stay.id)?.bedNumber).toBe(stay.bedNumber);
   });
 });
 
@@ -444,6 +714,11 @@ describe("engine safety under random event sequences", () => {
         expect(refused).toBeGreaterThan(total * 0.1);
         expect(refused).toBeLessThan(total * 0.9);
         expect(FUZZED_EVENT_TYPES.size).toBeGreaterThan(50);
+        // Every event in the role table is sent at least once (the generator's sweep steps see to it).
+        const neverSent = Object.keys(EVENT_ROLE).filter(
+          (type) => !FUZZED_EVENT_TYPES.has(type as WardFlowEvent["type"]),
+        );
+        expect(neverSent).toEqual([]);
         // Enough undoable steps are accepted that the undo rule is tested, not passed by default.
         expect(UNDONE_STEP_TYPES.size).toBeGreaterThan(8);
         completed = true;

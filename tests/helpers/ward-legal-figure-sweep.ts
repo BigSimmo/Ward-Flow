@@ -2561,6 +2561,22 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
      * identical reason: a precondition the shared sweep cannot reliably reach for every code.
      */
     const forArrival = buildHeldMovementFor(code, NOW_ANCHOR);
+    // Audit 2 E-13: arrival details need a ward that has accepted, which the round-robin does not
+    // reliably reach for every code, so they are recorded here on the held movement.
+    const detailsRecorded = wardFlowReducer(forArrival.state, {
+      type: "SET_ARRIVAL_DETAILS",
+      role: EVENT_ROLE.SET_ARRIVAL_DETAILS[0],
+      now: NOW_ANCHOR,
+      movementId: forArrival.movementId,
+      arrivalMode: "mental_health_transport",
+      estimatedArrivalAt: NOW_ANCHOR + 120,
+    });
+    expect(
+      detailsRecorded.rejections,
+      `SET_ARRIVAL_DETAILS (arrival chain) for Form ${code} was refused: ${detailsRecorded.rejections.at(-1)?.reason}`,
+    ).toEqual([]);
+    accepted.add("SET_ARRIVAL_DETAILS");
+    offenders.push(...offendingFormsIn(detailsRecorded, `SET_ARRIVAL_DETAILS(${code})`));
     const arrivalBooked = wardFlowReducer(forArrival.state, {
       type: "BOOK_TRANSPORT",
       role: EVENT_ROLE.BOOK_TRANSPORT[0],

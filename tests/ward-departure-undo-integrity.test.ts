@@ -99,7 +99,7 @@ function transferArrival() {
   });
   state = send(state, {
     type: "RECORD_TRANSPORT_NEED",
-    role: "ward",
+    role: "coordinator",
     now: NOW,
     movementId: movement.id,
     needed: false,

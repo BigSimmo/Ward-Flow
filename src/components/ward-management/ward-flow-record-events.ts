@@ -230,25 +230,28 @@ export function reduceRecordedFactEvent(
           `cannot record a transport need for a closed movement (${movement.closure.reason})`,
         );
       }
-      if (event.role === "ward" && event.actingUnitId !== undefined) {
+      if (event.role === "ward") {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
         const sendingWard =
           referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
           (movement as { originUnitId?: string }).originUnitId;
-        if (sendingWard) {
-          if (event.actingUnitId !== sendingWard) {
-            return reject(
-              state,
-              event,
-              `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
-            );
-          }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
+        // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
+        // transport need, named or not; the origin and coordinator do. With a sending ward, an
+        // unnamed ward desk is bound to it by its signed-in scope (commandRefusal), so only a named
+        // acting ward is checked here.
+        if (!sendingWard) {
           return reject(
             state,
             event,
-            `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`,
+            `RECORD_TRANSPORT_NEED was raised by ward ${event.actingUnitId ?? "(unnamed)"}, but this patient did not start on a ward`,
+          );
+        }
+        if (event.actingUnitId !== undefined && event.actingUnitId !== sendingWard) {
+          return reject(
+            state,
+            event,
+            `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
           );
         }
       }

@@ -69,7 +69,7 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
 
     const recorded = wardFlowReducer(pulled, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       movementId,
       needed: false,
@@ -111,7 +111,7 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
     expect(accepted.rejections, "ACCEPT_IN_PRINCIPLE was itself refused, so nothing below holds").toHaveLength(0);
     const recorded = wardFlowReducer(accepted, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 1,
       movementId: open.id,
       needed: false,
@@ -146,7 +146,7 @@ describe('"No transport needed" — owner answer 10 (second round, 2026-09-17)',
     const { state: pulled, movementId, unitId } = pulledWithCapacity(seedWardFlowState());
     const recorded = wardFlowReducer(pulled, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       movementId,
       needed: false,
@@ -185,7 +185,7 @@ describe("fit to travel at arrival with no transport leg (audit r1 item 4)", () 
     const { state: pulled, movementId, unitId } = pulledWithCapacity(seedWardFlowState());
     const recorded = wardFlowReducer(pulled, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       movementId,
       needed: false,

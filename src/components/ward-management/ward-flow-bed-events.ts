@@ -578,7 +578,9 @@ export function reduceBedEvent(
         // Clearing the flag clears the note with it — "being made ready, waiting on nothing" is
         // a state, "not being made ready, waiting on a clean" is a contradiction.
         preparationNote: event.preparing ? (event.note ?? null) : null,
-        confirmedAt: event.now,
+        // Audit 2 E-11: once the patient has left, `confirmedAt` is the departure time the
+        // Discharges board shows, so making the bed ready never rewrites it.
+        confirmedAt: release.state === "discharged" ? release.confirmedAt : event.now,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
