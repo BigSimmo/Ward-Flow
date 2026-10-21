@@ -136,7 +136,7 @@ describe("one ED on the executive desk, counts only", () => {
     expect(screen.getByTestId("ward-statistics-ed-next-not-listed")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ed-everyone-not-listed")).toBeTruthy();
     expect(
-      within(screen.getByTestId("ward-statistics-ed-everyone")).queryByRole("link", { name: /Not yet admitted/u }),
+      within(screen.getByTestId("ward-statistics-ed-everyone")).queryByRole("link", { name: /Tier [123]/u }),
     ).toBeNull();
   });
 

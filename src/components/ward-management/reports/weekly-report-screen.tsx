@@ -21,7 +21,6 @@ import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operat
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
-import { hoursText } from "@/components/ward-management/statistics/statistics-occupancy";
 import {
   PhoneBody,
   PhoneCard,
@@ -107,7 +106,8 @@ export function WeeklyReportScreen() {
     ],
   );
 
-  const targetText = `over ${hoursText(Math.round(report.edWaits.targetMinutes / 60))}`;
+  // Whole hours ("24h") on every device, not "1d 0h" here and "24h" on the phone (UX audit 21 Oct 2026).
+  const targetText = `over ${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const occupancyText = report.occupancy.averagePercent === null ? "—" : `${report.occupancy.averagePercent}%`;
   const weekRange = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
   // Phone wording in whole hours ("24h"), as the v10 phone drawing reads.
@@ -352,17 +352,16 @@ export function WeeklyReportScreen() {
                   ))}
                 </Select>
               </Field>
+              {/* The picker already names the week on screen, so the line repeats it only on paper,
+                  where the picker prints as an empty box (UX audit 21 Oct 2026). */}
               <p className={styles.stamp} data-testid="ward-weekly-range">
-                {weekLabel(week, dayZero)} · generated {formatSheetMoment(now, dayZero)}
+                <span className={styles.printOnlyInline}>Week: {weekLabel(week, dayZero)} · </span>
+                Generated {formatSheetMoment(now, dayZero)}
               </p>
             </div>
 
             <div className={styles.grid3}>
-              <StatCard
-                title={`ED waits first passing ${targetText}`}
-                icon={Clock}
-                meta="Counted in the week the wait passes the target (a default set in Settings)"
-              >
+              <StatCard title={`ED waits first passing ${targetText}`} icon={Clock}>
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
                     <dt>Placement journeys</dt>
@@ -373,8 +372,12 @@ export function WeeklyReportScreen() {
                     <dd>{report.edWaits.count > 0 ? splitDuration(report.edWaits.longestMinutes) : "—"}</dd>
                   </div>
                 </dl>
+                {/* Explanations sit under the figures, so the card titles are not cut (UX audit 21 Oct 2026). */}
+                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>
+                  Counted in the week the wait passes the target (a default set in Settings)
+                </p>
               </StatCard>
-              <StatCard title="Out of area" icon={Hospital} meta={OUT_OF_AREA_META}>
+              <StatCard title="Out of area" icon={Hospital}>
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
                     <dt>Bed days</dt>
@@ -385,12 +388,9 @@ export function WeeklyReportScreen() {
                     <dd>{report.outOfArea.people}</dd>
                   </div>
                 </dl>
+                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>{OUT_OF_AREA_META}</p>
               </StatCard>
-              <StatCard
-                title="Delayed discharge"
-                icon={BedDouble}
-                meta="Current expected date, counted only from when it was set (earlier dates are not kept)"
-              >
+              <StatCard title="Delayed discharge" icon={BedDouble}>
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
                     <dt>Bed days</dt>
@@ -402,10 +402,16 @@ export function WeeklyReportScreen() {
                   </div>
                 </dl>
                 {delayedNote ? (
-                  <p className={styles.disclosure} data-testid="ward-weekly-delayed-history">
+                  <p
+                    className={`${styles.disclosure} ${styles.cardFootNote}`}
+                    data-testid="ward-weekly-delayed-history"
+                  >
                     {delayedNote}
                   </p>
                 ) : null}
+                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>
+                  Current expected date, counted only from when it was set (earlier dates are not kept)
+                </p>
               </StatCard>
             </div>
 
