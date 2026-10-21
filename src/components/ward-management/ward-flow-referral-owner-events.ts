@@ -36,6 +36,8 @@ export function reduceReferralOwnerEvent(
   if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
   const closed = referralClosedForFollowUp(referral);
   if (closed) return reject(state, event, `${event.type} refused: ${closed}`);
+  // Both events append a timed entry, and a saved workspace holds only finite times.
+  if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
   const by = WARD_FLOW_ROLE_LABELS[event.role];
 
   switch (event.type) {

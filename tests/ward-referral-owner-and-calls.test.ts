@@ -123,6 +123,18 @@ describe("ASSIGN_REFERRAL", () => {
     expect(wardFlowReducer(f.state, assign("no-such-referral")).rejections).toHaveLength(1);
   });
 
+  it("refuses a time that is not finite, for an assignment and a call alike", () => {
+    const f = fixture();
+    for (const now of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      for (const event of [assign(f.referralId, { now }), logCall(f.referralId, { now })]) {
+        const next = wardFlowReducer(f.state, event);
+        expect(next.rejections).toHaveLength(1);
+        expect(referralIn(next, f.referralId).ownerHistory).toBeUndefined();
+        expect(referralIn(next, f.referralId).contactLog).toBeUndefined();
+      }
+    }
+  });
+
   it("refuses once a destination has accepted", () => {
     const f = fixture();
     const accepted: WardFlowState = {
