@@ -68,26 +68,33 @@ function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, pa
     const anchor = anchorRef.current;
     const panel = panelRef.current;
     if (!open || !anchor || !panel) return;
-    const trigger = anchor.getBoundingClientRect();
-    const box = panel.getBoundingClientRect();
-    if (!box.width) return;
     const style = panel.style;
-    const below = window.innerHeight - trigger.bottom - 14;
-    const above = trigger.top - 14;
-    if (box.height > below) {
-      if (above > below) {
-        style.top = "auto";
-        style.bottom = "calc(100% + 6px)";
+    function fit() {
+      // A resize (rotation, a narrower window) refits from the stylesheet placement.
+      style.top = style.bottom = style.maxHeight = style.overflowY = style.translate = "";
+      const trigger = anchor!.getBoundingClientRect();
+      const box = panel!.getBoundingClientRect();
+      if (!box.width) return;
+      const below = window.innerHeight - trigger.bottom - 14;
+      const above = trigger.top - 14;
+      if (box.height > below) {
+        if (above > below) {
+          style.top = "auto";
+          style.bottom = "calc(100% + 6px)";
+        }
+        const room = Math.max(above, below, 120);
+        if (box.height > room) {
+          style.maxHeight = `${room}px`;
+          style.overflowY = "auto";
+        }
       }
-      const room = Math.max(above, below, 120);
-      if (box.height > room) {
-        style.maxHeight = `${room}px`;
-        style.overflowY = "auto";
-      }
+      const right = document.documentElement.clientWidth - 8;
+      if (box.right > right) style.translate = `${Math.round(right - box.right)}px 0`;
+      else if (box.left < 8) style.translate = `${Math.round(8 - box.left)}px 0`;
     }
-    const right = document.documentElement.clientWidth - 8;
-    if (box.right > right) style.translate = `${Math.round(right - box.right)}px 0`;
-    else if (box.left < 8) style.translate = `${Math.round(8 - box.left)}px 0`;
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
   }, [open, anchorRef, panelRef]);
 }
 

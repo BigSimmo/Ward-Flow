@@ -110,6 +110,40 @@ describe("menu and popover placement", () => {
     expect(panel.style.top).toBe("auto");
   });
 
+  it("refits an open menu when the window is resized", () => {
+    let height = 800;
+    vi.spyOn(window, "innerHeight", "get").mockImplementation(() => height);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute("role") === "menu") return rect(140, 300);
+      return rect(100, 34);
+    });
+    render(
+      <Menu
+        label="Change ward"
+        items={items}
+        trigger={(props) => (
+          <button type="button" {...props}>
+            Change ward
+          </button>
+        )}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Change ward" }));
+    const menu = screen.getByRole("menu", { name: "Change ward" });
+    expect(menu.style.maxHeight).toBe("");
+    height = 360;
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(menu.style.overflowY).toBe("auto");
+    expect(parseFloat(menu.style.maxHeight)).toBeLessThanOrEqual(360 - 134);
+    height = 800;
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(menu.style.maxHeight).toBe("");
+  });
+
   it("slides a panel back inside the right edge", () => {
     vi.spyOn(window, "innerHeight", "get").mockReturnValue(800);
     vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1280);
