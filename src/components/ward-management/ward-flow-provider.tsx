@@ -997,6 +997,8 @@ function WardFlowWorld({
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
     const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
+    // A read settling after cleanup or after a newer broadcast's read must not adopt (stale closure).
+    const reads = { live: true, latest: 0 };
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
@@ -1014,8 +1016,9 @@ function WardFlowWorld({
           if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
             const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
             const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
+            const read = ++reads.latest;
             void readDemoStateLater(dayZero, referenceAbsolute, rawPayload).then(({ saved }) => {
-              if (!saved || localEditsSinceBroadcastRef.current) return;
+              if (!reads.live || read !== reads.latest || !saved || localEditsSinceBroadcastRef.current) return;
               openRequestSequence.current = Math.max(
                 openRequestSequence.current,
                 nextOpenRequestSequence(saved.state.auditEvents),
@@ -1052,6 +1055,7 @@ function WardFlowWorld({
         }
       };
       return () => {
+        reads.live = false;
         channel.close();
       };
     } catch {
