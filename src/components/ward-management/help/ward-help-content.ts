@@ -178,7 +178,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     term: "Tentative diagnosis",
     meaning: "A broad ICD-10-AM Chapter V block chosen from a fixed list. It is never a confirmed diagnosis.",
   },
-  { term: "Legal form", meaning: "The Mental Health Act 2014 form a movement carries, with its due time as recorded." },
+  { term: "Legal form", meaning: "The legal form a person recorded for a movement, with its due time as recorded." },
   { term: "Out of area", meaning: "A patient in a bed outside their home health service." },
   { term: "UMRN", meaning: "Unit medical record number. Ward Flow uses invented ones only." },
   { term: "CAD number", meaning: "The St John WA booking number for an ambulance transfer." },
