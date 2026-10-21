@@ -839,7 +839,7 @@ is inferred.
   1. **Shared boards Realtime** is closed. The 3-second refresh is accepted for the prototype. This supersedes D-72 item 3 for live updates; the history table stays as D-72 left it.
   2. **Community workflow gaps** join Phase 2 of the fix plan: an accepted community referral can be moved, transported and arrived; the coordinator can ask more wards; a community team sees the referrals it sent and whether a ward accepted.
   3. **Community referral purpose (Q9).** A new community team referral needs a purpose, "Community follow-up" or "Assess for admission". Older records read as "Community follow-up".
-  4. **Six-screen mockup** is not approved, and the six core screens build is paused. D-72 item 4 stands as direction only, until Josh approves a mockup.
+  4. **Six-screen mockup rejected and build cancelled.** Josh, in the project chat at 8:04 PM AWST: "CAN THAT 6 CORE SCREENS BUILD!!!! THE MOCKUP LOOKS TERRIBLE!!!". The mockup was removed before merge, and D-72 item 4 is withdrawn: the current coordinator screens stay as they are.
   5. **D-39** is kept: no referral number shows on the accept card until the ward accepts.
   6. **Copied text** carries no real names.
   7. **OA-58** (internal patient codes) stays parked until the privacy review.
