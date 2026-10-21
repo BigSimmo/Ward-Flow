@@ -103,6 +103,22 @@ describe("ward-docs-maintain-pipeline", () => {
       expect(unplacedScript.matched).toBe(false);
       expect(unplacedScript.recommendation?.recommendedDirectory).toBe("scripts/ward-flow/");
     });
+
+    it("keeps existing out-of-scope files in place instead of suggesting a move into Ward roots", () => {
+      for (const file of ["README.md", "backend/ward-flow/server.mjs"]) {
+        const result = classifyPath(file, { registry });
+        expect(result.existsOnDisk, file).toBe(true);
+        expect(result.matched, file).toBe(false);
+        expect(result.recommendation?.suggestedPath, file).toBe(file);
+      }
+    });
+
+    it("keeps a proposed backend module under the dedicated backend root", () => {
+      const result = classifyPath("backend/ward-flow/new-worker.mjs", { registry });
+      expect(result.existsOnDisk).toBe(false);
+      expect(result.matched).toBe(false);
+      expect(result.recommendation?.suggestedPath).toBe("backend/ward-flow/new-worker.mjs");
+    });
   });
 
   describe("CLI flag parsing and pipeline step definitions", () => {

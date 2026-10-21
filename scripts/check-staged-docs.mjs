@@ -10,7 +10,7 @@ export function selectedDocChecks(files, wardIndexes = false) {
     ? [
         [
           "scripts/ward-flow/screen-map.mjs",
-          /^(?:design\/third-edition-mockups\/|src\/app\/ward-flow\/|docs\/ward-flow\/SCREEN-MAP\.md$|scripts\/ward-flow\/(?:screen-pairs|screen-map)\.mjs$)/u,
+          /^(?:design\/third-edition-mockups\/|src\/app\/(?:ward-flow\/|ward-flow-sign-in\/|mockups\/ward-flow-digest\/)|docs\/ward-flow\/SCREEN-MAP\.md$|scripts\/ward-flow\/(?:screen-pairs|screen-map)\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/rules-index.mjs",

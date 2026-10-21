@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-19 - schema 11, sign-out and access guidance checked against source; Documentation owns._
+_Updated 2026-10-21 - shared build inputs and deployment watch contract checked against source; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -186,8 +186,18 @@ These source files do not establish a current hosted connection or deployment.
 
 ## Local checks
 
-From the repository root, `npm run test:backend` runs the backend tests offline. From
-`backend/ward-flow/`, run `npm run build:engine && npm test`. The real-PostgreSQL tests run only
+The backend has its own package and lockfile, but its engine build is coupled to this repository's
+root source and TypeScript configuration: `build-engine.mjs` bundles `engine.ts` with the root
+`tsconfig.json`, and backend `npm run typecheck` invokes the root TypeScript installation. Install
+both locked dependency sets from the repository root (`npm ci`, then
+`npm ci --prefix backend/ward-flow`) before those checks. This build contract does not require the
+running HTTP server and the frontend to share a process or Node version. Before changing an engine
+import or moving its source, compare the bundle inputs with [backend watch paths](watch-paths.mjs);
+the dated [hosting record](../../docs/hosting.md) lists deployment settings, not proof of their
+current provider state.
+
+From the repository root, `npm run test:backend` builds the engine and runs backend tests offline.
+From `backend/ward-flow/`, run `npm run build:engine && npm test`. The real-PostgreSQL tests run only
 when `WARD_TEST_DATABASE_URL` points at a disposable database (CI provides one). The backend
 accepts Node `>=22`; the root toolchain requires Node `>=24.15.0 <25` and npm `11.x`. Copy
 `.env.example` to an ignored `.env` for local use only and never add passwords or tokens to Git.

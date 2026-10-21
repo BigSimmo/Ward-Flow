@@ -127,6 +127,16 @@ jobs:
       - name: Check file organisation
         if: ${{ steps.plan.outputs.organisation == 'true' }}
         run: node scripts/ward-flow/organisation.mjs --check --source working-tree
+      - name: Check Ward screen map
+        run: node scripts/ward-flow/screen-map.mjs --check
+      - name: Check drawing manifest
+        run: node scripts/ward-flow/mockup-manifest.mjs --check
+      - name: Check screen verification index
+        run: node scripts/ward-flow/screen-verification.mjs --check
+      - name: Check scripts inventory
+        run: npm run docs:check-inventory
+      - name: Check architecture index coverage
+        run: npm run docs:check-index
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && steps.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
@@ -147,6 +157,9 @@ jobs:
         run: npm run build:engine && npm run typecheck && npm test
       # Prettier and ESLint (errors) on the PR's changed files, plus the test-deletion guard.
       # Seconds, and pre-existing issues in untouched files never block the PR.
+      - name: Check generated site map
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run sitemap:check
       - name: Check changed files
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:

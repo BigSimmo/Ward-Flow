@@ -1,13 +1,19 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-10-19 - separate broad local checks from scoped readiness and document actual generator coverage; Documentation owns._
+_Updated 2026-10-21 - exact generated counts and executable documentation boundary; Documentation owns._
 
-Curated map of `scripts/` (115 files) and the `package.json` script surface (82 entries),
+Curated map of `scripts/` (118 files) and the `package.json` script surface (82 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
-each group exists. `npm run docs:check-inventory` checks the two counts above (within a small
-tolerance) and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
+each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
+and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
 still exists. Neither check proves the descriptions are current, so read the script before
 relying on it.
+
+The journey build and serve commands execute tools under `docs/ward-flow/journey/`. They are
+maintained executable documentation, rather than ordinary Markdown or runtime modules. The
+generic lint command and executable coverage inventory target the source/scripts roots; they
+do not by themselves certify these documentation tools. Keep their explicit build/proof checks
+and relative inputs/outputs with them, following [organisation changes](DOCS-SYSTEM.md#organisation-changes-and-executable-inputs).
 
 On 18 October 2026 the tooling layer was cut from 163 files and 99 commands to the set below.
 One-off audits, PsychSift and Database leftovers, and multi-agent coordination helpers that no

@@ -1,5 +1,7 @@
 # Ward Flow documentation index
 
+_Updated 2026-10-21 - audience routes and explicit historical navigation; Documentation owns._
+
 > **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
 > [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
 > retains historical PsychSift-era entries; its old local-prototype and provider descriptions are
@@ -8,6 +10,15 @@
 Start with the maintained entry points below. The inherited catalogue preserves historical
 discovery; it is not a complete current inventory or proof that every listed procedure applies.
 The [task contract](task-receipts.md) preserves one original objective and existing task IDs.
+
+| I want to…                       | Start here                                                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Understand the prototype         | [Product overview](ward-flow/README.md)                                                                         |
+| Try it locally                   | [Local first run](ward-flow/LOCAL-FIRST-RUN.md)                                                                 |
+| Explore the coordinator workflow | [Coordinator guide](ward-flow/coordinator-guide-v2.md), with its stated source/screen evidence                  |
+| Change code                      | [AGENTS.md](../AGENTS.md), [workflow](ward-flow/HOW-WE-WORK.md), then [current architecture](codebase-index.md) |
+| Continue commissioned work       | [Task/receipt contract](task-receipts.md) and [plan navigation](ward-flow/plans/README.md)                      |
+| Find historical context          | [Historical collections](#historical-collections) and [preserved catalogue](#historical-discovery-catalogue)    |
 
 `npm run docs:check-links` checks relative links and anchors in every tracked Markdown file, outside marked history sections.
 For maintained Markdown elsewhere, use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
@@ -82,10 +93,28 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 ## Maintenance rules
 
 - Generated files ([`site-map.md`](site-map.md), [`scripts-index.md`](scripts-index.md), and the Ward Flow generated indexes listed in [`DOCS-SYSTEM.md`](DOCS-SYSTEM.md)) are updated only via their generator scripts.
-- When adding a doc, add it to the matching section here; date the filename if it is a point-in-time record.
+- When adding a maintained doc, link it from the matching section here and follow the naming, lifecycle and evidence conventions in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 - When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/ward-flow/archive/` as documented in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
 
+## Historical collections
+
+| Collection                                        | How to use it                                                                                             |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Plan navigation](ward-flow/plans/README.md)      | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
+| [Archive and restoration record](ARCHIVE.md)      | Archived handovers, reports and other dated material, with the retained Git revision                      |
+| [Earlier archive note](ward-flow/ARCHIVE-NOTE.md) | Earlier trims and their source revisions                                                                  |
+| [Lessons](ward-flow/lessons/README.md)            | Historical repository copy; its index does not turn a lesson into a current rule                          |
+| [Code map](ward-flow/code-map/README.md)          | Maintained navigation to scoped updates and the historical subsystem census                               |
+| [Legacy decision register](ward-flow-ledger.md)   | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
+
+The retained `handover/` rubric has a drawing consumer; `handovers/` was archived on 18 October.
+Folder names and old unchecked boxes do not establish active work. Keep consumer references and
+restoration provenance intact; this navigation change moves no files.
+
 ## Historical discovery catalogue
+
+<details>
+<summary>Open the inherited discovery catalogue — historical, not current task instructions</summary>
 
 Entries below include inherited PsychSift and dated material. Open a document's boundary and current
 consumers before applying its advice; keep original incident commands/results as evidence.
@@ -164,3 +193,5 @@ Every remaining tracked document in this category (dated records and the `superp
 - [superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md](superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md) — Ward Flow Phase 4 — specialist boards, design — Date: 2026-08-25. Product owner:
 
 <!-- docs-script-refs:historical-end -->
+
+</details>

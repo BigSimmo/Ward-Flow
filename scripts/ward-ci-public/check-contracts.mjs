@@ -135,6 +135,20 @@ function requireWorkflow(source) {
     "Check reference-pack integrity",
     "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check",
   );
+  for (const [name, command] of [
+    ["Check Ward screen map", "node scripts/ward-flow/screen-map.mjs --check"],
+    ["Check drawing manifest", "node scripts/ward-flow/mockup-manifest.mjs --check"],
+    ["Check screen verification index", "node scripts/ward-flow/screen-verification.mjs --check"],
+    ["Check scripts inventory", "npm run docs:check-inventory"],
+    ["Check architecture index coverage", "npm run docs:check-index"],
+  ])
+    exactStep("static", name, command);
+  exactStep(
+    "static",
+    "Check generated site map",
+    "npm run sitemap:check",
+    expression("!cancelled() && steps.install.outcome == 'success'"),
+  );
   for (const [name, command, output] of [
     ["Check owner rulings index", "node scripts/ward-flow/owner-rulings-index.mjs --check", "owner_index"],
     ["Check lessons rules index", "node scripts/ward-flow/rules-index.mjs --check", "rules_index"],
@@ -332,6 +346,14 @@ function requireWorkflow(source) {
 
 requireWorkflow(workflow);
 for (const bad of [
+  ...[
+    "node scripts/ward-flow/screen-map.mjs --check",
+    "node scripts/ward-flow/mockup-manifest.mjs --check",
+    "node scripts/ward-flow/screen-verification.mjs --check",
+    "npm run docs:check-inventory",
+    "npm run docs:check-index",
+    "npm run sitemap:check",
+  ].map((command) => workflow.replace(`run: ${command}`, "run: echo omitted documentation contract")),
   workflow.replaceAll("        id: plan\n", "        id: unused-plan\n"),
   workflow.replaceAll("        id: install\n", "        id: unused-install\n"),
   workflow.replace("        id: browsers\n", "        id: unused-browsers\n"),

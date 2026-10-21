@@ -85,7 +85,7 @@ export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map([
   ],
   [
     "transport",
-    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen, and /ward-flow/transport is now a redirect to /movements. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
+    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen. The current /ward-flow/transport route redirects to /ward-flow/transport/officer. RETAINED, unlike 'exceptions' which was retired alongside this entry on 2026-09-06, because something still renders it: tracker/live-tracker.tsx passes activeMode=\"transport\" to ClinicalRail. That file is itself imported by nothing and is a candidate for deletion — but deciding the fate of live-tracker.tsx and tracker-derivations.ts is a two-file question, not an id rename, so the id stays until somebody answers it.",
   ],
 ] as const);
 
@@ -121,7 +121,7 @@ export type WardViewItem = {
  * ⚠️ SIX, NOT SEVEN, as of MERGE 03 (owner-approved 2026-09-05). `movements` and `transport`
  * used to be two separate entries — the six-stage movement board and the live vehicle tracker,
  * asking "where is everyone right now" two different ways. `MovementsScreen` answers both, so the
- * `transport` entry is gone; the route still exists as a redirect to `/movements` — see
+ * `transport` entry is gone; the current route redirects to `/ward-flow/transport/officer` — see
  * `WARD_NAV_INTENTIONALLY_UNLISTED` below. The `transport` id itself is untouched in the `WardMode`
  * type below, for the same reason `queue`/`exceptions` stayed untouched after MERGE 01.
  *
