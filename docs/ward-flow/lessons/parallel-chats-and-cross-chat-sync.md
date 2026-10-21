@@ -265,3 +265,10 @@ easy to forget when someone hands you ten.
 
 **And the cheap version that would have prevented it:** name the files back in the acknowledgement
 before starting, so the coordinator can say "Two holds that one" while it is still free.
+
+## Auto-merge on a held PR belongs to whoever marked it ready (owner ruling, 21 Oct 2026)
+
+Do not arm or re-arm auto-merge on a PR that is held or awaiting owner approval; whoever marked a PR
+ready owns it. A sweep that finds a held PR green leaves auto-merge off and reports it; the session
+that marked the PR ready (or the owner) arms it once the hold is lifted. This is hard rule 6 in
+`AGENTS.md`.
