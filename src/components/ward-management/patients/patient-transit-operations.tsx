@@ -651,12 +651,13 @@ export function PatientTransitOperations({
                   aria-describedby={cadHint !== undefined ? `${baseId}-cad-hint` : undefined}
                   onChange={(e) => setCad(e.target.value)}
                 />
-                {cadHint !== undefined && (
-                  <span id={`${baseId}-cad-hint`} className={styles.deckHint} role="status">
-                    {`To save, ${cadHint}.`}
-                  </span>
-                )}
               </label>
+              {/* Outside the label, so the hint describes the field without renaming it. */}
+              {cadHint !== undefined && (
+                <span id={`${baseId}-cad-hint`} className={styles.deckHint} role="status">
+                  {`To save, ${cadHint}.`}
+                </span>
+              )}
               <label>
                 Quoted ETA (minutes from now)
                 <input required type="number" min="0" value={eta} onChange={(e) => setEta(e.target.value)} />
