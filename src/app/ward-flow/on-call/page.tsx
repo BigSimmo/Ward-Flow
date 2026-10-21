@@ -16,7 +16,7 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
  * (see `on-call-directory.ts`).
  */
 export const metadata: Metadata = {
-  title: "On-call and contacts — Ward Flow",
+  title: "On-call — Ward Flow",
   description:
     "Synthetic prototype contacts directory: who answers now and until when. Mock numbers and emails only, no names.",
 };

@@ -55,7 +55,8 @@ export const ACTIVITY_GLYPH: Record<WardActivityEventTone, WfTone> = {
 
 export const ACTIVITY_TONE_WORD: Record<WardActivityEventTone, string> = {
   danger: "Act now",
-  warning: "Needs you",
+  // UX audit (21 Oct 2026): "Needs you" is Home's one list, so a warning event says what it asks.
+  warning: "Check",
   info: "Update",
 };
 

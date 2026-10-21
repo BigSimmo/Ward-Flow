@@ -542,13 +542,13 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.focus(input);
 
     const group = screen.getByTestId("ward-global-search-group-needs");
-    expect(group).toHaveTextContent("Needs you now");
+    expect(group).toHaveTextContent("Tasks");
     const rows = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(rows.length).toBe(Math.min(3, inbox.length));
     expect(rows[0]).toHaveAttribute("href", movementHref(inbox[0].movementId));
   });
 
-  it("says how many tasks a cut Needs you now list holds, names the patient and offers See all tasks (shell-4)", () => {
+  it("says how many tasks a cut task list holds, names the patient and offers See all tasks (shell-4)", () => {
     if (inbox.length <= 3) throw new Error("fixture drifted: the seeded inbox has 3 or fewer rows, so nothing is cut");
     clearGlobalSearchRecents();
     const onSeeAllTasks = vi.fn();
@@ -565,9 +565,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     );
     fireEvent.focus(screen.getByTestId("ward-global-search-input"));
 
-    expect(screen.getByTestId("ward-global-search-group-needs")).toHaveTextContent(
-      `Needs you now · 3 of ${inbox.length}`,
-    );
+    expect(screen.getByTestId("ward-global-search-group-needs")).toHaveTextContent(`Tasks · 3 of ${inbox.length}`);
     const lookup = { patients: wardPatients, movements: wardMovements };
     const named = inbox
       .slice(0, 3)
