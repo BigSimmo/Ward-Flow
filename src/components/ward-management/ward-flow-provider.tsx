@@ -98,7 +98,6 @@ import { activeWardNetwork, NOW_ANCHOR, type WardNetwork } from "@/components/wa
 import {
   activateScenarioNetwork,
   scenarioWardNetwork,
-  WARD_SCENARIOS,
   type WardScenario,
 } from "@/components/ward-management/ward-scenarios";
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
@@ -530,8 +529,6 @@ function wardFlowContainerReducer(
  * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
-/** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
-const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
@@ -1136,7 +1133,7 @@ function WardFlowWorld({
     // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
     // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
     // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
-    const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
+    const deviceCopy = deviceCopyOf(state, container, typedTextLocked);
     if (deviceCopy === undefined) {
       const generation = state.worldGeneration;
       void loadTypedTextScrub().then(

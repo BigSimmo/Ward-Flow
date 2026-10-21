@@ -1,7 +1,7 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { isDischargeCriterion } from "./ward-discharge-criteria";
 import type { WardFlowEvent } from "./ward-flow-events";
-import type { WardFlowState } from "./ward-flow-reducer";
+import { seedWardFlowStateAt, type WardFlowState } from "./ward-flow-reducer";
 import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
 import {
   normaliseTypedText,
@@ -9,6 +9,7 @@ import {
   type TypedTextLedger,
   typedTextOf,
 } from "./ward-flow-typed-text-ledger";
+import { WARD_SCENARIOS } from "./ward-scenarios";
 
 /**
  * THE DEVICE COPY OF A SESSION THAT HOLDS TYPED TEXT (Josh, 21 Oct 2026, fix plan item 2, option A).
@@ -135,6 +136,8 @@ function matchesRule(path: readonly string[], rule: PathRule): boolean {
  * module imports neither the reducer nor the scenarios.
  */
 export type FixtureWorlds = () => readonly WardFlowState[];
+/** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
+export const scenarioWorlds: FixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
 
 let fixtureText: { from: FixtureWorlds; strings: ReadonlySet<string> } | undefined;
 

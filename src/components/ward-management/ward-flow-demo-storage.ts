@@ -4,7 +4,6 @@ import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
-import type { FixtureWorlds } from "./ward-flow-typed-text-scrub";
 import {
   RESTORED_NOTICE_PREFIX,
   STORAGE_UNAVAILABLE,
@@ -111,11 +110,18 @@ export function deviceCopyOf(
   state: WardFlowState,
   held: TypedTextHeld,
   locked: boolean,
-  fixtureWorlds: FixtureWorlds,
 ): WardFlowState | null | undefined {
   if (!held.typedTextSeen) return state;
   if (locked) return null;
-  return typedTextScrub?.deviceCopyFromEvents(state, held.typedTextEvents ?? [], fixtureWorlds, held.typedTextFromFile);
+  return (
+    typedTextScrub &&
+    typedTextScrub.deviceCopyFromEvents(
+      state,
+      held.typedTextEvents ?? [],
+      typedTextScrub.scenarioWorlds,
+      held.typedTextFromFile,
+    )
+  );
 }
 
 const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";
