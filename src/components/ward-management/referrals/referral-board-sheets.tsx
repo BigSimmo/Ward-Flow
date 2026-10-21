@@ -25,13 +25,14 @@ import {
   type MeetingRow,
 } from "./referral-board-parts";
 import styles from "./referral-board.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 function meetingText(rows: MeetingRow[], now: Instant): string {
   return rows
     .map((row, index) => {
       const { waited, due } = waitWords(row.referral, now);
       return [
-        `${index + 1}. T${row.referral.urgency} ${row.name} (${row.umrn})`,
+        `${index + 1}. T${row.referral.urgency} ${row.name}`,
         `waiting ${waited}, ${due}`,
         `from ${row.referral.originSiteCode}`,
         `asking for ${askingForShort(row.referral)}`,
@@ -50,8 +51,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       size="sm"
       icon={ClipboardCopy}
       onClick={() => {
-        void navigator.clipboard
-          ?.writeText(text)
+        void copyTextToClipboard(text)
           .then(() => setCopied(true))
           .catch(() => setCopied(false));
       }}

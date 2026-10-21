@@ -36,6 +36,7 @@ import {
   matchesHighlight,
   stageTone,
 } from "./discharge-board-model";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * The discharge workspace's state, effects, derived lists and handlers, moved unchanged and in
@@ -411,12 +412,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
       `Discharges, ${population === "records" ? "admission records" : "bed releases"}, as of ${formatSheetMoment(now, dayZero)}. ` +
       `${openCount} open: ${counts.blocked} blocked, ${counts.confirmed} confirmed, ${counts.expected} expected. ` +
       `${datePassed.length} past the ward's date, ${bedDaysPast} bed days. ${counts.departed} departed.`;
-    const clipboard = typeof navigator === "undefined" ? undefined : navigator.clipboard;
-    if (!clipboard) {
-      setCopyNote("Copying is not available in this browser.");
-      return;
-    }
-    clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => setCopyNote("Summary copied."),
       () => setCopyNote("Copying is not available in this browser."),
     );
