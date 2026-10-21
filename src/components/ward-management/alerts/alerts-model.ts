@@ -8,6 +8,7 @@ import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-m
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
+import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 /**
  * Alerts, Command queue (9 Oct 2026, round 2 option A). What each inbox row is, where it sits in
@@ -132,7 +133,7 @@ export function bookingOfInboxId(
   if (!id.startsWith(prefix)) return undefined;
   const planned = bookings?.find((booking) => booking.id === id.slice(prefix.length));
   if (!planned) return undefined;
-  return { planned, personLabel: planned.initials !== null ? `Initials ${planned.initials}` : undefined };
+  return { planned, personLabel: planned.initials !== null ? plannedInitialsLabel(planned.initials) : undefined };
 }
 
 /** Short name for a condition, used in History and the Today chart. */
