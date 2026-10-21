@@ -11,27 +11,21 @@
 /** The first line of every text Ward Flow puts on the clipboard (Audit 1, CS-12, Josh 20 Oct). */
 export const SYNTHETIC_COPY_LINE = "Synthetic prototype.";
 
-/** A synthetic record number, `UMnnnnnn` (hand-authored, generated and demo network bands alike). */
-const UMRN_TOKEN = String.raw`\bUM\d{6}\b`;
 /** A line whose whole job is an identifier, such as the letter's "UMRN: UM100001" or "DOB: …". */
-const IDENTIFIER_LINE = /^\s*(?:UMRN|DOB|Date of birth)\b.*$/i;
+const IDENTIFIER_LINE = /^\s*(?:UMRN|DOB|Date of birth)\b/i;
 
+// Kept as plain literals because Home loads this file on every phone first load (script budget).
 function stripUmrnFromLine(line: string): string {
   return (
     line
-      // "(UM100001)" or "(UMRN UM100001)" beside a name.
-      .replace(new RegExp(String.raw`\s*\(\s*(?:UMRN\s*:?\s*)?${UMRN_TOKEN}\s*\)`, "g"), "")
-      // "UMRN UM100001" or "UMRN not recorded" inside a sentence, with the separator before it.
-      .replace(new RegExp(String.raw`\s*[,;·]?\s*UMRN\s*:?\s*(?:${UMRN_TOKEN}|not recorded)`, "gi"), "")
-      // A bare "UM100001", with the separator before it.
-      .replace(new RegExp(String.raw`\s*[,;·]?\s*${UMRN_TOKEN}`, "g"), "")
-      // Tidy what the removal leaves: "act now ()", "Identify:, legal", "- , name", "Name ." and
-      // doubled spaces.
+      // A synthetic record number (`UMnnnnnn`), with any "UMRN" label and the separator before it;
+      // also "UMRN not recorded".
+      .replace(/\s*[,;·]?\s*(?:UMRN\s*:?\s*(?:UM\d{6}|not recorded)|\bUM\d{6})\b/gi, "")
+      // Tidy what that leaves: "Name ()", "Identify:, legal", "- , name" and "Name .".
       .replace(/\s*\(\s*\)/g, "")
       .replace(/:\s*[,;·]\s*/g, ": ")
       .replace(/^(\s*(?:[-•]\s*)?)[,;·]\s*/, "$1")
       .replace(/\s+([.,;])/g, "$1")
-      .replace(/ {2,}/g, " ")
   );
 }
 
