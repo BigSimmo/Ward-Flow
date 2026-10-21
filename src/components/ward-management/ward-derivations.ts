@@ -1219,7 +1219,9 @@ function referralMatches(referral: Referral, needle: string): boolean {
  * creates no movement, so until the ward starts the placement the referral is the only record of
  * that person. Linked by the referral's own id only (D-14: no patient link is read here). A
  * finished journey keeps its movement or admission, so it never comes back as a waiting referral.
- * The Patients page shows these in its census as Bed found; the header search uses this.
+ * Only a ward's acceptance waits for a bed: an ED psychiatry or community acceptance is complete
+ * without one (Codex review, #547). The Patients page shows these in its census as Bed found; the
+ * header search uses this.
  */
 export function acceptedReferralAwaitingMovement(
   referral: Referral,
@@ -1227,6 +1229,10 @@ export function acceptedReferralAwaitingMovement(
   admissions: readonly Pick<Admission, "referralId">[],
 ): boolean {
   if (referralState(referral) !== "accepted") return false;
+  const wardAccepted = referral.destinations.some(
+    (addressing) => addressing.state === "accepted" && addressing.destination.kind === "psychiatric_ward",
+  );
+  if (!wardAccepted) return false;
   const linked = (record: { referralId?: string | null }) => record.referralId === referral.id;
   return !movements.some(linked) && !admissions.some(linked);
 }

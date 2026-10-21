@@ -5,6 +5,7 @@ import { networkWardRows } from "@/components/ward-management/capacity/capacity-
 import { lastRecordedActivity } from "@/components/ward-management/delays/delays-derivations";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
+import { acceptedReferralAwaitingMovement } from "@/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -42,6 +43,19 @@ describe("A3-5: a referral accepted before its bed is pulled stays findable", ()
       now: NOW_ANCHOR + 1,
     });
     expect(results.referrals.map((result) => result.referral.id)).toEqual(["RF-011"]);
+  });
+
+  it("does not list a referral accepted by an ED or community team, which waits for no bed", () => {
+    const seed = seedWardFlowState();
+    const referral = seed.referrals.find(
+      (candidate) =>
+        candidate.destinations.length === 1 && candidate.destinations[0]!.destination.kind !== "psychiatric_ward",
+    );
+    if (!referral) throw new Error("fixture drifted: no single non-ward referral in the seed");
+    const accepted = { ...referral, destinations: [{ ...referral.destinations[0]!, state: "accepted" as const }] };
+    expect(acceptedReferralAwaitingMovement(accepted, seed.movements, seed.admissions)).toBe(false);
+    const ward = seed.referrals.find((candidate) => candidate.id === "RF-011")!;
+    expect(ward.destinations.some((addressing) => addressing.destination.kind === "psychiatric_ward")).toBe(true);
   });
 
   it("does not list an accepted referral whose movement or admission already exists", () => {
