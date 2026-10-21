@@ -130,7 +130,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         byRole: "coordinator",
         message: "Please review and confirm ward capacity.",
         urgent: true,
-        allocatableRevision: unit.allocatable.revision ?? 0,
+        confirmations: unit.allocatable.confirmations ?? 0,
       });
     });
 
@@ -155,7 +155,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         byRole: "bed_manager",
         message: "Please review and confirm ward capacity.",
         urgent: undefined,
-        allocatableRevision: unit.allocatable.revision ?? 0,
+        confirmations: unit.allocatable.confirmations ?? 0,
       });
     });
 
@@ -181,7 +181,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         byRole: "executive",
         message: "Please review and confirm ward capacity.",
         urgent: true,
-        allocatableRevision: unit.allocatable.revision ?? 0,
+        confirmations: unit.allocatable.confirmations ?? 0,
       });
     });
 

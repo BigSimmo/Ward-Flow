@@ -63,26 +63,26 @@ function refreshRequestAsksForCapacity(request: Pick<CapacityRefreshRequest, "me
 /**
  * DEC-L5-04 (CAP-REV): a capacity request stays open until the ward confirms its capacity, on every
  * desk, not only until somebody dismissed it on their own screen. It is read from the shared unit,
- * so a confirmation clears it everywhere without rewriting the request: answered once a ward
- * confirmation (from its minute on) has moved the capacity revision past the one the request
- * recorded, so a same-minute ask made after the confirmation stays open. A request saved before it
- * recorded a revision falls back to the old rule: answered only by a ward confirmation in a later
- * minute.
+ * so a confirmation clears it everywhere without rewriting the request: answered once the ward's
+ * confirmation count has moved past the one the request recorded. Only `CONFIRM_CAPACITY` moves that
+ * count, so the order comes from events, not minute timestamps, and no other bed change answers it.
+ * A request saved before it recorded the count keeps the old rule: answered only by a ward
+ * confirmation in a later minute.
  */
 export function refreshRequestIsOpen(
   request: CapacityRefreshRequest,
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">,
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "confirmations">,
 ): boolean {
-  if (allocatable === undefined || !refreshRequestAsksForCapacity(request) || allocatable.source !== "ward")
-    return true;
-  if (request.allocatableRevision === undefined) return !(allocatable.confirmedAt > request.at);
-  return !((allocatable.revision ?? 0) > request.allocatableRevision && allocatable.confirmedAt >= request.at);
+  if (allocatable === undefined || !refreshRequestAsksForCapacity(request)) return true;
+  if (request.confirmations === undefined)
+    return !(allocatable.source === "ward" && allocatable.confirmedAt > request.at);
+  return (allocatable.confirmations ?? 0) <= request.confirmations;
 }
 
 /** An open ask about capacity: what the capacity rows, sidebar, hub and ward home mark show. */
 export function capacityRequestIsOpen(
   request: CapacityRefreshRequest,
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">,
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "confirmations">,
 ): boolean {
   return refreshRequestAsksForCapacity(request) && refreshRequestIsOpen(request, allocatable);
 }

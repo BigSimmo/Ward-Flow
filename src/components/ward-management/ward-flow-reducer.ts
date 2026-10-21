@@ -2615,7 +2615,7 @@ export function reduceClinicalEvent(
             byRole: event.role,
             message: event.message,
             urgent: event.urgent,
-            allocatableRevision: unit.allocatable.revision ?? 0,
+            confirmations: unit.allocatable.confirmations ?? 0,
           },
           state.worldGeneration,
         ),

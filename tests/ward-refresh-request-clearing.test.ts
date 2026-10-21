@@ -39,7 +39,7 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
   it("records the capacity revision and stays open until the ward confirms", () => {
     const seeded = seedWardFlowStateAt(0);
     const asked = ask(seeded, 10);
-    expect(asked.refreshRequests.at(-1)?.allocatableRevision).toBe(unit(seeded).allocatable.revision ?? 0);
+    expect(asked.refreshRequests.at(-1)?.confirmations).toBe(unit(seeded).allocatable.confirmations ?? 0);
     expect(open(asked)).toHaveLength(1);
 
     const confirmed = confirm(asked, 10);
@@ -51,7 +51,11 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
 
   it("orders a same-minute ask after a confirmation by event, not timestamp", () => {
     const confirmedFirst = confirm(seedWardFlowStateAt(0), 10);
-    expect(open(ask(confirmedFirst, 10))).toHaveLength(1);
+    const asked = ask(confirmedFirst, 10);
+    expect(open(asked)).toHaveLength(1);
+    // Another bed change in that minute moves the capacity revision on but is not a confirmation.
+    const moved = { ...unit(asked).allocatable, revision: (unit(asked).allocatable.revision ?? 0) + 3 };
+    expect(capacityRequestIsOpen(asked.refreshRequests.at(-1)!, moved)).toBe(true);
   });
 
   it("clears capacity buzzes but leaves the placement buzz for the ward to dismiss", () => {
@@ -89,8 +93,9 @@ describe("capacity refresh requests clear on the ward's confirmation", () => {
   it("reopens the request when the confirmation is undone", () => {
     const confirmed = confirm(ask(seedWardFlowStateAt(0), 10), 12);
     expect(open(confirmed)).toHaveLength(0);
-    // Undo restores the earlier confirmation time and moves the revision on again.
-    const undone = { ...unit(confirmed).allocatable, confirmedAt: 9, revision: 99 };
+    // Undo restores the unit as it was before the confirmation, with its earlier count.
+    const asked = ask(seedWardFlowStateAt(0), 10);
+    const undone = { ...unit(asked).allocatable, revision: (unit(confirmed).allocatable.revision ?? 0) + 1 };
     expect(capacityRequestIsOpen(confirmed.refreshRequests.at(-1)!, undone)).toBe(true);
   });
 

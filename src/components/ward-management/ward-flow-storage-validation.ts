@@ -214,6 +214,7 @@ const capacityFigure = z.looseObject({
   staleAfterMinutes: counter,
   source: z.enum(["feed", "ward"]),
   revision: z.optional(counter),
+  confirmations: z.optional(counter),
 });
 const unit = z
   .looseObject({
@@ -500,7 +501,7 @@ const refreshRequest = z.looseObject({
   unitId: text,
   at: finite,
   byRole: text,
-  allocatableRevision: z.optional(counter),
+  confirmations: z.optional(counter),
 });
 const distinctRefreshRequestIds = (rows: readonly { id?: string }[]) => {
   const ids = rows.flatMap((row) => (row.id === undefined ? [] : [row.id]));

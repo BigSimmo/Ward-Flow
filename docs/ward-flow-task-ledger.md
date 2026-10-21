@@ -128,7 +128,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Status**: **Resolved** (mandatory clinician reason selection enforced prior to unblocking discharge delays).
    - **Requirement**: Require clinician reason selection from fixed taxonomy prior to unblocking discharge delays.
 8. **CAP-REV (Capacity Request Revision Decoupling)**:
-   - **Status**: **Resolved** 21 Oct 2026 (branch `claude/project-thread-yu7210`). Each request records `allocatableRevision`, and it reads as answered once the ward's own `CONFIRM_CAPACITY` has moved the shared unit's capacity revision past it, so it clears on every desk and the shared site without a confirmation from an older board clashing with the ask. #290 had been credited with this but never built it.
+   - **Status**: **Resolved** 21 Oct 2026 (branch `claude/project-thread-yu7210`). Each request records the ward's confirmation count (`allocatable.confirmations`, moved on only by `CONFIRM_CAPACITY`), and it reads as answered once the shared unit's count has moved past it, so it clears on every desk and the shared site, no other bed change answers it, and a confirmation from an older board does not clash with the ask. #290 had been credited with this but never built it.
    - **Requirement**: Record the allocatable revision on each Capacity request so request ordering and clearance do not rely on minute-level timestamps.
 9. **Code-Map Route Audit Synchronization**:
    - **Status**: Open.

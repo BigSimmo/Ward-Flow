@@ -32,10 +32,10 @@ export interface WardNotificationCenterProps {
     byRole: string;
     message?: string;
     urgent?: boolean;
-    allocatableRevision?: number;
+    confirmations?: number;
   }[];
   /** The ward's capacity figure: its own confirmation answers a capacity request (DEC-L5-04). */
-  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "revision">;
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "confirmations">;
   morningRollupConfirmed?: boolean;
   morningRollupDeadlinePassed?: boolean;
   morningRollupDeadlineMinutes?: number;
