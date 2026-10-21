@@ -17,7 +17,7 @@ describe("bot-author policy workflow (pull_request_target safety)", () => {
 
   it("checks out only the base commit and never PR code", () => {
     const refs = [...code.matchAll(/^\s+ref:\s*(.+)$/gm)].map((match) => match[1].trim());
-    expect(refs).toEqual(["${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"]);
+    expect(refs).toEqual(["${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref }}"]);
     expect(code).not.toMatch(/pull_request\.head|github\.head_ref|refs\/pull\/|merge_commit_sha/);
     expect(code).toMatch(/persist-credentials: false/);
     expect(code).not.toMatch(/npm (?:ci|install)|npx |pnpm|yarn/);
@@ -28,6 +28,10 @@ describe("bot-author policy workflow (pull_request_target safety)", () => {
     expect(code).toMatch(/^ {4}name: Ward Flow bot-author policy$/m);
     expect(code).toMatch(/Merge pull request #/);
     expect(code).toMatch(/failing closed/);
+  });
+
+  it("runs on pull requests into main and release branches", () => {
+    expect(code).toMatch(/^ {2}pull_request_target:\n {4}types: .*\n {4}branches: \[main, "release\/\*\*"\]$/m);
   });
 
   it("uses no secrets beyond GITHUB_TOKEN", () => {

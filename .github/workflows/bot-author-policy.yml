@@ -8,11 +8,12 @@ name: Ward Flow bot-author policy
 # merge_group: the merge queue needs this required check reported on its temporary
 # gh-readonly-queue ref. There the policy is re-run for EVERY pull request in the group (each
 # "Merge pull request #N" commit between the group's base and head, plus the PR named in the
-# queue ref), still from the base commit's copy of the script; no group PR found fails closed.
+# queue ref), from the protected main tip (merge_group.base_ref, never an earlier queued
+# group commit, which can carry queued PR changes); no group PR found fails closed.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
-    branches: [main]
+    branches: [main, "release/**"]
   merge_group:
     types: [checks_requested]
 
@@ -34,7 +35,7 @@ jobs:
       - name: Check out the base revision's policy script
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref }}
           persist-credentials: false
           sparse-checkout: scripts/ward-ci-public/bot-author-policy.mjs
           sparse-checkout-cone-mode: false
