@@ -13,6 +13,10 @@ import { afterEach, beforeEach, vi } from "vitest";
 // component synchronously once it has resolved (the loading placeholder until then), so code-split
 // panes behave like static imports in jsdom tests.
 const pendingDynamicLoads: Promise<unknown>[] = [];
+
+// The demo save's read loads on demand in the browser (Josh, 21 Oct 2026: no phone script budget
+// raises). Preloaded here so a provider mount restores in the same render, as a later mount does.
+await import("@/components/ward-management/ward-flow-demo-storage").then((module) => module.loadDemoRestore());
 let forceDynamicLoading = false;
 
 export function setForceDynamicLoading(force: boolean) {
@@ -81,7 +85,12 @@ export function installMatchMediaStub(matches = false) {
 
 beforeEach(async () => {
   // Every code-split pane has finished loading before the test renders, so it mounts synchronously.
-  await Promise.all(pendingDynamicLoads);
+  // A loaded chunk can itself call dynamic() (the phone menu's sheets load its search results), so
+  // wait until no new load has started.
+  for (let settled = -1; settled !== pendingDynamicLoads.length;) {
+    settled = pendingDynamicLoads.length;
+    await Promise.all(pendingDynamicLoads);
+  }
   installMatchMediaStub(false);
   // jsdom does not implement scrollIntoView; components call it on focus/expand.
   // Ensure a base impl exists, then re-spy each test so the mock's call history is

@@ -37,6 +37,11 @@ export type WardFeatureFlagDefinition = {
    * control fails closed: a typo or a stray setting cannot switch it off.
    */
   safeguard?: true;
+  /**
+   * Audit 1 (Josh 20 Oct 2026, D-71): a mockup kept to local builds. Off on any deployed build,
+   * whatever the server setting or a device says.
+   */
+  localOnly?: true;
 };
 
 export const WARD_FEATURE_FLAGS = {
@@ -102,6 +107,7 @@ export const WARD_FEATURE_FLAGS = {
     added: "2026-10-17",
     // Mockup stage with preview data, so on only for a local build until Josh picks a design.
     defaults: { development: true, demo: false, production: false },
+    localOnly: true,
     removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
   "referral-opened-receipts": {
@@ -267,6 +273,8 @@ export function resolveWardFeatureFlags(input: {
     const definition: WardFeatureFlagDefinition = WARD_FEATURE_FLAGS[name];
     if (definition.safeguard && safeguardsLocked)
       return { name, definition, on: true, source: "default", deviceCanChange: false };
+    if (definition.localOnly && input.environment !== "development")
+      return { name, definition, on: false, source: "default", deviceCanChange: false };
     const device = deviceCanChange ? input.device[name] : undefined;
     if (device !== undefined) return { name, definition, on: device, source: "device", deviceCanChange };
     const server = input.server[name];

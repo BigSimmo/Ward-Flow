@@ -1,3 +1,4 @@
+import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import { type AuditDecision } from "./ward-audit";
 import { uniqueRecord } from "./ward-discharge-records";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -690,7 +691,12 @@ export function reduceReferralSendEvent(
           : { ...movement, genderPlacements: [...(movement.genderPlacements ?? []), genderPlacementAddition] };
       for (const unitId of newUnitIds) {
         const candidate = findUnit(state, unitId);
-        const refusal = candidate ? eligibilityRefusal(event, movementForEligibility, candidate, event.now) : null;
+        // Audit 2 E-02: a closed ward is held back like any unsuitable ward, and no override
+        // reason reopens it; only reopening the ward does.
+        const refusal = candidate
+          ? (closedToAdmissionsRefusal(candidate) ??
+            eligibilityRefusal(event, movementForEligibility, candidate, event.now))
+          : null;
         targets.push({
           unitId: uniqueRecord(state.units, unitId)?.id ?? null,
           outcome: refusal ? "denied" : "accepted",

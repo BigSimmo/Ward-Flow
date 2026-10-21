@@ -45,6 +45,13 @@ function DispatchProbe() {
   );
 }
 
+/** The saved-session read loads on demand; let it land and the provider adopt its answer. */
+async function flushDemoRestore() {
+  await act(async () => {
+    await import("@/components/ward-management/ward-flow-demo-restore");
+  });
+}
+
 describe("WardFlowProvider", () => {
   it("seeds the fixture and holds the clock at the injected instant", () => {
     render(
@@ -256,12 +263,13 @@ describe("WardFlowProvider", () => {
       window.sessionStorage.clear();
     });
 
-    it("persists state to sessionStorage on state changes in live mode", () => {
+    it("persists state to sessionStorage on state changes in live mode", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
 
       const stored = window.sessionStorage.getItem("ward-flow-demo-state-v1");
       expect(stored).not.toBeNull();
@@ -280,7 +288,7 @@ describe("WardFlowProvider", () => {
       unmount();
     });
 
-    it("hydrates from sessionStorage in unpinned live mode", () => {
+    it("hydrates from sessionStorage in unpinned live mode", async () => {
       // Y4 privacy remediation, 2026-09-17 (Opus finding F4): this test used to carry a hidden
       // dependency on the two renders below landing inside the same real wall-clock minute, because
       // the provider discarded a save whose `anchorOffsetMinutes` no longer matched exactly. That
@@ -292,6 +300,7 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       firstUnmount();
@@ -301,17 +310,19 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       const stored = window.sessionStorage.getItem("ward-flow-demo-state-v1");
       const parsed = JSON.parse(stored!);
       expect(parsed.state.clockOffsetMinutes).toBe(40);
     });
 
-    it("clears sessionStorage and resets state on resetDemoState()", () => {
+    it("clears sessionStorage and resets state on resetDemoState()", async () => {
       render(
         <WardFlowProvider>
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       expect(JSON.parse(window.sessionStorage.getItem("ward-flow-demo-state-v1")!).state.clockOffsetMinutes).toBe(20);
 
@@ -389,7 +400,7 @@ describe("WardFlowProvider", () => {
       vi.useRealTimers();
     });
 
-    it("keeps seeded Referral.history and Movement.blocker text intact — D-11 is now enforced by default-deny, not by blanking", () => {
+    it("keeps seeded Referral.history and Movement.blocker text intact — D-11 is now enforced by default-deny, not by blanking", async () => {
       // Y4 privacy remediation, 2026-09-17 (Opus findings F2/F3/F7): this test used to assert the
       // OPPOSITE — that `sanitizeForStorage` blanked every `Movement.blocker` and `Referral.history`
       // to `""` before a write, seeded or typed alike. That was itself the defect: after a restore
@@ -405,6 +416,7 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       const { state } = readStoredState();
       const movements = state.movements as { blocker: string }[];
       const referrals = state.referrals as { history: string }[];
@@ -416,12 +428,13 @@ describe("WardFlowProvider", () => {
       expect(referrals.some((referral) => referral.history !== "")).toBe(true);
     });
 
-    it("discards a save written by a schema version this build no longer writes", () => {
+    it("discards a save written by a schema version this build no longer writes", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       const stored = readStoredState();
       expect(stored.state.clockOffsetMinutes).toBe(20);
@@ -433,15 +446,17 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       expect(readStoredState().state.clockOffsetMinutes).toBe(0);
     });
 
-    it("discards a save from yesterday rather than restoring it with shifted times", () => {
+    it("discards a save from yesterday rather than restoring it with shifted times", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       expect(readStoredState().state.clockOffsetMinutes).toBe(20);
       unmount();
@@ -455,10 +470,11 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       expect(readStoredState().state.clockOffsetMinutes).toBe(0);
     });
 
-    it("restores a save from a different clock anchor on the same day, rather than discarding it (F4)", () => {
+    it("restores a save from a different clock anchor on the same day, rather than discarding it (F4)", async () => {
       // Y4 privacy remediation, 2026-09-17 (Opus finding F4): this test used to assert the OPPOSITE
       // — that a save from a different `anchorOffsetMinutes` was discarded. That was the defect, not
       // a safeguard: the anchor is minutes since local midnight, so it advances by one on every real
@@ -472,6 +488,7 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       expect(readStoredState().state.clockOffsetMinutes).toBe(20);
       // `FIXED_SYSTEM_TIME`'s time-of-day equals `NOW_ANCHOR` exactly, so `anchorOffsetMinutes` is 0
@@ -492,6 +509,7 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       expect(readStoredState().state.clockOffsetMinutes).toBe(20);
       // 🔴 P3 finding 8: strengthened beyond `clockOffsetMinutes` alone. The restored `now` must be
       // exactly one minute AHEAD of what it was before the reload — `anchorOffsetMinutes` is now 1
@@ -506,12 +524,13 @@ describe("WardFlowProvider", () => {
       expect(screen.getByTestId("first-movement-opened-at")).toHaveTextContent(openedAtBefore!);
     });
 
-    it("discards a save missing one field the reducer's state requires, rather than filling in an invented default", () => {
+    it("discards a save missing one field the reducer's state requires, rather than filling in an invented default", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       const stored = readStoredState();
       expect(stored.state.notices).toBeDefined();
@@ -525,6 +544,7 @@ describe("WardFlowProvider", () => {
           <PersistProbe />
         </WardFlowProvider>,
       );
+      await flushDemoRestore();
       expect(readStoredState().state.clockOffsetMinutes).toBe(0);
     });
 

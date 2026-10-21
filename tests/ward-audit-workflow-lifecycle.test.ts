@@ -81,7 +81,13 @@ describe("patient and movement routes share lifecycle truth", () => {
   it("both report departure after an actual arrival and discharge", () => {
     const f = journey();
     f.accept();
-    f.send({ type: "RECORD_TRANSPORT_NEED", role: "ward", now: NOW_ANCHOR, movementId: f.movement.id, needed: false });
+    f.send({
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: f.movement.id,
+      needed: false,
+    });
     f.send({
       type: "PATIENT_ARRIVED",
       role: "ward",

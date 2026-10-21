@@ -15,6 +15,8 @@ import { SharedSessionContext, type SharedSession } from "./shell/ward-shared-se
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
+import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
+import { publishLiveRefresh } from "@/components/wf";
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
@@ -93,22 +95,28 @@ export function selectWardAuthProvider(): string {
 export function useWardShared(enabled: boolean): WardSharedConnection {
   const supabaseMode = selectWardAuthProvider() === "supabase";
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
+  // An account without a role still needs its own access-request API. Include the account in
+  // the binding even when React batches a replacement without an intervening signed-out render.
+  const accountBinding = supabase.signedIn ? (supabase.actorId ?? "signed-in-without-role") : null;
   const pushApi = useMemo<PhonePushApi>(() => {
+    const client = accountBinding ? supabase.client.current : null;
     const connected = () => {
-      if (!supabase.client.current) throw new Error("Shared workspace not connected");
-      return supabase.client.current;
+      if (!client || supabase.client.current !== client) throw new Error("Shared workspace not connected");
+      return client;
     };
     return {
+      ownerId: supabase.actorId ?? undefined,
       pushKey: async () => connected().pushKey(),
       pushStatus: async (endpoint) => connected().pushStatus(endpoint),
       pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
       pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
     };
-  }, [supabase.client]);
+  }, [supabase.client, supabase.actorId, accountBinding]);
   const accessApi = useMemo<WardSharedAccessApi>(() => {
+    const client = accountBinding ? supabase.client.current : null;
     const connected = () => {
-      if (!supabase.client.current) throw new Error("Shared workspace not connected");
-      return supabase.client.current;
+      if (!client || supabase.client.current !== client) throw new Error("Shared workspace not connected");
+      return client;
     };
     return {
       listAccess: async () => connected().listAccess(),
@@ -121,7 +129,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
     };
-  }, [supabase.client]);
+  }, [supabase.client, accountBinding]);
   if (!supabaseMode)
     return {
       ...supabase,
@@ -286,6 +294,18 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  // Audit 1 (CS-13, Josh 20 Oct): Live chips read Stale while the shared board cannot refresh or
+  // its last good refresh is more than two refreshes old. The one publisher; nothing in local mode.
+  const refreshUnavailable = connection.enabled && connection.status === "unavailable";
+  const receivedAt = connection.enabled && connection.receivedAt > 0 ? connection.receivedAt : undefined;
+  useEffect(() => {
+    publishLiveRefresh(
+      connection.enabled
+        ? { unavailable: refreshUnavailable, receivedAt, staleAfterMs: 2 * SHARED_REFRESH_MS }
+        : undefined,
+    );
+  }, [connection.enabled, refreshUnavailable, receivedAt]);
+  useEffect(() => () => publishLiveRefresh(undefined), []);
   // The server's role and place for this account. Checked against the access table, never widened.
   const accessKey = connection.enabled && connection.snapshot ? JSON.stringify(connection.access ?? null) : null;
   const serverAccess = useMemo(() => (accessKey ? parseStoredAccess(accessKey) : null), [accessKey]);
@@ -422,7 +442,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   );
 }
 
-/** v10 header pill: "Prototype", opening a small panel that says what the data is. */
+/** v10 header pill: "Synthetic prototype" (Audit 1 SS-4), opening a small panel that says what the data is. */
 function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospitalRecords: () => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -447,17 +467,17 @@ function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospita
         type="button"
         className={styles.pill}
         aria-expanded={open}
-        aria-label={`Data mode: Prototype. ${detail}`}
+        aria-label={`Data mode: Synthetic prototype. ${detail}`}
         onClick={() => {
           setOpen((value) => !value);
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
-        Prototype
+        Synthetic prototype
       </button>
       {open && (
         <section className={styles.pop} aria-label="Ward Flow data mode">
-          <strong>Data mode: Prototype</strong>
+          <strong>Data mode: Synthetic prototype</strong>
           <span className={styles.detail}>{detail}</span>
           <button
             type="button"

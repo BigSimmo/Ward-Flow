@@ -36,6 +36,7 @@ import { absenceStepsFor, ABSENCE_STEP_LABELS } from "@/components/ward-manageme
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
 import {
   activeCommunityTreatmentOrder,
   type Patient,
@@ -86,7 +87,7 @@ import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   holdEndsBeforeEta,
   instantFromEtaText,
@@ -107,6 +108,7 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
@@ -206,11 +208,10 @@ export function PatientNowScreen({
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
-  // `new Date(now)` would anchor to the 1970 epoch and render a negative age.
-  const displayInstant = new Date(dayZero.getTime() + now * 60_000);
-  const displayPerth = new Date(displayInstant.getTime() + 8 * 60 * 60_000);
-  // Build a local-date value from Perth's calendar fields so age calculations do not depend on the browser zone.
-  const displayToday = new Date(displayPerth.getUTCFullYear(), displayPerth.getUTCMonth(), displayPerth.getUTCDate());
+  // `new Date(now)` would anchor to the 1970 epoch and render a negative age. The real moment, as the
+  // engine passes it: `patientAgeYears` reads its Perth day. A local midnight built here was shifted
+  // to Perth a second time, a year low on the birthday east of Perth (Audit 1, CS-18, Josh 20 Oct).
+  const displayToday = calendarDateOf(now, dayZero);
 
   // Selected scenario / record ID, seeded from the route and re-synced on client-side navigation:
   // the WF-009/WF-004 toggle buttons also call setSelectedId but without changing `routeId`, so the
@@ -395,6 +396,7 @@ export function PatientNowScreen({
         return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
       });
       const text = [
+        SYNTHETIC_COPY_LINE,
         `Ward Flow missing person summary — ${displayName}`,
         `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
@@ -408,7 +410,8 @@ export function PatientNowScreen({
     }
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    const text = `Ward Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
+    // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
+    const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -1165,6 +1168,11 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
+              {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
+              <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
+              <MeetingActionsDue
+                subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
+              />
               {nowPanel}
             </div>
 

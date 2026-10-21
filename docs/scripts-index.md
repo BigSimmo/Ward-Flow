@@ -2,7 +2,7 @@
 
 _Updated 2026-10-21 - exact generated counts and executable documentation boundary; Documentation owns._
 
-Curated map of `scripts/` (118 files) and the `package.json` script surface (82 entries),
+Curated map of `scripts/` (132 files) and the `package.json` script surface (85 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs

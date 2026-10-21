@@ -27,7 +27,7 @@ import {
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
-  isActNow,
+  isActOrUrgent,
   isMoving,
   isWaitingForBed,
   STAGE_LABEL,
@@ -38,6 +38,8 @@ import {
   isStoppedAwaitingRelease,
 } from "./handover-model";
 import { wardClosedLine } from "../capacity/ward-closure";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import styles from "./handover-beds.module.css";
 
 export type HandoverBedsProps = {
@@ -86,7 +88,7 @@ const daysText = (days: number | null) =>
 
 /** Status shape for a patient heading to a ward: act now, moving, or waiting. */
 function patientTone(row: HandoverRow, now: Instant): WfTone {
-  if (isActNow(row, now)) return "danger";
+  if (isActOrUrgent(row, now)) return "danger";
   if (isMoving(row)) return "info";
   return "neutral";
 }
@@ -302,19 +304,21 @@ function WardPanel({
         </div>
       ) : null}
       <div className={styles.panelFoot}>
-        <Button
-          variant="sec"
-          size="sm"
-          icon={Send}
-          aria-disabled="true"
-          title="Not wired in this prototype."
-          className={styles.footButton}
-        >
-          Ask for update
-          <SrOnly>, preview, not wired in this prototype</SrOnly>
-        </Button>
+        <UnwiredPreview>
+          <Button
+            variant="sec"
+            size="sm"
+            icon={Send}
+            aria-disabled="true"
+            title="Not wired in this prototype."
+            className={styles.footButton}
+          >
+            Ask for update
+            <SrOnly>, preview, not wired in this prototype</SrOnly>
+          </Button>
+        </UnwiredPreview>
         <Link
-          href={`/ward-flow/ward?unit=${encodeURIComponent(ward.id)}`}
+          href={unitHref(ward.id)}
           className={buttonClass({ variant: "sec", size: "sm", className: styles.footButton })}
         >
           Open ward

@@ -95,6 +95,8 @@ describe("unified Patient Now clinical flight deck", () => {
     const check = screen.getByTestId("ward-patient-collect-check");
     expect(check).toHaveTextContent("Fit to travel not recorded");
     expect(check).toHaveTextContent("Form 4A transport order not uploaded");
+    // Audit 1 (CS-09, Josh 20 Oct): the dialog names the person and UMRN, never "this patient".
+    expect(check).toHaveTextContent(/Mark moving for .+ · UM\d+\?/);
     expect(screen.getByTestId("live-stage")).toHaveTextContent("handover_ready");
     fireEvent.change(screen.getByTestId("ward-patient-collect-check-reason"), {
       target: { value: "urgent_to_follow" },

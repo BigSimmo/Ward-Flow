@@ -426,7 +426,12 @@ describe("numbered bed designation integrity", () => {
     } as WardFlowEvent);
     expect(next.admissions.at(-1)?.bedKind).toBe("locked");
     expect(next.units.find((row) => row.id === UNIT)?.allocatableLocked).toBe(unit.allocatableLocked - 1);
-    next = send(next, { type: "RECORD_TRANSPORT_NEED", role: "ward", movementId, needed: false } as WardFlowEvent);
+    next = send(next, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      movementId,
+      needed: false,
+    } as WardFlowEvent);
     next = send(next, { type: "PATIENT_ARRIVED", role: "ward", movementId, actingUnitId: UNIT } as WardFlowEvent);
     expect(next.admissions.at(-1)).toMatchObject({ bedKind: "locked", bedNumber: heldBed, state: "occupied" });
   });

@@ -4,7 +4,17 @@ import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
-import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+
+// The shared state schema loads with the first request rather than with every phone page (Josh,
+// 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
+let isValidSharedState: ((value: unknown) => boolean) | undefined;
+function loadSharedStateCheck(): Promise<void> {
+  if (isValidSharedState) return Promise.resolve();
+  return import("./ward-shared-state-validation").then((module) => {
+    isValidSharedState = module.isValidSharedWardFlowState;
+  });
+}
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -70,6 +80,11 @@ export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
   message?: string;
+  /**
+   * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
+   * suitable were referred; the person must still be told about the one that was not.
+   */
+  partly?: string;
   undoRecords?: WardFlowState["undoRecords"];
   generation?: number;
   /** Memory-only fence for an accepted toast; never serialized with workspace state. */
@@ -83,9 +98,15 @@ type QueuedCommand = {
   commandId: string;
   confirmed: boolean;
   worldEpoch: number;
-  /** The oldest revision an open popup was showing when this was asked for (audit CS-19). */
-  basedOn?: number;
+  /** The popups open when this was asked for (audit CS-19); it is checked against what they showed. */
+  sheets?: readonly object[];
 };
+/**
+ * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the
+ * records (by the server's opaque tokens) it has since seen at a later revision through this tab's
+ * own saves from it.
+ */
+type SheetSeen = { revision: number; records: Map<string, number> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
@@ -102,6 +123,8 @@ type PendingCommand = {
   classification: "synthetic";
   commandId: string;
   expectedRevision: number;
+  /** Records the popups have seen at a later revision than `expectedRevision`, by token. */
+  seen?: Record<string, number>;
   event: WardFlowEvent;
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
@@ -141,6 +164,7 @@ export class SharedWorkspaceClient {
     message?: string,
     undoRecords?: WardFlowState["undoRecords"],
     metadata?: WardCommandMetadata,
+    partly?: string,
   ) {
     this.completions.get(commandId)?.({
       commandId,
@@ -148,6 +172,7 @@ export class SharedWorkspaceClient {
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
+      ...(partly ? { partly } : {}),
     });
     this.completions.delete(commandId);
   }
@@ -162,6 +187,8 @@ export class SharedWorkspaceClient {
     this.cancelQueued(message);
   }
   private cancelForRoleChange() {
+    // Fence outgoing drawers before their unmount cleanup can autosave into the next desk.
+    if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
       this.settle(
         this.pending.commandId,
@@ -204,7 +231,9 @@ export class SharedWorkspaceClient {
    * a popup is checked against that, so the server refuses it when another desk changed the record
    * while the person was looking, rather than letting an edit made from an older view through.
    */
-  private sheetSeen = new WeakMap<object, number>();
+  private sheetSeen = new WeakMap<object, SheetSeen>();
+  /** The popups the command in flight was asked for from, while it is in flight. */
+  private pendingSheets: readonly object[] | undefined;
   private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
@@ -224,6 +253,8 @@ export class SharedWorkspaceClient {
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
+      /** False for detached sign-out cleanup: it never owns the current board's drafts. */
+      manageDrafts?: boolean;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
@@ -234,17 +265,29 @@ export class SharedWorkspaceClient {
   /** Notes each open popup not yet noted. One opened before the board arrived is noted when it does. */
   private noteOpenSheets() {
     if (!this.view.snapshot) return;
-    for (const sheet of openSheetHandles()) if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, this.held());
+    for (const sheet of openSheetHandles())
+      if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, { revision: this.held(), records: new Map() });
   }
-  /** The oldest revision an open popup was showing, or `undefined` when none is open. */
-  private seenByOpenSheets() {
+  /** The popups open now, each noted, for a command asked for now; `undefined` when none is. */
+  private openSheetsNoted() {
     this.noteOpenSheets();
-    let oldest: number | undefined;
-    for (const sheet of openSheetHandles()) {
-      const seen = this.sheetSeen.get(sheet);
-      if (seen !== undefined && (oldest === undefined || seen < oldest)) oldest = seen;
+    const sheets = openSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
+    return sheets.length ? sheets : undefined;
+  }
+  /**
+   * What a command from these popups is checked against: the oldest revision they showed, and each
+   * record all of them have seen later, at the oldest of those. `undefined` when none is noted.
+   */
+  private basis(sheets: readonly object[] | undefined) {
+    const seen = (sheets ?? []).flatMap((sheet) => this.sheetSeen.get(sheet) ?? []);
+    if (!seen.length) return undefined;
+    const revision = Math.min(...seen.map((entry) => entry.revision));
+    const records: Record<string, number> = {};
+    for (const token of seen[0].records.keys()) {
+      const at = Math.min(...seen.map((entry) => entry.records.get(token) ?? entry.revision));
+      if (at > revision) records[token] = at;
     }
-    return oldest;
+    return { revision, records };
   }
   /**
    * This tab's own save is not a change made while the person was looking, so popups and queued
@@ -252,10 +295,19 @@ export class SharedWorkspaceClient {
    * in between: otherwise another desk's save sits in the gap, and a later save from the same popup
    * is still checked against it.
    */
-  private ownSaveLanded(from: number, to: number | undefined) {
-    if (to !== from + 1) return;
-    for (const sheet of openSheetHandles()) if (this.sheetSeen.get(sheet) === from) this.sheetSeen.set(sheet, to);
-    for (const queued of this.queue) if (queued.basedOn === from) queued.basedOn = to;
+  private ownSaveLanded(from: number, to: number | undefined, sheets?: readonly object[], covered?: unknown) {
+    if (to === undefined) return;
+    const tracked = new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
+    if (to === from + 1)
+      for (const sheet of tracked) {
+        const seen = this.sheetSeen.get(sheet);
+        if (seen?.revision === from) seen.revision = to;
+      }
+    // Otherwise the server still names the records it checked against what these popups showed:
+    // nobody else changed those since, so the popups have now seen them at this save.
+    if (!Array.isArray(covered)) return;
+    for (const sheet of sheets ?? [])
+      for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
   }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
@@ -272,7 +324,7 @@ export class SharedWorkspaceClient {
       (snapshot.accessContext !== undefined &&
         (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
       snapshot.payload?.version !== 1 ||
-      !isValidSharedWardFlowState(snapshot.payload.state) ||
+      !isValidSharedState?.(snapshot.payload.state) ||
       !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
@@ -286,6 +338,8 @@ export class SharedWorkspaceClient {
         snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
           ? held.payload
           : snapshot.payload;
+      if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
+        bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
       this.noteOpenSheets();
     }
@@ -299,6 +353,7 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
+    await loadSharedStateCheck();
     let token: string;
     try {
       token = await this.options.token();
@@ -537,7 +592,7 @@ export class SharedWorkspaceClient {
       commandId,
       confirmed: confirmed || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO",
       worldEpoch: this.worldEpoch,
-      basedOn: this.seenByOpenSheets(),
+      sheets: this.openSheetsNoted(),
     });
     void this.drain();
     return completion;
@@ -560,11 +615,14 @@ export class SharedWorkspaceClient {
             );
             continue;
           }
+          const basis = this.basis(queued.sheets);
+          this.pendingSheets = basis ? queued.sheets : undefined;
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: queued.commandId,
-            expectedRevision: queued.basedOn ?? Math.max(snapshot.revision, this.headRevision),
+            expectedRevision: basis?.revision ?? Math.max(snapshot.revision, this.headRevision),
+            ...(basis && Object.keys(basis.records).length ? { seen: basis.records } : {}),
             event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
@@ -626,7 +684,12 @@ export class SharedWorkspaceClient {
           else this.needsRefresh = true;
         }
         if (response.ok)
-          this.ownSaveLanded(command.expectedRevision, value.commandRevision ?? value.snapshot?.revision);
+          this.ownSaveLanded(
+            command.expectedRevision,
+            value.commandRevision ?? value.snapshot?.revision,
+            this.pendingSheets,
+            value.covered,
+          );
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
@@ -689,8 +752,14 @@ export class SharedWorkspaceClient {
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
           this.worldEpoch++;
-        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value);
-        this.publish({ status: "ready", error: null });
+        const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
+        this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
+        // Audit E-05: the board's message line tells the person which ward was not asked, as the
+        // local board's refusal note does, on whichever screen sent it.
+        this.publish({
+          status: "ready",
+          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
+        });
       }
     } catch {
       if (generation === this.viewGeneration) {

@@ -9,7 +9,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
-import { operationalScore } from "../src/components/ward-management/ward-priority";
+import { waitFactors } from "../src/components/ward-management/ward-priority";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -124,7 +124,7 @@ describe("Movement.blocker — free prose, and it must stay that way", () => {
     // The reason the trim matters: `hasActiveBlocker` in ward-priority.ts trims before matching its
     // "nothing is blocking" shapes, so an untrimmed store would still have been inactive — but a
     // consumer comparing two identical statements for equality would not have seen them as equal.
-    const factors = operationalScore(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors;
+    const factors = waitFactors(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(factors.map((factor) => factor.label)).not.toContain("Active blocker");
   });
 
@@ -369,9 +369,9 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
     // referral" and carried ten points for a blocker that had never existed.
     const arrived = movement(state, movementId);
     expect(arrived.blocker).toBe("None — handover complete");
-    expect(
-      operationalScore(arrived, NOW + 80, DEFAULT_DUE_SOON_THRESHOLDS).factors.map((factor) => factor.label),
-    ).not.toContain("Active blocker");
+    expect(waitFactors(arrived, NOW + 80, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label)).not.toContain(
+      "Active blocker",
+    );
   });
 
   it("a human's prose survives until the situation next changes", () => {
@@ -444,7 +444,8 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
  * stopped being safe the moment a person could type into the field.
  *
  * A nurse clearing a blocker with "none — resolved", "no blocker", "Nothing outstanding", "N/A" or
- * "Cleared" left the movement scoring TEN POINTS as actively obstructed in `operationalScore`, so
+ * "Cleared" left the movement scoring TEN POINTS as actively obstructed in `operationalScore` (now
+ * `waitFactors`, with no points since Audit 1), so
  * it sat above patients who really were blocked. Nothing failed. **That is the computed kind of
  * wrong rather than the displayed kind**: a wrong sentence is read by a person who can disbelieve
  * it; a wrong score is acted on by a system that cannot.
@@ -479,7 +480,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     }
 
     // And the control that DOES the job leaves the movement unblocked in the score, which is the
-    // property that actually matters — asserted through `operationalScore`, not through the string.
+    // property that actually matters — asserted through `waitFactors`, not through the string.
     const cleared = wardFlowReducer(state, {
       type: "CLEAR_MOVEMENT_BLOCKER",
       role: "coordinator",
@@ -488,9 +489,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     });
     expect(cleared.rejections).toHaveLength(0);
     expect(
-      operationalScore(movement(cleared, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.map(
-        (factor) => factor.label,
-      ),
+      waitFactors(movement(cleared, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label),
     ).not.toContain("Active blocker");
   });
 
@@ -525,9 +524,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     expect(next.rejections, "correctly-cased prose is stored, not refused").toHaveLength(0);
     expect(movement(next, target.id).blocker).toBe("None — resolved");
     expect(
-      operationalScore(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.map(
-        (factor) => factor.label,
-      ),
+      waitFactors(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label),
     ).toContain("Active blocker");
 
     // ...and the control that exists for this leaves it genuinely unblocked.
@@ -538,9 +535,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
       movementId: target.id,
     });
     expect(
-      operationalScore(movement(cleared, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.map(
-        (factor) => factor.label,
-      ),
+      waitFactors(movement(cleared, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label),
     ).not.toContain("Active blocker");
   });
 
@@ -559,9 +554,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     expect(next.rejections).toHaveLength(0);
     expect(movement(next, target.id).blocker).toBe("None of the secure units can take him");
     expect(
-      operationalScore(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.map(
-        (factor) => factor.label,
-      ),
+      waitFactors(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label),
     ).toContain("Active blocker");
   });
 
@@ -573,7 +566,7 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     for (const legacy of ["No blocker", "None — in transit", "None — handover complete"]) {
       const stored = { ...movement(state, target.id), blocker: legacy };
       expect(
-        operationalScore(stored, NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.map((factor) => factor.label),
+        waitFactors(stored, NOW, DEFAULT_DUE_SOON_THRESHOLDS).map((factor) => factor.label),
         legacy,
       ).not.toContain("Active blocker");
     }
@@ -777,30 +770,28 @@ describe("the transport legs restate what is holding a movement up", () => {
    * ⚠️ THE CONSTRAINT THAT MAKES THE REWORDING SAFE, AND IT IS NOT OBVIOUS.
    *
    * `hasActiveBlocker` (ward-priority.ts) decides "nothing is blocking" by EXACT match against
-   * `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`, and `operationalScore` awards ten points when it says
-   * something is. A new sentence phrased as an absence would therefore have silently dropped ten
-   * points off every movement at these two stages — a changed RANKING, produced by an edit that
-   * looked like copy. The whole point of the two new values is that they are genuine blockers.
+   * `BLOCKERS_MEANING_NOTHING_IS_BLOCKING`, and `waitFactors` lists "Active blocker" when it says
+   * something is. A new sentence phrased as an absence would therefore have silently dropped that
+   * reason from every movement at these two stages, produced by an edit that looked like copy. The whole point of the two new values is that they are genuine blockers.
    */
-  it("moves no operational score: the verdict is identical before and after the rewording", () => {
+  it("changes no wait reason: the verdict is identical before and after the rewording", () => {
     const { state, movementId } = throughToEnRoute();
     const moved = movement(state, movementId);
     const at = NOW + 60;
 
-    const scoreWith = (blocker: string) => operationalScore({ ...moved, blocker }, at, DEFAULT_DUE_SOON_THRESHOLDS);
-    const before = scoreWith(STAGE_TRANSITION_BLOCKERS.transportBooked);
+    const factorsWith = (blocker: string) => waitFactors({ ...moved, blocker }, at, DEFAULT_DUE_SOON_THRESHOLDS);
+    const before = factorsWith(STAGE_TRANSITION_BLOCKERS.transportBooked);
 
     for (const sentence of [STAGE_TRANSITION_BLOCKERS.transportAccepted, STAGE_TRANSITION_BLOCKERS.transportEnRoute]) {
-      const after = scoreWith(sentence);
-      expect(after.score, `"${sentence}" changed the operational score`).toBe(before.score);
+      const after = factorsWith(sentence);
       expect(
-        after.factors.map((factor) => factor.label),
+        after.map((factor) => factor.label),
         sentence,
-      ).toEqual(before.factors.map((factor) => factor.label));
+      ).toEqual(before.map((factor) => factor.label));
       // Stated positively as well as by equality: both old and new are ACTIVE blockers. An
-      // equality assertion alone would also pass if the ten points vanished from both sides.
+      // equality assertion alone would also pass if the reason vanished from both sides.
       expect(
-        after.factors.map((factor) => factor.label),
+        after.map((factor) => factor.label),
         sentence,
       ).toContain("Active blocker");
     }

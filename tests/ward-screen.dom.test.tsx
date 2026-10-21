@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -19,6 +19,7 @@ import { unitHasLockedBeds } from "@/components/ward-management/ward-bed-designa
 import { capacityBreakdown, releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { bedReleases, leaveBeds, movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 
@@ -537,5 +538,23 @@ describe("ward screen incoming patient arrival confirmation", () => {
 
     // After arrival, WF-014 closes and is no longer in the "Coming in" list
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
+  });
+
+  it("offers Undo on a confirmed arrival, which puts the patient back in Coming in (Audit 1, CS-07)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardScreen unitId="rph-adult-secure" />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
+    expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
+    const toast = screen.getByTestId("toast");
+    expect(toast).toHaveTextContent(/^Arrival recorded for /);
+    act(() => {
+      fireEvent.click(within(toast).getByRole("button", { name: /^Undo/ }));
+    });
+    expect(screen.getByTestId("ward-confirm-arrival-WF-014")).toBeInTheDocument();
   });
 });

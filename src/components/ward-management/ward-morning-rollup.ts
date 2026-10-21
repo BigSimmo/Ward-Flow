@@ -44,8 +44,9 @@ export { MORNING_HANDOVER_MINUTES };
  */
 export const CAPACITY_FIGURE_LABELS = {
   availableNow: "Ready",
-  confirmedToday: "Confirmed today",
-  expectedToday: "Expected today",
+  // Audit 6 (Josh, 20 Oct 2026): these count tomorrow's releases too (`releaseBand`), so they say so.
+  confirmedToday: "Confirmed today and tomorrow",
+  expectedToday: "Expected today and tomorrow",
   blockedToday: BED_RELEASE_BLOCKED_FIGURE_LABEL,
   // "Closed", not "Held" — 2026-09-01 ruling 5; "Held" now means only a bed kept for a patient on
   // leave. The key stays `held` because it names `CapacityBreakdown.held`, but that field still

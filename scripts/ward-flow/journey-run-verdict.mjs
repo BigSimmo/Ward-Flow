@@ -52,13 +52,33 @@ function countRan(report, executedProjects) {
 /**
  * @param {{ label: string, code: number | null, report: object | null }[]} runs one per shard (or one)
  * @param {string[]} projects the --project names requested
- * @param {{ allowNoTests?: boolean }} [options] explicitly advisory selections may be empty
+ * @param {{ allowNoTests?: boolean, requiredCases?: {project:string,file:string,title:string}[] }} [options]
  * @returns {{ ok: boolean, ran: number, problems: string[] }}
  */
-export function journeyRunVerdict(runs, projects, { allowNoTests = false } = {}) {
+export function journeyRunVerdict(runs, projects, { allowNoTests = false, requiredCases = [] } = {}) {
   const problems = [];
   let ran = 0;
   const executedProjects = new Set();
+  const requiredResults = new Map(requiredCases.map((entry) => [JSON.stringify(entry), []]));
+  const relativeFile = (file = "") =>
+    file
+      .replaceAll("\\", "/")
+      .replace(/^.*\/tests\//u, "")
+      .replace(/^tests\//u, "");
+  const recordCases = (suite, parentFile = "") => {
+    const file = suite.file ?? parentFile;
+    for (const spec of suite.specs ?? []) {
+      for (const test of spec.tests ?? []) {
+        const key = JSON.stringify({
+          project: test.projectName,
+          file: relativeFile(spec.file ?? file),
+          title: spec.title,
+        });
+        if (requiredResults.has(key)) requiredResults.get(key).push(test);
+      }
+    }
+    for (const child of suite.suites ?? []) recordCases(child, file);
+  };
   for (const { label, code, report } of runs) {
     if (!report) {
       problems.push(`${label} left no readable report (exit ${code})`);
@@ -74,10 +94,21 @@ export function journeyRunVerdict(runs, projects, { allowNoTests = false } = {})
       if (!configured.has(project)) problems.push(`${label} did not configure requested project "${project}"`);
     }
     ran += countRan(report, executedProjects);
+    for (const suite of report.suites ?? []) recordCases(suite);
   }
   for (const project of new Set(projects)) {
     if (!executedProjects.has(project)) problems.push(`did not run requested project "${project}"`);
   }
   if (ran === 0 && !allowNoTests) problems.push("no test ran");
+  for (const entry of requiredCases) {
+    const found = requiredResults.get(JSON.stringify(entry));
+    const passed =
+      found.length === 1 &&
+      found[0].status === "expected" &&
+      found[0].expectedStatus === "passed" &&
+      found[0].results?.length === 1 &&
+      found[0].results[0].status === "passed";
+    if (!passed) problems.push(`required journey did not pass: ${entry.project} / ${entry.file} / ${entry.title}`);
+  }
   return { ok: problems.length === 0, ran, problems };
 }

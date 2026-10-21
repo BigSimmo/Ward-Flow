@@ -341,11 +341,20 @@ export function isPublicWardFlowCheckout(worktree) {
       isCanonicalWardFlowRemote(run("remote", "get-url", "origin")) &&
       isCanonicalWardFlowRemote(run("remote", "get-url", "--push", "origin"));
     // A common base proves nothing: a repointed Database clone shares history with itself.
-    // HEAD and origin/main must both descend from the verified public Ward-Flow main;
+    // HEAD and the available main baseline must descend from verified public Ward-Flow history.
+    // An offline checkout may have only local main, as sign-out-check also supports. A present
+    // origin/main always wins: a foreign remote baseline must never hide behind local history.
     // `merge-base --is-ancestor` exits non-zero otherwise, which run() turns into a throw.
     if (verified) {
+      let baseline = "refs/remotes/origin/main";
+      try {
+        run("show-ref", "--verify", "--quiet", baseline);
+      } catch (error) {
+        if (error.status !== 1) throw error;
+        baseline = "refs/heads/main";
+      }
       run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD");
-      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "refs/remotes/origin/main");
+      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, baseline);
     }
   } catch {
     // A missing checkout, an unverified remote or foreign history never identifies a public claim.

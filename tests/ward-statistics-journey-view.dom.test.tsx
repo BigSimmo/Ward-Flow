@@ -36,7 +36,7 @@ function renderView(onShowBoard = vi.fn()) {
 }
 
 describe("Summary, Journey view", () => {
-  it("the four ED stages partition the open movements, so they add up to everyone waiting in ED", () => {
+  it("the four upstream stages partition open movements, including people already in transit", () => {
     const state = seedWardFlowStateAt(0);
     const now = NOW_ANCHOR;
     const stages = journeyStages({ ...state, now });

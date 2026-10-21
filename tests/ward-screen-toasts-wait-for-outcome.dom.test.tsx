@@ -83,6 +83,10 @@ describe("ward drawer quick actions report the saved outcome", () => {
     await act(async () => {
       fireEvent.click(button);
     });
+    // Audit 1 (CS-07): the drawer asks once before it records the ED transfer.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Record ED transfer" }));
+    });
     expect(screen.getByText("Not recorded: Someone else changed this stay first. Nothing was changed.")).toBeVisible();
     expect(screen.queryByText(/marked away at ED/u)).toBeNull();
   });
@@ -93,6 +97,10 @@ describe("ward drawer quick actions report the saved outcome", () => {
     await act(async () => {
       fireEvent.click(button);
     });
+    // Audit 1 (CS-07): the drawer asks once before it records the ED transfer.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Record ED transfer" }));
+    });
     // A failed save may still have reached the server, so it must not say nothing changed.
     expect(screen.getByText("Save is not confirmed. Review the board before trying again.")).toBeVisible();
     expect(screen.queryByText(/Nothing was changed|marked away at ED/u)).toBeNull();
@@ -102,6 +110,10 @@ describe("ward drawer quick actions report the saved outcome", () => {
     const button = await openMarkAtEd();
     await act(async () => {
       fireEvent.click(button);
+    });
+    // Audit 1 (CS-07): the drawer asks once before it records the ED transfer.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Record ED transfer" }));
     });
     expect(screen.getByText(`Bed ${bedNumber} patient marked away at ED.`)).toBeVisible();
   });

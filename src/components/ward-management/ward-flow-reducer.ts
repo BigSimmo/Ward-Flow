@@ -85,6 +85,10 @@ import {
   referralEligibility,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
+import {
+  authorisationReasonRecordedSinceLegalChange,
+  heldUnitAuthorisationGap,
+} from "@/components/ward-management/ward-held-legal-check";
 
 import {
   EVENT_ROLE,
@@ -632,6 +636,12 @@ function pullOverrides(
   const gates: NonNullable<Movement["overrides"][number]["gate"]>[] = [];
   if (movement.specialling && remainingSpeciallingCapacity(unit, admissions) <= 0) gates.push("specialling_staffing");
   if (movement.highAcuity && remainingHighAcuityCapacity(unit, admissions) <= 0) gates.push("high_acuity_staffing");
+  if (!checkEligibility) {
+    // The restore pull (Audit 2 E-03): the one suitability question it re-asks is authorisation
+    // after a legal status change, and only when no reason has been recorded since that change.
+    if (heldUnitAuthorisationGap(movement, [unit]) && !authorisationReasonRecordedSinceLegalChange(movement, unit.id))
+      gates.push("authorisation");
+  }
   if (checkEligibility) {
     if (movement.security === "Secure" && lockedBedsFree(unit) <= 0) gates.push("locked_bed_capacity");
     gates.push(
@@ -1589,13 +1599,21 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       if (event.role !== "coordinator" || admission.state !== "occupied") return deny("role");
       const receiving = uniqueRecord(state.units, event.change.receivingUnitId);
       const movement = dischargeMovement(state, admission);
+      // Audit 2 E-09: judge the receiving ward on the stay's current legal status, not the status
+      // the patient arrived with on the original movement. Used for the checks only; the recorded
+      // movement below keeps its own field.
+      const stayLegalStatus =
+        movement === undefined ? undefined : (admissionLegalStatus(state, admission) ?? movement.legalStatus);
+      const judged =
+        movement === undefined ? undefined : { ...movement, legalStatus: stayLegalStatus as Movement["legalStatus"] };
       if (
         !receiving ||
         receiving.isClosed ||
         !safeCounter(receiving.empty.value) ||
         receiving.empty.value <= 0 ||
         !movement ||
-        !eligibility(movement, receiving, event.now).eligible
+        !judged ||
+        !eligibility(judged, receiving, event.now).eligible
       )
         return deny(
           "transition",
@@ -1617,7 +1635,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       )
         return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
       const bedKind =
-        movement.legalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
+        stayLegalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
       if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
       const id = `transfer-${admission.id}-${revision + 1}`;
       const movementId: MovementId = `WF-${id}`;
@@ -2510,9 +2528,13 @@ export function reduceClinicalEvent(
       if (event.kind !== "voluntary_48h" && event.kind !== "involuntary_7d") {
         return reject(state, event, `RAISE_EXPECT_FLAG kind must be "voluntary_48h" or "involuntary_7d"`);
       }
+      // Audit 1 TS-9: a cleared earlier flag is kept, not overwritten.
       const updated: Movement = {
         ...movement,
         expectFlag: { raisedAt: event.now, kind: event.kind },
+        ...(movement.expectFlag
+          ? { expectFlagHistory: [...(movement.expectFlagHistory ?? []), movement.expectFlag] }
+          : {}),
       };
       return replaceMovement(state, movement.id, updated);
     }

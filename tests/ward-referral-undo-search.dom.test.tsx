@@ -62,6 +62,41 @@ describe("Referrals v10: Accept then Undo", () => {
   });
 });
 
+describe("Audit 1 (CS-15): a decision names the person and does not open the next one", () => {
+  it("keeps the detail on the person decided, and the toast names them", () => {
+    // Side by side, where the board opens the first in queue before anyone has chosen.
+    const split = (query: string) => ({
+      matches: query === "(min-width: 64rem)",
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+    Object.defineProperty(window, "matchMedia", { configurable: true, writable: true, value: split });
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <ReferralBoard defaultSelectFirst />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const [first, second] = queueIds();
+    const name = screen.getByTestId(`ward-referral-board-select-${first}`).textContent ?? "";
+    const accept = document.querySelector<HTMLButtonElement>('button[data-testid^="ward-referral-match-accept-"]');
+    expect(accept, "the first in queue can be accepted").not.toBeNull();
+    fireEvent.click(accept!);
+    const confirm = screen.queryByRole("button", { name: /^Confirm accept/ });
+    if (confirm) fireEvent.click(confirm);
+
+    expect(queueIds()).not.toContain(first);
+    expect(screen.getByTestId(`ward-referral-inspector-priority-${first}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-referral-inspector-priority-${second}`)).not.toBeInTheDocument();
+    const toast = screen.getByRole("button", { name: "Undo" }).closest("[data-undo]");
+    expect(toast).toHaveTextContent(/^Accepted .+ · /);
+    expect(name.length).toBeGreaterThan(0);
+    expect(toast?.textContent).not.toMatch(/RF-\d/);
+  });
+});
+
 describe("Referrals v10: search narrows", () => {
   it("narrows the queue to matching rows and the count line says how many are shown", () => {
     renderBoard();

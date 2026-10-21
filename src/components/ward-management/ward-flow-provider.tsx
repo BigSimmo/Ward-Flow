@@ -62,11 +62,13 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   clearWardFlowDemoState,
+  buildScenarioFileLater,
+  readDemoStateLater,
+  readScenarioFileLater,
   STORAGE_UNAVAILABLE,
-  tryReadDemoState,
   tryWriteDemoState,
+  useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
-  WARD_FLOW_DEMO_STORAGE_VERSION,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -104,11 +106,7 @@ import {
   type AssertNever,
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
-import {
-  buildScenarioFile,
-  readScenarioFile,
-  type ScenarioFileBuild,
-} from "@/components/ward-management/ward-flow-scenario-file";
+import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import {
   broadcastDispatchEvent,
@@ -228,8 +226,8 @@ type WardFlowContextValue = {
   /** Demo scenario files (`ward-flow-scenario-file.ts`): the whole synthetic world as a file the
    *  presenter downloads, and a loader that replaces this world with one read back from a file.
    *  Optional so hand-built test contexts need not supply them. */
-  saveScenarioFile?: () => ScenarioFileBuild;
-  loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
+  saveScenarioFile?: () => Promise<ScenarioFileBuild>;
+  loadScenarioFile?: (text: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
   /** Shared workspace connection status and error for forms that must await shared save completion. */
@@ -421,6 +419,7 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  */
 type WardFlowContainer = {
   sharedRevision?: number;
+  sharedAccessContext?: string; // Adopted with the world before remounting desk forms.
   world: WardFlowState;
   typedTextSeen: boolean;
   restoredElapsed: number;
@@ -926,6 +925,7 @@ function WardFlowWorld({
                 ...current,
                 world: seedWardFlowStateAt(anchorOffsetMinutes),
                 sharedRevision: undefined,
+                sharedAccessContext: undefined,
                 eventLog: [],
                 sessionAdopted: true,
                 sessionRestored: false,
@@ -944,12 +944,15 @@ function WardFlowWorld({
       [ADOPT_SESSION]: (current) =>
         // Grants and cover change the scoped payload without changing the clinical revision.
         // A clock-only poll preserves the state reference, so it still skips adoption.
-        current.sharedRevision === snapshot.revision && current.world === snapshot.payload.state
+        current.sharedRevision === snapshot.revision &&
+        current.world === snapshot.payload.state &&
+        current.sharedAccessContext === snapshot.accessContext
           ? current
           : {
               ...current,
               world: snapshot.payload.state,
               sharedRevision: snapshot.revision,
+              sharedAccessContext: snapshot.accessContext,
               sessionAdopted: true,
               sessionRestored: true,
               typedTextSeen: true,
@@ -994,6 +997,8 @@ function WardFlowWorld({
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
     const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
+    // A read settling after cleanup or after a newer broadcast's read must not adopt (stale closure).
+    const reads = { live: true, latest: 0 };
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
@@ -1011,8 +1016,9 @@ function WardFlowWorld({
           if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
             const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
             const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
-            const { saved } = tryReadDemoState(dayZero, referenceAbsolute, rawPayload);
-            if (saved) {
+            const read = ++reads.latest;
+            void readDemoStateLater(dayZero, referenceAbsolute, rawPayload).then(({ saved }) => {
+              if (!reads.live || read !== reads.latest || !saved || localEditsSinceBroadcastRef.current) return;
               openRequestSequence.current = Math.max(
                 openRequestSequence.current,
                 nextOpenRequestSequence(saved.state.auditEvents),
@@ -1043,12 +1049,13 @@ function WardFlowWorld({
                   };
                 },
               });
-            }
+            });
           }
           setTick((tick) => tick + 1);
         }
       };
       return () => {
+        reads.live = false;
         channel.close();
       };
     } catch {
@@ -1085,12 +1092,13 @@ function WardFlowWorld({
    * `mountedAtAbsolute`. The restored state arrives through the reducer. The screens are re-keyed
    * (remounted) once only when the restored day differs from the seed — see the `Fragment` key in
    * the render below; a first visit or an unchanged reload keeps every node. Runs once per mount;
-   * `sessionAdopted` gates the storage write below until it has run.
+   * `sessionAdopted` gates the storage write below until it has run. The read loads on demand.
    */
+  const demoRead = useDemoStateRead(!shared.enabled && initialNow === undefined, dayZero, mountedAtAbsolute);
   useEffect(() => {
     if (shared.enabled) return;
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
-    const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
+    const { saved, recoveryNotice } = demoRead;
     if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
@@ -1139,7 +1147,7 @@ function WardFlowWorld({
     // downtime screen is told and takes a fresh pack from the restored world, whether or not the
     // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
     if (saved) forgetDowntimePack();
-  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled]);
+  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled, demoRead]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
@@ -1193,20 +1201,17 @@ function WardFlowWorld({
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, shared.enabled]);
 
-  const saveScenarioFile = useCallback(
-    () => buildScenarioFile(state, nowRef.current, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
-    [state],
-  );
+  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 
   const loadScenarioFile = useCallback(
-    (text: string): { ok: true } | { ok: false; reason: string } => {
+    async (text: string): Promise<{ ok: true } | { ok: false; reason: string }> => {
       if (shared.enabled)
         return {
           ok: false,
           reason:
             "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
         };
-      const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
+      const read = await readScenarioFileLater(text);
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
@@ -1219,7 +1224,7 @@ function WardFlowWorld({
       // selections that belonged to the world being replaced.
       const world: WardFlowState = {
         ...read.state,
-        worldGeneration: Math.max(state.worldGeneration, read.state.worldGeneration) + 1,
+        worldGeneration: Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration) + 1,
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
@@ -1232,7 +1237,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
@@ -1398,6 +1403,8 @@ function WardFlowWorld({
     ],
   );
 
+  const screenKey =
+    (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
@@ -1415,15 +1422,9 @@ function WardFlowWorld({
           >
             <ToastDeviceSaveContext.Provider value={savesOnDevice}>
               <WardFlowClockContext.Provider value={now}>
-                {/*
-                 * Remounts the screens once, and only when a saved day that differs from the seed was
-                 * restored: screens initialise drafts and selections from provider data once
-                 * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-                 * must start again from the restored world rather than keep the seed's. A first visit, or a
-                 * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-                 */}
+                {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
                 <WardSharedAccess connection={sharedConnection}>
-                  <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+                  <Fragment key={screenKey}>{children}</Fragment>
                 </WardSharedAccess>
               </WardFlowClockContext.Provider>
             </ToastDeviceSaveContext.Provider>

@@ -23,6 +23,7 @@ import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/w
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Referral } from "@/components/ward-management/ward-model";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -426,6 +427,13 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     return { referral, name: person.displayName, umrn: person.umrn };
   });
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
+  // Audit 1 (CS-15, Josh 20 Oct): the toast names the person decided on, and the detail stays on
+  // them. A default "first in queue" detail used to slide to the next person, Accept showing, as
+  // soon as the decided one left the queue; the next is opened only when the coordinator picks it.
+  const decide = (referral: Referral) => (title: string, completion: ReturnType<WardCommandDispatch>) => {
+    setSelectedReferralId(referral.id);
+    watchDecision(referral.id, `${title} · ${nameOf(referral)}`, completion);
+  };
 
   function selectAt(step: 1 | -1) {
     if (queued.length === 0) return;
@@ -1069,7 +1077,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       rejections={rejections}
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
-                      onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
+                      onDecision={decide(selectedReferral)}
                       admissions={admissions}
                       bedReleases={bedReleases}
                       phone={
@@ -1156,7 +1164,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         rejections={rejections}
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
-                        onDecision={(title, completion) => watchDecision(selectedReferral.id, title, completion)}
+                        onDecision={decide(selectedReferral)}
                         admissions={admissions}
                         bedReleases={bedReleases}
                       />

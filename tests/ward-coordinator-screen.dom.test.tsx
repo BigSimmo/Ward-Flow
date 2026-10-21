@@ -54,8 +54,21 @@ describe("CoordinatorScreen", () => {
 
     expect(screen.queryByText(`Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Exceptions/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alerts/ })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
+  });
+
+  // Simplification A5 (Josh, 19 Oct 2026): Handover is reached from the rail's countdown card, so
+  // Home no longer carries its own "Start handover" button.
+  it("leaves the way into Handover to the rail", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+
+    expect(screen.queryByRole("link", { name: "Start handover" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alerts/ })).toBeInTheDocument();
   });
 });

@@ -316,7 +316,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       const sendingUnitEmptyBefore = next.units.find((unit) => unit.id === admission.unitId)!.empty.value;
       next = wardFlowReducer(next, {
         type: "RECORD_TRANSPORT_NEED",
-        role: "ward",
+        role: "coordinator",
         now: NOW + 20,
         movementId: returnMovement.id,
         needed: false,

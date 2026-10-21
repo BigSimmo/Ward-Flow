@@ -13,6 +13,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
 import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 /** Review or assign a referral: not wired in this prototype. */
 export function CommunityScreenReferralModal({ view }: { view: CommunityScreenView }) {
@@ -239,7 +240,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
 
               <div className={styles.deploymentNote}>
                 <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
-                {teamConfig.campus} to catchment residence. Duress beacon: not wired in this prototype.
+                {teamConfig.campus} to catchment residence.
+                {showsUnwiredPreviews() ? " Duress beacon: not wired in this prototype." : null}
               </div>
 
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>

@@ -18,6 +18,8 @@ import { isValidStoredWardFlowState } from "@/components/ward-management/ward-fl
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { scopeWardFlowState } from "@/components/ward-management/ward-access-state";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 function fixture() {
   const state = seedWardFlowState();
   const admission = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
@@ -45,6 +47,27 @@ const appointment: CareChange = {
   mode: "telephone",
 };
 describe("complete guarded local care journey", () => {
+  it("dates-only catchment visibility grants neither a full record read nor a care mutation", () => {
+    const { state, admission } = fixture();
+    const team = COMMUNITY_TEAM_PAGES[0];
+    const patient = state.patients.find((candidate) => candidate.id === admission.patientId)!;
+    patient.catchmentCommunityTeam = team.name;
+    admission.referralId = null;
+    admission.movementId = null;
+    const access = { role: "community", scope: { kind: "team", teamName: team.name } } as const;
+    const { scoped } = scopeWardFlowState(state, access, { now: NOW_ANCHOR, places: wardPlaceLookup(state.units) });
+    expect(scoped.datesOnlyAdmissionIds.has(admission.id)).toBe(true);
+    expect(selectDischargeRecord(state, { role: "community", actingTeamId: team.id }, admission.id).status).toBe(
+      "denied",
+    );
+    const result = wardFlowReducer(
+      state,
+      command(state, admission.id, appointment, { role: "community", actingTeamId: team.id }),
+    );
+    expect(result.admissions === state.admissions).toBe(true);
+    expect(result.auditEvents.at(-1)?.outcome).toBe("denied");
+  });
+
   it("records responsibility, appointment and contact separately with persistence and audit", () => {
     const { state, admission } = fixture();
     const arranged = wardFlowReducer(state, command(state, admission.id, appointment));

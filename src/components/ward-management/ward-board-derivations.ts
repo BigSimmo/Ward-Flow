@@ -4,7 +4,7 @@ import {
   remainingSpeciallingCapacity,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import {
@@ -37,8 +37,8 @@ import {
  *   1. **Every bed dimension is "does this bed ACCEPT this person", never an equality.** This is
  *      the longest comment in the file, on `bedAcceptsSex` below, because it is the single most
  *      likely way this module ships a serious bug.
- *   2. **The available figure is READ, never re-derived.** It comes out of `capacityBreakdown`
- *      (`ward-bed-availability.ts`) and nothing here does bed arithmetic of its own. A second
+ *   2. **The available figure is READ, never re-derived.** It comes out of `readyBedsNow`
+ *      (`ward-bed-states.ts`) and nothing here does bed arithmetic of its own. A second
  *      copy of that sum is how two screens come to disagree about the one number a coordinator
  *      acts on.
  *   3. **One function decides "accepts", and the sentence is built FROM it.** `constraintSentence`
@@ -161,20 +161,20 @@ function bedAcceptsSex(unit: Unit, sex: Sex, admissions: readonly Admission[], n
 /**
  * The one number the board leads with: beds this ward can fill right now.
  *
- * **Read from `capacityBreakdown`, never re-derived.** That module is the single place the
- * available figure is computed — `min(allocatable, empty)`, with nothing expected, confirmed but
- * unreleased, or on leave ever added in, and nothing subtracted for a bed being cleaned. Doing
- * the arithmetic again here would produce a second answer to the question a coordinator points at
- * and acts on, and the two copies would diverge the first time one of them was corrected.
+ * **Read from `readyBedsNow`, never re-derived** (Audit 6, Josh 20 Oct 2026): the one ready figure
+ * every screen prints. It is Ready from `bedStates`: `min(allocatable, empty)`, with nothing expected,
+ * confirmed but unreleased, or on leave ever added in, nothing subtracted for a bed being cleaned,
+ * and a bed pulled for an incoming patient left out. Doing the arithmetic again here would produce a
+ * second answer to the question a coordinator points at and acts on.
  *
  * Degrades to `0`, never to a guess. A unit whose figures cannot be resolved — a non-finite or
  * negative capacity value — yields no answer rather than a substituted fallback, because a board
  * that invents a bed sends someone to a ward that has none. Zero reads on screen as "no bed here
  * right now", which is the conservative direction; a fabricated 3 does not.
  *
- * `admissions` is accepted for signature symmetry with the rest of this module and is not read:
- * occupancy already reached the availability figures through the ward's own `empty` count, and
- * subtracting admissions again here would double-count every person in a bed.
+ * `admissions` is read only for pulled beds: occupancy already reached the availability figures
+ * through the ward's own `empty` count, and subtracting admissions again would double-count every
+ * person in a bed.
  */
 export function headlineAvailable(
   unit: Unit,
@@ -183,10 +183,11 @@ export function headlineAvailable(
   leaveBeds: readonly LeaveBed[],
   now: Instant,
 ): number {
-  void admissions;
-  const { availableNow } = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
-  if (!Number.isFinite(availableNow) || availableNow <= 0) return 0;
-  return Math.floor(availableNow);
+  void leaveBeds;
+  void now;
+  const ready = readyBedsNow(unit, admissions, bedReleases);
+  if (!Number.isFinite(ready) || ready <= 0) return 0;
+  return Math.floor(ready);
 }
 
 export type AcceptingBedCounts = {

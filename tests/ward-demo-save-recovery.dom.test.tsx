@@ -1,13 +1,15 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { absoluteWallClockMinutes, demoDayZero } from "@/components/ward-management/ward-clock";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  tryReadDemoState,
   tryWriteDemoState,
   WARD_FLOW_DEMO_STORAGE_KEY,
+  WARD_FLOW_DEMO_STORAGE_VERSION,
   STORAGE_UNAVAILABLE,
 } from "@/components/ward-management/ward-flow-demo-storage";
+import { tryReadDemoState } from "@/components/ward-management/ward-flow-demo-restore";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
@@ -18,6 +20,10 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 describe("successful save identity after storage failure", () => {
+  it("writes saves at the version the on-demand stored-state schema reads", () => {
+    expect(WARD_FLOW_DEMO_STORAGE_VERSION).toBe(WARD_FLOW_STORED_STATE_VERSION);
+  });
+
   it("restores and labels the retained older successful save after a later quota failure", () => {
     const state = seedWardFlowState();
     const dayZero = new Date("2026-10-16T00:00:00Z");
@@ -49,7 +55,7 @@ describe("successful save identity after storage failure", () => {
   });
 });
 
-it("shows the retained successful save label alongside the storage warning after actual provider restoration", () => {
+it("shows the retained successful save label alongside the storage warning after actual provider restoration", async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-16T10:00:00Z"));
   expect(
@@ -68,6 +74,9 @@ it("shows the retained successful save label alongside the storage warning after
       <Reset />
     </WardFlowProvider>,
   );
+  await act(async () => {
+    await import("@/components/ward-management/ward-flow-demo-restore");
+  });
   // DA-27: the save is named by the board clock it was made at (10:42), whatever the device's time.
   expect(screen.getByRole("status").textContent).toMatch(
     /Demo storage is unavailable.*last successful save from 10:42 on the board clock\./,

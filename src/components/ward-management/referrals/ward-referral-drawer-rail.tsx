@@ -60,7 +60,13 @@ export function ReferralSummaryRail({
     itemsLeft,
     itemsReady,
     readyRows,
+    needed,
   } = s;
+  // Overall review (20 Oct 2026): "0 of 18" sat beside steps whose "needed" figures add to 13. The
+  // count is the same items; this line shows how it splits, so the two visibly agree: what the four
+  // steps still need, plus the contact details asked at Send.
+  const stepsLeft = SECTION_IDS.reduce((sum, id) => sum + needed[id], 0);
+  const contactLeft = itemsLeft - stepsLeft;
   return (
     <aside
       className={styles.rail}
@@ -112,6 +118,13 @@ export function ReferralSummaryRail({
             <p className={styles.railCount}>
               <strong className={styles.mono}>{itemsReady}</strong> of {itemsTotal} ready
             </p>
+            {itemsLeft > 0 ? (
+              <p className={styles.railCount} data-testid="ward-referral-count-split">
+                {contactLeft > 0
+                  ? `${stepsLeft} still needed in the steps above, plus ${contactLeft} contact ${contactLeft === 1 ? "detail" : "details"} asked at Send`
+                  : `${stepsLeft} still needed in the steps above`}
+              </p>
+            ) : null}
             <span className={styles.railProgress} aria-hidden="true">
               <i style={{ width: `${Math.round((itemsReady / itemsTotal) * 100)}%` }} />
             </span>

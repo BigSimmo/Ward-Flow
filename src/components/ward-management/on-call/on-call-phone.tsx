@@ -17,6 +17,7 @@ import {
 import { ContactCard, ServiceTag, isWardRow, placeOf, type ContactActions } from "./on-call-parts";
 
 import styles from "./on-call.module.css";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 /**
  * Phone: its own layout, designed at 390 by 844 (owner, 9 October 2026: phone is never a trimmed
@@ -61,6 +62,9 @@ function Until({ entry, minute }: { entry: DirectoryEntry; minute: number }) {
 function CallButton({ entry, actions, onHero }: { entry: DirectoryEntry; actions: ContactActions; onHero?: boolean }) {
   const number = numberAt(entry, actions.minute);
   const off = availability(entry, actions.minute).kind === "off";
+  // Calling only copies the number, so outside a local development build there is no Call button
+  // (overall review, 20 Oct 2026). The row still shows the number, and its sheet copies it.
+  if (number && !showsUnwiredPreviews()) return <span />;
   if (number)
     return (
       <button
@@ -135,9 +139,11 @@ export function PhoneFocal({
           <span>{then}</span>
         </span>
         <div className={styles.focalActions}>
-          <Button variant="light" icon={PhoneCall} className={styles.focalCall} onClick={() => actions.onCall(entry)}>
-            Call
-          </Button>
+          {showsUnwiredPreviews() ? (
+            <Button variant="light" icon={PhoneCall} className={styles.focalCall} onClick={() => actions.onCall(entry)}>
+              Call
+            </Button>
+          ) : null}
           {number ? (
             <Button
               variant="onHero"
@@ -367,7 +373,7 @@ export function PhoneSheet({
       mobileSize="viewport"
       testId="ward-on-call-sheet"
       footer={
-        number ? (
+        number && showsUnwiredPreviews() ? (
           <Button
             variant="pri"
             size="lg"

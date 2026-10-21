@@ -2,7 +2,7 @@
 
 import { HeroStat, SrOnly, durMinutes } from "@/components/wf";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -55,7 +55,7 @@ export function WardTelemetryRibbon({
 }: WardTelemetryRibbonProps) {
   const { bedReleases } = useWardFlowSelect("bedReleases");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   const freeingByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const confirmedByWard = unit.allocatable.source === "ward";
 

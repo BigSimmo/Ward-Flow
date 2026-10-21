@@ -58,9 +58,9 @@ function PatientIdsProbe() {
 }
 /** No standalone data-mode bar: without a header slot nothing is drawn, but the mode is still published. */
 function expectNoStandaloneDataModeControl() {
-  expect(screen.queryByRole("button", { name: /^Data mode: Prototype/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Data mode: Synthetic prototype/ })).toBeNull();
   expect(screen.queryByRole("group", { name: "Data mode controls" })).toBeNull();
-  expect(screen.queryByText("Data mode: Prototype")).toBeNull();
+  expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
 }
 function connection(): WardSharedConnection {
   const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0)));
@@ -97,6 +97,33 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("remounts desk forms after adopting a changed effective access context", () => {
+    const tree = () => (
+      <WardFlowProvider>
+        <PatientIdsProbe />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    const initial = screen.getByLabelText("Scoped draft");
+    fireEvent.change(initial, { target: { value: "Synthetic previous desk draft" } });
+    // A normal save must keep the current form's unsent edits.
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: { ...fake.connection!.snapshot!, revision: 2 },
+    };
+    rerender(tree());
+    expect(screen.getByLabelText("Scoped draft")).toBe(initial);
+    expect(initial).toHaveValue("Synthetic previous desk draft");
+    // Cover/grant expiry can change context without another clinical revision.
+    fake.connection = {
+      ...fake.connection!,
+      snapshot: { ...fake.connection!.snapshot!, accessContext: "b".repeat(64) },
+    };
+    rerender(tree());
+    expect(screen.getByLabelText("Scoped draft")).not.toBe(initial);
+    expect(screen.getByLabelText("Scoped draft")).toHaveValue("draft");
+  });
+
   it("keeps the frozen report through ordinary same-account clinical snapshot adoption", () => {
     const tree = () => (
       <ToastProvider>
@@ -321,7 +348,7 @@ describe("shared provider boundary", () => {
       </WardFlowProvider>,
     );
     expect(
-      screen.getByRole("button", { name: "Data mode: Prototype. Invented records · Local demonstration" }),
+      screen.getByRole("button", { name: "Data mode: Synthetic prototype. Invented records · Local demonstration" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("45")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
@@ -338,12 +365,14 @@ describe("shared provider boundary", () => {
     const draft = screen.getByRole("textbox");
     fireEvent.change(draft, { target: { value: "keep prototype draft" } });
     // Exactly one data-mode control, in the header slot; it opens to explain the mode.
-    const pill = screen.getByRole("button", { name: /^Data mode: Prototype/ });
-    expect(screen.getAllByRole("button", { name: /^Data mode: Prototype/ })).toHaveLength(1);
-    expect(screen.queryByText("Data mode: Prototype")).toBeNull();
+    const pill = screen.getByRole("button", { name: /^Data mode: Synthetic prototype/ });
+    expect(screen.getAllByRole("button", { name: /^Data mode: Synthetic prototype/ })).toHaveLength(1);
+    expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("region", { name: "Ward Flow data mode" })).toHaveTextContent("Data mode: Prototype");
+    expect(screen.getByRole("region", { name: "Ward Flow data mode" })).toHaveTextContent(
+      "Data mode: Synthetic prototype",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
     expect(screen.getByRole("heading", { name: "Hospital records are not connected" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();

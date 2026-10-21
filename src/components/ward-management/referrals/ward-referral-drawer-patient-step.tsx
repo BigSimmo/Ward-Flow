@@ -243,6 +243,7 @@ export function ReferralPatientStep({
                 id={searchId}
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
+                aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
                 placeholder="Find a patient by name or UMRN"
                 autoCorrect="off"
                 autoCapitalize="none"
@@ -339,7 +340,7 @@ export function ReferralPatientStep({
           ) : unidentified === null ? (
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
-                <p className={styles.patientSub} data-testid="ward-referral-no-patient">
+                <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
                   No patient chosen. Find them by name or UMRN, add a new patient, or choose Not yet identified.
                 </p>
               ) : null}
@@ -606,7 +607,11 @@ export function ReferralPatientStep({
                   }}
                 />
               </Field>
-              <Field label="Search catchment" htmlFor={`${sectionId}-team`}>
+              <Field
+                label="Search catchment"
+                htmlFor={`${sectionId}-team`}
+                error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
+              >
                 <input
                   id={`${sectionId}-team`}
                   className={styles.fieldInput}
@@ -697,7 +702,15 @@ export function ReferralPatientStep({
                   type="button"
                   className={`${styles.btn} ${styles.btnTint}`}
                   aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
-                  aria-describedby={!catchmentTeam.trim() || !homeRegion ? `${sectionId}-catchment-why` : undefined}
+                  // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.
+                  data-referral-invalid={patientShowErrors && catchmentTeam.trim() && homeRegion ? "" : undefined}
+                  aria-describedby={
+                    !catchmentTeam.trim() || !homeRegion
+                      ? `${sectionId}-catchment-why`
+                      : patientShowErrors
+                        ? `${sectionId}-catchment-error`
+                        : undefined
+                  }
                   onClick={() => {
                     if (!catchmentTeam.trim() || !homeRegion) return;
                     setCatchmentConfirmed(true);
@@ -717,7 +730,7 @@ export function ReferralPatientStep({
             )}
           </div>
           {patientShowErrors && !catchmentConfirmed ? (
-            <p className={styles.fieldError}>
+            <p className={styles.fieldError} id={`${sectionId}-catchment-error`}>
               <StatusGlyph tone="danger" size={9} />
               Confirm the catchment before continuing
             </p>

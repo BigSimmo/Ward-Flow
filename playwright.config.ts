@@ -29,7 +29,7 @@ const mockupTag = /@mockup/;
 // step, on desktop Chrome and phone WebKit. Its own projects, its own CI job, nothing else in them.
 const releaseGateSpecPattern = /.*(?:release-gate-journeys|release-gate-axe-sweep)\.spec\.ts/;
 // Shared mode (audit F-16): two signed-in desks against a real local backend and PostgreSQL. It needs
-// the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode `next dev`, the backend, a
+// the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode production `next start`, the backend, a
 // fake sign-in service), so the project exists only inside that runner, never in the offline gates.
 const sharedModeSpecPattern = /.*ward-shared-mode\.spec\.ts/;
 const sharedModeRunner = Boolean(process.env.WARD_E2E_ACCOUNTS);
@@ -160,6 +160,8 @@ export default defineConfig({
             timeout: 120_000,
             use: {
               ...devices["Desktop Chrome"],
+              // The local proof creates a one-day self-signed loopback API certificate.
+              ignoreHTTPSErrors: true,
               viewport: { width: 1600, height: 1100 },
               ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
             },

@@ -204,6 +204,15 @@ type WardScreenBedDrawerProps = {
   raiseAsRouteRole: WardRaise;
 };
 
+/**
+ * The drawer's refusal line: what was refused, then that nothing changed, said once. A shared-board
+ * refusal already ends "Nothing was changed." (audit E-25).
+ */
+export function notRecordedMessage(message?: string): string {
+  const reason = (message ?? "The change was refused").replace(/\s*Nothing was changed\.$/u, "").replace(/\.$/u, "");
+  return `Not recorded: ${reason}. Nothing was changed.`;
+}
+
 export function WardScreenBedDrawer({
   selectedBed,
   bedsList,
@@ -244,10 +253,7 @@ export function WardScreenBedDrawer({
   function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
     completeCommand(`bed:${selectedBed}`, record, (outcome) => {
       // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
-      if (outcome?.status === "refused")
-        setToastMessage(
-          `Not recorded: ${(outcome.message ?? "The change was refused").replace(/\.$/, "")}. Nothing was changed.`,
-        );
+      if (outcome?.status === "refused") setToastMessage(notRecordedMessage(outcome.message));
       else setToastMessage(wardCommandFailure(outcome) ?? success);
     });
   }

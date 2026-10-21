@@ -184,6 +184,18 @@ export function referralState(referral: Referral): ReferralState {
 }
 
 /**
+ * Audit 2 E-12: the referrer withdrew this referral and nothing on it is still awaiting an answer
+ * or accepted. `referralState` keeps such a referral "queued" (or "declined" when one arm had
+ * already declined), which is right for its counts but wrong as a description of it.
+ */
+export function referralWithdrawn(referral: Referral): boolean {
+  return (
+    referral.destinations.some((addressing) => addressing.withdrawnAt !== undefined) &&
+    !referral.destinations.some((addressing) => addressing.state === "accepted" || isAwaitingAnswer(addressing))
+  );
+}
+
+/**
  * ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that

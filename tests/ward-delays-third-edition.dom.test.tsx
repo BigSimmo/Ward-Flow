@@ -283,10 +283,11 @@ describe("D3's cross-screen sentence — the property it claims, not the words i
     const group = stages.find((stage) => stage.id === "accepted_awaiting_bed");
     expect(group, "no group for the fixture's stage — the grouping changed shape").toBeDefined();
     expect(
-      group?.movements.map((movement) => movement.id),
+      // Membership, not order: equal waits now break on the id (Audit 1, Josh 20 Oct, wait order only).
+      group?.movements.map((movement) => movement.id).sort(),
       'the Movement screen now FILTERS closed movements off its stage board. That reverses "MARK IT, DO NOT ' +
         'FILTER IT" (owner, 2026-09-05) AND falsifies the Delays provenance sentence. Read the comment above.',
-    ).toEqual(["WF-TEST-OPEN", "WF-TEST-CLOSED"]);
+    ).toEqual(["WF-TEST-CLOSED", "WF-TEST-OPEN"]);
   });
 
   it("half 2 — this screen's waiting population excludes it", () => {

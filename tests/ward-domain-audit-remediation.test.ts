@@ -57,7 +57,7 @@ function journey(atsCategory?: number) {
     unitId,
     movementId,
     arrive() {
-      send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId, needed: false });
+      send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId, needed: false });
       send({ type: "PATIENT_ARRIVED", role: "ward", movementId, actingUnitId: unitId });
     },
     book() {
@@ -170,7 +170,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(corrupted)).toBe(false);
     const ready = wardFlowReducer(corrupted, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,
@@ -239,7 +239,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,
@@ -393,7 +393,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(held.unitId).toBe(movement.acceptedUnitId);
     const ready = wardFlowReducer(state, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: movement.id,
       needed: false,
@@ -423,7 +423,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: movement.id,
       needed: false,
@@ -485,7 +485,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     };
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,

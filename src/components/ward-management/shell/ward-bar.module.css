@@ -190,6 +190,93 @@
   }
 }
 
+/* A7 (overall review, 20 Oct 2026): the demo clock's one place, beside the Prototype pill, on
+ * screens wider than 1000px. It opens the demo controls in Tools. */
+.demoClock {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: var(--wf-tablet-tap, 0px);
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-radius: var(--wf-r-ctl);
+  color: inherit;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font: 500 12px / 1 var(--wf-font, inherit);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.demoClock:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.demoClock:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.demoClockDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  animation: wfPulse 2s ease-out infinite;
+}
+
+.demoClockTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.demoClockTz {
+  opacity: 0.72;
+  font-family: var(--wf-mono);
+}
+
+/* The bar's own width (not the screen's) decides: "Board time" goes first, then "AWST", so the
+ * page name and the search keep their room. The button's name keeps every word. */
+@container ward-bar (max-width: 84rem) {
+  .demoClockLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@container ward-bar (max-width: 72rem) {
+  .demoClockTz {
+    display: none;
+  }
+}
+
+/* Tablet portrait and phone: the bar has no room once a ward name and Back are in it (measured: up
+ * to 83px over at 770 to 1000px). The time stays in the Menu sheet's "Board time" line there, and in
+ * the phone's page Live chips. */
+@media (max-width: 1000px) {
+  .demoClock {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demoClockDot {
+    animation: none;
+  }
+}
+
 /* Tablet portrait (device audit, 11 Oct 2026): the Prototype pill keeps its word (the safety
  * notice must stay legible) and New referral keeps its label. The room comes from the search field,
  * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
@@ -616,6 +703,17 @@
   justify-content: center;
   flex: 1 1 auto;
   min-width: 4rem;
+}
+
+/* With the clock in the title row, a full desktop bar (1001 to 1440px wide) had no room left, and
+ * the page name shrank to nothing before the search did. The search's group now starts from no
+ * width and grows into what is left, so the search gives way first (as it already does with Back,
+ * `.deskBack + .title`), and a long page name ends in an ellipsis only once the search is at its
+ * 4rem floor. Tablet portrait folds the search to its magnifier instead, and leaves the clock out. */
+@media (min-width: 1001px) {
+  .centerGroup {
+    flex-basis: 0;
+  }
 }
 
 .searchWrap {
@@ -3191,14 +3289,18 @@
     letter-spacing: -0.01em;
   }
 
+  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is at least 24px tall, not the
+   * 18px line. The 3px it gains above and below come back from its margins, so the line does not
+   * move; it stays inline-flex (above) so the words sit centred in the taller box. */
   .scopeBadgeBtn {
-    min-height: 18px;
+    min-height: 24px;
+    margin-block: calc(-0.75rem - 3px);
     line-height: var(--wf-lh-12);
   }
 
-  /* The 18px line keeps a 48px tall hit area: 15px above and below. */
+  /* The 24px box keeps a 48px tall hit area: 12px above and below. */
   .scopeBadgeBtn::before {
-    inset: -15px -8px;
+    inset: -12px -8px;
   }
 
   /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under

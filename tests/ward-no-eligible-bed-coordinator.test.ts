@@ -51,6 +51,8 @@ describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
       expect(row, movement.id).toBeDefined();
       expect(row?.owner).toBe("Bed coordinator");
       expect(row?.tone).toBe("danger");
+      // Audit 1, Josh 20 Oct (SS-3): nothing is sent, so the row never claims a notification.
+      expect(row?.title).toBe("No eligible bed: shown to the bed coordinator");
     }
   });
 

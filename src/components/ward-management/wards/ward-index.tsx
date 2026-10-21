@@ -41,7 +41,7 @@ import {
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -477,7 +477,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const totalBeds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
   const totalOccupied = rows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
   const readyNow = rows.reduce((sum, row) => sum + row.ready, 0);
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   const freeingByShiftEnd = bedReleases.filter(
     (release) =>
       release.state !== "discharged" &&

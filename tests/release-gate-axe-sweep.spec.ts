@@ -141,6 +141,9 @@ test("axe: the header search palette with results open has no serious or critica
   const popup = page.getByTestId("ward-global-search-popup");
   await expect(popup).toBeVisible();
   await expect(popup.getByRole("option").first()).toBeVisible();
+  // Rows drawn from a deferred (stale) query are aria-disabled and ignore the keyboard by design;
+  // press only once the results belong to the typed query.
+  await expect(popup.getByRole("option").first()).not.toHaveAttribute("aria-disabled", "true");
   await input.press("ArrowDown");
   await expect(input).toHaveAttribute("aria-activedescendant", /.+/);
   await expectAccessible(page, testInfo, "header search open");

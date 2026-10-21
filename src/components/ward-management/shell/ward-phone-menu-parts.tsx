@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
+import type { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
 /*
  * Small pieces shared by the phone menu and its search results (`ward-phone-menu-results.tsx`),
@@ -29,5 +30,20 @@ export function MenuSearching() {
     <Section label="Searching">
       <li className={styles.empty}>Searching…</li>
     </Section>
+  );
+}
+
+type NavCountMap = ReturnType<typeof useWardNavCounts>["counts"];
+
+export function countIn(counts: NavCountMap, id: string): WardNavCount | undefined {
+  return counts[id as keyof NavCountMap];
+}
+
+export function CountChip({ value, className }: { value: number | undefined; className: string }) {
+  if (!value) return null;
+  return (
+    <span className={className} aria-hidden="true">
+      {value > 99 ? "99+" : value}
+    </span>
   );
 }

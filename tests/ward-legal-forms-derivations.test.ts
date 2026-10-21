@@ -23,7 +23,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
-import { FORM_TIMING_FACTOR_LABEL, operationalScore } from "@/components/ward-management/ward-priority";
+import { FORM_TIMING_FACTOR_LABEL, waitFactors } from "@/components/ward-management/ward-priority";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { openWorkBeforeShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -404,7 +404,7 @@ describe("current form deadlines across operational outputs", () => {
     const legalTasks = (movement: Movement) =>
       buildActionInbox([movement], NOW, []).filter((item) => item.title === "Legal due time passed");
     const legalFactors = (movement: Movement) =>
-      operationalScore(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS).factors.filter(
+      waitFactors(movement, NOW, DEFAULT_DUE_SOON_THRESHOLDS).filter(
         (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
       );
     const breaches = (movement: Movement) => edPressure(NOW, [movement]).reduce((sum, row) => sum + row.breaching, 0);

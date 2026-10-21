@@ -7,7 +7,9 @@ import type { RecordedFactEvent, RecordedFactEventHelpers } from "./ward-flow-re
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-events";
 import { form3CRefusedAfter3D, isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -192,6 +194,7 @@ export function reduceRecordedLegalEvent(
               ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
+          ...formHistoryAfter(movement, sameFormTimeEdit, event),
         },
         legalClock: undefined,
         legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
@@ -266,12 +269,26 @@ export function reduceRecordedLegalEvent(
       if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
         // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
         const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
+        // Audit 2 E-15: the very same 5B again (same start, no new end) is refused rather than
+        // rewriting its recorded times; a later or corrected 5B keeps the earlier one in
+        // `earlierContinuations`.
+        if (
+          earlier !== undefined &&
+          earlier.code === event.formCode &&
+          earlier.startedAt === event.startedAt &&
+          (event.paperExpiresAt ?? currentDueAt) === currentDueAt
+        ) {
+          return reject(state, event, "This 5B is already recorded with that start time.");
+        }
         const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;
         const continued: Movement = {
           ...movement,
           legalForm: {
             ...fiveA,
             ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
+            ...(earlier === undefined
+              ? {}
+              : { earlierContinuations: [...(fiveA.earlierContinuations ?? []), earlier] }),
             continuedBy: {
               code: event.formCode,
               startedAt: event.startedAt,
@@ -295,6 +312,7 @@ export function reduceRecordedLegalEvent(
           code: event.formCode,
           ...(event.region ? { region: event.region } : {}),
           ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
+          ...formHistoryAfter(movement, false, event),
         },
         legalClock: undefined,
         legalFormReceivedAt: undefined,
@@ -306,4 +324,31 @@ export function reduceRecordedLegalEvent(
     }
   }
   return state;
+}
+
+/**
+ * Audit 2 E-16 (Josh, 20 Oct 2026): a new form keeps the one it replaces as history, as the CTO and
+ * examinations already do. A time edit of the same form replaces nothing, so carries the list on.
+ */
+function formHistoryAfter(
+  movement: Movement,
+  sameFormTimeEdit: boolean,
+  event: { now: Instant; role: WardFlowRole },
+): Pick<LegalForm, "earlierForms"> {
+  const current = movement.legalForm;
+  if (current === undefined) return {};
+  const { earlierForms = [], ...replaced } = current;
+  if (sameFormTimeEdit) return earlierForms.length === 0 ? {} : { earlierForms };
+  return {
+    earlierForms: [
+      ...earlierForms,
+      {
+        ...replaced,
+        ...(movement.formedAt === undefined ? {} : { writtenAt: movement.formedAt }),
+        ...(movement.legalFormReceivedAt === undefined ? {} : { receivedAt: movement.legalFormReceivedAt }),
+        at: event.now,
+        by: event.role,
+      },
+    ],
+  };
 }

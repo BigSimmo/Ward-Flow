@@ -121,6 +121,7 @@ describe("maintained document CI scope", () => {
       owner_index: false,
       rules_index: false,
       organisation: true,
+      doc_contracts: true,
     });
     expect(classifyChanges(entries("docs/ward-flow/README.md"))).toMatchObject({
       full: false,
@@ -130,7 +131,12 @@ describe("maintained document CI scope", () => {
   });
   it("checks registry changes and fails closed for unavailable/deleted history", () => {
     expect(documentChecks(entries("docs/ward-flow/organisation/registry.json"))).toMatchObject({ organisation: true });
-    expect(documentChecks([])).toEqual({ owner_index: true, rules_index: true, organisation: true });
+    expect(documentChecks([])).toEqual({
+      owner_index: true,
+      rules_index: true,
+      organisation: true,
+      doc_contracts: true,
+    });
     expect(documentChecks([{ status: "D", file: "docs/ward-flow/decisions.md" }])).toMatchObject({
       owner_index: true,
       rules_index: true,
@@ -152,13 +158,28 @@ describe("maintained document CI scope", () => {
   ])("checks nested files under a ** organisation root: %s", (file) => {
     expect(documentChecks(entries(file)).organisation).toBe(true);
   });
+  it.each([
+    "src/app/page.tsx",
+    "docs/scripts-index.md",
+    "design/third-edition-mockups/MANIFEST.json",
+    "scripts/x.mjs",
+    "package.json",
+  ])("runs the generated documentation contracts when %s changes", (file) => {
+    expect(documentChecks(entries(file)).doc_contracts).toBe(true);
+  });
+  it.each(["backend/ward-flow/server.mjs", "tests/ward-ci-scope.test.ts", ".github/workflows/dependency-audit.yml"])(
+    "does not block unrelated PRs on the generated documentation contracts (%s)",
+    (file) => {
+      expect(documentChecks(entries(file)).doc_contracts).toBe(false);
+    },
+  );
   it("leaves the organisation check off for files outside every registered root", () => {
     expect(documentChecks(entries("backend/ward-flow/server.mjs")).organisation).toBe(false);
   });
   it("required workflow keeps the doc links, facts, safety wording, planned index/organisation checks, and the bounded synthetic check", () => {
     const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
     for (const flag of ["owner_index", "rules_index", "organisation"])
-      expect(workflow).toContain(`steps.plan.outputs.${flag} == 'true'`);
+      expect(workflow).toContain(`needs.plan.outputs.${flag} == 'true'`);
     expect(workflow).toContain("run: npm run docs:check-links");
     expect(workflow).toContain("run: node scripts/doc-facts.mjs");
     expect(workflow).toContain("run: npm run check:ward-legal-language");
@@ -177,19 +198,25 @@ describe("maintained document CI scope", () => {
       WARD_PLAN_UNIT: "true",
       WARD_PLAN_BROWSER: "true",
       WARD_PLAN_POLICY: "false",
+      WARD_PLAN_BACKEND: "true",
+      WARD_PLAN_BUILD: "true",
+      WARD_PLAN_FRONTEND_STATIC: "true",
       WARD_PLAN_DEPENDENCY_REVIEW: "true",
       WARD_PLAN_OWNER_INDEX: "true",
+      WARD_PLAN_DOC_CONTRACTS: "true",
       WARD_PLAN_RULES_INDEX: "true",
       WARD_PLAN_ORGANISATION: "true",
     };
     const good = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], { env, encoding: "utf8" });
     expect(good.status).toBe(0);
-    const wrong = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], {
-      env: { ...env, WARD_PLAN_OWNER_INDEX: "false" },
-      encoding: "utf8",
-    });
-    expect(wrong.status).toBe(1);
-    expect(wrong.stderr).toContain("owner_index");
+    for (const flag of ["OWNER_INDEX", "DOC_CONTRACTS", "BACKEND", "BUILD", "FRONTEND_STATIC"]) {
+      const wrong = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], {
+        env: { ...env, [`WARD_PLAN_${flag}`]: "false" },
+        encoding: "utf8",
+      });
+      expect(wrong.status, flag).toBe(1);
+      expect(wrong.stderr).toContain(flag.toLowerCase());
+    }
   });
 });
 

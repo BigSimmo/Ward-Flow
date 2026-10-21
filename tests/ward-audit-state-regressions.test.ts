@@ -51,7 +51,7 @@ function fixture() {
     for (const event of events) send(event);
   };
   const arrive = (id: string, unitId: string) => {
-    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: id, needed: false });
+    send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId: id, needed: false });
     send({ type: "PATIENT_ARRIVED", role: "ward", movementId: id, actingUnitId: unitId });
   };
   const movement = raise();
@@ -239,6 +239,11 @@ describe("audit core state regressions", () => {
     expect(state.rejections).toEqual([]);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...state, broadcastSequence: 0 })))).toBe(false);
+  });
+  it("names the scenario file by Perth time, whatever the device's zone (Audit 1, TM-2)", () => {
+    // 16:30 UTC on 20 Oct is 00:30 on 21 Oct in Perth.
+    const file = buildScenarioFile(seedWardFlowState(), now, 5, new Date("2026-10-20T16:30:00Z"));
+    expect(file.ok && file.fileName).toBe("ward-flow-scenario-2026-10-21-0030.json");
   });
   it.each([{}, null, [{ id: "bad" }]])("rejects malformed broadcast collections: %j", (alerts) => {
     const file = buildScenarioFile(seedWardFlowState(), now, 5, new Date("2026-10-07"));

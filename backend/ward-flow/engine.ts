@@ -18,6 +18,7 @@ import {
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
+import { demoDayZero } from "../../src/components/ward-management/ward-clock";
 import {
   BREAK_GLASS_REASONS,
   STATEWIDE_COORDINATOR,
@@ -82,6 +83,16 @@ function getWardPlaceLookup(units: WardFlowState["units"]): ReturnType<typeof wa
 /** A known type, an explicit allowed role and well-formed fields: see command-schemas.ts. */
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
   return validSharedCommand(value) && checkSyntheticPayload(value).safe;
+}
+
+/**
+ * Audit E-06: why the synthetic-data guard refuses a well-formed command, naming only the kind of
+ * identifier it looks like, never the text itself; null when the guard has nothing to say.
+ */
+export function privacyRefusal(value: unknown): string | null {
+  if (!validSharedCommand(value)) return null;
+  const check = checkSyntheticPayload(value);
+  return check.safe ? null : `${check.reason}. Ward Flow takes synthetic details only.`;
 }
 
 /** True for the demonstration controls (advance clock, reset or set scenario): role "demo" only. */
@@ -214,7 +225,8 @@ export function seedWorld(at: Date): SharedWorld {
   return {
     version: 1,
     state: serialise(seedWardFlowStateAt(0)),
-    dayZero: new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate())).toISOString(),
+    // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
+    dayZero: demoDayZero(at).toISOString(),
     startedAt: at.toISOString(),
   };
 }
@@ -520,6 +532,8 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     if (error instanceof TypeError || error instanceof RangeError) throw new Error("invalid-command");
     throw error;
   }
+  // Audit E-05: why a partly refused "Refer to wards" held a ward back, for the sender to be told.
+  let partly: string | null = null;
   if (rawNext.rejections.length > world.state.rejections.length) {
     // Referral suitability is deliberately decided per ward. Commit the permitted subset only
     // when this command's fresh audit records both outcomes; an earlier partial is no authority.
@@ -547,6 +561,11 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
         // by UMRN at most, never typed text, and only a desk allowed to act on the record gets here.
         reason: refusalReason(rawNext.rejections.at(-1)?.reason),
       };
+    // Every ward this command held back, not just the last, so none is silently left out.
+    partly = rawNext.rejections
+      .slice(world.state.rejections.length)
+      .map((rejection) => endSentence(refusalReason(rejection.reason)))
+      .join(" ");
   }
   // Refusal messages are transient (D-18). A partial referral's coded denied targets remain in audit.
   const next = serialise({ ...rawNext, rejections: [] });
@@ -561,11 +580,13 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     completion: commandMetadata(world.state, next),
     changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
     reason: null,
+    partly,
   };
 }
 
 const REFUSAL_FALLBACK = "The workflow rules did not permit this action.";
 const REFUSAL_MAX = 500;
+const endSentence = (text: string) => (/[.!?…]$/u.test(text) ? text : `${text}.`);
 function refusalReason(reason: unknown): string {
   if (typeof reason !== "string" || !reason.trim()) return REFUSAL_FALLBACK;
   const trimmed = reason.trim();

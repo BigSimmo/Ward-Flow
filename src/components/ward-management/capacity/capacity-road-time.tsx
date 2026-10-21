@@ -83,6 +83,10 @@ export function ReadyByRoadTime({
           </span>
         </span>
       </div>
+      {/* Decision 6 (Audit 1, Josh 20 Oct): the order is road time alone, never a placement pick. */}
+      <p className={styles.caveat} data-testid="capacity-road-time-caption">
+        Distance only, not suitability.
+      </p>
       {ranked.length === 0 ? (
         <p className={styles.empty}>No ward with a ready bed has a measured route from this department.</p>
       ) : (

@@ -76,7 +76,7 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push";
+import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
 import {
   Avatar,
   Badge,

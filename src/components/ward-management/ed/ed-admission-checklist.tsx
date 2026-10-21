@@ -3,6 +3,7 @@
 import { Badge } from "@/components/wf";
 import { admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import edStyles from "./ed.module.css";
 import styles from "./ed-admission-checklist.module.css";
@@ -10,10 +11,12 @@ import styles from "./ed-admission-checklist.module.css";
 /**
  * Admission arrival checklist (Top 25 item 14).
  * Reads recorded facts only. The search and medication checks without recorded values are not
- * wired; this card cannot record a completion.
+ * wired; this card cannot record a completion. Outside a local development build those checks are
+ * left off the card (overall review, 20 Oct 2026: nothing on screen pretends to work).
  */
 export function EdAdmissionChecklist({ movement, referrals }: { movement: Movement; referrals: readonly Referral[] }) {
-  const items = admissionChecklist(movement, referrals);
+  const showUnwired = showsUnwiredPreviews();
+  const items = admissionChecklist(movement, referrals).filter((item) => showUnwired || item.state !== "not_wired");
   const done = items.filter((item) => item.state === "done").length;
   const counted = items.filter((item) => item.state !== "not_wired").length;
   return (

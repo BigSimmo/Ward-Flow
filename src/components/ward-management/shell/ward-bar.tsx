@@ -505,6 +505,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         referrals,
         rejections,
         bedReleases,
+        admissions,
         leaveBeds,
         refreshRequests,
         now,
@@ -518,6 +519,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       referrals,
       rejections,
       bedReleases,
+      admissions,
       leaveBeds,
       refreshRequests,
       now,
@@ -1149,6 +1151,22 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
         {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
         <WardDataModeSlot className={styles.dataMode} />
+
+        {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
+            controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
+            room (CSS hides it): the tablet Menu sheet keeps its "Board time" line and phone page
+            Live chips read the same time (`publishLiveClock` above). */}
+        <WardDemoClockPopover
+          className={styles.demoClock}
+          testId="ward-bar-demo-clock"
+          title={`Board time ${liveClockFace} AWST`}
+          aria-label={`Board time ${liveClockFace} AWST`}
+        >
+          <span className={styles.demoClockDot} aria-hidden="true" />
+          <span className={styles.demoClockLabel}>Board time</span>
+          <span className={styles.demoClockTime}>{liveClockFace}</span>
+          <span className={styles.demoClockTz}>AWST</span>
+        </WardDemoClockPopover>
 
         <span
           className={styles.mark}
