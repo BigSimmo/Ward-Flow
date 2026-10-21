@@ -2,14 +2,75 @@
 
 // A board row's actions: every control the row's menu offers, and the actions group the person
 // sheet shows. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { Dialog } from "@/components/wf";
 import { movementReferralLink, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { canSetArrivalPlan } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import type { EdRowFacts } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
+
+/**
+ * Audit 1 (CS-07, Josh 20 Oct): a step the ED cannot take back from a toast asks first, naming the
+ * person and UMRN, as the ward board's departure confirm does (`board/ward-board.tsx`).
+ */
+export function EdConfirmedStep({
+  label,
+  title,
+  consequence,
+  who,
+  umrn,
+  onConfirm,
+  className,
+  testId,
+  menuItem = false,
+}: {
+  label: string;
+  title: string;
+  consequence: string;
+  who: string;
+  umrn: string;
+  onConfirm: () => void;
+  className: string;
+  testId: string;
+  /** Set by the row's actions menu, which gives each of its items `menuitem`. */
+  menuItem?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        data-testid={testId}
+        data-action={testId}
+        role={menuItem ? "menuitem" : undefined}
+        className={className}
+        onClick={() => setOpen(true)}
+      >
+        {label}
+      </button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={title}
+        description={`Check: ${who} · ${umrn}. ${consequence}`}
+        size="sm"
+        data-testid={`${testId}-confirm`}
+        secondary={[{ label: "Cancel", onAction: () => setOpen(false) }]}
+        primary={{
+          label,
+          tone: "danger",
+          onAction: () => {
+            setOpen(false);
+            onConfirm();
+          },
+        }}
+      />
+    </>
+  );
+}
 
 /** Every action the row offers. The board table puts them in the row's menu; the sheet lists them. */
 export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
@@ -169,18 +230,17 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         </button>
       ) : null}
       {movement.referralId === undefined && movementReferralLink(movement, referrals).kind === "not_recorded" ? (
-        <button
-          type="button"
-          data-testid={`ward-ed-no-referral-raised-${movement.id}`}
+        // Audit 1 CS-07: the engine has no undo for this record, so it asks first.
+        <EdConfirmedStep
+          label="No referral raised"
+          title={`Record that no referral was raised for ${row.patientInfo.displayName}?`}
+          consequence="This cannot be undone here."
+          who={row.patientInfo.displayName}
+          umrn={row.patientInfo.umrn}
+          testId={`ward-ed-no-referral-raised-${movement.id}`}
           className={styles.acceptButton}
-          onClick={() =>
-            raise("RECORD_NO_REFERRAL", {
-              movementId: movement.id,
-            })
-          }
-        >
-          No referral raised
-        </button>
+          onConfirm={() => raise("RECORD_NO_REFERRAL", { movementId: movement.id })}
+        />
       ) : null}
       <button
         type="button"
@@ -218,11 +278,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           data-testid={`ed-mark-form-received-${movement.id}`}
           data-action={`ed-mark-form-received-${movement.id}`}
           className={styles.acceptButton}
-          onClick={() =>
-            raise("RECORD_LEGAL_FORM_RECEIVED", {
-              movementId: movement.id,
-            })
-          }
+          onClick={() => recordEdStep({ type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id })}
         >
           Mark Form 1A received
         </button>
@@ -285,19 +341,16 @@ export function renderEdRowNextGroup(
     <>
       {movement.edOutcome !== undefined && !movement.leftDepartmentAt ? (
         <div className={styles.tableActionGroup} data-unfolded="true">
-          <button
-            type="button"
-            data-testid={`ward-ed-mark-left-${movement.id}`}
-            data-action={`ward-ed-mark-left-${movement.id}`}
+          <EdConfirmedStep
+            label="Left the department"
+            title={`${patientInfo.displayName} has left the department?`}
+            consequence="This takes them off this board and cannot be undone here."
+            who={patientInfo.displayName}
+            umrn={patientInfo.umrn}
+            testId={`ward-ed-mark-left-${movement.id}`}
             className={`${styles.acceptButton} ${styles.primaryActionButton}`}
-            onClick={() =>
-              raise("RECORD_LEFT_DEPARTMENT", {
-                movementId: movement.id,
-              })
-            }
-          >
-            Left the department
-          </button>
+            onConfirm={() => raise("RECORD_LEFT_DEPARTMENT", { movementId: movement.id })}
+          />
         </div>
       ) : movement.closure ? (
         /*

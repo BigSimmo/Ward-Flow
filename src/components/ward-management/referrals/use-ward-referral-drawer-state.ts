@@ -726,12 +726,11 @@ export function useWardReferralDrawerState({
     // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
     // sentence beside it is what was missing here.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
-    const sortedUnits = [...matchingRecords].sort((a, b) => {
-      const aMatch = a.healthService === catchmentService && catchmentConfirmed ? 1 : 0;
-      const bMatch = b.healthService === catchmentService && catchmentConfirmed ? 1 : 0;
-      if (aMatch !== bMatch) return bMatch - aMatch;
-      return b.readyBeds - a.readyBeds;
-    });
+    // Audit 1 (decision 6), Josh 20 Oct: a fixed, neutral order (health service, then ward name),
+    // never catchment first or most ready beds. Every matching ward stays listed.
+    const sortedUnits = [...matchingRecords].sort(
+      (a, b) => (a.healthService ?? "~").localeCompare(b.healthService ?? "~") || a.name.localeCompare(b.name),
+    );
     return { readyBedsCount, pulledBedsCount, pendingPreparationCount, sortedUnits };
   })();
 

@@ -9,7 +9,7 @@ import {
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
-import { assembleWorld, conflicts, markerKind, planSave } from "./records.mjs";
+import { assembleWorld, conflicts, coveredRecords, markerKind, planSave } from "./records.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** Desks with a phone turned on, read a page at a time when new alerts are queued. */
@@ -1475,11 +1475,13 @@ export function createWorkspaceStore(
      * The client asks for this when more of its commands are queued, and reads the board once at
      * the end. A refused or stale command always carries the snapshot. `options.view` is the
      * sender's desk from `viewer()`: the command is checked against its role and place, and the
-     * reply carries only its part of the workspace.
-     * @param {{ revisionOnly?: boolean, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * reply carries only its part of the workspace. `options.seen` maps record tokens to the later
+     * revision the sender has seen each at (CS-19 follow-up, `conflicts` in records.mjs); an
+     * accepted reply names the records it checked as `covered`.
+     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
-      const { revisionOnly = false, view } = options;
+      const { revisionOnly = false, view, seen = null } = options;
       // A community sender's team is authenticated by the selected membership, not by the
       // browser-supplied label. Bind it before applying the event so scope can safely recognise
       // the sender as the owner of the referral later.
@@ -1492,11 +1494,13 @@ export function createWorkspaceStore(
       }
       const supplied = event;
       event = engine.storableCommand(event);
-      if (!engine.validCommand(event)) throw new Error("invalid-command");
+      // Audit E-06: a guard refusal is a refusal with its reason, like any other, not a bad request.
+      const privacyRefusal = engine.privacyRefusal(event);
+      if (!privacyRefusal && !engine.validCommand(event)) throw new Error("invalid-command");
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprintOf = (value) =>
         createHash("sha256")
-          .update(JSON.stringify(canonical({ expectedRevision, event: value })))
+          .update(JSON.stringify(canonical({ expectedRevision, event: value, ...(seen ? { seen } : {}) })))
           .digest("hex");
       const fingerprint = fingerprintOf(event);
       // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
@@ -1534,12 +1538,18 @@ export function createWorkspaceStore(
           ? "Someone else changed this record first. Review the latest board before trying again."
           : "The workspace changed. Review the latest board before trying again.";
         let code = null;
+        let partly = null;
+        let covered = null;
         const priorRevision = Number(row.revision);
         // The sender's own role and place, checked before the revision, so a desk never learns
         // whether a record outside its place changed. A refusal can still show that an id
         // exists, because ids it cannot find fall through to the engine's own not-found reply.
         const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
-        if (scopeRefusal) {
+        if (privacyRefusal) {
+          outcome = "denied";
+          status = 422;
+          reason = privacyRefusal;
+        } else if (scopeRefusal) {
           outcome = "denied";
           status = 422;
           reason = scopeRefusal;
@@ -1567,14 +1577,27 @@ export function createWorkspaceStore(
               event,
               expectedRevision,
               priorRevision,
+              seen,
             });
           if (!stale) {
             ({ outcome, changes, reason } = applied);
+            partly = applied.partly ?? null;
             completion = applied.completion ?? {};
             status = outcome === "accepted" ? 200 : 422;
           }
           if (!stale && outcome === "accepted") {
             const before = row.payload;
+            // CS-19 follow-up: the records this save checked, so the sender's open popups can say
+            // they have seen them at this revision.
+            // Only records the sender's own view shows: a side effect outside its place stays unnamed.
+            if (row.core) {
+              const worlds = [before, applied.world];
+              const scoped = view
+                ? worlds.map((world) => engine.scopeWorld(world, view.access, at, view.grants))
+                : worlds;
+              const visible = scoped.every((world, index) => world === worlds[index]) ? null : scoped;
+              covered = coveredRecords({ core: row.core, before, after: applied.world, event, visible });
+            }
             row.revision = priorRevision + 1;
             row.payload = applied.world;
             await saveWorld(client, row, row.payload, row.revision, at);
@@ -1593,12 +1616,15 @@ export function createWorkspaceStore(
             }
           }
         }
+        // Audit E-05: a partly refused "Refer to wards" is saved and audited as accepted (the audit
+        // row's domain audit holds each ward's outcome); the sender is told which ward was held back.
         const result = {
-          outcome,
+          outcome: outcome === "accepted" && partly ? "partly" : outcome,
           commandRevision: Number(row.revision),
           ...(outcome === "accepted" ? completion : {}),
-          ...(reason ? { error: reason } : {}),
+          ...(reason ? { error: reason } : outcome === "accepted" && partly ? { error: partly } : {}),
           ...(code ? { code } : {}),
+          ...(covered?.length ? { covered } : {}),
         };
         await audit(client, view, actorId, {
           commandId,

@@ -12,6 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -64,5 +65,22 @@ describe("Transport stage step with Undo", () => {
     );
     expect(screen.getByText("Undone. Back as it was.")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-officer-toast-undo")).not.toBeInTheDocument();
+  });
+});
+
+describe("ED Form 1A receipt with Undo (Audit 1 CS-07)", () => {
+  it("marks Form 1A received on WF-001 and the toast's Undo takes it back", () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <EdScreen edId="arm-ed" />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ed-mark-form-received-WF-001"));
+    expect(screen.queryByTestId("ed-mark-form-received-WF-001")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByTestId("ed-mark-form-received-WF-001")).toBeInTheDocument();
   });
 });

@@ -19,7 +19,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { MOVEMENT_STAGES, type LegalStatus, type MovementId } from "@/components/ward-management/ward-model";
 import { movementById } from "@/components/ward-management/ward-movements";
-import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * ⚠️ THE CONTROLS ACTUALLY DO SOMETHING — which is the assertion the reducer tests cannot make.
@@ -430,33 +430,6 @@ describe("finding 2 — the voluntary-on-locked warning must render, not just re
     expect(WF_008?.security).toBe("Open");
   });
 
-  it("shows the warning text on every locked-ward alternative, marked with data-restriction, without touching eligibility", () => {
-    renderWorkspace("WF-008");
-    // WF-008 is closed, so the eligibility block sits behind its own control (ruling 1 above). The
-    // warning still has to survive being asked for — a legal risk that only appears on movements
-    // nobody looked at twice would be worse than useless.
-    fireEvent.click(screen.getByTestId("ward-console-reveal-eligibility"));
-    const alternatives = screen.getByTestId("ward-console-alternatives");
-    // Review finding 2 named both: "Ward 2K" and "FSH Adult Secure" each offered as
-    // "Eligible now" with the legal warning stripped. Both rows carry it, so both are checked.
-    // Selected by the RESTRICTION ATTRIBUTE, not by the sentence. The attribute is the contract
-    // between the derivation and the screen; the sentence is rendering, and the owner is rewording
-    // these pages. Finding the notices by their text made a reworded warning look like a MISSING
-    // warning — the same red as the defect this test exists for, which is the one thing it must
-    // never be confused with.
-    const notices = Array.from(alternatives.querySelectorAll<HTMLElement>('[data-restriction="voluntary_on_locked"]'));
-    expect(notices, "both locked-ward alternatives must carry the restriction marker").toHaveLength(2);
-    for (const notice of notices) {
-      expectSays(notice.textContent ?? "", "the locked-ward legal-status warning", ["voluntary", "locked", "legal"]);
-      // Information, never a gate: the row this notice sits on still reads its own real verdict.
-      // Walked by DOM structure (span -> row), never by CSS-module class name — the vitest
-      // CSS-module proxy fabricates a class for any property asked of it, so a
-      // `.closest(".alternativeRow")` selector would silently match nothing rather than fail loudly.
-      const row = notice.closest("li")!;
-      expect(within(row).getByText("Eligible", { selector: "b" })).toBeInTheDocument();
-    }
-  });
-
   it("also shows the warning for the CHOSEN destination once it is voluntary-on-locked", () => {
     // No seeded movement carries this combination on its OWN accepted unit — WF-004 is accepted at
     // BTY Adult Secure (a locked ward) as an involuntary inpatient. `CHANGE_LEGAL_STATUS` is a real,
@@ -550,36 +523,15 @@ describe("D1 — a figure tile must count the thing its label promises", () => {
   });
 });
 
-describe("D2 — the shortlist denominator is the cohort, and a shortlist with nothing in it says so", () => {
-  it("counts the movement's own cohort, derived from the live units and never hardcoded", () => {
-    // ⚠️ `eligibleCandidatesAmong` filters `unit.cohort === movement.cohort` BEFORE ranking, so
-    // "3 of 23" credited the search with seven wards that were never candidates. Computed here
-    // from the same source the component reads, so a ward added to the map moves both together.
-    const adultWards = allUnits().filter((unit) => unit.cohort === "Adult").length;
-    expect(adultWards).toBe(15);
-    expect(allUnits()).toHaveLength(22);
-
+// Audit 1, Josh 20 Oct (NB-9): the "Other wards, ranked" panel is removed (never-build item 2).
+describe("NB-9 — no ranked list of other wards", () => {
+  it("shows no ranked alternatives, even with the eligibility block revealed", () => {
     renderWorkspace("WF-009");
-    const shortlist = screen.getByTestId("ward-console-alternatives").closest("section")!;
-    expect(within(shortlist).getByText(`3 of ${adultWards}`)).toBeInTheDocument();
-    expect(within(shortlist).queryByText("3 of 22")).toBeNull();
-    expect(within(shortlist).getByText(/15 adult wards in the network/)).toBeInTheDocument();
-  });
-
-  it("says on the page when no ward on the list could take this patient", () => {
-    // ⚠️ WF-009 IS THE ONE PATIENT NOBODY CAN PLACE, and the panel headed "Other wards, ranked"
-    // listed three wards of which two had already declined and the third fails a secure gate. A
-    // coordinator reads that heading as somewhere left to try.
-    renderWorkspace("WF-009");
-    expect(screen.getByTestId("ward-console-no-usable-alternative")).toHaveTextContent(
-      /No ward on this list could take this patient/,
-    );
-  });
-
-  it("does not say it on a movement whose shortlist does hold a usable ward", () => {
-    // The anti-vacuity half: a note that appeared on every movement would say nothing at all.
-    renderWorkspace("WF-001");
-    expect(screen.queryByTestId("ward-console-no-usable-alternative")).toBeNull();
+    expect(screen.queryByTestId("ward-console-alternatives")).toBeNull();
+    expect(screen.queryByText(/Other wards, ranked/u)).toBeNull();
+    renderWorkspace("WF-008");
+    fireEvent.click(screen.getByTestId("ward-console-reveal-eligibility"));
+    expect(screen.queryByTestId("ward-console-alternatives")).toBeNull();
   });
 });
 

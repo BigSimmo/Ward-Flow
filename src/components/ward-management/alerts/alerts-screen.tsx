@@ -948,24 +948,33 @@ function AlertsWorkspace() {
     { id: "history" as const, label: "History", count: history.length },
   ];
 
+  // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
+  // chose it, says so above its actions.
   const selectedPanel = selected ? (
-    <AlertDetail
-      key={selected.item.id}
-      item={selected.item}
-      movement={selected.movement}
-      subject={selected.subject}
-      units={units}
-      now={now}
-      mine={selected.mine}
-      acknowledgements={inboxAcknowledgements[selected.item.id]}
-      ownership={inboxOwnership[selected.item.id]}
-      snoozeEntries={inboxSnoozes[selected.item.id]}
-      snoozedUntil={selected.snooze}
-      configuration={configuration}
-      handlers={detailHandlers}
-      actionDisabledReason={actionDisabledReason}
-      releaseRef={releaseRef}
-    />
+    <>
+      {chosen ? null : (
+        <p className={styles.confirmNote} data-testid="ward-alerts-first-in-line">
+          First in line, not chosen yet. Check the name before you act.
+        </p>
+      )}
+      <AlertDetail
+        key={selected.item.id}
+        item={selected.item}
+        movement={selected.movement}
+        subject={selected.subject}
+        units={units}
+        now={now}
+        mine={selected.mine}
+        acknowledgements={inboxAcknowledgements[selected.item.id]}
+        ownership={inboxOwnership[selected.item.id]}
+        snoozeEntries={inboxSnoozes[selected.item.id]}
+        snoozedUntil={selected.snooze}
+        configuration={configuration}
+        handlers={detailHandlers}
+        actionDisabledReason={actionDisabledReason}
+        releaseRef={releaseRef}
+      />
+    </>
   ) : null;
 
   const todayChart = (
