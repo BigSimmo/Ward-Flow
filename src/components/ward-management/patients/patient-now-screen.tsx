@@ -121,6 +121,7 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
 // and fence the completion so an old patient's save cannot dismiss another patient's form.
@@ -501,7 +502,10 @@ export function PatientNowScreen({
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = etaFromDraft(cleanEta);
     const errors: typeof transportFormErrors = {};
+    // HAZ-03 (#430): the engine's own CAD rule, so a placeholder is named here rather than refused silently.
+    const cadProblem = cleanCad ? cadNumberProblem(cleanCad) : undefined;
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
+    else if (cadProblem) errors.cad = `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}`;
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
     else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
     if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
