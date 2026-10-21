@@ -473,7 +473,10 @@ function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospita
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
-        Synthetic prototype
+        <span>
+          <span className={styles.pillLong}>Synthetic </span>
+          <span className={styles.pillTail}>prototype</span>
+        </span>
       </button>
       {open && (
         <section className={styles.pop} aria-label="Ward Flow data mode">

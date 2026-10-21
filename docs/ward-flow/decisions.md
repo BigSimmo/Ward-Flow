@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-19 - added the existing hosting approval’s supersession pointer at D-2; Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-22 - added D-72 to D-77 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps and the bigger UX changes); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -874,3 +874,23 @@ is inferred.
   2. **Fix plan item 16.** The coordinator can ask more wards about an open community referral. Each ward added is recorded with who added it and when. No more than 3 wards may be waiting at once (`PARALLEL_REFERRAL_CAP`), and wards that declined do not count. Wards are listed alphabetically and are never ranked or suggested (D-71).
 - **Boundary:** Synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
 - **Why:** D-74 item 2 put the community gaps into Phase 2, and the scope showed that only the full journey puts community transport on the boards that coordinators and transport officers already use.
+
+## D-77. The ten bigger UX changes approved for build (22 October 2026)
+
+- **Date:** 22 October 2026 (`2026-10-22`), 12:52 AM AWST. **Decided by:** Josh, on the decision card in the Bigger UX changes mock-ups thread, choosing "Build all ten, as recommended", after "Ok go ahead and build this for me now". The mock-ups were made from the running app at `main` 1459fb5, as D-75 requires, and the D-74 approval rule is met.
+- **Decision:** build these ten changes and the desktop top bar fix:
+  1. **Short community referral form.** Purpose is asked only on referrals to a community team, and purpose and first contact are required. There is no Documents step. The form has team search and a Sent tab.
+  2. **ED board** shows where its referral stands, using the words "Bed held".
+  3. **Desktop decision pane** uses the phone list, with Clinical override behind one button.
+  4. **Ask wards** is a checkbox list of up to 3 wards (D-76 item 2).
+  5. **Legal forms** loses the strip and side panels. Board now and Check a form time are dropped, and Form times stays in Tools.
+  6. **Add a patient** asks for identity only. Aboriginal status stays an optional field.
+  7. **Alerts drawer** gives one action per alert.
+  8. **Demo menu** sits under the Synthetic pill, and all 7 scenarios are kept.
+  9. **Statistics.** Summary and Overview become one Network page with no duplicate figures.
+  10. **Phone Bed board** shows every bed, above the day figures, with no legend on the phone.
+  11. **Top bar** at 1280 px is fixed.
+- **Not decided:** the "Not legally checked" notice stays on the live Legal forms screen, and D-70 is unchanged, until Josh answers that question. The card's recommendation to remove it is not acted on.
+- **Process:** one pull request per group, each from current `main`, with a visual check. Nothing merges without Josh.
+- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending.
+- **Why:** Josh reviewed the ten mock-ups, made from the current app, and approved them with the recommended answers to their open questions.

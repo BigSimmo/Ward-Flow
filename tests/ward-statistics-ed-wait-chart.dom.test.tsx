@@ -106,13 +106,13 @@ describe("the elapsed-wait chart and its named longest waits", () => {
   });
 
   // Owner, 13 Oct 2026: Statistics shows AD- admission numbers only, no patient name or UMRN, and
-  // D-39 never shows a WF- journey id. An ED wait has no admission yet, so it reads "not yet
-  // admitted"; the row links to the live page, which still shows the name.
-  it("labels the longest wait not yet admitted, never a name or WF id, and formats it through splitDuration, never as raw minutes", () => {
+  // D-39 never shows a WF- journey id. An ED wait has no admission yet, so it reads by its urgency
+  // tier (UX audit 21 Oct 2026); the row links to the live page, which still shows the name.
+  it("labels the longest wait by urgency tier, never a name or WF id, and formats it through splitDuration, never as raw minutes", () => {
     renderEd([under, past24, past48, distractor]);
 
     const longest = screen.getByTestId("ward-stat-ed-longest-wait").textContent ?? "";
-    expect(longest).toContain("not yet admitted");
+    expect(longest).toMatch(/tier [123] · /u);
     expect(longest).not.toMatch(/WF-/u);
     expect(longest).not.toContain("Name not recorded");
     expect(longest).toContain("2d 2h");
@@ -154,7 +154,8 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(rowPast24.textContent).toContain("1d 1h");
     expect(rowPast48.textContent).toContain("2d 2h");
     // AD- numbers only on Statistics (Owner, 13 Oct 2026) and never a WF- id (D-39): no name, no UMRN.
-    expect(rowPast48.textContent).toContain("Not yet admitted");
+    // UX audit 21 Oct 2026: the row names the recorded urgency tier, not "Not yet admitted" on every row.
+    expect(rowPast48.textContent).toMatch(/Tier [123] · /u);
     expect(table.textContent).not.toMatch(/WF-/u);
     expect(table.textContent).not.toContain("Name not recorded");
 
