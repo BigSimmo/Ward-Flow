@@ -15,6 +15,7 @@ import {
   FileClock,
   FileText,
   FlaskConical,
+  Inbox,
   Map as MapIcon,
   MapPinned,
   Phone,
@@ -46,10 +47,13 @@ const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").
   ssr: false,
 });
 
+// The synthetic hospital feed inbox (fix plan item 5) loads only when its row is opened.
+const WardFeedInbox = dynamic(() => import("./ward-feed-inbox").then((m) => m.WardFeedInbox), { ssr: false });
+
 const root = "/ward-flow";
 
 export type ToolsSheetToolId =
-  "figures" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo";
+  "figures" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo" | "feed";
 
 export type WardToolsSheetProps = {
   isPhone: boolean;
@@ -422,6 +426,13 @@ export function WardToolsSheet({
       <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
         <div className={styles.card}>
           {tool("demo", FlaskConical, "Demo", "Scenario, clock and reset. Synthetic data only.", <WardDemoPanel />)}
+          {tool(
+            "feed",
+            Inbox,
+            "Hospital feed",
+            "Invented admissions and discharges to confirm or reject.",
+            <WardFeedInbox />,
+          )}
         </div>
       </section>
     </div>

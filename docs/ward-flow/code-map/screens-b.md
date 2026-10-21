@@ -653,13 +653,21 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
 **Not a route.** Everything here renders inside the Tools sheet (`ward-tools-sheet.tsx`), opened as a
 drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rather than mounted by any
 one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
-these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
+these are chrome, not a drawn screen. **Dispatches:** demo events from `ward-demo-panel.tsx`, and
+`PATIENT_ARRIVED` and `RECORD_LEAVING` from `ward-feed-inbox.tsx`, only when a person confirms a message.
 **Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
 bed derivations (All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
 demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
 `ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
 `ward-bar-figures-telemetry.dom.test.tsx`.
 
+- **`tools/ward-feed-inbox.tsx`** (+ `.module.css`, `ward-feed-inbox-store.ts`) — the synthetic
+  hospital feed inbox (fix plan item 5, 21 Oct 2026), a Tools row under Demo. Receive brings in the
+  next message from `integration/hospital-feed-sim.ts`; a person confirms an arrival or a departure
+  (raising the normal event as this desk) or rejects it. Unreadable, non-synthetic and repeated
+  messages are refused; a name or date of birth that differs from the record confirms nothing. The
+  inbox is memory only and empties at sign-out or a new demo world. Tests:
+  `ward-hospital-feed-inbox.dom.test.tsx`.
 - **`src/components/ward-management/tools/ward-catchment-resolver.module.css`** (525 lines) —
   styles for the resolver.
 - **`src/components/ward-management/tools/ward-catchment-resolver.tsx`** (1027 lines) — WA
