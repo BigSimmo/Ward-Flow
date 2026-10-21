@@ -18,6 +18,7 @@ import styles from "./sheet.module.css";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
+  overlayOpener,
   popSheet,
   pushSheet,
   startSheetOpenFocus,
@@ -250,7 +251,7 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
 
-    const previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousActiveElement = overlayOpener();
     const restoreTimers = restoreTimersRef.current;
     // A close-then-reopen inside one frame leaves this instance's own restore
     // scheduled; left pending it pulls focus back to the opener mid-open.

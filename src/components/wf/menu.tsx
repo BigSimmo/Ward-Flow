@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -57,6 +58,48 @@ type MenuTriggerProps = {
 };
 
 /** Closes on a pointer press outside the anchor. */
+/*
+ * Keeps an open panel inside the window. It drops below its trigger, so a trigger low on the page or
+ * a long list ran off the bottom with no way to reach the last items, and an anchor near the right
+ * edge pushed it off the side. It flips above when there is more room there, caps its height to the
+ * room it has and scrolls inside, and slides sideways back into view.
+ */
+const PANEL_EDGE_GAP = 8;
+
+function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, panelRef: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    const panel = panelRef.current;
+    if (!open || !anchor || !panel) return;
+    const fit = () => {
+      Object.assign(panel.style, { top: "", bottom: "", maxHeight: "", overflowY: "", translate: "" });
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const viewportWidth = document.documentElement.clientWidth;
+      const anchorBox = anchor.getBoundingClientRect();
+      const height = panel.getBoundingClientRect().height;
+      const below = viewportHeight - anchorBox.bottom - PANEL_EDGE_GAP - 6;
+      const above = anchorBox.top - PANEL_EDGE_GAP - 6;
+      if (height > below) {
+        if (above > below) Object.assign(panel.style, { top: "auto", bottom: "calc(100% + 6px)" });
+        const room = Math.max(above, below);
+        if (height > room) Object.assign(panel.style, { maxHeight: `${Math.max(room, 120)}px`, overflowY: "auto" });
+      }
+      const box = panel.getBoundingClientRect();
+      if (box.width === 0) return;
+      const shift =
+        box.right > viewportWidth - PANEL_EDGE_GAP
+          ? viewportWidth - PANEL_EDGE_GAP - box.right
+          : box.left < PANEL_EDGE_GAP
+            ? PANEL_EDGE_GAP - box.left
+            : 0;
+      if (shift !== 0) panel.style.translate = `${Math.round(shift)}px 0`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [open, anchorRef, panelRef]);
+}
+
 function useOutsidePress(open: boolean, anchorRef: RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
     if (!open) return;
@@ -92,6 +135,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
   const anchorRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
 
   const actionableCount = items.filter((item) => item.kind === undefined || item.kind === "item").length;
   /** One checkable item reserves the tick column on every item, so labels stay aligned. */
@@ -118,9 +162,15 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
 
   const closeFromOutside = useCallback(() => close(false), [close]);
   useOutsidePress(open, anchorRef, closeFromOutside);
+  usePanelFit(open, anchorRef, menuPanelRef);
 
   useEffect(() => {
-    if (open) itemRefs.current[active]?.focus();
+    if (!open) return;
+    // The panel is already fitted to the window, so only the panel itself scrolls to the item, never
+    // the page behind it (a plain focus() could slide a clipped page sideways).
+    const item = itemRefs.current[active];
+    item?.focus({ preventScroll: true });
+    item?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   }, [open, active]);
 
   const openAt = (position: "first" | "last") => {
@@ -191,6 +241,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
       {open ? (
         // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
         <div
+          ref={menuPanelRef}
           id={menuId}
           role="menu"
           aria-label={label}
@@ -306,6 +357,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
     setReturnFocus(shouldRestore);
   }, []);
   useOutsidePress(open, anchorRef, close);
+  usePanelFit(open, anchorRef, panelRef);
 
   useEffect(() => {
     if (!open && returnFocus) {
@@ -323,7 +375,7 @@ export function Popover({ label, trigger, children, align = "start", className, 
     const first = panel?.querySelector<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
-    (first ?? panel)?.focus();
+    (first ?? panel)?.focus({ preventScroll: true });
   }, [open]);
 
   const onTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {

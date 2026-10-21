@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 
 import { ToastProvider, WfServerPhoneProvider, guessPhoneFromRequest, guessTabletFromRequest } from "@/components/wf";
+import { OverlayScope } from "@/components/wf/overlay-root";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
@@ -152,6 +153,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
           {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
           <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+            {/* Sheets, dialogs and toasts are portalled outside `.shellRow`, so they take the Ward tokens from here. */}
+            <OverlayScope className={styles.overlayScope} />
             <WardAccessibility />
             <WardRowDensity />
             <WardLiveRegion />
