@@ -78,10 +78,15 @@ describe("budget recheck: which pull requests re-measure when main moves", () =>
 describe("budget recheck workflow", () => {
   const workflow = readFileSync(new URL("../.github/workflows/ward-flow-budget-recheck.yml", import.meta.url), "utf8");
 
-  it("runs on pushes to main only, with main's own script and no write access beyond re-running jobs", () => {
-    expect(workflow).toMatch(/^on:\n {2}push:\n {4}branches: \[main\]\n\n/mu);
+  it("runs on pushes to main and auto-merge arming only, with main's own script and no write access beyond re-running jobs", () => {
+    expect(workflow).toMatch(
+      /^on:\n {2}push:\n {4}branches: \[main\]\n {2}pull_request_target:\n {4}types: \[auto_merge_enabled\]\n {4}branches: \[main\]\n\n/mu,
+    );
+    // pull_request_target must only ever run main's script: no PR ref, head or repository checkout.
+    expect(workflow).toMatch(/^ {10}ref: main$/mu);
+    expect(workflow).not.toMatch(/github\.event\.pull_request\.head|github\.head_ref|repository: \$\{\{/u);
     expect(workflow).toMatch(/^permissions:\n {2}contents: read\n {2}actions: write\n {2}pull-requests: read\n\n/mu);
-    expect(workflow).not.toMatch(/pull_request_target|contents: write|pull-requests: write|secrets\./u);
+    expect(workflow).not.toMatch(/contents: write|pull-requests: write|secrets\./u);
     expect(workflow).toContain("persist-credentials: false");
     expect(workflow).toContain("run: node scripts/ward-ci-public/budget-recheck.mjs");
   });

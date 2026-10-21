@@ -252,6 +252,14 @@ function requireWorkflow(source) {
     "node scripts/ward-ci-public/merge-latest-main.mjs",
     expression("github.event_name == 'pull_request'"),
   );
+  {
+    const build = jobs.get("build");
+    const merge = build.indexOf("name: Merge the latest main before measuring");
+    assert.ok(
+      merge >= 0 && merge < build.indexOf("name: Check the phone script budget"),
+      "build: main is merged before the phone script budget is measured",
+    );
+  }
   assert.doesNotMatch(jobs.get("build"), /WARD_GATE_BUILD/u);
   exact("coverage", "Check complete executable coverage inventory", "npm run check:coverage-inventory", installed);
   assert.doesNotMatch(jobs.get("coverage"), /WARD_COVERAGE_BLOB_DIR/u);

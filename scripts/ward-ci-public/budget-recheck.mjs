@@ -9,6 +9,9 @@
  * "Ward Flow required" check goes back to pending and the PR cannot merge until the budget holds
  * against the main it would land on.
  *
+ * With WARD_PR_NUMBER set (auto-merge was just armed on that PR), it checks only that PR, against
+ * the time main last moved, so a PR armed after a push that skipped it is still re-measured.
+ *
  * It only re-runs jobs. It never changes auto-merge, reviews, branches or labels.
  */
 import { pathToFileURL } from "node:url";
@@ -40,8 +43,7 @@ export function decide(pr, run, jobs, since) {
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPOSITORY;
-  // This job starts seconds after the push; a build that started just before it is re-run once more.
-  const since = Date.now();
+  const only = Number(process.env.WARD_PR_NUMBER || 0);
   if (!token || !repo) throw new Error("GITHUB_TOKEN and GITHUB_REPOSITORY are required");
   const api = async (path, init = {}) => {
     const response = await fetch(`https://api.github.com/repos/${repo}${path}`, {
@@ -61,7 +63,12 @@ async function main() {
     return { run, jobs };
   };
 
-  const prs = (await api("/pulls?state=open&base=main&per_page=100")).filter((pr) => pr.base.repo.full_name === repo);
+  // On a push this job starts seconds after main moved; a build that started just before it is
+  // re-run once more. When auto-merge is armed, main last moved when its head commit was committed.
+  const since = only ? Date.parse((await api("/commits/main")).commit.committer.date) : Date.now();
+  const prs = only
+    ? [await api(`/pulls/${only}`)].filter((pr) => pr.state === "open" && pr.base.ref === "main")
+    : (await api("/pulls?state=open&base=main&per_page=100")).filter((pr) => pr.base.repo.full_name === repo);
   let pending = prs;
   let failures = 0;
   // Runs still building when main moved cannot have a job re-run until they finish; wait up to 50 min.
