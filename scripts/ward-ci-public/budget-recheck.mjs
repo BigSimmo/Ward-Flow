@@ -71,8 +71,8 @@ async function main() {
     : (await api("/pulls?state=open&base=main&per_page=100")).filter((pr) => pr.base.repo.full_name === repo);
   let pending = prs;
   let failures = 0;
-  // Runs still building when main moved cannot have a job re-run until they finish; wait up to 50 min.
-  for (let round = 0; pending.length > 0 && round < 50; round++) {
+  // Runs still building when main moved cannot have a job re-run until they finish; wait up to 10 min.
+  for (let round = 0; pending.length > 0 && round < 10; round++) {
     if (round > 0) await new Promise((resolve) => setTimeout(resolve, 60_000));
     const next = [];
     for (const pr of pending) {
@@ -92,7 +92,7 @@ async function main() {
     }
     pending = next;
   }
-  for (const pr of pending) console.error(`::warning::#${pr.number}: its run was still in progress after 50 minutes`);
+  for (const pr of pending) console.error(`::warning::#${pr.number}: its run was still in progress after 10 minutes`);
   if (failures > 0) process.exit(1);
 }
 
