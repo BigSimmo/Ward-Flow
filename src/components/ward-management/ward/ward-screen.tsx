@@ -150,7 +150,7 @@ type WardScreenProps = {
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
-    return <WardAnswerView unitId={unitId} />;
+    return <WardAnswerView key={unitId} unitId={unitId} />;
   }
   return (
     <WardOverviewScreen

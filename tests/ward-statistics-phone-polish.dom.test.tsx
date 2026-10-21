@@ -13,11 +13,7 @@ vi.mock("next/link", () => ({
 
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import {
-  StatisticsCompareScreen,
-  shortPlaceName,
-  shortWardLabels,
-} from "@/components/ward-management/statistics/statistics-compare-screen";
+import { StatisticsCompareScreen } from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
@@ -104,18 +100,12 @@ describe("Statistics ED page on a phone (stats-8)", () => {
   });
 });
 
-describe("Compare chart ward labels (stats-13)", () => {
-  it("gives every ward a short, unique label of place and cohort, or its name on a clash", () => {
-    const units = allUnits();
-    const labels = shortWardLabels(units);
-    const values = units.map((unit) => labels.get(unit.id)!);
-    expect(new Set(values).size).toBe(values.length);
-    for (const unit of units) {
-      const label = labels.get(unit.id)!;
-      if (label !== unit.name)
-        expect(label).toMatch(new RegExp(`^${shortPlaceName(unit.siteCode)} (Adult|Secure|Older|Youth)$`, "u"));
-    }
-    expect(values.filter((value, index) => value === units[index]!.name).length).toBeLessThan(units.length / 2);
+describe("Compare chart ward labels (UX audit 21 Oct 2026)", () => {
+  it("names every ward on the phone chart by its recorded name, as the desktop does", () => {
+    asPhone();
+    renderInProvider(<StatisticsCompareScreen />);
+    const chart = screen.getByTestId("ward-statistics-compare-phone");
+    for (const unit of allUnits().slice(0, 5)) expect(chart).toHaveTextContent(unit.name);
   });
 });
 
@@ -129,19 +119,6 @@ describe("Amber dot keys on the phone lists (phone review F-25)", () => {
     unmount();
     renderInProvider(<StatisticsServicesIndexScreen />);
     expect(screen.getByTestId("ward-statistics-services-dot-key")).toHaveTextContent(`past ${LONG_WAIT_HOURS} hours`);
-  });
-});
-
-describe("Compare chart place names (phone review F-24)", () => {
-  it("names a place from the site data and keeps the code only when the name is too long", () => {
-    expect(shortPlaceName("ALB")).toBe("Albany");
-    expect(shortPlaceName("BUN")).toBe("Bunbury");
-    expect(shortPlaceName("GER")).toBe("Geraldton");
-    expect(shortPlaceName("FRE")).toBe("Fremantle");
-    expect(shortPlaceName("SJGS")).toBe("SJOG Subiaco");
-    expect(shortPlaceName("SJGM")).toBe("SJOG Midland");
-    expect(shortPlaceName("SCGH")).toBe("SCGH");
-    expect(shortPlaceName("NOPE")).toBe("NOPE");
   });
 });
 
@@ -206,9 +183,8 @@ describe("Compare two wards on a phone (stats-7)", () => {
     expect(within(pair).queryByRole("heading", { name: "Pinned wards" })).toBeNull();
 
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
-    const labels = shortWardLabels(allUnits());
     expect(screen.getByTestId("ward-statistics-compare-phone-pinned")).toHaveTextContent(
-      `${labels.get(first!.id)} and ${labels.get(second!.id)} against the network`,
+      `${first!.name} and ${second!.name} against the network`,
     );
 
     fireEvent.click(screen.getByTestId("ward-statistics-compare-phone-pinned"));
