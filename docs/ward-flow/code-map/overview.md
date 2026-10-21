@@ -235,7 +235,7 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (50 `page.tsx` under `src/app/ward-flow/`, 52 total including sign-in and digest)
+### 3.1 Routes (52 `page.tsx` under `src/app/ward-flow/`, 54 total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
@@ -243,11 +243,12 @@ Every page file is a server component that renders one client screen (or redirec
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/` (home) and `/command` (redirect alias)                                               | `CoordinatorScreen` (coordinator)                                         |
 | `/alerts`                                                                                | `AlertsScreen` (alerts)                                                   |
+| `/bed-meeting`                                                                           | `BedMeetingTvScreen` (bed-meeting) — flag `bed-meeting-tv`                |
+| `/bed-meeting/agenda`                                                                    | `BedMeetingAgendaScreen` (bed-meeting)                                    |
 | `/board/[unitId]`                                                                        | `WardBoard` (board)                                                       |
 | `/capacity`                                                                              | `CapacityScreen` (capacity)                                               |
 | `/community`                                                                             | `CommunityIndex` (community)                                              |
 | `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                             |
-| `/delays`                                                                                | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation          |
 | `/discharges`                                                                            | `DischargeBoard` (discharges)                                             |
 | `/ed`                                                                                    | `EdIndex` (`ed/ed-index.tsx`)                                             |
 | `/ed/[edId]`                                                                             | `EdScreen` (ed)                                                           |
@@ -272,10 +273,11 @@ Every page file is a server component that renders one client screen (or redirec
 | `/statistics/wards`, `/eds`, `/teams`, `/services`                                       | directory indexes (`statistics-*-index.tsx`)                              |
 | `/statistics/ward/[unitId]`, `/ed/[edId]`, `/service/[serviceId]`, `/community/[teamId]` | per-place statistics screens                                              |
 | `/transport/officer`                                                                     | `OfficerScreen` (officer) — phone-first                                   |
+| `/waiting`                                                                               | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation          |
 | `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
 | `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Seven redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
+**Eight redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/delays` (renamed Waiting, 19 Oct 2026) → `/waiting` with its query kept, `/escalation`, `/exceptions`, `/queue` → `/waiting?from=…`, `/transport` → `/transport/officer`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries

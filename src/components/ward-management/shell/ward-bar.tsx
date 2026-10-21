@@ -1464,10 +1464,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
  *
  * ⚠️ **WHY THIS IS A SEPARATE COMPONENT, NOT A FEW LINES INSIDE `layout.tsx` ITSELF.** Resolving a
  * pathname needs `usePathname()`, a Client Component hook — but `layout.tsx` cannot become one:
- * it renders `DeveloperAreaGate` (`src/components/developer-area/developer-area-gate.tsx`)
- * directly, an `async` Server Component that reads `next/headers`, and a Client Component's own
- * module can never import a Server Component that uses a server-only API (the import would be
- * bundled for the browser, where `next/headers` does not exist). `WardBar` itself stays exactly
+ * it is itself an `async` Server Component that reads `next/headers` (`await headers()`), and a
+ * Client Component can never import a module that uses a server-only API (the import would be
+ * bundled for the browser, where `next/headers` does not exist). The since-retired
+ * `DeveloperAreaGate` used to be the server-only part here. `WardBar` itself stays exactly
  * the pure, resolved-prop consumer its own doc comment describes — this wrapper is the one place
  * between the route and it that is allowed to call a hook, mirroring `WardShellHeader`
  * (`ward-shell.tsx`), the shell's other per-route resolver already mounted the identical way from
