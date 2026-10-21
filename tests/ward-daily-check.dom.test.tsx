@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { MissedRequestsPanel } from "@/components/ward-management/coordinator/missed-requests-panel";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowClockContext, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -47,5 +47,24 @@ describe("Daily check: Checked, all accounted for", () => {
     expect(done).toHaveAccessibleDescription("Show the list first");
     fireEvent.click(done);
     expect(screen.getByTestId("ward-missed-check-done")).toBeInTheDocument();
+  });
+
+  it("asks for the list again when the screen stays open into the next day", () => {
+    const at = (now: number) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFlowClockContext.Provider value={now}>
+          <MissedRequestsPanel />
+        </WardFlowClockContext.Provider>
+      </WardFlowProvider>
+    );
+    const { rerender } = render(at(NOW_ANCHOR));
+    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
+    expect(screen.getByRole("button", { name: "Checked, all accounted for" })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    rerender(at(NOW_ANCHOR + 24 * 60));
+    expect(screen.getByRole("button", { name: "Checked, all accounted for" })).toHaveAttribute("aria-disabled", "true");
   });
 });
