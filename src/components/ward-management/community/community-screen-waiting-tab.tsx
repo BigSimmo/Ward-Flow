@@ -18,7 +18,6 @@ import styles from "./community.module.css";
 import { referralOriginLabel } from "./community-screen-helpers";
 import { communityAttentionItems } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /** Tab 1: the team's own queue of referrals waiting for its answer. */
 export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView }) {
@@ -376,15 +375,13 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                             >
                               Review
                             </button>
-                            <UnwiredPreview>
-                              <button
-                                type="button"
-                                className={styles.cardActionButton}
-                                onClick={() => handleActionClick("Assign", referral)}
-                              >
-                                Assign
-                              </button>
-                            </UnwiredPreview>
+                            <button
+                              type="button"
+                              className={styles.cardActionButton}
+                              onClick={() => handleActionClick("Assign", referral)}
+                            >
+                              Assign
+                            </button>
                             <button
                               type="button"
                               className={styles.cardActionButton}
