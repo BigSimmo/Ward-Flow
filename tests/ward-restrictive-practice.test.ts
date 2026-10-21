@@ -10,8 +10,11 @@ import {
   recentIncidents,
   seclusionRoomView,
 } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { scopeWardFlowState } from "@/components/ward-management/ward-access-state";
 import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR + 5;
@@ -170,5 +173,27 @@ describe("typed times and saving", () => {
     ]) {
       expect(eventCarriesTypedTextPayload({ now: NOW, ...event } as never)).toBe(false);
     }
+  });
+});
+
+describe("what a scoped desk is sent", () => {
+  it("keeps a ward desk's own episodes and drops those naming another ward's stay", () => {
+    const state = seedWardFlowState();
+    const stay = state.admissions.find((admission) => admission.state === "occupied")!;
+    const otherStay = state.admissions.find(
+      (admission) => admission.state === "occupied" && admission.unitId !== stay.unitId,
+    )!;
+    const both = apply(apply(state, start(stay.unitId, stay.id)), start(otherStay.unitId, otherStay.id));
+    const places = wardPlaceLookup(both.units);
+    const desk: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [stay.unitId] } };
+    const episodesOn = (world: WardFlowState, unitId: string) =>
+      world.units.find((unit) => unit.id === unitId)?.restrictivePractice?.episodes ?? [];
+
+    const scoped = scopeWardFlowState(both, desk, { now: NOW, places }).state;
+    expect(episodesOn(scoped, stay.unitId).map((episode) => episode.admissionId)).toEqual([stay.id]);
+    expect(episodesOn(scoped, otherStay.unitId)).toEqual([]);
+
+    const statewide = scopeWardFlowState(both, STATEWIDE_COORDINATOR, { now: NOW, places }).state;
+    expect(episodesOn(statewide, otherStay.unitId).map((episode) => episode.admissionId)).toEqual([otherStay.id]);
   });
 });

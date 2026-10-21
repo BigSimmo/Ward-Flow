@@ -382,7 +382,18 @@ function closeReferences(
   const has = (set: ReadonlySet<string>) => (id: string) => set.has(id);
   return {
     ...scoped,
-    units: scoped.units.map((unit) => {
+    units: scoped.units.map((scopedUnit) => {
+      // D-72: a seclusion or restraint episode names a stay, so it goes wherever that stay goes.
+      const practice = scopedUnit.restrictivePractice;
+      const unit = practice
+        ? {
+            ...scopedUnit,
+            restrictivePractice: {
+              ...practice,
+              episodes: practice.episodes.filter((episode) => admissions.has(episode.admissionId)),
+            },
+          }
+        : scopedUnit;
       if (unit.arrivalCapacityConflicts === undefined && unit.reservationReleaseCapacityConflicts === undefined)
         return unit;
       const own = <C extends { movementId: string; admissionId?: string }>(conflicts: readonly C[] | undefined) =>

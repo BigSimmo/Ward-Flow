@@ -16,12 +16,14 @@ import {
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
+import { wardPlaceLookup } from "../ward-access-places";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-roles";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
+import { unitInScope } from "../ward-role-access";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
@@ -51,9 +53,13 @@ export function SeclusionScreen() {
     access.role === "ward" ? "ward" : access.role === "bed_manager" ? "bed_manager" : "coordinator";
   const patientOf = usePatientOf();
   const [chosen, setChosen] = useState<string>("");
-  const wardId = units.some((unit) => unit.id === chosen) ? chosen : (units[0]?.id ?? "");
-  const ward = units.find((unit) => unit.id === wardId);
-  const inUse = units.flatMap((unit) => openEpisodes(unit.restrictivePractice).map((episode) => ({ unit, episode })));
+  // Only the wards this desk may see: a ward or site desk never lists another ward's episodes, and
+  // the picker opens on the desk's own ward.
+  const places = wardPlaceLookup(units);
+  const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
+  const wardId = visible.some((unit) => unit.id === chosen) ? chosen : (visible[0]?.id ?? "");
+  const ward = visible.find((unit) => unit.id === wardId);
+  const inUse = visible.flatMap((unit) => openEpisodes(unit.restrictivePractice).map((episode) => ({ unit, episode })));
   const nameOf = (admissionId: string) => {
     const stay = admissions.find((admission) => admission.id === admissionId);
     return stay ? patientOf(stay).displayName : "No longer on this ward";
@@ -95,10 +101,10 @@ export function SeclusionScreen() {
         </CardBody>
       </Card>
 
-      {units.length > 1 ? (
+      {visible.length > 1 ? (
         <Field label="Ward">
           <Select value={wardId} onChange={(event) => setChosen(event.target.value)} data-testid="seclusion-ward">
-            {units.map((unit) => (
+            {visible.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.name}
               </option>
