@@ -248,13 +248,9 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expectAccessible(page, testInfo, "referral board with the team's referral queued");
   await boardEntry.click();
   await expectAccessible(page, testInfo, "referral board, the team's referral open");
-  // Desktop shows the match panel's accepting label; the phone lists the ward as a "Fits" candidate.
-  if (isPhoneLayout(page)) {
-    await expect(page.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`)).toHaveAttribute("data-kind", "yes");
-  } else {
-    await expect(page.getByTestId("ward-referral-match-panel")).toBeVisible();
-    await expect(page.getByTestId(`ward-referral-match-accepts-${UNIT_ID}`)).toBeVisible();
-  }
+  // Both layouts list the ward as a "Fits" candidate in the one decision list (D-77).
+  await expect(page.getByTestId("ward-referral-match-panel")).toBeVisible();
+  await expect(page.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`)).toHaveAttribute("data-kind", "yes");
   const closeDetail = page.getByRole("button", { name: "Close referral detail (Esc)" });
   if (await closeDetail.isVisible()) await closeDetail.click();
   await expectNoReloadSince(page, "the coordinator reviewing the referral");
