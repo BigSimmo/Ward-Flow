@@ -1576,6 +1576,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Fix plan item 16 (D-76): the coordinator asks one or two more wards on a referral.
+  [
+    0.5,
+    (state, random) => ({
+      type: "ASK_MORE_WARDS",
+      referralId: id(referralFor(state, random)),
+      unitIds: [id(pick(random, state.units)), ...(chance(random, 0.3) ? [id(pick(random, state.units))] : [])],
+    }),
+  ],
   // Referral follow-up: opened, information asked for and met, corrections, ward intake codes.
   [
     1,
