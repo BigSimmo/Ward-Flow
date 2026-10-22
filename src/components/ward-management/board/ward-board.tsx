@@ -1115,7 +1115,22 @@ export function WardBoard({
             </button>
             <details className={styles.wardSwitch}>
               <summary>
-                Change ward <span>{liveUnits.length} wards</span>
+                <svg
+                  className={styles.wardSwitchIcon}
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 8h14l-3-3M20 16H6l3 3" />
+                </svg>
+                <span className={styles.wardSwitchLabel}>Change ward</span>{" "}
+                <span className={styles.wardSwitchCount}>{liveUnits.length} wards</span>
               </summary>
               <div className={styles.wardSwitchBody}>
                 <p className={styles.wardSwitchHeading}>Choose a ward</p>
