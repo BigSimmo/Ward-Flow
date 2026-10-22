@@ -60,7 +60,6 @@ type WardScreenTopBarProps = {
   raiseReferralGate: RoleGate;
   wardRoleLockNote: ReactElement | null;
   notificationCenterOpen: boolean;
-  notificationCenterRef: RefObject<HTMLDivElement | null>;
   movements: Movement[];
   notices: Notice[];
   refreshRequests: CapacityRefreshRequest[];
@@ -107,7 +106,6 @@ export function WardScreenTopBar({
   raiseReferralGate,
   wardRoleLockNote,
   notificationCenterOpen,
-  notificationCenterRef,
   movements,
   notices,
   refreshRequests,
@@ -243,9 +241,7 @@ export function WardScreenTopBar({
             returnFocusRef={notificationTriggerRef}
             data-testid="ward-notifications-sheet"
           >
-            {/* No notificationCenterRef here: the ward screen's click-outside listener is for the desktop
-                popover, and the sheet's title and handle sit outside this div, so a press on them would
-                close it. The sheet closes from its own Close, scrim and Escape. */}
+            {/* The sheet closes from its own Close, scrim and Escape. */}
             <div data-testid="ward-notification-center-wrap">
               <WardNotificationCenter
                 inSheet
@@ -330,8 +326,7 @@ export function WardScreenTopBar({
                   ) : null}
                 </button>
                 {/* Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as
-                    Alerts, rather than a popover over the bed board. The ward screen's click-outside
-                    listener still reads notificationCenterRef, so a press on the backdrop closes it. */}
+                    Alerts, rather than a popover over the bed board. The Sheet closes itself. */}
                 <Sheet
                   open={notificationCenterOpen}
                   onClose={() => setNotificationCenterOpen(false)}
@@ -339,15 +334,11 @@ export function WardScreenTopBar({
                   headerHidden
                   placement="right"
                   returnFocusRef={notificationTriggerRef}
-                  contentClassName={noticesSheet.noticesSheet}
-                  bodyClassName={noticesSheet.noticesSheetBody}
+                  contentClassName={noticesSheet.sheet}
+                  bodyClassName={noticesSheet.body}
                 >
                   {notificationCenterOpen ? (
-                    <div
-                      ref={notificationCenterRef}
-                      className={noticesSheet.noticesSheetFill}
-                      data-testid="ward-notification-center-wrap"
-                    >
+                    <div>
                       <WardNotificationCenter
                         unitId={unit.id}
                         unitName={unit.name}

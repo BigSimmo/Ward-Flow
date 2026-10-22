@@ -439,7 +439,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
-  const notificationCenterRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
   function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
@@ -720,16 +719,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     function handleKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented) return;
       if (e.key === "Escape") {
-        if (notificationCenterOpen) {
-          e.preventDefault();
-          e.stopPropagation();
-          setNotificationCenterOpen(false);
-          setTimeout(() => {
-            notificationTriggerRef.current?.focus({ preventScroll: true });
-          }, 0);
-          return;
-        }
-        if (e.defaultPrevented || hasOpenSheet()) return;
+        // The Notices drawer and sheet are Sheets (Notices option A), so they close themselves.
+        if (hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -746,36 +737,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    selectedBed,
-    boardPick,
-    dailySheetOpen,
-    confirmNumbersOpen,
-    notificationCenterOpen,
-    closeBedDrawer,
-    closeCapacityModal,
-  ]);
-
-  // Click-outside listener for floating notification center
-  useEffect(() => {
-    if (!notificationCenterOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (
-        notificationCenterRef.current &&
-        !notificationCenterRef.current.contains(target) &&
-        // Phone and iPad portrait open it from the More menu, which has no trigger here.
-        !notificationTriggerRef.current?.contains(target)
-      ) {
-        setNotificationCenterOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [notificationCenterOpen]);
+  }, [selectedBed, boardPick, dailySheetOpen, confirmNumbersOpen, closeBedDrawer, closeCapacityModal]);
 
   // Focus moves to the first control whenever the drawer shows a bed, including a step to another bed.
   useEffect(() => {
@@ -2281,7 +2243,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             raiseReferralGate={raiseReferralGate}
             wardRoleLockNote={wardRoleLockNote}
             notificationCenterOpen={notificationCenterOpen}
-            notificationCenterRef={notificationCenterRef}
             movements={movements}
             notices={notices}
             refreshRequests={refreshRequests}
