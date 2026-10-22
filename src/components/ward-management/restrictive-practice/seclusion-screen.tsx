@@ -322,7 +322,7 @@ function EpisodeRow({
             }}
             data-testid="seclusion-episode-end"
           >
-            Record end
+            Save end time
           </Button>
           {time.refusal ? (
             <div className={styles.formReason}>

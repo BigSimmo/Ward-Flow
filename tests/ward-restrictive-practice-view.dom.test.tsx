@@ -70,7 +70,9 @@ describe("seclusion, restraint and incidents view", () => {
     expect(screen.getByTestId("seclusion-room-out-of-service")).toHaveAttribute("aria-disabled", "true");
 
     const episode = screen.getByTestId("seclusion-episode");
-    fireEvent.click(within(episode).getByTestId("seclusion-episode-end-open"));
+    // Desk check (22 Oct): the opener and the save button no longer share the label "Record end".
+    fireEvent.click(within(episode).getByRole("button", { name: "Record end" }));
+    expect(within(episode).getByRole("button", { name: "Save end time" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(within(episode).getByTestId("seclusion-episode-end-time"), { target: { value: clock(5) } });
     fireEvent.click(within(episode).getByTestId("seclusion-episode-end"));
     expect(screen.queryByTestId("seclusion-episode")).not.toBeInTheDocument();
