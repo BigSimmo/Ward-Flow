@@ -220,12 +220,16 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`. `ward-flow-diagnosis-events.ts`
   (FD-10, 21 Oct 2026) holds `reduceWardDiagnosis`, the guard and effect for
   `RECORD_WARD_DIAGNOSIS`: the ward's own diagnosis block, kept beside the referrer's.
+  `ward-flow-protected-record-events.ts` (22 Oct 2026) holds `reduceProtectedRecordEvent`, the
+  wrapper's protected record path (open a discharge record, review an audit event or undo that
+  review, record a discharge, a follow-up or admission care) and `UNLINKED_CARE_REFUSAL`; it takes
+  `(state, event, helpers)`, since that path makes its own audit decision.
   Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
   slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
-  first. Also declares `ReferralDraft` (the intake form's shape) and re-exports `WardFlowRole`/
+  first. Also re-exports `ReferralDraft` (the intake form's shape, from `ward-referral-draft.ts` since 22 Oct 2026) and `WardFlowRole`/
   `WARD_FLOW_ROLE_LABELS` from `ward-flow-roles.ts`. Heavily commented — most of the file is
   provenance for individual fields and role decisions, not code.
 - **`ward-model.ts`** (3,040 lines) — every domain entity type and closed vocabulary: `Movement`,
