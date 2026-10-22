@@ -2431,7 +2431,7 @@ describe("bed release privacy", () => {
       expect(correctionMismatch.rejections[0].reason).toContain("is not the referral origin ED");
     });
 
-    it("DEC-L5-04: REQUEST_CAPACITY_REFRESH records only unitId, at, and byRole per Spec D12", () => {
+    it("DEC-L5-04: REQUEST_CAPACITY_REFRESH records who asked, when, and the capacity revision asked about", () => {
       const seeded = seedWardFlowState();
       const unit = seeded.units[0];
       const stateWithRevision = {
@@ -2449,7 +2449,7 @@ describe("bed release privacy", () => {
       });
       expect(after.rejections).toHaveLength(0);
       const req = after.refreshRequests.at(-1)!;
-      expect(req).toEqual({ id: "buzz:0:1", unitId: unit.id, at: NOW, byRole: "coordinator" });
+      expect(req).toEqual({ id: "buzz:0:1", unitId: unit.id, at: NOW, byRole: "coordinator", confirmations: 0 });
     });
 
     it("S1-7: ACCEPT_IN_PRINCIPLE clears waitlistedUnitIds to undefined", () => {

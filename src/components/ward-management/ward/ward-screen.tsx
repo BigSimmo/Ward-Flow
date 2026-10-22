@@ -103,7 +103,7 @@ import {
   pickedUpSay,
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
-import { buzzKeys } from "./ward-buzz-keys";
+import { buzzKeys, capacityRequestIsOpen, refreshRequestIsOpen } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import {
@@ -1086,12 +1086,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    */
   const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
 
-  // Task 5, spec D12: every REQUEST_CAPACITY_REFRESH raised against this unit, live from the
-  // provider. `refreshRequests` only ever grows (the reducer never removes an entry), so the last
-  // one in array order is always the most recent ask.
-  const unitRefreshRequests = refreshRequests.filter((request) => request.unitId === unit.id);
-  const latestRefreshRequest =
-    unitRefreshRequests.length > 0 ? unitRefreshRequests[unitRefreshRequests.length - 1] : undefined;
+  // Spec D12 and DEC-L5-04: this unit's latest capacity ask that the ward has not yet answered.
+  const latestRefreshRequest = refreshRequests
+    .filter((request) => request.unitId === unit.id && capacityRequestIsOpen(request, unit.allocatable))
+    .at(-1);
 
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
@@ -1140,12 +1138,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const requests = refreshRequests ?? [];
-    const keys = buzzKeys(requests);
-    const activeBuzzes = requests.filter(
-      (r, index) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[index] ?? ""),
+    const keys = buzzKeys(refreshRequests);
+    const undismissed = refreshRequests.filter(
+      (r, i) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[i] ?? ""),
     );
-    count += activeBuzzes.length;
+    count += undismissed.filter((r) => refreshRequestIsOpen(r, unit.allocatable)).length;
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
     return count;

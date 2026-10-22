@@ -37,7 +37,7 @@ import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts"
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
-import { applyAppearance } from "./ward-bar";
+import { applyAppearance, applyGlare } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
@@ -199,11 +199,26 @@ const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
   executive: { id: "executive", name: CHROME_ROLE_LABELS.executive, initials: "EX", role: "Demo desk" },
 };
 
+// UX audit (21 Oct 2026): the same four themes as Settings, Display (settings-15 made Glare a fourth).
 const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
+  { id: "glare", label: "Glare" },
 ] as const;
+
+type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];
+
+/** Glare is its own preference that uses light, so picking any other theme turns it off. */
+function chooseAppearance(next: AppearanceChoice) {
+  if (next === "glare") {
+    applyGlare(true);
+  } else {
+    applyGlare(false);
+    applyAppearance(next);
+  }
+  announceToWardShell(`Appearance set to ${next}.`);
+}
 
 /**
  * The desk a page belongs to, when it is not the person's own kind of desk: "Viewing RPH ED as Bed
@@ -302,7 +317,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
-  const { open, appearance } = useWardDocumentPreferences();
+  const { open, appearance: storedAppearance, glare } = useWardDocumentPreferences();
+  const appearance: AppearanceChoice = glare ? "glare" : storedAppearance;
   const service = useServiceScope();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -716,13 +732,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           type="button"
           ref={toggleRef}
           className={styles.railToggle}
-          aria-label={open ? "Close" : "Open"}
+          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
+          aria-label={open ? "Collapse menu" : "Expand menu"}
           data-testid="ward-rail-toggle"
           onClick={() => setOpen(!open)}
           title={
             open
-              ? "Close the rail to a strip. The bracket key [ does the same."
-              : "Open the rail. The bracket key [ does the same."
+              ? "Collapse the menu to icons. The bracket key [ does the same."
+              : "Expand the menu. The bracket key [ does the same."
           }
         >
           {open ? (
@@ -731,8 +748,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
           )}
           <span className={styles.toggleText}>
-            {open ? "Close" : "Open"}
-            <span aria-hidden="true"> the rail</span>
+            {open ? "Collapse" : "Expand"}
+            <span aria-hidden="true"> menu</span>
           </span>
           <kbd aria-hidden="true" className={styles.toggleKey}>
             [
@@ -1019,10 +1036,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                     key={choice.id}
                     type="button"
                     aria-pressed={appearance === choice.id}
-                    onClick={() => {
-                      applyAppearance(choice.id);
-                      announceToWardShell(`Appearance set to ${choice.id}.`);
-                    }}
+                    onClick={() => chooseAppearance(choice.id)}
                     className={styles.appearancePillBtn}
                   >
                     <span className={styles.appearancePreview} aria-hidden="true">
@@ -1162,9 +1176,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 data-testid="ward-rail-sheet-appearance"
                 onClick={() => {
                   const order = APPEARANCE_CHOICES.map((choice) => choice.id);
-                  const next = order[(order.indexOf(appearance) + 1) % order.length] ?? "auto";
-                  applyAppearance(next);
-                  announceToWardShell(`Appearance set to ${next}.`);
+                  chooseAppearance(order[(order.indexOf(appearance) + 1) % order.length] ?? "auto");
                 }}
               >
                 <SunMoon aria-hidden="true" strokeWidth={1.75} />

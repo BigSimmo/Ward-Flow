@@ -216,6 +216,7 @@ const capacityFigure = z.looseObject({
   staleAfterMinutes: counter,
   source: z.enum(["feed", "ward"]),
   revision: z.optional(counter),
+  confirmations: z.optional(counter),
 });
 const unit = z
   .looseObject({
@@ -504,7 +505,13 @@ const leaveBed = z.looseObject({
   absentWithoutLeave: z.optional(absence),
 });
 
-const refreshRequest = z.looseObject({ id: z.optional(text), unitId: text, at: finite, byRole: text });
+const refreshRequest = z.looseObject({
+  id: z.optional(text),
+  unitId: text,
+  at: finite,
+  byRole: text,
+  confirmations: z.optional(counter),
+});
 const distinctRefreshRequestIds = (rows: readonly { id?: string }[]) => {
   const ids = rows.flatMap((row) => (row.id === undefined ? [] : [row.id]));
   return new Set(ids).size === ids.length;
