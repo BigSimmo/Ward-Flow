@@ -90,7 +90,7 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await page.getByTestId("ward-ed-referral-gender").selectOption("Male");
   await page.getByTestId("ward-ed-referral-legal-status").selectOption("Voluntary");
   await page.getByTestId("ward-ed-referral-urgency").selectOption("3");
-  await page.getByTestId("ward-ed-referral-specialling-not-required").click();
+  await page.getByTestId("ward-ed-referral-observation").selectOption("general");
   await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
   await expectAccessible(page, testInfo, "ED raise form, filled");
   await page.getByTestId("ward-ed-referral-submit").click();

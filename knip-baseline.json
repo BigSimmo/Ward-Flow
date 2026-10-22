@@ -2,7 +2,6 @@
   "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:extendBroadcastAlert",
   "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:initialWardBroadcastState",
   "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:wardBroadcastReducer",
-  "exports:src/components/ward-management/delays/delays-alias.ts:DELAYS_ALIAS_FROM",
   "exports:src/components/ward-management/patients/patient-now-records.ts:PATIENT_NOW_RECORDS",
   "exports:src/components/ward-management/referrals/referral-board-parts.tsx:NOT_WIRED",
   "exports:src/components/ward-management/shell/use-mobile-keyboard.tsx:MobileKeyboardProvider",

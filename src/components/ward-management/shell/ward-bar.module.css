@@ -169,7 +169,7 @@
  * `ward-shared-access.module.css`'s .pill: 10px sides, 1px border, 12px semibold, and 24px before
  * the word where the 8px ring and its 6px gap sit. */
 .dataMode:empty::before {
-  content: "Prototype";
+  content: "Synthetic";
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
@@ -3054,6 +3054,22 @@
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
     color: var(--wf-hero-ink);
+  }
+
+  /* Before hydration the band comes from the `:has()` arm alone, and it lands when the streamed hero
+     does. Everything on the bar must switch in the same frame: with the background faded in, the
+     title showed light on the pale bar for up to a second on a phone's first load, and Menu and the
+     service line, which fade their own colour, stayed dark on the band (22 Oct 2026). */
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+        :not([data-band]):not([data-scrolled])
+    ),
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+        :not([data-band]):not([data-scrolled])
+    )
+    :is(.phoneOnly, .scopeBadgeBtn) {
+    transition: none;
   }
 
   /* The service line also carries the band on its own attribute. CI WebKit restyled the bar when

@@ -5,6 +5,7 @@ import type { CareChange } from "@/components/ward-management/ward-care-journey"
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
 import { buildScenarioFile, readScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 type TestEvent = WithoutNow<WardFlowEvent>;
@@ -33,7 +34,7 @@ function fixture() {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

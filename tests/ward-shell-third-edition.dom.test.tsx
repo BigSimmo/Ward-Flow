@@ -155,20 +155,23 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     const sheet = await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
     // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).
-    // (22 until the Network screen was retired on 19 Oct 2026.)
-    expect(links).toHaveLength(21);
+    // (22 until the Network screen was retired on 19 Oct 2026, and 22 again with Seclusion on 21 Oct 2026.)
+    expect(links).toHaveLength(22);
     const groups = [
       ["Today", ["Waiting", "Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Discharges"]],
-      ["Reports and reference", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call"]],
+      [
+        "Reports and reference",
+        ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call", "Seclusion"],
+      ],
     ] as const;
     for (const [name, labels] of groups) {
       const groupLinks = within(within(sheet).getByRole("region", { name })).getAllByRole("link");
       expect(groupLinks.map((link) => link.getAttribute("aria-label")?.split(",")[0])).toEqual(labels);
     }
     const destinations = links.map((link) => link.getAttribute("href"));
-    expect(new Set(destinations).size).toBe(21);
+    expect(new Set(destinations).size).toBe(22);
     // Alerts and On-call are now reachable from the rail (previously orphaned / weakly discoverable).
     expect(destinations).toContain("/ward-flow/alerts");
     expect(destinations).toContain("/ward-flow/on-call");
@@ -180,7 +183,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       renderShell();
       await openMorePages();
       const links = screen.getAllByTestId("ward-rail-link");
-      expect(links).toHaveLength(20);
+      expect(links).toHaveLength(21);
       expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
@@ -741,7 +744,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps the one Demo panel and the role switcher in the Tools sheet while account utilities stay out", async () => {
+  it("keeps the role switcher in Tools and opens the one Demo panel from the Synthetic pill (change 8)", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -749,15 +752,25 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top and
-    // the scenario controls sit in the Demo row at the foot.
+    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top.
+    // Change 8 (D-77, 21 Oct 2026): the scenario controls left Tools for the Synthetic pill.
     expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
     expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
-    await user.click(withinDialog.getByTestId("ward-tools-toggle-demo"));
-    expect(withinDialog.getByTestId("ward-tools-demo-panel")).toBeVisible();
-    expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
+    expect(withinDialog.queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    expect(withinDialog.queryByRole("region", { name: "Demo" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /Tools/ })).toBeNull());
+
+    const pill = screen.getByRole("button", { name: /^Data mode: Synthetic prototype/ });
+    await user.click(pill);
+    expect(pill).toHaveAttribute("aria-expanded", "true");
+    const menu = await screen.findByRole("dialog", { name: "Demo" }, { timeout: 15_000 });
+    const panel = await within(menu).findByTestId("ward-tools-demo-panel");
+    // One list of all seven scenarios, so the separate Demo reset block is not repeated here.
+    expect(within(panel).getAllByRole("radio")).toHaveLength(7);
+    expect(within(panel).queryByTestId("ward-demo-reset")).toBeNull();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {

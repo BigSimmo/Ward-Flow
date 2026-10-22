@@ -59,6 +59,7 @@ import {
   type PlannedAdmissionDraft,
 } from "./planned-admissions-draft";
 import styles from "./planned-admissions.module.css";
+import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
 
@@ -106,7 +107,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
   // form that has not asked for anything yet.
   const [submittedInForm, setSubmittedInForm] = useState(false);
-  const bookButton = useRef<HTMLButtonElement>(null);
 
   useDirtyStateGuard(form !== null);
 
@@ -172,7 +172,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function whoText(planned: PlannedAdmission): string {
     if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
-    return `Initials ${planned.initials ?? "not recorded"}`;
+    return planned.initials === null ? "Initials not recorded" : plannedInitialsLabel(planned.initials);
   }
 
   const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
@@ -379,7 +379,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       count={`${booked} booked`}
       testId="ward-capacity-planned-admissions"
       headerAction={
-        <Button ref={bookButton} variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
+        <Button variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
           <CalendarPlus size={16} aria-hidden="true" />
           Book
         </Button>
@@ -459,7 +459,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         title={form?.mode === "change" ? "Change planned admission" : "Book planned admission"}
         portal={false}
         testId="ward-planned-form"
-        returnFocusRef={bookButton}
         footer={
           <div className={styles.sheetFoot}>
             <Button onClick={closeForm}>Close</Button>

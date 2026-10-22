@@ -6,6 +6,7 @@ import {
   type WardSharedConnection,
 } from "../src/components/ward-management/ward-shared-access";
 import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
+import { WardDemoMenu } from "../src/components/ward-management/shell/ward-demo-menu";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
@@ -27,6 +28,7 @@ import {
   ReferralDocumentLinks,
 } from "../src/components/ward-management/referrals/referral-flow-panels";
 
+const loadDemoMenu = async () => WardDemoMenu;
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
   const actual = await original<typeof import("../src/components/ward-management/ward-shared-access")>();
@@ -42,6 +44,15 @@ function Probe() {
         Advance
       </button>
     </>
+  );
+}
+/** The phone menu's way into the hospital records notice (`useWardDataMode`). */
+function HospitalRecordsLink() {
+  const mode = useWardDataMode();
+  return (
+    <button type="button" onClick={mode?.openHospitalRecords}>
+      Hospital records (unavailable)
+    </button>
   );
 }
 function DataModeDetail() {
@@ -348,31 +359,38 @@ describe("shared provider boundary", () => {
       </WardFlowProvider>,
     );
     expect(
-      screen.getByRole("button", { name: "Data mode: Synthetic prototype. Invented records · Local demonstration" }),
+      screen.getByRole("button", {
+        name: "Data mode: Synthetic prototype. Invented records · Local demonstration. Opens the demo menu",
+      }),
     ).toBeInTheDocument();
     expect(screen.queryByText("45")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
     fireEvent.click(screen.getByRole("button", { name: "Advance" }));
     expect(fake.connection!.dispatch).not.toHaveBeenCalled();
   });
-  it("explains live data without switching databases or losing a prototype draft", () => {
+  it("explains live data without switching databases or losing a prototype draft", async () => {
     render(
       <WardFlowProvider>
         <Probe />
-        <WardDataModeSlot />
+        <HospitalRecordsLink />
+        {/* The header passes the Demo menu's loader in (ward-bar.tsx), so the pill does not import it. */}
+        <WardDataModeSlot menu={loadDemoMenu} />
       </WardFlowProvider>,
     );
     const draft = screen.getByRole("textbox");
     fireEvent.change(draft, { target: { value: "keep prototype draft" } });
-    // Exactly one data-mode control, in the header slot; it opens to explain the mode.
+    // Exactly one data-mode control, in the header slot. Change 8 (D-77): it opens the Demo menu,
+    // and its label still says what the data is.
     const pill = screen.getByRole("button", { name: /^Data mode: Synthetic prototype/ });
     expect(screen.getAllByRole("button", { name: /^Data mode: Synthetic prototype/ })).toHaveLength(1);
     expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("region", { name: "Ward Flow data mode" })).toHaveTextContent(
-      "Data mode: Synthetic prototype",
-    );
+    const menu = await screen.findByRole("dialog", { name: "Demo" });
+    // Focus moves into the menu, so Tab reaches it from the Board time pill too.
+    await vi.waitFor(() => expect(menu).toContainElement(document.activeElement as HTMLElement));
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
     expect(screen.getByRole("heading", { name: "Hospital records are not connected" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();

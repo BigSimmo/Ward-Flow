@@ -18,6 +18,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Task 5 — three things this screen did not have before, covered here rather than reusing
@@ -54,7 +55,7 @@ function renderWard(unit: Unit, admissions: Admission[] = []) {
 }
 
 const ADMISSION_BASE = {
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   referralId: null,
   sex: "Female",

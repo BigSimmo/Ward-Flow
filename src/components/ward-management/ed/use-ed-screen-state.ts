@@ -23,6 +23,7 @@ import {
   type ReferralDraftState,
   type TransportDraftState,
 } from "./ed-screen-model";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 
 /** The raise-into-a-movement form: whether it is open, its draft, and the referral it is raised from. */
 export function useEdReferralDraft() {
@@ -164,6 +165,8 @@ export function useEdRowPanels() {
   >(undefined);
   const [communityReferralOpenFor, setCommunityReferralOpenFor] = useState<string | undefined>(undefined);
   const [communityTeamChoice, setCommunityTeamChoice] = useState<string>("");
+  // D-74: what the community referral is for. Unset until the clinician chooses.
+  const [communityPurposeChoice, setCommunityPurposeChoice] = useState<CommunityReferralPurpose | "">("");
 
   function toggleExamination(movementId: string) {
     setExaminationOpenFor((current) => (current === movementId ? undefined : movementId));
@@ -249,6 +252,8 @@ export function useEdRowPanels() {
     setCommunityReferralOpenFor,
     communityTeamChoice,
     setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
     toggleExamination,
     toggleUrgencyChange,
     toggleLegalStatusChange,

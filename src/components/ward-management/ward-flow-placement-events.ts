@@ -1,10 +1,12 @@
 import { type AuditDecision } from "./ward-audit";
 import { emptyCareJourney } from "./ward-care-journey";
 import {
+  lacksObservationStaff,
   remainingHighAcuityCapacity,
   remainingSpeciallingCapacity,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
@@ -139,13 +141,12 @@ export function reducePlacementEvent(
           event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
         if (
           !speciallingAnsweredRestore &&
-          movement.specialling &&
-          remainingSpeciallingCapacity(restoreUnit, admissionsExcludingOwn) <= 0
+          lacksObservationStaff(movement.observation, restoreUnit, admissionsExcludingOwn)
         ) {
           return reject(
             state,
             event,
-            `${restoreUnit.name} has no one-to-one specialling capacity left; this patient needs specialling and the ward cannot staff another`,
+            `${restoreUnit.name} has not enough observation staff left; this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it`,
           );
         }
         const acuityOverrideNeededRestore =
@@ -235,11 +236,11 @@ export function reducePlacementEvent(
        * make the static question overridable instead of this one.
        */
       const speciallingAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
-      if (!speciallingAnswered && movement.specialling && remainingSpeciallingCapacity(unit, state.admissions) <= 0) {
+      if (!speciallingAnswered && lacksObservationStaff(movement.observation, unit, state.admissions)) {
         return reject(
           state,
           event,
-          `${unit.name} has no one-to-one specialling capacity left (${unit.speciallingCapacity} staffable, all in use); this patient needs specialling and the ward cannot staff another`,
+          `${unit.name} has not enough observation staff left (${remainingSpeciallingCapacity(unit, state.admissions)} of ${unit.speciallingCapacity} free); this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it`,
         );
       }
 
@@ -349,11 +350,11 @@ export function reducePlacementEvent(
       const admission: Admission = {
         id: `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}`,
         unitId: unit.id,
-        // The ward's commitment to staff this bed one-to-one, copied from the movement where a
-        // person ticked it at intake. The only runtime writer; see `Admission.specialling`.
-        specialling: movement.specialling,
+        // The observation level the ward is staffing this bed at, copied from the movement where a
+        // person recorded it at intake. See `Admission.observation`.
+        observation: movement.observation,
         // A high-acuity place, copied from the movement, where the referring clinician marked it
-        // (owner ruling). Never derived from `specialling`.
+        // (owner ruling). Never derived from the observation level.
         highAcuity: movement.highAcuity,
         referralId: resolvedReferral?.id ?? null,
         movementId: movement.id,
@@ -678,6 +679,17 @@ export function reducePlacementEvent(
          * no `tsc` involved.
          */
         return reject(state, event, `STEP_BACK_STAGE reason must be chosen from STEP_BACK_REASONS`);
+      }
+      // Q25: a seeded journey at "pulled" or later can hold its bed by its stage alone, with no
+      // `admissionId` (review finding S2-1). Stepped back before "pulled", nothing would record the
+      // hold any more, so every later ending would keep that bed out of the count. Refused instead.
+      const pulledIndex = MOVEMENT_STAGES.indexOf("pulled");
+      if (movement.admissionId === undefined && fromIndex >= pulledIndex && toIndex < pulledIndex) {
+        return reject(
+          state,
+          event,
+          `cannot step movement ${movement.id} back before ${stageCopy.pulled.label}: its bed is held by its stage alone, so the hold would be lost. Step back no further than ${stageCopy.pulled.label}, or release the bed`,
+        );
       }
       // Touch nothing else (F3, ruling E: "does not release the bed / does not cancel the
       // transport"). Never write `acceptedUnitId`, `acceptedAt`, `pullExpiresAt`, `admissionId`,

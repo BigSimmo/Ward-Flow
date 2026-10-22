@@ -4,6 +4,7 @@ import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-managemen
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { turnaroundEligibilityAllows } from "@/components/ward-management/ward-turnaround-priority";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+import { GENERAL_OBSERVATION } from "../../src/components/ward-management/ward-observation";
 
 /** Build both staging subjects through real commands, with a ward-confirmed occupied departure. */
 export function buildTurnaroundFixture(code = "1A", dueAt?: number) {
@@ -18,7 +19,7 @@ export function buildTurnaroundFixture(code = "1A", dueAt?: number) {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Referred for psychiatric examination",
       urgency: 2,

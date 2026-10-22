@@ -13,6 +13,7 @@ import type { PatientId } from "@/components/ward-management/ward-patients";
 // see that module's own doc comment for why the vocabulary lives there rather than here or on
 // `ward-admissions.ts`, where the fact it describes first gained a runtime writer.
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { Observation, ObservationChange } from "@/components/ward-management/ward-observation";
 /**
  * `WardFlowRole` now lives in its own module, `ward-flow-roles.ts` (Spec D15 restoration,
  * 2026-09-11). It used to be imported from `ward-flow-events.ts` — a TYPE-ONLY import, so it
@@ -57,6 +58,7 @@ import type {
 } from "@/components/ward-management/ward-model-movement-parts";
 import type {
   CommunityDeclineReason,
+  CommunityReferralPurpose,
   HomeRegion,
   ReferralAddressingState,
   ReferralCorrection,
@@ -64,6 +66,7 @@ import type {
   ReferralSource,
   ReferralSuburb,
 } from "@/components/ward-management/ward-model-referral-parts";
+import type { WardRestrictivePractice } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   AtsCategory,
   CapacityFigure,
@@ -296,6 +299,12 @@ export type Unit = {
    * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
    */
   admissionsClosure?: WardAdmissionsClosure;
+  /**
+   * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
+   * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.
+   * Written only by `ward-flow-restrictive-practice-events.ts`. Absent until the ward records one.
+   */
+  restrictivePractice?: WardRestrictivePractice;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */
@@ -324,7 +333,12 @@ export type Unit = {
   blocked: number;
   /** Current occupants by sex, which is what constrains who the next admission can be. */
   sexMix: Record<Sex, number>;
-  /** How many 1:1 observation patients this unit can staff beyond its current load. */
+  /**
+   * How many staff this unit can commit to constant observation (specialling) at once, the ward's
+   * authored total. Since fix plan item 10 (21 Oct 2026) it counts staff, not patients: a one-to-one
+   * level takes one and two staff constant takes two (`observationStaff`). Never decremented; what is
+   * left is `remainingSpeciallingCapacity(unit, admissions)`.
+   */
   speciallingCapacity: number;
   /**
    * How many HIGH-ACUITY places this unit is staffed to hold at once — the ward's authored total.
@@ -632,12 +646,21 @@ export type Movement = {
    * value.
    */
   genderPlacements?: GenderPlacement[];
-  specialling: boolean;
+  /**
+   * The observation level a person recorded at intake (fix plan item 10, Josh, 21 Oct 2026), which
+   * replaced the yes/no `specialling` flag. `PULL_PATIENT` copies it to `Admission.observation`, and
+   * its staff count (`observationStaff`) is what the observation capacity check refuses on. Changed
+   * afterwards only by `RECORD_OBSERVATION_LEVEL`, which appends to `observationChanges`. Never
+   * inferred from urgency, legal status, security or anything else.
+   */
+  observation: Observation;
+  /** Every change after intake, oldest first. Absent until the first `RECORD_OBSERVATION_LEVEL`. */
+  observationChanges?: ObservationChange[];
   /**
    * Whether high-acuity nursing was requested for this movement. **Carried from the referral's
    * `highAcuityNursingNeeded`, which the REFERRING CLINICIAN marks — owner ruling 2026-09-10.**
    *
-   * Never inferred: not from urgency, not from `specialling`, not from legal status, not from
+   * Never inferred: not from urgency, not from the observation level, not from legal status, not from
    * security. `false` is the ordinary state and means it was not requested — **it is not a finding
    * that high-acuity nursing was considered and ruled out.**
    */
@@ -772,6 +795,12 @@ export type Movement = {
   closure?: MovementClosure;
   /** Recorded outcome from the emergency department (Item 19, owner answers 2026-09-17). */
   edOutcome?: "for_discharge" | "for_community_follow_up";
+  /**
+   * D-74: what the community referral that closed this record is for, written only by
+   * `REFER_TO_COMMUNITY_TEAM`. Absent on records closed before D-74; read it through
+   * `communityPurposeOf`, which treats absent as follow-up.
+   */
+  communityPurpose?: CommunityReferralPurpose;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
@@ -1348,6 +1377,12 @@ export type ReferralDestination =
        * region-derived membership through the back door. Never read it here.
        */
       teamName: string;
+      /**
+       * D-74: follow-up or assess for admission, chosen by the referrer. Optional only because arms
+       * saved before D-74 lack it; read it through `communityPurposeOf`, which treats absent as
+       * follow-up. Every form that creates an arm asks for it.
+       */
+      purpose?: CommunityReferralPurpose;
     };
 
 export type ReferralAddressing = {

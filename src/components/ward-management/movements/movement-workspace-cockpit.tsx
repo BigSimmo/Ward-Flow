@@ -106,6 +106,7 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
@@ -525,7 +526,9 @@ export function MovementWorkspaceCockpit({
                   {open ? "Flagged urgent" : "Was flagged urgent"}
                 </WardChip>
               ) : null}
-              {patient.specialling ? <WardChip level="routine">Specialling</WardChip> : null}
+              {isConstantObservation(patient.observation) ? (
+                <WardChip level="routine">{observationSummary(patient.observation)}</WardChip>
+              ) : null}
             </div>
           </div>
 
@@ -935,7 +938,7 @@ export function MovementWorkspaceCockpit({
                     <dt className={styles.factLabel}>Setting</dt>
                     <dd className={styles.factValue}>
                       {patient.cohort} · {patient.security} · {patient.sex}
-                      {patient.specialling ? " · specialling required" : ""}
+                      {` · ${observationSummary(patient.observation)}`}
                     </dd>
                   </div>
                 </dl>

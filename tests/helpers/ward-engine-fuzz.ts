@@ -99,6 +99,13 @@ import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooz
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
+import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
+import {
+  RESTRICTIVE_PRACTICE_IDS,
+  SECLUSION_ROOM_STATUS_IDS,
+  WARD_INCIDENT_CATEGORY_IDS,
+  openEpisodes,
+} from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
@@ -267,7 +274,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
         security: pick(random, ["Open", "Secure"]),
         sex: pick(random, ["Female", "Male"]),
         gender: pick(random, REFERRAL_GENDERS),
-        specialling: chance(random, 0.2),
+        observation: observationAt(pick(random, OBSERVATION_LEVELS) ?? "general"),
         highAcuity: chance(random, 0.2),
         legalStatus: pick(random, LEGAL_STATUSES),
         urgency: int(random, 1, 3),
@@ -794,16 +801,16 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [
     1,
     (state, random) => {
+      // With no booking it still sends, naming a missing one, so a sweep step always covers it.
       const booking = pick(random, state.plannedAdmissions);
-      return booking
-        ? {
-            type: "CANCEL_PLANNED_ADMISSION",
-            plannedAdmissionId: booking.id,
-            unitId: booking.unitId,
-            actingUnitId: booking.unitId,
-            reason: pick(random, PLANNED_ADMISSION_CANCEL_REASONS),
-          }
-        : null;
+      const unitId = booking?.unitId ?? id(pick(random, state.units));
+      return {
+        type: "CANCEL_PLANNED_ADMISSION",
+        plannedAdmissionId: booking?.id ?? MISSING_ID,
+        unitId,
+        actingUnitId: unitId,
+        reason: pick(random, PLANNED_ADMISSION_CANCEL_REASONS),
+      };
     },
   ],
   [
@@ -960,6 +967,17 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const stay = stayFor(state, random, occupied);
       return {
+        type: "RECORD_OBSERVATION_LEVEL",
+        target: { kind: "admission", admissionId: id(stay), actingUnitId: stay?.unitId ?? MISSING_ID },
+        observation: observationAt(pick(random, OBSERVATION_LEVELS) ?? "general"),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
         type: "RECORD_STAY_DISCHARGE_BLOCKER",
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
@@ -988,6 +1006,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
         stepDownCandidate: chance(random, 0.5),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_WARD_DIAGNOSIS",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        block: chance(random, 0.5) ? "F20–F29" : "F30–F39",
       };
     },
   ],
@@ -1489,6 +1519,60 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         referralId: id(referral),
         contact,
         outcome: pick(random, REFERRAL_CONTACT_OUTCOME_IDS) ?? "no_answer",
+      };
+    },
+  ],
+  // D-72: seclusion and restraint on a stay, then ended; ward incidents and the seclusion room.
+  [
+    1,
+    (state, random) => {
+      const stay = pick(random, state.admissions);
+      return {
+        type: "RECORD_RESTRICTIVE_PRACTICE_START",
+        unitId: stay?.unitId ?? id(pick(random, state.units)),
+        actingUnitId: stay?.unitId,
+        admissionId: id(stay),
+        practice: pick(random, RESTRICTIVE_PRACTICE_IDS),
+        startedAt: currentNow - pick(random, [0, 15, 90, 2000])!,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (candidate) => openEpisodes(candidate.restrictivePractice).length > 0);
+      const episode = pick(random, unit?.restrictivePractice?.episodes ?? []);
+      return {
+        type: "RECORD_RESTRICTIVE_PRACTICE_END",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        episodeId: episode?.id ?? MISSING_ID,
+        endedAt: currentNow - pick(random, [0, 5, 3000])!,
+      };
+    },
+  ],
+  [
+    0.5,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      return {
+        type: "RECORD_WARD_INCIDENT",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        category: pick(random, WARD_INCIDENT_CATEGORY_IDS),
+        at: currentNow - pick(random, [0, 60, -5])!,
+      };
+    },
+  ],
+  [
+    0.5,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      return {
+        type: "SET_SECLUSION_ROOM_STATUS",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        status: pick(random, SECLUSION_ROOM_STATUS_IDS),
       };
     },
   ],

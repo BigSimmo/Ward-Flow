@@ -48,6 +48,7 @@ import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { StagePresentationDetail } from "./patient-now-screen-helpers";
 import type { WfTone } from "@/components/wf";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The values `PatientNowScreen` has derived that its summary section reads. */
 export type PatientNowSummaryProps = {
@@ -167,12 +168,14 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         }
         phoneEyebrow={
           phoneMovement ? (
-            // A3-20: the phone hero keeps the desktop's tier, bed type and specialling. F-05 (phone
+            // A3-20: the phone hero keeps the desktop's tier, bed type and observation. F-05 (phone
             // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
             // second line rather than cut it off.
             <span className={styles.phMoveEyebrow}>
               {`Movement · ${tierChipText(urgencyTier)} · ${bedTypeChipText(liveMovement?.security)}`}
-              {liveMovement?.specialling ? <span className={styles.phObsChip}>1:1 specialling</span> : null}
+              {liveMovement && isConstantObservation(liveMovement.observation) ? (
+                <span className={styles.phObsChip}>{observationSummary(liveMovement.observation)}</span>
+              ) : null}
             </span>
           ) : (
             <span className={styles.phEyebrow}>
@@ -346,10 +349,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   Over T{urgencyTier} target ({tierOverdueAfterMinutes(urgencyTier) / 60}h)
                 </span>
               ) : null}
-              {liveMovement.specialling ? (
+              {isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
                   <StatusGlyph tone="warning" size={9} />
-                  1:1 specialling
+                  {observationSummary(liveMovement.observation)}
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>

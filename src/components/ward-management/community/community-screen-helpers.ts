@@ -39,7 +39,8 @@ export const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedDay: "today",
 };
 
-export type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
+export type ActiveTabType =
+  "tab-sent" | "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
 
 export type DrawerType =
   | "px"

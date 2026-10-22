@@ -15,6 +15,7 @@ import {
   legalShort,
   nextStep,
   obsLong,
+  obsShort,
   STAGE_LABEL,
   type HandoverRow,
 } from "./handover-model";
@@ -126,7 +127,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       <span className={styles.two}>
         <span className={styles.trunc}>{legalShort(row)}</span>
         {row.obs === "Standard" ? (
-          <span className={styles.sub}>Standard obs</span>
+          <span className={styles.sub}>{obsLong(row)}</span>
         ) : (
           <span className={`${styles.sub} ${styles.glyphText}`}>
             <StatusGlyph tone={row.obs === "Urgent" ? "danger" : "warning"} size={8} />
@@ -150,14 +151,14 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 92,
     cell: (row) =>
       row.obs === "Standard" ? (
-        <span className={styles.sub}>Standard</span>
+        <span className={styles.sub}>{obsShort(row)}</span>
       ) : (
         <span className={styles.glyphText}>
           <StatusGlyph tone={row.obs === "Urgent" ? "danger" : "warning"} size={8} />
-          {row.obs === "Urgent" ? "Urgent" : "1:1"}
+          {obsShort(row)}
         </span>
       ),
-    paper: (row) => (row.obs === "Standard" ? "Standard" : row.obs === "Urgent" ? "Urgent" : "1:1"),
+    paper: (row) => obsShort(row),
   },
   {
     id: "due",

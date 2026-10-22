@@ -5,6 +5,7 @@ import { eligibility } from "../src/components/ward-management/ward-eligibility"
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -47,7 +48,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
           security: "Open",
           sex: "Female",
           gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,
@@ -81,7 +82,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
           security: "Open",
           sex: "Male",
           gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 1,
@@ -114,7 +115,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
           security: "Open",
           sex: "Female",
           gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,

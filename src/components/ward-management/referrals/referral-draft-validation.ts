@@ -7,6 +7,7 @@ import {
   REFERRAL_GENDERS,
 } from "../ward-model";
 import { NOT_ON_SENDING_WARD_REASONS } from "../ward-change-reasons";
+import { COMMUNITY_REFERRAL_PURPOSES } from "../ward-model-referral-parts";
 import { CLEARANCE_CHECKS, CLEARANCE_STATUSES, ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
 import type { KeptDraft } from "./ward-referral-drawer-model";
 
@@ -65,6 +66,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
       "unidentified",
       "notOnWard",
       "needsChartReattachment",
+      "communityPurpose",
     ])
   )
     return false;
@@ -78,6 +80,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
     !oneOf(value.referralSex, RECORDED_SEXES) ||
     !oneOf(value.referralGender, ["", ...REFERRAL_GENDERS]) ||
     !optional(value.atsCategory, (item) => oneOf(item, ATS_CATEGORIES)) ||
+    !optional(value.communityPurpose, (item) => oneOf(item, COMMUNITY_REFERRAL_PURPOSES)) ||
     !optional(value.unidentified, (item) => item === null || string(item)) ||
     !optional(value.needsChartReattachment, boolean) ||
     !boolean(value.highAcuity) ||

@@ -77,7 +77,7 @@ function answerClinicalFields() {
   ] as const) {
     fireEvent.change(screen.getByTestId(testId), { target: { value } });
   }
-  fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
 }
 

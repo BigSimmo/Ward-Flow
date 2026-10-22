@@ -12,7 +12,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { referralSenderRole, referralWithdrawable } from "@/components/ward-management/ward-referrals";
 import styles from "./referrals.module.css";
-import { useBandGroupsOpenByDefault, MATCH_VIEW_DECISION_EVENTS } from "./referral-match-model";
+import { MATCH_VIEW_DECISION_EVENTS } from "./referral-match-model";
 
 /**
  * The match view's state, its rejection check, the ward arm under review and the controls built
@@ -54,11 +54,6 @@ export function useReferralMatchState({
    * nothing derived from `ward`. There is therefore no no-ward stand-in value to invent here;
    * everything that IS derived from `ward` stays below, where it runs only once there is one.
    */
-  /* Shut on a phone, open at desktop width — read through the repository's own SSR-safe external
-   * store rather than by setting state in an effect, so the value is already correct on the first
-   * client render and no cascading re-render is needed to reach it. */
-  const bandGroupsOpenByDefault = useBandGroupsOpenByDefault();
-
   /**
    * ⚠️ UNCHOSEN, AND THIS IS THE MOST CONSEQUENTIAL PLACE IN THE APP FOR THAT TO BE TRUE.
    *
@@ -75,7 +70,6 @@ export function useReferralMatchState({
    */
   const [declineReason, setDeclineReason] = useState<ReferralDeclineReason | undefined>(undefined);
   const [edDeclineReason, setEdDeclineReason] = useState<ReferralDeclineReason | undefined>(undefined);
-  const [expandedUnitGates, setExpandedUnitGates] = useState<Set<string>>(new Set());
   /**
    * A SEPARATE draft from `declineReason` above, deliberately — not a second use of the same
    * state. The `!ward` branch below can render an emergency-department decline control AND a
@@ -110,8 +104,7 @@ export function useReferralMatchState({
   // before and after, on the next render.
   const priorRejectionCountRef = useRef(rejections.length);
   const [checkToken, setCheckToken] = useState(0);
-  const [collapsedTiers, setCollapsedTiers] = useState<Record<number, boolean>>({});
-  /* v10 phone sheet: the picked unit, whether the decline reasons are showing, and the fit list cap. */
+  /* The decision sheet (phone and, since D-77, desktop): the picked unit, whether the decline reasons are showing, and the fit list cap. */
   const [phonePick, setPhonePick] = useState<string | undefined>(undefined);
   const [phoneDeclining, setPhoneDeclining] = useState(false);
   const [phoneAllFits, setPhoneAllFits] = useState(false);
@@ -240,13 +233,10 @@ export function useReferralMatchState({
 
   return {
     linkedMovements,
-    bandGroupsOpenByDefault,
     declineReason,
     setDeclineReason,
     edDeclineReason,
     setEdDeclineReason,
-    expandedUnitGates,
-    setExpandedUnitGates,
     communityDeclineReason,
     setCommunityDeclineReason,
     communityWithdrawReason,
@@ -262,8 +252,6 @@ export function useReferralMatchState({
     priorRejectionCountRef,
     checkToken,
     setCheckToken,
-    collapsedTiers,
-    setCollapsedTiers,
     phonePick,
     setPhonePick,
     phoneDeclining,

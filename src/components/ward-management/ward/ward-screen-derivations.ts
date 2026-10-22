@@ -37,6 +37,7 @@ import type { PatientResolutionSubject, ResolvedPatientInfo } from "@/components
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
+import { isConstantObservation } from "@/components/ward-management/ward-observation";
 
 /** The bed roster the Bed board and bed list draw, derived from this ward's records. */
 type WardBedRosterInputs = {
@@ -188,7 +189,7 @@ export function wardBedRoster({
     const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.displayName;
     const stayDays = admission && status !== "incoming" ? admissionStayDays(admission, now) : null;
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
-    const isSpecialling = admission?.specialling === true;
+    const isSpecialling = admission ? isConstantObservation(admission.observation) : false;
 
     // D-64, behind the criteria led discharge flag: the Legal tile reads the same records as the
     // criteria card, so the two agree. With the flag off the tile is unchanged.
@@ -267,6 +268,7 @@ export function wardBedRoster({
       blockReason: releaseBlocker ?? admission?.blockReason ?? undefined,
       dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
+      observation: admission?.observation,
       legalStatus: patientLegalStatus,
       legalForm: patientLegalForm,
       legalStatusLabel,

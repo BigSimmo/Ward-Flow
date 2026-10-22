@@ -9,6 +9,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 /**
  * ⚠️ **NO REASON TYPED INTO A FORM CREATES A BED.**
@@ -73,7 +74,7 @@ function staged(source: Movement, id: Movement["id"], specialling: boolean): Mov
   return {
     ...source,
     id,
-    specialling,
+    observation: specialling ? observationAt("within_sight") : GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
     referredUnitIds: [],
@@ -208,7 +209,7 @@ describe("specialling capacity refuses, and a recorded reason answers it (owner 
     // The exact substring the specialling guard produces, and nowhere else in the file, so this
     // cannot pass on some other refusal.
     expect(state.rejections[0].reason, "the refusal must be the specialling guard's own distinctive text").toContain(
-      "specialling capacity left",
+      "observation staff left",
     );
     expect(movementIn(state, MOVEMENT_SPECIALLED_BLOCKED).stage).toBe("accepted_awaiting_bed");
     expect(movementIn(state, MOVEMENT_SPECIALLED_BLOCKED).admissionId).toBeUndefined();

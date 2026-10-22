@@ -43,6 +43,7 @@ import {
 import {
   accessIsWholeNetwork,
   edInScope,
+  ROLE_SCREENS,
   unitInScope,
   type PlaceLookup,
   type WardAccess,
@@ -176,7 +177,26 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   plannedAdmissionSequence: keep("plannedAdmissionSequence"),
   scenario: keep("scenario"),
   configuration: keep("configuration"),
-  units: keep("units"),
+  // D-72: a ward's seclusion and restraint record goes to the desks that open the Seclusion view and
+  // hold the ward, which still see an episode whose patient has left so they can record its end.
+  // Other such desks get only their own stays' episodes, and no other ward's room or incidents. A
+  // role without the view, such as an access admin or an executive, gets none of it.
+  units: (context) => {
+    const seesView = ROLE_SCREENS[context.access.role].seclusion !== undefined;
+    return context.state.units.map((unit) =>
+      !unit.restrictivePractice || (seesView && context.unitIn(unit.id))
+        ? unit
+        : {
+            ...unit,
+            restrictivePractice: {
+              incidents: [],
+              episodes: seesView
+                ? unit.restrictivePractice.episodes.filter((episode) => context.admissionIds.has(episode.admissionId))
+                : [],
+            },
+          },
+    );
+  },
   morningRollupConfirmations: keep("morningRollupConfirmations"),
   // Role and time only, no person.
   handoverSignOffs: keep("handoverSignOffs"),

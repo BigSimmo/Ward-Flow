@@ -20,6 +20,7 @@ import { TRANSPORT_PROVIDERS, type Referral } from "@/components/ward-management
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Community transport booking and cancel on the admitted table — the control the engine already
@@ -41,7 +42,7 @@ function admission(overrides: Partial<Admission>): Admission {
   return {
     id: "AD-TRANSPORT-01",
     unitId: "unit-under-test",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

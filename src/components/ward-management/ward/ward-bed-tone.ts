@@ -2,6 +2,7 @@ import type { WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
+import type { Observation } from "@/components/ward-management/ward-observation";
 
 /*
  * The bed tile's data shape and its two small rules, kept apart from `ward-beds-matrix.tsx` so the
@@ -47,7 +48,10 @@ export interface BedItem {
   podLabel?: string;
   designation?: string;
   isHdu?: boolean;
+  /** True when the stay's observation level takes observation staff (a one-to-one or two staff level). */
   isSpecialling?: boolean;
+  /** The stay's recorded observation level (fix plan item 10). Absent for a bed with nobody in it. */
+  observation?: Observation;
   tentativeDiagnosis?: string;
   blockReason?: string;
   expectedDays?: number | null;

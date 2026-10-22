@@ -165,6 +165,11 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "REOPEN_WARD_TO_ADMISSIONS",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
+  // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
+  "RECORD_RESTRICTIVE_PRACTICE_START",
+  "RECORD_RESTRICTIVE_PRACTICE_END",
+  "RECORD_WARD_INCIDENT",
+  "SET_SECLUSION_ROOM_STATUS",
   "COMPLETE_INBOX_ITEM",
   "CONFIRM_BED_RELEASE",
   "CONFIRM_CAPACITY",
@@ -197,6 +202,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // An admission id, the caller's own role and one choice from the closed `BED_RELEASE_BLOCKERS` list. No typed text.
   "RECORD_STAY_DISCHARGE_BLOCKER",
   "CLEAR_STAY_DISCHARGE_BLOCKER",
+  // Fix plan item 10: an id, a level from `OBSERVATION_LEVELS`, an interval from a fixed list and a
+  // typed review time as a number. No typed text.
+  "RECORD_OBSERVATION_LEVEL",
   // RB3, item 19: `movementId` (an id), `outcome` (one of two fixed strings) and the caller's own
   // `role` — no human-typed field.
   "RECORD_ED_OUTCOME",
@@ -269,6 +277,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the same shape `DECLINE`'s `reason` already has on this same list.
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
+  // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
+  // the reducer. No typed text.
+  "RECORD_WARD_DIAGNOSIS",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
@@ -419,6 +430,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "referralId"
   | "releaseId"
   | "leaveBedId"
+  // D-72: RECORD_RESTRICTIVE_PRACTICE_END names an episode the reducer minted on the ward's record.
+  | "episodeId"
   // Own-team community scope, resolved against the fixed service directory and referral link.
   | "actingTeamId"
   | "actingUnitId"

@@ -134,6 +134,31 @@ export function openSheetHandles(): readonly object[] {
  * sheet that was replaced rather than stacked on, and restoring it would drag
  * focus out of the sheet that took over.
  */
+/*
+ * Safari (macOS and iPhone) does not focus a button when it is clicked or tapped, so a sheet or
+ * dialog opened that way saw <body> as the focused element and returned focus to nowhere on close.
+ * The last control pressed stands in for the opener in that case.
+ */
+const PRESSABLE = 'button, a[href], summary, [role="button"], [tabindex]:not([tabindex="-1"])';
+let lastPressedControl: HTMLElement | null = null;
+
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      lastPressedControl = event.target instanceof Element ? event.target.closest<HTMLElement>(PRESSABLE) : null;
+    },
+    true,
+  );
+}
+
+/** The element focus should go back to when an overlay opening now closes. */
+export function overlayOpener(): HTMLElement | null {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active !== document.body) return active;
+  return lastPressedControl?.isConnected ? lastPressedControl : null;
+}
+
 export function canRestoreFocusTo(target: HTMLElement | null) {
   if (target == null) return false;
   const topRoot = openSheets[openSheets.length - 1]?.root ?? null;

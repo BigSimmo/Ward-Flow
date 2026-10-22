@@ -88,6 +88,11 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return event.subject.id;
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_WARD_INCIDENT":
+    case "SET_SECLUSION_ROOM_STATUS":
+      return event.unitId;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
     case "SET_SCENARIO":
@@ -117,6 +122,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "MARK_NOTICE_READ":
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
+    case "RECORD_WARD_DIAGNOSIS":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
@@ -143,6 +149,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "CANCEL_PLANNED_ADMISSION":
     case "CONVERT_PLANNED_ADMISSION":
       return event.plannedAdmissionId;
+    case "RECORD_OBSERVATION_LEVEL":
+      return event.target.kind === "movement" ? event.target.movementId : event.target.admissionId;
     default:
       return "movementId" in event ? (event.movementId as string) : "none";
   }

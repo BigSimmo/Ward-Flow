@@ -30,6 +30,7 @@ import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LEG_STATE_LABEL, MS_PER_MINUTE, meaningfulBlocker, transportRouteLabels } from "./movements-screen-helpers";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 export function HighlightStat({
   label,
@@ -270,7 +271,7 @@ export function StageRow({
   const detailTitle = [
     healthService,
     `Owner: ${movement.owner.trim() || "Not recorded"}`,
-    movement.specialling ? "One-to-one nursing" : null,
+    isConstantObservation(movement.observation) ? observationSummary(movement.observation) : null,
     movement.highAcuity ? "High acuity" : null,
   ]
     .filter(Boolean)

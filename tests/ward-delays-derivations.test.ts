@@ -21,6 +21,7 @@ import { referrals, wardMovements } from "@/components/ward-management/ward-move
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, minutesUntil } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * The merge's whole claim, asserted rather than argued: the priority queue, the exceptions inbox and
@@ -51,7 +52,7 @@ const BASE_MOVEMENT: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],

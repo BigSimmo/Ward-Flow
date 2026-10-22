@@ -1,4 +1,5 @@
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
+import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -68,6 +69,7 @@ import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import { type RecordedFactEventHelpers, reduceRecordedFactEvent } from "./ward-flow-record-events";
+import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
 import { type UndoEventHelpers, reduceUndoEvent } from "./ward-flow-undo-events";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
@@ -149,8 +151,8 @@ import {
 } from "@/components/ward-management/ward-scenarios";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import {
+  lacksObservationStaff,
   remainingHighAcuityCapacity,
-  remainingSpeciallingCapacity,
   bedIsOccupied,
   type Admission,
   type PlannedAdmission,
@@ -185,6 +187,7 @@ import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
@@ -636,7 +639,7 @@ function pullOverrides(
 ): Movement["overrides"] {
   if (event.overrideReason === undefined || !OVERRIDE_REASONS.includes(event.overrideReason)) return movement.overrides;
   const gates: NonNullable<Movement["overrides"][number]["gate"]>[] = [];
-  if (movement.specialling && remainingSpeciallingCapacity(unit, admissions) <= 0) gates.push("specialling_staffing");
+  if (lacksObservationStaff(movement.observation, unit, admissions)) gates.push("specialling_staffing");
   if (movement.highAcuity && remainingHighAcuityCapacity(unit, admissions) <= 0) gates.push("high_acuity_staffing");
   if (!checkEligibility) {
     // The restore pull (Audit 2 E-03): the one suitability question it re-asks is authorisation
@@ -1632,7 +1635,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       )
         return deny("transition", "denied", "The patient already has another occupied or held bed.");
       if (
-        (admission.specialling && remainingSpeciallingCapacity(receiving, state.admissions) <= 0) ||
+        lacksObservationStaff(admission.observation, receiving, state.admissions) ||
         (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
       )
         return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
@@ -2269,6 +2272,8 @@ export function reduceClinicalEvent(
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
       return reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
+    case "RECORD_OBSERVATION_LEVEL":
+      return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS);
     case "ACCEPT_IN_PRINCIPLE":
     case "DECLINE":
     case "RECEIVE_REFERRAL":
@@ -2286,6 +2291,11 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_WARD_INCIDENT":
+    case "SET_SECLUSION_ROOM_STATUS":
+      return reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
     case "SEND_RELEASE_SUPPORT_NOTICE":
       return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
     case "RECORD_ARRIVAL_CHECK":
@@ -2656,6 +2666,8 @@ export function reduceClinicalEvent(
     case "CONVERT_PLANNED_ADMISSION": {
       return reducePlannedAdmission(state, event, decision);
     }
+    case "RECORD_WARD_DIAGNOSIS":
+      return reduceWardDiagnosis(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;

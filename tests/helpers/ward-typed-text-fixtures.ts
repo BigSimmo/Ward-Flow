@@ -3,6 +3,7 @@ import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reaso
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
+import { isConstantObservation } from "@/components/ward-management/ward-observation";
 import { TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
@@ -576,7 +577,7 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
     type: "PULL_PATIENT",
     // PULL_PATIENT keeps an override, and so its sign-off, only for a gate that actually failed: a
     // reason and sign-off on a pull that needed none is accepted and then dropped. So this places a
-    // patient who needs one-to-one specialling at a ward with no specialling capacity left, through
+    // patient on constant observation at a ward with no observation staff left, through
     // an accepted offer and acceptance in principle, and the pull then records the override.
     build: (seed) => {
       const now = typedTextFixtureClock(seed);
@@ -591,7 +592,8 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
       });
       const movements = openMovements(seed).filter(
         (movement) =>
-          movement.specialling && (movement.stage === "placement_requested" || movement.stage === "destination_review"),
+          isConstantObservation(movement.observation) &&
+          (movement.stage === "placement_requested" || movement.stage === "destination_review"),
       );
       const units = seed.units.filter((unit) => remainingSpeciallingCapacity(unit, seed.admissions) <= 0);
       for (const movement of movements) {
@@ -627,7 +629,9 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
           }
         }
       }
-      throw new Error("PULL_PATIENT with overrideSignOff: no seeded specialling patient and full ward accepts it");
+      throw new Error(
+        "PULL_PATIENT with overrideSignOff: no seeded constant-observation patient and full ward accepts it",
+      );
     },
     markers: [M.signOffPull],
   },

@@ -9,6 +9,7 @@ import {
 } from "../src/components/ward-management/ward-statistics";
 import { stayBand, type Admission } from "../src/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Every admission below is CONSTRUCTED, never found by searching a fixture.
@@ -27,7 +28,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
   return {
     id: "ADM-1",
     unitId: UNIT,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: "REF-1",
     movementId: null,

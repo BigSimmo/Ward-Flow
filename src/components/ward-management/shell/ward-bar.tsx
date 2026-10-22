@@ -44,6 +44,8 @@ import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-mana
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
@@ -57,14 +59,23 @@ import {
   wardTasksAreActionableForRole,
 } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
-const WardToolsSheet = dynamic(() =>
-  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
-);
+// Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
+// crashing the page (offline Tools crash, 22 Oct 2026).
+const loadToolsSheet = () =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet);
+// No `loading` option: a local Suspense boundary holds the first reveal on a timer, which a paused
+// test clock never fires (ui-ward-roles.spec.ts demo clock journey).
+const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
+preloadWhenIdle(loadToolsSheet);
+// The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
+const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -653,6 +664,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [setOpenPanel],
   );
 
+  // A sheet footer's Board time pill (D-77) closes its sheet before the Demo menu opens.
+  const openDemoMenuFromSheet = useDemoMenuFromSheet(openPanel, (id) => closePopover(id, false), isPhone);
+
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
       // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
@@ -1153,7 +1167,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
         {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
-        <WardDataModeSlot className={styles.dataMode} />
+        <WardDataModeSlot className={styles.dataMode} menu={loadDemoMenu} />
 
         {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
             controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
@@ -1297,7 +1311,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone ? undefined : (
             <div className={styles.drawerFoot}>
               <span>Synthetic events · newest first</span>
-              <WardDemoClockPopover>
+              <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("activity", from)}>
                 <span className={styles.footClock}>
                   Demo time <b>{formatInstant(now)}</b>
                 </span>
@@ -1402,7 +1416,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         footer={
           <div className={styles.drawerFoot}>
             <span>Whole network · synthetic prototype</span>
-            <WardDemoClockPopover>
+            <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
                 Demo time <b>{formatInstant(now)}</b>
               </span>
@@ -1453,6 +1467,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           />
         ) : null}
       </Sheet>
+
+      {/* Help (fix plan item 12): its sheet loads only when the rail, the phone menu or Settings opens it. */}
+      <WardHelpHost />
     </header>
   );
 }

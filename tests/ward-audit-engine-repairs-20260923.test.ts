@@ -18,6 +18,7 @@ import {
   CANCEL_TRANSPORT_REASONS,
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../src/components/ward-management/ward-change-reasons";
+import { observationAt } from "../src/components/ward-management/ward-observation";
 
 const id = "WF-012",
   unitId = "rph-adult-secure",
@@ -351,7 +352,9 @@ describe("23 September engine audit repairs", () => {
     const initial = beforePull();
     const state = {
       ...initial,
-      movements: initial.movements.map((m) => (m.id === id ? { ...m, specialling: true, highAcuity: true } : m)),
+      movements: initial.movements.map((m) =>
+        m.id === id ? { ...m, observation: observationAt("within_sight"), highAcuity: true } : m,
+      ),
       units: initial.units.map((u) => (u.id === unitId ? { ...u, speciallingCapacity: 0, highAcuityCapacity: 0 } : u)),
     };
     const next = apply(state, {

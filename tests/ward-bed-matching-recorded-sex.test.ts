@@ -29,6 +29,7 @@ import { referralState } from "../src/components/ward-management/ward-referrals"
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Owner ruling R7, 25 September 2026 (`docs/ward-flow/decisions.md`): gender identity is Female,
@@ -106,7 +107,7 @@ function movement(person: Person, genderPlacements?: GenderPlacement[], override
     sex: person.sex,
     gender: person.gender,
     genderPlacements,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

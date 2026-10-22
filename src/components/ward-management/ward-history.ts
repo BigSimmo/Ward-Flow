@@ -58,7 +58,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   },
   RECORD_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker recorded" },
   CLEAR_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker cleared" },
+  RECORD_OBSERVATION_LEVEL: { category: "patient", plainWording: "Observation level changed" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
+  RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
@@ -162,6 +164,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
   RECORD_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action recorded" },
   COMPLETE_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action done" },
+  RECORD_RESTRICTIVE_PRACTICE_START: { category: "both", plainWording: "Seclusion or restraint started" },
+  RECORD_RESTRICTIVE_PRACTICE_END: { category: "both", plainWording: "Seclusion or restraint ended" },
+  RECORD_WARD_INCIDENT: { category: "bed", plainWording: "Ward incident recorded" },
+  SET_SECLUSION_ROOM_STATUS: { category: "bed", plainWording: "Seclusion room status recorded" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },
@@ -352,7 +358,10 @@ export function selectPatientHistory(
       eventFieldString(event, "referralId") === recordId ||
       eventFieldString(event, "plannedAdmissionId") === recordId ||
       // Bed meeting actions name their bed request or stay as `subject.id`.
-      ("subject" in event && event.subject.id === recordId);
+      ("subject" in event && event.subject.id === recordId) ||
+      // An observation level change names its movement or stay inside `target`.
+      (event.type === "RECORD_OBSERVATION_LEVEL" &&
+        (event.target.kind === "movement" ? event.target.movementId : event.target.admissionId) === recordId);
 
     if (matchesPatient) {
       matchingEntries.push(buildHistoryEntry(event, now));

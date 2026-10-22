@@ -1105,7 +1105,7 @@ function WardProfileBody({
           <dd>{unit.lockedBeds}</dd>
         </div>
         <div>
-          <dt>1:1</dt>
+          <dt>Observation staff in use</dt>
           <dd>{row.specialling}</dd>
         </div>
       </dl>

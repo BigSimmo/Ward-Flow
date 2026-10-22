@@ -117,7 +117,7 @@ function fillRequiredReferralFields() {
   // ⚠️ Answered separately because it is a radio pair, not a <select>. Owner ruling 1 made an
   // unticked checkbox load-bearing — a `false` nobody chose skips the reducer's one-to-one
   // capacity refusal — so "Not required" is now stated rather than assumed.
-  fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
   // Same shape, same reasoning, added 2026-09-10 with the acuity gate: a `false` nobody chose
   // skips the acuity gate entirely, so "Not required" is stated rather than assumed here too.
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
@@ -137,8 +137,8 @@ function fillRequiredReferralFieldsExcept(skipTestId: string) {
     if (field.testId === skipTestId) continue;
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
-  if (skipTestId !== "ward-ed-referral-specialling-not-required") {
-    fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+  if (skipTestId !== "ward-ed-referral-observation") {
+    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
   }
   if (skipTestId !== "ward-ed-referral-high-acuity-not-required") {
     fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
@@ -664,8 +664,8 @@ describe("emergency department referral form refuses an unanswered submission", 
     });
     fireEvent.change(screen.getByTestId("ward-ed-referral-urgency"), { target: { value: "1" } });
     // Stated, not assumed — see "one-to-one nursing must be stated" below.
-    fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-required"));
-    // ⚠️ ANSWERED THE OPPOSITE WAY FROM `specialling` DIRECTLY ABOVE, ON PURPOSE. The two are
+    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "within_sight" } });
+    // ⚠️ ANSWERED THE OPPOSITE WAY FROM THE OBSERVATION LEVEL DIRECTLY ABOVE, ON PURPOSE. The two are
     // separate clinical questions and this test's whole subject is that no field's value bleeds
     // into another's; answering both "Required" would make a bleed between exactly this pair
     // invisible, which is the pair most likely to be wired together by mistake.
@@ -783,31 +783,27 @@ describe("the urgency change reason starts unchosen", () => {
  * a `false` nobody chose does not record "not required", it SKIPS THE CHECK, and a patient needing
  * one-to-one nursing can be pulled into a ward that cannot staff it.
  */
-describe("one-to-one nursing must be stated, not assumed", () => {
-  it("blocks the referral until one-to-one nursing is answered either way", () => {
+describe("the observation level must be stated, not assumed", () => {
+  it("blocks the referral until an observation level is chosen", () => {
     renderEd();
     openRaiseIntoMovementForm();
-    fillRequiredReferralFieldsExcept("ward-ed-referral-specialling-not-required");
+    fillRequiredReferralFieldsExcept("ward-ed-referral-observation");
 
     const submit = screen.getByTestId("ward-ed-referral-submit");
     expect(
       submit.getAttribute("aria-disabled"),
-      "the referral can be raised with one-to-one nursing unanswered, so it is filed as 'not " +
-        "required' — and the reducer only checks a ward's one-to-one capacity when the patient is " +
-        "recorded as needing it, so the capacity refusal is skipped for a patient nobody assessed",
+      "the referral can be raised with no observation level chosen, and the pull only checks a " +
+        "ward's observation staff when the level needs them, so the capacity refusal would be " +
+        "skipped for a patient nobody assessed",
     ).toBe("true");
 
-    // Neither radio is pre-chosen: the absence is the point, not a cleared value.
+    // No level is pre-chosen: the absence is the point, not a cleared value.
     expect(
-      (screen.getByTestId("ward-ed-referral-specialling-required") as HTMLInputElement).checked,
-      "'Required' arrives pre-chosen",
-    ).toBe(false);
-    expect(
-      (screen.getByTestId("ward-ed-referral-specialling-not-required") as HTMLInputElement).checked,
-      "'Not required' arrives pre-chosen, which is the old checkbox defect in a new shape",
-    ).toBe(false);
+      (screen.getByTestId("ward-ed-referral-observation") as HTMLSelectElement).value,
+      "a level arrives pre-chosen, which is the old checkbox defect in a new shape",
+    ).toBe("");
 
-    fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
     expect(submit.getAttribute("aria-disabled"), "still blocked after the clinician answered").toBeNull();
   });
 });
@@ -1123,6 +1119,9 @@ describe("direct CMHT referral pathway from ED screen", () => {
     expect(teamSelect.options.length).toBeGreaterThan(1);
     const chosenTeam = teamSelect.options[1].value;
     fireEvent.change(teamSelect, { target: { value: chosenTeam } });
+    // D-74: what the referral is for is required too.
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByTestId("ward-ed-cmht-purpose-follow_up-WF-001"));
     expect(confirmBtn).not.toHaveAttribute("aria-disabled", "true");
 
     // Confirm the referral
