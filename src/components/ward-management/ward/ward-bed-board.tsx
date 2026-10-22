@@ -227,15 +227,16 @@ function cellLabel(
   fits: boolean,
   nameFor: (name: string, umrn: string | undefined | null) => string,
 ): string {
-  // A2-20: the accessible name follows Discreet names, as the visible cell does.
+  // A2-20: the accessible name follows Discreet names, as the visible cell does. Codex on #551: it uses the
+  // cell's Ready and Pulled words too, so a pulled bed is never announced as free.
   const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
   const state =
     bed.status === "ready"
       ? bed.heldFor
-        ? `free, held for ${bed.heldFor}`
+        ? `pulled for ${bed.heldFor}`
         : bed.preparing
           ? "being made ready"
-          : "free"
+          : "ready"
       : bed.status === "closed"
         ? "closed"
         : bed.status === "incoming"
