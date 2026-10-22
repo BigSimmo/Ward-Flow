@@ -1,6 +1,7 @@
 import {
   ED_ACCESS_TARGET_MINUTES,
   ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
+  EXTRA_TRAVEL_HOLD_MINUTES,
   PULL_HOLD_MINUTES,
 } from "@/components/ward-management/ward-model";
 
@@ -72,7 +73,10 @@ const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_17_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-17" } as const;
 /** Josh signed the missed bed request window for the prototype at 07:02 AWST on 20 Oct 2026. */
 const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-20" } as const;
-/** Josh approved the observation levels and their intervals for the prototype on 21 Oct 2026 (fix plan item 10). */
+/**
+ * Josh chose the extra-travel bed hold (D-75 item 5) and approved the observation levels and their
+ * intervals for the prototype (fix plan item 10) on 21 Oct 2026.
+ */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 
 /**
@@ -239,6 +243,13 @@ export const CLINICAL_VALUES = {
     value: PULL_HOLD_MINUTES,
     unit: "minutes",
     adjustable: true,
+  },
+  extraTravelHold: {
+    ...SIGNED_BY_JOSH_21_OCT,
+    name: "Extra-travel bed hold adds",
+    group: "Alerts and holds",
+    value: EXTRA_TRAVEL_HOLD_MINUTES,
+    unit: "minutes",
   },
   bedHoldReview: {
     ...SIGNED_BY_JOSH,

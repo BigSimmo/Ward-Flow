@@ -85,6 +85,7 @@ describe("clinical values file", () => {
       pullNowAnswer: 15,
       pullNowLive: 240,
       pullHold: 240,
+      extraTravelHold: 60,
       bedHoldReview: 120,
       bedCountFresh: 60,
       downtimePackStale: 60,
@@ -218,6 +219,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   { file: "ward-model.ts", name: "PULL_HOLD_MINUTES", why: "legal figure guard provenance; listed as pullHold" },
+  {
+    file: "ward-model.ts",
+    name: "EXTRA_TRAVEL_HOLD_MINUTES",
+    why: "legal figure guard provenance; listed as extraTravelHold",
+  },
   {
     file: "ward-model.ts",
     name: "ED_ACCESS_TARGET_MINUTES",

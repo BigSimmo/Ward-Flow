@@ -54,10 +54,13 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
       .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+    await page
+      .getByTestId("ward-index-phone-sheet")
+      .getByRole("button", { name: "Stays and discharges", exact: true })
+      .click();
   } else {
     await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    await page.getByRole("link", { name: "Stays and discharges", exact: true }).click();
   }
   await page.waitForURL(`**/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");

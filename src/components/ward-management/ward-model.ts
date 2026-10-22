@@ -123,6 +123,13 @@ export const PARALLEL_REFERRAL_CAP_RANGE = { min: 1, max: PARALLEL_REFERRAL_CAP,
 export const PULL_HOLD_MINUTES = 240;
 
 /**
+ * D-75 item 5 (Josh, 21 Oct 2026): the extra minutes an accepting ward can ask for when the patient has
+ * further to travel, added to the configured pull hold. Josh chose 60 minutes on 21 Oct 2026 as a
+ * prototype value (listed as `extraTravelHold` in ward-clinical-values.ts), not a local policy.
+ */
+export const EXTRA_TRAVEL_HOLD_MINUTES = 60;
+
+/**
  * The slider bounds for `WardConfiguration.pullHoldMinutes` on the settings screen. Not a
  * statutory or clinical range — a coordinator-usable band around the carried-over default above.
  */
@@ -818,6 +825,13 @@ export type Movement = {
   arrivalMode?: "self" | "ambulance" | "police";
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
+  /**
+   * D-72: the `acceptedAt` of the acceptance that asked for the extra-travel bed hold
+   * (`ACCEPT_IN_PRINCIPLE.extendedHold`). A pull applies it only while that same acceptance stands
+   * (`acceptedAt` and `acceptedUnitId` unchanged), so a withdrawn or replaced acceptance never
+   * carries it. `undefined` when the standard hold applies.
+   */
+  extendedHoldAt?: Instant;
   /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
   meetingActions?: BedMeetingAction[];
   /**
@@ -976,6 +990,17 @@ export type Movement = {
   /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
   medicationChartDone?: boolean;
 };
+
+/** #398: the services a discharge support notice goes to (`SEND_RELEASE_SUPPORT_NOTICE`). */
+export const SUPPORT_SERVICE_TYPES = ["pharmacy", "transport", "cleaning"] as const;
+export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
+
+/**
+ * D-72 (21 Oct 2026): the arrival checklist items the emergency department records with
+ * `RECORD_ARRIVAL_CHECK`, onto `Movement.contrabandSearchDone` and `Movement.medicationChartDone`.
+ */
+export const ARRIVAL_CHECKS = ["contraband_search", "medication_chart"] as const;
+export type ArrivalCheck = (typeof ARRIVAL_CHECKS)[number];
 
 /**
  * A bed release's lifecycle, in the order a bed moves through it. Hand-listed (never derived) for
@@ -1147,6 +1172,15 @@ export type BedRelease = {
     /** Absent when the clearing event named no reason; never defaulted. */
     readonly reason?: DischargeDelayClearReason;
     readonly blocker?: BedReleaseBlocker | null;
+  }>;
+  /**
+   * #398 (D-72): the support notices the ward sent for this confirmed release, one per service,
+   * oldest first (`SEND_RELEASE_SUPPORT_NOTICE`). About the bed only. Absent until the first.
+   */
+  supportNoticesSent?: ReadonlyArray<{
+    readonly service: SupportServiceType;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
   }>;
 };
 

@@ -25,6 +25,7 @@ import {
   REFERRAL_ADDRESSING_STATES,
   ABSENCE_STEPS,
   REFERRAL_DECLINE_REASONS,
+  SUPPORT_SERVICE_TYPES,
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
@@ -342,6 +343,7 @@ const movement = z
     sourceAdmissionId: link,
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
+    extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
     meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
@@ -481,6 +483,12 @@ const bedRelease = z.looseObject({
   confirmedAt: finite,
   confirmedBy: text,
   preparing: bool,
+  // #398: each service is notified at most once.
+  supportNoticesSent: z.optional(
+    z
+      .array(z.looseObject({ service: z.enum(SUPPORT_SERVICE_TYPES), at: finite, by: text }))
+      .check(z.refine((sent) => new Set(sent.map((notice) => notice.service)).size === sent.length)),
+  ),
 });
 
 // D-38: an absence holds when it was recorded and the time of each fixed missing person step, and

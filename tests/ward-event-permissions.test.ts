@@ -482,6 +482,8 @@ describe("who may raise which event", () => {
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
     RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+    RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
     // v10 pass 2 (Josh, 10 Oct 2026): Undo and the ward Bed board. The reducer narrows the referral
     // undo to the role that decided (a ward to its own unit) or the coordinator.
     UNDO_REFERRAL_DECISION: ["ward", "coordinator", "ed", "community"],

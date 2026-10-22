@@ -56,16 +56,11 @@ it("lists every clinical value with its synthetic or signed status", () => {
     expect(row).toHaveTextContent(clinicalValueStatusText(entry));
   }
 });
-it("discloses that board refresh is not wired and does not pretend to save a cadence", () => {
+it("offers no board refresh cadence, since nothing reads one (D-72)", () => {
   settings();
   fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
-  const row = screen.getByTestId("setting-wallboard-refresh-row");
-  expect(row).toHaveTextContent("Not wired in this prototype.");
-  const option = within(row).getByRole("radio", { name: "15s" });
-  // Site review (12 Oct 2026): a working control that says it is not wired (D-16), never greyed.
-  expect(option).not.toHaveAttribute("aria-disabled");
-  fireEvent.click(option);
-  expect(screen.getByRole("status")).toHaveTextContent("is not wired in this prototype.");
-  expect(option).toHaveAttribute("aria-checked", "false");
+  expect(screen.getByTestId("setting-buzz-alert-row")).toBeInTheDocument();
+  expect(screen.queryByTestId("setting-wallboard-refresh-row")).toBeNull();
+  expect(screen.queryByText("Not wired in this prototype.")).toBeNull();
   expect(localStorage.getItem("ward_flow_wallboard_refresh")).toBeNull();
 });

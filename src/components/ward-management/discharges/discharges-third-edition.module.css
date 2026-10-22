@@ -925,19 +925,6 @@
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.actionDeck {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  flex-wrap: wrap;
-}
-
-.notWired {
-  border-style: dashed;
-  color: var(--wf-ink-3);
-  cursor: not-allowed;
-}
-
 .inlineAction {
   margin-top: var(--wf-s-2);
 }

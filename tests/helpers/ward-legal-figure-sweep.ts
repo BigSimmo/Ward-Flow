@@ -35,7 +35,7 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../../src/components/ward-management/ward-change-reasons";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
-import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
+import { ABSENCE_STEPS, SUPPORT_SERVICE_TYPES } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo";
 import {
@@ -429,6 +429,18 @@ export function candidateEvents(
         movementId,
         cleared: true,
       }));
+    case "RECORD_ARRIVAL_CHECK":
+      // D-72: one candidate per movement crossed with each check, recorded as done.
+      return movementIds.flatMap((movementId) =>
+        (["contraband_search", "medication_chart"] as const).map((check) => ({
+          type,
+          role,
+          now,
+          movementId,
+          check,
+          done: true,
+        })),
+      );
     case "UPLOAD_PATIENT_FORM":
       return movementIds.map((movementId) => ({
         type,
@@ -886,6 +898,19 @@ export function candidateEvents(
         releaseId: release.id,
         actingUnitId: release.unitId,
       }));
+    case "SEND_RELEASE_SUPPORT_NOTICE":
+      // #398 (D-72): one candidate per release crossed with every service, against the release's
+      // own unit, as CONFIRM_BED_RELEASE above. Only a confirmed release accepts it.
+      return state.bedReleases.flatMap((release) =>
+        SUPPORT_SERVICE_TYPES.map((service) => ({
+          type,
+          role,
+          now,
+          releaseId: release.id,
+          actingUnitId: release.unitId,
+          service,
+        })),
+      );
     case "REVERT_BED_RELEASE":
       // Bed-model rework (2026-08-28). One candidate per release crossed with every waiting-on
       // value — the same "one candidate per real domain value" precedent every list-valued event
@@ -1495,6 +1520,8 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   // path carries `admissionId`. Scoped like other subject-targeted events so the unscoped
   // coverage assertion does not demand it as a whole-state command.
   "RECORD_SUPPORT_NOTIFICATION",
+  // D-72 arrival checklist (21 Oct 2026): a movement-targeted fact with no legal figure.
+  "RECORD_ARRIVAL_CHECK",
 ]);
 
 /**

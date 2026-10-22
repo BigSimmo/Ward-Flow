@@ -263,6 +263,10 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   // no clinician or owner attribution — see the constant's own doc comment in ward-model.ts.
   PULL_HOLD_MINUTES: "owner answer 35, 17 September 2026 (docs/ward-flow/owner-answers-2026-09-17.md): default 4 hours",
 
+  // D-75 item 5 bed hold (Josh, 21 Oct 2026): the extra-travel hold adds 60 minutes to the
+  // configured pull hold. A bed-management choice, not a Mental Health Act period.
+  EXTRA_TRAVEL_HOLD_MINUTES: "Josh, 21 October 2026, D-75 item 5: extra-travel bed hold adds 60 minutes",
+
   // Task 5-wiring, 2026-09-16: the slider range around PULL_HOLD_MINUTES above. Not a statutory or
   // clinical range — a coordinator-usable band around the carried-over default.
   PULL_HOLD_RANGE_MINUTES:

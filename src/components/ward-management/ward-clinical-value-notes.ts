@@ -96,6 +96,9 @@ const CLINICAL_VALUE_NOTES = {
   pullHold: {
     source: "Owner answer 35, 17 Sep 2026 (ward-model.ts provenance)",
   },
+  extraTravelHold: {
+    source: "Josh, 21 Oct 2026, D-75 item 5 (ward-model.ts provenance)",
+  },
   bedHoldReview: {
     source: "Josh, 26 Sep 2026, his default",
   },
