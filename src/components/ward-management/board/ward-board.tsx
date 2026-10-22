@@ -407,6 +407,9 @@ export function WardBoard({
   const onZoneKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== "Escape") return;
+      // The phone sheet is portalled out of the zones but its events still bubble here through
+      // React. It runs its own Escape (which spares an open select), so leave those to it.
+      if (!event.currentTarget.contains(event.target as Node)) return;
       event.stopPropagation();
       closeDetail();
     },

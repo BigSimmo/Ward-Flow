@@ -80,6 +80,23 @@ describe("phone bed grid", () => {
     expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
   });
 
+  it("leaves the sheet open when Escape only dismisses a select inside it", () => {
+    stubPhone(true);
+    renderBoard();
+    const tiles = within(screen.getByTestId("ward-board-beds")).getAllByRole("button");
+    // Open beds in turn until one's record holds a select.
+    const select = tiles.reduce<HTMLSelectElement | null>((found, tile) => {
+      if (found !== null) return found;
+      fireEvent.click(tile);
+      return screen.queryByTestId("ward-board-detail-sheet")?.querySelector("select") ?? null;
+    }, null);
+    if (select === null) throw new Error("no bed record with a select");
+    fireEvent.keyDown(select, { key: "Escape" });
+    expect(screen.getByTestId("ward-board-detail-sheet")).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Close bed record" }), { key: "Escape" });
+    expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
+  });
+
   it("keeps the side panel beside the grid on a larger screen", () => {
     stubPhone(false);
     renderBoard();
