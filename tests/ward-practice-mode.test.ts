@@ -44,7 +44,7 @@ describe("practiceProgress", () => {
         ...f.state.movements,
         f.fresh({
           referredUnitIds: [f.unitA.id],
-          declines: [{ unitId: f.unitB.id, at: 10_010, reason: "no_bed" } as Movement["declines"][number]],
+          declines: [{ unitId: f.unitB.id, at: 10_010, reason: "no_suitable_bed" } as Movement["declines"][number]],
         }),
       ],
       f.startedWith,

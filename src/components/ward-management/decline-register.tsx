@@ -4,6 +4,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { DeclineEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import { StatusGlyph } from "@/components/wf";
 
@@ -74,9 +75,9 @@ export function DeclineRegister({ entries, units, now }: DeclineRegisterProps) {
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                 {patientOf(entry.movement).formalName} ·{" "}
                 {/* `DeclineReason` is a controlled-vocabulary identifier (`DECLINE_REASONS`), never
-                    free text. The same `replace(/_/g, " ")` rendering the shortlist panel uses. */}
+                    free text. D-78: shown in the one list's wording, the coordinator's labels. */}
                 <span className={styles.entryReason} data-testid={`ward-decline-reason-${entry.movement.id}-${index}`}>
-                  {entry.decline.reason.replace(/_/g, " ")}
+                  {DECLINE_REASON_LABELS[entry.decline.reason] ?? entry.decline.reason}
                 </span>
               </span>
             </span>

@@ -11,7 +11,7 @@ import {
   type InboxItemKind,
   STAGE_TRANSITION_BLOCKERS,
 } from "@/components/ward-management/ward-flow-reducer";
-import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
+import { DECLINE_REASON_LABELS, isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
 import {
@@ -129,7 +129,10 @@ export function movementTimeline(movement: Movement) {
     events.push({ at: change.at, label: `Legal status changed: ${change.from} → ${change.to} (${change.by})` });
   }
   for (const decline of movement.declines) {
-    events.push({ at: decline.at, label: `Declined by referral: ${decline.reason.replace(/_/g, " ")}` });
+    events.push({
+      at: decline.at,
+      label: `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`,
+    });
   }
   if (movement.transport?.acceptedAt !== undefined) {
     events.push({ at: movement.transport.acceptedAt, label: `Transport accepted by ${movement.transport.provider}` });

@@ -1014,7 +1014,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
       id: "WF-TEST-DECLINED-ELSEWHERE-ELIGIBLE",
       originEdId: "rph-ed",
       referredUnitIds: [],
-      declines: [{ unitId: declinedUnitId, at: NOW_ANCHOR - 10, reason: "no_bed" }],
+      declines: [{ unitId: declinedUnitId, at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
     });
     // Still genuinely eligible somewhere else — the OTHER real ward this probe found was never
     // referred to or declined by, so the network has not actually run out.

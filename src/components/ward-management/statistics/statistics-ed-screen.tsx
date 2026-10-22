@@ -178,7 +178,7 @@ export function StatisticsEdScreen({
   const declinesReadout = readDeclinesByReason([...allDepartmentMovements]);
   const noFreeBedDeclineCount = allDepartmentMovements
     .flatMap((movement) => movement.declines)
-    .filter((decline) => decline.reason === "no_bed").length;
+    .filter((decline) => decline.reason === "no_suitable_bed").length;
   const notSuitableDeclineCount = declinesReadout.ok
     ? declinesReadout.value.totalCount - noFreeBedDeclineCount
     : undefined;

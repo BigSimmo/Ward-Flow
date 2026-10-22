@@ -61,7 +61,7 @@ const MOVEMENTS: Movement[] = [
   movement({
     id: "WF-x1",
     originEdId: HERE.id,
-    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_bed" }],
+    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
   }),
   movement({ id: "WF-x2", originEdId: HERE.id }),
   ...Array.from({ length: 6 }, (_, index) =>

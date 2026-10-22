@@ -93,16 +93,34 @@ export * from "@/components/ward-management/ward-model-leave";
 export * from "@/components/ward-management/ward-model-referral-parts";
 export * from "@/components/ward-management/ward-model-notices";
 
+/** D-78 (Josh, 21 Oct 2026): ONE decline list, the coordinator's wording plus four ward-only reasons. */
 export const DECLINE_REASONS = [
-  "no_bed",
-  "sex_mix",
+  "no_suitable_bed",
+  "age_band_not_provided_here",
+  "sex_designation_unavailable",
+  "secure_bed_unavailable",
+  "belongs_to_another_service",
+  "referred_elsewhere",
   "specialling_unavailable",
   "acuity_mix",
   "capability_mismatch",
   "bed_pulled_for_earlier_referral",
-  "out_of_catchment",
+  "another_reason",
 ] as const;
 export type DeclineReason = (typeof DECLINE_REASONS)[number];
+
+/** The ward-only reasons: each one is about a ward's beds, staffing or mix, never asked of an ED. */
+export const WARD_ONLY_DECLINE_REASONS: readonly DeclineReason[] = [
+  "specialling_unavailable",
+  "acuity_mix",
+  "capability_mismatch",
+  "bed_pulled_for_earlier_referral",
+];
+
+/** A ward refusing a MOVEMENT: not the sex designation, which there only filters beds (T10). */
+export const MOVEMENT_DECLINE_REASONS: readonly DeclineReason[] = DECLINE_REASONS.filter(
+  (reason) => reason !== "sex_designation_unavailable",
+);
 
 /** Referring to more than three units at once spams wards and erodes trust between services. */
 export const PARALLEL_REFERRAL_CAP = 3;
@@ -1231,18 +1249,12 @@ export type BedRelease = {
  *
  * ⚠️ AND IT IS A DELIBERATE CHOICE, NOT AN ABSENCE. A ward picks this on purpose, which is a
  * different thing from the unchosen state the control starts in — that one refuses to submit.
- * This one says "none of the other six, ring me", which is a real answer a coordinator can act on.
+ * This one says "none of the others, ring me", which is a real answer a coordinator can act on.
  */
-export const REFERRAL_DECLINE_REASONS = [
-  "no_suitable_bed",
-  "age_band_not_provided_here",
-  "sex_designation_unavailable",
-  "secure_bed_unavailable",
-  "belongs_to_another_service",
-  "referred_elsewhere",
-  "another_reason",
-] as const;
-export type ReferralDeclineReason = (typeof REFERRAL_DECLINE_REASONS)[number];
+/** @deprecated D-78: the same list as `DECLINE_REASONS`, kept under its older name so importers are unchanged. */
+export const REFERRAL_DECLINE_REASONS = DECLINE_REASONS;
+/** @deprecated D-78: the same type as `DeclineReason`. */
+export type ReferralDeclineReason = DeclineReason;
 
 /**
  * ⚠️ **THE REASONS AN EMERGENCY-DEPARTMENT-ADDRESSED DECLINE MUST NOT OFFER, AND WHY EACH ONE IS
@@ -1287,7 +1299,7 @@ export const BED_SHAPED_DECLINE_REASONS: readonly ReferralDeclineReason[] = [
  * answered, never against `REFERRAL_DECLINE_REASONS` whole.
  */
 export const ED_DECLINE_REASONS: readonly ReferralDeclineReason[] = REFERRAL_DECLINE_REASONS.filter(
-  (reason) => !BED_SHAPED_DECLINE_REASONS.includes(reason),
+  (reason) => !BED_SHAPED_DECLINE_REASONS.includes(reason) && !WARD_ONLY_DECLINE_REASONS.includes(reason),
 );
 
 export type ReferralDestination =

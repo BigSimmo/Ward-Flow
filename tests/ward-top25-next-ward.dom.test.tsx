@@ -40,7 +40,10 @@ describe("Top 25 item 3: next ward after a refusal", () => {
 
   it("does not treat a ward that waitlisted as a refusal", () => {
     const { movement, declinedUnitId } = declinedMovement();
-    const waitlisted = { ...movement, declines: [{ unitId: declinedUnitId, at: now, reason: "no_bed" as const }] };
+    const waitlisted = {
+      ...movement,
+      declines: [{ unitId: declinedUnitId, at: now, reason: "no_suitable_bed" as const }],
+    };
     expect(deriveNextWardsAfterRefusal(waitlisted, seeded.units, now)).toBeUndefined();
   });
 

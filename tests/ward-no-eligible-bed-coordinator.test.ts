@@ -122,7 +122,7 @@ describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
       const declined: Movement = {
         ...waiting,
         declines: [
-          { unitId: candidate.unit.id, at: NOW_ANCHOR - 60, reason: "no_bed" } as Movement["declines"][number],
+          { unitId: candidate.unit.id, at: NOW_ANCHOR - 60, reason: "no_suitable_bed" } as Movement["declines"][number],
         ],
       };
       const verdict = eligibleCandidatesAmong(declined, [candidate.unit], NOW_ANCHOR, 1)[0]!.verdict;

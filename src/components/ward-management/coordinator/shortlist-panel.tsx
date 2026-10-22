@@ -82,7 +82,7 @@ import {
   type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
+import { DECLINE_REASON_LABELS, referralSuburbLabel } from "@/components/ward-management/ward-referrals";
 import {
   useDueSoonThresholds,
   useOptionalWardFlowSelect,
@@ -2318,7 +2318,7 @@ export function ShortlistPanel({
                     className={styles.shortlistDeclineRow}
                   >
                     <strong>{unit ? unit.name : "Unresolved unit"}</strong>
-                    <span>{decline.reason.replace(/_/g, " ")}</span>
+                    <span>{DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}</span>
                     <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
                   </li>
                 );

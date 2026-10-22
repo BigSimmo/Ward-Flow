@@ -508,7 +508,9 @@ terminal); "open" means no closure yet.
   the unit to `waitlistedUnitIds` without changing stage). Guards: movement/no closure; stage
   `destination_review`; unit holds a live referral; a gender-mismatch reason is refused outright;
   `reason` must be in `DECLINE_REASONS` (a waitlist reason is checked against
-  `parallelReferralCap` instead). Case at `:4073`.
+  `parallelReferralCap` instead). A retired value (`no_bed`, `sex_mix`, `out_of_catchment`) is read
+  through `LEGACY_DECLINE_REASONS` first (D-78: one decline list, shared with `DECLINE_REFERRAL`;
+  old saves convert on load in `ward-decline-legacy.ts`). Case at `:4073`.
 - **`HANDOVER_READY`** — roles: `ed`. Effect: sets stage `handover_ready`. Guards: movement/no
   closure; stage `pulled`; a transport must already be booked unless `transportNeed` explicitly
   marks `needed: false`; re-runs `heldUnitGenderRefusal`. Case at `:4189`.

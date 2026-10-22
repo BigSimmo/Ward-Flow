@@ -25,6 +25,7 @@ import {
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
 
@@ -114,7 +115,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: decline.at,
         id: `decline:${movement.id}:${decline.unitId}:${decline.at}:${index}`,
-        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${decline.reason.replaceAll("_", " ")}.`,
+        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}.`,
         tone: "warning",
         category: "decline",
       });

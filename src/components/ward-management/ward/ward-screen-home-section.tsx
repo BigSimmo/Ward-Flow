@@ -10,7 +10,7 @@ import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-managemen
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
-import type { Rejection } from "@/components/ward-management/ward-model";
+import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
 import type { WaitingReferral } from "./ward-bed-board";
@@ -64,27 +64,8 @@ type WardScreenHomeSectionProps = {
   visibleIncoming: Movement[];
   declineOpenFor: string | undefined;
   toggleDecline: (movementId: string) => void;
-  declineReason:
-    | "sex_mix"
-    | "no_bed"
-    | "specialling_unavailable"
-    | "acuity_mix"
-    | "capability_mismatch"
-    | "bed_pulled_for_earlier_referral"
-    | "out_of_catchment"
-    | undefined;
-  setDeclineReason: Dispatch<
-    SetStateAction<
-      | "sex_mix"
-      | "no_bed"
-      | "specialling_unavailable"
-      | "acuity_mix"
-      | "capability_mismatch"
-      | "bed_pulled_for_earlier_referral"
-      | "out_of_catchment"
-      | undefined
-    >
-  >;
+  declineReason: DeclineReason | undefined;
+  setDeclineReason: Dispatch<SetStateAction<DeclineReason | undefined>>;
   submitDecline: (event: FormEvent<HTMLFormElement>, movementId: string) => void;
   priorRejectionCountRef: RefObject<number>;
   rejections: Rejection[];
@@ -95,15 +76,7 @@ type WardScreenHomeSectionProps = {
     movementId: string;
     outcome: "Accepted" | "Declined";
     at?: number | undefined;
-    reason?:
-      | "sex_mix"
-      | "no_bed"
-      | "specialling_unavailable"
-      | "acuity_mix"
-      | "capability_mismatch"
-      | "bed_pulled_for_earlier_referral"
-      | "out_of_catchment"
-      | undefined;
+    reason?: DeclineReason | undefined;
   }[];
   breakdown: CapacityBreakdown;
   capacityConfirmationForm: () => ReactElement;

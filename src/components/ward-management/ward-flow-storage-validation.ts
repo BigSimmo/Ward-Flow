@@ -65,6 +65,7 @@ import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
 import { isObservation, type Observation } from "./ward-observation";
+import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
@@ -1179,13 +1180,14 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
 
 /**
  * A validated stored state with the stream A inbox records filled in when the save predates them,
- * and reviews of seeded governance entries moved to ids that name their subject.
+ * reviews of seeded governance entries moved to ids that name their subject, and decline reasons
+ * saved before the one decline list read as merged ones (D-78, `ward-decline-legacy.ts`).
  * Call after `isValidStoredWardFlowState` on every restore path.
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
   return withSeededReviewIds({
-    ...state,
+    ...upgradeLegacyDeclineReasons(state),
     inboxOwnership: stored.inboxOwnership ?? {},
     inboxSnoozes: stored.inboxSnoozes ?? {},
   });

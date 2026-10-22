@@ -234,7 +234,7 @@ describe("clinical and operational gates", () => {
   });
 
   it("refuses a unit that has already declined this movement", () => {
-    const declined = movement({ declines: [{ unitId: "u-test", at: NOW - 60, reason: "no_bed" }] });
+    const declined = movement({ declines: [{ unitId: "u-test", at: NOW - 60, reason: "no_suitable_bed" }] });
     const verdict = eligibility(declined, unit(), NOW);
     expect(verdict.gates.find((gate) => gate.gate === "prior_decline")?.pass).toBe(false);
   });
