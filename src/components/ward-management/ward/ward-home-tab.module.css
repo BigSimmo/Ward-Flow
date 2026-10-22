@@ -578,9 +578,11 @@
   white-space: nowrap;
 }
 
+/* `flex: none` keeps the foot as tall as its 48px touch link when the card is held to the sheet's height. */
 .flowFoot,
 .shiftFoot {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);

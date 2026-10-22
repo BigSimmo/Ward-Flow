@@ -300,7 +300,7 @@ function freshnessGate(unit: Unit, now: Instant): GateResult {
   return {
     gate: "capacity_freshness",
     pass: fresh,
-    detail: fresh ? `Confirmed ${age} min ago` : `Last confirmed ${age} min ago — stale`,
+    detail: fresh ? `Confirmed ${age} min ago` : `Last confirmed ${age} min ago, stale`,
   };
 }
 

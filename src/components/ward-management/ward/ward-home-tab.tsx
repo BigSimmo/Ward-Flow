@@ -10,6 +10,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
+import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
 import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
@@ -139,10 +140,6 @@ export function wardActNowCount({
     (lapsedHolds > 0 ? 1 : 0) +
     (stoppedHolds > 0 ? 1 : 0)
   );
-}
-
-function wardSafeRejectionReason(reason: string): string {
-  return reason;
 }
 
 interface WardHomeTabProps {
@@ -1813,8 +1810,10 @@ export function WardHomeTab({
               <span className={styles.needsText}>
                 <b>Ward flow</b>
                 <span>
-                  {incoming.length} referrals · {expectedRows.length + leaveRows.length} admissions · {outRows.length}{" "}
-                  discharges
+                  {incoming.length} {incoming.length === 1 ? "referral" : "referrals"} ·{" "}
+                  {expectedRows.length + leaveRows.length}{" "}
+                  {expectedRows.length + leaveRows.length === 1 ? "admission" : "admissions"} · {outRows.length}{" "}
+                  {outRows.length === 1 ? "discharge" : "discharges"}
                 </span>
               </span>
               <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
