@@ -67,7 +67,10 @@ const loadToolsSheet = () =>
 // test clock never fires (ui-ward-roles.spec.ts demo clock journey).
 const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
+// The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
+const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
@@ -661,6 +664,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [setOpenPanel],
   );
 
+  // A sheet footer's Board time pill (D-77) closes its sheet before the Demo menu opens.
+  const openDemoMenuFromSheet = useDemoMenuFromSheet(openPanel, (id) => closePopover(id, false), isPhone);
+
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
       // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
@@ -1161,7 +1167,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
         {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
-        <WardDataModeSlot className={styles.dataMode} />
+        <WardDataModeSlot className={styles.dataMode} menu={loadDemoMenu} />
 
         {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
             controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
@@ -1305,7 +1311,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone ? undefined : (
             <div className={styles.drawerFoot}>
               <span>Synthetic events · newest first</span>
-              <WardDemoClockPopover>
+              <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("activity", from)}>
                 <span className={styles.footClock}>
                   Demo time <b>{formatInstant(now)}</b>
                 </span>
@@ -1410,7 +1416,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         footer={
           <div className={styles.drawerFoot}>
             <span>Whole network · synthetic prototype</span>
-            <WardDemoClockPopover>
+            <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
                 Demo time <b>{formatInstant(now)}</b>
               </span>

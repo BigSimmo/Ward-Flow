@@ -132,7 +132,7 @@ describe("board time in the top bar (A7)", () => {
     expect(clocks).toHaveLength(1);
     const clock = clocks[0]!;
     expect(clock).toHaveAttribute("data-testid", "ward-bar-demo-clock");
-    expect(clock).toHaveAccessibleName("Board time 10:42 AWST. Open demo controls in Tools");
+    expect(clock).toHaveAccessibleName("Board time 10:42 AWST. Open demo controls");
     expect(clock).toHaveTextContent("Board time");
     expect(clock).toHaveTextContent("10:42");
     expect(clock).toHaveTextContent("AWST");

@@ -252,18 +252,16 @@ test.describe("@mockup Ward screen", () => {
     await card.getByTestId("ward-pull-WF-003").click();
     await expect(card).toContainText("Bed pull 4h 00m left");
 
-    // The demo controls live in the one Demo panel at the foot of `WardBar`'s Tools sheet (Tools
-    // review, 15 Oct 2026), a layout-level sibling of `wardScreen` rather than a descendant of it, so
-    // `page`-scoped, and only present once the drawer is open. See `ensureToolsOpen`'s own header
-    // for why opening is conditional rather than an unconditional click.
-    await ensureToolsOpen(page);
+    // On a desktop the demo controls open from the header's Synthetic pill as the Demo menu
+    // (change 8, D-77, 21 Oct 2026), a layout-level sibling of `wardScreen` rather than a
+    // descendant of it, so `page`-scoped. A phone keeps them in Tools.
+    await page.getByRole("button", { name: /^Data mode: Synthetic prototype/ }).click();
 
-    // The panel must never be mistaken for a clinical action, checked in words, not merely by
-    // colour: its row and its opening notice both say so explicitly.
-    const toggle = page.getByTestId("ward-tools-toggle-demo");
-    await expect(toggle).toContainText(/synthetic data only/i);
-    await toggle.click();
-    const panel = page.getByTestId("ward-tools-demo-panel");
+    // The menu must never be mistaken for a clinical action, checked in words, not merely by
+    // colour: its heading row and its opening notice both say so explicitly.
+    const menu = page.getByRole("dialog", { name: "Demo" });
+    await expect(menu).toContainText(/synthetic data only/i);
+    const panel = menu.getByTestId("ward-tools-demo-panel");
     await expect(panel).toBeVisible();
     await expect(panel).toContainText(/change the synthetic data only, never a clinical record/i);
 
@@ -280,6 +278,23 @@ test.describe("@mockup Ward screen", () => {
     // expiring in seconds. 3 hours 45 minutes advanced against a 240-minute (4-hour) hold leaves 15.
     await expect(card).toContainText("Bed pull 15m left");
     await expect(card).not.toContainText("Bed pull 4h 00m left");
+  });
+
+  // Change 8 (D-77): the Demo menu sits under the header's Synthetic pill, below a sheet's modal
+  // layer. The Board time pill in the Tools sheet footer closes the sheet first, so the menu it
+  // opens is on top and holds focus rather than opening unreachable behind the sheet (Codex, #558).
+  test("the Tools sheet footer's Board time pill closes the sheet and opens the Demo menu on top", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/ward-flow/referrals", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("ward-bar-tools-trigger").click();
+    const sheet = page.getByTestId("ward-bar-tools-sheet");
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: /Open demo controls$/ }).click();
+
+    await expect(sheet).toBeHidden();
+    const menu = page.getByRole("dialog", { name: "Demo" });
+    await expect(menu.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    await expect.poll(() => menu.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   });
 
   /**
