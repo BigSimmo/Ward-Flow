@@ -68,6 +68,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     keywords: "privacy initials umrn mobile hide name",
   },
   { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
+  { id: "help", label: "Help and tour", tab: "display", keywords: "help glossary tour guide words codes" },
   {
     id: "character-shortcuts",
     label: "Single-key shortcuts",

@@ -3,6 +3,8 @@
 import { Hand, LayoutGrid, List } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
@@ -211,9 +213,9 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
 export function cellWord(bed: BedItem): string {
   if (bed.status === "ready" && !bed.heldFor && bed.preparing) return "Making ready";
   if (bed.status === "ready") {
-    if (!bed.heldFor) return "Free";
+    if (!bed.heldFor) return "Ready";
     const held = occupantParts(bed.heldFor);
-    return held ? `Held, ${held.surname}, ${held.initial}` : `Held, ${surname(bed.heldFor)}`;
+    return held ? `Pulled, ${held.surname}, ${held.initial}` : `Pulled, ${surname(bed.heldFor)}`;
   }
   if (bed.status === "closed") return "Closed";
   if (bed.status === "incoming") return "Pulled";
@@ -225,15 +227,16 @@ function cellLabel(
   fits: boolean,
   nameFor: (name: string, umrn: string | undefined | null) => string,
 ): string {
-  // A2-20: the accessible name follows Discreet names, as the visible cell does.
+  // A2-20: the accessible name follows Discreet names, as the visible cell does. Codex on #551: it uses the
+  // cell's Ready and Pulled words too, so a pulled bed is never announced as free.
   const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
   const state =
     bed.status === "ready"
       ? bed.heldFor
-        ? `free, held for ${bed.heldFor}`
+        ? `pulled for ${bed.heldFor}`
         : bed.preparing
           ? "being made ready"
-          : "free"
+          : "ready"
       : bed.status === "closed"
         ? "closed"
         : bed.status === "incoming"
@@ -277,6 +280,9 @@ export function WardBedBoard({
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
   const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
+  // The ready figure states how many beds are still being made ready, as every other ready figure does.
+  const { bedReleases } = useWardFlowSelect("bedReleases");
+  const beingMadeReady = bedsPendingPreparation(unit.id, bedReleases);
   const leavingToday = beds.filter(
     (bed) =>
       bed.status !== "ready" &&
@@ -386,12 +392,12 @@ export function WardBedBoard({
         return (
           <div key={pod.id} className={styles.podSlot}>
             {index === 1 ? <div className={styles.corridor} aria-hidden="true" /> : null}
-            <section className={styles.pod} aria-label={`${pod.name}, ${podFree} free of ${pod.beds.length}`}>
+            <section className={styles.pod} aria-label={`${pod.name}, ${podFree} ready of ${pod.beds.length}`}>
               <div className={styles.podHead}>
                 <b className={styles.podName}>{pod.name}</b>
                 <span className={styles.podRule}>{pod.rule}</span>
                 <span className={styles.podCount}>
-                  <b>{podFree}</b> free of {pod.beds.length}
+                  <b>{podFree}</b> ready of {pod.beds.length}
                 </span>
               </div>
               <div
@@ -489,7 +495,7 @@ export function WardBedBoard({
       </span>
       <span>
         <StatusGlyph tone="success" size={9} />
-        Free
+        Ready
       </span>
     </span>
   );
@@ -503,7 +509,8 @@ export function WardBedBoard({
         meta={isPhone ? undefined : isMixed ? "Locked and open beds" : unit.name}
         aside={
           <span className={styles.headCount}>
-            <b>{free}</b> free of {beds.length}
+            <b>{free}</b> ready of {beds.length}
+            {beingMadeReady > 0 ? `, ${beingMadeReady} being made ready` : null}
           </span>
         }
         action={

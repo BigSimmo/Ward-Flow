@@ -460,6 +460,15 @@ export function candidateEvents(
         actingUnitId: admission.unitId,
         stepDownCandidate: true,
       }));
+    case "RECORD_WARD_DIAGNOSIS":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        block: "F20–F29",
+      }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
         type,

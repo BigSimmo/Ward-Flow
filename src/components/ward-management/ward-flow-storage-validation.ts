@@ -59,6 +59,8 @@ import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
+import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
+import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 
 /**
  * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
@@ -377,6 +379,8 @@ const movement = z
     pullExpiresAt: z.optional(finite),
     extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
+    // D-74: the community purpose that closed this record is one of the two listed values, or absent.
+    communityPurpose: z.optional(z.custom(isCommunityReferralPurpose)),
     meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
@@ -430,6 +434,14 @@ const admission = z.looseObject({
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
+  // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
+  wardDiagnosis: z.optional(
+    z.looseObject({
+      block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
+      recordedAt: finite,
+      recordedBy: text,
+    }),
+  ),
   // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
   // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
   dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
@@ -989,6 +1001,13 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     if (!reference(referral.turnaroundPriority?.unitId, unitIds)) return false;
     if (!reference(referral.patientId, patientIds) || !reference(referral.originUnitId, unitIds)) return false;
     if (!referral.destinations.every((arm) => reference(arm.acceptedUnitId, unitIds))) return false;
+    // D-74: a stored community purpose is one of the two listed values, or absent.
+    const purposes = referral.destinations.flatMap((arm) =>
+      arm.destination.kind === "community_team" && arm.destination.purpose !== undefined
+        ? [arm.destination.purpose]
+        : [],
+    );
+    if (!purposes.every(isCommunityReferralPurpose)) return false;
   }
   for (const rows of [state.bedReleases, state.leaveBeds, state.refreshRequests]) {
     for (const row of rows) if (!unitIds.has(row.unitId)) return false;

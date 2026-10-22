@@ -21,8 +21,13 @@ vi.mock("next/navigation", () => ({
 import {
   forgetDowntimePack,
   lastDowntimePack,
+  lastDowntimeSyncAt,
   markDowntimePackHandled,
+  noteDowntimeSync,
+  rememberDowntimePack,
+  type DowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
+import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
@@ -53,6 +58,20 @@ function renderShell() {
         <Clock>
           <WardOfflineBanner />
           <WardDowntimePackLine />
+        </Clock>
+      </WardAccessScope>
+    </WardFlowProvider>,
+  );
+}
+
+function renderShellWithScreen() {
+  route.pathname = "/ward-flow/reports/downtime";
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardAccessScope>
+        <Clock>
+          <WardDowntimePackLine />
+          <DowntimePackScreen />
         </Clock>
       </WardAccessScope>
     </WardFlowProvider>,
@@ -193,6 +212,85 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.getByTestId("ward-offline-banner").textContent).toMatch(
       /use the downtime pack taken at 15:00, printed or saved as a PDF\.$/u,
     );
+  });
+
+  // Owner, 22 Oct 2026: allow it offline, labelled "taken offline" with the last sync time. Codex on
+  // #551: forgetting the pack (session end, restore) also forgets the sync, which described the old records.
+  it("offline with no pack, takes one labelled taken offline, with no sync recorded for replaced records", () => {
+    renderShellWithScreen();
+    act(() => {
+      setOnline(false);
+      window.dispatchEvent(new Event("offline"));
+    });
+    act(() => setClock(ELEVEN));
+    act(() => forgetDowntimePack());
+    const pack = lastDowntimePack();
+    expect(pack?.offline).toEqual({ lastSyncAt: null });
+    const frozen = screen.getByTestId("ward-downtime-frozen").textContent ?? "";
+    // The hero chip is kept short (visual desk, 22 Oct 2026); the taken line below says "Taken offline".
+    expect(frozen).toMatch(/Offline · last sync not recorded/u);
+    expect(frozen).not.toMatch(/11:00/u);
+    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(
+      /^Taken offline · last sync not recorded · next pack when the connection returns$/u,
+    );
+    expect(screen.getByTestId("ward-downtime-stale").textContent).toMatch(/Stale · no sync recorded/u);
+    act(() => {
+      setOnline(true);
+      window.dispatchEvent(new Event("online"));
+    });
+    expect(lastDowntimePack()?.offline).toBeUndefined();
+    expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
+  });
+
+  it("keeps the last sync only for its own world, never a future one, and forgets it with the session", () => {
+    noteDowntimeSync(NOW_ANCHOR, 1);
+    expect(lastDowntimeSyncAt(1, ELEVEN)).toBe(NOW_ANCHOR);
+    // A reset or scenario switch starts a new world generation.
+    expect(lastDowntimeSyncAt(2, ELEVEN)).toBeNull();
+    // A clock reset puts the old sync in the future.
+    expect(lastDowntimeSyncAt(1, NOW_ANCHOR - HOUR)).toBeNull();
+    // An exiting screen boundary keeps it; a session end or restore does not.
+    forgetDowntimePack({} as Parameters<typeof forgetDowntimePack>[0]);
+    expect(lastDowntimeSyncAt(1, ELEVEN)).toBe(NOW_ANCHOR);
+    forgetDowntimePack();
+    expect(lastDowntimeSyncAt(1, ELEVEN)).toBeNull();
+  });
+
+  it("keeps a pack taken online: an offline pack never replaces it", () => {
+    const base = { generatedAt: 0, wards: [], edQueue: [], pendingMoves: [], legalForms: [], leftEd: 0 };
+    const totals = {
+      beds: 0,
+      ready: 0,
+      pulled: 0,
+      closed: 0,
+      occupied: 0,
+      beingMadeReady: 0,
+      pendingPreparation: 0,
+      onLeave: 0,
+    };
+    const online = { ...base, totals } as DowntimePack;
+    const offline = { ...base, totals, generatedAt: 60, offline: { lastSyncAt: 0 } } as DowntimePack;
+    const laterOffline = { ...offline, generatedAt: 120 };
+    rememberDowntimePack(offline);
+    expect(lastDowntimePack()).toBe(offline);
+    rememberDowntimePack(laterOffline);
+    expect(lastDowntimePack()).toBe(laterOffline);
+    rememberDowntimePack(online);
+    expect(lastDowntimePack()).toBe(online);
+    rememberDowntimePack(offline);
+    expect(lastDowntimePack()).toBe(online);
+  });
+
+  it("offline, the screen keeps the pack taken online", () => {
+    renderShellWithScreen();
+    const taken = lastDowntimePack();
+    act(() => {
+      setOnline(false);
+      window.dispatchEvent(new Event("offline"));
+    });
+    act(() => setClock(ELEVEN));
+    expect(lastDowntimePack()).toBe(taken);
+    expect(taken?.offline).toBeUndefined();
   });
 
   it("writes nothing to browser storage", () => {
