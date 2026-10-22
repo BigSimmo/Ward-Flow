@@ -177,7 +177,7 @@ export function WardArrivalsCorridor({
                 movement.transport?.collectedAt !== undefined ||
                 (noTransportNeeded && (movement.stage === "pulled" || movement.stage === "handover_ready")));
             const arriveBlocked = movement.transport?.diversion
-              ? `${patientInfo.displayName} was diverted; release the held bed rather than recording arrival.`
+              ? `${patientInfo.displayName} was diverted; release the pulled bed rather than recording arrival.`
               : noTransportNeeded
                 ? movement.stage === "pulled" || movement.stage === "handover_ready"
                   ? undefined
@@ -419,7 +419,7 @@ export function WardArrivalsCorridor({
                           })
                         }
                       >
-                        Release the held bed
+                        Release the pulled bed
                       </button>
                     </div>
                   ) : null}
@@ -488,7 +488,7 @@ export function WardArrivalsCorridor({
 
       {heldAfterStop.length > 0 ? (
         <section aria-label="Stopped transports awaiting bed release" className={styles.heldSection}>
-          <h3>Transport stopped — release held bed</h3>
+          <h3>Transport stopped — release pulled bed</h3>
           {heldAfterStop.map((movement) => {
             const patient = resolvePatientIdentity(movement);
             const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : "(UMRN not recorded)";
@@ -499,17 +499,17 @@ export function WardArrivalsCorridor({
                     <strong>{patient.displayName}</strong>
                     {patient.umrn ? <span className={styles.patientUmrn}> UMRN: {patient.umrn}</span> : null}
                   </div>
-                  <p>Transport stopped after collection. The bed remains held until released.</p>
+                  <p>Transport stopped after collection. The bed stays pulled until released.</p>
                 </div>
                 <div className={styles.corridorActions}>
                   <button
                     type="button"
-                    aria-label={`Release held bed for ${patient.displayName} ${patientDistinction}`}
+                    aria-label={`Release pulled bed for ${patient.displayName} ${patientDistinction}`}
                     className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
                     data-testid={`ward-release-stopped-bed-${movement.id}`}
                     onClick={() => setReleaseHeldId(movement.id)}
                   >
-                    Release held bed
+                    Release pulled bed
                   </button>
                 </div>
               </article>
@@ -527,11 +527,11 @@ export function WardArrivalsCorridor({
         open={releaseHeldMovement !== undefined}
         onClose={() => setReleaseHeldId(null)}
         size="sm"
-        title="Release held bed?"
+        title="Release pulled bed?"
         description={`The bed pulled for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
         secondary={[{ label: "Cancel", onAction: () => setReleaseHeldId(null) }]}
         primary={{
-          label: "Release held bed",
+          label: "Release pulled bed",
           onAction: () => {
             setReleaseHeldId(null);
             if (!releaseHeldMovement) return;

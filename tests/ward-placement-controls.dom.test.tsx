@@ -256,7 +256,7 @@ describe("candidate placement documentation", () => {
   });
 });
 
-describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () => {
+describe("stopped transport: release pulled bed asks first (Audit 1, CS-07)", () => {
   it("names the person and UMRN, and records nothing on Cancel", () => {
     const state = seedWardFlowState();
     const movement = state.movements.find((m) => m.acceptedUnitId)!;
@@ -295,7 +295,7 @@ describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () =
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release held bed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_HELD_BED", movementId: movement.id });
   });
