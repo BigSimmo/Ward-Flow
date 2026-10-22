@@ -53,6 +53,16 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Design review (22 Oct 2026): the tick first, then the written reason it waits, wrapping under
+   it on a phone. */
+.check > span:has(> button) {
+  flex-wrap: wrap;
+}
+
+.check > span:has(> button) > button {
+  order: -1;
+}
+
 .list + .check {
   margin-top: var(--wf-s-2);
   padding-top: var(--wf-s-2);

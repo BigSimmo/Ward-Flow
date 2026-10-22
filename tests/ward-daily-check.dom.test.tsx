@@ -26,7 +26,9 @@ describe("Daily check: Checked, all accounted for", () => {
     );
     const confirmation = screen.getByTestId("ward-missed-check-confirmation");
     // UX audit (21 Oct 2026): the tick waits until the list has been opened once.
+    expect(screen.getByTestId("ward-missed-check-toggle")).toHaveTextContent("Show list");
     fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
+    expect(screen.getByTestId("ward-missed-check-toggle")).toHaveTextContent("Hide list");
     fireEvent.click(screen.getByRole("button", { name: "Checked, all accounted for" }));
 
     expect(screen.queryByTestId("ward-missed-check-done")).toBeNull();
@@ -44,7 +46,8 @@ describe("Daily check: Checked, all accounted for", () => {
     );
     const done = screen.getByRole("button", { name: "Checked, all accounted for" });
     expect(done).toHaveAttribute("aria-disabled", "true");
-    expect(done).toHaveAccessibleDescription("Show the list first");
+    expect(done).toHaveAccessibleDescription("Open the list to confirm it");
+    expect(screen.getByText("Open the list to confirm it")).toBeVisible();
     fireEvent.click(done);
     expect(screen.getByTestId("ward-missed-check-done")).toBeInTheDocument();
   });

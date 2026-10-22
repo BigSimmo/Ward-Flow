@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CircleAlert } from "lucide-react";
 
+import { InboxSnoozeControl } from "@/components/ward-management/inbox-snooze-control";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { inboxItemIsActNow, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -74,7 +75,7 @@ describe("tasks drawer: ownership and snooze", () => {
     fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
     expect(dispatch).not.toHaveBeenCalled();
 
-    const reasons = screen.getByRole("group", { name: "Reason" });
+    const reasons = screen.getByRole("group", { name: "Snooze because" });
     fireEvent.click(within(reasons).getByRole("button", { name: "Awaiting call back" }));
     expect(dispatch).toHaveBeenCalledWith({
       type: "SNOOZE_INBOX_ITEM",
@@ -84,6 +85,39 @@ describe("tasks drawer: ownership and snooze", () => {
       until: NOW_ANCHOR + 60,
       reason: "awaiting_call_back",
     });
+  });
+
+  it("says when the row comes back and the act now limit in words, not only on hover", () => {
+    const { drawer } = renderDrawer();
+    openSnooze(drawer, red);
+    expect(screen.getByText(/^Back at/)).toHaveTextContent(/^Back at \d\d:\d\d\. Act now: 1h 00m at most\.$/);
+  });
+
+  it("opens as its own bottom sheet on a phone, and records the snooze from there", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      const onSnooze = vi.fn();
+      render(<InboxSnoozeControl subject="Synthetic alert" actNow now={NOW_ANCHOR} onSnooze={onSnooze} />);
+      fireEvent.click(screen.getByRole("button", { name: "Snooze Synthetic alert" }));
+      const sheet = screen.getByRole("dialog", { name: "Snooze" });
+      expect(sheet).toHaveAccessibleDescription("Synthetic alert");
+      const presets = within(sheet).getByRole("group", { name: "Back in" });
+      expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
+      const reasons = within(sheet).getByRole("group", { name: "Snooze because" });
+      fireEvent.click(within(reasons).getByRole("button", { name: "Waiting on ward" }));
+      expect(onSnooze).toHaveBeenCalledWith(NOW_ANCHOR + 30, "waiting_on_ward");
+      expect(screen.queryByRole("dialog", { name: "Snooze" })).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("forgets an abandoned time when the picker closes without a reason", () => {

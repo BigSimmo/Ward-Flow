@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { ListChecks } from "lucide-react";
+import { ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 
 import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -92,9 +92,10 @@ export function MissedRequestsPanel() {
                 setOpen((current) => !current);
                 setSeenDay(today);
               }}
+              iconEnd={open ? ChevronUp : ChevronDown}
               data-testid="ward-missed-check-toggle"
             >
-              {open ? "Hide" : "Show"}
+              {open ? "Hide list" : "Show list"}
             </Button>
           ) : undefined
         }
@@ -135,8 +136,9 @@ export function MissedRequestsPanel() {
             <Button
               variant="sec"
               size="sm"
-              disabledReason={items.length > 0 && !seen ? "Show the list first" : undefined}
-              reasonDisplay="tooltip"
+              // Design review (22 Oct 2026, Josh approved): the reason is written beside the tick, as a
+              // hover tooltip never shows on a touch screen.
+              disabledReason={items.length > 0 && !seen ? "Open the list to confirm it" : undefined}
               onClick={() => {
                 raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) });
               }}
