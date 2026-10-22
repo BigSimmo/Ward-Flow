@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -36,7 +35,6 @@ import {
   deriveServiceBedAlerts,
   formatOccupancyPercent,
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
 // Loads the shared coordinator styles here, ahead of home.module.css and shortlist-panel.module.css,
 // as flow-diagram.tsx did while this card imported it. The Placement panel's own overrides depend on
@@ -428,7 +426,8 @@ export function HomeBedflow({
       </div>
       {service ? (
         <p className={styles.cardNote} data-testid="ward-diagram-service-foot">
-          {`Showing the whole network. The queue is scoped to ${service}.`}
+          {/* Home v7 (22 Oct 2026): the card sits on Capacity now, where there is no queue. */}
+          {`Showing every ward in the network, not only ${service}.`}
         </p>
       ) : null}
       <div className={styles.cardFoot}>
@@ -442,9 +441,6 @@ export function HomeBedflow({
             </>
           ) : null}
         </span>
-        <Link href={WARD_CAPACITY_HREF} className={styles.footLink}>
-          Open Capacity
-        </Link>
       </div>
     </Card>
   );

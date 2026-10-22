@@ -192,7 +192,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     );
 
     expect(screen.getByTestId("ward-diagram-service-foot")).toHaveTextContent(
-      `Showing the whole network. The queue is scoped to ${SERVICE}.`,
+      `Showing every ward in the network, not only ${SERVICE}.`,
     );
   });
 
