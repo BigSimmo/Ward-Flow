@@ -94,7 +94,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    await page.getByRole("link", { name: /^Beds\b/u }).click();
+    await page.getByRole("link", { name: /^Capacity\b/u }).click();
     await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

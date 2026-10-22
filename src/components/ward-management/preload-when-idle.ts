@@ -1,8 +1,8 @@
 /**
  * F-10 (phone review, October 2026): fetches code-split panels once the page has finished loading
  * and the browser is idle, so they stay out of the first load but are normally ready by the time
- * someone opens them. Errors are ignored here: a failed fetch is retried by `next/dynamic` when the
- * panel is actually opened. Does nothing on the server.
+ * someone opens them. Errors are ignored here: a failed fetch is retried when the panel is actually
+ * opened, by `next/dynamic` or by the panel's own wrapper. Does nothing on the server.
  */
 export function preloadWhenIdle(...loaders: Array<() => Promise<unknown>>): void {
   if (typeof window === "undefined") return;

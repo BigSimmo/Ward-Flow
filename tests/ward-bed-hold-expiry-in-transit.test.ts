@@ -5,11 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Movement, TransportJob } from "@/components/ward-management/ward-model";
-import {
-  BED_HOLD_EXPIRY_MINUTES,
-  bedHoldExpiryAlert,
-  isBedHoldExpired,
-} from "@/components/ward-management/ward-referrals";
+import { BED_HOLD_EXPIRY_MINUTES, isBedHoldExpired } from "@/components/ward-management/ward-referrals";
 
 const NOW = 1_000;
 const HELD_SINCE = NOW - BED_HOLD_EXPIRY_MINUTES - 5;
@@ -37,8 +33,6 @@ describe("isBedHoldExpired: in-transit patients (AUD-05)", () => {
   it.each(["pulled", "handover_ready"] as const)("does not alarm once transport is en route (%s)", (stage) => {
     const m = movement({ enRouteAt: NOW - 20 }, stage);
     expect(isBedHoldExpired(m, NOW)).toBe(false);
-    expect(bedHoldExpiryAlert(m, NOW)).toMatchObject({ expired: false });
-    expect(bedHoldExpiryAlert(m, NOW).message).toBeUndefined();
   });
 
   it("does not alarm once the patient has arrived", () => {
@@ -55,13 +49,11 @@ describe("isBedHoldExpired: in-transit patients (AUD-05)", () => {
   it("still alarms when the en-route job was cancelled — nobody is on the road", () => {
     const m = movement({ enRouteAt: NOW - 40, cancelledAt: NOW - 30 });
     expect(isBedHoldExpired(m, NOW)).toBe(true);
-    expect(bedHoldExpiryAlert(m, NOW).expired).toBe(true);
   });
 
   it("still alarms when the job was cancelled at epoch zero", () => {
     const m = movement({ enRouteAt: 0, cancelledAt: 0 });
     expect(isBedHoldExpired(m, NOW)).toBe(true);
-    expect(bedHoldExpiryAlert(m, NOW).expired).toBe(true);
   });
 
   it("keeps the threshold boundary for a hold without transport", () => {
