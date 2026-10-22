@@ -819,6 +819,8 @@ export type WardFlowEvent =
       contact: ReferralContactTarget;
       outcome: ReferralContactOutcome;
     }
+  /** Fix plan item 16 (D-76): more named wards on an open community referral, capped, never ranked (D-71). */
+  | { type: "ASK_MORE_WARDS"; role: WardFlowRole; now: Instant; referralId: string; unitIds: string[] }
   | {
       /**
        * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets

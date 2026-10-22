@@ -41,7 +41,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // D-72 (21 Oct 2026) adds SEND_RELEASE_SUPPORT_NOTICE (#398) and RECORD_ARRIVAL_CHECK, and
       // RECORD_RESTRICTIVE_PRACTICE_START, RECORD_RESTRICTIVE_PRACTICE_END, RECORD_WARD_INCIDENT and
       // SET_SECLUSION_ROOM_STATUS.
-      expect(allEventTypes.length).toBe(149);
+      // Fix plan item 16 (D-76) adds ASK_MORE_WARDS.
+      expect(allEventTypes.length).toBe(150);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

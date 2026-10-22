@@ -364,6 +364,11 @@ export function candidateEvents(
           outcome: "no_answer" as const,
         })),
       );
+    // Fix plan item 16 (D-76): every referral, asking each ward on its own.
+    case "ASK_MORE_WARDS":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitIds: [unitId] })),
+      );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
         .filter((unit) => unitTurnaroundSource(state, unit.id, now) !== null)
@@ -2869,6 +2874,11 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     // release RELEASE_BED can accept. Named, not "at most N", for the reason given above; its
     // refusal while occupied is pinned in tests/ward-bed-release-lifecycle.test.ts (4 and 13).
     const UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE = new Set(["RELEASE_BED"]);
+    // Fix plan item 16 (D-76): asking more wards needs an open community referral already sent to a
+    // NAMED ward, to copy its bed questions from. The seed has none open, and this sweep's only new
+    // referral is the broad RECEIVE_REFERRAL_CANDIDATE, which asks no named ward. Named, not "at most
+    // N"; its acceptance is pinned in tests/ward-referral-ask-more-wards.test.ts.
+    const NO_NAMED_WARD_REFERRAL_TO_ASK_FROM = new Set(["ASK_MORE_WARDS"]);
     const unscoped = ALL_EVENT_TYPES.filter(
       (type) =>
         !MOVEMENT_TARGETED_EVENTS.has(type) &&
@@ -2876,7 +2886,8 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
         type !== "SET_SCENARIO" &&
         type !== "RECORD_COUNTRY_EXTENSION" && // explicit unchanged-state refusal proof above
         !NO_COMMITMENT_ROW_TO_ACT_ON.has(type) &&
-        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type),
+        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type) &&
+        !NO_NAMED_WARD_REFERRAL_TO_ASK_FROM.has(type),
     );
     expect(
       unscoped.filter((type) => !accepted.has(type)),

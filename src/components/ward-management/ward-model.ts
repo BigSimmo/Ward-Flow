@@ -1446,6 +1446,9 @@ export type ReferralAddressing = {
    * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only.
    */
   informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>;
+  /** Fix plan item 16 (D-76): the ROLE that added this ward to an open referral with
+   *  `ASK_MORE_WARDS`. Absent on every destination the referrer chose when raising it. */
+  addedBy?: string;
 };
 
 /** One item a ward asked for on a referral. `by` and `metBy` are ROLES, never people. */
