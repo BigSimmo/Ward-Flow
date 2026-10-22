@@ -58,6 +58,7 @@ import {
   REJECTED_DECISION_LABELS,
 } from "./referral-match-model";
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { AskMoreWardsCard, AskMoreWardsFoot, useAskMoreWards } from "./referral-ask-more-wards";
 import { MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
@@ -121,6 +122,8 @@ export function ReferralMatchView({
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  // Fix plan item 16 (D-76): asking more wards about an open community referral.
+  const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
     "admissions",
     "patients",
@@ -1049,6 +1052,7 @@ export function ReferralMatchView({
           {group("Fits, bed ready", tier1Candidates, "yes")}
           {group("Fits, no bed now", tier2Candidates, "nobed")}
           {group("Needs review", tier3Candidates, "review")}
+          <AskMoreWardsCard ask={askMore} />
           {pick && pickTurnaround ? (
             <div className={styles.unitActionStatusWrap}>
               <Button
@@ -1109,7 +1113,9 @@ export function ReferralMatchView({
       )}
 
       <div className={ph.foot}>
-        {phoneDeclining ? (
+        {askMore.open ? (
+          <AskMoreWardsFoot ask={askMore} />
+        ) : phoneDeclining ? (
           <>
             <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
               Back
