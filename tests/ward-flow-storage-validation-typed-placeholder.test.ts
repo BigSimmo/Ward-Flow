@@ -42,6 +42,15 @@ describe("restore fence with typed text not kept", () => {
     expect(isValidStoredWardFlowState(copy)).toBe(false);
   });
 
+  it("refuses a repatriation naming an unknown hospital, or two for one admission", () => {
+    const copy = deviceCopy("RECORD_REPATRIATION");
+    const [row] = copy.repatriations;
+    expect(
+      isValidStoredWardFlowState({ ...copy, repatriations: [{ ...row, homeHospital: "Synthetic typed site" }] }),
+    ).toBe(false);
+    expect(isValidStoredWardFlowState({ ...copy, repatriations: [row, { ...row, at: row.at + 1 }] })).toBe(false);
+  });
+
   it("holds a told record with the placeholder, and refuses a typed name or a later contact time", () => {
     const copy = deviceCopy("RECORD_SUPPORT_NOTIFICATION told (who)");
     const [row] = copy.supportNotifications!;

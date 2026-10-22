@@ -740,7 +740,8 @@ const repatriation = z
     at: finite,
     estimatedAt: finite,
     by: role,
-    homeHospital: text,
+    // The reducer only records a site it knows, so anything else would be typed text.
+    homeHospital: text.check(z.refine((code) => siteByCode(code) !== undefined)),
     cadNumber: notKept,
     receivingWardAgreed: bool,
     mode: z.enum(REPATRIATION_MODES),
@@ -803,7 +804,10 @@ const storedState = z.looseObject({
   patients: z.array(patient).check(z.refine(distinctIds)),
   admissions: z.array(admission).check(z.refine(distinctIds)),
   notices: z.array(notice).check(z.refine(distinctIds)),
-  repatriations: z.array(repatriation),
+  // One record per admission, as the reducer keeps it.
+  repatriations: z
+    .array(repatriation)
+    .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
   supportNotifications: z.optional(z.array(supportNotification).check(z.refine((rows) => distinctIds(rows)))),
   handoverSignOffs: z.array(stamped),
   clinicalContacts: z.array(
