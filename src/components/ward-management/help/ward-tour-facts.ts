@@ -12,7 +12,7 @@ import { usePersonaDeskId } from "@/components/ward-management/settings/persona-
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 import { homeHrefFor } from "@/components/ward-management/ward-role-access";
@@ -87,7 +87,7 @@ export function useTourFacts(role: TourRole): { facts: TourFacts; home: string |
             beds: entry.beds,
             occupied: entry.occupied ?? 0,
             ready: entry.ready ?? 0,
-            confirmedAt: entry.confirmedAt === undefined ? undefined : formatInstant(entry.confirmedAt),
+            confirmedAt: entry.confirmedAt === undefined ? undefined : formatInstantWithDay(entry.confirmedAt, now),
           };
         }
         home = unitHref(unit.id);

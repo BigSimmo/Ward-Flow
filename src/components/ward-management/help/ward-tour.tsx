@@ -3,8 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { useIsPhone } from "@/components/wf";
-import { OverlayPortal } from "@/components/wf/overlay-root";
+import { OverlayPortal, useIsPhone } from "@/components/wf";
 
 import { markTourSeen, readTourStep, saveTourStep, useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
