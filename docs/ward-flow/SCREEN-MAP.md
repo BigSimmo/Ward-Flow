@@ -116,6 +116,10 @@ UNMAPPED rather than disappearing.
 - `/statistics/weekly`
 - `/transport`
 
+### ⚠️ UNREACHABLE — a screen component nothing imports — 1
+
+- `src/components/ward-management/statistics/statistics-overview-screen.tsx`
+
 ⚠️ **An UNREACHABLE entry is not always a defect** — a component may be mounted by a route file
 this check cannot follow. **It is always worth opening.** `ed-home.tsx` was found exactly this way:
 a whole emergency-department index screen with no route and no importer.

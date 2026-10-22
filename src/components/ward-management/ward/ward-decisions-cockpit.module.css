@@ -285,18 +285,6 @@
   border-radius: var(--wf-r-tag);
 }
 
-.unwired,
-.unwiredLine {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.unwiredLine {
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
-}
-
 .staffingBody:empty {
   display: none;
 }

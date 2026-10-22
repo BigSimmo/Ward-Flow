@@ -31,7 +31,13 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import { DECLINE_REASONS, type DeclineReason, type Movement, type Unit } from "@/components/ward-management/ward-model";
+import {
+  DECLINE_REASONS,
+  EXTRA_TRAVEL_HOLD_MINUTES,
+  type DeclineReason,
+  type Movement,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import {
   GENDER_NO_LONGER_SUITS_REFUSAL,
   OVERRIDE_REASONS,
@@ -56,7 +62,6 @@ import {
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import {
   canSubmitDecline,
   canSubmitOverride,
@@ -115,17 +120,27 @@ function declineReasonLabel(reason: DeclineReason): string {
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const [, startTransition] = useTransition();
-  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
-    useWardFlowSelect(
-      "movements",
-      "units",
-      "bedReleases",
-      "leaveBeds",
-      "admissions",
-      "dispatch",
-      "rejections",
-      "resolvePatientIdentity",
-    );
+  const {
+    movements,
+    units,
+    bedReleases,
+    leaveBeds,
+    admissions,
+    dispatch,
+    rejections,
+    resolvePatientIdentity,
+    configuration,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "dispatch",
+    "rejections",
+    "resolvePatientIdentity",
+    "configuration",
+  );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
@@ -156,7 +171,19 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   // Modal & interactive state. The accept dialog belongs to one journey id (CS-08).
   const [acceptModalFor, setAcceptModalFor] = useState<string>();
-  const [holdDuration, setHoldDuration] = useState("120");
+  // D-75 item 5: the accepting ward can ask for the extra-travel bed hold (`ACCEPT_IN_PRINCIPLE.extendedHold`).
+  // The choice belongs to the request it was made for (CS-08), so it never carries to the next one.
+  const [holdChoice, setHoldChoice] = useState<{ movementId: string; extended: boolean }>();
+  const extendedHoldFor = (movementId: string | undefined) =>
+    movementId !== undefined && holdChoice?.movementId === movementId && holdChoice.extended;
+  const chooseHold = (movementId: string, extended: boolean) => setHoldChoice({ movementId, extended });
+  const holdChoices = [
+    { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+    {
+      extended: true,
+      label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+    },
+  ];
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -231,6 +258,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const acceptModalOpen = acceptModalMovement !== undefined;
   useWardModalFocus(acceptModalOpen, modalRef, () => {
     setAcceptModalFor(undefined);
+    setHoldChoice(undefined);
     (openerRef.current ?? triggerRef.current)?.focus();
   });
   // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
@@ -311,7 +339,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
   const activeMovement = incoming[activeAnswerIndex];
-  const selectAnswer = (index: number) => setAnswerSelection({ id: incoming[index]?.id, index });
+  const selectAnswer = (index: number) => {
+    setAnswerSelection({ id: incoming[index]?.id, index });
+    setHoldChoice(undefined);
+  };
   // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
   // elsewhere), so it closes rather than confirm whoever now sits in its place.
   const phoneAcceptLeft = phoneSheet === "accept" && answerSelection.id !== undefined && heldIndex < 0;
@@ -322,6 +353,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   }
   function openPhoneAccept() {
     selectAnswer(activeAnswerIndex);
+    setHoldChoice(undefined);
     setPhoneSheet("accept");
   }
 
@@ -373,13 +405,21 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     }
   }
 
-  function handleAccept(movementId: string) {
+  function handleAccept(movementId: string, withExtendedHold = false) {
     setPriorRejectionCount(rejections.length);
     const unitIdHere = currentUnit.id;
     // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
     runStep(
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere, actingUnitId: unitIdHere },
+      {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now,
+        movementId,
+        unitId: unitIdHere,
+        actingUnitId: unitIdHere,
+        ...(withExtendedHold ? { extendedHold: true as const } : {}),
+      },
       {
         success: "Accepted in principle.",
         undo: (at) => ({
@@ -393,6 +433,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       },
     );
     setAcceptModalFor(undefined);
+    // The choice stays, keyed to this request, so an override reason sends it again.
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -411,6 +452,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         unitId: currentUnit.id,
         actingUnitId: currentUnit.id,
         overrideReason,
+        ...(extendedHoldFor(movementId) ? { extendedHold: true as const } : {}),
       });
     } else {
       raise("PULL_PATIENT", {
@@ -1189,7 +1231,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               label: "Accept in principle",
                               onAction: () => {
                                 setPhoneSheet(null);
-                                handleAccept(activeMovement.id);
+                                handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
                               },
                             }}
                             data-testid={`ward-accept-sheet-${activeMovement.id}`}
@@ -1209,44 +1251,27 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                   <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
                                 </div>
                               </dl>
-                              {/* Audit 7 NA-03: nothing saves these, so they show in a development build only. */}
-                              <UnwiredPreview>
-                                <div className={styles.phoneSheetField}>
-                                  <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
-                                    Bed hold
-                                  </span>
-                                  <div
-                                    className={styles.phoneSegment}
-                                    role="group"
-                                    aria-labelledby={`ward-hold-${activeMovement.id}`}
-                                  >
-                                    {[
-                                      ["120", "120 minutes, standard"],
-                                      ["180", "180 minutes, extra travel"],
-                                    ].map(([value, label]) => (
-                                      <button
-                                        key={value}
-                                        type="button"
-                                        aria-pressed={holdDuration === value}
-                                        onClick={() => setHoldDuration(value ?? "120")}
-                                      >
-                                        {label}
-                                      </button>
-                                    ))}
-                                  </div>
+                              <div className={styles.phoneSheetField}>
+                                <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
+                                  Bed hold once pulled
+                                </span>
+                                <div
+                                  className={styles.phoneSegment}
+                                  role="group"
+                                  aria-labelledby={`ward-hold-${activeMovement.id}`}
+                                >
+                                  {holdChoices.map((choice) => (
+                                    <button
+                                      key={choice.label}
+                                      type="button"
+                                      aria-pressed={extendedHoldFor(activeMovement.id) === choice.extended}
+                                      onClick={() => chooseHold(activeMovement.id, choice.extended)}
+                                    >
+                                      {choice.label}
+                                    </button>
+                                  ))}
                                 </div>
-                                <label className={styles.phoneSheetField}>
-                                  <span className={styles.phoneSheetFieldLabel}>Receiving nurse unit manager</span>
-                                  <input
-                                    type="text"
-                                    className={styles.phoneSheetInput}
-                                    defaultValue={`NUM ${unit.name}`}
-                                  />
-                                </label>
-                                <p className={styles.phoneSheetNote}>
-                                  Bed hold and nurse unit manager are not saved. Not wired in this prototype.
-                                </p>
-                              </UnwiredPreview>
+                              </div>
                               <p className={styles.phoneSheetNote}>
                                 <StatusGlyph tone="neutral" size={8} />
                                 Acceptance in principle holds a place. Nobody is moved and no transport is booked.
@@ -1259,6 +1284,24 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       {/* Decision Action Controls */}
                       {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
+                        {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
+                        {isPhone || blocked ? null : (
+                          <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
+                            <span className={styles.formLabel}>Bed hold once pulled</span>
+                            <select
+                              id={`ward-accept-hold-${activeMovement.id}`}
+                              className={styles.formSelect}
+                              value={extendedHoldFor(activeMovement.id) ? "extended" : "standard"}
+                              onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
+                            >
+                              {holdChoices.map((choice) => (
+                                <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
+                                  {choice.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                         <button
                           type="button"
                           data-testid={`ward-decline-toggle-${activeMovement.id}`}
@@ -1284,7 +1327,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               openPhoneAccept();
                               return;
                             }
-                            handleAccept(activeMovement.id);
+                            handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
                           }}
                         >
                           Accept in principle
@@ -1474,6 +1517,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           if (activeMovement) {
                             openerRef.current = e.currentTarget;
                             selectAnswer(activeAnswerIndex);
+                            setHoldChoice(undefined);
                             setAcceptModalFor(activeMovement.id);
                           }
                         }}
@@ -1573,6 +1617,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnSm}`}
                 onClick={() => {
                   setAcceptModalFor(undefined);
+                  setHoldChoice(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1609,36 +1654,23 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               <p className={styles.formNote} data-testid="ward-answer-no-bed-named">
                 Accepting does not allocate a bed. No bed number is recorded.
               </p>
-              <UnwiredPreview>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="hold-duration-select">
-                    Bed Hold Expiry Duration
-                  </label>
-                  <select
-                    id="hold-duration-select"
-                    className={styles.formSelect}
-                    value={holdDuration}
-                    onChange={(e) => setHoldDuration(e.target.value)}
-                  >
-                    <option value="120">120 Minutes (Standard Transport Hold)</option>
-                    <option value="180">180 Minutes (Extended Travel Buffer)</option>
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="num-endorsement-input">
-                    Receiving Nurse Unit Manager Endorsement
-                  </label>
-                  <input
-                    id="num-endorsement-input"
-                    type="text"
-                    className={styles.formInput}
-                    defaultValue={`NUM ${unit.name}`}
-                  />
-                </div>
-                <p className={styles.formNote}>
-                  Bed hold and nurse unit manager are not saved. Not wired in this prototype.
-                </p>
-              </UnwiredPreview>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel} htmlFor="hold-duration-select">
+                  Bed hold once pulled
+                </label>
+                <select
+                  id="hold-duration-select"
+                  className={styles.formSelect}
+                  value={extendedHoldFor(acceptModalMovement.id) ? "extended" : "standard"}
+                  onChange={(e) => chooseHold(acceptModalMovement.id, e.target.value === "extended")}
+                >
+                  {holdChoices.map((choice) => (
+                    <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
+                      {choice.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className={styles.modalFoot}>
               <button
@@ -1646,6 +1678,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={styles.btn}
                 onClick={() => {
                   setAcceptModalFor(undefined);
+                  setHoldChoice(undefined);
                   (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
@@ -1656,7 +1689,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnGood}`}
                 onClick={() => {
                   const opener = openerRef.current;
-                  handleAccept(acceptModalMovement.id);
+                  handleAccept(acceptModalMovement.id, extendedHoldFor(acceptModalMovement.id));
                   if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
                     opener.focus();
                   } else {

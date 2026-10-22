@@ -41,7 +41,7 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 
 /** Copied from `bed-board-third-edition.html`. ✅ That drawing contains ZERO HTML entities —
  *  measured, not assumed — so every string here is safe to compare as plain text. */
-const SCREEN_NAME = "Bed board";
+const SCREEN_NAME = "Stays and discharges";
 const GRID_HEADING = "Every bed, and who is in it";
 
 /** The headings that stand today, in render order. ⚠️ `Where these beds free up to` is deliberately

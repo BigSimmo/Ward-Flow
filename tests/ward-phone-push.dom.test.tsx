@@ -57,7 +57,6 @@ function alertsPane(state: PhonePushState, onPhonePushChange = vi.fn()) {
       buzz={false}
       onBuzzChange={vi.fn()}
       onTestBuzz={vi.fn()}
-      onPreview={vi.fn()}
     />,
   );
   const row = screen.getByTestId("setting-phone-alerts-row");
