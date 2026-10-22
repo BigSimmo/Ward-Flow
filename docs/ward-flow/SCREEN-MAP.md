@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**70 mockups · 54 routes · 32 screen folders.**
+**70 mockups · 54 routes · 33 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -115,6 +115,10 @@ UNMAPPED rather than disappearing.
 - `/statistics/wards`
 - `/statistics/weekly`
 - `/transport`
+
+### ⚠️ UNREACHABLE — a screen component nothing imports — 1
+
+- `src/components/ward-management/statistics/statistics-overview-screen.tsx`
 
 ⚠️ **An UNREACHABLE entry is not always a defect** — a component may be mounted by a route file
 this check cannot follow. **It is always worth opening.** `ed-home.tsx` was found exactly this way:

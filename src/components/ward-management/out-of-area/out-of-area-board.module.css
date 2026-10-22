@@ -460,6 +460,13 @@
   overflow-wrap: anywhere;
 }
 
+/* Desk check (22 Oct 2026): a legal status, or "Legal not recorded", is never cut off in the
+   patient column. It wraps above the UMRN instead. */
+.table .two > .legalUmrn {
+  overflow: visible;
+  white-space: normal;
+}
+
 .colPatient {
   width: 19%;
 }

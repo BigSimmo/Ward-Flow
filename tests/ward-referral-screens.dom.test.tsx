@@ -1267,7 +1267,7 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     const refusals = screen.getByTestId(`ward-referral-board-decided-refusals-${referralId}`);
     expect(refusals.textContent).toBe(
       `Also refused — Emergency department (For psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
-        ` · Community team: ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+        ` · Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
     // The refusals come AFTER the outcome, never before it — a coordinator scanning this column
     // reads what happened first.
@@ -1383,7 +1383,7 @@ describe("ReferralBoard — a cancelled destination is shown, worded so it canno
       "Emergency department",
     );
     expect(refusals.textContent).toBe(
-      `Also refused — Community team: ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+      `Also refused — Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
 
     // The cancellation: ED only, worded with the one reused sentence — never "Declined", and never
@@ -1510,7 +1510,7 @@ describe("ReferralBoard — a refusal shows on the board while the referral is s
 
     expect(screen.getByTestId(`ward-referral-board-refusals-${referralId}`).textContent).toBe(
       `Already refused — Emergency department (For psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
-        ` · Community team: ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+        ` · Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
   });
 

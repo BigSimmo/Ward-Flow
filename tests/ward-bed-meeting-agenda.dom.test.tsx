@@ -23,9 +23,7 @@ describe("bed meeting agenda", () => {
         <BedMeetingAgendaScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
-      "0 done in the last day · 0 overdue · 0 still open",
-    );
+    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("No actions are waiting.");
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
 
@@ -47,7 +45,7 @@ describe("bed meeting agenda", () => {
 
     fireEvent.click(within(list).getByTestId("bed-meeting-action-done"));
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
-      "1 done in the last day · 0 overdue · 0 still open",
+      "No actions are waiting · 1 done in the last day.",
     );
   });
 

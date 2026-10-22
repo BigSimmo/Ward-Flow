@@ -111,6 +111,8 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
     toggleLegalFormExpiry,
     communityReferralOpenFor,
     setCommunityReferralOpenFor,
+    setCommunityTeamChoice,
+    setCommunityPurposeChoice,
   } = ctx;
   return (
     <>
@@ -317,7 +319,12 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         onClick={
           cmhtBlocked
             ? ignoreUnavailableActivation
-            : () => setCommunityReferralOpenFor(communityReferralOpenFor === movement.id ? undefined : movement.id)
+            : () => {
+                // Each opening starts unset, so a team or purpose chosen for another person is never carried over.
+                setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
+                setCommunityReferralOpenFor(communityReferralOpenFor === movement.id ? undefined : movement.id);
+              }
         }
       >
         Refer to a community team

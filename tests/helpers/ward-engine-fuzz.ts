@@ -732,6 +732,19 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [1, bedReleaseEvent("BLOCK_BED_RELEASE", (_state, random) => ({ blocker: pick(random, BED_RELEASE_BLOCKERS) }))],
   [1, bedReleaseEvent("CLEAR_BED_RELEASE_BLOCK")],
   [
+    1,
+    bedReleaseEvent("SEND_RELEASE_SUPPORT_NOTICE", (_state, random) => ({
+      service: pick(random, ["pharmacy", "transport", "cleaning"] as const),
+    })),
+  ],
+  [
+    0.5,
+    movementEvent("RECORD_ARRIVAL_CHECK", undefined, (_state, random) => ({
+      check: pick(random, ["contraband_search", "medication_chart"] as const),
+      done: chance(random, 0.8),
+    })),
+  ],
+  [
     3,
     (state, random) => {
       const unit = pick(random, state.units);
@@ -975,6 +988,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
         stepDownCandidate: chance(random, 0.5),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_WARD_DIAGNOSIS",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        block: chance(random, 0.5) ? "F20–F29" : "F30–F39",
       };
     },
   ],

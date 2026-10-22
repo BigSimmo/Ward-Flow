@@ -25,6 +25,7 @@ import {
   REFERRAL_ADDRESSING_STATES,
   ABSENCE_STEPS,
   REFERRAL_DECLINE_REASONS,
+  SUPPORT_SERVICE_TYPES,
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
@@ -43,6 +44,8 @@ import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
+import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
+import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -214,6 +217,7 @@ const capacityFigure = z.looseObject({
   staleAfterMinutes: counter,
   source: z.enum(["feed", "ward"]),
   revision: z.optional(counter),
+  confirmations: z.optional(counter),
 });
 const unit = z
   .looseObject({
@@ -333,7 +337,10 @@ const movement = z
     sourceAdmissionId: link,
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
+    extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
+    // D-74: the community purpose that closed this record is one of the two listed values, or absent.
+    communityPurpose: z.optional(z.custom(isCommunityReferralPurpose)),
     meetingActions: z.optional(z.array(meetingAction)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
@@ -387,6 +394,14 @@ const admission = z.looseObject({
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
+  // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
+  wardDiagnosis: z.optional(
+    z.looseObject({
+      block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
+      recordedAt: finite,
+      recordedBy: text,
+    }),
+  ),
   // Browser storage holds fixed-list criteria with finite times only. Typed patient specific criteria
   // are refused on restore, the second fence behind the typed-text lock (D-60, D-65).
   dischargeCriteria: z.optional(z.nullable(z.custom(isFixedOnlyDischargeCriteriaRecord))),
@@ -471,6 +486,12 @@ const bedRelease = z.looseObject({
   confirmedAt: finite,
   confirmedBy: text,
   preparing: bool,
+  // #398: each service is notified at most once.
+  supportNoticesSent: z.optional(
+    z
+      .array(z.looseObject({ service: z.enum(SUPPORT_SERVICE_TYPES), at: finite, by: text }))
+      .check(z.refine((sent) => new Set(sent.map((notice) => notice.service)).size === sent.length)),
+  ),
 });
 
 // D-38: an absence holds when it was recorded and the time of each fixed missing person step, and
@@ -495,7 +516,13 @@ const leaveBed = z.looseObject({
   absentWithoutLeave: z.optional(absence),
 });
 
-const refreshRequest = z.looseObject({ id: z.optional(text), unitId: text, at: finite, byRole: text });
+const refreshRequest = z.looseObject({
+  id: z.optional(text),
+  unitId: text,
+  at: finite,
+  byRole: text,
+  confirmations: z.optional(counter),
+});
 const distinctRefreshRequestIds = (rows: readonly { id?: string }[]) => {
   const ids = rows.flatMap((row) => (row.id === undefined ? [] : [row.id]));
   return new Set(ids).size === ids.length;
@@ -869,6 +896,13 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     if (!reference(referral.turnaroundPriority?.unitId, unitIds)) return false;
     if (!reference(referral.patientId, patientIds) || !reference(referral.originUnitId, unitIds)) return false;
     if (!referral.destinations.every((arm) => reference(arm.acceptedUnitId, unitIds))) return false;
+    // D-74: a stored community purpose is one of the two listed values, or absent.
+    const purposes = referral.destinations.flatMap((arm) =>
+      arm.destination.kind === "community_team" && arm.destination.purpose !== undefined
+        ? [arm.destination.purpose]
+        : [],
+    );
+    if (!purposes.every(isCommunityReferralPurpose)) return false;
   }
   for (const rows of [state.bedReleases, state.leaveBeds, state.refreshRequests]) {
     for (const row of rows) if (!unitIds.has(row.unitId)) return false;

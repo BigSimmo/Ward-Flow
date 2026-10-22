@@ -395,11 +395,10 @@ describe("PR15 discharge and referral provenance", () => {
     renderFlow(<LegalFormsScreen />, {
       movements: [{ ...movement, legalForm: { ...movement.legalForm!, dueAt: NOW_ANCHOR - 1 } }],
     });
-    // Forms v10 (10 Oct 2026): the clock rail moved from the hero to the Board now rail; the
-    // passed count is its bay, above the twelve-hour line.
+    // D-77 change 5: the Board now rail is gone; the passed form says so in its own row.
     const hud = screen.getByTestId("ward-legal-hud-island");
-    const rail = screen.getByTestId("ward-legal-clock-rail");
-    expect(within(rail).getAllByText("Passed")[0]!.parentElement?.textContent).toBe("Passed1");
+    const row = document.querySelector(`[data-record-key="${movement.id}"]`) as HTMLElement;
+    expect(within(row).getByText("Passed")).toBeInTheDocument();
     expect(hud.textContent).toContain("forms on open moves");
     expect(hud.textContent).not.toContain("statutory deadline");
   });

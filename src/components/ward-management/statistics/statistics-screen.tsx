@@ -77,7 +77,10 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
+import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
+import { NetworkOverviewCards } from "./statistics-network-cards";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
@@ -436,34 +439,64 @@ export function StatisticsScreen({
 
   if (isPhone) {
     return (
-      <StatisticsSummaryPhone
-        ready={availableNow}
-        beingMadeReady={pendingPreparation}
-        occupied={inUseCount}
-        occupiedPct={occupiedPct}
-        waitingInEd={waitingCount}
-        endedToday={dischargesCount}
-        wards={allPressureWards.map((ward) => ({
-          id: ward.id,
-          name: ward.name,
-          hospital: ward.hospital,
-          service: siteByCode(ward.site)?.service ?? "Service not recorded",
-          beds: ward.beds,
-          ready: ward.ready,
-          percent: Math.round(ward.occupancyRate * 100),
-        }))}
-        eds={emergencyDepts.map((ed) => ({
-          id: ed.id,
-          name: ed.name,
-          site: ed.site,
-          waiting: ed.waiting,
-          longest: ed.longest,
-        }))}
-        referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
-        wardCount={units.length}
-        paused={live.paused}
-        onTogglePause={live.togglePause}
-      />
+      <>
+        <StatisticsSummaryPhone
+          ready={availableNow}
+          beingMadeReady={pendingPreparation}
+          occupied={inUseCount}
+          occupiedPct={occupiedPct}
+          waitingInEd={waitingCount}
+          endedToday={dischargesCount}
+          wards={allPressureWards.map((ward) => ({
+            id: ward.id,
+            name: ward.name,
+            hospital: ward.hospital,
+            service: siteByCode(ward.site)?.service ?? "Service not recorded",
+            beds: ward.beds,
+            ready: ward.ready,
+            percent: Math.round(ward.occupancyRate * 100),
+          }))}
+          eds={emergencyDepts.map((ed) => ({
+            id: ed.id,
+            name: ed.name,
+            site: ed.site,
+            waiting: ed.waiting,
+            longest: ed.longest,
+          }))}
+          referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
+          moreFigures={{
+            blocked: {
+              total: blocked.totalCount,
+              admissions: blocked.admissionCount,
+              tallies: blocked.tallies.map((tally) => ({ id: tally.reason, label: tally.reason, count: tally.count })),
+            },
+            declines: declinesReadout.ok
+              ? {
+                  total: declinesReadout.value.totalCount,
+                  tallies: declinesReadout.value.tallies.map((tally) => ({
+                    id: tally.reason,
+                    label: sentenceCase(tally.reason),
+                    count: tally.count,
+                  })),
+                }
+              : { statement: declinesReadout.statement },
+            arrivals: {
+              measured: arrivals.measuredCount,
+              average: arrivals.averageMinutes,
+              shortest: arrivals.shortestMinutes,
+              longest: arrivals.longestMinutes,
+            },
+          }}
+          wardCount={units.length}
+          paused={live.paused}
+          onTogglePause={live.togglePause}
+        />
+        {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
+            hours and no total fit a phone's width without a sideways scroll. */}
+        <aside className={trendStyles.phoneSlot} aria-label="This session">
+          <StatisticsSessionTrendsCard now={now} hours={3} showTotal={false} />
+        </aside>
+      </>
     );
   }
 
@@ -653,6 +686,14 @@ export function StatisticsScreen({
                 </StatCard>
               </Follow>
             </FlushRow>
+
+            {/* D-77 (change 9): Overview's figures that this page lacked, once each, above the pressure. */}
+            <NetworkOverviewCards
+              units={units}
+              admissions={sourceAdmissions}
+              bedReleases={sourceBedReleases}
+              leaveBeds={leaveBeds}
+            />
 
             <div className={styles.grid2}>
               <StatCard
@@ -1089,6 +1130,8 @@ export function StatisticsScreen({
                   </dl>
                 </CardBody>
               </StatCard>
+
+              <StatisticsSessionTrendsCard now={now} />
             </div>
           </div>
         )}

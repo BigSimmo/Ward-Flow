@@ -33,6 +33,8 @@ type FeedEventKind = (typeof FEED_EVENTS)[FeedEventCode];
 
 export type FeedMessage = {
   event: FeedEventKind;
+  /** The sender's message control id (MSH-10), used to refuse a message received twice. */
+  controlId: string;
   /** Synthetic record number, `UMnnnnnn`. */
   umrn: string;
   familyName: string;
@@ -100,6 +102,7 @@ export function readFeedMessage(text: string): FeedReadResult {
     ok: true,
     message: {
       event: FEED_EVENTS[code as FeedEventCode],
+      controlId: msh[10]?.trim() ?? "",
       umrn,
       familyName: component(pid[5], 0),
       givenName: component(pid[5], 1),

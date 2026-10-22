@@ -157,6 +157,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CHANGE_LEGAL_STATUS",
   "CHANGE_URGENCY",
   "CLEAR_BED_RELEASE_BLOCK",
+  "SEND_RELEASE_SUPPORT_NOTICE",
+  "RECORD_ARRIVAL_CHECK",
   "CLEAR_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
@@ -267,6 +269,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the same shape `DECLINE`'s `reason` already has on this same list.
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
+  // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
+  // the reducer. No typed text.
+  "RECORD_WARD_DIAGNOSIS",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level

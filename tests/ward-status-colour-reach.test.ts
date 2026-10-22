@@ -130,7 +130,6 @@ const RECORDED: readonly { readonly file: string; readonly measured: number; rea
       "were dropped the moment the hold expired rather than at the next tidy-up.",
   },
   { file: "ed/ed.module.css", measured: 0, because: "CLEARED 2026-09-06, with add-patient and person." },
-  { file: "patients/person.module.css", measured: 0, because: "CLEARED 2026-09-06, with add-patient and ed." },
   {
     file: "ward-global-search.module.css",
     measured: 0,

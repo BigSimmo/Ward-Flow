@@ -43,7 +43,6 @@ export {
   rowDim,
   TimeRail,
   JourneyStrip,
-  type TimeRailMark,
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";

@@ -4,6 +4,7 @@ import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import {
   WARD_FLOW_ROLE_LABELS,
@@ -194,6 +195,8 @@ export function reduceReferralAnswerEvent(
             : movement.overrides,
         // The instant this acceptance happened. See `Movement.acceptedAt`.
         acceptedAt: event.now,
+        // D-72: the extra-travel bed hold belongs to this acceptance only. See `Movement.extendedHoldAt`.
+        extendedHoldAt: event.extendedHold === true ? event.now : undefined,
         stage: "accepted_awaiting_bed",
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
@@ -405,6 +408,18 @@ export function reduceReferralAnswerEvent(
         if (!REFERRAL_PURPOSES.includes(edDestination.purpose)) {
           return reject(state, event, `RECEIVE_REFERRAL purpose must be chosen from REFERRAL_PURPOSES`);
         }
+      }
+      // D-74: a community arm's purpose, when sent, is one of the two listed. Absent reads as
+      // follow-up, as on arms saved before D-74.
+      if (
+        event.destinations.some(
+          (destination) =>
+            destination.kind === "community_team" &&
+            destination.purpose !== undefined &&
+            !isCommunityReferralPurpose(destination.purpose),
+        )
+      ) {
+        return reject(state, event, "RECEIVE_REFERRAL community purpose is not listed");
       }
       for (const wardDestination of event.destinations) {
         if (wardDestination.kind !== "psychiatric_ward") continue;

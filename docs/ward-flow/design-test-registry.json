@@ -138,11 +138,15 @@
       "mockup": "patient-now-third-edition.html",
       "route": "/people/[patientId]",
       "folder": "patients",
-      "component": "src/components/ward-management/patients/person-screen.tsx",
-      "testFiles": ["tests/ward-patient-search.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "component": "src/components/ward-management/patients/patient-now-screen.tsx",
+      "testFiles": [
+        "tests/ward-patient-search.dom.test.tsx",
+        "tests/ward-nav.test.ts",
+        "tests/ward-patient-now-screen.dom.test.tsx"
+      ],
       "invariants": {
         "protectedClinicalFields": ["patientId", "dob", "legalStatus", "genderPlacement"],
-        "primaryTestIds": ["person-detail-screen"],
+        "primaryTestIds": ["ward-person-screen"],
         "landmarkHeadings": ["Patient Clinical Dossier"]
       }
     },
