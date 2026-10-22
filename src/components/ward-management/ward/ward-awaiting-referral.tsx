@@ -4,8 +4,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Button, durMinutes } from "@/components/wf";
+import { durMinutes } from "@/components/wf";
 import { patientFitLine, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-home-tab.module.css";
 
@@ -32,6 +31,9 @@ export function AwaitingIdentity({
   now: Instant;
   onOpen: () => void;
 }) {
+  // Opted out of the React Compiler, as ward-screen-tab-sections.tsx is: memoising this small card
+  // part changed nothing visible but added to the ward page's phone download (script-budget.json).
+  "use no memo";
   const originName = edById(movement.originEdId)?.name;
   return (
     <div className={styles.awaitingIdentity}>
@@ -83,6 +85,7 @@ export function AwaitingFitLines({
   wardLine: string | undefined;
   onUpdateBeds?: () => void;
 }) {
+  "use no memo";
   const issue = fit.patientIssues.length > 0 || wardLine !== undefined;
   return (
     <div
@@ -110,46 +113,6 @@ export function AwaitingFitLines({
           </span>
         </span>
       ) : null}
-    </div>
-  );
-}
-
-/** The referral sheet's own Decline and Accept in principle, which act exactly as the card's do. */
-export function ReferralDetailFooter({
-  movementId,
-  blocked,
-  onDecline,
-  onAccept,
-}: {
-  movementId: string;
-  blocked: string | undefined;
-  onDecline: () => void;
-  onAccept: () => void;
-}) {
-  return (
-    <div className={styles.awaitingActions}>
-      <Button
-        variant="sec"
-        size="md"
-        disabledReason={blocked}
-        reasonDisplay="tooltip"
-        type="button"
-        data-testid={`ward-referral-detail-decline-${movementId}`}
-        onClick={blocked ? ignoreUnavailableActivation : onDecline}
-      >
-        Decline
-      </Button>
-      <Button
-        variant="pri"
-        size="md"
-        disabledReason={blocked}
-        reasonDisplay="tooltip"
-        type="button"
-        data-testid={`ward-referral-detail-accept-${movementId}`}
-        onClick={blocked ? ignoreUnavailableActivation : onAccept}
-      >
-        Accept in principle
-      </Button>
     </div>
   );
 }

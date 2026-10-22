@@ -295,3 +295,10 @@
   opacity: 0.14;
   transform: rotate(-30deg);
 }
+
+.footerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import { Button, Drawer, durMinutes } from "@/components/wf";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
@@ -422,14 +423,56 @@ export function WardReferralDetail({
   );
 }
 
+/** The referral sheet's own Decline and Accept in principle, which act exactly as the card's do. */
+function ReferralDetailFooter({
+  movementId,
+  blocked,
+  onDecline,
+  onAccept,
+}: {
+  movementId: string;
+  blocked: string | undefined;
+  onDecline: () => void;
+  onAccept: () => void;
+}) {
+  return (
+    <div className={styles.footerActions}>
+      <Button
+        variant="sec"
+        size="md"
+        disabledReason={blocked}
+        reasonDisplay="tooltip"
+        type="button"
+        data-testid={`ward-referral-detail-decline-${movementId}`}
+        onClick={blocked ? ignoreUnavailableActivation : onDecline}
+      >
+        Decline
+      </Button>
+      <Button
+        variant="pri"
+        size="md"
+        disabledReason={blocked}
+        reasonDisplay="tooltip"
+        type="button"
+        data-testid={`ward-referral-detail-accept-${movementId}`}
+        onClick={blocked ? ignoreUnavailableActivation : onAccept}
+      >
+        Accept in principle
+      </Button>
+    </div>
+  );
+}
+
 export type WardReferralDetailDrawerProps = {
   movement: Movement;
   unit: Unit;
   now: Instant;
   identity: ResolvedPatientInfo;
   onClose: () => void;
-  /** Decline and Accept in principle, the same controls the card offers. */
-  footer: ReactNode;
+  /** Why the ward cannot answer now, if it cannot. Decline and Accept act exactly as the card's do. */
+  blocked: string | undefined;
+  onDecline: () => void;
+  onAccept: () => void;
   onUpdateBeds?: () => void;
 };
 
@@ -440,7 +483,9 @@ export function WardReferralDetailDrawer({
   now,
   identity,
   onClose,
-  footer,
+  blocked,
+  onDecline,
+  onAccept,
   onUpdateBeds,
 }: WardReferralDetailDrawerProps) {
   const { dayZero, wardReferralInbox } = useWardFlowSelect("dayZero", "wardReferralInbox");
@@ -454,7 +499,9 @@ export function WardReferralDetailDrawer({
       onClose={onClose}
       title={identity.displayName}
       description={`Referral to ${unit.name}`}
-      footer={footer}
+      footer={
+        <ReferralDetailFooter movementId={movement.id} blocked={blocked} onDecline={onDecline} onAccept={onAccept} />
+      }
       testId="ward-referral-detail-drawer"
     >
       <WardReferralDetail

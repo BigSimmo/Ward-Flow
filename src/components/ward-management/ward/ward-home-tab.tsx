@@ -28,12 +28,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
-import {
-  AwaitingFitLines,
-  AwaitingIdentity,
-  ReferralDetailFooter,
-  WardReferralDetailDrawer,
-} from "./ward-awaiting-referral";
+import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -2076,20 +2071,15 @@ export function WardHomeTab({
             identity={resolvePatientIdentity(detailMovement)}
             onClose={() => setReferralDetailFor(null)}
             onUpdateBeds={onOpenConfirmNumbers}
-            footer={
-              <ReferralDetailFooter
-                movementId={detailMovement.id}
-                blocked={referralAnswerBlocked(detailMovement, unit)}
-                onDecline={() => {
-                  setReferralDetailFor(null);
-                  if (declineOpenFor !== detailMovement.id) toggleDecline(detailMovement.id);
-                }}
-                onAccept={() => {
-                  setReferralDetailFor(null);
-                  acceptIncoming(detailMovement.id);
-                }}
-              />
-            }
+            blocked={referralAnswerBlocked(detailMovement, unit)}
+            onDecline={() => {
+              setReferralDetailFor(null);
+              if (declineOpenFor !== detailMovement.id) toggleDecline(detailMovement.id);
+            }}
+            onAccept={() => {
+              setReferralDetailFor(null);
+              acceptIncoming(detailMovement.id);
+            }}
           />
         );
       })()}
