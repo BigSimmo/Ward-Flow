@@ -1284,7 +1284,9 @@ describe("the prompt that tells the sending team a bed is ready to book against"
     renderWorkspaceWithControls("WF-003");
     fireEvent.click(screen.getByTestId("test-pull-patient"));
     const rail = screen.getByTestId("ward-console-attention");
-    expect(within(rail).getByText(/has a bed held for this patient and no transport job exists/i)).toBeInTheDocument();
+    expect(
+      within(rail).getByText(/has a bed pulled for this patient and no transport job exists/i),
+    ).toBeInTheDocument();
     // The ward is named because "a bed is ready" without saying whose is not actionable.
     expect(within(rail).getByText(/Dabakarn/)).toBeInTheDocument();
     expect(within(rail).getByText(/Not booked/i)).toBeInTheDocument();

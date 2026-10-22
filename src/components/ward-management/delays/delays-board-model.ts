@@ -410,7 +410,7 @@ export function wardLines(row: BoardRow, units: readonly Unit[]): WardLine[] {
       tone: row.cause === "bed_pull_expired" ? "warning" : "success",
       text:
         row.cause === "bed_pull_expired"
-          ? "Bed held, reserved time passed"
+          ? "Pull expired, bed still pulled"
           : row.cause === "awaiting_bed_ready"
             ? "Accepted, bed not ready"
             : "Accepted",

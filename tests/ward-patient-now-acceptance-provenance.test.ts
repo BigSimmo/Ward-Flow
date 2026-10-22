@@ -81,7 +81,7 @@ describe("patient profile acceptance and actual bed commitments", () => {
     f.pull();
     const held = f.state.admissions.find((a) => a.movementId === f.movementId)!;
     expect(held.state).toBe("pulled");
-    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Bed Held");
+    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Bed Pulled");
     f.send({
       type: "STEP_BACK_STAGE",
       role: "coordinator",
@@ -92,8 +92,8 @@ describe("patient profile acceptance and actual bed commitments", () => {
     });
     expect(f.state.movements.at(-1)!.admissionId).toBe(held.id);
     for (const id of [f.movementId, f.patientId]) {
-      expect(f.resolve(id).verdict.short).toBe("Bed Held");
-      expect(f.resolve(id).verdict.title).toContain("Bed held at");
+      expect(f.resolve(id).verdict.short).toBe("Bed Pulled");
+      expect(f.resolve(id).verdict.title).toContain("Bed pulled at");
     }
   });
 

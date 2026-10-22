@@ -521,7 +521,7 @@ export type MovementHorizonLane = {
 /** Same display title `delayGroups`' `bed_pull_expired` cause already uses
  *  (`delays/delays-derivations.ts`) for exactly this fact — a held bed whose reserved time has
  *  passed. Reused rather than re-worded, so this chart cannot describe the same fact differently. */
-const BED_PULL_EXPIRED_TITLE = "Reserved time has passed, bed still held";
+const BED_PULL_EXPIRED_TITLE = "Pull expired, bed still pulled";
 
 function horizonEventType(movement: Movement, now: Instant): MovementHorizonEventType {
   if (movement.stage === "moving") return "transit";
