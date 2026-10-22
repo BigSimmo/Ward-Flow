@@ -23,6 +23,7 @@ import {
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { showWholeHomeQueue } from "./helpers/ward-home-queue";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
@@ -107,6 +108,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
+    showEveryoneWaiting();
     fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
 
     for (const referral of MEMBER_REFERRALS) {
@@ -131,6 +133,8 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
+    // The scope bar belongs to the priority queue, behind Home's Everyone waiting switch.
+    showEveryoneWaiting();
     const memberOfWhole = wardMovements.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
     // The screen's own denominator is the full seeded population (seedWardFlowState().movements),
     // not the raw wardMovements fixture array: seedWardFlowState() additively overlays demonstration

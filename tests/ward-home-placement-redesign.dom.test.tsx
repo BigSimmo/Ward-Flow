@@ -11,6 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Home placement redesign, Josh 19 Oct 2026. Desktop Home scrolls once: the queue shows its top 10
@@ -84,6 +85,7 @@ describe("desktop Home queue: top 10, then Show all (N)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    showEveryoneWaiting();
     const patients = screen.getByRole("group", { name: "Patients" });
     const total = Number(within(screen.getByRole("radio", { name: /Patients/ })).getByText(/^\d+$/u).textContent);
     expect(total, "the fixture must hold more than 10 open patients for the cap to matter").toBeGreaterThan(10);
@@ -104,6 +106,7 @@ describe("desktop Home queue: top 10, then Show all (N)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
+    showEveryoneWaiting();
     const patients = screen.getByRole("group", { name: "Patients" });
     fireEvent.click(screen.getByTestId("ward-queue-show-all"));
     const rows = within(patients).getAllByTestId(/^ward-queue-row-/);

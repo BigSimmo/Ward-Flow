@@ -120,10 +120,10 @@ describe("the coordinator screen never keeps a closed movement selected", () => 
       "TARGET must actually be closed after the dispatch, or this test proves nothing about a closed movement",
     ).toHaveTextContent("false");
 
-    // The shortlist no longer names the movement: Placement falls back to the top of the queue
-    // (direction A, owner 10 Oct 2026), labelled so, and nothing anywhere still carries TARGET's
-    // own shortlist body.
-    expect(within(screen.getByLabelText("Placement")).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+    // The shortlist no longer names the movement: Placement goes back to its prompt (Home v7, Josh
+    // 22 Oct 2026: nobody is pre-selected), and nothing anywhere still carries TARGET's own
+    // shortlist body.
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     expect(screen.queryByTestId(`ward-shortlist-${TARGET!.id}`)).not.toBeInTheDocument();
 
     // No other movement is silently selected — the queue must show no row claiming selection.

@@ -114,20 +114,22 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     ).toBeTruthy();
   });
 
-  it("keeps the registers closed until the hero's Alerts count opens them, above the columns", () => {
+  it("keeps the registers closed until Registers opens them, above the columns", () => {
+    // Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the registers open
+    // from Registers above the list, still as the strip under the hero.
     renderCoordinator();
     const body = screen.getByTestId("ward-coordinator-body");
     expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
 
-    const toggle = within(body).getByRole("button", { name: /Alerts/ });
+    const toggle = within(body).getByRole("button", { name: "Registers" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     const registers = within(body).getByTestId("ward-coordinator-registers");
-    const statewideFlow = within(body).getByLabelText("State Bedflow");
+    const columns = within(body).getByTestId("ward-coordinator-region-grid");
     expect(
-      registers.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
+      registers.compareDocumentPosition(columns) & Node.DOCUMENT_POSITION_FOLLOWING,
       "the registers strip must sit above the columns",
     ).toBeTruthy();
 

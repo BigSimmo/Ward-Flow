@@ -44,7 +44,7 @@ describe("CoordinatorScreen", () => {
   // Simplification A1 (Josh, 19 Oct 2026): the hero keeps three figures, the same three the phone
   // shows. The forms-due count is not repeated there because the queue's "Form due" filter already
   // carries it.
-  it("keeps the hero to three figures and leaves forms due to the queue", () => {
+  it("keeps the hero to its own counts and leaves forms due to the queue", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SaveUrgentWindow />
@@ -54,7 +54,11 @@ describe("CoordinatorScreen", () => {
 
     expect(screen.queryByText(`Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Alerts/ })).toBeInTheDocument();
+    // Home v7 (Josh, 22 Oct 2026): Act now replaced the hero's Alerts count; the registers open
+    // from Registers above the list.
+    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^\d+\s*Alerts$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Registers" })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
   });
@@ -69,6 +73,6 @@ describe("CoordinatorScreen", () => {
     );
 
     expect(screen.queryByRole("link", { name: "Start handover" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Alerts/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
   });
 });
