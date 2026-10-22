@@ -18,6 +18,7 @@ import styles from "./sheet.module.css";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
+  overlayOpener,
   popSheet,
   pushSheet,
   startSheetOpenFocus,
@@ -250,7 +251,7 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
 
-    const previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousActiveElement = overlayOpener();
     const restoreTimers = restoreTimersRef.current;
     // A close-then-reopen inside one frame leaves this instance's own restore
     // scheduled; left pending it pulls focus back to the opener mid-open.
@@ -294,13 +295,19 @@ export function Sheet({
       }
       if (event.key !== "Tab") return;
 
-      const focusable = Array.from(
-        panelRef.current?.querySelectorAll<HTMLElement>(
-          // Exclude tabindex="-1" buttons so roving-tabindex menus (e.g. Mode
-          // options) do not dump every inactive item into the Tab cycle.
-          'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      ).filter(
+      // Exclude tabindex="-1" buttons so roving-tabindex menus (e.g. Mode
+      // options) do not dump every inactive item into the Tab cycle.
+      const tabbable =
+        'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+      // Codex on #551: a toast raised from this sheet (Undo after "Pull the bed") sits in the toast
+      // layer outside the panel, so its actions join the end of the Tab cycle.
+      const toastActions = Array.from(document.querySelectorAll<HTMLElement>('[data-overlay-host="toast"]')).flatMap(
+        (host) => Array.from(host.querySelectorAll<HTMLElement>(tabbable)),
+      );
+      const focusable = [
+        ...Array.from(panelRef.current?.querySelectorAll<HTMLElement>(tabbable) ?? []),
+        ...toastActions,
+      ].filter(
         (element) =>
           !element.hasAttribute("disabled") &&
           element.getAttribute("aria-hidden") !== "true" &&

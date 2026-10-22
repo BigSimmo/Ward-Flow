@@ -2,15 +2,11 @@
 
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
-  Hospital,
   Plus,
-  Siren,
-  Users,
   Check,
   ChevronDown,
   ClipboardCheck,
@@ -413,7 +409,7 @@ export function WardBarDrawerTriggers({
   );
 }
 
-/** The bar's one primary action: New referral's menu, or a not-wired action's popover. */
+/** The bar's one primary action: New referral, or a not-wired action's popover. */
 export function WardBarPrimaryAction({
   primaryAction,
   primaryTriggerRef,
@@ -439,58 +435,23 @@ export function WardBarPrimaryAction({
     <>
       {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}
       {primaryAction?.kind === "new-referral" ? (
+        // UX audit (21 Oct 2026): New referral opens the form at once. The drawer's own "Refer to"
+        // switch (Ward, Community, ED) is the one place the destination is chosen, so the bar no
+        // longer asks the same question in a menu first.
         <div className={styles.primaryWrap}>
           <button
             type="button"
             ref={primaryTriggerRef}
             className={`${styles.primary} ${styles.referralPrimary}`}
             data-testid="ward-bar-primary-action"
-            aria-haspopup="true"
-            aria-expanded={openPanel === "primary"}
-            aria-controls="ward-bar-primary-panel"
-            onClick={() => (openPanel === "primary" ? closePopover("primary", false) : openPopover("primary"))}
+            onClick={() => {
+              openReferral({ category: roleCategory }, primaryTriggerRef.current);
+            }}
           >
             <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
             <span className={styles.primaryPrefix}>New </span>
             <span className={styles.primaryMain}>referral</span>
-            <span className={styles.referralChevron} aria-hidden="true">
-              <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
-            </span>
           </button>
-          {openPanel === "primary" ? (
-            <div
-              id="ward-bar-primary-panel"
-              ref={primaryPanelRef}
-              className={styles.primaryPanel}
-              role="menu"
-              aria-label={primaryAction.label}
-              data-testid="ward-bar-primary-panel"
-            >
-              {primaryAction.menu.map((entry) => {
-                const MenuIcon =
-                  entry.destination === "community" ? Users : entry.destination === "ed" ? Siren : Hospital;
-                return (
-                  <Link
-                    key={entry.destination}
-                    href={entry.href}
-                    role="menuitem"
-                    className={styles.primaryMenuItem}
-                    data-testid={`ward-bar-primary-menu-${entry.destination}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openReferral(
-                        { category: roleCategory, destination: entry.destination },
-                        primaryTriggerRef.current,
-                      );
-                    }}
-                  >
-                    <MenuIcon className={styles.menuIcon} aria-hidden="true" strokeWidth={1.75} />
-                    {entry.label}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
         </div>
       ) : primaryAction && primaryAction.kind !== "none" ? (
         <div className={styles.primaryWrap}>

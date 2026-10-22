@@ -300,6 +300,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair completes.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
   COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
+  // D-72: the ward for itself (reducer checks the acting unit), its site's bed manager, or the coordinator.
+  RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "bed_manager", "coordinator"],
+  RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "bed_manager", "coordinator"],
+  RECORD_WARD_INCIDENT: ["ward", "bed_manager", "coordinator"],
+  SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*
@@ -478,6 +483,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNSNOOZE_INBOX_ITEM: ["coordinator"],
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
+  // FD-10: the ward's own assessment. The coordinator may act for a ward (Josh, 10 Oct 2026).
+  RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
@@ -519,6 +526,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+  RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the
   // coordinator, who may undo anyone's.

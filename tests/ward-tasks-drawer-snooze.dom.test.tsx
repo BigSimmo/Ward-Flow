@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CircleAlert } from "lucide-react";
 
+import { InboxSnoozeControl } from "@/components/ward-management/inbox-snooze-control";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { inboxItemIsActNow, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -61,27 +62,79 @@ describe("tasks drawer: ownership and snooze", () => {
     });
   });
 
-  it("needs a reason, then snoozes for 30m, and holds a red row to 1h at most", () => {
+  it("picks a time, needs a reason, then snoozes, and holds a red row to 1h at most", () => {
     const { dispatch, drawer } = renderDrawer();
     const presets = openSnooze(drawer, red);
-    fireEvent.click(within(presets).getByRole("button", { name: /^30m/ }));
-    expect(dispatch).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByRole("combobox", { name: "Reason" }), { target: { value: "awaiting_call_back" } });
+    // UX audit (21 Oct 2026): the first allowed time is selected on open and the chips are live.
+    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
     const fourHours = within(presets).getByRole("button", { name: /^4h/ });
     expect(fourHours).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(fourHours);
     expect(dispatch).not.toHaveBeenCalled();
 
-    fireEvent.click(within(presets).getByRole("button", { name: /^30m/ }));
+    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    expect(dispatch).not.toHaveBeenCalled();
+
+    const reasons = screen.getByRole("group", { name: "Snooze because" });
+    fireEvent.click(within(reasons).getByRole("button", { name: "Awaiting call back" }));
     expect(dispatch).toHaveBeenCalledWith({
       type: "SNOOZE_INBOX_ITEM",
       role: "coordinator",
       now: NOW_ANCHOR,
       inboxItemId: red.id,
-      until: NOW_ANCHOR + 30,
+      until: NOW_ANCHOR + 60,
       reason: "awaiting_call_back",
     });
+  });
+
+  it("says when the row comes back and the act now limit in words, not only on hover", () => {
+    const { drawer } = renderDrawer();
+    openSnooze(drawer, red);
+    expect(screen.getByText(/^Back at/)).toHaveTextContent(/^Back at \d\d:\d\d\. Act now: 1h 00m at most\.$/);
+  });
+
+  it("opens as its own bottom sheet on a phone, and records the snooze from there", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      const onSnooze = vi.fn();
+      render(<InboxSnoozeControl subject="Synthetic alert" actNow now={NOW_ANCHOR} onSnooze={onSnooze} />);
+      fireEvent.click(screen.getByRole("button", { name: "Snooze Synthetic alert" }));
+      const sheet = screen.getByRole("dialog", { name: "Snooze" });
+      expect(sheet).toHaveAccessibleDescription("Synthetic alert");
+      const presets = within(sheet).getByRole("group", { name: "Back in" });
+      expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
+      const reasons = within(sheet).getByRole("group", { name: "Snooze because" });
+      fireEvent.click(within(reasons).getByRole("button", { name: "Waiting on ward" }));
+      expect(onSnooze).toHaveBeenCalledWith(NOW_ANCHOR + 30, "waiting_on_ward");
+      expect(screen.queryByRole("dialog", { name: "Snooze" })).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("forgets an abandoned time when the picker closes without a reason", () => {
+    const { dispatch, drawer } = renderDrawer();
+    let presets = openSnooze(drawer, red);
+    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    // Close with the trigger, then open again: the first allowed time is back.
+    fireEvent.click(
+      within(drawer)
+        .getAllByRole("button", { name: new RegExp(`^Snooze ${red.title}`) })
+        .at(0)!,
+    );
+    expect(screen.queryByRole("group", { name: "Back in" })).toBeNull();
+    presets = openSnooze(drawer, red);
+    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(presets).getByRole("button", { name: /^1h/ })).toHaveAttribute("aria-pressed", "false");
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("moves a snoozed row into the Snoozed section with who and why, and returns it on request", () => {

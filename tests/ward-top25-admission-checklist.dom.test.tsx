@@ -1,10 +1,16 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { EdAdmissionChecklist } from "@/components/ward-management/ed/ed-admission-checklist";
-import { NOT_WIRED, admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
+import { admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
+
+const raise = vi.fn();
+vi.mock("@/components/ward-management/ward-flow-raise", async (original) => ({
+  ...(await original<typeof import("@/components/ward-management/ward-flow-raise")>()),
+  useWardRaise: (role: string) => (type: string, fields: object) => raise({ ...fields, type, role }),
+}));
 
 const seeded = seedWardFlowState();
 const base = seeded.movements[0]!;
@@ -33,8 +39,8 @@ describe("Top 25 item 14: admission arrival checklist", () => {
       medical_clearance: "outstanding",
       legal_form: "done",
       transport: "outstanding",
-      contraband_search: "not_wired",
-      medication_chart: "not_wired",
+      contraband_search: "outstanding",
+      medication_chart: "outstanding",
     });
     const ready = movement({
       medicalClearance: { cleared: true, at: 10 } as Movement["medicalClearance"],
@@ -54,7 +60,7 @@ describe("Top 25 item 14: admission arrival checklist", () => {
       medication_chart: true,
     });
     for (const key of ["contraband_search", "medication_chart"]) {
-      expect(items.find((item) => item.key === key)).toMatchObject({ state: "not_wired", detail: NOT_WIRED });
+      expect(items.find((item) => item.key === key)).toMatchObject({ state: "outstanding", detail: "Not recorded" });
     }
     const recorded = admissionChecklist(movement({ contrabandSearchDone: true, medicationChartDone: false }), [], {
       contraband_search: false,
@@ -78,16 +84,24 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     expect(missing?.detail).toBe("Legal form not on this record");
   });
 
-  it("does not offer local completion controls for checks that cannot be recorded", () => {
-    const { rerender } = render(
-      <EdAdmissionChecklist movement={movement({ legalStatus: "Voluntary" })} referrals={[]} />,
-    );
+  it("records the search and the chart through RECORD_ARRIVAL_CHECK and shows Done only from the record", () => {
+    const pending = movement({ legalStatus: "Voluntary" });
+    const { rerender } = render(<EdAdmissionChecklist movement={pending} referrals={[]} />);
     const card = screen.getByTestId("ward-ed-admission-checklist");
-    expect(within(card).getByText("Arrival checklist, 1 of 3 recorded")).toBeTruthy();
-    expect(within(card).getAllByText(NOT_WIRED)).toHaveLength(2);
-    expect(within(card).queryByRole("button", { name: /^Mark done: / })).toBeNull();
+    expect(within(card).getByText("Arrival checklist, 1 of 5 recorded")).toBeTruthy();
+    expect(within(card).queryByText(/not wired/i)).toBeNull();
+    fireEvent.click(within(card).getByRole("button", { name: "Record contraband search done" }));
+    expect(raise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "RECORD_ARRIVAL_CHECK",
+        role: "ed",
+        movementId: pending.id,
+        check: "contraband_search",
+        done: true,
+      }),
+    );
+    // The tap alone records nothing on screen.
     expect(within(card).queryByText("Checked in ED")).toBeNull();
-    expect(within(card).queryByText("Ready for ward")).toBeNull();
 
     rerender(
       <EdAdmissionChecklist
@@ -98,6 +112,6 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     expect(within(card).getByText("Arrival checklist, 3 of 5 recorded")).toBeTruthy();
     expect(within(card).getByText("Checked in ED")).toBeTruthy();
     expect(within(card).getByText("Ready for ward")).toBeTruthy();
-    expect(within(card).queryByText(NOT_WIRED)).toBeNull();
+    expect(within(card).getByRole("button", { name: "Take back medication chart" })).toBeTruthy();
   });
 });

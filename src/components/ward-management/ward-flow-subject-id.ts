@@ -50,6 +50,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
+    case "SEND_RELEASE_SUPPORT_NOTICE":
       return event.releaseId;
     case "RELEASE_BED":
       return event.releaseId;
@@ -87,6 +88,11 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return event.subject.id;
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_WARD_INCIDENT":
+    case "SET_SECLUSION_ROOM_STATUS":
+      return event.unitId;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
     case "SET_SCENARIO":
@@ -116,6 +122,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "MARK_NOTICE_READ":
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
+    case "RECORD_WARD_DIAGNOSIS":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;

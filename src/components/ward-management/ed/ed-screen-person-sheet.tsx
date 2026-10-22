@@ -4,11 +4,12 @@
 // where every edit to the row happens. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and
 // 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
+import { Check } from "lucide-react";
 import { minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
+import { edRowReferralStatus, edStageLabel } from "./ed-referral-status";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { movementMedicalClearance } from "./ed-screen-model";
@@ -38,7 +39,9 @@ export function renderEdPersonSheet(
 ): ReactNode {
   const { movement, minutesInDepartment, patientInfo, nextAction, destinationLabel } = row;
   const { now, referrals, department, isPhone, setSelectedPatientId } = ctx;
-  const { patientExtras, formControl, clearedControl, reviewControl, destinationContent } = controls;
+  const { patientExtras, formControl, clearedControl, reviewControl, destinationContent, referralLink } = controls;
+  // Change 2 (D-77): where the referral stands replaces the Destination line while one is under way.
+  const referral = edRowReferralStatus(row, ctx);
   return (
     <PhoneSheet
       open
@@ -78,7 +81,7 @@ export function renderEdPersonSheet(
         </div>
         <div>
           <dt>Stage</dt>
-          <dd>{stageCopy[movement.stage].label}</dd>
+          <dd>{edStageLabel(movement.stage)}</dd>
         </div>
         <div>
           <dt>Tier</dt>
@@ -100,6 +103,32 @@ export function renderEdPersonSheet(
           </dd>
         </div>
       </dl>
+      {referral.steps ? (
+        <section
+          className={styles.phoneSheetSection}
+          aria-label="Where the referral is"
+          data-testid={`ward-ed-referral-steps-${movement.id}`}
+        >
+          <h3 className={styles.phoneSheetHeading}>Where the referral is</h3>
+          <ol className={styles.referralSteps}>
+            {referral.steps.map((step, index) => (
+              <li key={step.label} data-done={step.done ? "true" : "false"}>
+                <span className={styles.referralStepMark} aria-hidden="true">
+                  {step.done ? <Check size={14} strokeWidth={2.5} aria-hidden="true" /> : index + 1}
+                </span>
+                <span>
+                  <span className={styles.referralStepLabel}>
+                    {step.label}
+                    <span className="sr-only">{step.done ? ", done" : ", not yet"}</span>
+                  </span>
+                  <span className={styles.referralStepDetail}>{step.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          {referralLink}
+        </section>
+      ) : null}
       {/* v10 phone person sheet: where the time in the department went, then the
                           few facts a coordinator checks, above the actions. */}
       <section
@@ -112,7 +141,7 @@ export function renderEdPersonSheet(
           stages={edJourneyStages(
             movement,
             movementMedicalClearance(movement, referrals),
-            stageCopy[movement.stage].label,
+            edStageLabel(movement.stage),
             now,
           )}
           formatDuration={splitDuration}
@@ -126,10 +155,12 @@ export function renderEdPersonSheet(
             {movement.cohort} · {movement.sex}
           </dd>
         </div>
-        <div>
-          <dt>Destination</dt>
-          <dd>{destinationLabel}</dd>
-        </div>
+        {referral.steps ? null : (
+          <div>
+            <dt>Destination</dt>
+            <dd>{destinationLabel}</dd>
+          </div>
+        )}
         <div>
           <dt>Psychiatric review</dt>
           <dd>{movement.examination ? "Recorded" : "Not recorded"}</dd>
@@ -180,10 +211,12 @@ export function renderEdPersonSheet(
           <span>Psychiatric review</span>
           <div>{reviewControl}</div>
         </div>
-        <div className={styles.phoneSheetField}>
-          <span>Destination</span>
-          <div>{destinationContent}</div>
-        </div>
+        {referral.steps ? null : (
+          <div className={styles.phoneSheetField}>
+            <span>Destination</span>
+            <div>{destinationContent}</div>
+          </div>
+        )}
       </section>
       <div className={styles.phoneSheetCards}>{expandedCards}</div>
     </PhoneSheet>

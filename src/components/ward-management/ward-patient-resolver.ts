@@ -1,6 +1,7 @@
 import { patientDisplayName, type Patient, type PatientId } from "./ward-patients";
 import type { Movement, Referral } from "./ward-model";
 import type { Admission, PlannedAdmission } from "./ward-admissions";
+import { plannedInitialsLabel, TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 
 /** All the resolver reads of a referral: its id and the person it points at. */
 type ReferralPointer = Pick<Referral, "id" | "patientId">;
@@ -101,11 +102,13 @@ function getOrBuildIndex(
 
 /** A person known by initials only (a planned admission booked that way): no record, no UMRN. */
 function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
+  const label = plannedInitialsLabel(initials);
   return {
-    displayName: `Initials ${initials}`,
-    formalName: `Initials ${initials}`,
+    displayName: label,
+    formalName: label,
     umrn: UMRN_NOT_RECORDED,
-    initials,
+    // Initials the device copy did not keep read as an unknown person's ("UP") in short slots.
+    initials: initials === TYPED_TEXT_NOT_KEPT ? "UP" : initials,
   };
 }
 

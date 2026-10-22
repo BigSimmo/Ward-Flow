@@ -1442,10 +1442,6 @@
   inset: -2px;
 }
 
-.focalCall {
-  flex: 1 1 auto;
-}
-
 .focalMini {
   display: flex;
   align-items: center;
@@ -1769,12 +1765,6 @@
   outline-offset: 2px;
 }
 
-.phoneCallOff {
-  border-color: var(--wf-line-2);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-2);
-}
-
 .phoneCallHero {
   border-color: var(--wf-hero-ink);
   background: var(--wf-hero-ink);
@@ -1825,11 +1815,6 @@
 
 .sheetBody .statusOff {
   background: var(--wf-surface-2);
-}
-
-.sheetCall {
-  width: 100%;
-  justify-content: center;
 }
 
 .actionTiles {

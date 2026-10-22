@@ -44,7 +44,7 @@ const beds: WalkRoundBed[] = [
     number: "03",
     name: "Free to offer",
     note: "Free to offer",
-    stateWord: "Free",
+    stateWord: "Ready",
     changeKey: "ready",
     glyph: null,
     days: "",
@@ -190,7 +190,7 @@ describe("the bed state word (C3)", () => {
   const occupied = { status: "occupied" } as const;
 
   it.each([
-    ["Free", occupied, { ...none, free: true }],
+    ["Ready", occupied, { ...none, free: true }],
     ["Preparing", { status: "ready" }, { ...none, preparing: true }],
     ["Closed", { status: "closed" }, none],
     ["Absent", { status: "leave", statusText: "Absent without leave" }, none],
@@ -199,7 +199,7 @@ describe("the bed state word (C3)", () => {
     ["At ED", occupied, { ...none, awayAtEd: true }],
     ["Past date", { ...occupied, pastDate: true }, none],
     ["Barrier", { ...occupied, dischargeBarrier: "Accommodation" }, none],
-    ["Held", { status: "incoming" }, none],
+    ["Pulled", { status: "incoming" }, none],
     ["Due out", occupied, { ...none, leaving: true }],
     ["Occupied", occupied, none],
   ] as const)("reads %s", (word, bed, flags) => {

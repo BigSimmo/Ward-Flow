@@ -13,7 +13,6 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement, Rejection } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { resolveAlertSubject } from "./alerts-model";
 import { isAlertLive, replyBoard } from "./global-alert-view";
 import {
@@ -46,7 +45,6 @@ export function ReplyBoardList({
 }) {
   const board = replyBoard(alert, units);
   if (board.rows.length === 0) return null;
-  const waiting = board.rows.length - board.answered;
   return (
     <section className={styles.board} aria-label="Replies">
       <div className={styles.boardHead}>
@@ -55,17 +53,6 @@ export function ReplyBoardList({
           {board.answered} of {board.rows.length} answered
           {broadcastKind(alert) === "bed_call" ? `, ${board.bedsOffered} beds offered` : ""}
         </span>
-        <UnwiredPreview>
-          <Button
-            size="sm"
-            className={styles.push}
-            disabledReason="Not wired in this prototype."
-            reasonDisplay="tooltip"
-            count={waiting}
-          >
-            Chase
-          </Button>
-        </UnwiredPreview>
       </div>
       <ul className={styles.rows}>
         {board.rows.map((row) => (

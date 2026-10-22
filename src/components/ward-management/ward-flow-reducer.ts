@@ -1,4 +1,5 @@
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
+import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -183,7 +184,9 @@ import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
 import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
+import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
@@ -2285,6 +2288,15 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_WARD_INCIDENT":
+    case "SET_SECLUSION_ROOM_STATUS":
+      return reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    case "SEND_RELEASE_SUPPORT_NOTICE":
+      return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
+    case "RECORD_ARRIVAL_CHECK":
+      return reduceArrivalCheckEvent(state, event, decision, { findMovement, reject, replaceMovement });
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return reduceBedMeetingEvent(state, event, decision, {
@@ -2651,6 +2663,8 @@ export function reduceClinicalEvent(
     case "CONVERT_PLANNED_ADMISSION": {
       return reducePlannedAdmission(state, event, decision);
     }
+    case "RECORD_WARD_DIAGNOSIS":
+      return reduceWardDiagnosis(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;

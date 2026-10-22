@@ -6,8 +6,7 @@ import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivat
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { StatusGlyph, buttonClass } from "@/components/wf";
+import { StatusGlyph } from "@/components/wf";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
 import {
@@ -40,20 +39,6 @@ export const badge = (stage: WorkStatus) => (
     </span>
     <span>{WORK_STATUS_LABELS[stage]}</span>
   </span>
-);
-
-/** A control this prototype does not wire, saying so ("Not wired in this prototype."). */
-export const notWired = (label: string, noteId: string, variant: "sec" | "ghost" = "sec") => (
-  <button
-    type="button"
-    className={buttonClass({ size: "sm", variant, className: pageStyles.notWired })}
-    aria-disabled="true"
-    aria-describedby={noteId}
-    title="Not wired in this prototype."
-    onClick={ignoreUnavailableActivation}
-  >
-    {label}
-  </button>
 );
 
 export function RecordedDischargeMilestones({

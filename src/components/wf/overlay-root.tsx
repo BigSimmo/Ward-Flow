@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { SHEET_INERT_SKIP_ATTRIBUTE } from "./sheet-focus";
 
 export type OverlayLayer = "overlay" | "popover" | "modal" | "toast";
 
@@ -15,6 +16,37 @@ const Z_INDEX: Record<OverlayLayer, string> = {
 
 let mountedRoots = 0;
 
+/*
+ * A portalled overlay renders under <body>, outside the screen that opened it, so it cannot inherit
+ * custom properties declared on that screen's ancestors. An app area that declares its tokens on a
+ * class (Ward Flow's `wardShellTokens`) mounts <OverlayScope> with that class, and every
+ * OverlayPortal carries it on its wrapper while the area is mounted. Without it a screen
+ * stylesheet's `var(--line)` inside a sheet or dialog resolves to nothing, and fields lose their
+ * borders and text its colour.
+ */
+let scopeClassName: string | undefined;
+const scopeListeners = new Set<() => void>();
+
+function subscribeScope(onStoreChange: () => void) {
+  scopeListeners.add(onStoreChange);
+  return () => {
+    scopeListeners.delete(onStoreChange);
+  };
+}
+
+function setScopeClassName(next: string | undefined) {
+  scopeClassName = next;
+  for (const listener of scopeListeners) listener();
+}
+
+export function OverlayScope({ className }: { className: string }) {
+  useEffect(() => {
+    setScopeClassName(className);
+    return () => setScopeClassName(undefined);
+  }, [className]);
+  return null;
+}
+
 /** One body observer shared by every OverlayPortal — avoids N×Subtree churn. */
 const hostListeners = new Set<() => void>();
 let sharedHostObserver: MutationObserver | null = null;
@@ -24,6 +56,9 @@ function OverlayHost({ layer }: { layer: OverlayLayer }) {
   return (
     <div
       data-overlay-host={layer}
+      // A toast raised from inside a sheet (Undo after "Pull the bed") must stay clickable, so the
+      // sheet's background inerting skips the toast layer (visual desk, 22 Oct 2026).
+      {...(layer === "toast" ? { [SHEET_INERT_SKIP_ATTRIBUTE]: "" } : {})}
       style={{ position: "fixed", inset: 0, zIndex: Z_INDEX[layer], pointerEvents: "none" }}
     />
   );
@@ -95,6 +130,7 @@ function ensureFallbackHost(layer: OverlayLayer) {
     for (const fallbackLayer of LAYERS) {
       const host = document.createElement("div");
       host.dataset.overlayHost = fallbackLayer;
+      if (fallbackLayer === "toast") host.setAttribute(SHEET_INERT_SKIP_ATTRIBUTE, "");
       Object.assign(host.style, {
         position: "fixed",
         inset: "0",
@@ -134,11 +170,16 @@ function getServerOverlayHost() {
   return null;
 }
 
+function getServerScope() {
+  return undefined;
+}
+
 export type OverlayPortalProps =
   | { layer: "modal"; name: string; children: ReactNode }
   | { layer: Exclude<OverlayLayer, "modal">; name?: string; children: ReactNode };
 
 export function OverlayPortal({ layer, name, children }: OverlayPortalProps) {
+  const scope = useSyncExternalStore(subscribeScope, () => scopeClassName, getServerScope);
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (typeof document === "undefined") return () => undefined;
@@ -156,6 +197,7 @@ export function OverlayPortal({ layer, name, children }: OverlayPortalProps) {
   if (!host) return null;
   return createPortal(
     <div
+      className={scope}
       data-overlay-layer={layer}
       data-overlay-name={name}
       style={{ display: "contents", pointerEvents: layer === "modal" ? "auto" : "none" }}

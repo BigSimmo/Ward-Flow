@@ -959,6 +959,12 @@ button.check[aria-pressed="true"] {
   overflow: hidden;
 }
 
+/* Design review (22 Oct 2026): a picker open in More actions (Snooze) reaches past the card, and
+   the rail scrolls to it instead of cutting it off. */
+.panelCard:has(.moreActions [role="dialog"]) {
+  overflow: visible;
+}
+
 .detail {
   display: flex;
   flex-direction: column;
@@ -1880,7 +1886,10 @@ button.check[aria-pressed="true"] {
   min-width: 0;
 }
 
-.moreGrid button {
+/* Design review (22 Oct 2026): only the grid's own buttons (direct, or inside a tooltip or popover
+   anchor). A descendant rule also stretched every button inside the Snooze picker. */
+.moreGrid > button,
+.moreGrid > * > button {
   justify-content: center;
   width: 100%;
 }
@@ -1890,7 +1899,8 @@ button.check[aria-pressed="true"] {
     min-height: 48px;
   }
 
-  .moreGrid button {
+  .moreGrid > button,
+  .moreGrid > * > button {
     min-height: 48px;
   }
 }

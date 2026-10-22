@@ -208,12 +208,6 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await expect(sheet).toHaveCount(0);
 }
 
-/** Phase 8: the four travel bands plus the not-recorded group. Written out here rather than
- *  derived, for the same reason `tests/ward-travel-grouping.test.ts` writes its own copy out: a
- *  count derived from `TRAVEL_BANDS` moves with it and could not fail, so adding or removing a
- *  band stays a decision somebody takes in a test. It counts groups on a screen. */
-const BAND_GROUP_COUNT = 5;
-
 /** The unit this journey accepts at: the first ADULT unit in the site table's own order that the
  *  referral slide-out offers for an open bed — Mental Health Unit (Sir Charles Gairdner).
  *
@@ -534,8 +528,8 @@ async function openNewReferralFromBoard(page: Page) {
   // v10 (10 Oct 2026): the board's hero no longer repeats New referral; the header's is the one.
   const headerNew = page.getByTestId("ward-bar-primary-action");
   if (await headerNew.isVisible()) {
+    // UX audit (21 Oct 2026): New referral opens the slide-out at once, set to a ward.
     await headerNew.click();
-    await page.getByTestId("ward-bar-primary-menu-ward").click();
     return;
   }
   // Phone (device audit option A, 11 Oct 2026): New referral is behind the page dock's raised +.
@@ -651,7 +645,6 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
     await page.getByTestId("ward-bar-primary-action").click();
-    await page.getByTestId("ward-bar-primary-menu-ward").click();
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
     await expect(page).toHaveURL(/\/ward-flow\/referrals$/);
     await expectNoReloadSince(page, "board -> referral slide-out");
@@ -868,67 +861,37 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-match-accepting-count")).toHaveText(
       `${REVIEWED_ACCEPTING} of ${REVIEWED_UNITS} units accept this referral right now.`,
     );
-    // Every unit under review is listed, never a shortlist (D10). Phase 8 groups those rows by
-    // travel band, so they are spread across five `<details>` groups rather than one flat list —
-    // the count is unchanged, which is the property this line has always pinned.
-    await expect(page.getByTestId("ward-referral-match-list").locator("li")).toHaveCount(REVIEWED_UNITS);
-
-    // Phase 8, Task 4 (owner decision, 2026-08-29): the band groups are SHUT by default at phone
-    // width, and this journey is phone width throughout. Nothing is hidden by that — every heading
-    // and both of its counts are on the screen while shut, asserted here before anything is opened,
-    // so "there is nothing available within an hour" is answerable without expanding a thing.
-    const bandGroups = page
-      .getByTestId("ward-referral-match-list")
-      .locator('details[data-testid^="ward-referral-match-band-group-"]');
-    await expect(bandGroups).toHaveCount(BAND_GROUP_COUNT);
-    let unitsAcrossBands = 0;
-    for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      const summary = bandGroups.nth(index).locator(":scope > summary");
-      await expect(summary).toBeVisible();
-      // Scoped to the SUMMARY and reading its TEXT, both deliberately. A closed `<details>` paints
-      // only its summary, so counts rendered one line below it would still be in the DOM, still
-      // pass a document-wide query, and still leave a coordinator on a phone looking at five bare
-      // bars. Asserting the box is visible does not catch that; asserting the numbers are inside
-      // that box does.
-      await expect(summary).toContainText(/[0-9]+ units? in this band/);
-      await expect(summary).toContainText(/[0-9]+ accepts? this referral/);
-      // A heading states composition, never operational temporality — "right now" belongs to the
-      // accepting-count line above and must never migrate into a band heading.
-      await expect(summary).not.toContainText(/right now/i);
-      const text = (await summary.textContent()) ?? "";
-      const units = Number(/([0-9]+) units? in this band/.exec(text)?.[1]);
-      expect(Number.isNaN(units), `band heading ${index} states no unit count: ${text}`).toBe(false);
-      unitsAcrossBands += units;
+    // Every unit under review is listed, never a shortlist (D10). D-77: desktop uses the phone's
+    // one list of radio rows in three fit groups; "Show n more" opens the rest of the fits.
+    async function showEveryWard() {
+      const more = matchPanel.getByRole("button", { name: /^Show \d+ more with a bed ready$/ });
+      if (await more.count()) await more.click();
     }
-    // The five shut headings between them account for every unit under review, so nothing is
-    // hidden by the fold: every bed is answered for before anything is opened.
-    expect(unitsAcrossBands).toBe(REVIEWED_UNITS);
+    await showEveryWard();
+    const wardRows = matchPanel.locator('[data-testid^="ward-referral-match-phone-cand-"]');
+    await expect(wardRows).toHaveCount(REVIEWED_UNITS);
     // The invented-travel-times sentence is on this screen, once, wherever a band is shown.
     await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
-    // A coordinator on a phone opens the groups to reach the rows. Every shut group is expanded
-    // here so the assertions below see every unit under review, as they did before the grouping
-    // existed. Run again after changing the reviewed ward, whose unit may sit in another band.
-    async function openEveryBandGroup() {
-      for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-        const group = bandGroups.nth(index);
-        if (!(await group.evaluate((element) => (element as HTMLDetailsElement).open))) {
-          await group.locator(":scope > summary").click();
-        }
-        await expect(group).toHaveJSProperty("open", true);
-      }
-    }
-    await openEveryBandGroup();
 
     // The bed accepted below, and one unit per reason it is not offered — each named, so a rule
     // that stopped excluding anything cannot pass unnoticed.
-    await expect(page.getByTestId(`ward-referral-match-accepts-${ACCEPT_UNIT_ID}`)).toBeVisible();
+    await expect(page.getByTestId(`ward-referral-match-phone-cand-${ACCEPT_UNIT_ID}`)).toHaveAttribute(
+      "data-kind",
+      "yes",
+    );
     // The other named recipient, reviewed by choosing it. The wrong-age unit was never offered in
     // the slide-out (asserted at its Wards step), so its refusal is not reached here.
     await reviewWard.selectOption(FEMALE_ONLY_UNIT_ID);
     await expect(page.getByTestId("ward-referral-match-accepting-count")).toHaveText(
       `0 of ${REVIEWED_UNITS} units accept this referral right now.`,
     );
-    await openEveryBandGroup();
+    await showEveryWard();
+    // The ward's reason shows once it is picked and Clinical override is opened (D-77).
+    await page.getByTestId(`ward-referral-match-phone-cand-${FEMALE_ONLY_UNIT_ID}`).click();
+    await expect(page.getByTestId("ward-referral-match-phone-accept")).toHaveText(
+      `Clinical override for ${FEMALE_ONLY_UNIT_NAME}`,
+    );
+    await page.getByTestId("ward-referral-match-phone-accept").click();
     // D7 (a forensic bed is never offered) is not shown here: the sample network has no forensic
     // ward since owner ruling 1A. See the note on the unit constants above for where it is proven.
     // D3 rule 3: a designated bed constrains who may occupy it. This is the one dimension whose
@@ -947,8 +910,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // --- Step 5: accept it. A human decides; nothing here allocated on its own (D10). ---
     await reviewWard.selectOption(ACCEPT_UNIT_ID);
-    await openEveryBandGroup();
-    await page.getByTestId(`ward-referral-match-accept-${ACCEPT_UNIT_ID}`).click();
+    await showEveryWard();
+    await page.getByTestId(`ward-referral-match-phone-cand-${ACCEPT_UNIT_ID}`).click();
+    await page.getByTestId("ward-referral-match-phone-accept").click();
     await expect(page.getByTestId("ward-referral-match-rejection")).toHaveCount(0);
     await expect(page.getByTestId("ward-referral-match-decided")).toHaveText(`Accepted at ${ACCEPT_UNIT_NAME}.`);
     await expectNoReloadSince(page, "accepting the referral");
@@ -1094,54 +1058,22 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // viewport changes, with the referral still selected.
     await page.setViewportSize({ width: 769, height: 900 });
 
-    // The five groups, and the sentence saying the times are invented, on the screen where the
-    // acceptance is actually taken.
-    await expect(
-      page.getByTestId("ward-referral-match-list").locator('details[data-testid^="ward-referral-match-band-group-"]'),
-    ).toHaveCount(BAND_GROUP_COUNT);
+    // The sentence saying the times are invented, on the screen where the acceptance is taken.
+    const farPanel = page.getByTestId("ward-referral-match-panel");
     await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
+    const more = farPanel.getByRole("button", { name: /^Show \d+ more with a bed ready$/ });
+    if (await more.count()) await more.click();
 
-    // Open the far group by CLICK, the way a coordinator does. At 375px the groups mount shut, so
-    // the accept control really is behind the disclosure here rather than already on screen — which
-    // is the whole reason this step is worth doing in a browser. Its counts are visible while it is
-    // still shut, which jsdom cannot show, because jsdom does not hide closed disclosure content.
-    const farGroup = page.getByTestId(`ward-referral-match-band-group-${band}`);
-    // From 769px the groups mount open (shut is the phone default); shut it first so the accept
-    // control below is still reached by opening the group with a click.
-    if (await farGroup.evaluate((element) => (element as HTMLDetailsElement).open)) {
-      await farGroup.locator(":scope > summary").click();
-    }
-    await expect(farGroup).toHaveJSProperty("open", false);
-    /*
-     * Phase 8, Task 10 fix round (F2). This replaces an
-     * `expect(OUT_OF_AREA_BANDS).toContain(band)` that stood here and COULD NOT FAIL: `band`
-     * reached that line only because the `FAR_PLACEMENT` search had already admitted it through
-     * `OUT_OF_AREA_BANDS.includes(band)` a hundred lines earlier, so both sides of the comparison
-     * were the same source. A check that cannot fail, added by the task whose subject is checks
-     * that cannot fail.
-     *
-     * What is worth checking at this point has two genuinely different sources: the group the
-     * screen mounted under THIS band's testid must also be showing THIS band's heading. The testid
-     * comes from the grouping in `referral-match.tsx` and the heading from `travelBandGroupLabel`,
-     * so a group rendered under one band's testid while headed with another band's label fails
-     * here — which would mean the accept control taken out of it below belongs to a band the
-     * coordinator was never shown. Stated precisely: this does not re-prove that the band is out of
-     * area (the search settled that); it proves the screen agrees about which band this group is.
-     */
-    await expect(farGroup.locator(":scope > summary")).toContainText(TRAVEL_BAND_LABELS[band]);
-    await expect(page.getByTestId(`ward-referral-match-band-counts-${band}`)).toBeVisible();
-    await farGroup.locator(":scope > summary").click();
-    await expect(farGroup).toHaveJSProperty("open", true);
-
-    // The accept control is taken from INSIDE the far group, so "far" is a property of where the
-    // button was found rather than a claim this test makes about a named hospital. The unit's name
-    // then comes off that control's own label, so the acceptance message below is checked against
-    // what the screen offered rather than against anything recomputed here.
-    const farAccept = farGroup.locator("[data-testid^='ward-referral-match-accept-']").first();
-    await expect(
-      farAccept,
-      `the ${band} group offers no unit that accepts this referral, so there is no far acceptance to make`,
-    ).toBeVisible();
+    // D-77: each ward's row names its travel band in words. The ward is taken from a FITTING row
+    // whose band is this out-of-area band, so "far" is a property of what the screen showed rather
+    // than a claim this test makes about a named hospital. The unit's name then comes off that row.
+    const farRow = farPanel
+      .locator('[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]')
+      .filter({ hasText: TRAVEL_BAND_LABELS[band] })
+      .first();
+    await expect(farRow, `no ${band} ward accepts this referral, so there is no far acceptance to make`).toBeVisible();
+    await farRow.click();
+    const farAccept = page.getByTestId("ward-referral-match-phone-accept");
     const acceptLabel = ((await farAccept.textContent()) ?? "").trim();
     expect(acceptLabel, "the accept control's label no longer names the unit").toMatch(/^Accept at .+/);
     const acceptedUnitName = acceptLabel.replace(/^Accept at /, "");

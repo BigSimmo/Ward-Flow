@@ -350,22 +350,27 @@ describe("PR15 discharge and referral provenance", () => {
         rejections={[]}
       />,
     );
-    expect(screen.getByText("TIER 2: CAPACITY CHECKS OUTSTANDING")).toBeTruthy();
-    expect(screen.getByText("Capacity unresolved")).toBeTruthy();
-    expect(screen.getByText(/Recorded capacity checks:/).textContent).toContain("Capacity freshness");
+    // D-77: the one decision list names the capacity gap on the ward's own row.
+    const row = screen.getByTestId(`ward-referral-match-phone-cand-${unresolvedCapacity.id}`);
+    expect(row).toHaveAttribute("data-kind", "nobed");
+    expect(row).toHaveTextContent("Count not current");
     expect(document.body.textContent).not.toMatch(
       /Planned discharge today|Sanitisation buffer|NUM Bed Coordination|Units Full|Staffed Ensuite|Ext 4192/,
     );
-    for (const name of ["Flag Turnaround Priority", "Clinical Override"]) {
-      const button = screen.getByRole("button", { name });
-      expect(button).toHaveAttribute("aria-disabled", "true");
-      const reason = document.getElementById(button.getAttribute("aria-describedby")!)!;
-      expect(reason.textContent).toContain("unavailable");
-      // The wf Button states its disabledReason as the accessible description and a hover tooltip,
-      // not a title attribute (placement touch targets, 17 Oct 2026).
-      expect(button).toHaveAccessibleDescription(/unavailable/);
-      fireEvent.click(button);
-    }
+    fireEvent.click(row);
+    const turnaround = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    expect(turnaround).toHaveAttribute("aria-disabled", "true");
+    expect(turnaround).toHaveAccessibleDescription(/unavailable/);
+    fireEvent.click(turnaround);
+    // Clinical override sits behind the one button, and still needs a recorded reason before it accepts.
+    const override = screen.getByTestId("ward-referral-match-phone-accept");
+    expect(override).toHaveTextContent(`Clinical override for ${unresolvedCapacity.name}`);
+    fireEvent.click(override);
+    const criteria = screen.getByTestId(`ward-referral-match-criteria-${unresolvedCapacity.id}`);
+    expect(criteria.textContent).toContain("Capacity freshness");
+    const anyway = screen.getByTestId(`ward-referral-match-override-accept-${unresolvedCapacity.id}`);
+    expect(anyway).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(anyway);
     expect(dispatch).not.toHaveBeenCalled();
   });
 
@@ -390,11 +395,10 @@ describe("PR15 discharge and referral provenance", () => {
     renderFlow(<LegalFormsScreen />, {
       movements: [{ ...movement, legalForm: { ...movement.legalForm!, dueAt: NOW_ANCHOR - 1 } }],
     });
-    // Forms v10 (10 Oct 2026): the clock rail moved from the hero to the Board now rail; the
-    // passed count is its bay, above the twelve-hour line.
+    // D-77 change 5: the Board now rail is gone; the passed form says so in its own row.
     const hud = screen.getByTestId("ward-legal-hud-island");
-    const rail = screen.getByTestId("ward-legal-clock-rail");
-    expect(within(rail).getAllByText("Passed")[0]!.parentElement?.textContent).toBe("Passed1");
+    const row = document.querySelector(`[data-record-key="${movement.id}"]`) as HTMLElement;
+    expect(within(row).getByText("Passed")).toBeInTheDocument();
     expect(hud.textContent).toContain("forms on open moves");
     expect(hud.textContent).not.toContain("statutory deadline");
   });

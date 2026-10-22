@@ -51,7 +51,7 @@
   position: absolute;
   top: calc(100% + 6px);
   z-index: var(--z-popover, 95);
-  min-width: 220px;
+  min-width: min(220px, calc(100vw - 16px));
   max-width: min(360px, calc(100vw - 16px));
   box-sizing: border-box;
   border-radius: var(--wf-r-lg);

@@ -98,7 +98,7 @@ with a build contract"). **Dispatches:** `ACKNOWLEDGE_INBOX_ITEM`, `DISPATCH_BRO
 **Route:** `/board/[unitId]`. **Mockup:** `bed-board-third-edition.html`. **Dispatches:**
 `BLOCK_BED_RELEASE`, `END_LEAVE_BED`, `PATIENT_ARRIVED`, `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`,
 `RECORD_LEAVE_BED`, `RECORD_LEAVING`, `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT`, `RELEASE_BED`,
-`SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
+`RECORD_WARD_DIAGNOSIS`, `SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
 (`ward-derivations.ts`) plus this folder's own tile/occupant builders. **Tests:** the two-dozen
 `ward-board-*`, `ward-daily-sheet*`, `ward-advanced-features.dom.test.tsx`,
 `ward-builder-2-features.dom.test.tsx`, `ward-dialog-accessibility.dom.test.tsx`,
@@ -113,6 +113,9 @@ repo-wide guards.
   `PersonEntry` component (623); the screen itself, `export function WardBoard({ unitId })`, starts
   at 878 and runs to end of file — dialogs, focus traps, keyboard handling and the tile grid are all
   inline in that one function rather than split into sub-components.
+- **`board/ward-board-ward-diagnosis.tsx`** — `WardDiagnosisControl` (FD-10, 21 Oct 2026): the
+  ward's own tentative diagnosis block, chosen from the fixed list in the detail panel and shown
+  beside the referrer's, which is never changed. Dispatches `RECORD_WARD_DIAGNOSIS`.
 - **`src/components/ward-management/board/board.module.css`** (4847 lines) — styles for both
   `ward-board.tsx` and `ward-daily-sheet.tsx`.
 - **`src/components/ward-management/board/ward-bed-board.tsx`** (removed) — former 2-line re-export shim (`WardBedBoard`); deleted during the October 2026 cleanup pass. The live route (`board/[unitId]/page.tsx`) imports `WardBoard` directly from `src/components/ward-management/board/ward-board.tsx`.
@@ -205,7 +208,7 @@ repo-wide guards.
 ## `delays/`
 
 **Route:** `/delays` (also the landing point for `/queue`, `/exceptions` and `/escalation`
-redirects — see `delays-alias.ts` and the `escalation/` entry below). **Mockup:**
+redirects, which land on `/waiting` with no banner since 22 Oct 2026 — see the `escalation/` entry below). **Mockup:**
 the approved Delays page mockup (October 2026, built live in October 2026; earlier
 `delays-third-edition.html`). **Dispatches:** `RECORD_ESCALATION` from `delays-screen.tsx`
 (Escalate to State bed coordination desk in the person's panel); everything else reads and presents. **Reads:**
@@ -217,10 +220,6 @@ its own `delays-derivations.ts`, plus `ward-derivations.ts` selectors via the sh
 `coordinator/coordinator-screen.tsx` and `movements/movements-screen.tsx` (cross-screen
 figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
 
-- **`src/components/ward-management/delays/delays-alias.ts`** (25 lines) — Wave 4 item 15 pedagogy:
-  `DELAYS_ALIAS_FROM` (`"queue" | "exceptions" | "escalation"`), `parseDelaysAliasFrom`,
-  `delaysAliasBannerCopy`. Backs the banner shown when a visitor lands on `/delays` via one of the
-  three old bookmarks.
 - **`src/components/ward-management/delays/delays-derivations.ts`** (589 lines) — pure logic:
   `DelayCause` union and `DELAY_CAUSE_ORDER`/`DELAY_CAUSE_COPY`, `SEVERE_CAUSES`, `DelayOwnerId` and
   `DELAY_OWNERS`, `ownerOf`, `delayGroups`, `legalDeadlineMinutes`. A comment flags a past defect:
@@ -282,7 +281,7 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 ## `escalation/`
 
 **Route:** none live. `/escalation` (`src/app/ward-flow/escalation/page.tsx`) is a
-`redirect()` to `/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
+`redirect()` to `/ward-flow/waiting` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
 inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
 `escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306
@@ -570,19 +569,17 @@ the unified flight deck implementation note (`docs/ward-flow/plans/unified-patie
 reasoned step-back / release capacity behaviour against the shared reducer.
 
 **Routes:** `/people/new` (renders `AddPatientForm` from `add-patient.tsx`) and
-`/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx` by default, or
-`PersonScreen` from `person-screen.tsx` when the URL carries `?view=governed` or `?view=legacy` —
-`people/[patientId]/page.tsx` picks between them explicitly). **Mockups:**
+`/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx`; the governed
+`PersonScreen` dossier behind `?view=governed` was retired on 21 Oct 2026, Josh). **Mockups:**
 `add-a-patient-third-edition.html` → `/people/new`; `patient-now-third-edition.html` →
 `/people/[patientId]`. **Dispatches:** `ADD_PATIENT`, `BOOK_TRANSPORT`. **Reads:** `stageCopy`,
 `transportLeg` (`ward-derivations.ts`), plus `patient-now-adapter.ts`/`patient-now-records.ts` for
 the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.test.tsx`,
 `ward-advanced-features.dom.test.tsx`, `ward-builder-2-features.dom.test.tsx`,
 `ward-flow-single-source.test.ts`, `ward-patient-identity-integrity.test.ts`,
-`ward-patient-now-screen.dom.test.tsx`, `ward-patient-now.dom.test.tsx`,
-`ward-patient-placement-fields.dom.test.tsx`, `ward-patient-sensitive-adjacency-css.test.ts`,
+`ward-patient-now-screen.dom.test.tsx`, `ward-patient-safety-audit-fixes.dom.test.tsx`,
 `ward-patient-transport-section.dom.test.tsx`, `ward-patient-typed-text-not-in-url.dom.test.tsx`,
-`ward-person-screen.dom.test.tsx`, `ward-referral-destinations.dom.test.tsx`, plus repo-wide guards.
+`ward-referral-destinations.dom.test.tsx`, plus repo-wide guards.
 
 - **`src/components/ward-management/patients/add-patient.module.css`** (1245 lines) — styles for
   `add-patient.tsx`.
@@ -603,11 +600,27 @@ the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.t
   sub-components broken out — the whole 1,560-line body is one function.
 - **`src/components/ward-management/patients/patient-now.module.css`** (2276 lines) — styles for
   `patient-now-screen.tsx`.
-- **`src/components/ward-management/patients/person-screen.tsx`** (510 lines) — the governed/legacy
-  patient view (reached via `?view=governed`/`?view=legacy`). Exports `Fact` (109) and `PersonScreen`
-  (189).
-- **`src/components/ward-management/patients/person.module.css`** (820 lines) — styles for
-  `person-screen.tsx`.
+
+## `restrictive-practice/`
+
+D-72 (21 Oct 2026), operational view only: seclusion and bodily restraint in use, the seclusion
+room's status and the last day's ward incidents. Typed times and fixed lists, no legal limit, no
+typed text. The legal register stays in the health service's own system.
+
+**Route:** `/seclusion` (coordinator all, bed manager and ward their own). **Dispatches:**
+`RECORD_RESTRICTIVE_PRACTICE_START`, `RECORD_RESTRICTIVE_PRACTICE_END`, `RECORD_WARD_INCIDENT`,
+`SET_SECLUSION_ROOM_STATUS` (reducer: `ward-flow-restrictive-practice-events.ts`, writing only
+`Unit.restrictivePractice`). **Tests:** `ward-restrictive-practice.test.ts`,
+`ward-restrictive-practice-view.dom.test.tsx`.
+
+- **`src/components/ward-management/restrictive-practice/ward-restrictive-practice.ts`** — the fixed
+  list ids, record types, the four event shapes, `openEpisodes` and `typedTimeRefusal`, which the shared engine
+  loads.
+- **`src/components/ward-management/restrictive-practice/restrictive-practice-view.ts`** — the
+  screen-only labels, `pastInstantFromClockText`, `seclusionRoomView` and
+  `recentIncidents`, kept out of the shared engine for the phone script budget.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.tsx`** — `SeclusionScreen`.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.module.css`** — styles.
 
 ## `settings/`
 
@@ -650,13 +663,21 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
 **Not a route.** Everything here renders inside the Tools sheet (`ward-tools-sheet.tsx`), opened as a
 drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rather than mounted by any
 one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
-these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
+these are chrome, not a drawn screen. **Dispatches:** demo events from `ward-demo-panel.tsx`, and
+`PATIENT_ARRIVED` and `RECORD_LEAVING` from `ward-feed-inbox.tsx`, only when a person confirms a message.
 **Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
 bed derivations (All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
 demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
 `ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
 `ward-bar-figures-telemetry.dom.test.tsx`.
 
+- **`tools/ward-feed-inbox.tsx`** (+ `.module.css`, `ward-feed-inbox-store.ts`) — the synthetic
+  hospital feed inbox (fix plan item 5, 21 Oct 2026), a Tools row under Demo. Receive brings in the
+  next message from `integration/hospital-feed-sim.ts`; a person confirms an arrival or a departure
+  (raising the normal event as this desk) or rejects it. Unreadable, non-synthetic and repeated
+  messages are refused; a name or date of birth that differs from the record confirms nothing. The
+  inbox is memory only and empties at sign-out or a new demo world. Tests:
+  `ward-hospital-feed-inbox.dom.test.tsx`.
 - **`src/components/ward-management/tools/ward-catchment-resolver.module.css`** (525 lines) —
   styles for the resolver.
 - **`src/components/ward-management/tools/ward-catchment-resolver.tsx`** (1027 lines) — WA

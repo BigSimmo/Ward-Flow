@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -83,6 +83,8 @@ describe("the two referral controls are findable by the words on them", () => {
       </WardFlowProvider>,
     );
 
+    // D-77: Decline opens the reasons first, then the control that records it reads "Decline referral".
+    fireEvent.click(screen.getByRole("button", { name: /^decline$/i }));
     expect(screen.getByRole("button", { name: /decline referral/i })).toBeInTheDocument();
   });
 });

@@ -555,6 +555,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Smart features idea 5: a task for a person about a record, never a refusal of it.
     RECORD_BED_MEETING_ACTION: false,
     COMPLETE_BED_MEETING_ACTION: false,
+    // D-72: operational records on a ward, never a refusal of a named referral or placement.
+    RECORD_RESTRICTIVE_PRACTICE_START: false,
+    RECORD_RESTRICTIVE_PRACTICE_END: false,
+    RECORD_WARD_INCIDENT: false,
+    SET_SECLUSION_ROOM_STATUS: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,
@@ -642,6 +647,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNSNOOZE_INBOX_ITEM: false,
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
+    // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
+    RECORD_WARD_DIAGNOSIS: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -682,6 +689,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CONVERT_PLANNED_ADMISSION: false,
     // Records that a carer, PSP or MHAS was told about a completed move. Not a refusal.
     RECORD_SUPPORT_NOTIFICATION: false,
+    SEND_RELEASE_SUPPORT_NOTICE: false,
+    RECORD_ARRIVAL_CHECK: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,
@@ -1249,7 +1258,8 @@ describe("Referral privacy — structural", () => {
       "highAcuityNursingNeeded",
     ].sort(),
     emergency_department: ["kind", "edId", "purpose"].sort(),
-    community_team: ["kind", "teamName"].sort(),
+    // D-74: what the arm is for, follow-up or assess for admission. A fixed list, never typed.
+    community_team: ["kind", "teamName", "purpose"].sort(),
   };
 
   /**
@@ -1284,6 +1294,7 @@ describe("Referral privacy — structural", () => {
     const canonicalCommunity: Required<Extract<ReferralDestination, { kind: "community_team" }>> = {
       kind: "community_team",
       teamName: "Inner City Clinic",
+      purpose: "assess_for_admission",
     };
 
     for (const canonical of [canonicalWard, canonicalEd, canonicalCommunity]) {

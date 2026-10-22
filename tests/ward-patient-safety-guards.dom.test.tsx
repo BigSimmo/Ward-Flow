@@ -141,7 +141,7 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it("clicking Reset form with entered clinical notes or data opens confirmation modal", () => {
+  it("clicking Reset form with entered patient details opens confirmation modal", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AddPatientForm />
@@ -151,28 +151,29 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     const givenNameInput = screen.getByLabelText(/given name/i);
     fireEvent.change(givenNameInput, { target: { value: "Jane" } });
 
-    const notesInput = screen.getByLabelText(/clinical intake notes/i);
-    fireEvent.change(notesInput, { target: { value: "Detailed intake evaluation notes." } });
+    // D-77 change 6: the intake notes box is gone, so the family name stands in as the second field.
+    const familyNameInput = screen.getByLabelText(/family name/i);
+    fireEvent.change(familyNameInput, { target: { value: "Invented" } });
 
     const resetBtn = screen.getByTestId("ward-add-patient-reset");
     fireEvent.click(resetBtn);
 
     // Confirmation modal opens
     expect(screen.getByText("Reset patient form?")).toBeInTheDocument();
-    expect(screen.getByText(/You have entered patient details or clinical notes/i)).toBeInTheDocument();
+    expect(screen.getByText(/You have entered patient details/i)).toBeInTheDocument();
 
     // Cancel preserves entered details
     fireEvent.click(screen.getByTestId("ward-add-patient-reset-cancel"));
     expect(screen.queryByText("Reset patient form?")).not.toBeInTheDocument();
     expect(givenNameInput).toHaveValue("Jane");
-    expect(notesInput).toHaveValue("Detailed intake evaluation notes.");
+    expect(familyNameInput).toHaveValue("Invented");
 
     // Clicking confirm clears fields
     fireEvent.click(resetBtn);
     fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
     expect(screen.queryByText("Reset patient form?")).not.toBeInTheDocument();
     expect(givenNameInput).toHaveValue("");
-    expect(notesInput).toHaveValue("");
+    expect(familyNameInput).toHaveValue("");
   });
 
   it("locks the submit button with isSubmitting while processing", async () => {
@@ -198,7 +199,7 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     expect(submitBtn).toHaveTextContent("Adding patient...");
   });
 
-  it("D-18 Privacy Ruling: never writes clinical notes or patient draft to localStorage or sessionStorage", () => {
+  it("D-18 Privacy Ruling: never writes the patient draft to localStorage or sessionStorage", () => {
     const localSpy = vi.spyOn(Storage.prototype, "setItem");
 
     render(
@@ -208,7 +209,9 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/given name/i), { target: { value: "ConfidentialPatient" } });
-    fireEvent.change(screen.getByLabelText(/clinical intake notes/i), {
+    // D-77 change 6: no clinical notes box remains to type into; the identity fields still stay off storage.
+    expect(screen.queryByLabelText(/clinical intake notes/i)).toBeNull();
+    fireEvent.change(screen.getByLabelText(/family name/i), {
       target: { value: "Sensitive psychiatric clinical history." },
     });
 

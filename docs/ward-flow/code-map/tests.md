@@ -568,15 +568,11 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-patient-link-default-deny.test.ts`** (376 lines) — D-14 default-deny: the patient link is read only where explicitly permitted
 - **`tests/ward-patient-model.test.ts`** (419 lines) — Patient identity is a ruling, not a drift
 - **`tests/ward-patient-now-screen.dom.test.tsx`** (331 lines) — the patient-now screen
-- **`tests/ward-patient-now.dom.test.tsx`** (119 lines) — the person now — identity absences (D-6)
-- **`tests/ward-patient-placement-fields.dom.test.tsx`** (155 lines) — the placement rule for the two sensitive fields (R-2026-09-04-A)
 - **`tests/ward-patient-search.dom.test.tsx`** (1111 lines) — PatientSearchPage
 - **`tests/ward-patient-search.test.ts`** (343 lines) — searchMovements
-- **`tests/ward-patient-sensitive-adjacency-css.test.ts`** (331 lines) — the two sensitive patient fields cannot become adjacent by reflow
 - **`tests/ward-patient-transport-section.dom.test.tsx`** (190 lines) — Patient Transport & Transfer Coordination section
 - **`tests/ward-patient-typeahead.dom.test.tsx`** (284 lines) — test fixtures
 - **`tests/ward-patient-typed-text-not-in-url.dom.test.tsx`** (229 lines) — Typed patient text never reaches a URL
-- **`tests/ward-person-screen.dom.test.tsx`** (581 lines) — a person's own screen
 - **`tests/ward-register-inpatient-form-codes.test.ts`** (102 lines) — ward register MHA authorities
 
 #### Movements (14 files)
@@ -603,9 +599,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-shortlist-ward-detail.dom.test.tsx`** (120 lines) — ShortlistPanel's ward detail block
 - **`tests/ward-shortlist.dom.test.tsx`** (413 lines) — ShortlistPanel escalation contact
 
-#### Delays (5 files)
+#### Delays (4 files)
 
-- **`tests/ward-delays-alias.test.ts`** (22 lines) — delays alias pedagogy (Wave 4 item 15)
 - **`tests/ward-delays-nobody-waiting.dom.test.tsx`** (143 lines) — the delays screen when nobody is waiting
 - **`tests/ward-delays-screen.dom.test.tsx`** (780 lines) — the Delays screen
 - **`tests/ward-delays-third-edition.dom.test.tsx`** (293 lines) — Delays — the drawing's panel names (task D1)

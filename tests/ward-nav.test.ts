@@ -54,6 +54,7 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
+import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -74,7 +75,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
-import { PersonScreen } from "@/components/ward-management/patients/person-screen";
+import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -1296,6 +1297,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    * is how `/morning` was found too. The count above moved 36 → 37 in the same change.
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
+  { route: `${ROUTE_PREFIX}/seclusion`, render: () => createElement(SeclusionScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
   { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },
@@ -1319,7 +1321,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   },
   {
     route: `${ROUTE_PREFIX}/people/[patientId]`,
-    render: () => createElement(PersonScreen, { patientId: wardPatients[0].id }),
+    render: () => createElement(PatientNowScreen, { patientId: wardPatients[0].id }),
   },
   // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },
@@ -1436,7 +1438,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 43, not 44: the Sovereign showcase route was deleted once the Top 25 items moved into the real screens, 15 Oct 2026.
     // 43: the Network screen was retired and `/network` became a redirect to Home, and the bed meeting
     // agenda (`/bed-meeting/agenda`) was added, both 19 Oct 2026. Moved in both files together.
-    expect(RENDERABLE_ROUTES.length).toBe(43);
+    // 44: the seclusion, restraint and incident view (`/seclusion`, D-72), 21 Oct 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(44);
   });
 });
 

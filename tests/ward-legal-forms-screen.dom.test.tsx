@@ -217,17 +217,12 @@ describe("the Forms screen", () => {
 });
 
 describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
-  // v6 (LegalForms.png): the reminder sentence became the Warning windows card ("Your defaults,
-  // not legal limits") plus a "Within Nh" state beside each typed expiry.
-  // Forms (9 Oct 2026): the Warning windows block sits in the summary panel shown while nobody is
-  // selected; choosing a patient swaps it for their form.
-  it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as not legal limits", () => {
+  // v6 (LegalForms.png): a "Within Nh" state beside each typed expiry. D-77 change 5 removed the
+  // Board now panel and its Warning windows block; the windows stay in Settings.
+  it("marks seeded typed expiries inside the warning windows and works out no Act period", () => {
     renderScreen();
-    const banner = screen.getByTestId("ward-legal-expiry-reminder");
-    expect(banner).toHaveTextContent("Warning windows");
-    expect(banner).toHaveTextContent("not legal limits");
     expect(screen.getAllByText(/^Within \dh$/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-legal-summary")).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
+    expect(screen.getByRole("region", { name: "Legal forms list" })).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
   });
 });
 
@@ -251,14 +246,28 @@ describe("LegalFormsScreen shows only a recorded due time (owner, 20 Oct 2026, r
 });
 
 describe("Forms v10 pass (10 Oct 2026)", () => {
-  it("draws the clock rail in the Board now rail, not the hero, with each mark a button named by form and time", () => {
+  // D-77 change 5: desktop drops the record-and-tell strip and the side panels, so the list takes the
+  // full width and a chosen patient's form opens in a drawer over it.
+  it("shows the list without the strip or side panels, and opens a chosen form in a drawer", () => {
     renderScreen();
-    const hero = screen.getByTestId("ward-legal-hud-island");
-    expect(within(hero).queryByTestId("ward-legal-clock-rail")).toBeNull();
-    const rail = within(screen.getByTestId("ward-legal-summary")).getByTestId("ward-legal-clock-rail");
-    for (const mark of within(rail).queryAllByRole("button")) {
-      expect(mark.getAttribute("aria-label")).toMatch(/^Form \w+ (expires|expired) .+, open$/);
+    for (const gone of ["Board now", "Check a form time", "Forms in force", "Record on the form", "Tell people"]) {
+      expect(screen.queryByRole("heading", { name: gone })).toBeNull();
     }
+    expect(screen.queryByTestId("ward-legal-clock-rail")).toBeNull();
+    expect(screen.queryByTestId("ward-legal-form-sheet")).toBeNull();
+    selectRowWithoutDueTime();
+    expect(screen.getByTestId("ward-legal-form-sheet")).toContainElement(screen.getByTestId("ward-legal-selected"));
+  });
+
+  it("keeps the record-and-tell tasks one button away on desktop, and steps aside for a task", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: /^Record and tell/ }));
+    const drawer = screen.getByTestId("ward-legal-tasks-sheet");
+    for (const heading of ["Forms in force", "Record on the form", "Tell people"]) {
+      expect(within(drawer).getByRole("heading", { name: heading })).toBeInTheDocument();
+    }
+    fireEvent.click(within(drawer).getByRole("button", { name: /Requirements/ }));
+    expect(screen.queryByTestId("ward-legal-tasks-sheet")).toBeNull();
   });
 
   it("never folds Time not written: every row shows with no Show all (audit A3-6)", () => {

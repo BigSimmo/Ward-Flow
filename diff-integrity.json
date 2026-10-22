@@ -1291,6 +1291,48 @@
       "after": 0,
       "reason": "Audit 1, Josh 20 Oct 2026 (D-71): its one case drove a control inside the removed ranked-wards cockpit panel; recording sex when it is missing stays covered by tests/ward-bed-matching-recorded-sex.test.ts and tests/ward-eligibility.test.ts.",
       "approvedOn": "2026-10-20"
+    },
+    {
+      "path": "tests/ward-referral-screens.dom.test.tsx",
+      "before": 71,
+      "after": 67,
+      "reason": "D-77 (Josh, 21 Oct 2026, 'Build all ten, as recommended') replaced the desktop travel-band groups with the phone decision list. The four retired cases pinned the band group headings, their two counts, the counts sitting inside each summary, and the groups opening at desktop width, none of which exists any more. Every ward is still on the screen and still names its travel band; those properties are now pinned by the rewritten RF-001 and band cases in the same file (decisionGroups, renderedUnitIds, expectNetworkOrderInsideEachGroup).",
+      "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ward-person-screen.dom.test.tsx",
+      "before": 20,
+      "after": 0,
+      "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. Every case rendered PersonScreen. The unknown-id refusal is now asserted on Patient Now in tests/ward-patient-now-screen.dom.test.tsx (Patient not found, no other patient's identity, no id echoed).",
+      "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ward-patient-now.dom.test.tsx",
+      "before": 6,
+      "after": 0,
+      "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. Every case rendered PersonScreen or its Fact helper; Patient Now has its own absence wording tests.",
+      "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ward-patient-placement-fields.dom.test.tsx",
+      "before": 5,
+      "after": 0,
+      "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. The R-2026-09-04-A placement rule is now asserted on Patient Now's Details tab in tests/ward-patient-safety-audit-fixes.dom.test.tsx (the two sensitive fields in different groups and not adjacent).",
+      "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ward-patient-sensitive-adjacency-css.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. It read person.module.css, which is deleted. Patient Now's Details tab keeps the two sensitive fields in separate groups, so CSS reflow cannot make them adjacent within one list.",
+      "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ward-address-tab.dom.test.tsx",
+      "before": 5,
+      "after": 4,
+      "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. The dropped case checked PersonScreen's tab in the address; the useAddressTab hook cases stay.",
+      "approvedOn": "2026-10-21"
     }
   ]
 }

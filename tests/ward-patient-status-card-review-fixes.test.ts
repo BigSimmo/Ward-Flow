@@ -88,7 +88,7 @@ describe("gate board status card review fixes", () => {
       "held",
       ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
     ).cells.find((cell) => cell.key === "transport");
-    expect(waiting?.sub).toBe("Needs the bed held");
+    expect(waiting?.sub).toBe("Needs the bed pulled");
     let opened = "";
     const prior = buildPatientStatus(
       "held",
@@ -192,9 +192,9 @@ describe("gate board status card review fixes", () => {
     const cto = status.cells.find((cell) => cell.key === "cto");
     expect(cto?.value).toBe("Form 5A in force");
     expect(cto?.action).toMatchObject({ kind: "button", label: "Record ended" });
-    expect(status.cells.find((cell) => cell.key === "bed")?.value).toBe("Hold on Synthetic Ward");
-    expect(status.meta).toBe("Accepted at Synthetic Ward. Next: hold the bed");
+    expect(status.cells.find((cell) => cell.key === "bed")?.value).toBe("Accepted on Synthetic Ward");
+    expect(status.meta).toBe("Accepted at Synthetic Ward. Next: pull the bed");
     // Idle keeps the accepted-referral card.
-    expect(buildPatientStatus("idle", ctx(base, { acceptedReferral })).verdict).toBe("Accepted, no bed held");
+    expect(buildPatientStatus("idle", ctx(base, { acceptedReferral })).verdict).toBe("Accepted, no bed pulled");
   });
 });
