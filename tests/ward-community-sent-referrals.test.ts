@@ -10,7 +10,7 @@ import {
 } from "@/components/ward-management/community/community-sent-referrals";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
-import { communitySentReferral, communitySentView } from "@/components/ward-management/ward-referral-visibility";
+import { communitySentView } from "@/components/ward-management/ward-referral-visibility";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -34,6 +34,11 @@ function ward(unitId: string) {
     involuntaryBedNeeded: false,
     highAcuityNursingNeeded: false,
   };
+}
+
+/** The sending team's view of one referral, as the provider builds it. */
+function communitySentReferral(referral: Referral) {
+  return communitySentView([referral]).sent[0];
 }
 
 /** A seeded referral re-sourced as a community referral to one ward. Plain data, no reducer: this

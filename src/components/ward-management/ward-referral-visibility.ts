@@ -768,25 +768,6 @@ export type CommunitySentReferral = {
   addressings: CommunitySentAddressing[];
 };
 
-/** The sending team's view of one referral, or `undefined` when no community team is recorded as
- *  its sender. An older community referral with no `sendingTeamName` is nobody's to list. */
-export function communitySentReferral(referral: Referral): CommunitySentReferral | undefined {
-  if (referral.source !== "community" || referral.sendingTeamName === undefined) return undefined;
-  return {
-    id: referral.id,
-    raisedAt: referral.raisedAt,
-    patientId: referral.patientId,
-    sendingTeamName: referral.sendingTeamName,
-    state: referralState(referral),
-    withdrawn: referralWithdrawn(referral),
-    addressings: referral.destinations.map((addressing) => ({
-      destination: addressing.destination,
-      state: addressing.state,
-      answer: referralAddressingStateLabel(addressing),
-    })),
-  };
-}
-
 /** Every referral a community team is recorded as having sent, sender-scoped, and how many community
  *  referrals record no sending team (a count only, never guessed onto a team). Which team's they are
  *  is the caller's filter, as everywhere in this module. */
@@ -797,9 +778,22 @@ export function communitySentView(referrals: readonly Referral[]): CommunitySent
   let unattributed = 0;
   for (const referral of referrals) {
     if (referral.source !== "community") continue;
-    const projected = communitySentReferral(referral);
-    if (projected) sent.push(projected);
-    else unattributed += 1;
+    // An older community referral with no `sendingTeamName` is nobody's to list.
+    if (referral.sendingTeamName === undefined) unattributed += 1;
+    else
+      sent.push({
+        id: referral.id,
+        raisedAt: referral.raisedAt,
+        patientId: referral.patientId,
+        sendingTeamName: referral.sendingTeamName,
+        state: referralState(referral),
+        withdrawn: referralWithdrawn(referral),
+        addressings: referral.destinations.map((addressing) => ({
+          destination: addressing.destination,
+          state: addressing.state,
+          answer: referralAddressingStateLabel(addressing),
+        })),
+      });
   }
   return { sent, unattributed };
 }
