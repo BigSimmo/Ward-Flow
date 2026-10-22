@@ -63,6 +63,7 @@ const WardToolsSheet = dynamic(() =>
 // The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
 const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
@@ -654,6 +655,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     },
     [setOpenPanel],
   );
+
+  // A sheet footer's Board time pill (change 8, D-77): the Demo menu sits below the sheet's modal
+  // layer, so close the sheet first, then open the menu a frame later, after the sheet's focus restore.
+  const demoMenuAfterCloseRef = useRef(false);
+  const openDemoMenuFromSheet = (id: WardBarPopoverId, from: HTMLElement) => {
+    if (isPhone) return requestDemoMenu(from);
+    demoMenuAfterCloseRef.current = true;
+    closePopover(id, false);
+  };
+  useEffect(() => {
+    if (openPanel !== null || !demoMenuAfterCloseRef.current) return;
+    demoMenuAfterCloseRef.current = false;
+    const frame = window.requestAnimationFrame(() => requestDemoMenu());
+    return () => window.cancelAnimationFrame(frame);
+  }, [openPanel]);
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {
@@ -1299,7 +1315,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           isPhone ? undefined : (
             <div className={styles.drawerFoot}>
               <span>Synthetic events · newest first</span>
-              <WardDemoClockPopover>
+              <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("activity", from)}>
                 <span className={styles.footClock}>
                   Demo time <b>{formatInstant(now)}</b>
                 </span>
@@ -1404,7 +1420,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         footer={
           <div className={styles.drawerFoot}>
             <span>Whole network · synthetic prototype</span>
-            <WardDemoClockPopover>
+            <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
                 Demo time <b>{formatInstant(now)}</b>
               </span>

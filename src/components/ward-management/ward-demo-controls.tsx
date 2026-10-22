@@ -12,6 +12,8 @@ export type WardDemoClockPopoverProps = {
   "aria-label"?: string;
   children?: ReactNode;
   testId?: string;
+  /** Replaces the default open, for a pill inside a sheet that must close first. */
+  onOpen?: (button: HTMLElement) => void;
 };
 
 /**
@@ -27,6 +29,7 @@ export function WardDemoClockPopover({
   "aria-label": ariaLabel,
   children,
   testId = "ward-demo-clock-pill",
+  onOpen,
 }: WardDemoClockPopoverProps) {
   const now = useWardFlowClock();
   const clockText = formatInstant(now);
@@ -37,7 +40,7 @@ export function WardDemoClockPopover({
       title={title ?? `Board time ${clockText} AWST`}
       aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls`}
       data-testid={testId}
-      onClick={(event) => requestDemoMenu(event.currentTarget)}
+      onClick={(event) => (onOpen ?? requestDemoMenu)(event.currentTarget)}
     >
       {children ?? (
         <>

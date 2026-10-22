@@ -280,6 +280,23 @@ test.describe("@mockup Ward screen", () => {
     await expect(card).not.toContainText("Bed pull 4h 00m left");
   });
 
+  // Change 8 (D-77): the Demo menu sits under the header's Synthetic pill, below a sheet's modal
+  // layer. The Board time pill in the Tools sheet footer closes the sheet first, so the menu it
+  // opens is on top and holds focus rather than opening unreachable behind the sheet (Codex, #558).
+  test("the Tools sheet footer's Board time pill closes the sheet and opens the Demo menu on top", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/ward-flow/referrals", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("ward-bar-tools-trigger").click();
+    const sheet = page.getByTestId("ward-bar-tools-sheet");
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: /Open demo controls$/ }).click();
+
+    await expect(sheet).toBeHidden();
+    const menu = page.getByRole("dialog", { name: "Demo" });
+    await expect(menu.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    await expect.poll(() => menu.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+  });
+
   /**
    * Deferred item 1. `tests/ui-ward-management.spec.ts`'s "retains its operating structure in
    * dark, forced-colours, and print modes" already proves this for the coordinator command view;
