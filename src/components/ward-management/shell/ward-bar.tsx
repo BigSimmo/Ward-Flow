@@ -657,8 +657,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [setOpenPanel],
   );
 
-  // A sheet footer's Board time pill (change 8, D-77): the Demo menu sits below the sheet's modal
-  // layer, so close the sheet first, then open the menu a frame later, after the sheet's focus restore.
+  // A sheet footer's Board time pill (D-77): close the sheet, then open the Demo menu after its focus restore.
   const demoMenuAfterCloseRef = useRef(false);
   const openDemoMenuFromSheet = (id: WardBarPopoverId, from: HTMLElement) => {
     if (isPhone) return requestDemoMenu(from);
