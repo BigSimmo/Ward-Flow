@@ -1271,10 +1271,26 @@ const STATIC_GUARD_LOCK_WAIT_MS = 30_000;
 
 /** Files per eslint invocation; matches the prettier step's batch size. */
 const LINT_BATCH_SIZE = 200;
+/** Path characters per eslint invocation, well under Windows' 32,767 limit once the wrapper and flags are added. */
+const LINT_BATCH_MAX_CHARS = 24_000;
 
-/** Exported for tests: split lintable files into command-line-sized batches. */
-export function lintBatches(files) {
-  return chunk(files, LINT_BATCH_SIZE);
+/** Exported for tests: split lintable files into batches bounded by count and by command length. */
+export function lintBatches(files, maxFiles = LINT_BATCH_SIZE, maxChars = LINT_BATCH_MAX_CHARS) {
+  const batches = [];
+  let batch = [];
+  let chars = 0;
+  for (const file of files) {
+    const cost = file.length + 3; // the separating space and quotes
+    if (batch.length > 0 && (batch.length >= maxFiles || chars + cost > maxChars)) {
+      batches.push(batch);
+      batch = [];
+      chars = 0;
+    }
+    batch.push(file);
+    chars += cost;
+  }
+  if (batch.length > 0) batches.push(batch);
+  return batches;
 }
 
 /** Exported for tests: which changed paths eslint would actually cover. */

@@ -397,6 +397,12 @@ describe("static guard scope selection", () => {
     expect(batches.flat()).toEqual(files);
     for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(32_767);
     expect(lintBatches(["src/a.ts"])).toEqual([["src/a.ts"]]);
+    const longPaths = Array.from({ length: 200 }, (_, index) => `src/${"nested/".repeat(22)}${index}.ts`);
+    expect(longPaths.join(" ").length).toBeGreaterThan(32_767);
+    const longBatches = lintBatches(longPaths);
+    expect(longBatches.length).toBeGreaterThan(1);
+    expect(longBatches.flat()).toEqual(longPaths);
+    for (const batch of longBatches) expect(batch.join(" ").length).toBeLessThan(24_000);
   });
 
   it("normalizes backslash paths before filtering", () => {
