@@ -435,7 +435,19 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
       {boardTable ? null : referredFact}
     </>
   );
-  return { patientExtras, formControl, clearedControl, reviewControl, destinationContent };
+  // The row sheet's "Where the referral is" replaces the Destination field, so the A2-5 link to the
+  // sent referral moves under its steps.
+  const referralLink =
+    openWardReferral && destinationLabel === referredTo ? (
+      <Link
+        className={styles.dest}
+        href={referralBoardHref(openWardReferral.referral.id)}
+        data-testid={`ward-ed-referral-open-${movement.id}`}
+      >
+        Open on the Referrals board
+      </Link>
+    ) : null;
+  return { patientExtras, formControl, clearedControl, reviewControl, destinationContent, referralLink };
 }
 
 /** The cards under a row's actions in the person sheet: placement, checklist, journey and facts. */

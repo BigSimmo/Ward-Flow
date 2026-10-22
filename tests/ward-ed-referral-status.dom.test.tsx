@@ -186,6 +186,6 @@ describe("the ED board shows where each referral stands", () => {
     expect(within(sheet).getAllByText("Bed held").length).toBeGreaterThan(0);
     expect(sheet.textContent ?? "").not.toMatch(/Bed pulled/);
     expect(sheet).toHaveTextContent("Bed held — ready to mark the handover to transport.");
-    expect(within(sheet).queryByText("Destination", { selector: "dt" })).toBeNull();
+    expect(within(sheet).queryByText("Destination")).toBeNull();
   });
 });

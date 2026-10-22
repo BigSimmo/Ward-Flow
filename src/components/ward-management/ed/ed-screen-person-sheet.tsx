@@ -39,7 +39,7 @@ export function renderEdPersonSheet(
 ): ReactNode {
   const { movement, minutesInDepartment, patientInfo, nextAction, destinationLabel } = row;
   const { now, referrals, department, isPhone, setSelectedPatientId } = ctx;
-  const { patientExtras, formControl, clearedControl, reviewControl, destinationContent } = controls;
+  const { patientExtras, formControl, clearedControl, reviewControl, destinationContent, referralLink } = controls;
   // Change 2 (D-77): where the referral stands replaces the Destination line while one is under way.
   const referral = edRowReferralStatus(row, ctx);
   return (
@@ -126,6 +126,7 @@ export function renderEdPersonSheet(
               </li>
             ))}
           </ol>
+          {referralLink}
         </section>
       ) : null}
       {/* v10 phone person sheet: where the time in the department went, then the
@@ -210,10 +211,12 @@ export function renderEdPersonSheet(
           <span>Psychiatric review</span>
           <div>{reviewControl}</div>
         </div>
-        <div className={styles.phoneSheetField}>
-          <span>Destination</span>
-          <div>{destinationContent}</div>
-        </div>
+        {referral.steps ? null : (
+          <div className={styles.phoneSheetField}>
+            <span>Destination</span>
+            <div>{destinationContent}</div>
+          </div>
+        )}
       </section>
       <div className={styles.phoneSheetCards}>{expandedCards}</div>
     </PhoneSheet>
