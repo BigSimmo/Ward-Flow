@@ -85,6 +85,8 @@ function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): st
 
 export interface WardAnswerViewProps {
   unitId: string;
+  /** The request to open on, when a link names one; otherwise the longest wait. */
+  initialMovementId?: string;
 }
 
 /** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
@@ -92,7 +94,7 @@ function declineReasonLabel(reason: DeclineReason): string {
   return DECLINE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
-export function WardAnswerView({ unitId }: WardAnswerViewProps) {
+export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProps) {
   const [, startTransition] = useTransition();
   const {
     movements,
@@ -122,7 +124,11 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   // Audit 1, Josh 20 Oct (CS-08): the request on screen is held by its journey id, never its list
   // position, so a request answered elsewhere or a new one sorting ahead cannot swap the person.
   // `index` is only where to land when the held request leaves the list.
-  const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number }>({ index: 0 });
+  // Notices option A (22 Oct 2026): a Notices row names its request, so the view opens on that patient.
+  const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number }>({
+    id: initialMovementId,
+    index: 0,
+  });
   // Phone (v10): its own layout. The facts show four until asked, the ISBAR summary and the
   // ward's gates fold, and the beds, census and answers are rows that open in place.
   const isPhone = useIsPhone();

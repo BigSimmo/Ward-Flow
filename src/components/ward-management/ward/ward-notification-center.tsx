@@ -36,6 +36,7 @@ import {
   type ResolvedPatientInfo,
 } from "@/components/ward-management/ward-patient-resolver";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
@@ -306,13 +307,18 @@ export function WardNotificationCenter({
   // Each row counts once in the badge (ward-clearance-alerts.ts), so a shown row never sits under a zero.
   const { missing: missingClearances, unrecorded: unrecordedClearances } = wardClearanceAlerts(movements, unitId);
 
-  // Option A: a clearance row opens the request this ward is answering, or the transfer once accepted.
+  // Option A: a clearance row opens that patient's request in the ward's Answer view, or the transfer
+  // once accepted. The request is named in the query, so the Answer view does not land on the oldest one.
   const transferAction = (m: Movement) => {
     const accepted = m.acceptedUnitId === unitId;
     return (
       <Link
         className={`${drawer.btn} ${drawer.btnPrimary}`}
-        href={accepted ? movementHref(m.id) : `/ward-flow/ward/${encodeURIComponent(unitId)}/answer`}
+        href={
+          accepted
+            ? movementHref(m.id)
+            : `/ward-flow/ward/${encodeURIComponent(unitId)}/answer?movement=${encodeURIComponent(encodeRecordAddress(m.id))}`
+        }
         onClick={() => onClose?.()}
       >
         {accepted ? "Open transfer" : "Open request"}

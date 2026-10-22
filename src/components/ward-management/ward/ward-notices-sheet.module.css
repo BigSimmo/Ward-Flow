@@ -1,0 +1,26 @@
+/* src/components/ward-management/ward/ward-notices-sheet.module.css */
+
+/* Notices option A (22 Oct 2026). Desktop: the Sheet around the Notices panel, sized like the Alerts drawer (shell/ward-bar.module.css .drawerSheetTasks).
+   Its own small module: ward.module.css reaches shared chunks through composes, and the Notices module is lazy. */
+.noticesSheet {
+  max-width: min(calc(100vw - 1.5rem), 34rem);
+  background: var(--wf-surface-2);
+}
+
+.noticesSheetBody {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.noticesSheetFill {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.noticesSheetFill > section {
+  width: 100%;
+}

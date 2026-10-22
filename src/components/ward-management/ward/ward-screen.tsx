@@ -131,7 +131,7 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerView, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
@@ -153,7 +153,7 @@ type WardScreenProps = {
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
-    return <WardAnswerView key={unitId} unitId={unitId} />;
+    return <WardAnswerFromLink key={unitId} unitId={unitId} />;
   }
   return (
     <WardOverviewScreen

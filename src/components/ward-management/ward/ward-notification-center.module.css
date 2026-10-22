@@ -107,27 +107,3 @@
 .inSheet .footNote {
   display: none;
 }
-
-/* Desktop: the Sheet around the panel, sized like the Alerts drawer (shell/ward-bar.module.css .drawerSheetTasks). */
-.drawerSheet {
-  max-width: min(calc(100vw - 1.5rem), 34rem);
-  background: var(--wf-surface-2);
-}
-
-.drawerSheetBody {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-}
-
-.drawerSheetFill {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-}
-
-.drawerSheetFill > section {
-  width: 100%;
-}

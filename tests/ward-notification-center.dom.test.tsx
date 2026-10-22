@@ -7,6 +7,7 @@ import {
 } from "@/components/ward-management/ward/ward-notification-center";
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import {
   getAudioBuzzPreference,
   setAudioBuzzPreference,
@@ -343,7 +344,8 @@ describe("WardNotificationCenter DOM Component", () => {
     ];
     render(<WardNotificationCenter {...defaultProps} movements={movements} onClose={onClose} />);
     const link = screen.getByRole("link", { name: "Open request" });
-    expect(link).toHaveAttribute("href", "/ward-flow/ward/ward-alpha/answer");
+    // The link names the request, so the Answer view opens on this patient (Codex P1 on #585).
+    expect(link).toHaveAttribute("href", `/ward-flow/ward/ward-alpha/answer?movement=${encodeRecordAddress("WF-030")}`);
     expect(screen.getByTestId("ward-clearance-not-recorded")).toHaveTextContent("before you accept");
     fireEvent.click(link);
     expect(onClose).toHaveBeenCalledTimes(1);

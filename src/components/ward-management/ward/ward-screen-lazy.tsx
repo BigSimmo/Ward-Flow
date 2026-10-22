@@ -7,6 +7,8 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { wardRouteUnitId } from "../ward-chrome-role";
 import { useWardFlowSelect } from "../ward-flow-provider";
+import { recordIdFromParam } from "../shell/ward-record-address";
+import { useOptionalSearchParams } from "./ward-screen-helpers";
 
 // PERF-05 (21 Oct 2026): each ward tab body below arrives as its own chunk, which is slow on a
 // phone. Until it does, hold most of a screen so the tab bar and action bar do not jump, and say
@@ -35,7 +37,7 @@ export const WardNotificationCenter = dynamic(
   () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
   { ssr: false },
 );
-export const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
+const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
   ssr: false,
   // The loading state keeps the page's one main landmark and one h1; the loaded view replaces it
   // wholesale, so neither is ever duplicated.
@@ -111,3 +113,10 @@ export const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) =>
   ssr: false,
   loading: () => <WardTabBodyPlaceholder />,
 });
+
+/** Notices option A (22 Oct 2026): a Notices row names its request in `?movement=`, so the Answer view
+ * opens on that patient, not the oldest. Read on the ward page, which already reads its query. */
+export function WardAnswerFromLink({ unitId }: { unitId: string }) {
+  const named = recordIdFromParam(useOptionalSearchParams()?.get("movement"));
+  return <WardAnswerView unitId={unitId} initialMovementId={named ?? undefined} />;
+}

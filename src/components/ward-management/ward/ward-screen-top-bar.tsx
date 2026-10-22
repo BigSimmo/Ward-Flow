@@ -10,7 +10,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
-import noticeStyles from "./ward-notification-center.module.css";
+import noticesSheet from "./ward-notices-sheet.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
@@ -340,13 +340,13 @@ export function WardScreenTopBar({
                   placement="right"
                   testId="ward-notifications-drawer"
                   returnFocusRef={notificationTriggerRef}
-                  contentClassName={noticeStyles.drawerSheet}
-                  bodyClassName={noticeStyles.drawerSheetBody}
+                  contentClassName={noticesSheet.noticesSheet}
+                  bodyClassName={noticesSheet.noticesSheetBody}
                 >
                   {notificationCenterOpen ? (
                     <div
                       ref={notificationCenterRef}
-                      className={noticeStyles.drawerSheetFill}
+                      className={noticesSheet.noticesSheetFill}
                       data-testid="ward-notification-center-wrap"
                     >
                       <WardNotificationCenter
