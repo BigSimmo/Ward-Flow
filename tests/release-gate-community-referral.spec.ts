@@ -36,8 +36,9 @@ import {
  *   "No bed is pulled, no patient is moved and no transport is arranged", asserted below.
  * - No coordinator "ask wards" act for a referral. The referrer names the wards in the slide-out;
  *   `REFER_TO_UNITS` works on movements only. The coordinator reviews the named ward here.
- * - The team's desk cannot list referrals it sent to a ward. It sees only referrals addressed to
- *   it (FD-23), and states that referrals it raised "cannot be attributed".
+ * - The team's own "Referrals we have made" list (fix plan item 17) is covered by unit and DOM
+ *   tests (`tests/ward-community-sent-referrals.test.ts`, `tests/ward-community-hub.dom.test.tsx`),
+ *   not by this journey yet.
  *
  * Runs on the release-gate projects (desktop Chrome 1440px, phone WebKit 390x844) with an axe WCAG
  * 2.1 AA check at each key step. One typed URL, then only the app's own links, drawers and desks,

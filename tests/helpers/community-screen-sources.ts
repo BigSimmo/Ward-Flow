@@ -24,6 +24,7 @@ export const COMMUNITY_SCREEN_FILES: readonly string[] = [
   `${COMMUNITY_DIR}/community-screen-panels.tsx`,
   `${COMMUNITY_DIR}/community-screen-phone.tsx`,
   `${COMMUNITY_DIR}/community-screen-hero.tsx`,
+  `${COMMUNITY_DIR}/community-screen-sent-tab.tsx`,
   `${COMMUNITY_DIR}/community-screen-waiting-tab.tsx`,
   `${COMMUNITY_DIR}/community-screen-in-bed-tab.tsx`,
   `${COMMUNITY_DIR}/community-screen-back-tab.tsx`,
