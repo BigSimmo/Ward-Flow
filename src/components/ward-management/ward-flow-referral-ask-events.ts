@@ -44,19 +44,16 @@ export function reduceReferralAskEvent(
   decision: AuditDecision,
   { findReferral, findUnit, reject, replaceReferral }: ReferralAskHelpers,
 ): WardFlowState {
+  // One prefix for every refusal keeps this shared reducer code small (phone script budget).
+  const refuse = (why: string) => reject(state, event, `ASK_MORE_WARDS refused: ${why}`);
   const referral = findReferral(state, event.referralId);
-  if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-  if (referral.source !== "community") {
-    return reject(state, event, `${event.type} is for a community referral; this one came from ${referral.source}`);
-  }
+  if (!referral) return refuse("no such referral");
+  if (referral.source !== "community") return refuse("only a community referral can ask more wards");
   const closed = referralClosedForFollowUp(referral) ?? (referralWithdrawn(referral) ? "It was withdrawn." : undefined);
-  if (closed) return reject(state, event, `${event.type} refused: ${closed}`);
-  if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
-  const unitIds = event.unitIds as unknown;
-  if (!Array.isArray(unitIds) || unitIds.length === 0 || !unitIds.every((id) => typeof id === "string")) {
-    return reject(state, event, `${event.type} needs at least one ward`);
-  }
-  if (new Set(unitIds).size !== unitIds.length) return reject(state, event, `${event.type} names a ward twice`);
+  if (closed) return refuse(closed);
+  const { unitIds } = event;
+  if (!Array.isArray(unitIds) || unitIds.length === 0) return refuse("name at least one ward");
+  if (new Set(unitIds).size !== unitIds.length) return refuse("it names a ward twice");
 
   const wardArms = referral.destinations.filter(
     (addressing): addressing is ReferralAddressing & { destination: WardDestination } =>
@@ -65,44 +62,30 @@ export function reduceReferralAskEvent(
   // The bed questions come from the referrer's own ward request; a broad "any ward" request names
   // no ward, so adding named wards beside it would ask the same ward twice.
   const template = wardArms[0]?.destination;
-  if (!template) return reject(state, event, `${event.type} needs the referral's own ward request to copy from`);
-  if (wardArms.some((addressing) => addressing.destination.unitId === undefined)) {
-    return reject(state, event, `${event.type} cannot add wards to a referral sent to any ward`);
+  if (!template || wardArms.some((addressing) => addressing.destination.unitId === undefined)) {
+    return refuse("no named ward request to copy the bed questions from");
   }
-  const asked = new Set(wardArms.map((addressing) => addressing.destination.unitId));
-  for (const unitId of unitIds as string[]) {
+  for (const unitId of unitIds) {
     const unit = findUnit(state, unitId);
-    if (!unit) return reject(state, event, `${event.type} names no ward with id ${unitId}`);
-    if (asked.has(unitId)) return reject(state, event, `${unit.name} has already been asked about this referral`);
-    const closedRefusal = closedToAdmissionsRefusal(unit);
-    if (closedRefusal) return reject(state, event, closedRefusal);
+    if (!unit) return refuse(`no ward ${unitId}`);
+    if (wardArms.some((addressing) => addressing.destination.unitId === unitId)) {
+      return refuse(`${unit.name} has already been asked`);
+    }
     // Checked against the state now, since a bed or a gate can change after the list was opened.
     const verdict = referralEligibility(referral, { ...template, unitId }, unit, event.now);
-    if (!verdict.eligible) {
-      return reject(state, event, `${unit.name} does not fit this referral now: ${candidateReason(verdict)}`);
-    }
+    const why =
+      closedToAdmissionsRefusal(unit) ??
+      (verdict.eligible ? null : `${unit.name} does not fit this referral now: ${candidateReason(verdict)}`);
+    if (why) return refuse(why);
   }
-  const waiting = wardArms.filter((addressing) => isAwaitingAnswer(addressing)).length;
   const cap = state.configuration.parallelReferralCap;
-  if (waiting + unitIds.length > cap) {
-    return reject(
-      state,
-      event,
-      `${event.type} would leave ${waiting + unitIds.length} wards waiting; no more than ${cap} may wait at once`,
-    );
+  if (wardArms.filter((addressing) => isAwaitingAnswer(addressing)).length + unitIds.length > cap) {
+    return refuse(`no more than ${cap} wards may wait at once`);
   }
 
   const addedBy = WARD_FLOW_ROLE_LABELS[event.role];
-  const added: ReferralAddressing[] = (unitIds as string[]).map((unitId) => ({
-    destination: {
-      kind: "psychiatric_ward",
-      unitId,
-      sex: template.sex,
-      ...(template.gender !== undefined ? { gender: template.gender } : {}),
-      secureBedNeeded: template.secureBedNeeded,
-      involuntaryBedNeeded: template.involuntaryBedNeeded,
-      highAcuityNursingNeeded: template.highAcuityNursingNeeded,
-    },
+  const added: ReferralAddressing[] = unitIds.map((unitId) => ({
+    destination: { ...template, unitId },
     state: "queued",
     referredAt: event.now,
     addedBy,

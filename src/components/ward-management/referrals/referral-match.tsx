@@ -887,6 +887,29 @@ export function ReferralMatchView({
     });
   };
 
+  // Desk and phone both choose which asked ward to answer for, since Ask more wards (D-76) can leave several waiting.
+  const recipientSelect =
+    wardArms.length > 1 ? (
+      <label className={styles.fieldLabel}>
+        Review recipient ward
+        <select
+          className={styles.select}
+          value={ward?.destination.unitId ?? ""}
+          onChange={(event) => setReviewUnitId(event.target.value)}
+        >
+          {wardArms.map(
+            (arm) =>
+              arm.destination.kind === "psychiatric_ward" && (
+                <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                  {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                  {arm.state}
+                </option>
+              ),
+          )}
+        </select>
+      </label>
+    ) : null;
+
   return (
     <section
       className={`${styles.matchPanel} ${ph.sheet}`}
@@ -896,26 +919,7 @@ export function ReferralMatchView({
       {phone === undefined ? (
         <>
           <ReferralIntakeSummary intake={referral.intake} />
-          {wardArms.length > 1 && (
-            <label className={styles.fieldLabel}>
-              Review recipient ward
-              <select
-                className={styles.select}
-                value={ward?.destination.unitId ?? ""}
-                onChange={(event) => setReviewUnitId(event.target.value)}
-              >
-                {wardArms.map(
-                  (arm) =>
-                    arm.destination.kind === "psychiatric_ward" && (
-                      <option key={arm.destination.unitId} value={arm.destination.unitId}>
-                        {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
-                        {arm.state}
-                      </option>
-                    ),
-                )}
-              </select>
-            </label>
-          )}
+          {recipientSelect}
           {!hideDossierHeader ? (
             <div className={styles.matchDossierHeader}>
               <div className={styles.matchDossierTop}>
@@ -1034,7 +1038,12 @@ export function ReferralMatchView({
         </>
       ) : (
         <>
-          {phone !== undefined ? gpSourceNotice : null}
+          {phone !== undefined ? (
+            <>
+              {gpSourceNotice}
+              {recipientSelect}
+            </>
+          ) : null}
           {!hasCohort ? (
             <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
               No {referral.ageBand.toLowerCase()} unit exists in this network.

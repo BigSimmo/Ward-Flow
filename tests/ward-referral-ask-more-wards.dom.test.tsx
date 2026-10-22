@@ -142,6 +142,10 @@ describe("Ask more wards on a community referral (fix plan item 16, D-76)", () =
     expect(within(after).getAllByRole("listitem")).toHaveLength(3);
     expect(within(after).getByRole("button", { name: "Ask more wards" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByTestId("ward-referral-match-decline-open")).toBeInTheDocument();
+    // On phone too, the coordinator chooses which waiting ward to answer for.
+    expect(
+      within(screen.getByRole("combobox", { name: /Review recipient ward/u })).getAllByRole("option"),
+    ).toHaveLength(3);
   });
 
   it("keeps ticks a search hides, so the slots left still cap the wards asked", () => {

@@ -90,7 +90,7 @@ describe("ASK_MORE_WARDS", () => {
     const twoWaiting = withReferral([wardArm(WARD_A), wardArm(WARD_B)]);
     const refused = ask(twoWaiting, [WARD_C, WARD_D]);
     expect(asked(refused).destinations).toHaveLength(2);
-    expect(refused.rejections.at(-1)?.reason).toMatch(/no more than 3 may wait at once/u);
+    expect(refused.rejections.at(-1)?.reason).toMatch(/no more than 3 wards may wait at once/u);
   });
 
   it("starts a newly asked ward's clock when it was asked, not when the referral was raised", () => {
@@ -114,7 +114,7 @@ describe("ASK_MORE_WARDS", () => {
   it("refuses a ward already asked, an unknown ward, and a ward named twice", () => {
     const state = withReferral([wardArm(WARD_A, "declined")]);
     expect(ask(state, [WARD_A]).rejections.at(-1)?.reason).toMatch(/already been asked/u);
-    expect(ask(state, ["no-such-ward"]).rejections.at(-1)?.reason).toMatch(/names no ward/u);
+    expect(ask(state, ["no-such-ward"]).rejections.at(-1)?.reason).toMatch(/no ward no-such-ward/u);
     expect(ask(state, [WARD_B, WARD_B]).rejections.at(-1)?.reason).toMatch(/names a ward twice/u);
     expect(ask(state, []).rejections.at(-1)?.reason).toMatch(/at least one ward/u);
   });
@@ -135,6 +135,6 @@ describe("ASK_MORE_WARDS", () => {
         state: "declined",
       } as ReferralAddressing,
     ]);
-    expect(ask(communityOnly, [WARD_B]).rejections.at(-1)?.reason).toMatch(/ward request to copy from/u);
+    expect(ask(communityOnly, [WARD_B]).rejections.at(-1)?.reason).toMatch(/ward request to copy/u);
   });
 });
