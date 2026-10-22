@@ -44,7 +44,7 @@ function tab(name: string) {
 describe("polished patient dossier tabs", () => {
   it("opens documents from Legal now and returns to the status card on Now with focus handoff", async () => {
     setup();
-    fireEvent.click(within(screen.getByTestId("ward-patient-legal-now")).getByRole("button", { name: "All forms" }));
+    fireEvent.click(within(screen.getByTestId("ward-patient-legal-now")).getByRole("button", { name: "Forms" }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Documents/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Documents and legal authority" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: /^Now/ }));

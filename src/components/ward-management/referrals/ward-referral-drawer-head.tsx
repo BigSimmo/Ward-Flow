@@ -23,11 +23,9 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
     requestClose,
     currentPatient,
     recipientLabels,
-    itemsTotal,
     inboxCount,
     tier,
     itemsLeft,
-    itemsReady,
     destination,
     decisionDueAt,
   } = s;
@@ -66,7 +64,7 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
           ? `${inboxCount} waiting in ward inboxes`
           : sentReferralId
             ? "Referral sent"
-            : `${itemsReady} of ${itemsTotal} ready to send`}
+            : "Fill in and send"}
       </p>
       <p className={styles.phHeroSub}>
         {view === "inbox"
@@ -157,12 +155,9 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     handleTouchEnd,
     requestClose,
     needed,
-    itemsTotal,
     inboxWards,
     inboxCount,
     inboxWard,
-    itemsLeft,
-    itemsReady,
     originLabel,
     chooseDestination,
     selectSection,
@@ -211,18 +206,6 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
 
       {view === "new" ? (
         <>
-          {sentReferralId ? null : (
-            /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
-            <p className={styles.phReady} data-testid="ward-referral-phone-ready">
-              <StatusGlyph tone={itemsLeft === 0 ? "success" : "neutral"} size={10} />
-              <span className={styles.phReadyText}>
-                <b>
-                  {itemsReady} of {itemsTotal}
-                </b>{" "}
-                ready to send
-              </span>
-            </p>
-          )}
           {sentReferralId ? null : (
             <div className={styles.destRow}>
               <span className={styles.destLabel} id={`${sectionId}-refer-to`}>

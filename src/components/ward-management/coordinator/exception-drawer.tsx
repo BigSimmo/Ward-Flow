@@ -76,7 +76,7 @@ type ExceptionDrawerProps = {
  */
 function commandInboxTitle(item: InboxItem): string {
   if (item.id.startsWith("bed-pull-") || item.title === "Bed pull expired") {
-    return "Reserved time has passed, bed still held";
+    return "Pull expired, bed still pulled";
   }
   return item.title;
 }
