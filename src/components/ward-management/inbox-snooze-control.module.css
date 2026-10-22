@@ -1,23 +1,102 @@
 /* Snooze picker and row status shared by Alerts and Tasks. Tokens only. */
 .panel {
-  min-width: 260px;
+  min-width: 304px;
 }
 
+/* Design review (22 Oct 2026, Josh approved): a "Back in" row, one line saying when it returns,
+   then the reasons as a list under "Snooze because". */
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-3);
+  padding: var(--wf-s-3) 14px 14px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.section + .section {
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .presets {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
+  flex-wrap: nowrap;
+  gap: 6px;
 }
 
 .presets > * {
+  flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.when {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.when strong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+}
+
+.reasons > button.reason {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-radius: 0;
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+.reasons > button.reason + button.reason {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* In the phone sheet: the sheet supplies the padding, the times share one row and every row is a
+   full-size touch target. */
+@media (max-width: 48rem) {
+  .body {
+    padding: 0;
+  }
+
+  .presets button {
+    min-height: 44px;
+  }
+
+  .when {
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .reasons > button.reason {
+    min-height: 48px;
+    font-size: var(--wf-fs-15);
+  }
 }
 
 .status {

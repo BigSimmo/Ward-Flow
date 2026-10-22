@@ -599,9 +599,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-shortlist-ward-detail.dom.test.tsx`** (120 lines) — ShortlistPanel's ward detail block
 - **`tests/ward-shortlist.dom.test.tsx`** (413 lines) — ShortlistPanel escalation contact
 
-#### Delays (5 files)
+#### Delays (4 files)
 
-- **`tests/ward-delays-alias.test.ts`** (22 lines) — delays alias pedagogy (Wave 4 item 15)
 - **`tests/ward-delays-nobody-waiting.dom.test.tsx`** (143 lines) — the delays screen when nobody is waiting
 - **`tests/ward-delays-screen.dom.test.tsx`** (780 lines) — the Delays screen
 - **`tests/ward-delays-third-edition.dom.test.tsx`** (293 lines) — Delays — the drawing's panel names (task D1)

@@ -528,8 +528,8 @@ async function openNewReferralFromBoard(page: Page) {
   // v10 (10 Oct 2026): the board's hero no longer repeats New referral; the header's is the one.
   const headerNew = page.getByTestId("ward-bar-primary-action");
   if (await headerNew.isVisible()) {
+    // UX audit (21 Oct 2026): New referral opens the slide-out at once, set to a ward.
     await headerNew.click();
-    await page.getByTestId("ward-bar-primary-menu-ward").click();
     return;
   }
   // Phone (device audit option A, 11 Oct 2026): New referral is behind the page dock's raised +.
@@ -645,7 +645,6 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
     await page.getByTestId("ward-bar-primary-action").click();
-    await page.getByTestId("ward-bar-primary-menu-ward").click();
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
     await expect(page).toHaveURL(/\/ward-flow\/referrals$/);
     await expectNoReloadSince(page, "board -> referral slide-out");
