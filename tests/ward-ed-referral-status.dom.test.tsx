@@ -31,6 +31,7 @@ const movement = (stage: Movement["stage"], extra: Partial<Movement> = {}): Move
   edOutcome: undefined,
   declines: [],
   acceptedUnitId: undefined,
+  admissionId: undefined,
   pullExpiresAt: undefined,
   transport: undefined,
   transportNeed: undefined,
@@ -99,6 +100,15 @@ describe("edReferralStatus", () => {
       { label: "Bed held for this patient", detail: "27m left", done: true },
       { label: "Transport", detail: "Not booked yet", done: false },
     ]);
+  });
+
+  it("keeps a bed held when the coordinator steps the record back from pulled", () => {
+    const status = edReferralStatus(
+      movement("accepted_awaiting_bed", { admissionId: "AD-STEP-BACK", pullExpiresAt: 1_027 }),
+      { ...options, acceptedUnitName: "SJGM Adult Open" },
+    );
+    expect([status.line, status.phone]).toEqual(["Accepted, bed held 27m left", "SJGM Adult Open accepted, bed held"]);
+    expect(status.steps?.[2]).toEqual({ label: "Bed held for this patient", detail: "27m left", done: true });
   });
 
   it("marks a lapsed hold as danger and says it expired", () => {

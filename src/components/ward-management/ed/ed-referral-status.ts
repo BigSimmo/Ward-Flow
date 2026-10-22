@@ -76,7 +76,10 @@ export function edReferralStatus(
     return { title: fallback, tone: "quiet", phone: fallback };
 
   const ward = acceptedUnitName?.split(" — ")[0];
-  const stage = movement.stage;
+  // `STEP_BACK_STAGE` from `pulled` corrects only the stage and keeps the admission and the bed
+  // (the held-bed rule in `movementHoldsBedByStage`), so a stepped-back record still reads as held.
+  const stage: MovementStage =
+    movement.stage === "accepted_awaiting_bed" && movement.admissionId !== undefined ? "pulled" : movement.stage;
   const declinedBy = new Set(movement.declines.map((decline) => decline.unitId)).size;
   const hold = stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : undefined;
   const done = STEPS_DONE[stage];
