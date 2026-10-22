@@ -547,6 +547,13 @@ export function ReferralMatchView({
                 "Accepted — unit not recorded."
             : referralAddressingStateLabel(ward)}
         </p>
+        {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}
+        <AskMoreWardsCard ask={askMore} />
+        {askMore.open ? (
+          <div className={ph.foot}>
+            <AskMoreWardsFoot ask={askMore} />
+          </div>
+        ) : null}
         {renderEdControls()}
         {communityArmLive ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls-community_team">

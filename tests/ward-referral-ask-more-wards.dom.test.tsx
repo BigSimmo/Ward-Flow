@@ -30,7 +30,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /** The id the reducer gives the first `RECEIVE_REFERRAL` against a freshly seeded state. */
 const RAISED_ID = "RF-901";
 
-function SeedCommunityReferral({ unitId }: { unitId: string }) {
+function SeedCommunityReferral({ unitId, declined = false }: { unitId: string; declined?: boolean }) {
   const { now, dispatch } = useWardFlow();
   const seeded = useRef(false);
   useEffect(() => {
@@ -61,6 +61,21 @@ function SeedCommunityReferral({ unitId }: { unitId: string }) {
       ...FIXTURE_HISTORY,
     });
   }, [now, dispatch, unitId]);
+  const raised = useWardFlow().referrals.some((referral) => referral.id === RAISED_ID);
+  const declinedOnce = useRef(false);
+  useEffect(() => {
+    if (!declined || !raised || declinedOnce.current) return;
+    declinedOnce.current = true;
+    dispatch({
+      type: "DECLINE_REFERRAL",
+      role: "coordinator",
+      now,
+      referralId: RAISED_ID,
+      destinationKind: "psychiatric_ward",
+      unitId,
+      reason: "no_suitable_bed",
+    });
+  }, [declined, raised, now, dispatch, unitId]);
   return null;
 }
 
@@ -80,16 +95,16 @@ function Harness() {
   );
 }
 
-function FirstOpenUnit() {
+function FirstOpenUnit({ declined }: { declined?: boolean }) {
   const { units } = useWardFlow();
   const unit = units.find((candidate) => candidate.cohort === "Adult" && !candidate.isClosed);
-  return unit ? <SeedCommunityReferral unitId={unit.id} /> : null;
+  return unit ? <SeedCommunityReferral unitId={unit.id} declined={declined} /> : null;
 }
 
-function renderPane() {
+function renderPane({ declined }: { declined?: boolean } = {}) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <FirstOpenUnit />
+      <FirstOpenUnit declined={declined} />
       <Harness />
     </WardFlowProvider>,
   );
@@ -140,6 +155,18 @@ describe("Ask more wards on a community referral (fix plan item 16, D-76)", () =
     fireEvent.change(within(card).getByRole("searchbox", { name: "Find a ward" }), { target: { value: third } });
     expect(within(card).getByRole("checkbox", { name: third })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Ask 2 wards" })).toBeInTheDocument();
+  });
+
+  it("still offers Ask more wards once every ward asked has declined", () => {
+    renderPane({ declined: true });
+    const card = screen.getByTestId("ward-referral-ask-more-wards");
+    expect(within(card).getByTestId("ward-referral-ask-waiting")).toHaveTextContent("0 of 3 waiting");
+    fireEvent.click(within(card).getByRole("button", { name: "Ask more wards" }));
+    fireEvent.click(fitBoxes(card)[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Ask 1 ward" }));
+    expect(
+      within(screen.getByTestId("ward-referral-ask-more-wards")).getByTestId("ward-referral-ask-waiting"),
+    ).toHaveTextContent("1 of 3 waiting");
   });
 
   it("Cancel closes the list, clears the ticks and brings Decline back", () => {
