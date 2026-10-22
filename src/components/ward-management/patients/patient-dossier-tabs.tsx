@@ -662,9 +662,9 @@ export function PatientDetailsTab({
   // compares two values only when there is something to compare.
   const sexDiffers = movement !== undefined && movement.sex !== patient?.sex;
   const genderDiffers = movement !== undefined && movement.gender !== patient?.gender;
-  const legalDiffers = Boolean(
-    movement?.legalStatus && patient?.legalStatus && movement.legalStatus !== patient.legalStatus,
-  );
+  // One side recorded and the other not is a difference too, so a patient added without a legal
+  // status still shows "Patient legal status" as not recorded.
+  const legalDiffers = movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
   // Interpreter language and Aboriginal status sit in different groups, never side by side (the
   // placement rule in person-screen.tsx).
   const groups: { title: string; facts: Fact[] }[] = [

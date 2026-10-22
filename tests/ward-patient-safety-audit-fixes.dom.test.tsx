@@ -45,6 +45,13 @@ describe("Record details says each fact once", () => {
     expect(pane.getByText("Patient legal status")).toBeInTheDocument();
   });
 
+  it("keeps the patient's legal status row when only the movement has one recorded", () => {
+    const pane = renderDetails(open, { ...patient, legalStatus: undefined });
+    expect(pane.getByText("Movement legal status")).toBeInTheDocument();
+    expect(pane.getByText("Patient legal status")).toBeInTheDocument();
+    expect(pane.queryByText("Legal status")).not.toBeInTheDocument();
+  });
+
   it("writes the date of birth as DD/MM/YYYY, the header's format", () => {
     const pane = renderDetails(open, { ...patient, dateOfBirth: "1988-03-14" });
     expect(pane.getByText("14/03/1988")).toBeInTheDocument();
