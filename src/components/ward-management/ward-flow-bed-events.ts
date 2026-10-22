@@ -305,6 +305,7 @@ export function reduceBedEvent(
           source: "ward",
           confirmedAt: event.now,
           revision: (unit.allocatable.revision ?? 0) + 1,
+          confirmations: (unit.allocatable.confirmations ?? 0) + 1,
         },
       };
       return replaceUnit(state, unit.id, updatedUnit);
@@ -684,6 +685,7 @@ export function reduceBedEvent(
             unitId: unit.id,
             at: event.now,
             byRole: event.role,
+            confirmations: unit.allocatable.confirmations ?? 0,
           },
           state.worldGeneration,
         ),
