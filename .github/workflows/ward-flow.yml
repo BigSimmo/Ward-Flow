@@ -227,6 +227,21 @@ jobs:
         env:
           WARD_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/wardflow_test
         run: npm run build:engine && npm run typecheck && npm run test:coverage
+      - name: Resolve release browser version
+        id: shared-version
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+      # Read-only reuse of the release gate's main-saved apt cache, as in the browser journeys.
+      - name: Restore release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
+          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-
+      - name: Seed release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
       - name: Install Chromium for the shared-mode journey
         id: shared-chromium
         timeout-minutes: 10
@@ -390,7 +405,7 @@ jobs:
       - name: Resolve the Playwright version
         id: playwright-version
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Restore Playwright browsers
         id: playwright-cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -398,6 +413,18 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ward-playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      # Chromium's system packages are a subset of the release gate's, so reuse its main-saved apt
+      # cache read-only; the runner's apt mirror has run past the install budget here too.
+      - name: Restore release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-${{ steps.playwright-version.outputs.image }}
+          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
+      - name: Seed release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
       - name: Install Chromium
         id: chromium
         timeout-minutes: 8
