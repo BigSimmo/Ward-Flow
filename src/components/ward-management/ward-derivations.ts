@@ -87,6 +87,7 @@ export {
   blockingGate,
   eligibleCandidatesAmong,
 } from "./ward-derivations-shortlist";
+import { plannedInitialsLabel } from "./ward-flow-demo-storage-constants";
 export type { ShortlistCandidate } from "./ward-derivations-shortlist";
 export { changeAudit, MINIMUM_EFFECTIVENESS_SAMPLE, effectivenessNumbers } from "./ward-derivations-records";
 export type { ChangeAuditEntry } from "./ward-derivations-records";
@@ -730,7 +731,7 @@ export function buildActionInbox(
       since: planned.expectedArrivalAt,
       // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
       href: "/ward-flow/capacity",
-      ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
+      ...(planned.initials !== null ? { personLabel: plannedInitialsLabel(planned.initials) } : {}),
     });
   }
 
