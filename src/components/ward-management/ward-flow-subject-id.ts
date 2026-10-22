@@ -117,6 +117,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "MARK_NOTICE_READ":
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
+    case "RECORD_WARD_DIAGNOSIS":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;

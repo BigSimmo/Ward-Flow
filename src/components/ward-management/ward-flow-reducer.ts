@@ -1,4 +1,5 @@
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
+import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -2656,6 +2657,8 @@ export function reduceClinicalEvent(
     case "CONVERT_PLANNED_ADMISSION": {
       return reducePlannedAdmission(state, event, decision);
     }
+    case "RECORD_WARD_DIAGNOSIS":
+      return reduceWardDiagnosis(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;
