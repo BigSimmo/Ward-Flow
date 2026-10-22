@@ -98,6 +98,7 @@ import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
 } from "@/components/ward-management/ward-flow-release-notice-events";
+import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -2197,20 +2198,6 @@ export type WardFlowEvent =
       stepDownCandidate: boolean;
     }
   | {
-      /**
-       * FD-10 (owner, 29 Aug 2026): the ward's own tentative diagnosis block, recorded beside the
-       * referrer's and never over it. Each new one replaces the ward's previous one on the record,
-       * which keeps only the latest block. The history notes when and by which desk each one was
-       * recorded, not the block. A correction, not a task: nothing prompts for it.
-       */
-      type: "RECORD_WARD_DIAGNOSIS";
-      role: WardFlowRole;
-      now: Instant;
-      actingUnitId?: string;
-      admissionId: string;
-      block: TentativeDiagnosisBlock;
-    }
-  | {
       type: "SET_DISCHARGE_BARRIER";
       role: WardFlowRole;
       now: Instant;
@@ -2580,6 +2567,7 @@ export type WardFlowEvent =
   // #398 and the arrival checklist (D-72): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  | RecordWardDiagnosisEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

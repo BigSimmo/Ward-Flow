@@ -1,6 +1,23 @@
+import type { Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
+import type { WardFlowRole } from "./ward-flow-roles";
+import { isTentativeDiagnosisBlock, type TentativeDiagnosisBlock } from "./ward-diagnosis";
+
+/**
+ * FD-10 (owner, 29 Aug 2026): the ward's own tentative diagnosis block, recorded beside the
+ * referrer's and never over it. Each new one replaces the ward's previous one on the record, which
+ * keeps only the latest block. The history notes when and by which desk each one was recorded, not
+ * the block. A correction, not a task: nothing prompts for it. Kept here for the events file's line cap.
+ */
+export type RecordWardDiagnosisEvent = {
+  type: "RECORD_WARD_DIAGNOSIS";
+  role: WardFlowRole;
+  now: Instant;
+  actingUnitId?: string;
+  admissionId: string;
+  block: TentativeDiagnosisBlock;
+};
 
 /**
  * FD-10 (owner, 29 Aug 2026): the ward records its own tentative diagnosis block beside the
@@ -11,7 +28,7 @@ import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
  */
 export function reduceWardDiagnosis(
   state: WardFlowState,
-  event: Extract<WardFlowEvent, { type: "RECORD_WARD_DIAGNOSIS" }>,
+  event: RecordWardDiagnosisEvent,
   reject: (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState,
 ): WardFlowState {
   const admission = state.admissions.find((candidate) => candidate.id === event.admissionId);
