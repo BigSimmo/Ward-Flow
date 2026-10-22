@@ -39,6 +39,29 @@ function DeclineFirstAsked() {
   );
 }
 
+// Another coordinator asking a ward on the same movement while this pane holds ticks.
+function AskElsewhere({ unitId }: { unitId: () => string }) {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId: "WF-012",
+          unitIds: [unitId()],
+          genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+          genderPlacementChecked: true,
+        })
+      }
+    >
+      Someone else asks a ward
+    </button>
+  );
+}
+
 function enabledBoxes(region: HTMLElement) {
   return within(region)
     .getAllByRole("checkbox")
@@ -84,5 +107,31 @@ describe("Ask wards (D-77): the list holds at the cap of wards still waiting (D-
     expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("0 of 1 chosen");
     expect(screen.getByRole("button", { name: "Pick up to 1 ward" })).toBeInTheDocument();
     expect(enabledBoxes(screen.getByRole("region", { name: "Ask wards" })).length).toBeGreaterThan(0);
+  });
+
+  it("holds the Ask button when someone else asks a ward and leaves fewer slots than ticks", () => {
+    let otherUnitId = "";
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PatientNowScreen movementId="WF-012" />
+        <AskElsewhere unitId={() => otherUnitId} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
+    const fits = enabledBoxes(screen.getByRole("region", { name: "Ask wards" }));
+    otherUnitId = fits[3]
+      .closest("[data-testid^='ward-ask-ward-']")!
+      .getAttribute("data-testid")!
+      .slice("ward-ask-ward-".length);
+    fits.slice(0, 3).forEach((box) => fireEvent.click(box));
+    fireEvent.change(screen.getByLabelText("Ward placement reason"), {
+      target: { value: GENDER_PLACEMENT_REASONS[0] },
+    });
+    fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
+    expect(screen.getByRole("button", { name: "Ask 3 wards" })).not.toHaveAttribute("aria-disabled");
+
+    fireEvent.click(screen.getByRole("button", { name: "Someone else asks a ward" }));
+    expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("3 of 2 chosen");
+    expect(screen.getByRole("button", { name: "Pick up to 2 wards" })).toHaveAttribute("aria-disabled", "true");
   });
 });

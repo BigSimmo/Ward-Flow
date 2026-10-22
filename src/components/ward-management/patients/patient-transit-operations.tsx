@@ -296,7 +296,11 @@ export function PatientTransitOperations({
     ) : null;
 
   const askButtonUnavailable =
-    !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked));
+    !canRefer ||
+    selectedTargets.length === 0 ||
+    // Another coordinator can ask a ward while ticks are held, leaving fewer slots than ticks.
+    selectedTargets.length > askSlots ||
+    (needsGenderPlacement && (!genderReason || !wardChecked));
   const askRow = ({ unit, verdict }: (typeof candidates)[number]) => {
     const checked = selectedTargets.includes(unit.id);
     const full = !checked && selectedTargets.length >= askSlots;
@@ -500,7 +504,7 @@ export function PatientTransitOperations({
         >
           {askSlots === 0
             ? `${referralCap} wards already asked`
-            : selectedTargets.length === 0
+            : selectedTargets.length === 0 || selectedTargets.length > askSlots
               ? `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
               : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
           <ArrowRight size={16} aria-hidden="true" />
