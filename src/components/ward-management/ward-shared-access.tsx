@@ -77,7 +77,7 @@ const DataModeSlotContext = createContext<((slot: DataModeSlot | null) => void) 
  * panel reaches back to the provider this file sits under, so importing it here would be a cycle. The
  * pill keeps the loaded menu in state rather than a lazy component, so opening it never waits on a
  * Suspense reveal timer (a paused test clock would hold that forever). */
-export type WardDemoMenuComponent = ComponentType<{ top: number; left: number; onClose: () => void }>;
+export type WardDemoMenuComponent = ComponentType<{ onClose: (refocus?: boolean) => void }>;
 export type WardDemoMenuLoader = () => Promise<WardDemoMenuComponent>;
 type DataModeSlot = { element: HTMLElement; menu?: WardDemoMenuLoader };
 
@@ -474,45 +474,24 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
 function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDemoMenuLoader }) {
   const [open, setOpen] = useState(false);
   const [Menu, setMenu] = useState<WardDemoMenuComponent | null>(null);
-  const [place, setPlace] = useState({ top: 0, left: 0 });
-  const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const show = useCallback(
     (from?: HTMLElement) => {
-      const rect = button.current?.getBoundingClientRect();
-      if (rect) setPlace({ top: rect.bottom + 8, left: Math.max(8, Math.min(rect.left, window.innerWidth - 468)) });
       returnFocus.current = from ?? button.current;
       setOpen(true);
       void loadMenu?.().then((menu) => setMenu(() => menu));
     },
     [loadMenu],
   );
-  const close = useCallback(() => {
+  // The menu closes itself on Escape (refocusing the opener) and on a press outside (not refocusing).
+  const close = useCallback((refocus = true) => {
     setOpen(false);
-    returnFocus.current?.focus();
+    if (refocus) returnFocus.current?.focus();
   }, []);
   useEffect(() => subscribeDemoMenu(show), [show]);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: PointerEvent) => {
-      const target = event.target as Element;
-      // The menu's own confirm dialog sits outside it, in a portal; a press there is not outside.
-      if (!wrap.current?.contains(target) && !target.closest?.('[aria-modal="true"]')) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      // A confirm open over the menu takes Escape first.
-      if (event.key === "Escape" && !document.querySelector('[aria-modal="true"]')) close();
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, close]);
   return (
-    <div ref={wrap} className={styles.pillWrap} data-data-mode="prototype">
+    <div className={styles.pillWrap} data-data-mode="prototype">
       <button
         type="button"
         className={styles.pill}
@@ -531,7 +510,7 @@ function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDem
           <span className={styles.pillTail}> prototype</span>
         </span>
       </button>
-      {open && Menu ? <Menu top={place.top} left={place.left} onClose={close} /> : null}
+      {open && Menu ? <Menu onClose={close} /> : null}
     </div>
   );
 }
