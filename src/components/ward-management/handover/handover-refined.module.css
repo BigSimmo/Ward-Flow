@@ -486,11 +486,15 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The action wraps to a second line rather than cutting off; the full text is also on hover. The
+   table primitive sets nowrap on every cell, so this cell opts back in to wrapping. */
 .next {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 18px;
   font-weight: 500;
   color: var(--wf-ink-1);
 }
