@@ -17,6 +17,7 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -73,13 +74,15 @@ function InUse({ percent, where }: { percent: number; where: string }) {
   );
 }
 
-const countText = (count: number) => (count === 0 ? "none" : count);
+const countText = (count: number | string) => (count === 0 ? "none" : count);
 
 function TallyList({ label, tallies }: { label: string; tallies: readonly PhoneTally[] }) {
+  // Executive: the parts add up to the total above them, so they hide together, as on the desktop.
+  const shown = useStatisticsCounts().parts(tallies.map((tally) => tally.count));
   return (
     <ul className={styles.list} aria-label={label}>
-      {tallies.map((tally) => (
-        <PhoneListRow key={tally.id} as="li" name={tally.label} value={countText(tally.count)} />
+      {tallies.map((tally, index) => (
+        <PhoneListRow key={tally.id} as="li" name={tally.label} value={countText(shown[index] ?? tally.count)} />
       ))}
     </ul>
   );
@@ -88,13 +91,14 @@ function TallyList({ label, tallies }: { label: string; tallies: readonly PhoneT
 /** The More figures sheet: blocked discharges, declines by reason and pull to arrival. */
 function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
   const { blocked, declines, arrivals } = figures;
+  const { small } = useStatisticsCounts();
   const duration = (minutes: number | null) => (minutes === null ? "Not recorded" : durMinutes(minutes));
   return (
     <>
       <GroupHead
         title="Blocked discharges"
         variant="letter"
-        aside={`${blocked.total} of ${blocked.admissions} not departed`}
+        aside={`${small(blocked.total)} of ${small(blocked.admissions)} not departed`}
       />
       <TallyList label="Blocked discharges by blocker" tallies={blocked.tallies} />
       {"statement" in declines ? (
@@ -107,12 +111,12 @@ function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
           <GroupHead
             title="Declines by reason"
             variant="letter"
-            aside={`${declines.total} ${declines.total === 1 ? "decline" : "declines"}`}
+            aside={`${small(declines.total)} ${small(declines.total) === 1 ? "decline" : "declines"}`}
           />
           <TallyList label="Declines by reason" tallies={declines.tallies} />
         </>
       )}
-      <GroupHead title="Pull to arrival" variant="letter" aside={`${arrivals.measured} admissions`} />
+      <GroupHead title="Pull to arrival" variant="letter" aside={`${small(arrivals.measured)} admissions`} />
       <ul className={styles.list} aria-label="Pull to arrival">
         <PhoneListRow as="li" name="Average" value={duration(arrivals.average)} />
         <PhoneListRow as="li" name="Shortest" value={duration(arrivals.shortest)} />
