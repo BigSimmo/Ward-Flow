@@ -75,7 +75,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 140,
+    width: 180,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -92,12 +92,14 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 84,
+    width: 110,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <b className={styles.mono}>{durMinutes(ctx.now - row.openedAt)}</b>
-        <span className={`${styles.sub} ${styles.mono}`}>{formatInstantWithDay(row.openedAt, ctx.now)}</span>
+        <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
+          {formatInstantWithDay(row.openedAt, ctx.now)}
+        </span>
       </span>
     ),
     paper: (row, ctx) => durMinutes(ctx.now - row.openedAt),
@@ -191,7 +193,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     // and Patient, Status and From and to give way (names truncate first).
     id: "next",
     header: "Next step",
-    width: 300,
+    width: 270,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (

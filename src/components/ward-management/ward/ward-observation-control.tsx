@@ -30,11 +30,11 @@ function reviewInputs(reviewAt: Instant | null, now: Instant): { time: string; d
   return { time, day: offset === 1 ? "tomorrow" : "today" };
 }
 
-/** The level as the drawer reads it: "Intermittent, every 15 minutes. Review 14:00". */
-function observationWithReview(observation: Observation, now: Instant): string {
+/** The level as the drawer row reads it: "Intermittent, every 15 minutes. Review 14:00". */
+export function observationWithReview(observation: Observation, now: Instant): string {
   const summary = observationSummary(observation);
   return observation.reviewAt === null
-    ? `${summary}. No review time recorded`
+    ? summary
     : `${summary}. Review ${formatInstantWithDay(observation.reviewAt, now)}`;
 }
 
@@ -48,11 +48,14 @@ export function WardObservationControl({
   observation,
   now,
   onSave,
+  showCurrent = true,
 }: {
   observation: Observation;
   now: Instant;
   /** Absent for a desk that may not change it: the level is shown and nothing more. */
   onSave?: (next: Observation) => void;
+  /** False where a row above already states the level, as in the bed drawer. */
+  showCurrent?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<ObservationLevel>(observation.level);
@@ -80,12 +83,18 @@ export function WardObservationControl({
     setOpen(false);
   }
 
+  // In the bed drawer the row above already states the level and its review time, so a desk that
+  // may not change it sees nothing more here.
+  if (!onSave && !showCurrent) return null;
+
   return (
     <div className={styles.cardInner} data-testid="ward-observation-control">
-      <p className={styles.meta} data-testid="ward-observation-current">
-        {observationWithReview(observation, now)}
-      </p>
-      {onSave && !open ? (
+      {showCurrent ? (
+        <p className={styles.meta} data-testid="ward-observation-current">
+          {observationWithReview(observation, now)}
+        </p>
+      ) : null}
+      {!onSave ? null : !open ? (
         <Button
           variant="sec"
           className={styles.pill}
@@ -103,62 +112,69 @@ export function WardObservationControl({
         >
           Change observation level
         </Button>
-      ) : null}
-      {onSave && open ? (
+      ) : (
         <>
-          <select
-            className={styles.select}
-            aria-label="Observation level"
-            data-testid="ward-observation-level"
-            value={level}
-            onChange={(event) => setLevel(event.target.value as ObservationLevel)}
-          >
-            {OBSERVATION_LEVELS.map((option) => (
-              <option key={option} value={option}>
-                {levelOptionLabel(option)}
-              </option>
-            ))}
-          </select>
-          {level === "intermittent" ? (
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Observation level</span>
             <select
               className={styles.select}
-              aria-label="Check every"
-              data-testid="ward-observation-interval"
-              value={interval}
-              onChange={(event) => setIntervalMinutes(Number(event.target.value))}
+              data-testid="ward-observation-level"
+              value={level}
+              onChange={(event) => setLevel(event.target.value as ObservationLevel)}
             >
-              {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
-                <option key={minutes} value={minutes}>
-                  Every {minutes} minutes
+              {OBSERVATION_LEVELS.map((option) => (
+                <option key={option} value={option}>
+                  {levelOptionLabel(option)}
                 </option>
               ))}
             </select>
+          </label>
+          {level === "intermittent" ? (
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Check every</span>
+              <select
+                className={styles.select}
+                data-testid="ward-observation-interval"
+                value={interval}
+                onChange={(event) => setIntervalMinutes(Number(event.target.value))}
+              >
+                {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} minutes
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
-          <div className={`${styles.editor} ${styles.editorFlush}`}>
-            <input
-              className={styles.select}
-              aria-label="Next review time, for example 14:30"
-              data-testid="ward-observation-review-time"
-              inputMode="numeric"
-              placeholder="For example 14:30"
-              value={reviewTime}
-              onChange={(event) => {
-                setReviewTime(event.target.value);
-                setReviewEdited(true);
-              }}
-            />
-            <select
-              className={styles.select}
-              aria-label="Review day"
-              value={reviewDay}
-              onChange={(event) => {
-                setReviewDay(event.target.value as "today" | "tomorrow");
-                setReviewEdited(true);
-              }}
-            >
-              <option value="today">Today</option>
-              <option value="tomorrow">Tomorrow</option>
-            </select>
+          <div className={styles.fieldRow}>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Next review (optional)</span>
+              <input
+                className={styles.select}
+                data-testid="ward-observation-review-time"
+                inputMode="numeric"
+                placeholder="For example 14:30"
+                value={reviewTime}
+                onChange={(event) => {
+                  setReviewTime(event.target.value);
+                  setReviewEdited(true);
+                }}
+              />
+            </label>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Day</span>
+              <select
+                className={styles.select}
+                value={reviewDay}
+                onChange={(event) => {
+                  setReviewDay(event.target.value as "today" | "tomorrow");
+                  setReviewEdited(true);
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+              </select>
+            </label>
           </div>
           {error ? (
             <p className={styles.meta} role="alert">
@@ -174,7 +190,7 @@ export function WardObservationControl({
             </Button>
           </div>
         </>
-      ) : null}
+      )}
     </div>
   );
 }

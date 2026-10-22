@@ -65,7 +65,7 @@ import {
   type WalkRoundMark,
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
-import { observationSummary } from "@/components/ward-management/ward-observation";
+import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -526,7 +526,9 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Confirmed out"
                   : "Due out"
-                : note;
+                : bed.isSpecialling && bed.observation
+                  ? `Constant ${observationRatio(bed.observation.level)}`
+                  : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
@@ -1128,45 +1130,53 @@ export function WardHomeTab({
         ) : (
           <ul className={styles.todoList}>
             {rows.map((row) => (
-              <li key={row.key} className={styles.todoRow}>
-                <StatusGlyph tone={row.tone} size={9} />
-                {row.tick ? (
-                  <label className={styles.todoMain}>
-                    <input
-                      type="checkbox"
-                      className={styles.todoTick}
-                      checked={localChecks[row.tick] !== null}
-                      onChange={() => {
-                        if (row.tick) toggleLocalCheck(row.tick);
-                      }}
-                      aria-label={row.title}
-                    />
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail}>{row.detail}</span>
-                  </label>
-                ) : (
-                  <span className={styles.todoMain}>
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail} title={row.detail}>
-                      {row.detail}
+              <li key={row.key} className={styles.todoItem}>
+                <div className={styles.todoRow}>
+                  <StatusGlyph tone={row.tone} size={9} />
+                  {row.tick ? (
+                    <label className={styles.todoMain}>
+                      <input
+                        type="checkbox"
+                        className={styles.todoTick}
+                        checked={localChecks[row.tick] !== null}
+                        onChange={() => {
+                          if (row.tick) toggleLocalCheck(row.tick);
+                        }}
+                        aria-label={row.title}
+                      />
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail}>{row.detail}</span>
+                    </label>
+                  ) : (
+                    <span className={styles.todoMain}>
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail} title={row.detail}>
+                        {row.detail}
+                      </span>
                     </span>
-                  </span>
-                )}
-                {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
-                {row.action ? (
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                    onClick={row.action.run}
-                  >
-                    {row.action.label}
-                    <SrOnly> {row.title}</SrOnly>
-                  </button>
-                ) : null}
+                  )}
+                  {row.meta ? (
+                    <span
+                      className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}
+                    >
+                      {row.meta}
+                    </span>
+                  ) : null}
+                  {row.action ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={row.action.run}
+                    >
+                      {row.action.label}
+                      <SrOnly> {row.title}</SrOnly>
+                    </button>
+                  ) : null}
+                </div>
                 {row.secondaryAction ? (
                   <button
                     type="button"
-                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
                     onClick={row.secondaryAction.run}
                   >
                     {row.secondaryAction.label}
