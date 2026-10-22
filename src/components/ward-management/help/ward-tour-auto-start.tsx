@@ -14,13 +14,13 @@ import { useTourFacts } from "./ward-tour-facts";
 export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const role = useTourRole();
   const seen = useTourSeen(role);
-  const { home } = useTourFacts(role);
+  const { home, deskHome } = useTourFacts(role);
   const pathname = usePathname() ?? "";
   const started = useRef(false);
   useEffect(() => {
-    if (started.current || seen || !home || pathname !== home) return;
+    if (started.current || seen || !home || (pathname !== home && pathname !== deskHome)) return;
     started.current = true;
     onStart();
-  }, [home, onStart, pathname, seen]);
+  }, [deskHome, home, onStart, pathname, seen]);
   return null;
 }

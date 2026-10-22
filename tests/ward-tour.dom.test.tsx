@@ -15,7 +15,11 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-const tourFacts = { facts: { readyBeds: 26, openMovements: 70, referralsWaiting: 7 }, home: "/ward-flow" };
+const tourFacts = {
+  facts: { readyBeds: 26, openMovements: 70, referralsWaiting: 7 },
+  home: "/ward-flow",
+  deskHome: "/ward-flow",
+};
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({ useTourFacts: () => tourFacts }));
 
 import { WardTour, findTourTarget } from "@/components/ward-management/help/ward-tour";
@@ -39,6 +43,7 @@ function card() {
 beforeEach(() => {
   route.pathname = "/ward-flow";
   tourFacts.home = "/ward-flow";
+  tourFacts.deskHome = "/ward-flow";
   push.mockReset();
   resetTourSeenForTests();
 });
@@ -137,6 +142,22 @@ describe("tour auto-start", () => {
     await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
     rerender(<WardTourAutoStart onStart={onStart} />);
     expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts on the page the app opens for the desk when the tour's own home differs", async () => {
+    const onStart = vi.fn();
+    tourFacts.home = "/ward-flow/governance";
+    tourFacts.deskHome = "/ward-flow/settings";
+    route.pathname = "/ward-flow/settings";
+    render(<WardTourAutoStart onStart={onStart} />);
+    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+  });
+
+  it("closes on Escape pressed anywhere, not only inside the card", () => {
+    const onClose = vi.fn();
+    render(<WardTour onClose={onClose} />);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("stays quiet on another page and once the tour has been seen", async () => {

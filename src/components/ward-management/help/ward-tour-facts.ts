@@ -35,7 +35,11 @@ const FIXED_HOMES: Partial<Record<TourRole, string>> = {
  * address of that home, where the tour runs. The place is the desk's own (role access), else the
  * desk last chosen in "Go to a desk", else the page in view when it is that kind of desk's page.
  */
-export function useTourFacts(role: TourRole): { facts: TourFacts; home: string | undefined } {
+export function useTourFacts(role: TourRole): {
+  facts: TourFacts;
+  home: string | undefined;
+  deskHome: string | undefined;
+} {
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
   const deskId = usePersonaDeskId();
@@ -133,10 +137,11 @@ export function useTourFacts(role: TourRole): { facts: TourFacts; home: string |
     if (role === "officer") facts.activeJobs = movements.filter(isOfficerJob).length;
 
     // A signed-in desk's own home, as the access table names it, wins over a guess from the page.
-    if (access.role === role && role !== "admin" && role !== "coordinator") {
-      home = homeHrefFor(access, communityTeamSlug);
-    }
-    return { facts, home };
+    // The page the app opens for this desk. The tour starts there too, then walks to its own home
+    // when they differ (the access admin lands on Settings; the tour shows Governance).
+    const deskHome = access.role === role ? homeHrefFor(access, communityTeamSlug) : home;
+    if (access.role === role && role !== "admin" && role !== "coordinator") home = deskHome;
+    return { facts, home, deskHome };
   }, [
     role,
     access,

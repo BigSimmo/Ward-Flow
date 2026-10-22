@@ -21,6 +21,8 @@ import styles from "./ward-tour.module.css";
 type Box = { top: number; left: number; width: number; height: number };
 
 /** How long a step waits for its control to appear (a page still loading) before it shows without one. */
+/** How often the spotlight re-measures, so a notice that shifts the page cannot leave it behind. */
+const REMEASURE_MS = 400;
 const FIND_TIMEOUT_MS = 2000;
 const GAP = 12;
 const EDGE = 8;
@@ -46,8 +48,10 @@ function bringIntoView(element: HTMLElement): void {
   element.style.scrollMarginTop = margin;
 }
 
-function shown(element: Element): boolean {
-  return element.getClientRects().length > 0;
+function shown(element: HTMLElement): boolean {
+  if (element.getClientRects().length === 0) return false;
+  // A control laid out but hidden (the phone dock under another dialog) is not on screen.
+  return element.checkVisibility?.({ visibilityProperty: true }) ?? true;
 }
 
 /** The step's control on screen now, or null. See `TourTarget`. */
@@ -137,6 +141,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const [spot, setSpot] = useState<{ target: TourTarget; box: Box | null } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const step: TourStep | undefined = steps[Math.min(index, steps.length - 1)];
@@ -158,6 +163,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     if (!target) return;
     let element: HTMLElement | null = null;
     let frame = 0;
+    let follow = 0;
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() =>
@@ -172,11 +178,13 @@ export function WardTour({ onClose }: { onClose: () => void }) {
       if (!element) return;
       bringIntoView(element);
       measure();
+      follow = window.setInterval(measure, REMEASURE_MS);
     }, 100);
     window.addEventListener("scroll", measure, true);
     window.addEventListener("resize", measure);
     return () => {
       window.clearInterval(poll);
+      window.clearInterval(follow);
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
@@ -185,6 +193,15 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   useLayoutEffect(() => {
     if (cardRef.current) placeCard(cardRef.current, box, device);
+    // A tall control with no room beside it: the light stops short of the card below it.
+    const spotElement = spotRef.current;
+    const card = cardRef.current;
+    if (!spotElement || !card || !box) return;
+    const rect = card.getBoundingClientRect();
+    const stop = rect.top - GAP / 2 - box.top;
+    const sideBySide = rect.left >= box.left + box.width || rect.right <= box.left;
+    spotElement.style.height =
+      !sideBySide && rect.top > box.top && stop < box.height ? `${Math.max(24, stop)}px` : `${box.height}px`;
   }, [box, device, index, step]);
 
   useEffect(() => {
@@ -203,6 +220,17 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     onClose();
   }, [index, last, onClose, role]);
 
+  // Escape closes the tour wherever focus is, which on a phone is often not inside the card.
+  useEffect(() => {
+    const onEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      close();
+    };
+    document.addEventListener("keydown", onEscape);
+    return () => document.removeEventListener("keydown", onEscape);
+  }, [close]);
+
   function go(next: number) {
     const clamped = Math.min(Math.max(0, next), steps.length - 1);
     setIndex(clamped);
@@ -210,10 +238,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      close();
-    } else if (event.key === "ArrowRight" && !last) {
+    if (event.key === "ArrowRight" && !last) {
       event.preventDefault();
       go(index + 1);
     } else if (event.key === "ArrowLeft" && index > 0) {
@@ -256,6 +281,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
       <div className={styles.layer} data-testid="ward-tour" data-device={device}>
         {box ? (
           <div
+            ref={spotRef}
             className={styles.spot}
             style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
             data-testid="ward-tour-spot"
@@ -273,6 +299,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           aria-labelledby="ward-tour-title"
           aria-describedby="ward-tour-body"
           onKeyDown={onKeyDown}
+          id="ward-tour-card"
           data-testid="ward-tour-card"
           data-step={step.id}
         >
