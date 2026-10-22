@@ -65,7 +65,7 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     expect(within(panel).getByRole("button", { name: /Escalated/i })).toHaveTextContent("Escalated");
   });
 
-  it("keeps the ReplyBoardList Chase button unavailable until a follow-up action exists", () => {
+  it("shows no ReplyBoardList Chase button until a follow-up action exists", () => {
     const units = allUnits().slice(0, 3);
     const alert: BroadcastAlert = {
       id: "BC-TEST-1",
@@ -87,9 +87,8 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
     };
 
     render(<ReplyBoardList alert={alert} units={units} now={NOW_ANCHOR} />);
-    const chaseBtn = screen.getByRole("button", { name: /Chase/i });
-    expect(chaseBtn).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(chaseBtn);
-    expect(screen.queryByText(/Chased unanswered desks/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Replies" })).toHaveTextContent("1 of 3 answered");
+    // D-72: the unwired Chase control was deleted rather than left as a dead button.
+    expect(screen.queryByRole("button", { name: /Chase/i })).not.toBeInTheDocument();
   });
 });

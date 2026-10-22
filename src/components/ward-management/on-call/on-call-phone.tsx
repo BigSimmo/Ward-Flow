@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, Copy, Mail, PhoneCall, Search, Star } from "lucide-react";
+import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
 import { Button, Icon, Sheet, StatusGlyph, cx } from "@/components/wf";
 import {
   SERVICE_META,
@@ -17,7 +17,6 @@ import {
 import { ContactCard, ServiceTag, isWardRow, placeOf, type ContactActions } from "./on-call-parts";
 
 import styles from "./on-call.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 /**
  * Phone: its own layout, designed at 390 by 844 (owner, 9 October 2026: phone is never a trimmed
@@ -61,24 +60,9 @@ function Until({ entry, minute }: { entry: DirectoryEntry; minute: number }) {
 
 function CallButton({ entry, actions, onHero }: { entry: DirectoryEntry; actions: ContactActions; onHero?: boolean }) {
   const number = numberAt(entry, actions.minute);
-  const off = availability(entry, actions.minute).kind === "off";
-  // Calling only copies the number, so outside a local development build there is no Call button
-  // (overall review, 20 Oct 2026). The row still shows the number, and its sheet copies it.
-  if (number && !showsUnwiredPreviews()) return <span />;
-  if (number)
-    return (
-      <button
-        type="button"
-        className={cx(styles.phoneCall, off && styles.phoneCallOff, onHero && styles.phoneCallHero)}
-        aria-label={`Call ${entry.name}${entry.siteCode ? `, ${entry.siteCode}` : ""}, ${number}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          actions.onCall(entry);
-        }}
-      >
-        <Icon icon={PhoneCall} size={20} />
-      </button>
-    );
+  // Calling only copies the number, so there is no Call button (overall review, 20 Oct 2026). The
+  // row still shows the number, and its sheet copies it.
+  if (number) return <span />;
   if (entry.email)
     return (
       <button
@@ -139,11 +123,6 @@ export function PhoneFocal({
           <span>{then}</span>
         </span>
         <div className={styles.focalActions}>
-          {showsUnwiredPreviews() ? (
-            <Button variant="light" icon={PhoneCall} className={styles.focalCall} onClick={() => actions.onCall(entry)}>
-              Call
-            </Button>
-          ) : null}
           {number ? (
             <Button
               variant="onHero"
@@ -372,19 +351,6 @@ export function PhoneSheet({
       mobilePlacement="bottom"
       mobileSize="viewport"
       testId="ward-on-call-sheet"
-      footer={
-        number && showsUnwiredPreviews() ? (
-          <Button
-            variant="pri"
-            size="lg"
-            icon={PhoneCall}
-            className={styles.sheetCall}
-            onClick={() => actions.onCall(entry)}
-          >
-            Call <span className={styles.mono}>{number}</span>
-          </Button>
-        ) : undefined
-      }
     >
       <div className={styles.sheetBody}>
         <div className={styles.actionTiles}>

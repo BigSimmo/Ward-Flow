@@ -294,7 +294,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
   {
     id: "board",
     href: "/ward-flow/board/rph-adult-secure",
-    label: "Example bed board",
+    label: "Example stays and discharges",
     group: "role",
     exampleOnly: true,
   },

@@ -190,6 +190,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CANCEL_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission cancelled" },
   CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
   RECORD_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS notification recorded" },
+  SEND_RELEASE_SUPPORT_NOTICE: { category: "bed", plainWording: "Discharge support notice sent" },
+  RECORD_ARRIVAL_CHECK: { category: "patient", plainWording: "Arrival checklist item recorded" },
   // v10 pass 2 (10 Oct 2026): Undo and the ward Bed board.
   UNDO_REFERRAL_DECISION: { category: "patient", plainWording: "Referral decision undone" },
   UNDO_AUDIT_REVIEW: { category: "neither", plainWording: "Governance audit review undone" },

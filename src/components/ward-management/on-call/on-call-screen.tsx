@@ -245,11 +245,6 @@ export function OnCallScreen() {
     onPick: pick,
     onToggleFavourite: toggleFavourite,
     onCopy: (text, label) => void copy(text, label),
-    onCall: (entry) => {
-      const number = numberAt(entry, minute);
-      if (!number) return;
-      void copy(number, `Number copied. Calling is not wired in this prototype.`);
-    },
   };
 
   const answering = entries.filter((entry) => isAnswering(entry, minute));

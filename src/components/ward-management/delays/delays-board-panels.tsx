@@ -34,7 +34,6 @@ import {
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import styles from "./delays-board.module.css";
 import { ago, originLabel } from "./delays-board-rows";
 
@@ -386,8 +385,7 @@ function NoStatewideDelays() {
       <Glyph tone="success" />
       <span>
         <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
-        transport outages are not represented as patient movements yet
-        {showsUnwiredPreviews() ? ", and recording one is not wired in this prototype." : "."}
+        transport outages are not represented as patient movements yet.
       </span>
     </p>
   );
