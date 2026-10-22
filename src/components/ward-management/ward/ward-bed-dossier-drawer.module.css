@@ -324,6 +324,26 @@
   padding-inline: 0;
 }
 
+/* The observation level editor: each control carries its own visible label. */
+.field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+}
+
 .done {
   display: flex;
   align-items: center;

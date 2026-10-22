@@ -75,7 +75,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 140,
+    width: 172,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -92,12 +92,14 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 84,
+    width: 140,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <b className={styles.mono}>{durMinutes(ctx.now - row.openedAt)}</b>
-        <span className={`${styles.sub} ${styles.mono}`}>{formatInstantWithDay(row.openedAt, ctx.now)}</span>
+        <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
+          {formatInstantWithDay(row.openedAt, ctx.now)}
+        </span>
       </span>
     ),
     paper: (row, ctx) => durMinutes(ctx.now - row.openedAt),

@@ -175,11 +175,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Incoming arrivals
-          </span>
           <h2 className={styles.subViewTitle}>All arrivals</h2>
           <button
             type="button"
@@ -230,11 +228,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Discharges &amp; leave
-          </span>
           <h2 className={styles.subViewTitle}>All discharges</h2>
           <button
             type="button"
@@ -276,11 +272,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Bed matrix
-          </span>
           <h2 className={styles.subViewTitle}>Full bed list</h2>
           <button
             type="button"

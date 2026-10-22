@@ -846,7 +846,7 @@ export function HandoverPage() {
           onCopySince={copySince}
           chips={HANDOVER_CHIPS.map((chip) => ({
             id: chip.id,
-            label: chip.id === "spec" ? "1:1 obs" : chip.label,
+            label: chip.label,
             count: rows.filter((row) => chip.test(row, now)).length,
             pressed: chips.has(chip.id),
             onToggle: () => toggleChip(chip.id),
