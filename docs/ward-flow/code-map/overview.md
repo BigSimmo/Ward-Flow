@@ -259,7 +259,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |
 | `/on-call`                                                                               | `OnCallScreen` (on-call) — separate from PsychSift's on-call              |
 | `/out-of-area`                                                                           | `OutOfAreaBoard` (out-of-area)                                            |
-| `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                            |
+| `/people/[patientId]`                                                                    | `PatientNowScreen` (patients)                                             |
 | `/people/new`                                                                            | `AddPatientForm` (patients)                                               |
 | `/referrals`                                                                             | `ReferralBoard` (referrals)                                               |
 | `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                          |

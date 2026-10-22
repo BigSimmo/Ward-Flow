@@ -130,6 +130,20 @@ export function EventTable({
   );
 }
 
+/**
+ * UX audit (21 Oct 2026): a refused or stale request leads with one plain sentence, so a reviewer
+ * does not have to work out from Before, Requested and After that nothing changed.
+ */
+function notAppliedLine(event: AuditEvent): string | null {
+  if (event.outcome === "stale")
+    return "Not applied. The record had changed before this request saved, so nothing was changed.";
+  if (event.outcome === "denied")
+    return event.reasonCode === "none"
+      ? "Not applied. The request was refused, so nothing was changed."
+      : `Not applied. Refused (${reasonLabels[event.reasonCode].toLowerCase()}), so nothing was changed.`;
+  return null;
+}
+
 /** The By column is narrow: "Bed coordinator" reads as "Coordinator" so it never truncates. */
 function shortRoleLabel(label: string): string {
   return label === "Bed coordinator" ? "Coordinator" : label;
@@ -226,6 +240,11 @@ export function EventDetail({
       <div className={thirdEdition.detailBody} role="region" aria-label="Event facts" tabIndex={0}>
         {selected ? (
           <>
+            {notAppliedLine(selected) ? (
+              <p className={thirdEdition.notice} data-testid="ward-governance-not-applied">
+                <strong>{notAppliedLine(selected)}</strong>
+              </p>
+            ) : null}
             <FactList
               facts={[
                 ["Record", subjectLabel(selected, patientOf)],

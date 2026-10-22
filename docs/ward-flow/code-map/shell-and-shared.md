@@ -176,57 +176,57 @@ to read" (owner ruling, 10 September 2026).
 
 Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (50 `page.tsx` routes under `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 routes** total). Shared design-system primitives in `src/components/wf/**` (`v10-parts.tsx`, labeled `"v10 sections 8 to 14"`, alongside `bar.tsx`, `rail.tsx`, `drawer.tsx`, `modal.tsx`, `toast.tsx`, `pill.tsx`, `kbd.tsx`, `avatar.tsx`, `stat.tsx`, `table.tsx`, `filter-chip.tsx`, `segmented.tsx`, `banner.tsx`, `sparkline.tsx`) implement Sections 8–14 of `design/v9/design-system-v9.md`. "Screen" is the component the page renders; its file is named once in §1.4 rather than repeated per row.
 
-| URL under `/ward-flow`            | Screen                                                                                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `/`                               | `CoordinatorScreen`                                                                             |
-| `/alerts`                         | `AlertsScreen`                                                                                  |
-| `/board/[unitId]`                 | `WardBoard`                                                                                     |
-| `/capacity`                       | `CapacityScreen`                                                                                |
-| `/command`                        | redirect → `/` (`/ward-flow`)                                                                   |
-| `/community`                      | `CommunityIndex`                                                                                |
-| `/community/[teamId]`             | `CommunityScreen`                                                                               |
-| `/constellation`                  | redirect → `/` (`/ward-flow`)                                                                   |
-| `/delays`                         | `DelaysScreen`                                                                                  |
-| `/discharges`                     | `DischargeBoard`                                                                                |
-| `/ed`                             | `EdIndex`                                                                                       |
-| `/ed/[edId]`                      | `EdScreen`                                                                                      |
-| `/escalation`                     | redirect → `/waiting`                                                                           |
-| `/exceptions`                     | redirect → `/waiting`                                                                           |
-| `/governance`                     | `WardModeWorkspace` mode `"governance"` → `GovernanceWorkbench`                                 |
-| `/bed-meeting`                    | `BedMeetingTvScreen` (flag `bed-meeting-tv`)                                                    |
-| `/handover`                       | `HandoverPage`                                                                                  |
-| `/hub`                            | `HubScreen`                                                                                     |
-| `/legal-forms`                    | `LegalFormsScreen`                                                                              |
-| `/movements`                      | `MovementsScreen`                                                                               |
-| `/movements/[movementId]`         | `PatientNowScreen` (or `WardMovementNotFound`)                                                  |
-| `/on-call`                        | `OnCallScreen`                                                                                  |
-| `/out-of-area`                    | `OutOfAreaBoard`                                                                                |
-| `/people/[patientId]`             | `PatientNowScreen`, or `PersonScreen` with `?view=governed`/`legacy`, or `WardMovementNotFound` |
-| `/people/new`                     | `AddPatientForm`                                                                                |
-| `/queue`                          | redirect → `/waiting`                                                                           |
-| `/referrals`                      | `ReferralBoard`                                                                                 |
-| `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`)                         |
-| `/reports/chronology`             | `PatientChronologyScreen`                                                                       |
-| `/reports/downtime`               | `DowntimePackScreen`                                                                            |
-| `/search`                         | `PatientSearchPage`                                                                             |
-| `/settings`                       | `SettingsScreen`                                                                                |
-| `/statistics`                     | `StatisticsScreen`                                                                              |
-| `/statistics/community/[teamId]`  | `StatisticsCommunityScreen`                                                                     |
-| `/statistics/compare`             | `StatisticsCompareScreen`                                                                       |
-| `/statistics/ed/[edId]`           | `StatisticsEdScreen`                                                                            |
-| `/statistics/eds`                 | `StatisticsEdsIndex`                                                                            |
-| `/statistics/overview`            | `StatisticsOverviewScreen`                                                                      |
-| `/statistics/service/[serviceId]` | `StatisticsServiceScreen`                                                                       |
-| `/statistics/services`            | `StatisticsServicesIndex`                                                                       |
-| `/statistics/teams`               | `StatisticsTeamsIndex`                                                                          |
-| `/statistics/ward/[unitId]`       | `StatisticsWardScreen`                                                                          |
-| `/statistics/wards`               | `StatisticsWardsIndex`                                                                          |
-| `/statistics/weekly`              | `WeeklyReportScreen`                                                                            |
-| `/transport`                      | redirect → `/movements`                                                                         |
-| `/transport/officer`              | `OfficerScreen`                                                                                 |
-| `/ward/[unitId]`                  | `WardScreen`                                                                                    |
-| `/ward/[unitId]/answer`           | `WardScreen` (`presentation="answer"`)                                                          |
-| `/wards`                          | `WardIndex`                                                                                     |
+| URL under `/ward-flow`            | Screen                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `/`                               | `CoordinatorScreen`                                                     |
+| `/alerts`                         | `AlertsScreen`                                                          |
+| `/board/[unitId]`                 | `WardBoard`                                                             |
+| `/capacity`                       | `CapacityScreen`                                                        |
+| `/command`                        | redirect → `/` (`/ward-flow`)                                           |
+| `/community`                      | `CommunityIndex`                                                        |
+| `/community/[teamId]`             | `CommunityScreen`                                                       |
+| `/constellation`                  | redirect → `/` (`/ward-flow`)                                           |
+| `/delays`                         | `DelaysScreen`                                                          |
+| `/discharges`                     | `DischargeBoard`                                                        |
+| `/ed`                             | `EdIndex`                                                               |
+| `/ed/[edId]`                      | `EdScreen`                                                              |
+| `/escalation`                     | redirect → `/waiting`                                                   |
+| `/exceptions`                     | redirect → `/waiting`                                                   |
+| `/governance`                     | `WardModeWorkspace` mode `"governance"` → `GovernanceWorkbench`         |
+| `/bed-meeting`                    | `BedMeetingTvScreen` (flag `bed-meeting-tv`)                            |
+| `/handover`                       | `HandoverPage`                                                          |
+| `/hub`                            | `HubScreen`                                                             |
+| `/legal-forms`                    | `LegalFormsScreen`                                                      |
+| `/movements`                      | `MovementsScreen`                                                       |
+| `/movements/[movementId]`         | `PatientNowScreen` (or `WardMovementNotFound`)                          |
+| `/on-call`                        | `OnCallScreen`                                                          |
+| `/out-of-area`                    | `OutOfAreaBoard`                                                        |
+| `/people/[patientId]`             | `PatientNowScreen`, or `WardMovementNotFound`                           |
+| `/people/new`                     | `AddPatientForm`                                                        |
+| `/queue`                          | redirect → `/waiting`                                                   |
+| `/referrals`                      | `ReferralBoard`                                                         |
+| `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`) |
+| `/reports/chronology`             | `PatientChronologyScreen`                                               |
+| `/reports/downtime`               | `DowntimePackScreen`                                                    |
+| `/search`                         | `PatientSearchPage`                                                     |
+| `/settings`                       | `SettingsScreen`                                                        |
+| `/statistics`                     | `StatisticsScreen`                                                      |
+| `/statistics/community/[teamId]`  | `StatisticsCommunityScreen`                                             |
+| `/statistics/compare`             | `StatisticsCompareScreen`                                               |
+| `/statistics/ed/[edId]`           | `StatisticsEdScreen`                                                    |
+| `/statistics/eds`                 | `StatisticsEdsIndex`                                                    |
+| `/statistics/overview`            | `StatisticsOverviewScreen`                                              |
+| `/statistics/service/[serviceId]` | `StatisticsServiceScreen`                                               |
+| `/statistics/services`            | `StatisticsServicesIndex`                                               |
+| `/statistics/teams`               | `StatisticsTeamsIndex`                                                  |
+| `/statistics/ward/[unitId]`       | `StatisticsWardScreen`                                                  |
+| `/statistics/wards`               | `StatisticsWardsIndex`                                                  |
+| `/statistics/weekly`              | `WeeklyReportScreen`                                                    |
+| `/transport`                      | redirect → `/movements`                                                 |
+| `/transport/officer`              | `OfficerScreen`                                                         |
+| `/ward/[unitId]`                  | `WardScreen`                                                            |
+| `/ward/[unitId]/answer`           | `WardScreen` (`presentation="answer"`)                                  |
+| `/wards`                          | `WardIndex`                                                             |
 
 `/ward-flow-sign-in`: `WardFlowSignInScreen`. `/mockups/ward-flow-digest`: not a page — a
 route handler (`GET`) that streams `design/third-edition-mockups/ward-flow-digest.html` back verbatim.
@@ -311,7 +311,7 @@ mode="governance"`.
 - **`src/app/ward-flow/out-of-area/page.tsx`** (13) — `/out-of-area` → `OutOfAreaBoard`.
 - **`src/app/ward-flow/people/new/page.tsx`** (12) — `/people/new` → `AddPatientForm` (`@/components/ward-management/patients/add-patient`).
 - **`src/app/ward-flow/people/[patientId]/page.tsx`** (62) — `/people/[patientId]`.
-  `?view=governed` or `?view=legacy` → `PersonScreen`; otherwise → `PatientNowScreen` (a `PT-`
+  → `PatientNowScreen` (the governed `?view=` dossier was retired 21 Oct 2026; a `PT-`
   prefix is passed as `patientId`, a `WF-` prefix as `movementId`); an id starting with neither →
   `WardMovementNotFound`. Doc comment: deliberately `/people/`, not `/patients/`, because the old
   `/patients/[patientId]` route actually looked a _Movement_ up by id.
@@ -691,7 +691,7 @@ One line each: which component(s) compose/import it, and whether anything does.
   `ward-tasks-drawer.module.css`) — a shared `prefers-reduced-motion` kill-switch, not a
   standalone stylesheet.
 - **`ward-role-switcher.module.css`** (303) — `ward-role-switcher.tsx` only.
-- **`ward-shared.module.css`** (87) — `patients/person-screen.tsx` only within this map's grep,
+- **`ward-shared.module.css`** (87) — no TSX importer since `patients/person-screen.tsx` was retired (21 Oct 2026) within this map's grep,
   despite its own header comment describing seven classes "every Ward Flow screen independently
   invented" — worth re-checking with a wider search if this file's adoption matters to a future
   task.

@@ -27,8 +27,8 @@ export type WalkRoundBed = {
   name: string;
   note: string;
   /**
-   * C3 (phone simplification, 19 Oct 2026): one word for the bed's state ("Free", "Due out",
-   * "Held"), from the bed's own state, so a colour never carries the meaning alone. Shown on each
+   * C3 (phone simplification, 19 Oct 2026): one word for the bed's state ("Ready", "Due out",
+   * "Pulled"), from the bed's own state, so a colour never carries the meaning alone. Shown on each
    * row of the round.
    */
   stateWord: string;
@@ -48,7 +48,7 @@ export function bedStripWord(
   bed: Pick<BedItem, "status" | "statusText" | "blockReason" | "pastDate" | "dischargeBarrier">,
   flags: { free: boolean; preparing: boolean; awayAtEd: boolean; leaving: boolean },
 ): string {
-  if (flags.free) return "Free";
+  if (flags.free) return "Ready";
   if (flags.preparing) return "Preparing";
   if (bed.status === "closed") return BED_STATE_LABELS.closed;
   if (bed.status === "leave" && bed.statusText === "Absent without leave") return "Absent";
@@ -56,7 +56,7 @@ export function bedStripWord(
   if (flags.awayAtEd) return "At ED";
   if (bed.pastDate) return "Past date";
   if (bed.dischargeBarrier) return "Barrier";
-  if (bed.status === "incoming") return "Held";
+  if (bed.status === "incoming") return "Pulled";
   if (flags.leaving) return "Due out";
   if (bed.status === "leave") return "Leave";
   return BED_STATE_LABELS.occupied;

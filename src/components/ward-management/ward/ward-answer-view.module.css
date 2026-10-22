@@ -591,6 +591,15 @@
   border: 1px solid var(--danger);
 }
 
+/* Visual desk, 22 Oct 2026: the gate notices are sentences, so they wrap inside the card instead of
+   running past its right edge at 1280. */
+.noticeBadge {
+  white-space: normal;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
 .badge[data-tone="accent"] {
   background: var(--accent-soft);
   color: var(--accent-ink);
