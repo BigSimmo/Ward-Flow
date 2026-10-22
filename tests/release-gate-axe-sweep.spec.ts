@@ -50,7 +50,6 @@ const ROUTES = [
   ["/statistics/compare", "ward-statistics-compare-screen"],
   ["/statistics/ed/rph-ed", "ward-statistics-ed-screen"],
   ["/statistics/eds", "ward-statistics-eds-index"],
-  ["/statistics/overview", "ward-statistics-overview-screen"],
   ["/statistics/service/North%20Metro", "ward-statistics-service-screen"],
   ["/statistics/services", "ward-statistics-services-index"],
   ["/statistics/teams", "ward-statistics-teams-index"],

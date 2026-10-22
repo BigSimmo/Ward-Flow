@@ -12,7 +12,6 @@ import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_EDS_HREF,
   STATISTICS_HOME_HREF,
-  STATISTICS_OVERVIEW_HREF,
   STATISTICS_SERVICES_HREF,
   STATISTICS_TEAMS_HREF,
   STATISTICS_WARDS_HREF,
@@ -64,7 +63,6 @@ function scrollActiveIntoView(node: HTMLAnchorElement | null) {
 
 /** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
 function sectionOf(pathname: string): StatisticsNavSection {
-  if (pathname.includes("/statistics/overview")) return "overview";
   if (pathname.includes("/statistics/compare")) return "compare";
   if (pathname.includes("/statistics/service")) return "service";
   if (pathname.includes("/statistics/ward")) return "ward";
@@ -109,7 +107,7 @@ export function StatisticsSamplesSwitch() {
 }
 
 /**
- * The statistics section track. It sits on each page's hero band: Summary, Overview and Compare,
+ * The statistics section track. It sits on each page's hero band: Network and Compare,
  * then the four unit kinds with their counts. On a phone it becomes one native select.
  */
 export function StatisticsNav({
@@ -127,8 +125,9 @@ export function StatisticsNav({
   // The four unit kinds open their index pages (Statistics A, 9 Oct 2026): every service, ward, ED
   // and team on one page, each the way into its own page. The tab stays current on a detail page.
   const items = [
-    { id: "hub", label: "Summary", href: STATISTICS_HOME_HREF },
-    { id: "overview", label: "Overview", href: STATISTICS_OVERVIEW_HREF },
+    // D-77 (change 9, 21 Oct 2026): Summary and Overview are one Network page. The old Overview
+    // address redirects here, and Overview's figures that Summary lacked sit on this page.
+    { id: "hub", label: "Network", href: STATISTICS_HOME_HREF },
     { id: "compare", label: "Compare", href: STATISTICS_COMPARE_HREF },
     { id: "service", label: "Services", count: HEALTH_SERVICES.length, href: STATISTICS_SERVICES_HREF },
     { id: "ward", label: "Wards", count: wardCount, href: STATISTICS_WARDS_HREF },

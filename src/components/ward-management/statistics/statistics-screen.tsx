@@ -78,6 +78,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
+import { NetworkOverviewCards } from "./statistics-network-cards";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
@@ -460,6 +461,29 @@ export function StatisticsScreen({
           longest: ed.longest,
         }))}
         referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
+        moreFigures={{
+          blocked: {
+            total: blocked.totalCount,
+            admissions: blocked.admissionCount,
+            tallies: blocked.tallies.map((tally) => ({ id: tally.reason, label: tally.reason, count: tally.count })),
+          },
+          declines: declinesReadout.ok
+            ? {
+                total: declinesReadout.value.totalCount,
+                tallies: declinesReadout.value.tallies.map((tally) => ({
+                  id: tally.reason,
+                  label: sentenceCase(tally.reason),
+                  count: tally.count,
+                })),
+              }
+            : { statement: declinesReadout.statement },
+          arrivals: {
+            measured: arrivals.measuredCount,
+            average: arrivals.averageMinutes,
+            shortest: arrivals.shortestMinutes,
+            longest: arrivals.longestMinutes,
+          },
+        }}
         wardCount={units.length}
         paused={live.paused}
         onTogglePause={live.togglePause}
@@ -653,6 +677,14 @@ export function StatisticsScreen({
                 </StatCard>
               </Follow>
             </FlushRow>
+
+            {/* D-77 (change 9): Overview's figures that this page lacked, once each, above the pressure. */}
+            <NetworkOverviewCards
+              units={units}
+              admissions={sourceAdmissions}
+              bedReleases={sourceBedReleases}
+              leaveBeds={leaveBeds}
+            />
 
             <div className={styles.grid2}>
               <StatCard
