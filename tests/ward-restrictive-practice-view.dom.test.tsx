@@ -61,6 +61,14 @@ describe("seclusion, restraint and incidents view", () => {
     expect(within(screen.getByTestId("seclusion-in-use")).getByText(/^Seclusion ·/)).toBeInTheDocument();
     expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(`In use since ${clock(20)}`);
 
+    // Desk check (22 Oct): marking the room out of service while it is in use shows at once, and the
+    // same button then reads as done.
+    fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
+    expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(
+      new RegExp(`^In use since ${clock(20)}\\. Last marked Out of service · recorded by`),
+    );
+    expect(screen.getByTestId("seclusion-room-out-of-service")).toHaveAttribute("aria-disabled", "true");
+
     const episode = screen.getByTestId("seclusion-episode");
     fireEvent.click(within(episode).getByTestId("seclusion-episode-end-open"));
     fireEvent.change(within(episode).getByTestId("seclusion-episode-end-time"), { target: { value: clock(5) } });

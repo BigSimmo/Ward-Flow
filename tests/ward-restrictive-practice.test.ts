@@ -152,7 +152,10 @@ describe("ward incidents and the seclusion room", () => {
     const record = () => out.units.find((unit) => unit.id === unitId)!.restrictivePractice;
     expect(seclusionRoomView(record())).toMatchObject({ kind: "recorded", status: "out_of_service" });
     const inUse = apply(apply(out, { ...room, status: "available" }), start(unitId, stay.id));
-    expect(seclusionRoomView(inUse.units.find((unit) => unit.id === unitId)!.restrictivePractice).kind).toBe("in_use");
+    expect(seclusionRoomView(inUse.units.find((unit) => unit.id === unitId)!.restrictivePractice)).toMatchObject({
+      kind: "in_use",
+      recorded: { status: "available" },
+    });
   });
 });
 

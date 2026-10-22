@@ -48,17 +48,26 @@ export function pastInstantFromClockText(text: string, now: Instant): Instant | 
   return today > now ? today - MINUTES_PER_DAY : today;
 }
 
-/** In use now, from an open seclusion; otherwise the status a person last recorded, if any. */
+type SeclusionRoomRecorded = { status: SeclusionRoomStatus; at: Instant; by: string };
+
+/**
+ * In use now, from an open seclusion; otherwise the status a person last recorded, if any. While in
+ * use it still carries the last recorded status, so marking the room out of service shows at once.
+ */
 type SeclusionRoomView =
-  | { kind: "in_use"; since: Instant }
-  | { kind: "recorded"; status: SeclusionRoomStatus; at: Instant; by: string }
+  | { kind: "in_use"; since: Instant; recorded?: SeclusionRoomRecorded }
+  | ({ kind: "recorded" } & SeclusionRoomRecorded)
   | { kind: "not_recorded" };
 
 export function seclusionRoomView(record: WardRestrictivePractice | undefined): SeclusionRoomView {
   const secluded = openEpisodes(record).filter((episode) => episode.practice === "seclusion");
-  if (secluded.length > 0) return { kind: "in_use", since: Math.min(...secluded.map((episode) => episode.startedAt)) };
   const room = record?.seclusionRoom;
-  return room ? { kind: "recorded", status: room.status, at: room.at, by: room.by } : { kind: "not_recorded" };
+  const recorded = room ? { status: room.status, at: room.at, by: room.by } : undefined;
+  if (secluded.length > 0) {
+    const since = Math.min(...secluded.map((episode) => episode.startedAt));
+    return recorded ? { kind: "in_use", since, recorded } : { kind: "in_use", since };
+  }
+  return recorded ? { kind: "recorded", ...recorded } : { kind: "not_recorded" };
 }
 
 /** Incidents shown on the view: those in the last day. Older ones stay on the record. */

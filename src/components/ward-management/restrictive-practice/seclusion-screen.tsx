@@ -137,7 +137,11 @@ function WardCard({
   const open = openEpisodes(ward.restrictivePractice);
   const incidents = recentIncidents(ward.restrictivePractice, now);
   const acting = { unitId: ward.id, ...(role === "ward" ? { actingUnitId: ward.id } : {}) };
-  const roomStatus = room.kind === "recorded" ? room.status : undefined;
+  const recorded = room.kind === "recorded" ? room : room.kind === "in_use" ? room.recorded : undefined;
+  const roomStatus = recorded?.status;
+  const recordedLine = recorded
+    ? `${recorded.status === "available" ? "Available" : "Out of service"} · recorded by ${recorded.by} ${formatInstantWithDay(recorded.at, now)}`
+    : undefined;
 
   return (
     <Card data-testid="seclusion-ward-card">
@@ -149,10 +153,8 @@ function WardCard({
           </h3>
           <p className={styles.line} data-testid="seclusion-room-status">
             {room.kind === "in_use"
-              ? `In use since ${formatInstantWithDay(room.since, now)}`
-              : room.kind === "recorded"
-                ? `${room.status === "available" ? "Available" : "Out of service"} · recorded by ${room.by} ${formatInstantWithDay(room.at, now)}`
-                : "Not recorded yet"}
+              ? `In use since ${formatInstantWithDay(room.since, now)}${recordedLine ? `. Last marked ${recordedLine}` : ""}`
+              : (recordedLine ?? "Not recorded yet")}
           </p>
           <div className={styles.controls}>
             <Button
