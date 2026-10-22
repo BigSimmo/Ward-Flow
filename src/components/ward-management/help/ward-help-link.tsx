@@ -2,16 +2,14 @@
 
 import { CircleHelp } from "lucide-react";
 
-import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
-
 import { openWardHelp } from "./ward-help-events";
-import { useTourSeen } from "./ward-help-store";
+import { useTourRole, useTourSeen } from "./ward-help-store";
 import styles from "./ward-help.module.css";
 
 /**
  * The rail's Help button. Until this desk's tour has been seen or dismissed on this device it says
- * "New" and opens the tour; after that it opens help for the current screen. The marker never
- * blocks the page: there is no automatic pop-up, so nothing covers a screen someone is working in.
+ * "New" and opens the tour; after that it opens help for the current screen. The tour itself starts
+ * on its own only once, on a signed-in desk's home screen (`ward-tour-auto-start.tsx`).
  */
 export function WardHelpLink({
   classes,
@@ -22,7 +20,7 @@ export function WardHelpLink({
   /** The closed strip shows the icon only, so it needs the hover title. */
   showTitle: boolean;
 }) {
-  const role = useShellPersonaRole();
+  const role = useTourRole();
   const seen = useTourSeen(role);
   return (
     <button
@@ -50,7 +48,7 @@ export function WardHelpLink({
 
 /** The same, as a row in the phone menu. `row` draws it like the menu's other rows. */
 export function useWardHelpRow(): { label: string; isNew: boolean; open: () => void } {
-  const role = useShellPersonaRole();
+  const role = useTourRole();
   const seen = useTourSeen(role);
   return {
     label: seen ? "Help" : "Help, new: take the tour",
