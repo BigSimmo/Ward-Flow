@@ -22,22 +22,21 @@ import {
   type Tile,
 } from "./ward-board-model";
 
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 export function WardBoardGridColumn({
   bedFilter,
   bedOrder,
+  chooseFilter,
   closeDetail,
   filterCounts,
   filteredTiles,
-  focusBackTo,
   cardNameByKey,
+  isPhone,
   occupantByKey,
   occupants,
   orderedTiles,
   selectedKey,
-  selectedTile,
-  setBedFilter,
   setBedOrder,
   setSelectedKey,
   tileIndexMap,
@@ -47,18 +46,19 @@ export function WardBoardGridColumn({
 }: {
   bedFilter: BoardFilter;
   bedOrder: BoardOrder;
+  /** Sets the filter, and closes a chosen bed the new filter would hide. */
+  chooseFilter: (filter: BoardFilter) => void;
   closeDetail: () => void;
   filterCounts: Record<BoardFilter, number>;
   filteredTiles: Tile[];
-  focusBackTo: RefObject<string | null>;
   /** Lead line per occupied tile: the surname, so a bed is found without opening every card. */
   cardNameByKey: Map<string, string>;
+  /** Phone: the filters and order fold into one row of two controls (D-77 change 10, option B). */
+  isPhone: boolean;
   occupantByKey: Map<string, Occupant>;
   occupants: Occupant[];
   orderedTiles: Tile[];
   selectedKey: string | null;
-  selectedTile: Tile | null;
-  setBedFilter: Dispatch<SetStateAction<BoardFilter>>;
   setBedOrder: Dispatch<SetStateAction<BoardOrder>>;
   setSelectedKey: Dispatch<SetStateAction<string | null>>;
   tileIndexMap: Map<Tile, number>;
@@ -66,6 +66,22 @@ export function WardBoardGridColumn({
   tiles: Tile[];
   unit: Unit;
 }) {
+  const countText = (filter: BoardFilter) => (filterCounts[filter] === 0 ? "none" : filterCounts[filter]);
+  const orderSelect = (
+    <select
+      id="ward-board-order-select"
+      name="wardBoardOrder"
+      value={bedOrder}
+      onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
+      aria-label="Order the beds"
+    >
+      {BOARD_ORDERS.map((order) => (
+        <option key={order} value={order}>
+          {BOARD_ORDER_LABELS[order]}
+        </option>
+      ))}
+    </select>
+  );
   return (
     <div className={styles.gridColumn}>
       {/* ✅ **THE GRID HAD NO HEADING AT ALL** — measured across the whole component, not inferred.
@@ -77,44 +93,61 @@ export function WardBoardGridColumn({
           Showing {filteredTiles.length} of {tiles.length} beds
         </span>
       </header>
-      <div className={styles.boardBar}>
-        <div className={styles.filterSet} role="group" aria-label="Narrow stays and discharges">
-          {BOARD_FILTERS.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              aria-pressed={bedFilter === filter}
-              onClick={() => {
-                setBedFilter(filter);
-                if (selectedTile !== null && !tileMatchesFilter(selectedTile, filter)) {
-                  focusBackTo.current = null;
-                  setSelectedKey(null);
-                }
-              }}
-              data-testid={`ward-board-filter-${filter}`}
-            >
-              {BOARD_FILTER_LABELS[filter]}
-              <span className={styles.filterCount}>{filterCounts[filter] === 0 ? "none" : filterCounts[filter]}</span>
-            </button>
-          ))}
-        </div>
-        <label className={styles.orderControl} htmlFor="ward-board-order-select">
-          <span>Order</span>
+      {isPhone ? (
+        <div className={styles.phoneFilterRow}>
           <select
-            id="ward-board-order-select"
-            name="wardBoardOrder"
-            value={bedOrder}
-            onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
-            aria-label="Order the beds"
+            className={styles.phoneFilterSelect}
+            value={bedFilter}
+            onChange={(event) => chooseFilter(event.target.value as BoardFilter)}
+            aria-label="Show"
+            data-testid="ward-board-filter-select"
           >
-            {BOARD_ORDERS.map((order) => (
-              <option key={order} value={order}>
-                {BOARD_ORDER_LABELS[order]}
+            {BOARD_FILTERS.map((filter) => (
+              <option key={filter} value={filter}>
+                {`${BOARD_FILTER_LABELS[filter]} · ${countText(filter)}`}
               </option>
             ))}
           </select>
-        </label>
-      </div>
+          {/* The sort button is the order select itself, drawn as an icon; its name is unchanged. */}
+          <span className={styles.phoneSort}>
+            {orderSelect}
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
+            </svg>
+          </span>
+        </div>
+      ) : (
+        <div className={styles.boardBar}>
+          <div className={styles.filterSet} role="group" aria-label="Narrow stays and discharges">
+            {BOARD_FILTERS.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                aria-pressed={bedFilter === filter}
+                onClick={() => chooseFilter(filter)}
+                data-testid={`ward-board-filter-${filter}`}
+              >
+                {BOARD_FILTER_LABELS[filter]}
+                <span className={styles.filterCount}>{countText(filter)}</span>
+              </button>
+            ))}
+          </div>
+          <label className={styles.orderControl} htmlFor="ward-board-order-select">
+            <span>Order</span>
+            {orderSelect}
+          </label>
+        </div>
+      )}
       {/* The legend explains the shades. It is not what makes the board readable without colour —
               the day count on every tile does that — it just saves a reader working the ranges out. */}
       <ul className={styles.legend} data-testid="ward-board-legend">

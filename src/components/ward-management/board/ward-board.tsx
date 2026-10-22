@@ -971,21 +971,28 @@ export function WardBoard({
       ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at ${handoverAt}.`
       : `Nothing needs you before the handover at ${handoverAt}.`;
 
+  const chooseFilter = (filter: BoardFilter) => {
+    setBedFilter(filter);
+    if (selectedTile !== null && !tileMatchesFilter(selectedTile, filter)) {
+      focusBackTo.current = null;
+      setSelectedKey(null);
+    }
+  };
+
   const gridColumn = (
     <WardBoardGridColumn
+      isPhone={isPhone}
       bedFilter={bedFilter}
       bedOrder={bedOrder}
+      chooseFilter={chooseFilter}
       closeDetail={closeDetail}
       filterCounts={filterCounts}
       filteredTiles={filteredTiles}
-      focusBackTo={focusBackTo}
       cardNameByKey={cardNameByKey}
       occupantByKey={occupantByKey}
       occupants={occupants}
       orderedTiles={orderedTiles}
       selectedKey={selectedKey}
-      selectedTile={selectedTile}
-      setBedFilter={setBedFilter}
       setBedOrder={setBedOrder}
       setSelectedKey={setSelectedKey}
       tileIndexMap={tileIndexMap}

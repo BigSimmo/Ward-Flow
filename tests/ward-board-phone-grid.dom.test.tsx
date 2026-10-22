@@ -44,9 +44,25 @@ describe("phone bed grid", () => {
     const figures = screen.getByTestId("ward-board-triage");
     expect(beds.compareDocumentPosition(figures) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(beds).getAllByRole("button").length).toBeGreaterThan(0);
-    expect(screen.getByRole("group", { name: "Narrow stays and discharges" })).toBeInTheDocument();
+    // One row: a Show drop-down and the order select as a sort button, not the chip group.
+    expect(screen.queryByRole("group", { name: "Narrow stays and discharges" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Show" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Order the beds" })).toBeInTheDocument();
     // No side panel on a phone until a bed is chosen.
     expect(screen.queryByTestId("ward-board-detail")).toBeNull();
+  });
+
+  it("narrows the beds from the Show drop-down, with each option carrying its count", () => {
+    stubPhone(true);
+    renderBoard();
+    const show = screen.getByRole<HTMLSelectElement>("combobox", { name: "Show" });
+    const before = within(screen.getByTestId("ward-board-beds")).getAllByRole("button").length;
+    const ready = [...show.options].find((option) => option.value === "ready")!;
+    expect(ready.textContent).toMatch(/^Ready · (\d+|none)$/);
+    fireEvent.change(show, { target: { value: "ready" } });
+    expect(show.value).toBe("ready");
+    const after = within(screen.getByTestId("ward-board-beds")).getAllByRole("button").length;
+    expect(after).toBeLessThan(before);
   });
 
   it("opens the bed's record in a sheet and closes it again", () => {
