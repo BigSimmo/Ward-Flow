@@ -71,8 +71,11 @@ export function useAskMoreWards({
   const slots = Math.max(0, cap - waiting);
 
   const askedIds = new Set(wardArms.map((addressing) => addressing.destination.unitId));
-  const unitById = new Map(units.map((unit) => [unit.id, unit]));
-  const asked = wardArms.map((addressing) => ({ addressing, unit: unitById.get(addressing.destination.unitId ?? "") }));
+  const unitsByWardId = new Map(units.map((unit) => [unit.id, unit]));
+  const asked = wardArms.map((addressing) => ({
+    addressing,
+    unit: unitsByWardId.get(addressing.destination.unitId ?? ""),
+  }));
 
   const q = query.trim().toLowerCase();
   const others =
@@ -275,9 +278,6 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
           ) : null}
           <p className={styles.hint}>
             Listed A to Z, never ranked. Each ward asked gets the same referral and bed details, with its own clock.
-          </p>
-          <p className="sr-only" role="status">
-            {ask.chosen.length} of {ask.slots} chosen
           </p>
         </div>
       ) : (
