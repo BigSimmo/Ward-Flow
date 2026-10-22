@@ -6,10 +6,8 @@ import Link from "next/link";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
-  stageCopy,
 } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -19,7 +17,6 @@ import {
   arrivalModeLabel,
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
-import { StatusGlyph } from "@/components/wf";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
 import { referralBoardHref } from "./ed-bed-search-step";
 import { EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
@@ -27,6 +24,7 @@ import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { CLINICAL_REVIEW_OPTIONS, formExpiryLine, RECORDED_ED_FORMS } from "./ed-screen-model";
+import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
 /** The facts a board row carries, each a fragment the table row, phone row and person sheet place. */
@@ -109,26 +107,9 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             )
           </span>
         )
-      ) : movement.stage === "pulled" ? (
-        // Audit A4-4: the one bed-hold rule (`ward-bed-hold.ts`), the same words as
-        // Movement detail and Handover. Lapsed: the act-now glyph; under an hour: amber dot.
-        <span className={styles.transitBadgeHold} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-          {(() => {
-            const hold = bedHold(movement.pullExpiresAt, now);
-            if (!hold) return <>⏱ Pulled · {holdLabel} pull</>;
-            return (
-              <>
-                {hold.state === "held" ? (
-                  "⏱"
-                ) : (
-                  <StatusGlyph tone={hold.state === "lapsed" ? "danger" : "warning"} size={8} />
-                )}{" "}
-                Pulled · {hold.short}
-              </>
-            );
-          })()}
-        </span>
-      ) : null}
+      ) : // Change 2 (D-77): a held bed's time left moved from here into the board's Referral column,
+      // the phone row line and the sheet's "Where the referral is" (`ed-referral-status.ts`).
+      null}
     </>
   );
   const formExpiryFacts = (
@@ -454,7 +435,19 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
       {boardTable ? null : referredFact}
     </>
   );
-  return { patientExtras, formControl, clearedControl, reviewControl, destinationContent };
+  // The row sheet's "Where the referral is" replaces the Destination field, so the A2-5 link to the
+  // sent referral moves under its steps.
+  const referralLink =
+    openWardReferral && destinationLabel === referredTo ? (
+      <Link
+        className={styles.dest}
+        href={referralBoardHref(openWardReferral.referral.id)}
+        data-testid={`ward-ed-referral-open-${movement.id}`}
+      >
+        Open on the Referrals board
+      </Link>
+    ) : null;
+  return { patientExtras, formControl, clearedControl, reviewControl, destinationContent, referralLink };
 }
 
 /** The cards under a row's actions in the person sheet: placement, checklist, journey and facts. */
@@ -493,7 +486,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
           </div>
           <div>
             <dt>Stage</dt>
-            <dd>{stageCopy[movement.stage].label}</dd>
+            <dd>{edStageLabel(movement.stage)}</dd>
           </div>
           <div>
             <dt>Legal</dt>

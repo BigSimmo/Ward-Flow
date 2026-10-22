@@ -94,6 +94,7 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -871,6 +872,8 @@ export type WardFlowEvent =
       action: BedMeetingActionKind;
       actingUnitId?: string;
     }
+  // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
+  | RestrictivePracticeWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;

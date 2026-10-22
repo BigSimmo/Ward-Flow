@@ -3166,6 +3166,52 @@ button.searchBox:hover {
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* D-77 group A: the Sent tab's answer wraps in its cell, and each place's answer sits under it. */
+.statusPillBadge.sentAnswer {
+  white-space: normal;
+  justify-content: flex-start;
+  font-family: var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Four short columns fit the card, as mocked, so this table wraps rather than scrolls. */
+.table.sentTable {
+  --ward-table-min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.sentTable td,
+.sentTable th {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.sentTable th:nth-child(1) {
+  width: 27%;
+}
+
+.sentTable th:nth-child(2) {
+  width: 20%;
+}
+
+.sentTable th:nth-child(3) {
+  width: 19%;
+}
+
+.sentFootnote,
+.sentEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.sentPlaces {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 @media (max-width: 40rem) {
   .governanceSummary {
     min-height: var(--spacing-tap, 3rem);

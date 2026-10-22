@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect, useRef } from "react";
 import { describe, expect, it } from "vitest";
 
@@ -77,13 +77,17 @@ function MatchHarness() {
   );
 }
 
+/** D-77: the decision is one list on every width, and no ward starts picked. The coordinator picks
+ *  the ward first, and a ward that needs the gender placement check then shows that one form. */
 function renderNonBinaryReferral() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <SeedNonBinaryReferral />
       <MatchHarness />
     </WardFlowProvider>,
   );
+  fireEvent.click(screen.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`));
+  return view;
 }
 
 describe("ReferralMatchView: a non-binary placement explains itself, then succeeds once answered", () => {
@@ -98,10 +102,10 @@ describe("ReferralMatchView: a non-binary placement explains itself, then succee
     ).toBeInTheDocument();
 
     // The plain "Accept at X" button must not exist at all while the placement is unanswered —
-    // never present-but-disabled, which the movement path's `ward-shortlist-refer` uses instead
-    // because that button also serves every OTHER kind of referral. This screen's ordinary accept
-    // control is per-unit and per-row, so the gender-placement form replaces it outright here.
+    // never present-but-disabled. The one button names the check instead, and the form replaces
+    // the row's own accept control outright.
     expect(screen.queryByTestId(`ward-referral-match-accept-${UNIT_ID}`)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Accept at Dabakarn" })).toBeNull();
 
     const form = screen.getByTestId(`ward-referral-match-gender-placement-form-${UNIT_ID}`);
     expect(form).toBeTruthy();
@@ -137,20 +141,19 @@ describe("ReferralMatchView: a non-binary placement explains itself, then succee
     expect(screen.getByTestId("ward-referral-match-decided").textContent).toContain("Accepted at Dabakarn");
   });
 
-  it("the tier-1 card offers no plain accept either; its button opens the same form instead", () => {
+  it("the one button offers no plain accept either; it opens the same form instead", async () => {
     renderNonBinaryReferral();
 
-    // No plain "Accept at X" for this unit anywhere on the screen: the tier-1 card used to send
-    // one straight to the reducer, which could only refuse it with GENDER_PLACEMENT_REFUSAL.
+    // No plain "Accept at X" for this unit anywhere on the screen: a plain accept could only be
+    // refused by the reducer with GENDER_PLACEMENT_REFUSAL.
     expect(screen.queryByRole("button", { name: "Accept at Dabakarn" })).toBeNull();
 
-    const check = screen.getByTestId(`ward-referral-match-tier-1-gender-placement-${UNIT_ID}`);
+    const check = screen.getByTestId("ward-referral-match-phone-accept");
     expect(check.textContent).toBe("Check placement at Dabakarn");
     fireEvent.click(check);
 
     const reason = screen.getByTestId(`ward-referral-match-gender-placement-reason-${UNIT_ID}`);
-    expect(reason).toHaveFocus();
-    expect((reason.closest("details") as HTMLDetailsElement).open).toBe(true);
+    await waitFor(() => expect(reason).toHaveFocus());
     // Nothing was dispatched: the referral is still undecided until the form is answered.
     expect(screen.queryByTestId("ward-referral-match-decided")).toBeNull();
   });

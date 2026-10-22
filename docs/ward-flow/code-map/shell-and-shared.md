@@ -323,6 +323,7 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/ward-flow/reports/chronology/page.tsx`** — `/reports/chronology` → `PatientChronologyScreen` (`@/components/ward-management/reports/patient-chronology-screen`).
 - **`src/app/ward-flow/reports/downtime/page.tsx`** — `/reports/downtime` → `DowntimePackScreen` (`@/components/ward-management/reports/downtime-pack-screen`).
 - **`src/app/ward-flow/search/page.tsx`** (12) — `/search` → `PatientSearchPage`.
+- **`src/app/ward-flow/seclusion/page.tsx`** (13) — `/seclusion` → `SeclusionScreen` (D-72, operational only).
 - **`src/app/ward-flow/settings/page.tsx`** (13) — `/settings` → `SettingsScreen`.
 - **`src/app/ward-flow/statistics/page.tsx`** (25) — `/statistics` → `StatisticsScreen` (`@/components/ward-management/statistics/statistics-screen`).
   Doc comment: the screen must never be passed `admissions`/`referrals`/`bedReleases`/`movements` —

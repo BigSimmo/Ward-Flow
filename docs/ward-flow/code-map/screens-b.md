@@ -605,6 +605,27 @@ the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.t
 - **`src/components/ward-management/patients/patient-now.module.css`** (2276 lines) — styles for
   `patient-now-screen.tsx`.
 
+## `restrictive-practice/`
+
+D-72 (21 Oct 2026), operational view only: seclusion and bodily restraint in use, the seclusion
+room's status and the last day's ward incidents. Typed times and fixed lists, no legal limit, no
+typed text. The legal register stays in the health service's own system.
+
+**Route:** `/seclusion` (coordinator all, bed manager and ward their own). **Dispatches:**
+`RECORD_RESTRICTIVE_PRACTICE_START`, `RECORD_RESTRICTIVE_PRACTICE_END`, `RECORD_WARD_INCIDENT`,
+`SET_SECLUSION_ROOM_STATUS` (reducer: `ward-flow-restrictive-practice-events.ts`, writing only
+`Unit.restrictivePractice`). **Tests:** `ward-restrictive-practice.test.ts`,
+`ward-restrictive-practice-view.dom.test.tsx`.
+
+- **`src/components/ward-management/restrictive-practice/ward-restrictive-practice.ts`** — the fixed
+  list ids, record types, the four event shapes, `openEpisodes` and `typedTimeRefusal`, which the shared engine
+  loads.
+- **`src/components/ward-management/restrictive-practice/restrictive-practice-view.ts`** — the
+  screen-only labels, `pastInstantFromClockText`, `seclusionRoomView` and
+  `recentIncidents`, kept out of the shared engine for the phone script budget.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.tsx`** — `SeclusionScreen`.
+- **`src/components/ward-management/restrictive-practice/seclusion-screen.module.css`** — styles.
+
 ## `settings/`
 
 **Route:** `/settings`. **Mockup:** `settings-third-edition.html`. **Dispatches:**

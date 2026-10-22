@@ -150,8 +150,8 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           if (boardTable) {
             const a2Rows = visiblePatients.map(renderBoardRow);
             const columns = isTabletPortrait
-              ? ["T", "Patient", "In ED", "Destination", "Next"]
-              : ["T", "Patient", "In ED", "Bay", "Form", "Cleared", "Review", "Destination", "Next"];
+              ? ["T", "Patient", "In ED", "Referral", "Next"]
+              : ["T", "Patient", "In ED", "Bay", "Form", "Cleared", "Review", "Referral", "Next"];
             return (
               <>
                 {boardMatchCount === 0 ? (

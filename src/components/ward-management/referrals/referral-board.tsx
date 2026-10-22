@@ -1044,8 +1044,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={decide(selectedReferral)}
-                      admissions={admissions}
-                      bedReleases={bedReleases}
                       phone={
                         <>
                           <span className={a.notWiredStart}>
@@ -1131,8 +1129,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
                         onDecision={decide(selectedReferral)}
-                        admissions={admissions}
-                        bedReleases={bedReleases}
                       />
                     ) : null}
                     {inspectorTab === "patient" ? (

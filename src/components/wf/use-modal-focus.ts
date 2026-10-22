@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, type RefObject } from "react";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
+  overlayOpener,
   popSheet,
   pushSheet,
   startSheetOpenFocus,
@@ -123,7 +124,7 @@ export function useModalFocus({
 
   useEffect(() => {
     if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const opener = overlayOpener();
     const openPanel = panelRef.current;
     const capture = keyPhase === "capture";
 

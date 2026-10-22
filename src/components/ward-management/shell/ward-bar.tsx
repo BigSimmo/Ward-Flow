@@ -44,6 +44,8 @@ import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-mana
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
@@ -57,9 +59,14 @@ import {
   wardTasksAreActionableForRole,
 } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
-const WardToolsSheet = dynamic(() =>
-  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
-);
+// Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
+// crashing the page (offline Tools crash, 22 Oct 2026).
+const loadToolsSheet = () =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet);
+// No `loading` option: a local Suspense boundary holds the first reveal on a timer, which a paused
+// test clock never fires (ui-ward-roles.spec.ts demo clock journey).
+const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
+preloadWhenIdle(loadToolsSheet);
 // The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
 const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
@@ -123,7 +130,6 @@ export { drawerCloseHistoryStep, isPendingNavigation };
  *
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * WHAT IS REUSED RATHER THAN REBUILT, and why each one is safe to reuse here:
- *
  * - **Search** is `WardGlobalSearch` (`../ward-global-search.tsx`) unchanged — already the
  *   codebase's one universal-search implementation (patients + open movements, the "/" and
  *   Ctrl/Cmd+K shortcuts, its own Escape/ArrowDown/Enter keyboard contract). Building a second
@@ -144,10 +150,8 @@ export { drawerCloseHistoryStep, isPendingNavigation };
  * - **"Place"** reuses `wardPlaceFor(pathname, units)` (`../ward-place.ts`), the one function a
  *   pathname resolves to a place name through — same call `WardShellHeader` (the component this
  *   bar supersedes) already makes, rendering nothing when the route names no place.
- *
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * WHAT IS DELIBERATELY LEFT AS A SEAM RATHER THAN BUILT HERE:
- *
  * - **`activity` (the Activity drawer's page tally).** Screens may supply their existing tally.
  *   Command instead projects timestamped reducer records and shared navigation counts into a
  *   synthetic event feed and tally. Authored notices are read from reducer state and filtered to
@@ -185,18 +189,14 @@ export { drawerCloseHistoryStep, isPendingNavigation };
  *   level (that component's own header comment: "a movement that has closed or arrived can never
  *   appear here"), but surfaces none of the four sentences as text: no refusal shown in its
  *   popover or the filter bar, no distinct no-results wording of its own, no fixed footer. Adding
- *   them means changing `WardGlobalSearch`
- *   itself — a shared component this
- *   bar reuses unchanged, used wherever search appears, not owned by this phase-1.1 shell task —
+ *   them means changing `WardGlobalSearch` itself — a shared component this bar reuses unchanged, used wherever search appears, not owned by this phase-1.1 shell task —
  *   and the phase-1.1 brief's own enumerated list names "search" as a component to REUSE, not one
  *   to rewrite. Building the sentences into that file without that task's own review and catcher
  *   risks exactly the kind of untested surface area the contact-tables trim above was flagged for
  *   avoiding. Flagged rather than silently left out a second time.
- *
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * THE ESCAPE ORDER (standard §7.3, §7.6). `checkDrawerOrSearchOwnsEscape` below is the guard that
  * keeps one Escape press from clearing two things:
- *
  *   1. An open drawer/popover (Activity, Tasks, Tools, the Service selector) — closes it, returns
  *      focus, announces "Closed." `<Sheet>` already does this itself for the three drawers, so
  *      this file's own document-level handler simply returns without acting whenever one of them
@@ -216,7 +216,6 @@ export { drawerCloseHistoryStep, isPendingNavigation };
  *      confirms verbatim in its own `escape()` (`design/third-edition-mockups/command-third-edition.html`,
  *      not the earlier `third-edition-kit/shell/shell-script.js` draft, which still cleared it —
  *      see that file's own SHELL-NOTES.md for the same discrepancy, resolved by the newer file).
- *
  * Page-specific Escape steps the drawing's own order also walks (a ward selection, a referral
  * subject, a department filter) belong to each host page's own domain state, which this shared
  * bar has no access to — there is deliberately no extensibility seam for them here, because

@@ -166,7 +166,7 @@ describe("Track C Referral Matching fixes", () => {
 
     // Psychiatric ward bed candidates render
     expect(screen.getByTestId("ward-referral-match-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-referral-match-decline-controls")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referral-match-decline-open")).toBeInTheDocument();
 
     // Community triage controls also render alongside bed candidates
     expect(screen.getByTestId("ward-referral-match-accept-controls-community_team")).toBeInTheDocument();
@@ -182,7 +182,7 @@ describe("Track C Referral Matching fixes", () => {
 
     // Psychiatric ward bed candidates render
     expect(screen.getByTestId("ward-referral-match-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-referral-match-decline-controls")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referral-match-decline-open")).toBeInTheDocument();
 
     // ED triage controls also render alongside bed candidates
     expect(screen.getByTestId("ward-referral-match-accept-controls-emergency_department")).toBeInTheDocument();
@@ -197,9 +197,10 @@ describe("Track C Referral Matching fixes", () => {
     );
     const edSelect = screen.getByTestId("ward-referral-match-decline-reason-emergency_department") as HTMLSelectElement;
     expect(edSelect.value).toBe("");
-    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), {
-      target: { value: "no_suitable_bed" },
-    });
+    // D-77: the ward's reasons open behind Decline; Back returns to the list with the ED controls.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-decline-no_suitable_bed"));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(
       (screen.getByTestId("ward-referral-match-decline-reason-emergency_department") as HTMLSelectElement).value,
     ).toBe("");
