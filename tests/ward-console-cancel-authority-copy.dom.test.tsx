@@ -32,14 +32,6 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * `CANCEL_TRANSPORT` will actually do, and a hand-built fixture could assert that by construction.
  */
 
-function renderWorkspace(movementId: MovementId) {
-  render(
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardPatientWorkspace movementId={movementId} />
-    </WardFlowProvider>,
-  );
-}
-
 /**
  * Test-only scaffold, same shape as `tests/ward-console-controls.dom.test.tsx`'s — needed because
  * booking transport AS A WARD has no button anywhere on this page (booking is the sending team's
@@ -81,6 +73,28 @@ function WorkspaceTestControls({ movementId }: { movementId: MovementId }) {
         }
       >
         book transport as ward
+      </button>
+      {/* Q25: a seeded job with no recorded booker sits on a bed held by stage alone, which can no
+          longer be stepped back before the pull. A coordinator booking is the reachable job that
+          names no ward or community booker, so the general sentence is tested on it instead. */}
+      <button
+        type="button"
+        data-testid="test-book-transport-as-coordinator"
+        onClick={() =>
+          dispatch({
+            type: "BOOK_TRANSPORT",
+            role: "coordinator",
+            now,
+            movementId,
+            provider: "Patient transport service",
+            escortRequired: true,
+            cadNumber: "CAD-STUB-0002",
+            transportLegalStatus: "voluntary",
+            estimatedAt: 0,
+          })
+        }
+      >
+        book transport as coordinator
       </button>
       <button
         type="button"
@@ -147,30 +161,30 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
     ).toBeInTheDocument();
   });
 
-  it("names only the coordinator and the referring ED for a job with no recorded booker", () => {
-    renderWorkspace("WF-005");
-    fireEvent.change(screen.getByTestId("ward-console-step-back-to"), { target: { value: "accepted_awaiting_bed" } });
-    fireEvent.change(screen.getByTestId("ward-console-step-back-reason"), { target: { value: "recorded_in_error" } });
-    fireEvent.click(screen.getByTestId("ward-console-step-back-stage"));
+  it("names only the coordinator and the referring ED for a job no ward or community team booked", () => {
+    renderWorkspaceWithControls("WF-003");
+    fireEvent.click(screen.getByTestId("test-pull-patient"));
+    fireEvent.click(screen.getByTestId("test-book-transport-as-coordinator"));
+    fireEvent.click(screen.getByTestId("test-step-back"));
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
     expect(
       within(panel).getByText(/cancelled by the flow coordinator or by the referring emergency department/i),
     ).toBeInTheDocument();
     // No ward is named as able to cancel — the "which booked it" clause only ever appears when
-    // `transport.bookedBy` names a ward, which this seeded job does not carry.
+    // `transport.bookedBy` names a ward, which this coordinator booking does not carry.
     expect(within(panel).queryByText(/which booked it/i)).not.toBeInTheDocument();
   });
 
   it("never says a community team can cancel", () => {
-    renderWorkspace("WF-005");
-    fireEvent.change(screen.getByTestId("ward-console-step-back-to"), { target: { value: "accepted_awaiting_bed" } });
-    fireEvent.change(screen.getByTestId("ward-console-step-back-reason"), { target: { value: "recorded_in_error" } });
-    fireEvent.click(screen.getByTestId("ward-console-step-back-stage"));
+    renderWorkspaceWithControls("WF-003");
+    fireEvent.click(screen.getByTestId("test-pull-patient"));
+    fireEvent.click(screen.getByTestId("test-book-transport-as-coordinator"));
+    fireEvent.click(screen.getByTestId("test-step-back"));
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
     const panelText = panel.textContent ?? "";
-    // This seeded job has no community booker, so no community team is named. (Owner third ruling,
+    // This job has no community booker, so no community team is named. (Owner third ruling,
     // 2026-09-17, answer 9, lets the community team that BOOKED a job cancel it; the reducer checks
     // bookedBy.placeId, and the console names that team only when the record shows it booked.)
     expect(panelText).not.toMatch(/community team (may|can) cancel/i);
