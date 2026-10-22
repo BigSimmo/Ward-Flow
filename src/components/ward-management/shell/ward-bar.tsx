@@ -63,7 +63,9 @@ import {
 // crashing the page (offline Tools crash, 22 Oct 2026).
 const loadToolsSheet = () =>
   import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet);
-const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"), { loading: () => null });
+// No `loading` option: a local Suspense boundary holds the first reveal on a timer, which a paused
+// test clock never fires (ui-ward-roles.spec.ts demo clock journey).
+const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
