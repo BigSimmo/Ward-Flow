@@ -95,6 +95,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
+import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -130,7 +131,7 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerView, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
@@ -152,7 +153,7 @@ type WardScreenProps = {
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
-    return <WardAnswerView key={unitId} unitId={unitId} />;
+    return <WardAnswerFromLink key={unitId} unitId={unitId} />;
   }
   return (
     <WardOverviewScreen
@@ -438,7 +439,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
-  const notificationCenterRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
   function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
@@ -719,16 +719,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     function handleKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented) return;
       if (e.key === "Escape") {
-        if (notificationCenterOpen) {
-          e.preventDefault();
-          e.stopPropagation();
-          setNotificationCenterOpen(false);
-          setTimeout(() => {
-            notificationTriggerRef.current?.focus({ preventScroll: true });
-          }, 0);
-          return;
-        }
-        if (e.defaultPrevented || hasOpenSheet()) return;
+        // The Notices drawer and sheet are Sheets (Notices option A), so they close themselves.
+        if (hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -745,36 +737,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    selectedBed,
-    boardPick,
-    dailySheetOpen,
-    confirmNumbersOpen,
-    notificationCenterOpen,
-    closeBedDrawer,
-    closeCapacityModal,
-  ]);
-
-  // Click-outside listener for floating notification center
-  useEffect(() => {
-    if (!notificationCenterOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (
-        notificationCenterRef.current &&
-        !notificationCenterRef.current.contains(target) &&
-        // Phone and iPad portrait open it from the More menu, which has no trigger here.
-        !notificationTriggerRef.current?.contains(target)
-      ) {
-        setNotificationCenterOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [notificationCenterOpen]);
+  }, [selectedBed, boardPick, dailySheetOpen, confirmNumbersOpen, closeBedDrawer, closeCapacityModal]);
 
   // Focus moves to the first control whenever the drawer shows a bed, including a step to another bed.
   useEffect(() => {
@@ -1147,6 +1110,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
     count += wardClearanceAlerts(movements, unit.id).count;
+    // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
+    count += notices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
     return count;
   })();
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
@@ -2278,7 +2243,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             raiseReferralGate={raiseReferralGate}
             wardRoleLockNote={wardRoleLockNote}
             notificationCenterOpen={notificationCenterOpen}
-            notificationCenterRef={notificationCenterRef}
             movements={movements}
             notices={notices}
             refreshRequests={refreshRequests}

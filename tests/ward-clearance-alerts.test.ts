@@ -12,7 +12,7 @@ function movement(patch: Partial<Movement>): Movement {
 }
 
 describe("wardClearanceAlerts", () => {
-  it("counts each open transfer marked not cleared, plus one card for any with nothing recorded", () => {
+  it("counts one row per open transfer marked not cleared or with nothing recorded", () => {
     const alerts = wardClearanceAlerts(
       [
         movement({ id: "WF-1", medicalClearance: { cleared: false, at: 0 } }),
@@ -24,7 +24,7 @@ describe("wardClearanceAlerts", () => {
     );
     expect(alerts.missing.map((m) => m.id)).toEqual(["WF-1"]);
     expect(alerts.unrecorded.map((m) => m.id)).toEqual(["WF-2", "WF-3"]);
-    expect(alerts.count).toBe(2);
+    expect(alerts.count).toBe(3);
   });
 
   // Codex review on #584: a closed transfer still marked not cleared held the Notices badge above zero.

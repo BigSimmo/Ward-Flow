@@ -3146,42 +3146,6 @@
   line-height: 1;
 }
 
-.notificationCenterContainer {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: min(520px, calc(100vw - 32px));
-  z-index: 100;
-  box-shadow: var(--float);
-  border-radius: 12px;
-  animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes popoverIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .notificationCenterContainer {
-    left: 0;
-    width: calc(100vw - 32px);
-    max-width: 480px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .notificationCenterContainer {
-    animation: none;
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════
    TAB 5: DECISIONS & CENSUS — PERFECTED THIRD EDITION STYLES
    Tokens only · Anti-cheap-look · Hairline borders · Responsive · Zero raw hex
@@ -3556,11 +3520,6 @@
     color: var(--wf-ink-1);
     font-family: var(--wf-mono);
     font-size: var(--wf-fs-11);
-  }
-
-  .notificationCenterContainer {
-    right: 0;
-    left: auto;
   }
 }
 

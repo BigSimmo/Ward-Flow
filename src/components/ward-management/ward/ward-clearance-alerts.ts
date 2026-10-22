@@ -8,12 +8,12 @@ function isOpenInbound(movement: Movement, unitId: string): boolean {
 }
 
 /**
- * The clearance cards in the ward's Notices panel: one per transfer recorded as not cleared, and one
- * card listing every open transfer with no clearance recorded. The panel and the Notices badge both
- * count from here, so the badge never leaves out a card the panel shows.
+ * The clearance rows in the ward's Notices panel: one per transfer recorded as not cleared, and one per
+ * open transfer with no clearance recorded (Notices option A, 22 Oct 2026: each row has its own action).
+ * The panel and the Notices badge both count from here, so the badge never leaves out a row the panel shows.
  */
 export function wardClearanceAlerts(movements: readonly Movement[], unitId: string) {
   const missing = movements.filter((m) => isOpenInbound(m, unitId) && m.medicalClearance?.cleared === false);
   const unrecorded = movements.filter((m) => isOpenInbound(m, unitId) && m.medicalClearance === undefined);
-  return { missing, unrecorded, count: missing.length + (unrecorded.length > 0 ? 1 : 0) };
+  return { missing, unrecorded, count: missing.length + unrecorded.length };
 }

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -99,7 +99,7 @@ describe("WardScreen & WardIndex audit remediation", () => {
     expect(document.activeElement).toBe(bed02);
   });
 
-  it("registers Confirm capacity figures modal with pushSheet, uses singular 1 bed grammar, and supports roving tabIndex + focus return on WardNotificationCenter", async () => {
+  it("registers Confirm capacity figures modal with pushSheet, uses singular 1 bed grammar, and supports the filter + focus return on WardNotificationCenter", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId={RPH_ADULT_SECURE} />
@@ -111,24 +111,23 @@ describe("WardScreen & WardIndex audit remediation", () => {
     fireEvent.click(noticesBtn);
 
     const center = await screen.findByTestId("ward-notification-center");
-    const allTab = within(center).getByRole("tab", { name: /^All/ });
-    // Notices (20 Oct 2026): Urgent comes straight after All.
-    const urgentTab = within(center).getByRole("tab", { name: /^Urgent/ });
-    expect(allTab).toHaveAttribute("tabindex", "0");
-    expect(urgentTab).toHaveAttribute("tabindex", "-1");
+    // Notices option A (22 Oct 2026): a pressed-button filter, as in the shared Alerts drawer.
+    const allFilter = within(center).getByRole("button", { name: /^All/ });
+    const actFilter = within(center).getByRole("button", { name: /^Act now/ });
+    expect(allFilter).toHaveAttribute("aria-pressed", "true");
+    expect(actFilter).toHaveAttribute("aria-pressed", "false");
 
-    allTab.focus();
-    fireEvent.keyDown(allTab, { key: "ArrowRight" });
-    expect(urgentTab).toHaveAttribute("aria-selected", "true");
-    expect(urgentTab).toHaveAttribute("tabindex", "0");
-    expect(document.activeElement).toBe(urgentTab);
+    fireEvent.click(actFilter);
+    expect(actFilter).toHaveAttribute("aria-pressed", "true");
+    expect(allFilter).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.keyDown(center, { key: "Escape" });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
     });
     expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
-    expect(document.activeElement).toBe(noticesBtn);
+    // The desktop drawer is the shared Sheet, which hands focus back after a frame.
+    await waitFor(() => expect(document.activeElement).toBe(noticesBtn));
 
     // Open Confirm capacity figures modal
     const confirmBtns = screen.getAllByRole("button", { name: /Confirm (today's )?numbers/i });
