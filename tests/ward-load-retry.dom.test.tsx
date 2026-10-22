@@ -37,17 +37,4 @@ describe("withLoadRetry", () => {
     expect(await screen.findByText("Tools loaded")).toBeInTheDocument();
     expect(load).toHaveBeenCalledTimes(3);
   });
-
-  it("fetches again when the browser comes back online", async () => {
-    const load = vi
-      .fn<() => Promise<typeof Panel>>()
-      .mockRejectedValueOnce(new Error("ChunkLoadError"))
-      .mockResolvedValue(Panel);
-    const Lazy = dynamic(withLoadRetry(load, "Catchment lookup did not load"), { ssr: false });
-
-    render(<Lazy label="Catchment" />);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Catchment lookup did not load");
-    await act(async () => window.dispatchEvent(new Event("online")));
-    expect(await screen.findByText("Catchment loaded")).toBeInTheDocument();
-  });
 });

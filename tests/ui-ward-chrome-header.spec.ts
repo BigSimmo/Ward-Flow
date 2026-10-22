@@ -706,7 +706,10 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
 
 // Offline Tools crash (22 Oct 2026): opening Tools for the first time with no connection threw the
 // failed code fetch to the route error boundary, and the whole page became "Something went wrong".
-test("@mockup Tools opened offline shows Try again, then opens once back online", async ({ page, context }) => {
+test("@mockup Tools opened offline shows Try again, then opens on Try again once back online", async ({
+  page,
+  context,
+}) => {
   // No idle preloads, so the Tools code is first asked for when Tools opens, as on a slow phone.
   await page.addInitScript(() => {
     window.requestIdleCallback = () => 0;
@@ -723,10 +726,11 @@ test("@mockup Tools opened offline shows Try again, then opens once back online"
   expect(tryAgain?.height, "Try again is under the 44px tap floor").toBeGreaterThanOrEqual(44);
   await expect(page.getByTestId("ward-bar")).toBeVisible();
 
-  // Try again while still offline keeps the line; coming back online fetches the code by itself.
+  // Try again while still offline keeps the line; once back online it draws the sheet.
   await retry.getByRole("button", { name: "Try again" }).click();
   await expect(retry).toContainText("Tools did not load");
   await context.setOffline(false);
+  await retry.getByRole("button", { name: "Try again" }).click();
   await expect(tools.getByRole("heading", { name: "Look up" })).toBeVisible();
   await expect(retry).toHaveCount(0);
 });

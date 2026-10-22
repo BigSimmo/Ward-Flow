@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 
 import { Button, StatusGlyph } from "@/components/wf";
 
@@ -12,8 +12,8 @@ import styles from "./load-retry.module.css";
  * boundary, so opening Tools offline replaced the whole page with "Something went wrong".
  *
  * Wrap the panel's loader in this. If the fetch fails, the panel resolves to a stand-in that shows
- * one error line with a 44px Try again. It fetches again on Try again and when the browser comes back
- * online, and draws the real panel once the code arrives, including on every later open.
+ * one error line with a 44px Try again, which fetches again and draws the real panel once the code
+ * arrives, including on every later open. Kept small: it sits in the code every page loads.
  */
 export function withLoadRetry<P extends object>(
   load: () => Promise<ComponentType<P>>,
@@ -24,38 +24,23 @@ export function withLoadRetry<P extends object>(
 
   function LoadRetry(props: P) {
     const [Panel, setPanel] = useState(() => loaded);
-    const trying = useRef(false);
-    const live = useRef(true);
-    const retry = useCallback(() => {
-      if (trying.current) return;
-      trying.current = true;
-      loadOnce().then(
-        (panel) => {
-          trying.current = false;
-          if (live.current) setPanel(() => panel);
-        },
-        () => {
-          trying.current = false;
-        },
-      );
-    }, []);
-    useEffect(() => {
-      live.current = true;
-      window.addEventListener("online", retry);
-      return () => {
-        live.current = false;
-        window.removeEventListener("online", retry);
-      };
-    }, [retry]);
     if (Panel) return <Panel {...props} />;
     return (
       <div className={styles.retry} role="alert" data-testid="ward-load-retry">
-        <p className={styles.message}>
-          <StatusGlyph tone="danger" className={styles.glyph} />
-          <span className={styles.title}>{title}.</span>{" "}
-          <span className={styles.reason}>Check the connection, then try again.</span>
+        <p>
+          <StatusGlyph tone="danger" />
+          <strong>{title}.</strong> <span>Check the connection, then try again.</span>
         </p>
-        <Button variant="sec" size="lg" className={styles.action} onClick={retry}>
+        <Button
+          variant="sec"
+          size="lg"
+          onClick={() =>
+            loadOnce().then(
+              (panel) => setPanel(() => panel),
+              () => {},
+            )
+          }
+        >
           Try again
         </Button>
       </div>
