@@ -61,7 +61,7 @@ export function WardBoardWorkBand({
       <details className={styles.workBandFold} data-testid="ward-board-work-band" open>
         <summary className={styles.workBandSummary}>
           <h2 id="ward-board-work-band-heading" className={styles.workBandTitle}>
-            Needs you this shift
+            Before handover
           </h2>
           <span className={styles.workBandDigest} data-testid="ward-board-work-band-digest">
             {shiftDigest}

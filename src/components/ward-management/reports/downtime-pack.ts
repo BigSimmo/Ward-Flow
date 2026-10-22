@@ -76,6 +76,12 @@ export type DowntimePack = {
    * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.
    */
   leftEd: number;
+  /**
+   * Set when the pack was taken while the browser was offline (owner, 22 Oct 2026): the records
+   * may be stale, so the pack is labelled "taken offline" with the last sync time instead of reading
+   * as fresh. `lastSyncAt` is null when this tab has not been online since it opened.
+   */
+  offline?: { lastSyncAt: Instant | null };
 };
 
 export type DowntimePackInput = {
@@ -209,11 +215,30 @@ export function rememberDowntimePack(
 ): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
   if (owner?.active === false || owner?.ready === false) return;
+  // A pack taken online is kept: an offline one never replaces it (owner, 22 Oct 2026).
+  const held = lastDowntimePack(owner, worldGeneration ?? undefined);
+  if (pack.offline && held !== null && held.offline === undefined) return;
   if (lastPack !== pack) handledPack = null;
   lastPack = pack;
   packGeneration = worldGeneration;
   packOwner = owner;
   notify();
+}
+
+/**
+ * When this tab last saw the browser online, in world time, and in which world generation. Memory
+ * only (D-18). Codex on #551: a sync belongs to its world and session, so a reset or scenario switch
+ * (new generation) or a forgotten pack (session end, restore) leaves it unrecorded rather than
+ * carrying an older, or after a clock reset a future, time onto the next offline pack.
+ */
+let lastSync: { at: Instant; worldGeneration: number | null } | null = null;
+export function noteDowntimeSync(now: Instant, worldGeneration: number | null = null): void {
+  lastSync = { at: now, worldGeneration };
+}
+export function lastDowntimeSyncAt(worldGeneration: number | null = null, now?: Instant): Instant | null {
+  if (lastSync === null || lastSync.worldGeneration !== worldGeneration) return null;
+  if (now !== undefined && lastSync.at > now) return null;
+  return lastSync.at;
 }
 
 /** True when the remembered pack was taken in another world generation (a reset or scenario switch). */
@@ -261,6 +286,8 @@ export function forgetDowntimePack(owner?: DowntimePackOwner | null): void {
   packGeneration = null;
   packOwner = null;
   handledPack = null;
+  // A session end or restore replaces the records, so their last sync no longer describes them.
+  if (owner === undefined) lastSync = null;
   notify();
 }
 // The pack lists one account's patients, so a session ending forgets it (Codex review on PR #487).

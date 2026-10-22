@@ -568,15 +568,11 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-patient-link-default-deny.test.ts`** (376 lines) — D-14 default-deny: the patient link is read only where explicitly permitted
 - **`tests/ward-patient-model.test.ts`** (419 lines) — Patient identity is a ruling, not a drift
 - **`tests/ward-patient-now-screen.dom.test.tsx`** (331 lines) — the patient-now screen
-- **`tests/ward-patient-now.dom.test.tsx`** (119 lines) — the person now — identity absences (D-6)
-- **`tests/ward-patient-placement-fields.dom.test.tsx`** (155 lines) — the placement rule for the two sensitive fields (R-2026-09-04-A)
 - **`tests/ward-patient-search.dom.test.tsx`** (1111 lines) — PatientSearchPage
 - **`tests/ward-patient-search.test.ts`** (343 lines) — searchMovements
-- **`tests/ward-patient-sensitive-adjacency-css.test.ts`** (331 lines) — the two sensitive patient fields cannot become adjacent by reflow
 - **`tests/ward-patient-transport-section.dom.test.tsx`** (190 lines) — Patient Transport & Transfer Coordination section
 - **`tests/ward-patient-typeahead.dom.test.tsx`** (284 lines) — test fixtures
 - **`tests/ward-patient-typed-text-not-in-url.dom.test.tsx`** (229 lines) — Typed patient text never reaches a URL
-- **`tests/ward-person-screen.dom.test.tsx`** (581 lines) — a person's own screen
 - **`tests/ward-register-inpatient-form-codes.test.ts`** (102 lines) — ward register MHA authorities
 
 #### Movements (14 files)

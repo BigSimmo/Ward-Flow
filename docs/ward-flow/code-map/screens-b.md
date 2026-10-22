@@ -573,19 +573,17 @@ the unified flight deck implementation note (`docs/ward-flow/plans/unified-patie
 reasoned step-back / release capacity behaviour against the shared reducer.
 
 **Routes:** `/people/new` (renders `AddPatientForm` from `add-patient.tsx`) and
-`/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx` by default, or
-`PersonScreen` from `person-screen.tsx` when the URL carries `?view=governed` or `?view=legacy` —
-`people/[patientId]/page.tsx` picks between them explicitly). **Mockups:**
+`/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx`; the governed
+`PersonScreen` dossier behind `?view=governed` was retired on 21 Oct 2026, Josh). **Mockups:**
 `add-a-patient-third-edition.html` → `/people/new`; `patient-now-third-edition.html` →
 `/people/[patientId]`. **Dispatches:** `ADD_PATIENT`, `BOOK_TRANSPORT`. **Reads:** `stageCopy`,
 `transportLeg` (`ward-derivations.ts`), plus `patient-now-adapter.ts`/`patient-now-records.ts` for
 the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.test.tsx`,
 `ward-advanced-features.dom.test.tsx`, `ward-builder-2-features.dom.test.tsx`,
 `ward-flow-single-source.test.ts`, `ward-patient-identity-integrity.test.ts`,
-`ward-patient-now-screen.dom.test.tsx`, `ward-patient-now.dom.test.tsx`,
-`ward-patient-placement-fields.dom.test.tsx`, `ward-patient-sensitive-adjacency-css.test.ts`,
+`ward-patient-now-screen.dom.test.tsx`, `ward-patient-safety-audit-fixes.dom.test.tsx`,
 `ward-patient-transport-section.dom.test.tsx`, `ward-patient-typed-text-not-in-url.dom.test.tsx`,
-`ward-person-screen.dom.test.tsx`, `ward-referral-destinations.dom.test.tsx`, plus repo-wide guards.
+`ward-referral-destinations.dom.test.tsx`, plus repo-wide guards.
 
 - **`src/components/ward-management/patients/add-patient.module.css`** (1245 lines) — styles for
   `add-patient.tsx`.
@@ -606,11 +604,6 @@ the rich-scenario path. **Tests:** `guard-push.test.ts`, `ward-add-patient.dom.t
   sub-components broken out — the whole 1,560-line body is one function.
 - **`src/components/ward-management/patients/patient-now.module.css`** (2276 lines) — styles for
   `patient-now-screen.tsx`.
-- **`src/components/ward-management/patients/person-screen.tsx`** (510 lines) — the governed/legacy
-  patient view (reached via `?view=governed`/`?view=legacy`). Exports `Fact` (109) and `PersonScreen`
-  (189).
-- **`src/components/ward-management/patients/person.module.css`** (820 lines) — styles for
-  `person-screen.tsx`.
 
 ## `settings/`
 
