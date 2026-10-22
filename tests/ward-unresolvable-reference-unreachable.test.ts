@@ -39,6 +39,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 const NO_SUCH_ED = "ed-that-does-not-exist-9999";
@@ -91,7 +92,7 @@ describe("no dispatch in this application can create an unresolvable department 
         cohort: "Adult",
         security: "Open",
         sex: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

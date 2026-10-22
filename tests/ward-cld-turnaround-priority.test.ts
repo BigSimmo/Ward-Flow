@@ -12,6 +12,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const now = NOW_ANCHOR;
 function fixture() {
@@ -313,7 +314,7 @@ describe("CLD turnaround preference", () => {
         cohort: "Adult",
         security: "Open",
         sex: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

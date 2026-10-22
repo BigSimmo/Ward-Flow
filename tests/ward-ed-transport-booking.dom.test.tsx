@@ -22,6 +22,7 @@ import { LEGAL_STATUS_CHANGE_REASONS, OVERRIDE_REASONS } from "@/components/ward
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { TRANSPORT_PROVIDERS, type Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * THE BOOKING CONTROL ON THE ED SCREEN, AND THE ONE THING IT MUST NEVER DO.
@@ -390,7 +391,7 @@ describe("the no-4A-recorded notice beside the booking control", () => {
                 security: "Secure",
                 sex: "Female",
                 gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-                specialling: false,
+                observation: GENERAL_OBSERVATION,
                 highAcuity: false,
                 legalStatus: "Involuntary inpatient",
                 urgency: 2,

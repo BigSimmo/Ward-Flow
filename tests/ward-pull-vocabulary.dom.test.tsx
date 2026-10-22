@@ -32,6 +32,7 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * ⚠️ **THE WORD, ON THE SCREEN — NOT THE IDENTIFIER.**
  *
@@ -305,7 +306,7 @@ describe("the community hub says a bed is PULLED for somebody who has not arrive
     return {
       id: "AD-PULL-01",
       unitId: "bty-adult-secure",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       referralId: null,
       movementId: null,

@@ -19,6 +19,7 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { logger } from "../src/lib/logger";
 import { auditSubject, AUDITABLE_FORM_CODES } from "../src/components/ward-management/ward-audit";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -266,7 +267,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
           security: "Open",
           sex: "Female",
           gender: "Female",
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,
@@ -615,7 +616,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
           security: "Open",
           sex: "Male",
           gender: "Male",
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,

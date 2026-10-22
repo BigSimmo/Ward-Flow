@@ -16,6 +16,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * The per-ward statistics page shows only what this ward's records hold.
@@ -33,7 +34,7 @@ function realAdmission(unit: Unit): Admission {
   return {
     id: "AD-REAL-01",
     unitId: unit.id,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

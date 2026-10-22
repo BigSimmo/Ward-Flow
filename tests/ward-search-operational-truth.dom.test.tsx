@@ -17,6 +17,7 @@ import { PatientSearchPage } from "@/components/ward-management/search/patient-s
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const seed = seedWardFlowState();
 function search(movementId: string) {
   render(
@@ -106,7 +107,7 @@ function AcceptanceHarness() {
               security: "Open",
               sex: "Female",
               gender: "Female",
-              specialling: false,
+              observation: GENERAL_OBSERVATION,
               highAcuity: false,
               legalStatus: "Voluntary",
               urgency: 2,

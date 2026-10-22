@@ -21,6 +21,7 @@ import type {
 import type { OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { genderReviewNeeded, type GenderPlacement } from "@/components/ward-management/ward-model";
+import { observationStaff, observationSummary, type Observation } from "@/components/ward-management/ward-observation";
 
 /**
  * ⚠️ **EVERY GATE NAME EITHER ELIGIBILITY FUNCTION CAN EMIT — the single source of truth, and it
@@ -329,26 +330,29 @@ function acuityGate(requested: boolean, unit: Unit, noun: string): GateResult {
 }
 
 /**
- * Specialling (one-to-one nursing), the same kind of staffing fact as acuity, and information only
- * for the same reason. `unit.speciallingCapacity` is the authored total, never decremented, so this
- * says what is staffed and where current use is decided, never how many slots are free (see
- * `tests/ward-specialling-detail-claims-no-headroom.test.ts`). A referral records no specialling
- * need, so the referral path says so.
+ * Specialling (constant observation staff), the same kind of staffing fact as acuity, and information
+ * only for the same reason. Since fix plan item 10 (21 Oct 2026) the movement carries an observation
+ * level, and only the constant levels need staff: one for a one-to-one level, two for two staff
+ * constant. `unit.speciallingCapacity` is the authored staff total, never decremented, so this says
+ * what is staffed and where current use is decided, never how many staff are free (see
+ * `tests/ward-specialling-detail-claims-no-headroom.test.ts`). A referral records no observation
+ * level, so the referral path says so.
  */
-function speciallingGate(requested: boolean | undefined, unit: Unit): GateResult {
+function speciallingGate(observation: Observation | undefined, unit: Unit): GateResult {
   const places = unit.speciallingCapacity;
+  const needed = observation === undefined ? 0 : observationStaff(observation.level);
   return {
     gate: "specialling",
     pass: true,
     info: true,
     detail:
-      requested === undefined
-        ? "Specialling need is not recorded on a referral"
-        : !requested
-          ? "No specialling required"
+      observation === undefined
+        ? "Observation level is not recorded on a referral"
+        : needed === 0
+          ? `${observationSummary(observation)}: no specialling staff needed`
           : places > 0
-            ? `Staffed for ${places} one-to-one — current use is checked at placement`
-            : "Specialling (one-to-one nursing) requested; ward is not staffed for one-to-one nursing. Information only: additional shift staffing required upon admission.",
+            ? `${observationSummary(observation)} needs ${needed} specialling staff; ward is staffed for ${places}, current use is checked at placement`
+            : `${observationSummary(observation)} requested; ward is not staffed for specialling (one-to-one or two staff constant nursing). Information only: additional shift staffing required upon admission.`,
   };
 }
 
@@ -359,7 +363,7 @@ function speciallingGate(requested: boolean | undefined, unit: Unit): GateResult
  */
 export type EligibilitySubject = Pick<
   Movement,
-  "declines" | "gender" | "sex" | "genderPlacements" | "cohort" | "security" | "highAcuity" | "specialling"
+  "declines" | "gender" | "sex" | "genderPlacements" | "cohort" | "security" | "highAcuity" | "observation"
 > & {
   /** Not recorded is `undefined`, which the authorisation gate treats as needing an authorised ward. */
   legalStatus: Movement["legalStatus"] | undefined;
@@ -431,7 +435,7 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
     forensicGate(unit),
     sexMixGate(movement.gender, movement.sex, unit),
     acuityGate(movement.highAcuity, unit, "movement"),
-    speciallingGate(movement.specialling, unit),
+    speciallingGate(movement.observation, unit),
     {
       gate: "prior_decline",
       pass: !declined,

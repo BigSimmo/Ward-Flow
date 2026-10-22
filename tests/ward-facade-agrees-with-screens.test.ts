@@ -140,6 +140,7 @@ import { MovementsScreen } from "@/components/ward-management/movements/movement
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 // jsdom is already the installed test environment; use only its document API here.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
@@ -188,7 +189,7 @@ function movementAdded(state: WardFlowState): WardFlowState {
         cohort: "Adult",
         security: "Open",
         sex: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

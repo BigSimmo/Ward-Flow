@@ -21,6 +21,7 @@ import { openJourneySplit, waitingInEds, waitingSplit } from "@/components/ward-
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { RECEIVE_REFERRAL_CANDIDATE } from "./helpers/ward-legal-figure-sweep";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Josh, 20 Oct 2026: "ensure everything is wired up correctly so that when I add new patients… all
@@ -62,7 +63,7 @@ function raiseFor(patientId: PatientId): Extract<WardFlowEvent, { type: "RAISE_R
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

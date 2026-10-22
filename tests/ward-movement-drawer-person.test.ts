@@ -5,6 +5,7 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { referrals as seedReferrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * 🔴 **THE NAMED BRANCH WAS UNREACHABLE FROM THE SEED WHEN THIS FILE WAS WRITTEN** (it is reachable
@@ -40,7 +41,7 @@ const BASE_MOVEMENT: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],

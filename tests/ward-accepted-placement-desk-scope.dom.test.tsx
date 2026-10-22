@@ -80,3 +80,20 @@ describe("accepted referral placement respects the desk's ED scope", () => {
     expect(screen.queryByTestId("ward-accepted-placement-coordinator")).not.toBeInTheDocument();
   });
 });
+
+describe("accepted referral placement asks the Intermittent interval", () => {
+  it("shows Check every only for Intermittent, offering 15 and 30 minutes", () => {
+    renderPlacement(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    expect(screen.queryByRole("combobox", { name: "Check every" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), {
+      target: { value: "intermittent" },
+    });
+    const interval = screen.getByRole("combobox", { name: "Check every" });
+    expect([...(interval as HTMLSelectElement).options].map((option) => option.value)).toEqual(["15", "30"]);
+    fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), {
+      target: { value: "within_sight" },
+    });
+    expect(screen.queryByRole("combobox", { name: "Check every" })).not.toBeInTheDocument();
+  });
+});

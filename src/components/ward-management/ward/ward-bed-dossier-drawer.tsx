@@ -43,6 +43,13 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import {
+  observationLevelName,
+  observationRatio,
+  observationSummary,
+  type Observation,
+} from "@/components/ward-management/ward-observation";
+import { WardObservationControl } from "./ward-observation-control";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -53,6 +60,8 @@ interface WardBedDossierDrawerProps {
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
+  /** Records a new observation level for the stay (fix plan item 10). Absent where this desk may not. */
+  onSetObservation?: (admissionId: string, observation: Observation) => void;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   /** Steps to the bed before this one. The arrow shows only when the parent passes it. */
@@ -150,6 +159,7 @@ export function WardBedDossierDrawer({
   setDrawerLeavingDestination,
   onRecordLeft,
   onUpdateBlocker,
+  onSetObservation,
   onMarkAtEd,
   onMove,
   onOpenBoard,
@@ -254,7 +264,15 @@ export function WardBedDossierDrawer({
         : `Moved ${bedItem.dischargeDateMoves} time${bedItem.dischargeDateMoves === 1 ? "" : "s"}`
       : null;
 
-  const observation = bedItem?.isSpecialling ? "1:1" : bedItem?.highAcuity ? "High acuity" : "Not 1:1";
+  const observation = bedItem?.observation
+    ? observationSummary(bedItem.observation)
+    : bedItem?.highAcuity
+      ? "High acuity"
+      : "Not recorded";
+  // The fact tile is narrow: the ratio for a constant level, the name otherwise. The row below has it in full.
+  const observationShort = bedItem?.observation
+    ? (observationRatio(bedItem.observation.level) ?? observationLevelName(bedItem.observation.level))
+    : observation;
 
   // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here.
   const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
@@ -458,6 +476,7 @@ export function WardBedDossierDrawer({
           onClose={onClose}
           onRecordLeft={() => setConfirmStep("leave")}
           onUpdateBlocker={onUpdateBlocker}
+          onSetObservation={onSetObservation}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
           onMarkBack={onMarkBack}
           onMove={onMove}
@@ -575,7 +594,7 @@ export function WardBedDossierDrawer({
               <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `${stayDays}d`} />
               <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
               <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "danger" : null} />
-              <FactTile label="Observation" value={observation} />
+              <FactTile label="Observation" value={observationShort} />
             </div>
             <div className={styles.tabsWrap}>
               {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
@@ -652,12 +671,17 @@ export function WardBedDossierDrawer({
                       <Row label="Where">
                         {isAwayAtEd ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held` : "On the ward"}
                       </Row>
-                      <Row label="1:1 nursing">
-                        {bedItem?.isSpecialling ? "Specialling recorded (1:1 rostered)" : "No specialling recorded"}
-                      </Row>
+                      <Row label="Observation level">{observation}</Row>
                       <Row label="High acuity">{bedItem?.highAcuity ? "Requested" : "Not requested"}</Row>
                       <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
                     </dl>
+                    {bedItem?.observation && bedItem.admissionId ? (
+                      <WardObservationControl
+                        observation={bedItem.observation}
+                        now={now}
+                        onSave={onSetObservation ? (next) => onSetObservation(bedItem.admissionId!, next) : undefined}
+                      />
+                    ) : null}
                   </Section>
                 </>,
               )}
@@ -965,6 +989,7 @@ interface PhoneBedSheetProps {
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
+  onSetObservation?: (admissionId: string, observation: Observation) => void;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
@@ -1017,6 +1042,7 @@ function PhoneBedSheet({
   onClose,
   onRecordLeft,
   onUpdateBlocker,
+  onSetObservation,
   onMarkAtEd,
   onMarkBack,
   onMove,
@@ -1127,6 +1153,13 @@ function PhoneBedSheet({
                 <Row label="Observation">{observation}</Row>
                 <Row label="Community team">{bedItem?.catchmentCommunityTeam ?? "No community team yet"}</Row>
               </dl>
+              {bedItem?.observation && admissionId ? (
+                <WardObservationControl
+                  observation={bedItem.observation}
+                  now={now}
+                  onSave={onSetObservation ? (next) => onSetObservation(admissionId, next) : undefined}
+                />
+              ) : null}
               <h3 className={styles.phoneSec}>Plan to leave</h3>
               <dl className={styles.phoneKv}>
                 <Row label="Expected">{expectedPlan}</Row>

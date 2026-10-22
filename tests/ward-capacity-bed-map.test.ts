@@ -17,6 +17,7 @@ import { bedReleases, leaveBeds } from "@/components/ward-management/ward-moveme
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 const units = allUnits();
@@ -172,7 +173,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
