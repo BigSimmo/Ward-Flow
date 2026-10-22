@@ -30,8 +30,8 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
   useEffect(() => {
-    if (online) noteDowntimeSync(now);
-  }, [online, now]);
+    if (online) noteDowntimeSync(now, worldGeneration);
+  }, [online, now, worldGeneration]);
   return useCallback(
     (options?: { shiftChangeAt?: Instant | null }): void => {
       if (!ready) return;
@@ -47,7 +47,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
           return `${person.displayName} · ${person.umrn}`;
         },
       });
-      if (!online) pack.offline = { lastSyncAt: lastDowntimeSyncAt() };
+      if (!online) pack.offline = { lastSyncAt: lastDowntimeSyncAt(worldGeneration, now) };
       const shiftChangeAt = options?.shiftChangeAt;
       rememberDowntimePack(
         typeof shiftChangeAt === "number" ? { ...pack, shiftChangeAt } : pack,

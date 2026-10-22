@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { OverlayRoot } from "@/components/wf/overlay-root";
 import { Sheet } from "@/components/wf/sheet";
@@ -46,5 +46,40 @@ describe.each([
     expect(undo.closest("[inert]")).toBeNull();
     fireEvent.click(undo);
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("toast Undo in the sheet's Tab cycle", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Codex on #551: keyboard users must reach Undo too, not only a pointer.
+  it("Tab moves from the sheet's last control to the toast's Undo and back round", () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
+      length: 1,
+      item: () => null,
+      [Symbol.iterator]: function* () {
+        yield {} as DOMRect;
+      },
+    } as DOMRectList);
+    render(
+      <ToastProvider>
+        <OverlayRoot />
+        <PullInSheet onUndo={() => {}} />
+      </ToastProvider>,
+    );
+    const pull = screen.getByRole("button", { name: "Pull the bed" });
+    fireEvent.click(pull);
+    const undo = screen.getByRole("button", { name: "Undo" });
+    pull.focus();
+    // Tab forward until Undo takes focus, never leaving the sheet and its toast.
+    let reached = false;
+    for (let step = 0; step < 6 && !reached; step += 1) {
+      fireEvent.keyDown(window, { key: "Tab" });
+      reached = document.activeElement === undo;
+    }
+    expect(reached).toBe(true);
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(document.activeElement).not.toBe(undo);
+    expect(document.activeElement?.closest('[data-overlay-host="toast"], [role="dialog"]')).not.toBeNull();
   });
 });
