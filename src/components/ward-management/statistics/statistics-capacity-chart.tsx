@@ -323,7 +323,7 @@ export function StatisticsCapacityChart({
           aria-label="Search capacity"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Find a hospital"
+          placeholder={groupBy === "ward" ? "Find a ward" : "Find a hospital"}
         />
         {services.length > 1 ? (
           <Segmented
