@@ -2,11 +2,9 @@
 
 import dynamic from "next/dynamic";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import { dayOf } from "@/components/ward-management/ward-clock";
-import { subscribeToLocation } from "@/components/ward-management/ward-url-state";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
@@ -38,30 +36,20 @@ const MissedRequestsPanel = dynamic(() =>
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
 export interface DelaysScreenProps {
-  aliasFrom?: "queue" | "exceptions" | "escalation" | null;
   movements?: Movement[];
-}
-
-function readAliasFromLocation() {
-  return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
 }
 
 /**
  * Delays: why each waiting person is still waiting. The layout is the approved Delays page mockup
- * (`delays-board.tsx`); this screen owns the data scope (chosen service), the old-bookmark banner,
+ * (`delays-board.tsx`); this screen owns the data scope (chosen service),
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
-export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
-  const [, startTransition] = useTransition();
+export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
-  const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
-  const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
-  const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
   // Checked here as well as in the panel, so nobody else's page asks for the panel's code.
   const missedRequestsOn = useWardFeatureFlag("missed-requests-check");
   const accessRole = useEffectiveWardAccess().role;
   const showMissedRequests = missedRequestsOn && accessRole === "coordinator";
-  const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
@@ -175,27 +163,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   const banner = (
     <>
-      {showAliasBanner && aliasFrom ? (
-        <aside
-          className={styles.aliasBanner}
-          role="status"
-          data-testid="ward-delays-alias-banner"
-          data-from={aliasFrom}
-        >
-          <p>{delaysAliasBannerCopy(aliasFrom)}</p>
-          <button
-            type="button"
-            className={styles.aliasBannerDismiss}
-            onClick={() => {
-              startTransition(() => {
-                setAliasBannerDismissed(true);
-              });
-            }}
-          >
-            Dismiss
-          </button>
-        </aside>
-      ) : null}
       {service === null ? null : (
         <WardServiceScopeBar
           service={service}

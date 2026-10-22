@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { AlarmClock } from "lucide-react";
+import { useId, useState } from "react";
+import { AlarmClock, ChevronRight } from "lucide-react";
 
-import { Button, Field, Popover, Select, StatusGlyph, type ButtonSize } from "@/components/wf";
+import { Button, PhoneSheet, Popover, StatusGlyph, useIsPhone, type ButtonSize } from "@/components/wf";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "./ward-clock";
 import type { DecisionTargetReading } from "./ward-decision-targets";
@@ -23,9 +23,16 @@ import { RED_ROW_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
 import styles from "./inbox-snooze-control.module.css";
 
 /**
- * Snooze picker shared by the Alerts screen and the Tasks drawer (stream A, 9 Oct 2026): a reason
- * from the closed list, then a return time from the presets. An act-now row offers only the
+ * Snooze picker shared by the Alerts screen and the Tasks drawer (stream A, 9 Oct 2026): a return
+ * time from the presets, then a reason from the closed list. An act-now row offers only the
  * presets inside the act-now cap; the reducer refuses anything longer regardless.
+ *
+ * UX audit (21 Oct 2026): the time chips no longer sit faded until a reason is chosen. The first
+ * allowed time is selected on open, and each reason is one button that records the snooze, so the
+ * reason is still always the person's own choice and is never filled in for them.
+ *
+ * Design review (22 Oct 2026, Josh approved): on a phone the picker opens as its own bottom sheet.
+ * As a popover inside an alert's More actions it ran off the bottom of the screen.
  */
 export function InboxSnoozeControl({
   subject,
@@ -43,7 +50,27 @@ export function InboxSnoozeControl({
   size?: ButtonSize;
   variant?: "ghost" | "sec";
 }) {
-  const [reason, setReason] = useState<InboxSnoozeReason | "">("");
+  const phone = useIsPhone();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  if (phone) {
+    return (
+      <>
+        <Button
+          size={size}
+          variant={variant}
+          icon={AlarmClock}
+          aria-label={`Snooze ${subject}`}
+          aria-haspopup="dialog"
+          onClick={() => setSheetOpen(true)}
+        >
+          Snooze
+        </Button>
+        <PhoneSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Snooze" description={subject}>
+          <SnoozePicker actNow={actNow} now={now} onSnooze={onSnooze} close={() => setSheetOpen(false)} />
+        </PhoneSheet>
+      </>
+    );
+  }
   return (
     <Popover
       label={`Snooze ${subject}`}
@@ -55,55 +82,94 @@ export function InboxSnoozeControl({
         </Button>
       )}
     >
-      {(close) => (
-        <div className={styles.body}>
-          <Field label="Reason">
-            <Select
-              value={reason}
-              onChange={(event) => {
-                setReason(event.target.value as InboxSnoozeReason | "");
+      {(close) => <SnoozePicker actNow={actNow} now={now} onSnooze={onSnooze} close={close} />}
+    </Popover>
+  );
+}
+
+/**
+ * The picker lives inside the popover panel or the phone sheet, which unmount on every close, so an
+ * abandoned time choice (Escape, an outside press or the trigger) never carries over to the next open.
+ */
+function SnoozePicker({
+  actNow,
+  now,
+  onSnooze,
+  close,
+}: {
+  actNow: boolean;
+  now: Instant;
+  onSnooze: (until: Instant, reason: InboxSnoozeReason) => void;
+  close: () => void;
+}) {
+  const backInId = useId();
+  const reasonId = useId();
+  const presets = SNOOZE_PRESETS.map((preset) => {
+    const until = snoozeUntilFor(preset.id, now);
+    return { ...preset, until, allowed: snoozeAllowed(until, now, actNow) };
+  });
+  const firstAllowed = presets.find((preset) => preset.allowed)?.id;
+  const [chosenPreset, setChosenPreset] = useState<string | undefined>(undefined);
+  const selected = presets.find((preset) => preset.id === (chosenPreset ?? firstAllowed) && preset.allowed);
+  const capReason = `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`;
+  const capped = presets.some((preset) => !preset.allowed);
+  return (
+    <div className={styles.body}>
+      <div className={styles.section}>
+        <p className={styles.eyebrow} id={backInId}>
+          Back in
+        </p>
+        <div className={styles.presets} role="group" aria-labelledby={backInId}>
+          {presets.map((preset) => (
+            <Button
+              key={preset.id}
+              size="sm"
+              variant={selected?.id === preset.id ? "pri" : "sec"}
+              aria-pressed={selected?.id === preset.id}
+              title={`Back at ${formatInstantWithDay(preset.until, now)}`}
+              disabledReason={preset.allowed ? undefined : capReason}
+              reasonDisplay="tooltip"
+              onClick={() => {
+                if (!preset.allowed) return;
+                setChosenPreset(preset.id);
               }}
             >
-              <option value="">Choose a reason</option>
-              {SNOOZE_REASONS.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <div className={styles.presets} role="group" aria-label="Back in">
-            {SNOOZE_PRESETS.map((preset) => {
-              const until = snoozeUntilFor(preset.id, now);
-              const allowed = snoozeAllowed(until, now, actNow);
-              const disabledReason = !allowed
-                ? `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`
-                : reason === ""
-                  ? "Choose a reason first"
-                  : undefined;
-              return (
-                <Button
-                  key={preset.id}
-                  size="sm"
-                  variant="sec"
-                  title={`Back at ${formatInstantWithDay(until, now)}`}
-                  disabledReason={disabledReason}
-                  reasonDisplay="tooltip"
-                  onClick={() => {
-                    if (disabledReason || reason === "") return;
-                    onSnooze(until, reason);
-                    setReason("");
-                    close();
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              );
-            })}
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+        {selected ? (
+          <p className={styles.when}>
+            Back at <strong>{formatInstantWithDay(selected.until, now)}</strong>
+            {capped ? `. ${capReason}.` : "."}
+          </p>
+        ) : null}
+      </div>
+      {selected ? (
+        <div className={styles.section}>
+          <p className={styles.eyebrow} id={reasonId}>
+            Snooze because
+          </p>
+          <div className={styles.reasons} role="group" aria-labelledby={reasonId}>
+            {SNOOZE_REASONS.map((entry) => (
+              <Button
+                key={entry.id}
+                size="sm"
+                variant="ghost"
+                className={styles.reason}
+                iconEnd={ChevronRight}
+                onClick={() => {
+                  onSnooze(selected.until, entry.id);
+                  close();
+                }}
+              >
+                {entry.label}
+              </Button>
+            ))}
           </div>
         </div>
-      )}
-    </Popover>
+      ) : null}
+    </div>
   );
 }
 
