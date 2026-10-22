@@ -58,6 +58,16 @@ export function WardFeedInbox() {
   const raise = useWardRaise(role);
   const routeUnitId = wardRouteUnitId(usePathname() ?? "");
   const [status, setStatus] = useState("");
+  // Messages whose confirmation is still saving. A shared save is async, so Confirm and Reject wait
+  // for it: a second tap or a reject in the gap would raise the event twice or settle it wrongly.
+  const [pending, setPending] = useState<ReadonlySet<number>>(() => new Set());
+  const setItemPending = (seq: number, on: boolean) =>
+    setPending((current) => {
+      const next = new Set(current);
+      if (on) next.add(seq);
+      else next.delete(seq);
+      return next;
+    });
 
   useEffect(() => syncFeedInboxGeneration(worldGeneration), [worldGeneration]);
 
@@ -114,7 +124,10 @@ export function WardFeedInbox() {
               differences={item.message ? differencesFrom(item.message, patients) : []}
               unitName={unitName}
               blockedReason={(suggestion) => confirmBlockedReason(suggestion, role, routeUnitId, unitName)}
+              pending={pending.has(item.seq)}
               onConfirm={(suggestion, leaving) => {
+                if (pending.has(item.seq)) return;
+                setItemPending(item.seq, true);
                 const outcome =
                   suggestion.kind === "arrival"
                     ? raise("PATIENT_ARRIVED", {
@@ -132,6 +145,7 @@ export function WardFeedInbox() {
                     : `Departure recorded from ${unitName(suggestion.unitId)}.`;
                 void Promise.resolve(outcome).then(
                   (result: WardCommandOutcome | void) => {
+                    setItemPending(item.seq, false);
                     if (result && result.status !== "accepted") {
                       setStatus(
                         `Not recorded: ${result.message ?? "the action was refused"}. The message still waits.`,
@@ -141,10 +155,14 @@ export function WardFeedInbox() {
                     settleFeedItem(item.seq, "confirmed", done);
                     setStatus(`Message ${item.seq}: ${done}`);
                   },
-                  () => setStatus("Not confirmed. Check the board before trying again."),
+                  () => {
+                    setItemPending(item.seq, false);
+                    setStatus("Not confirmed. Check the board before trying again.");
+                  },
                 );
               }}
               onReject={() => {
+                if (pending.has(item.seq)) return;
                 settleFeedItem(item.seq, "rejected");
                 setStatus(`Message ${item.seq} rejected. Nothing changed.`);
               }}
@@ -190,6 +208,7 @@ function FeedRow({
   differences,
   unitName,
   blockedReason,
+  pending,
   onConfirm,
   onReject,
 }: {
@@ -198,6 +217,7 @@ function FeedRow({
   differences: readonly string[];
   unitName: (id: string) => string;
   blockedReason: (suggestion: Confirmable) => string | null;
+  pending: boolean;
   onConfirm: (suggestion: Confirmable, leaving?: LeavingDestination) => void;
   onReject: () => void;
 }) {
@@ -207,7 +227,8 @@ function FeedRow({
   const blocked = suggestion && suggestion.kind !== "none" ? blockedReason(suggestion) : null;
   const blockedId = `ward-feed-blocked-${item.seq}`;
   const noteId = `ward-feed-note-${item.seq}`;
-  const unavailable = !!blocked || (suggestion?.kind === "departure" && !leaving);
+  const pendingId = `ward-feed-pending-${item.seq}`;
+  const unavailable = pending || !!blocked || (suggestion?.kind === "departure" && !leaving);
   return (
     <li className={inboxStyles.item} data-status={item.status} data-testid={`ward-feed-item-${item.seq}`}>
       <div className={inboxStyles.head}>
@@ -242,6 +263,11 @@ function FeedRow({
                 {blocked}
               </p>
             ) : null}
+            {pending ? (
+              <p className={styles.note} id={pendingId} data-testid={pendingId}>
+                Saving this confirmation.
+              </p>
+            ) : null}
             {suggestion.kind === "departure" && !blocked ? (
               <Select
                 aria-label="Where the person went"
@@ -262,7 +288,7 @@ function FeedRow({
                 type="button"
                 className={`${styles.primaryButton} ${inboxStyles.confirm}`}
                 aria-disabled={unavailable || undefined}
-                aria-describedby={blocked ? blockedId : unavailable ? noteId : undefined}
+                aria-describedby={pending ? pendingId : blocked ? blockedId : unavailable ? noteId : undefined}
                 onClick={() => {
                   if (!unavailable) onConfirm(suggestion, leaving || undefined);
                 }}
@@ -273,7 +299,11 @@ function FeedRow({
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={onReject}
+                aria-disabled={pending || undefined}
+                aria-describedby={pending ? pendingId : undefined}
+                onClick={() => {
+                  if (!pending) onReject();
+                }}
                 data-testid={`ward-feed-reject-${item.seq}`}
               >
                 Reject

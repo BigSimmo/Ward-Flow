@@ -16,6 +16,19 @@ import {
 } from "@/components/ward-management/tools/ward-feed-inbox-store";
 
 const route = vi.hoisted(() => ({ pathname: "/ward-flow/capacity" }));
+// Lets a test stand in for a shared save that has not answered yet. Null keeps the real raise.
+const heldRaise = vi.hoisted(() => ({ raise: null as null | ((...args: unknown[]) => unknown) }));
+
+vi.mock("@/components/ward-management/ward-flow-raise", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-raise")>();
+  return {
+    ...actual,
+    useWardRaise: (role: Parameters<typeof actual.useWardRaise>[0]) => {
+      const real = actual.useWardRaise(role);
+      return (heldRaise.raise ?? real) as typeof real;
+    },
+  };
+});
 
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -26,6 +39,7 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   route.pathname = "/ward-flow/capacity";
+  heldRaise.raise = null;
   act(() => resetFeedInboxForTests());
 });
 
@@ -124,6 +138,31 @@ describe("feed inbox in Tools", () => {
 
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
+    expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
+  });
+
+  it("holds Confirm and Reject while a confirmation is still saving", async () => {
+    let answer: (outcome: { status: "accepted" }) => void = () => {};
+    const raise = vi.fn(() => new Promise((resolve) => (answer = resolve)));
+    heldRaise.raise = raise;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardFeedInbox />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    expect(screen.getByTestId("ward-feed-pending-1")).toHaveTextContent("Saving this confirmation.");
+    const reject = screen.getByTestId("ward-feed-reject-1");
+    expect(reject).toHaveAttribute("aria-disabled", "true");
+    expect(reject).toHaveAttribute("aria-describedby", "ward-feed-pending-1");
+
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    fireEvent.click(reject);
+    expect(raise).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("ward-feed-item-1")).toHaveTextContent("Waiting for a person");
+
+    await act(async () => answer({ status: "accepted" }));
     expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
   });
 

@@ -2193,8 +2193,9 @@ export type WardFlowEvent =
   | {
       /**
        * FD-10 (owner, 29 Aug 2026): the ward's own tentative diagnosis block, recorded beside the
-       * referrer's and never over it. Each new one replaces the ward's previous one on the record;
-       * the history keeps every one. A correction, not a task: nothing prompts for it.
+       * referrer's and never over it. Each new one replaces the ward's previous one on the record,
+       * which keeps only the latest block. The history notes when and by which desk each one was
+       * recorded, not the block. A correction, not a task: nothing prompts for it.
        */
       type: "RECORD_WARD_DIAGNOSIS";
       role: WardFlowRole;
