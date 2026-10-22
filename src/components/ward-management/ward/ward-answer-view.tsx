@@ -188,6 +188,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const declineFormRef = useRef<HTMLFormElement | null>(null);
 
   // A response belongs to the attempt that preceded it, without reading a mutable ref in render.
   const [priorRejectionCount, setPriorRejectionCount] = useState<number>();
@@ -209,6 +210,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     const timer = setTimeout(() => setToastMessage(null), 3500);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // Opening Decline moves focus to the first reason, which also scrolls the reasons into view.
+  useEffect(() => {
+    if (!declineOpenFor || isPhone) return;
+    declineFormRef.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+  }, [declineOpenFor, isPhone]);
 
   // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
   // toast line carries the outcome where no toast region is mounted.
@@ -265,7 +272,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               const wardAnswers: Array<{
                 key: string;
                 movementId: string;
-                outcome: "Accepted" | "Declined";
+                outcome: "Accepted in principle" | "Declined";
                 at?: Instant;
                 reason?: DeclineReason;
               }> = [];
@@ -274,7 +281,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 wardAnswers.push({
                   key: `${movement.id}-accepted`,
                   movementId: movement.id,
-                  outcome: "Accepted",
+                  outcome: "Accepted in principle",
                   at: movement.acceptedAt,
                 });
               }
@@ -1016,7 +1023,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
                       {notice ? (
                         <span
-                          className={styles.badge}
+                          className={`${styles.badge} ${styles.noticeBadge}`}
                           data-testid={`ward-restriction-notice-${activeMovement.id}`}
                           data-level={notice.level}
                           data-tone="warn"
@@ -1027,7 +1034,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
                       {eligibilityIssue ? (
                         <span
-                          className={styles.badge}
+                          className={`${styles.badge} ${styles.noticeBadge}`}
                           data-testid={`ward-eligibility-warning-${activeMovement.id}`}
                           data-level={eligibilityIssue.level}
                           data-tone="danger"
@@ -1174,7 +1181,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                     Choose a reason to confirm the decline.
                                   </p>
                                 ) : null}
-                                {DECLINE_REASONS.map((reason) => (
+                                {DECLINE_REASONS.map((reason, index) => (
                                   <label key={reason} className={styles.phoneRadioRow}>
                                     <input
                                       type="radio"
@@ -1182,6 +1189,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                       value={reason}
                                       checked={declineReason === reason}
                                       onChange={() => setDeclineReason(reason)}
+                                      // Visual desk, 22 Oct 2026: the sheet opens on the reasons, not on ×.
+                                      data-sheet-autofocus={
+                                        (declineReason ? declineReason === reason : index === 0) ? "true" : undefined
+                                      }
                                     />
                                     <span>{declineReasonLabel(reason)}</span>
                                   </label>
@@ -1270,54 +1281,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         </>
                       ) : null}
 
-                      {/* Inline Decline Form */}
-                      {declineOpen && !blocked && !isPhone ? (
-                        <form
-                          className={styles.declineForm}
-                          onSubmit={(event) => submitDecline(event, activeMovement.id)}
-                          data-testid={`ward-decline-form-${activeMovement.id}`}
-                        >
-                          <fieldset className={styles.declineFieldset} disabled={declinePending}>
-                            <legend className={styles.declineLegend}>Decline reason for this patient</legend>
-                            {DECLINE_REASONS.map((reason) => (
-                              <label key={reason} className={styles.declineOption}>
-                                <input
-                                  type="radio"
-                                  name={`decline-reason-${activeMovement.id}`}
-                                  value={reason}
-                                  checked={declineReason === reason}
-                                  onChange={() => setDeclineReason(reason)}
-                                />
-                                {reason.replace(/_/g, " ")}
-                              </label>
-                            ))}
-                          </fieldset>
-                          <button
-                            type="submit"
-                            aria-disabled={declinePending || !canSubmitDecline(declineReason) ? "true" : undefined}
-                            onClick={
-                              declinePending || !canSubmitDecline(declineReason)
-                                ? ignoreUnavailableActivation
-                                : undefined
-                            }
-                            aria-describedby={
-                              !canSubmitDecline(declineReason)
-                                ? `ward-decline-submit-reason-${activeMovement.id}`
-                                : undefined
-                            }
-                            title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
-                            className={`${styles.btn} ${styles.btnDanger}`}
-                          >
-                            {declinePending ? "Confirming decline…" : "Confirm decline"}
-                          </button>
-                          {!canSubmitDecline(declineReason) ? (
-                            <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">
-                              {DECLINE_SUBMIT_UNAVAILABLE_REASON}
-                            </span>
-                          ) : null}
-                        </form>
-                      ) : null}
-
                       {/* Decision Action Controls */}
                       {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
@@ -1370,6 +1333,55 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           Accept in principle
                         </button>
                       </div>
+
+                      {/* Inline Decline Form: below the buttons that open it, so the reasons appear in view (UX audit 21 Oct 2026). */}
+                      {declineOpen && !blocked && !isPhone ? (
+                        <form
+                          ref={declineFormRef}
+                          className={styles.declineForm}
+                          onSubmit={(event) => submitDecline(event, activeMovement.id)}
+                          data-testid={`ward-decline-form-${activeMovement.id}`}
+                        >
+                          <fieldset className={styles.declineFieldset} disabled={declinePending}>
+                            <legend className={styles.declineLegend}>Decline reason for this patient</legend>
+                            {DECLINE_REASONS.map((reason) => (
+                              <label key={reason} className={styles.declineOption}>
+                                <input
+                                  type="radio"
+                                  name={`decline-reason-${activeMovement.id}`}
+                                  value={reason}
+                                  checked={declineReason === reason}
+                                  onChange={() => setDeclineReason(reason)}
+                                />
+                                {reason.replace(/_/g, " ")}
+                              </label>
+                            ))}
+                          </fieldset>
+                          <button
+                            type="submit"
+                            aria-disabled={declinePending || !canSubmitDecline(declineReason) ? "true" : undefined}
+                            onClick={
+                              declinePending || !canSubmitDecline(declineReason)
+                                ? ignoreUnavailableActivation
+                                : undefined
+                            }
+                            aria-describedby={
+                              !canSubmitDecline(declineReason)
+                                ? `ward-decline-submit-reason-${activeMovement.id}`
+                                : undefined
+                            }
+                            title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
+                            className={`${styles.btn} ${styles.btnDanger}`}
+                          >
+                            {declinePending ? "Confirming decline…" : "Confirm decline"}
+                          </button>
+                          {!canSubmitDecline(declineReason) ? (
+                            <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">
+                              {DECLINE_SUBMIT_UNAVAILABLE_REASON}
+                            </span>
+                          ) : null}
+                        </form>
+                      ) : null}
                     </div>
                   </div>
                 );

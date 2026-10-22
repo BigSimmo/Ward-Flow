@@ -92,6 +92,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import { WardFormTimes } from "../tools/ward-form-times";
+import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -734,6 +735,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 </>
               }
             />
+            <LegalLimitsNotChecked />
             <button type="button" className={styles.phoneTasks} onClick={() => setPhoneTasks(true)}>
               <ClipboardList size={16} aria-hidden="true" />
               <span className={styles.cellStack}>
@@ -924,6 +926,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 }
               />
             </div>
+            <LegalLimitsNotChecked />
 
             {taskStrip}
 
@@ -992,7 +995,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                           <div className={styles.groupHead}>
                             <span>Time not written</span>
                             <span className={styles.groupCount}>{noDeadline.length}</span>
-                            <span className={styles.groupOrder}>most of the period used first</span>
+                            <span className={styles.groupOrder}>longest open first</span>
                             <span className={styles.srOnly}>Forms with no deadline recorded</span>
                           </div>
                           {noDeadline.length > 0 ? (

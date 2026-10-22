@@ -734,6 +734,7 @@
 
 .todoRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
@@ -745,9 +746,15 @@
   border-bottom: 0;
 }
 
+/* UX audit 21 Oct 2026: in a narrow column the action buttons shrank under their own label and the
+   link text overprinted the next button. The text keeps a minimum width and the buttons wrap below. */
+.todoRow > button {
+  flex: none;
+}
+
 .todoMain {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 9rem;
   flex-direction: column;
   min-width: 0;
   cursor: default;
