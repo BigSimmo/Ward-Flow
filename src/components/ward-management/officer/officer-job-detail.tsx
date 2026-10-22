@@ -440,7 +440,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
           {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
             <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
-              <dt>Bed held until</dt>
+              <dt>Bed pulled until</dt>
               <dd>
                 {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
                   <StatusGlyph tone="warning" size={9} />

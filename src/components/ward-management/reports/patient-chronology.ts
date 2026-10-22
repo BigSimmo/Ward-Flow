@@ -234,7 +234,7 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Transport job closed": ["WITHDRAW_REFERRAL", "RECORD_EXAMINATION", "STOP_TRANSPORT", "RELEASE_DIVERTED_BED"],
     "Document recorded": ["UPLOAD_PATIENT_FORM"],
     "Referral withdrawn by referrer": ["RECORD_REFERRER_WITHDRAWAL"],
-    "Bed held": ["PULL_PATIENT"],
+    "Bed pulled": ["PULL_PATIENT"],
     "Arrived on ward": ["PATIENT_ARRIVED"],
     "Expected discharge date set": ["UPDATE_EXPECTED_DISCHARGE"],
     "Discharge confirmed": ["RECORD_PATIENT_DISCHARGE"],
@@ -592,7 +592,7 @@ function admissionRows(admission: Admission, units: readonly Unit[]): RowDraft[]
   const ward = units.find((unit) => unit.id === admission.unitId)?.name ?? admission.unitId;
   const rows: RowDraft[] = [];
   if (finite(admission.pulledAt) !== null) {
-    rows.push({ record, recordedAt: finite(admission.pulledAt), who: NOT_RECORDED, action: "Bed held", after: ward });
+    rows.push({ record, recordedAt: finite(admission.pulledAt), who: NOT_RECORDED, action: "Bed pulled", after: ward });
   }
   if (finite(admission.arrivedAt) !== null) {
     rows.push({

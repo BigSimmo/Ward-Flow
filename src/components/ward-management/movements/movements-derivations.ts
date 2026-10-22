@@ -43,7 +43,7 @@ const STAGE_BLURBS: Record<MovementStage, string> = {
   placement_requested: "A destination has been asked for; nothing has responded yet.",
   destination_review: "At least one unit is weighing up whether it can take this patient.",
   accepted_awaiting_bed: "A unit has agreed in principle, but no bed has been pulled yet.",
-  pulled: "A bed is being held for this patient, and the hold has a time limit.",
+  pulled: "A bed is pulled for this patient, and the pull has a time limit.",
   handover_ready: "Bed and paperwork are ready; only the physical move is outstanding.",
   moving: "A vehicle has collected the patient and the move is under way.",
   arrived: "The patient has arrived — this leg of the journey is complete.",
