@@ -205,7 +205,7 @@ repo-wide guards.
 ## `delays/`
 
 **Route:** `/delays` (also the landing point for `/queue`, `/exceptions` and `/escalation`
-redirects — see `delays-alias.ts` and the `escalation/` entry below). **Mockup:**
+redirects, which land on `/waiting` with no banner since 22 Oct 2026 — see the `escalation/` entry below). **Mockup:**
 the approved Delays page mockup (October 2026, built live in October 2026; earlier
 `delays-third-edition.html`). **Dispatches:** `RECORD_ESCALATION` from `delays-screen.tsx`
 (Escalate to State bed coordination desk in the person's panel); everything else reads and presents. **Reads:**
@@ -217,10 +217,6 @@ its own `delays-derivations.ts`, plus `ward-derivations.ts` selectors via the sh
 `coordinator/coordinator-screen.tsx` and `movements/movements-screen.tsx` (cross-screen
 figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
 
-- **`src/components/ward-management/delays/delays-alias.ts`** (25 lines) — Wave 4 item 15 pedagogy:
-  `DELAYS_ALIAS_FROM` (`"queue" | "exceptions" | "escalation"`), `parseDelaysAliasFrom`,
-  `delaysAliasBannerCopy`. Backs the banner shown when a visitor lands on `/delays` via one of the
-  three old bookmarks.
 - **`src/components/ward-management/delays/delays-derivations.ts`** (589 lines) — pure logic:
   `DelayCause` union and `DELAY_CAUSE_ORDER`/`DELAY_CAUSE_COPY`, `SEVERE_CAUSES`, `DelayOwnerId` and
   `DELAY_OWNERS`, `ownerOf`, `delayGroups`, `legalDeadlineMinutes`. A comment flags a past defect:
@@ -282,7 +278,7 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 ## `escalation/`
 
 **Route:** none live. `/escalation` (`src/app/ward-flow/escalation/page.tsx`) is a
-`redirect()` to `/ward-flow/delays?from=escalation` — MERGE 01, owner-approved 2026-09-05.
+`redirect()` to `/ward-flow/waiting` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
 inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
 `escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306

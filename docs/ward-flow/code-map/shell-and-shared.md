@@ -190,8 +190,8 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/discharges`                     | `DischargeBoard`                                                                                |
 | `/ed`                             | `EdIndex`                                                                                       |
 | `/ed/[edId]`                      | `EdScreen`                                                                                      |
-| `/escalation`                     | redirect → `/delays?from=escalation`                                                            |
-| `/exceptions`                     | redirect → `/delays?from=exceptions`                                                            |
+| `/escalation`                     | redirect → `/waiting`                                                                           |
+| `/exceptions`                     | redirect → `/waiting`                                                                           |
 | `/governance`                     | `WardModeWorkspace` mode `"governance"` → `GovernanceWorkbench`                                 |
 | `/bed-meeting`                    | `BedMeetingTvScreen` (flag `bed-meeting-tv`)                                                    |
 | `/handover`                       | `HandoverPage`                                                                                  |
@@ -203,7 +203,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/out-of-area`                    | `OutOfAreaBoard`                                                                                |
 | `/people/[patientId]`             | `PatientNowScreen`, or `PersonScreen` with `?view=governed`/`legacy`, or `WardMovementNotFound` |
 | `/people/new`                     | `AddPatientForm`                                                                                |
-| `/queue`                          | redirect → `/delays?from=queue`                                                                 |
+| `/queue`                          | redirect → `/waiting`                                                                           |
 | `/referrals`                      | `ReferralBoard`                                                                                 |
 | `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`)                         |
 | `/reports/chronology`             | `PatientChronologyScreen`                                                                       |
@@ -232,8 +232,8 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 route handler (`GET`) that streams `design/third-edition-mockups/ward-flow-digest.html` back verbatim.
 
 **Seven redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
-`command`, `constellation` and `network` (Network screen retired 19 Oct 2026) → `/ward-flow`; `escalation`, `exceptions`, `queue` → each
-its own `/delays?from=<name>` (Delays reads that query param to show an alias banner); `transport` →
+`command`, `constellation` and `network` (Network screen retired 19 Oct 2026) → `/ward-flow`; `escalation`, `exceptions`, `queue` →
+`/waiting` (the old-bookmark banner was removed 22 Oct 2026); `transport` →
 `/movements`. (`/ed` was formerly a redirect to `/ed/fremantle-ed` and now renders `EdIndex`.) `transport/officer` is a separate, nested route unaffected by the `transport` redirect.
 
 ### 1.3 Error and loading boundaries
@@ -289,8 +289,8 @@ Two `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree
 - **`src/app/ward-flow/ed/page.tsx`** — `/ed` → `EdIndex` (`@/components/ward-management/ed/ed-index`).
 - **`src/app/ward-flow/ed/[edId]/page.tsx`** (24) — `/ed/[edId]` → `EdScreen`;
   `generateMetadata` resolves the department name via `edById`.
-- **`src/app/ward-flow/escalation/page.tsx`** (13) — redirect → `/delays?from=escalation`.
-- **`src/app/ward-flow/exceptions/page.tsx`** (13) — redirect → `/delays?from=exceptions`.
+- **`src/app/ward-flow/escalation/page.tsx`** (13) — redirect → `/waiting`.
+- **`src/app/ward-flow/exceptions/page.tsx`** (13) — redirect → `/waiting`.
 - **`src/app/ward-flow/governance/page.tsx`** (12) — `/governance` → `WardModeWorkspace
 mode="governance"`.
 - **`src/app/ward-flow/handover/page.tsx`** (12) — `/handover` → `HandoverPage`.
@@ -315,7 +315,7 @@ mode="governance"`.
   prefix is passed as `patientId`, a `WF-` prefix as `movementId`); an id starting with neither →
   `WardMovementNotFound`. Doc comment: deliberately `/people/`, not `/patients/`, because the old
   `/patients/[patientId]` route actually looked a _Movement_ up by id.
-- **`src/app/ward-flow/queue/page.tsx`** (13) — redirect → `/delays?from=queue`.
+- **`src/app/ward-flow/queue/page.tsx`** (13) — redirect → `/waiting`.
 - **`src/app/ward-flow/referrals/page.tsx`** (13) — `/referrals` → `ReferralBoard
 defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/ward-flow/referrals/new/page.tsx`** (13) — `/referrals/new` →
