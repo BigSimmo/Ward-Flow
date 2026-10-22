@@ -313,6 +313,8 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(card).not.toHaveTextContent("Synthetic Cleared");
     expect(card).not.toHaveTextContent("Synthetic Closed");
     expect(screen.queryByText("No urgent tasks recorded.")).not.toBeInTheDocument();
+    // The card counts once, so the badge never reads zero beside it.
+    expect(screen.getByLabelText("1 unread alert")).toHaveTextContent("1 Alert");
   });
 
   it("renders direct ward notices and allows acknowledging unread notices", () => {

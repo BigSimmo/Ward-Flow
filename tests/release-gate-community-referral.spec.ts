@@ -16,6 +16,7 @@ import {
   waitForScreen,
   wardDesk,
 } from "./helpers/ward-release-gate";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Release gate: a community mental health team refers a person for a bed from its own desk.
@@ -213,6 +214,9 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // --- The coordinator's Home: the referral is queued, sent by the team. ---
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
+  // Home v7 (Josh, 22 Oct 2026): Home opens on My list; the queue's Referrals tab is under
+  // Everyone waiting.
+  await showEveryoneWaitingOn(page);
   await page.getByRole("radio", { name: /^Referrals/u }).click();
   await expect
     .poll(async () => (await homeReferralIds(page)).filter((id) => !SEEDED_REFERRAL_IDS.has(id)), {

@@ -121,10 +121,10 @@ describe("the rail shows the desk's own menu (B1)", () => {
     expect(screen.getByTestId("ward-rail-role-menu")).toHaveAccessibleName("Nurse in charge menu");
   });
 
-  it("gives the bed coordinator Needs you, Capacity, Movements, Referrals and Handover (B1)", () => {
+  it("gives the bed coordinator My list, Capacity, Movements, Referrals and Handover (B1, Home v7)", () => {
     const { main, more } = roleMenu(railEntries(), "coordinator");
     expect(main.map((item) => [item.id, item.label])).toEqual([
-      ["command", "Needs you"],
+      ["command", "My list"],
       ["capacity", "Capacity"],
       ["movements", "Movements"],
       ["referrals", "Referrals"],
@@ -134,12 +134,12 @@ describe("the rail shows the desk's own menu (B1)", () => {
     expect(more.find((group) => group.label === "Today")?.entries.map((entry) => entry.label)).toContain("Waiting");
     render(wrap(<WardRail />));
     expect(railMenu()).toEqual([
-      "Needs you",
+      "My list",
       expect.stringMatching(/^Capacity, /u),
       expect.stringMatching(/^Movements, /u),
       expect.stringMatching(/^Referrals, /u),
     ]);
-    expect(screen.getByRole("link", { name: "Needs you" })).toHaveAttribute("href", "/ward-flow");
+    expect(screen.getByRole("link", { name: "My list" })).toHaveAttribute("href", "/ward-flow");
     expect(screen.getByRole("link", { name: /^Capacity, /u })).toHaveAttribute("href", "/ward-flow/capacity");
     expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
     fireEvent.click(screen.getByTestId("ward-rail-more"));
@@ -230,7 +230,7 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
     expect(toHandover[0]).toHaveTextContent(/^Handover(in .+|due now)$/u);
     expect(
       within(within(sheet).getByRole("region", { name: "Bed coordinator" })).getAllByRole("link")[0],
-    ).toHaveAccessibleName("Needs you");
+    ).toHaveAccessibleName("My list");
   });
 });
 

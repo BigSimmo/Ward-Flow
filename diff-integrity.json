@@ -1333,6 +1333,20 @@
       "after": 4,
       "reason": "Josh approved retiring the hidden governed patient dossier (?view=governed, PersonScreen) on 21 Oct 2026 (UX audit). The screen and its CSS were deleted, so cases that rendered only PersonScreen go with it. The dropped case checked PersonScreen's tab in the address; the useAddressTab hook cases stay.",
       "approvedOn": "2026-10-21"
+    },
+    {
+      "path": "tests/ui-ward-coordinator.spec.ts",
+      "before": 22,
+      "after": 18,
+      "reason": "Home v7, approved by Josh on 22 Oct 2026, with State bedflow moved to the foot of Capacity unchanged (his decision card, 10:25Z). Four journeys read only State bedflow's patient mode on Home: routes to the shortlist, an ineligible ward's marking, accepted against referred, and the recorded destination at the hub. Capacity chooses no patient, so that mode is no longer on any screen. The card's patient mode keeps component coverage in tests/ward-home-bedflow-fits.dom.test.tsx, and the shortlist halves of the restrictive-ward and voluntary-on-locked journeys stay in this spec.",
+      "approvedOn": "2026-10-22"
+    },
+    {
+      "path": "tests/ward-home-offer-undo.dom.test.tsx",
+      "before": 3,
+      "after": 1,
+      "reason": "Home v7, approved by Josh on 22 Oct 2026, with State bedflow moved to the foot of Capacity unchanged. The two retired cases offered a ward from State bedflow on Home and checked its Undo toast. Capacity chooses no patient, so Offer is never shown there, and Home now refers from Placement, which opens the referral sheet. The override sign-off case stays; tests/ward-home-offer-visible.dom.test.tsx still checks what Home shows of an offer.",
+      "approvedOn": "2026-10-22"
     }
   ]
 }

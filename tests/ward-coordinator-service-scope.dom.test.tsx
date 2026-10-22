@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 // which already import it directly for the same reason.
 import "@testing-library/jest-dom/vitest";
 
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -23,6 +24,7 @@ import {
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { showWholeHomeQueue } from "./helpers/ward-home-queue";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
@@ -107,6 +109,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
+    showEveryoneWaiting();
     fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
 
     for (const referral of MEMBER_REFERRALS) {
@@ -131,6 +134,8 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
+    // The scope bar belongs to the priority queue, behind Home's Everyone waiting switch.
+    showEveryoneWaiting();
     const memberOfWhole = wardMovements.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
     // The screen's own denominator is the full seeded population (seedWardFlowState().movements),
     // not the raw wardMovements fixture array: seedWardFlowState() additively overlays demonstration
@@ -179,14 +184,15 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
 
   it("the flow diagram's foot sentence is exact, and the diagram itself keeps every unit (whole-network)", () => {
     setServiceScope(SERVICE);
+    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
+        <CapacityScreen />
       </WardFlowProvider>,
     );
 
     expect(screen.getByTestId("ward-diagram-service-foot")).toHaveTextContent(
-      `Showing the whole network. The queue is scoped to ${SERVICE}.`,
+      `Showing every ward in the network, not only ${SERVICE}.`,
     );
   });
 

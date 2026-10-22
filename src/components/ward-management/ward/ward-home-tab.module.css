@@ -578,9 +578,11 @@
   white-space: nowrap;
 }
 
+/* `flex: none` keeps the foot as tall as its 48px touch link when the card is held to the sheet's height. */
 .flowFoot,
 .shiftFoot {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
@@ -1357,6 +1359,16 @@ label.todoMain:has(.todoTick:focus-visible) {
 .needsCard .phoneClearTitle {
   flex-wrap: wrap;
   font-size: var(--wf-fs-14);
+}
+
+/* In the card the counts take their own line under the title, so no line starts with a dot. */
+.needsCard .phoneClearText {
+  flex-basis: 100%;
+  padding-left: calc(12px + var(--wf-s-2));
+}
+
+.needsCard .phoneClearSep {
+  display: none;
 }
 
 .needsLabel {

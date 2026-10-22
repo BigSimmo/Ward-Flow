@@ -3,6 +3,7 @@
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
+import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type {
   Unit,
   Movement,
@@ -53,10 +54,6 @@ function arrivalIsLate(movement: Movement, now: Instant): boolean {
   const eta = movement.arrivalDetails?.estimatedArrivalAt;
   if (eta === undefined) return false;
   return minutesUntil(eta, now) < 0;
-}
-
-function wardSafeRejectionReason(reason: string): string {
-  return reason;
 }
 
 interface WardArrivalsCorridorProps {

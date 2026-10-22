@@ -109,7 +109,7 @@ export function eligibilityWarning(movement: Movement, unit: Unit, now: Instant)
     // `gate.detail` directly — is what keeps this ward/ED-facing warning from ever joining in the
     // `gender_designation` gate's own "female only"/"Record gender first" wording. This is the
     // only caller of `eligibilityWarning` today (`ward-screen.tsx`, both presentation modes).
-    text: `Does not meet every placement requirement — ${failedGates.map((gate) => wardFacingGateDetail(gate)).join("; ")}`,
+    text: `Does not meet every placement requirement: ${failedGates.map((gate) => wardFacingGateDetail(gate)).join("; ")}`,
     failedGates,
   };
 }

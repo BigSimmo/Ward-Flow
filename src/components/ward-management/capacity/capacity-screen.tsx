@@ -8,7 +8,13 @@ import { Printer } from "lucide-react";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
+import { HomeBedflow } from "@/components/ward-management/coordinator/home-bedflow";
+import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import {
   FilterChip,
   Hero,
@@ -114,18 +120,36 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 export function CapacityScreen() {
   const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
-  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
-    useWardFlowSelect(
-      "movements",
-      "units",
-      "bedReleases",
-      "admissions",
-      "leaveBeds",
-      "dispatch",
-      "worldGeneration",
-      "plannedAdmissions",
-    );
+  const {
+    movements,
+    units,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    dispatch,
+    worldGeneration,
+    plannedAdmissions,
+    configuration,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "dispatch",
+    "worldGeneration",
+    "plannedAdmissions",
+    "configuration",
+  );
+  const network = useWardNetwork();
+  // Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of this screen, unchanged.
+  // No patient is chosen here, so it reads beds only: a ward can be picked out, never offered.
+  const [bedflowUnitId, setBedflowUnitId] = useState<string | undefined>(undefined);
   const { now, paused, togglePause } = usePageLive();
+  const bedflowDischargesHeldUp = useMemo(
+    () => serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now).service.blockedToday,
+    [network.sites, units, bedReleases, leaveBeds, now],
+  );
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   const makeRoomOn = useWardFeatureFlag("make-room-chains");
@@ -1067,6 +1091,23 @@ export function CapacityScreen() {
           {/* Top 25 item 8: desktop only, so the phone design is unchanged. */}
           {!isPhone ? <StepDownBoard now={now} /> : null}
           {makeRoomOn && !isPhone ? <MakeRoomPanel now={now} service={service} /> : null}
+          {!isPhone ? (
+            <HomeBedflow
+              movement={undefined}
+              units={units}
+              movements={movements}
+              bedReleases={bedReleases}
+              leaveBeds={leaveBeds}
+              admissions={admissions}
+              now={now}
+              selectedUnitId={bedflowUnitId}
+              onSelectUnit={(unitId) => setBedflowUnitId((current) => (current === unitId ? undefined : unitId))}
+              onOffer={() => undefined}
+              parallelReferralCap={configuration.parallelReferralCap}
+              dischargesHeldUp={bedflowDischargesHeldUp}
+              service={service}
+            />
+          ) : null}
         </div>
         {isPhone ? (
           <div className={styles.plannedWrap} data-phone-hidden={phoneTab !== "planned" ? "true" : undefined}>

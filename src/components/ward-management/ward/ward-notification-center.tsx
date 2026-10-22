@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { type CapacityFigure, type Movement, type Notice } from "@/components/ward-management/ward-model";
+import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -213,13 +214,13 @@ export function WardNotificationCenter({
   // Before, only a recorded "not cleared" was listed and the panel could say "No urgent tasks" while no
   // clearance had been recorded at all. A ward screen reads the transfer's own record only: referral
   // data reaches ward code through the ward-scoped projection (FD-23), which carries no clearance, so
-  // the card says "on the transfer". Not recorded is not counted as urgent: it is a gap, not an alarm.
-  const isInbound = (m: Movement) =>
-    m.acceptedUnitId === unitId || (m.referredUnitIds !== undefined && m.referredUnitIds.includes(unitId));
-  const missingClearances = movements.filter((m) => isInbound(m) && m.medicalClearance?.cleared === false);
-  const unrecordedClearances = movements.filter(
-    (m) => m.closure === undefined && isInbound(m) && m.medicalClearance === undefined,
-  );
+  // the card says "on the transfer". The card counts once in Urgent and the Alert badge, so a shown card
+  // never sits under a zero (Notices thread, 22 Oct 2026).
+  const {
+    missing: missingClearances,
+    unrecorded: unrecordedClearances,
+    count: clearanceCount,
+  } = wardClearanceAlerts(movements, unitId);
 
   // 3. Direct Ward Notices
   const wardNotices = notices.filter((n) => noticeIsForWardChrome(n, "ward", unitId, now));
@@ -227,9 +228,8 @@ export function WardNotificationCenter({
   // Counts for Telemetry Strip & Tab Badges
   const buzzCount = matchingBuzzes.length;
   const overdueArrivalsCount = overdueArrivals.length;
-  const missingClearancesCount = missingClearances.length;
   const censusCount = isCensusOverdue ? 1 : 0;
-  const urgentTasksCount = censusCount + overdueArrivalsCount + missingClearancesCount;
+  const urgentTasksCount = censusCount + overdueArrivalsCount + clearanceCount;
   const unreadNoticesCount = wardNotices.filter((n) => n.readAt === undefined).length;
   const totalUnreadAlerts = buzzCount + urgentTasksCount + unreadNoticesCount;
 

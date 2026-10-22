@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Locator, type Page } from "playwright/test";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Shared mode end to end (audit F-16): two coordinator desks, each signed in in its own browser
@@ -47,6 +48,14 @@ async function openDesk(browser: Browser, account: { email: string; password: st
     const response = await route.fetch({ url: route.request().url().replace(supabaseOrigin, authOrigin) });
     await route.fulfill({ response });
   });
+  // A signed-in desk's tour starts on its own once, over the home screen. These journeys are about
+  // the shared workspace, so every desk's tour is marked seen before the page loads.
+  await context.addInitScript(() => {
+    window.localStorage.setItem(
+      "ward_flow_choice_tour_seen",
+      "coordinator,ward,ed,community,officer,bed_manager,executive,admin",
+    );
+  });
   const page = await context.newPage();
   // A desk whose poll the clash test must hold back runs on Playwright's clock: it keeps real time
   // until paused, and while paused the 3 s poll timer cannot fire.
@@ -74,6 +83,7 @@ function queueRow(page: Page, movement = MOVEMENT): Locator {
 
 /** Show the movement's queue row, opening the queue's "Show all" when the row is past the first rows. */
 async function revealRow(page: Page, movement = MOVEMENT): Promise<Locator> {
+  await showEveryoneWaitingOn(page);
   const queue = page.getByRole("region", { name: "Priority queue" });
   const row = queueRow(page, movement);
   const showAll = queue.getByRole("button", { name: /^Show all/u });
@@ -127,6 +137,7 @@ async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, moveme
 
 /** A queued movement other than MOVEMENT, for a second record to change. */
 async function anotherMovement(page: Page): Promise<string> {
+  await showEveryoneWaitingOn(page);
   const rows = page.getByRole("region", { name: "Priority queue" }).locator('[data-testid^="ward-queue-row-"]');
   await expect(rows.first()).toBeVisible();
   const ids = await rows.evaluateAll((list) =>
@@ -329,7 +340,9 @@ test("different records at once: two desks change different records from the sam
 test("a desk that loses its network says it is not connected, then catches up without a reload when it returns", async () => {
   for (const desk of [one, two]) {
     await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
-    await revealRow(desk.page);
+    // Home v7 (Josh, 22 Oct 2026): Placement opens only once a patient is chosen, so each desk
+    // chooses the movement before the network drops.
+    await selectMovement(desk.page);
   }
   await plantSentinel(one.page);
 
