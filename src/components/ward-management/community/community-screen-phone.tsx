@@ -43,6 +43,14 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
+import {
+  sentAgo,
+  sentAnswer,
+  sentAskedFor,
+  sentPlaceLine,
+  sentToLine,
+  unattributedSentLine,
+} from "./community-sent-referrals";
 
 /*
  * PHONE (v10 all-pages mockup, "Community team", Phone, 11 Oct 2026). Its own tree under 48rem,
@@ -101,6 +109,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
     suburbsNamingTeam,
     phoneListTab,
     phoneList,
+    sentReferrals,
     phonePerson,
     phoneName,
     openDossier,
@@ -127,6 +136,37 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
   // Built only on a phone, so desktop does no phone work.
   const phoneLists: CommunityPhoneList[] = isPhone
     ? [
+        {
+          // D-77 group A: the referrals this team sent, first among the team's lists, as mocked.
+          id: "sent",
+          label: "Sent",
+          groups: [
+            {
+              id: "sent",
+              rows: sentReferrals.sent.map((referral) => {
+                const person = phonePerson(referral.patientId);
+                const patientId = referral.patientId;
+                return {
+                  id: referral.id,
+                  testId: `ward-community-phone-sent-${referral.id}`,
+                  name: phoneName(person, "No person on file"),
+                  meta: `${sentAskedFor(referral)} · ${sentToLine(referral, units)}`,
+                  time: `Sent ${sentAgo(referral.raisedAt, now)}`,
+                  note: [
+                    sentAnswer(referral, units).text,
+                    ...referral.addressings.map((addressing) => sentPlaceLine(addressing, units)),
+                  ].join(" "),
+                  onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
+                };
+              }),
+              empty: `No referral on record names ${team.name} as the team that sent it.`,
+              after:
+                sentReferrals.unattributed > 0 ? (
+                  <p className={phoneCss.quiet}>{unattributedSentLine(sentReferrals.unattributed)}</p>
+                ) : undefined,
+            },
+          ],
+        },
         {
           id: "waiting",
           label: "Waiting",
@@ -523,6 +563,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
           </>
         }
         figures={[
+          { id: "sent", value: sentReferrals.sent.length, label: "Sent" },
           {
             id: "waiting",
             value: phoneWaitingValue,

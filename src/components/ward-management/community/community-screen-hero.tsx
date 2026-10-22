@@ -21,11 +21,12 @@ import { communitySearchRenderer } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
 
 /**
- * The hero's four lists, in the mockup's order. Ids are the panels' own. The team's own facts (how
+ * The hero's five lists, in the mockup's order. Sent comes first (D-77 group A, approved 21 Oct 2026). Ids are the panels' own. The team's own facts (how
  * to reach it, the sample deployment) are no longer a fifth tab: the v6 page keeps them in view
  * under every list, as the mockup's side column does.
  */
 const TEAM_TABS = [
+  { id: "tab-sent", buttonId: "tabBtn-sent", label: "Sent", section: "ward-community-sent" },
   { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
   { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
   { id: "tab-egress", buttonId: "tabBtn-egress", label: "Expected back", section: "ward-community-expected-back" },
@@ -58,6 +59,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
     pastPlannedDateCount,
     admittedWhileAlreadyWithTeam,
     activeTab,
+    sentReferrals,
   } = view;
   const renderSearch = communitySearchRenderer(view);
   return (
@@ -162,21 +164,23 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
               {TEAM_TABS.map((tab) => {
                 const selected = activeTab === tab.id;
                 const count =
-                  tab.id === "tab-triage"
-                    ? isDemoMode && !hasAnyReferralsForTeam
-                      ? teamConfig.triage
-                      : waitingReferrals.length
-                    : tab.id === "tab-inpatients"
-                      ? isDemoMode
-                        ? teamConfig.inpatients
-                        : lists.currentlyAdmitted.length
-                      : tab.id === "tab-egress"
+                  tab.id === "tab-sent"
+                    ? sentReferrals.sent.length
+                    : tab.id === "tab-triage"
+                      ? isDemoMode && !hasAnyReferralsForTeam
+                        ? teamConfig.triage
+                        : waitingReferrals.length
+                      : tab.id === "tab-inpatients"
                         ? isDemoMode
-                          ? teamConfig.egress
-                          : lists.expectedBack.length
-                        : isDemoMode
-                          ? teamConfig.caseload
-                          : caseloadRows.length;
+                          ? teamConfig.inpatients
+                          : lists.currentlyAdmitted.length
+                        : tab.id === "tab-egress"
+                          ? isDemoMode
+                            ? teamConfig.egress
+                            : lists.expectedBack.length
+                          : isDemoMode
+                            ? teamConfig.caseload
+                            : caseloadRows.length;
                 return (
                   <button
                     key={tab.id}

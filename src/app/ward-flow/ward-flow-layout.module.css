@@ -19,6 +19,16 @@
  * Paint the rail's full track with the Ward surface. The sticky rail stays viewport-height;
  * longer route content must not expose the host application's background below it.
  */
+/* Carried by every portalled sheet, dialog and toast (OverlayScope in layout.tsx), which render
+ * under <body> and so cannot inherit what the page around them declares: the shell tokens from
+ * `.shellRow`, the fixed palette from WardGround and the second-edition tokens most screens compose.
+ * `--lift-sm` is the one screen-level alias the board, ED and ward screens each declare alike. */
+.overlayScope {
+  composes: wardTokens from "../../components/ward-management/ward-tokens.module.css";
+  composes: wardShellTokens wardFixedPalette from "../ward-flow-shell-tokens.module.css";
+  --lift-sm: var(--wf-e1);
+}
+
 .shellRow {
   composes: wardShellTokens from "../ward-flow-shell-tokens.module.css";
   display: flex;

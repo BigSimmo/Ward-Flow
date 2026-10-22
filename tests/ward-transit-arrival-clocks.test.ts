@@ -309,14 +309,15 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
   });
 
   describe("Emergency Department pressure screen transit badge", () => {
-    it("renders transit badge for pulled movement in ED patient table row", () => {
+    it("shows a pulled movement's bed hold in the ED board's Referral column", () => {
       render(React.createElement(EdScreen, { edId: "jhc-ed" }));
 
-      const badge = screen.getByTestId(`ward-ed-transit-badge-${movementPulled.id}`);
-      expect(badge).toBeInTheDocument();
-      // Audit A4-4: the one bed-hold rule; with no hold end recorded it states the configured length only.
-      expect(badge).toHaveTextContent(/Pulled · 4h pull/i);
-      expect(badge).not.toHaveTextContent(/clock active/i);
+      // Change 2 (D-77): the hold moved from a chip under the name into the Referral column, in the
+      // ED's words. Audit A4-4: with no hold end recorded it states the configured length only.
+      expect(screen.queryByTestId(`ward-ed-transit-badge-${movementPulled.id}`)).not.toBeInTheDocument();
+      const referral = screen.getByTestId(`ward-ed-referral-${movementPulled.id}`);
+      expect(referral).toHaveTextContent(/Accepted, bed held, 4h hold/i);
+      expect(referral).not.toHaveTextContent(/clock active/i);
     });
 
     it("renders transit badge with active ETA and arrival mode when arrivalDetails present", () => {

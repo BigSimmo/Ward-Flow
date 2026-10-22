@@ -1,16 +1,16 @@
 /** Thin adapter for the Supabase Auth REST contract: https://github.com/supabase/auth/blob/master/openapi.yaml. */
 const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
-export const WARD_AUTH_STORAGE_KEY = "ward-flow:auth:zakzoemeedfepxcstsou:v1";
-export class WardAuthError extends Error {
-  constructor(
-    public readonly kind: "credentials" | "session" | "unavailable" | "cancelled",
-    message: string,
-  ) {
-    super(message);
-  }
-}
-type User = { id: string };
-type Session = { access_token: string; refresh_token: string; expiresAt: number; recovery: boolean; user?: User };
+import {
+  WARD_AUTH_STORAGE_KEY,
+  WardAuthError,
+  consumeRecoveryFragment,
+  type WardAuthSession,
+  type WardAuthUser,
+} from "./ward-auth-link";
+
+export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryFragment };
+type User = WardAuthUser;
+type Session = WardAuthSession;
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 function isValidSession(parsed: unknown): parsed is Session {
   if (!parsed || typeof parsed !== "object") return false;
@@ -27,32 +27,6 @@ function isValidSession(parsed: unknown): parsed is Session {
     typeof row.recovery === "boolean" &&
     (!row.recovery ? typeof userId === "string" && userId.length > 0 : true)
   );
-}
-export function consumeRecoveryFragment(
-  location: Pick<Location, "hash" | "pathname" | "search">,
-  replace: (url: string) => void,
-): Session | null {
-  const parts = new URLSearchParams(location.hash.replace(/^#/, ""));
-  if (
-    !["access_token", "refresh_token", "error", "error_code", "error_description", "type"].some((key) => parts.has(key))
-  )
-    return null;
-  replace(location.pathname + location.search);
-  const failed = ["error", "error_code", "error_description"].some((key) => parts.has(key));
-  if (parts.get("type") === "signup" && !failed) return null;
-  const accessToken = parts.get("access_token");
-  const refreshToken = parts.get("refresh_token");
-  if (failed || parts.get("type") !== "recovery" || !accessToken || !refreshToken)
-    throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
-  const expires = Number(parts.get("expires_in"));
-  if (!Number.isFinite(expires) || expires <= 0)
-    throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
-  return {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    expiresAt: Date.now() + expires * 1000,
-    recovery: true,
-  };
 }
 export type WardBrowserAuthAdapter = {
   readonly isRecovery: boolean;

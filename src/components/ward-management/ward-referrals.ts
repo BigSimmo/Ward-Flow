@@ -17,6 +17,7 @@ import {
   BED_HOLD_EXPIRY_MINUTES,
   EXPECT_RECONSIDER_AFTER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   CommunityDeclineReason,
   Movement,
@@ -293,7 +294,21 @@ export function referralDestinationLabel(destination: ReferralDestination): stri
     // two dashes carry different meanings and the reader has to guess which clause is which.
     return `${referralDestinationKindLabel(destination.kind)} (${referralPurposeLabel(destination.purpose)})`;
   }
+  // D-74: a community arm says what it is for too, so a follow-up is never read as an admission ask.
+  if (destination.kind === "community_team") {
+    return `${referralDestinationKindLabel(destination.kind)} (${communityReferralPurposeLabel(communityPurposeOf(destination))})`;
+  }
   return referralDestinationKindLabel(destination.kind);
+}
+
+/** D-74: a community arm's purpose; an arm saved before D-74 reads as follow-up. */
+export function communityPurposeOf(destination: { purpose?: CommunityReferralPurpose }): CommunityReferralPurpose {
+  return destination.purpose ?? "follow_up";
+}
+
+/** D-74: the words for each community purpose, the same on every screen. */
+export function communityReferralPurposeLabel(purpose: CommunityReferralPurpose): string {
+  return purpose === "assess_for_admission" ? "Assess for admission" : "Community follow-up";
 }
 
 /**
@@ -1338,25 +1353,6 @@ export function travelBandGroupCounts(group: TravelBandGroup): TravelBandGroupCo
 export function travelBandGroupLabel(band: TravelBandGroup["band"]): string {
   return band === "not_recorded" ? NOT_RECORDED_LABEL : TRAVEL_BAND_LABELS[band];
 }
-
-/**
- * The one spelling of the two figures a band group's heading carries.
- *
- * Two present facts about the beds in this band and nothing else. `accepting` is a subset of
- * `units` and is the only ratio these two ever form; neither counts what is missing, and neither
- * shares a denominator with any other figure on any screen.
- */
-export function travelBandGroupCountsSentence(counts: TravelBandGroupCounts): string {
-  return (
-    `${counts.units} ${counts.units === 1 ? "unit" : "units"} in this band · ` +
-    `${counts.accepting} ${counts.accepting === 1 ? "accepts" : "accept"} this referral`
-  );
-}
-
-/** What an empty group says under its heading. An empty group is still rendered, still carries its
- *  heading and still carries both counts — "there is nothing in this band" is an answer a
- *  coordinator came for, and a group that vanishes when it is empty cannot give it. */
-export const TRAVEL_BAND_GROUP_EMPTY_SENTENCE = "No unit in this band.";
 
 // The out-of-area ledger lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals-out-of-area";

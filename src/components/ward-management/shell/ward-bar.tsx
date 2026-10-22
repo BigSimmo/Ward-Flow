@@ -44,6 +44,8 @@ import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-mana
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
@@ -57,14 +59,20 @@ import {
   wardTasksAreActionableForRole,
 } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
-const WardToolsSheet = dynamic(() =>
-  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
-);
+// Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
+// crashing the page (offline Tools crash, 22 Oct 2026).
+const loadToolsSheet = () =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet);
+// No `loading` option: a local Suspense boundary holds the first reveal on a timer, which a paused
+// test clock never fires (ui-ward-roles.spec.ts demo clock journey).
+const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
+preloadWhenIdle(loadToolsSheet);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -1453,6 +1461,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           />
         ) : null}
       </Sheet>
+
+      {/* Help (fix plan item 12): its sheet loads only when the rail, the phone menu or Settings opens it. */}
+      <WardHelpHost />
     </header>
   );
 }

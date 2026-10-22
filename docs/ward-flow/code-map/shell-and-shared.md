@@ -499,6 +499,19 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   screens do not each reimplement it slightly differently. 1 importer within this scope's grep, plus
   several capacity/delays/movements screens outside it.
 - **`shell/ward-service-scope-bar.module.css`** (70 lines) — its styles.
+- **`shell/ward-my-wards-store.ts`** — My wards: the ward ids one person pins on this device
+  (`MY_WARDS_STORAGE_KEY = "ward-flow-my-wards"`, localStorage, at most `MY_WARDS_LIMIT`). Ids only,
+  checked on every read, and cleared at sign-out. Key exports: `useMyWards`, `toggleMyWard`,
+  `parseMyWards`, `resetMyWardsForTests`.
+- **`shell/ward-my-wards.tsx`** (+ `.module.css`) — `WardMyWards`, the My wards section in the open
+  rail and the phone menu: links to pinned wards in today's network that the desk may open, a
+  remove button each, and "Pin this ward" on a ward page. Renders nothing otherwise.
+- **`help/`** (fix plan item 12, 21 Oct 2026) — in-app help. `ward-help-content.ts` holds
+  `SCREEN_HELP` (keyed by rail entry id), `GLOSSARY` (Ward Flow terms plus site codes) and
+  `tourFor(role)`, built from that desk's `ROLE_MENUS`. `ward-help-store.ts` keeps which desks have
+  seen their tour under `ward_flow_choice_tour_seen` (kept at sign-out). `ward-help-events.ts` sends
+  and hears the open-help event, apart from the store so the header loads only it. `ward-help-host.tsx` lazy-loads `ward-help-sheet.tsx` (screen help, glossary search and the
+  tour). `ward-help-link.tsx` is the rail and phone menu row, marked New until the tour is seen.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

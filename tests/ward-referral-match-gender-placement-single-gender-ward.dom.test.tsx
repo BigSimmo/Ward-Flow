@@ -85,6 +85,8 @@ function renderNonBinaryReferral() {
 describe("ReferralMatchView: a single-gender ward offers the non-binary placement form instead of the decline branch", () => {
   it("FSH Adult Secure carries the gender-placement form, and submitting accepts it", () => {
     renderNonBinaryReferral();
+    // D-77: no ward starts picked in the one decision list.
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`));
 
     // The canary: if this ward had `candidateAccepts === false`, this row would render the
     // decline/override branch instead and neither testid below would exist.

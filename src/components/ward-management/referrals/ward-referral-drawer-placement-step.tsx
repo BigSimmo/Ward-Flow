@@ -15,6 +15,8 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { communityTeamOptions } from "./referral-destination-options";
+import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { DocumentationPanel } from "./referral-flow-panels";
 import { StatusGlyph } from "@/components/wf";
 import {
@@ -145,6 +147,11 @@ export function ReferralDocumentationStep({ s }: { s: WardReferralDrawerState })
   );
 }
 
+const COMMUNITY_PURPOSE_LABELS = {
+  follow_up: communityReferralPurposeLabel("follow_up"),
+  assess_for_admission: communityReferralPurposeLabel("assess_for_admission"),
+};
+
 /** Step 4, Wards, Teams or EDs: the places to refer to, the summary and the arrival plan. */
 export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
   const {
@@ -157,6 +164,8 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     setSelectedUnitIds,
     selectedRecipient,
     setSelectedRecipient,
+    communityPurpose,
+    setCommunityPurpose,
     previewOpen,
     confirmationOpen,
     setFlowError,
@@ -420,6 +429,21 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               </label>
             ))}
           </div>
+          {destType === "community" ? (
+            <div className={styles.cardBody} data-testid="ward-referral-community-purpose">
+              <Choice
+                legend="What is the referral for?"
+                name={`${sectionId}-community-purpose`}
+                options={COMMUNITY_REFERRAL_PURPOSES}
+                labels={COMMUNITY_PURPOSE_LABELS}
+                value={communityPurpose || undefined}
+                onChange={(purpose) => {
+                  setCommunityPurpose(purpose);
+                  setFlowError(null);
+                }}
+              />
+            </div>
+          ) : null}
         </section>
       )}
 

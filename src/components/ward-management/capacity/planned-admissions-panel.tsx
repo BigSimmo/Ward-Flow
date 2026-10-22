@@ -106,7 +106,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
   // form that has not asked for anything yet.
   const [submittedInForm, setSubmittedInForm] = useState(false);
-  const bookButton = useRef<HTMLButtonElement>(null);
 
   useDirtyStateGuard(form !== null);
 
@@ -379,7 +378,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       count={`${booked} booked`}
       testId="ward-capacity-planned-admissions"
       headerAction={
-        <Button ref={bookButton} variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
+        <Button variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
           <CalendarPlus size={16} aria-hidden="true" />
           Book
         </Button>
@@ -459,7 +458,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         title={form?.mode === "change" ? "Change planned admission" : "Book planned admission"}
         portal={false}
         testId="ward-planned-form"
-        returnFocusRef={bookButton}
         footer={
           <div className={styles.sheetFoot}>
             <Button onClick={closeForm}>Close</Button>

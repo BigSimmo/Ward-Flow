@@ -98,6 +98,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
     now,
     referrals,
     thisEdId,
+    boardTable,
     raise,
     recordEdStep,
     toggleExamination,
@@ -111,21 +112,27 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
     toggleLegalFormExpiry,
     communityReferralOpenFor,
     setCommunityReferralOpenFor,
+    setCommunityTeamChoice,
+    setCommunityPurposeChoice,
   } = ctx;
   return (
     <>
-      <button
-        type="button"
-        data-testid={`ward-ed-examine-toggle-${movement.id}`}
-        aria-disabled={examBlocked ? "true" : undefined}
-        aria-describedby={examBlocked ? `ward-ed-examine-unavailable-${movement.id}` : undefined}
-        title={examBlocked ?? undefined}
-        aria-expanded={examOpen}
-        className={`${styles.declineButton}${primaryAction === "exam" ? ` ${styles.primaryActionButton}` : ""}`}
-        onClick={examBlocked ? ignoreUnavailableActivation : () => toggleExamination(movement.id)}
-      >
-        Record examination
-      </button>
+      {/* Change 2 (D-77): off the phone sheet when it is already the sheet's pinned next step, so the
+          sheet never offers the same action twice. The board table keeps it in the row menu. */}
+      {!boardTable && primaryAction === "exam" ? null : (
+        <button
+          type="button"
+          data-testid={`ward-ed-examine-toggle-${movement.id}`}
+          aria-disabled={examBlocked ? "true" : undefined}
+          aria-describedby={examBlocked ? `ward-ed-examine-unavailable-${movement.id}` : undefined}
+          title={examBlocked ?? undefined}
+          aria-expanded={examOpen}
+          className={`${styles.declineButton}${primaryAction === "exam" ? ` ${styles.primaryActionButton}` : ""}`}
+          onClick={examBlocked ? ignoreUnavailableActivation : () => toggleExamination(movement.id)}
+        >
+          Record examination
+        </button>
+      )}
       <button
         type="button"
         data-testid={`ward-ed-outcome-toggle-${movement.id}`}
@@ -317,7 +324,12 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         onClick={
           cmhtBlocked
             ? ignoreUnavailableActivation
-            : () => setCommunityReferralOpenFor(communityReferralOpenFor === movement.id ? undefined : movement.id)
+            : () => {
+                // Each opening starts unset, so a team or purpose chosen for another person is never carried over.
+                setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
+                setCommunityReferralOpenFor(communityReferralOpenFor === movement.id ? undefined : movement.id);
+              }
         }
       >
         Refer to a community team
