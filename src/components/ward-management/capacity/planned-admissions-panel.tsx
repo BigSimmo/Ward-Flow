@@ -208,7 +208,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     setDraft({
       who: planned.patientId ? "patient" : "initials",
       patientId: planned.patientId ?? "",
-      initials: planned.initials === null || planned.initials === TYPED_TEXT_NOT_KEPT ? "" : planned.initials,
+      initials: planned.initials ?? "",
       sex: planned.sex,
       gender: planned.gender,
       reason: planned.reason,
