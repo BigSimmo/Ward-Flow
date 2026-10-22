@@ -82,7 +82,7 @@ export function WardTelemetryRibbon({
         {onActNow ? (
           <HeroStat
             value={actNow}
-            label="Tasks due now"
+            label="Due now"
             tone={actNow > 0 ? "danger" : "success"}
             command
             onToggle={onActNow}

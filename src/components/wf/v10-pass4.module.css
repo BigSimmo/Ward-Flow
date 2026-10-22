@@ -61,7 +61,8 @@
 /* DeltaTwin: then and now bars with the signed change. */
 .twin {
   display: inline-flex;
-  align-items: center;
+  /* Baseline: the bars stand on the text line, so "no change" no longer sits below the glyph. */
+  align-items: baseline;
   gap: 4px;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-15) / 1 var(--wf-mono);

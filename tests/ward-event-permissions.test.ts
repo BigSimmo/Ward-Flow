@@ -284,6 +284,7 @@ describe("who may raise which event", () => {
     // desk takes a referral for itself; the same desks log calls about it.
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
     LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+    ASK_MORE_WARDS: ["coordinator"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
