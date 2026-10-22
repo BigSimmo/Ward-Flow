@@ -1,6 +1,7 @@
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import type { AuditDecision } from "./ward-audit";
 import type { Instant } from "./ward-clock";
+import { candidateReason, referralEligibility } from "./ward-eligibility";
 import type { findReferral, findUnit, reject, replaceReferral, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { ReferralAddressing, ReferralDestination } from "./ward-model";
@@ -75,6 +76,11 @@ export function reduceReferralAskEvent(
     if (asked.has(unitId)) return reject(state, event, `${unit.name} has already been asked about this referral`);
     const closedRefusal = closedToAdmissionsRefusal(unit);
     if (closedRefusal) return reject(state, event, closedRefusal);
+    // Checked against the state now, since a bed or a gate can change after the list was opened.
+    const verdict = referralEligibility(referral, { ...template, unitId }, unit, event.now);
+    if (!verdict.eligible) {
+      return reject(state, event, `${unit.name} does not fit this referral now: ${candidateReason(verdict)}`);
+    }
   }
   const waiting = wardArms.filter((addressing) => isAwaitingAnswer(addressing)).length;
   const cap = state.configuration.parallelReferralCap;
