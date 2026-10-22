@@ -738,7 +738,7 @@ export function OfficerScreen() {
         "forms",
         formsOutstanding,
         "Jobs need forms",
-        "Need forms",
+        "Forms",
         isPhone && formsOutstanding > 0 ? "warning" : "neutral",
       )}
     </>

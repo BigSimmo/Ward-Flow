@@ -22,9 +22,10 @@ type Figure = { id: string; label: string; value: ReactNode; note?: string; test
 function durationFigures(summary: DurationSummary, what: string): { typical: Figure; slow: Figure } {
   const sample = `from ${summary.sampleSize} of ${summary.population} ${what}`;
   if (summary.median === undefined || summary.p90 === undefined) {
-    const reason = summary.population === 0 ? "none in this week" : "not enough data to publish";
+    // "from 0 of 0 beds held" read as a broken figure, so an empty week says so plainly.
+    const note = summary.population === 0 ? `No ${what} this week` : `${sample}, not enough data to publish`;
     return {
-      typical: { id: "typical", label: "Typical", value: "—", note: `${sample}, ${reason}` },
+      typical: { id: "typical", label: "Typical", value: "—", note },
       slow: { id: "slow", label: "Slowest 1 in 10", value: "—" },
     };
   }
