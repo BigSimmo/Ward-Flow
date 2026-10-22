@@ -161,7 +161,10 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       ["Today", ["Waiting", "Bed meeting TV"]],
       ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Discharges"]],
-      ["Reports and reference", ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call", "Seclusion"]],
+      [
+        "Reports and reference",
+        ["Governance", "Statistics", "Legal forms", "Out of area", "Alerts", "On-call", "Seclusion"],
+      ],
     ] as const;
     for (const [name, labels] of groups) {
       const groupLinks = within(within(sheet).getByRole("region", { name })).getAllByRole("link");
