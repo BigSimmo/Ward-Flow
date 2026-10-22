@@ -238,7 +238,8 @@ export function PersonEntry({
             {occupant.dischargeDateSetBy !== null
               ? `Date set by ${occupant.dischargeDateSetBy}`
               : "Date set — the role that set it is not recorded"}
-            , and {movesPhrase(occupant.dischargeDateMoves)}.{" "}
+            {/* A moved date is said once, by the flag below, not twice. */}
+            {occupant.dischargeDateMoves > 0 ? "" : `, and ${movesPhrase(occupant.dischargeDateMoves)}`}.{" "}
             {occupant.confirmed
               ? occupant.dischargeConfirmedBy !== null
                 ? `Confirmed by ${occupant.dischargeConfirmedBy} — a decision, not a plan.`

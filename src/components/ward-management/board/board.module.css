@@ -6110,8 +6110,8 @@
 }
 
 /* Change 10 (D-77, 21 Oct 2026): every bed on the phone, above the day figures, two to a row.
- * The filters scroll as one row and the colour legend is left off, because the day count on each
- * tile carries the meaning. A tapped bed opens its record in a sheet (`.detailSheetBody`). */
+ * The four filters also sit two to a row so none hides off the edge. The colour legend is left
+ * off, because the day count on each tile carries the meaning. A tapped bed opens its record in a sheet (`.detailSheetBody`). */
 @media screen and (max-width: 48rem) {
   .screen .phoneBeds {
     min-width: 0;
@@ -6124,15 +6124,14 @@
   }
 
   .screen .phoneBeds .filterSet {
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--wf-s-2);
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
   }
 
   .screen .phoneBeds .filterSet button {
-    flex: 0 0 auto;
+    justify-content: space-between;
+    min-width: 0;
     white-space: nowrap;
   }
 
@@ -6173,17 +6172,38 @@
 }
 
 /* The bed's record inside the phone sheet. The sheet carries the title and Close, so the panel's
- * own bar is hidden there. */
+ * own bar is hidden there. The sheet is portalled to <body>, outside `.screen`, so it takes the
+ * Ward tokens itself; without them the action buttons drew with no border or fill. */
+.detailSheetBody {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  /* The two board-local tokens the record's controls read, as set on `.screen`. */
+  --wb-control-radius: 0.5rem;
+  --wb-control-edge: var(--muted);
+}
+
 .detailSheetBody .detail {
   display: block;
   position: static;
   max-height: none;
   border: 0;
   border-radius: 0;
+  background: transparent;
   box-shadow: none;
   padding: 0;
 }
 
 .detailSheetBody .detailBar {
   display: none;
+}
+
+/* The sheet already pads its body, so the record drops its own inset and top rule there;
+ * otherwise its cards sit a step in from the sheet title with a stray line above. */
+.detailSheetBody .detail > :not(.detailBar) {
+  padding-inline: 0;
+}
+
+.detailSheetBody .person {
+  border-top: 0;
+  padding-top: 0;
 }
