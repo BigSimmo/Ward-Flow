@@ -1,6 +1,6 @@
 "use client";
 
-// Phone (v10) Capacity Overview, under the mismatch list: "Needs you" (the wards whose bed count is
+// Phone (v10) Capacity Overview, under the mismatch list: "Wards to check" (the wards whose bed count is
 // stale, oldest first), then two rows that open the bed forecast and today's discharges as sheets.
 // Rendered only on phone; the larger screen keeps the network aside these rows stand in for.
 import { useState } from "react";
@@ -55,7 +55,7 @@ export function CapacityPhoneOverview({
       </p>
       <section aria-labelledby="capacity-phone-needs-you">
         <h2 id="capacity-phone-needs-you" className={styles.phoneOverviewHead}>
-          <span>Needs you</span>
+          <span>Wards to check</span>
           <span className={styles.phoneOverviewCount}>
             {needsYou.length} of {needing.length}
           </span>

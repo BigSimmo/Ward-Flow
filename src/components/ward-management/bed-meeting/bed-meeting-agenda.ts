@@ -72,7 +72,7 @@ export function bedMeetingAgenda(
         subject: movementSubject(movement),
         record: movement,
         ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
-        detail: left > 0 ? `Hold runs out in ${durMinutes(left)}` : `Hold ran out ${durMinutes(-left)} ago`,
+        detail: left > 0 ? `Pull ${durMinutes(left)} left` : `Pull expired ${durMinutes(-left)} ago`,
       };
     });
 
@@ -104,7 +104,7 @@ export function bedMeetingAgenda(
 
   return [
     { id: "ed-waits", title: "Longest ED waits", items: edWaits },
-    { id: "holds", title: "Held beds, soonest to run out", items: holds },
+    { id: "holds", title: "Pulled beds, soonest to expire", items: holds },
     { id: "stranded", title: "Stranded stays", items: stranded },
     { id: "out-of-area", title: "Out of area", items: outOfArea },
   ];

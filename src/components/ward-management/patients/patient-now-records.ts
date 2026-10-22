@@ -6,7 +6,7 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
-import { dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { dayOf, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
@@ -567,6 +567,8 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
 };
 
 export function dur(min: number): string {
+  // UX audit 21 Oct 2026: "169h 0m" here read as a different wait from "7d 1h" on every other screen.
+  if (min >= 1440) return splitDuration(min);
   const h = Math.floor(min / 60);
   const m = min % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
