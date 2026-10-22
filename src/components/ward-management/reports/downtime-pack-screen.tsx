@@ -826,8 +826,16 @@ export function DowntimePackScreen() {
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">
               <span className={styles.frozenDot} aria-hidden="true" />
-              Frozen{pack.offline ? ", " : " "}
-              <b>{frozenAt}</b>
+              {/* Visual desk, 22 Oct 2026: the full "taken offline · last sync" line pushed the title to
+                  "Dow…" at 1280, so the chip stays short and the taken line beside it says it in full. */}
+              {pack.offline ? "Offline · last sync " : "Frozen "}
+              <b>
+                {pack.offline && syncedAt !== null
+                  ? formatInstantWithDay(syncedAt, now)
+                  : pack.offline
+                    ? "not recorded"
+                    : frozenAt}
+              </b>
             </span>
           }
           aside={

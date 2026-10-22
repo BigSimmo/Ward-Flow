@@ -224,7 +224,8 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     const pack = lastDowntimePack();
     expect(pack?.offline).toEqual({ lastSyncAt: NOW_ANCHOR });
     const frozen = screen.getByTestId("ward-downtime-frozen").textContent ?? "";
-    expect(frozen).toMatch(/taken offline · last sync 10:42/u);
+    // The hero chip is kept short (visual desk, 22 Oct 2026); the taken line below says "Taken offline".
+    expect(frozen).toMatch(/Offline · last sync 10:42/u);
     expect(frozen).not.toMatch(/11:00/u);
     expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(
       /^Taken offline · last sync .*10:42.* · next pack when the connection returns$/u,
