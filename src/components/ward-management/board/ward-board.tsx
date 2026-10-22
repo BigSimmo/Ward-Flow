@@ -5,7 +5,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { useModalFocus } from "@/components/wf";
+import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -63,8 +63,6 @@ import { WardBoardHeader } from "./ward-board-header";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { WardBoardDetailPanel } from "./ward-board-detail-panel";
-import { PhoneSheet } from "@/components/wf/phone";
-import { useIsPhone } from "@/components/wf/use-is-phone";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
